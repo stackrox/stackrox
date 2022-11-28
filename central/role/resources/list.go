@@ -105,6 +105,11 @@ var (
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ServiceIdentity = newDeprecatedResourceMetadata("ServiceIdentity",
 		permissions.GlobalScope, Administration)
+	SignatureIntegration = newDeprecatedResourceMetadata("SignatureIntegration",
+		permissions.GlobalScope, Integration)
+	User                   = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
+	ProcessListeningOnPort = newDeprecatedResourceMetadata("ProcessListeningOnPort",
+		permissions.NamespaceScope, DeploymentExtension)
 
 	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)

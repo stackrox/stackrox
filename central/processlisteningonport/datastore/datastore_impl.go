@@ -3,7 +3,9 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/stackrox/rox/central/metrics"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
@@ -21,8 +23,8 @@ type datastoreImpl struct {
 }
 
 var (
-	indicatorSAC = sac.ForResource(resources.Indicator)
-	log          = logging.LoggerForModule()
+	plopSAC = sac.ForResource(resources.ProcessListeningOnPort)
+	log     = logging.LoggerForModule()
 )
 
 func newDatastoreImpl(
@@ -39,13 +41,18 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
 	portProcesses ...*storage.ProcessListeningOnPort,
 ) error {
+	defer metrics.SetDatastoreFunctionDuration(
+		time.Now(),
+		"ProcessListeningOnPort",
+		"AddProcessListeningOnPort",
+	)
 
 	var (
 		lookups       []*v1.Query
 		indicatorsMap = map[string]*storage.ProcessIndicator{}
 	)
 
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -90,7 +97,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	plopObjects := make([]*storage.ProcessListeningOnPortStorage, len(portProcesses))
 	for i, val := range portProcesses {
-		indicatorId := ""
+		indicatorID := ""
 
 		key := fmt.Sprintf("%s %s %s %s %s",
 			val.Process.ContainerName,
@@ -101,9 +108,10 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		)
 
 		if indicator, ok := indicatorsMap[key]; ok {
-			indicatorId = indicator.GetId()
-			log.Debugf("Got indicator %s: %+v", indicatorId, indicator)
+			indicatorID = indicator.GetId()
+			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
+			// XXX: Create a metric for this
 			log.Warnf("Found no matching indicators for %s", key)
 		}
 
@@ -113,12 +121,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			Id:                 uuid.NewV4().String(),
 			Port:               val.Port,
 			Protocol:           val.Protocol,
-			ProcessIndicatorId: indicatorId,
+			ProcessIndicatorId: indicatorID,
 			CloseTimestamp:     val.CloseTimestamp,
 		}
 	}
 
-	// Not save actual PLOP objects
+	// Now save actual PLOP objects
 	err = ds.storage.UpsertMany(ctx, plopObjects)
 	if err != nil {
 		return err
@@ -129,18 +137,30 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
-	namespace string,
-	deploymentId string,
+	opts GetOptions,
 ) (
-	[]*storage.ProcessListeningOnPort, error,
+	portProcessMap map[string][]*storage.ProcessListeningOnPort, err error,
 ) {
+	if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
 
-	portProcessList, err := ds.storage.GetProcessListeningOnPort(ctx,
-		namespace, deploymentId)
+	if opts.Namespace != nil && opts.DeploymentID != nil {
+		portProcessMap, err = ds.storage.GetProcessListeningOnPort(ctx,
+			*opts.Namespace, *opts.DeploymentID)
+	} else if opts.Namespace != nil {
+		portProcessMap, err = ds.storage.GetProcessListeningOnPortByNamespace(
+			ctx, *opts.Namespace)
+	} else {
+		log.Warnf("Options for read query are incorrect: %+v", opts)
+		return nil, nil
+	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	return portProcessList, nil
+	return portProcessMap, nil
 }
