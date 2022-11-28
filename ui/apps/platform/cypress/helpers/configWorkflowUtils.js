@@ -150,7 +150,7 @@ export function visitConfigurationManagementDashboard() {
     visitAndAssertBeforeResponses(
         basePath,
         () => {
-            cy.get(`h1:contains("h1:contains("${containerTitle}")")`);
+            cy.get(`h1:contains("${containerTitle}")`);
         },
         routeMatcherMapForConfigurationManagementDashboard
     );
