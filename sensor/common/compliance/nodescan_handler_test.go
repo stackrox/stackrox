@@ -228,3 +228,16 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStopHandler() {
 	h.Stop(nil)
 	s.NoError(h.Stopped().Wait())
 }
+
+func (s *NodeScanHandlerTestSuite) TestInputChannelClosed() {
+	ch, producer := s.generateTestInputNoClose(10)
+	h := NewNodeScanHandler(ch)
+	s.NoError(h.Start())
+	consumer := consumeAndCount(h.ResponsesC(), 10)
+	s.NoError(producer.stoppedC.Wait())
+
+	close(ch) // producer finishes writing all messages to ch
+	s.ErrorIs(h.Stopped().Wait(), errInputChanClosed)
+
+	s.NoError(consumer.stoppedC.Wait())
+}
