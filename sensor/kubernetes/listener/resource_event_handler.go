@@ -202,7 +202,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(resyncingSif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	handle(resyncingSif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	handle(resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(resyncingSif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 
 	if osAppsFactory != nil {
 		handle(osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
