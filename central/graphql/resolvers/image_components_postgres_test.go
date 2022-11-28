@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -123,8 +124,6 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 		err = s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
 		s.NoError(err)
 	}
-
-	s.T().Parallel()
 }
 
 func (s *GraphQLImageComponentTestSuite) TearDownSuite() {
@@ -429,32 +428,32 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentDeployments() {
 		{
 			"comp1os1",
 			scancomponent.ComponentID("comp1", "0.9", "os1"),
-			[]string{"dep1id", "dep2id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp2os1",
 			scancomponent.ComponentID("comp2", "1.1", "os1"),
-			[]string{"dep1id", "dep2id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp3os1",
 			scancomponent.ComponentID("comp3", "1.0", "os1"),
-			[]string{"dep1id", "dep2id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp1os2",
 			scancomponent.ComponentID("comp1", "0.9", "os2"),
-			[]string{"dep1id", "dep3id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 		{
 			"comp3os2",
 			scancomponent.ComponentID("comp3", "1.0", "os2"),
-			[]string{"dep1id", "dep3id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 		{
 			"comp4os2",
 			scancomponent.ComponentID("comp4", "1.0", "os2"),
-			[]string{"dep1id", "dep3id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 	}
 

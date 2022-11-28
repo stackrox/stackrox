@@ -15,6 +15,7 @@ const (
 	Namespace1          = "ccaaaaaa-bbbb-4011-0000-111111111111"
 	Node1               = "bbaaaaaa-bbbb-4011-0000-111111111111"
 	Node2               = "bbaaaaaa-bbbb-4011-0000-222222222222"
+	Node3               = "bbaaaaaa-bbbb-4011-0000-333333333333"
 	PodUID1             = "aaaaaaaa-bbbb-4011-0000-111111111111"
 	PodUID2             = "aaaaaaaa-bbbb-4011-0000-222222222222"
 	PodUID3             = "aaaaaaaa-bbbb-4011-0000-3333333333333"
