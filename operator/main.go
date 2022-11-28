@@ -44,9 +44,10 @@ import (
 )
 
 var (
-	setupLog       = ctrl.Log.WithName("setup")
-	scheme         = runtime.NewScheme()
-	enableWebhooks = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+	setupLog        = ctrl.Log.WithName("setup")
+	scheme          = runtime.NewScheme()
+	enableWebhooks  = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+	enableProfiling = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
 
 	// Default place where controller-runtime looks for TLS artifacts.
 	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
