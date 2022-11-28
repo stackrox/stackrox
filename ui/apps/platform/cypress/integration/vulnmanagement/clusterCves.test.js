@@ -85,12 +85,12 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
         );
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
-    // Count the checkbox as the first column.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
     it('should display links for clusters', () => {
-        verifySecondaryEntities(entitiesKey, 'clusters', 8, /^\d+ clusters?$/);
+        verifySecondaryEntities(entitiesKey, 'clusters', 9, /^\d+ clusters?$/);
     });
 });

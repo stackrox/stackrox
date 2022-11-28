@@ -78,7 +78,8 @@ describe('Vulnerability Management Namespaces', () => {
         // Do not assert because of potential timing problem: get td elements before table re-renders.
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
@@ -86,7 +87,7 @@ describe('Vulnerability Management Namespaces', () => {
         verifySecondaryEntities(
             entitiesKey,
             'image-cves',
-            2,
+            3,
             /^\d+ CVEs?$/,
             getCountAndNounFromImageCVEsLinkResults
         );
@@ -96,17 +97,17 @@ describe('Vulnerability Management Namespaces', () => {
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'image-cves',
-            2,
+            3,
             /^\d+ Fixable$/,
             getCountAndNounFromImageCVEsLinkResults
         );
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 4, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 5, /^\d+ deployments?$/);
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 5, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 6, /^\d+ images?$/);
     });
 });
