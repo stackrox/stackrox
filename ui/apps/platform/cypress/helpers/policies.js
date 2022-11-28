@@ -25,7 +25,7 @@ const routeMatcherMapForPolicies = {
     },
 };
 
-const containerTitle = 'Policy management';
+const containerTitle = 'Policy Management';
 
 /**
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
