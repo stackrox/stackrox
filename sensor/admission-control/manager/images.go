@@ -29,13 +29,12 @@ func (m *manager) getCachedImage(img *storage.ContainerImage) *storage.Image {
 		return nil
 	}
 
-	cachedEntry, ok := m.imageCache.Get(img.GetId())
+	cachedImg, ok := m.imageCache.Get(img.GetId())
 	if !ok {
 		return nil
 	}
-	cachedImg := cachedEntry.(imageCacheEntry)
 	if time.Since(cachedImg.timestamp) > imageCacheTTL {
-		m.imageCache.RemoveIf(img.GetId(), func(entry interface{}) bool { return entry == cachedEntry })
+		m.imageCache.RemoveIf(img.GetId(), func(entry imageCacheEntry) bool { return entry == cachedImg })
 		return nil
 	}
 

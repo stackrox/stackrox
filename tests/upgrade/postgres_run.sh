@@ -123,6 +123,12 @@ test_upgrade_paths() {
     createRocksDBScopes
     checkForRocksAccessScopes
 
+    # Grab a backup from rocks db to use later
+    backup_dir="$(mktemp -d)"
+    info "Backing up to ${backup_dir}"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "${backup_dir}" || touch DB_TEST_FAIL
+    [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
+
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
 
     cd "$TEST_ROOT"
@@ -197,6 +203,22 @@ test_upgrade_paths() {
 
     collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
 
+    # Now lets restore from a stackrox backup
+    info "Restoring from ${backup_dir}/stackrox_db_*"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "${backup_dir}"/stackrox_db_* || touch DB_TEST_FAIL
+    [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
+
+    wait_for_api
+
+    # Ensure we still have the access scopes added to Rocks
+    checkForRocksAccessScopes
+    # The scopes added after the initial upgrade to Postgres should no longer exist.
+    verifyNoPostgresAccessScopes
+
+    validate_upgrade "03_restore_rocks_to_postgres" "restore rocks db to Postgres" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+
+    collect_and_check_stackrox_logs "$log_output_dir" "03_restore_rocks_to_postgres"
+
     info "Fetching a sensor bundle for cluster 'remote'"
     rm -rf sensor-remote
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
@@ -218,7 +240,7 @@ test_upgrade_paths() {
     store_qa_test_results "upgrade-paths-smoke-tests"
     [[ ! -f FAIL ]] || die "Smoke tests failed"
 
-    collect_and_check_stackrox_logs "$log_output_dir" "03_final"
+    collect_and_check_stackrox_logs "$log_output_dir" "04_final"
 }
 
 helm_upgrade_to_current_with_postgres() {

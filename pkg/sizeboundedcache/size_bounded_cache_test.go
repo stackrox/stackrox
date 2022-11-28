@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testSizeFunc(k, v interface{}) int64 {
-	return int64(len(k.(string)) + len(v.(string)))
+func testSizeFunc(k string, v string) int64 {
+	return int64(len(k) + len(v))
 }
 
 func TestSizeBoundedCacheErrors(t *testing.T) {
 	var cases = []struct {
 		maxSize, maxItemSize int64
-		costFunc             func(k, v interface{}) int64
+		costFunc             func(k string, v string) int64
 	}{
 		{
 			maxSize:     0,
@@ -49,7 +49,7 @@ func TestSizeBoundedCacheErrors(t *testing.T) {
 func TestSizeBoundedCache(t *testing.T) {
 	cache, err := New(10, 9, testSizeFunc)
 	require.NoError(t, err)
-	cacheImpl := cache.(*sizeBoundedCache)
+	cacheImpl := cache.(*sizeBoundedCache[string, string])
 
 	// simple add
 	cacheImpl.Add("a", "b")

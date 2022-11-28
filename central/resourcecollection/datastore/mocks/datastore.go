@@ -154,21 +154,6 @@ func (mr *MockDataStoreMockRecorder) GetMany(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockDataStore)(nil).GetMany), ctx, id)
 }
 
-// ResolveListDeployments mocks base method.
-func (m *MockDataStore) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveListDeployments", ctx, collection)
-	ret0, _ := ret[0].([]*storage.ListDeployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ResolveListDeployments indicates an expected call of ResolveListDeployments.
-func (mr *MockDataStoreMockRecorder) ResolveListDeployments(ctx, collection interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveListDeployments", reflect.TypeOf((*MockDataStore)(nil).ResolveListDeployments), ctx, collection)
-}
-
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
@@ -226,4 +211,42 @@ func (m *MockDataStore) UpdateCollection(ctx context.Context, collection *storag
 func (mr *MockDataStoreMockRecorder) UpdateCollection(ctx, collection interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCollection", reflect.TypeOf((*MockDataStore)(nil).UpdateCollection), ctx, collection)
+}
+
+// MockQueryResolver is a mock of QueryResolver interface.
+type MockQueryResolver struct {
+	ctrl     *gomock.Controller
+	recorder *MockQueryResolverMockRecorder
+}
+
+// MockQueryResolverMockRecorder is the mock recorder for MockQueryResolver.
+type MockQueryResolverMockRecorder struct {
+	mock *MockQueryResolver
+}
+
+// NewMockQueryResolver creates a new mock instance.
+func NewMockQueryResolver(ctrl *gomock.Controller) *MockQueryResolver {
+	mock := &MockQueryResolver{ctrl: ctrl}
+	mock.recorder = &MockQueryResolverMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockQueryResolver) EXPECT() *MockQueryResolverMockRecorder {
+	return m.recorder
+}
+
+// ResolveCollectionQuery mocks base method.
+func (m *MockQueryResolver) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveCollectionQuery", ctx, collection)
+	ret0, _ := ret[0].(*v1.Query)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveCollectionQuery indicates an expected call of ResolveCollectionQuery.
+func (mr *MockQueryResolverMockRecorder) ResolveCollectionQuery(ctx, collection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveCollectionQuery", reflect.TypeOf((*MockQueryResolver)(nil).ResolveCollectionQuery), ctx, collection)
 }

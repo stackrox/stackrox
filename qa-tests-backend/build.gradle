@@ -17,8 +17,8 @@ repositories {
 
 def grpcVersion = '1.21.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protocVersion = '3.21.4'
-def protobufVersion = '3.21.4'
+def protocVersion = '3.21.9'
+def protobufVersion = '3.21.9'
 def nettyTcNativeVersion = '2.0.45.Final'
 def fabric8Version = '6.1.1'
 def jacksonVersion = '2.13.2'
@@ -88,7 +88,7 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:15.0.1'
+    implementation 'io.kubernetes:client-java:16.0.2'
 
     implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.2.13'
 

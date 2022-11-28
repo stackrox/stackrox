@@ -274,13 +274,13 @@ func main() {
 		}
 		versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 	} else {
-		// Now that we verified that the DB can be loaded, remove the .backup directory
-		if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
-			log.Errorf("Failed to remove backup DB: %v", err)
-		}
-
 		// Update last associated software version on DBs.
 		migrations.SetCurrent(option.CentralOptions.DBPathBase)
+	}
+
+	// Now that we verified that the DB can be loaded, remove the .backup directory
+	if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
+		log.Fatalf("Failed to remove backup DB: %v", err)
 	}
 
 	// Start the prometheus metrics server

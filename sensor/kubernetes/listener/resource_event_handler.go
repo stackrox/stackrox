@@ -77,6 +77,7 @@ func (k *listenerImpl) handleAllEvents() {
 		orchestratornamespaces.Singleton(),
 		k.credentialsManager,
 		k.traceWriter,
+		k.storeProvider,
 	)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
@@ -202,7 +203,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(resyncingSif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	handle(resyncingSif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	handle(resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(resyncingSif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 
 	if osAppsFactory != nil {
 		handle(osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
@@ -253,7 +254,7 @@ func (k *listenerImpl) handleAllEvents() {
 func handle(
 	informer cache.SharedIndexInformer,
 	dispatcher resources.Dispatcher,
-	outputQueue component.OutputQueue,
+	resolver component.Resolver,
 	syncingResources *concurrency.Flag,
 	wg *concurrency.WaitGroup,
 	stopSignal *concurrency.Signal,
@@ -262,7 +263,7 @@ func handle(
 	handlerImpl := &resourceEventHandlerImpl{
 		eventLock:        eventLock,
 		dispatcher:       dispatcher,
-		outputQueue:      outputQueue,
+		resolver:         resolver,
 		syncingResources: syncingResources,
 
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),

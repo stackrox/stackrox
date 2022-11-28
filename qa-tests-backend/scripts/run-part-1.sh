@@ -43,6 +43,8 @@ run_tests_part_1() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
+    rm -f FAIL
+
     if is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL

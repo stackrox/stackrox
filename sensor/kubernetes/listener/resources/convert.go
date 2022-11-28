@@ -20,10 +20,10 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
-	"k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -61,7 +61,7 @@ type deploymentWrap struct {
 	*storage.Deployment
 	registryOverride string
 	original         interface{}
-	portConfigs      map[portRef]*storage.PortConfig
+	portConfigs      map[service.PortRef]*storage.PortConfig
 	pods             []*v1.Pod
 	// registryStore is the image registry store to use when determining if an image is cluster-local.
 	registryStore *registry.Store
@@ -189,7 +189,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		// instead of looking for it inside a PodTemplate.
 		podLabels = o.Labels
 		labelSelector = w.populateK8sComponentIfNecessary(o, hierarchy)
-	case *v1beta1.CronJob:
+	case *batchv1.CronJob:
 		// Cron jobs have a Job spec that then have a Pod Template underneath
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
 		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
@@ -391,12 +391,12 @@ func (w *deploymentWrap) populatePorts() {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	w.portConfigs = make(map[portRef]*storage.PortConfig)
+	w.portConfigs = make(map[service.PortRef]*storage.PortConfig)
 	for _, c := range w.GetContainers() {
 		for _, p := range c.GetPorts() {
-			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
+			w.portConfigs[service.PortRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
 			if p.Name != "" {
-				w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
+				w.portConfigs[service.PortRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
 			}
 		}
 	}
@@ -451,42 +451,26 @@ func (w *deploymentWrap) resetPortExposureNoLock() {
 	}
 }
 
-func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
+func (w *deploymentWrap) updatePortExposure(portExposure map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	w.updatePortExposureUncheckedNoLock(portExposure)
+}
+
+func (w *deploymentWrap) updatePortExposureSlice(portExposures []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
 	w.resetPortExposureNoLock()
 
-	svcs := store.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels)
-	for _, svc := range svcs {
-		w.updatePortExposureUncheckedNoLock(svc)
+	for _, exposureInfo := range portExposures {
+		w.updatePortExposureUncheckedNoLock(exposureInfo)
 	}
 }
 
-func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoutes) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-
-	w.resetPortExposureNoLock()
-
-	for _, svc := range svcs {
-		w.updatePortExposureUncheckedNoLock(svc)
-	}
-}
-
-func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(selector.CreateLabelsWithLen(w.PodLabels)) {
-		return
-	}
-
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-
-	w.updatePortExposureUncheckedNoLock(svc)
-}
-
-func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc serviceWithRoutes) {
-	for ref, exposureInfos := range svc.exposure() {
+func (w *deploymentWrap) updatePortExposureUncheckedNoLock(portExposure map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
+	for ref, exposureInfos := range portExposure {
 		portCfg := w.portConfigs[ref]
 		if portCfg == nil {
 			if ref.Port.Type == intstr.String {
@@ -544,7 +528,7 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 		}
 	}
 	if w.portConfigs != nil {
-		ret.portConfigs = make(map[portRef]*storage.PortConfig)
+		ret.portConfigs = make(map[service.PortRef]*storage.PortConfig)
 		for k, v := range w.portConfigs {
 			ret.portConfigs[k] = v.Clone()
 		}
