@@ -1,7 +1,12 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
 import { visitFromLeftNav } from './nav';
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
+import {
+    getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
+    interceptRequests,
+    waitForResponses,
+} from './request';
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
 import tabSelectors from '../selectors/tab';
@@ -259,33 +264,41 @@ const routeMatcherMapToVisitNetworkGraphWithDeploymentSelected = {
 
 export const basePath = '/main/network';
 
-/*
- * Reach clusters by interaction from another container.
- * For example, click View Deployment in Network Graph button from Risk.
- */
-export function reachNetworkGraphWithDeploymentSelected(interactionCallback, staticResponseMap) {
-    interactAndWaitForResponses(
-        interactionCallback,
-        routeMatcherMapToVisitNetworkGraphWithDeploymentSelected,
-        staticResponseMap
-    );
+const title = 'Network Graph';
 
-    cy.location('pathname').should('contain', basePath); // contain because pathname might have id
-    cy.get(networkGraphSelectors.networkGraphHeading);
+/**
+ * Visit network graph deployment by interaction from another container.
+ * For example, click View Deployment in Network Graph button from Risk.
+ *
+ * @param {function} interactionCallback
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function interactAndVisitNetworkGraphWithDeploymentSelected(
+    interactionCallback,
+    staticResponseMap
+) {
+    interceptRequests(routeMatcherMapToVisitNetworkGraphWithDeploymentSelected, staticResponseMap);
+
+    interactionCallback();
+
+    cy.location('pathname').should('contain', basePath); // contain because pathname has id
+    cy.get(`h1:contains("${title}")`);
+
+    waitForResponses(routeMatcherMapToVisitNetworkGraphWithDeploymentSelected, staticResponseMap);
 }
 
 export function visitNetworkGraphFromLeftNav() {
     visitFromLeftNav('Network', routeMatcherMapToVisitNetworkGraph);
 
     cy.location('pathname').should('eq', basePath);
-    cy.get(networkGraphSelectors.networkGraphHeading);
+    cy.get(`h1:contains("${title}")`);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
 
 export function visitNetworkGraph(staticResponseMap) {
     visit(basePath, routeMatcherMapToVisitNetworkGraph, staticResponseMap);
 
-    cy.get(networkGraphSelectors.networkGraphHeading);
+    cy.get(`h1:contains("${title}")`);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
 
