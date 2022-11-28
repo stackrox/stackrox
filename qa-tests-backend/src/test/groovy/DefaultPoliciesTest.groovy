@@ -5,7 +5,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import common.Constants
 import groups.BAT
-import groups.COMPATIBILITY
 import groups.SMOKE
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
@@ -244,7 +243,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return strutsComponent.getVulnsList().find { it.cve == "CVE-2017-5638" } != null
     }
 
-    @Category([BAT, SMOKE, COMPATIBILITY])
+    @Category([BAT, SMOKE])
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"
@@ -428,7 +427,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 //                 []
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Category(BAT)
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
@@ -524,7 +523,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return total
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Category(BAT)
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
@@ -558,7 +557,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return m
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Category(BAT)
     def "Verify that alert groups API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()

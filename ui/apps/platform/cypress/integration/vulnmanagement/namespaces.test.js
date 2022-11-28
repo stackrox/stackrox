@@ -14,9 +14,9 @@ import {
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
 
-const entitiesKey = 'image-components';
+const entitiesKey = 'namespaces';
 
-describe('Vulnerability Management Image Components', () => {
+describe('Vulnerability Management Namespaces', () => {
     withAuth();
 
     before(function beforeHook() {
@@ -30,13 +30,13 @@ describe('Vulnerability Management Image Components', () => {
 
         hasTableColumnHeadings([
             '', // hidden
-            'Component',
-            'Operating System',
-            'CVEs',
-            'Fixed In',
-            'Top CVSS',
-            'Images',
+            'Namespace',
+            'Image CVEs',
+            'Cluster',
             'Deployments',
+            'Images',
+            'Policy Status',
+            'Latest Violation',
             'Risk Priority',
         ]);
     });
@@ -59,7 +59,7 @@ describe('Vulnerability Management Image Components', () => {
         }, entitiesKey);
         cy.location('search').should(
             'eq',
-            '?sort[0][id]=Component%20Risk%20Priority&sort[0][desc]=true'
+            '?sort[0][id]=Namespace%20Risk%20Priority&sort[0][desc]=true'
         );
 
         cy.get(thSelector).should('have.class', '-sort-desc');
@@ -71,55 +71,15 @@ describe('Vulnerability Management Image Components', () => {
         cy.get(thSelector).click(); // no request because initial response has been cached
         cy.location('search').should(
             'eq',
-            '?sort[0][id]=Component%20Risk%20Priority&sort[0][desc]=false'
+            '?sort[0][id]=Namespace%20Risk%20Priority&sort[0][desc]=false'
         );
 
         cy.get(thSelector).should('have.class', '-sort-asc');
         // Do not assert because of potential timing problem: get td elements before table re-renders.
     });
 
-    // TODO Investigate whether not yet supported or incorrect field in payload.
-    it.skip('should sort the Top CVSS column', () => {
-        visitVulnerabilityManagementEntities(entitiesKey);
-
-        const thSelector = '.rt-th:contains("Top CVSS")';
-        const tdSelector = '.rt-td:nth-child(6) [data-testid="label-chip"]';
-
-        // 0. Initial table state indicates that the column is not sorted.
-        cy.get(thSelector)
-            .should('not.have.class', '-sort-asc')
-            .should('not.have.class', '-sort-desc');
-
-        // 1. Sort ascending by the column.
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(thSelector).click();
-        }, entitiesKey);
-        cy.location('search').should(
-            'eq',
-            '?sort[0][id]=Component%20Top%20CVSS&sort[0][desc]=false'
-        );
-
-        cy.get(thSelector).should('have.class', '-sort-asc');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfAscendingNumberValuesFromElements);
-        });
-
-        // 2. Sort descending by the column.
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(thSelector).click();
-        }, entitiesKey);
-        cy.location('search').should(
-            'eq',
-            '?sort[0][id]=Component%20Top%20CVSS&sort[0][desc]=true'
-        );
-
-        cy.get(thSelector).should('have.class', '-sort-desc');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfDescendingNumberValuesFromElements);
-        });
-    });
-
-    // Argument 3 in verify functions is one-based index of column which has the links.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
@@ -143,11 +103,11 @@ describe('Vulnerability Management Image Components', () => {
         );
     });
 
-    it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 6, /^\d+ images?$/);
+    it('should display links for deployments', () => {
+        verifySecondaryEntities(entitiesKey, 'deployments', 5, /^\d+ deployments?$/);
     });
 
-    it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 7, /^\d+ deployments?$/);
+    it('should display links for images', () => {
+        verifySecondaryEntities(entitiesKey, 'images', 6, /^\d+ images?$/);
     });
 });

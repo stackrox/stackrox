@@ -1,6 +1,7 @@
 package service
 
 import (
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -14,7 +15,8 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton())
+	ds, qr := datastore.Singleton()
+	as = New(ds, qr, deploymentDS.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

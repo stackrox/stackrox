@@ -37,7 +37,7 @@ func (i *fakeImageServiceClient) EnrichLocalImageInternal(ctx context.Context,
 type scanTestSuite struct {
 	suite.Suite
 	fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
-		registry registryTypes.Registry) ([]*storage.Signature, error)
+		fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 	getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
 	scannerClientSingleton func() *scannerclient.Client
 	scanImg                func(ctx context.Context, image *storage.Image, registry registryTypes.Registry,
@@ -101,7 +101,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 		scanImg func(ctx context.Context, image *storage.Image,
 			registry registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
-			registry registryTypes.Registry) ([]*storage.Signature, error)
+			fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 		getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
 		fakeImageServiceClient *fakeImageServiceClient
 		enrichmentTriggered    bool
@@ -168,7 +168,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 
 func (suite *scanTestSuite) TestMetadataBeingSet() {
 	scanImg = successfulScan
-	fetchSignaturesWithRetry = func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image,
+	fetchSignaturesWithRetry = func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image, _ string,
 		_ registryTypes.Registry) ([]*storage.Signature, error) {
 		if img.GetMetadata().GetV2() == nil {
 			return nil, errors.New("image metadata missing, not attempting fetch of signatures")
@@ -210,7 +210,7 @@ func successfulScan(_ context.Context, _ *storage.Image,
 	}, nil
 }
 
-func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image,
+func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
 	_ registryTypes.Registry) ([]*storage.Signature, error) {
 	return []*storage.Signature{{
 		Signature: &storage.Signature_Cosign{Cosign: &storage.CosignSignature{
@@ -225,7 +225,7 @@ func failingScan(_ context.Context, _ *storage.Image,
 	return nil, errors.New("failed scanning image")
 }
 
-func failingFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image,
+func failingFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
 	_ registryTypes.Registry) ([]*storage.Signature, error) {
 	return nil, errors.New("failed fetching signatures")
 }
@@ -239,7 +239,7 @@ type fakeRegistry struct {
 	fail bool
 }
 
-func (f *fakeRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
+func (f *fakeRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) {
 	if f.fail {
 		return nil, errors.New("failed fetching metadata")
 	}

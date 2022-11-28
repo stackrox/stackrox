@@ -165,7 +165,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	}
 	reg := &mockRegistry{cfg: mockConfig}
 
-	res, err := f.FetchSignatures(context.Background(), img, reg)
+	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), reg)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSignatures, res)
 }
@@ -184,7 +184,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	cimg.Name.FullName = "fa@wrongreference"
 	img := types.ToImage(cimg)
 	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
-	res, err := f.FetchSignatures(context.Background(), img, nil)
+	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), nil)
 	assert.Nil(t, res)
 	require.Error(t, err)
 	assert.False(t, retry.IsRetryable(err))
@@ -203,7 +203,7 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	reg := &mockRegistry{cfg: &registryTypes.Config{}}
 
 	require.NoError(t, err)
-	result, err := f.FetchSignatures(context.Background(), img, reg)
+	result, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), reg)
 	assert.NoError(t, err)
 	assert.Nil(t, result)
 }

@@ -19,11 +19,13 @@ message ListCollectionSelectorsResponse {
 }
 
 message GetCollectionRequest {
-    message Options {
-        bool with_matches = 1;
-    }
     string id = 1;
-    Options options = 2;
+    CollectionDeploymentMatchOptions options = 2;
+}
+
+message CollectionDeploymentMatchOptions {
+    bool with_matches = 1;
+    Pagination matches_pagination = 2;
 }
 
 message GetCollectionResponse {
@@ -63,16 +65,12 @@ message UpdateCollectionResponse {
 }
 
 message DryRunCollectionRequest {
-    message Options {
-        Pagination pagination = 1;
-        bool skip_deployment_matching = 2;
-    }
     string name = 1;
     string id = 2; // set if dryrun on existing collections
     string description = 3;
     repeated storage.ResourceSelector resource_selectors = 4;
     repeated string embedded_collection_ids = 5;
-    Options options = 6;
+    CollectionDeploymentMatchOptions options = 6;
 }
 
 message DryRunCollectionResponse {

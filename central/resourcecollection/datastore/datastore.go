@@ -2,14 +2,10 @@ package datastore
 
 import (
 	"context"
-	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -35,11 +31,12 @@ type DataStore interface {
 	// UpdateCollection updates the given collection object, and preserves createdAt and createdBy fields from stored collection
 	UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
-	ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error)
 	// autocomplete workflow, maybe SearchResults? TODO ROX-12616
+}
 
-	// ResolveCollectionQuery exported exclusively for testing purposes, should be hidden once e2e tests go in
-	// ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error)
+// QueryResolver provides functionality for resolving v1.Query objects from storage.ResourceCollection objects
+type QueryResolver interface {
+	ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error)
 }
 
 var (
@@ -64,8 +61,8 @@ func GetSupportedFieldLabels() []pkgSearch.FieldLabel {
 	return ret
 }
 
-// New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+// New returns a new instance of a DataStore and a QueryResolver.
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, QueryResolver, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
@@ -73,19 +70,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 	}
 
 	if err := ds.initGraph(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return ds, nil
-}
-
-// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	if t == nil {
-		// this function should only be used for testing purposes
-		return nil, errors.New("TestPostgresDataStore should only be used within testing context")
-	}
-	dbstore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
-	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher)
+	return ds, ds, nil
 }

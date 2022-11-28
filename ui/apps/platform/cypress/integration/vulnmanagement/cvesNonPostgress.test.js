@@ -13,13 +13,13 @@ import {
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
 
-const entitiesKey = 'cluster-cves';
+const entitiesKey = 'cves';
 
-describe('Vulnerability Management Cluster (Platform) CVEs', () => {
+describe('Vulnerability Management CVEs', () => {
     withAuth();
 
     before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
     });
@@ -37,6 +37,7 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
             'Env. Impact',
             'Impact Score',
             'Entities',
+            'Discovered Time',
             'Published',
             '', // hidden
         ]);
@@ -73,8 +74,6 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
         // Do not assert because of potential timing problem: get td elements before table re-renders.
     });
 
-    // Cluster (Platform) CVEs does not yet have Severity column.
-
     it('should display vulnerability descriptions', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
@@ -85,12 +84,20 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
         );
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
-    // Count the checkbox as the first column.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
-    it('should display links for clusters', () => {
-        verifySecondaryEntities(entitiesKey, 'clusters', 8, /^\d+ clusters?$/);
+    it('should display links for deployments', () => {
+        verifySecondaryEntities(entitiesKey, 'deployments', 9, /^\d+ deployments?$/);
+    });
+
+    it('should display links for images', () => {
+        verifySecondaryEntities(entitiesKey, 'images', 9, /^\d+ images?$/);
+    });
+
+    it('should display links for components', () => {
+        verifySecondaryEntities(entitiesKey, 'components', 9, /^\d+ components?$/);
     });
 });

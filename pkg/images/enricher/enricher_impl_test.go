@@ -55,7 +55,7 @@ type fakeSigFetcher struct {
 	retryable bool
 }
 
-func (f *fakeSigFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
+func (f *fakeSigFetcher) FetchSignatures(ctx context.Context, image *storage.Image, imageReference string,
 	registry types.Registry) ([]*storage.Signature, error) {
 	if f.fail {
 		err := errors.New("some error")
@@ -226,7 +226,11 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: UseCachesIfPossible,
 			},
 			inMetadataCache: false,
-			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			image: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -245,8 +249,12 @@ func TestEnricherFlow(t *testing.T) {
 			inMetadataCache:      true,
 			shortCircuitRegistry: false,
 			shortCircuitScanner:  true,
-			image:                &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
-			imageGetter:          imageGetterFromImage(&storage.Image{Id: "id", Scan: &storage.ImageScan{}}),
+			image: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
+			imageGetter: imageGetterFromImage(&storage.Image{Id: "id", Scan: &storage.ImageScan{}}),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -263,7 +271,11 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: ForceRefetch,
 			},
 			inMetadataCache: true,
-			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			image: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -280,7 +292,10 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: ForceRefetchScansOnly,
 			},
 			inMetadataCache: true,
-			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			image: &storage.Image{
+				Id: "id", Name: &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -323,6 +338,7 @@ func TestEnricherFlow(t *testing.T) {
 				Metadata: &storage.ImageMetadata{},
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg"},
+				Names:    []*storage.ImageName{{Registry: "reg"}},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -344,7 +360,8 @@ func TestEnricherFlow(t *testing.T) {
 				Name: &storage.ImageName{
 					Registry: "reg",
 				},
-				Scan: &storage.ImageScan{},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+				Scan:  &storage.ImageScan{},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -368,6 +385,7 @@ func TestEnricherFlow(t *testing.T) {
 				Metadata: &storage.ImageMetadata{},
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg"},
+				Names:    []*storage.ImageName{{Registry: "reg"}},
 			},
 			imageGetter: imageGetterFromImage(&storage.Image{
 				Id:       "id",
@@ -474,7 +492,8 @@ func TestCVESuppression(t *testing.T) {
 		signatureFetcher:           &fakeSigFetcher{},
 	}
 
-	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"},
+		Names: []*storage.ImageName{{Registry: "reg"}}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
@@ -663,7 +682,11 @@ func TestZeroScannerIntegrations(t *testing.T) {
 		emptyImageGetter,
 		mockReporter, emptySignatureIntegrationGetter)
 
-	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
+	img := &storage.Image{
+		Id:    "id",
+		Name:  &storage.ImageName{Registry: "reg"},
+		Names: []*storage.ImageName{{Registry: "reg"}},
+	}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error scanning image:  error: no image scanners are integrated"
@@ -789,7 +812,11 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 		ctx          EnrichmentContext
 	}{
 		"signatures found without pre-existing signatures": {
-			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			img: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
 			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload")}},
@@ -802,12 +829,16 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 		"cached values should be respected": {
 			ctx: EnrichmentContext{FetchOpt: UseCachesIfPossible},
 			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}, Signature: &storage.ImageSignature{
-				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
-			}},
+				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")}},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
 			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
 		},
 		"fetched signatures contains duplicate": {
-			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			img: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}}},
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
 			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload"),

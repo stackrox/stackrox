@@ -6,7 +6,6 @@ import (
 
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
@@ -23,7 +22,7 @@ import (
 )
 
 const (
-	graphInitBatchSize = 20
+	graphInitBatchSize = 200
 )
 
 var (
@@ -35,8 +34,6 @@ type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
-
-	deploymentDS deploymentDS.DataStore
 
 	lock  sync.RWMutex
 	graph *dag.DAG
@@ -429,36 +426,27 @@ func verifyCollectionObjectNotEmpty(obj *storage.ResourceCollection) error {
 	return nil
 }
 
-func (ds *datastoreImpl) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error) {
+func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
+	var collectionQueue []*storage.ResourceCollection
+	var visitedCollection set.Set[string]
+	var disjunctions []*v1.Query
 
 	if err := verifyCollectionConstraints(collection); err != nil {
 		return nil, err
 	}
 
-	query, err := ds.resolveCollectionQuery(ctx, collection)
-	if err != nil {
-		return nil, err
-	}
-	return ds.deploymentDS.SearchListDeployments(ctx, query)
-}
-
-func (ds *datastoreImpl) resolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
-	var collections []*storage.ResourceCollection
-	var collectionSet set.Set[string]
-	var disjunctions []*v1.Query
-
-	collections = append(collections, collection)
+	collectionQueue = append(collectionQueue, collection)
 
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	for len(collections) > 0 {
+	for len(collectionQueue) > 0 {
 
 		// get first index and remove from list
-		collection := collections[0]
-		collections = collections[1:]
+		collection := collectionQueue[0]
+		collectionQueue = collectionQueue[1:]
 
-		if !collectionSet.Add(collection.GetId()) {
+		if !visitedCollection.Add(collection.GetId()) {
 			continue
 		}
 
@@ -474,7 +462,7 @@ func (ds *datastoreImpl) resolveCollectionQuery(ctx context.Context, collection 
 		if err != nil {
 			return nil, err
 		}
-		collections = append(collections, embeddedList...)
+		collectionQueue = append(collectionQueue, embeddedList...)
 	}
 
 	return pkgSearch.DisjunctionQuery(disjunctions...), nil
@@ -542,8 +530,9 @@ func embeddedCollectionsToIDList(embeddedList []*storage.ResourceCollection_Embe
 func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 
 	// object not nil
-	if collection == nil {
-		return errors.New("passed collection must be non nil")
+	err := verifyCollectionObjectNotEmpty(collection)
+	if err != nil {
+		return err
 	}
 
 	// currently we only support one resource selector per collection from UX
