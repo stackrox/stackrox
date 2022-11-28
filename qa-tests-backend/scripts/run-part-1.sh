@@ -20,7 +20,7 @@ test_part_1() {
 }
 
 config_part_1() {
-    info "Configuring the cluster to run part I of e2e tests"
+    info "Configuring the cluster to run part 1 of e2e tests"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"

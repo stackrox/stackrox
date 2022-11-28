@@ -37,7 +37,8 @@ $script -c qa
 # cluster).
 $script qa DeploymentTest 'Verify deployment of type Job is deleted once it completes'
 
-# Run the full set of qa-tests-backend/ tests, similar to CI for a PR.
+# Run the full set of qa-tests-backend/ tests. This is similar to what CI runs
+# for a PR.
 $script qa
 _EOH_
     exit 1
