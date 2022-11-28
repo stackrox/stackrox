@@ -204,8 +204,8 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	if len(request.GetResourceSelectors()) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs, "No resource selectors were provided")
+	if len(request.GetResourceSelectors())+len(request.GetEmbeddedCollectionIds()) == 0 {
+		return nil, errors.Wrap(errox.InvalidArgs, "No resource selectors or embedded collections were provided")
 	}
 
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())

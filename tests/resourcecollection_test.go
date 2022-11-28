@@ -7,6 +7,8 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
@@ -56,11 +58,10 @@ type CollectionE2ETestSuite struct {
 }
 
 func (s *CollectionE2ETestSuite) SetupSuite() {
-	// if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.ObjectCollections.Enabled() {
-	// 	fmt.Println(env.PostgresDatastoreEnabled.EnvVar(), env.PostgresDatastoreEnabled.BooleanSetting(), features.ObjectCollections.EnvVar(), features.ObjectCollections.Enabled())
-	// 	s.T().Skip("Skip collection tests")
-	// 	s.T().SkipNow()
-	// }
+	if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.ObjectCollections.Enabled() {
+		s.T().Skip("Skip collection tests")
+		s.T().SkipNow()
+	}
 
 	var err error
 
@@ -409,6 +410,32 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 			},
 			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
 				return deployment.GetName() == "deployment1" || (deployment.GetNamespace() == collectionNamespaces[0] && deployment.GetName() == "deployment2")
+			}),
+		},
+		{
+			"embedded collection",
+			&v1.DryRunCollectionRequest{
+				Name:                  "test collection",
+				EmbeddedCollectionIds: []string{collectionIDs[1]},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment2"
+			}),
+		},
+		{
+			"embedded collections",
+			&v1.DryRunCollectionRequest{
+				Name:                  "test collection",
+				EmbeddedCollectionIds: collectionIDs,
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment1" || deployment.GetName() == "deployment2"
 			}),
 		},
 	} {
