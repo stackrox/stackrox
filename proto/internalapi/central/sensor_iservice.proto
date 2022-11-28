@@ -35,7 +35,7 @@ message MsgFromSensor {
         AuditLogStatusInfo            audit_log_status_info             = 11;
         IssueLocalScannerCertsRequest issue_local_scanner_certs_request = 12;
         ClusterMetrics                cluster_metrics                   = 13;
-	ProcessListeningOnPortsUpdate	process_listening_on_port_update	= 14;
+        ProcessListeningOnPortsUpdate process_listening_on_port_update  = 14;
     }
 }
 

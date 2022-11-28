@@ -90,7 +90,8 @@
                 "CLUSTER_HEALTH",
                 "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS",
-                "COLLECTIONS"
+                "COLLECTIONS",
+                "PROCESS_LISTENING_ON_PORT"
               ]
             },
             "collectionFormat": "multi"
@@ -180,7 +181,8 @@
                 "CLUSTER_HEALTH",
                 "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS",
-                "COLLECTIONS"
+                "COLLECTIONS",
+                "PROCESS_LISTENING_ON_PORT"
               ]
             },
             "collectionFormat": "multi"
@@ -264,7 +266,8 @@
                 "CLUSTER_HEALTH",
                 "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS",
-                "COLLECTIONS"
+                "COLLECTIONS",
+                "PROCESS_LISTENING_ON_PORT"
               ]
             },
             "collectionFormat": "multi"
@@ -397,7 +400,8 @@
         "CLUSTER_HEALTH",
         "POLICY_CATEGORIES",
         "IMAGE_INTEGRATIONS",
-        "COLLECTIONS"
+        "COLLECTIONS",
+        "PROCESS_LISTENING_ON_PORT"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 49"
