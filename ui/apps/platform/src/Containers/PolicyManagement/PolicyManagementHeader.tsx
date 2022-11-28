@@ -20,9 +20,9 @@ function PolicyManagementHeader({ currentTabTitle }: PolicyManagementHeaderProps
 
     return (
         <>
-            <PageTitle title="Policy management - Policy categories" />
+            <PageTitle title="Policy Management - Policy categories" />
             <PageSection variant="light">
-                <Title headingLevel="h1">Policy management</Title>
+                <Title headingLevel="h1">Policy Management</Title>
             </PageSection>
             <PageSection variant="light" className="pf-u-px-sm pf-u-py-0">
                 <TabNav currentTabTitle={currentTabTitle} tabLinks={tabLinks} />
