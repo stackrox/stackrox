@@ -170,8 +170,6 @@ func (s *NodeScanHandlerTestSuite) TestHandlerStoppedError() {
 	errTest := errors.New("example-stop-error")
 	h.Stop(errTest)
 	s.ErrorIs(h.Stopped().Wait(), errTest)
-
-	stopAll(s.T(), producer, consumer)
 }
 
 // generateTestInputNoClose generates numToProduce messages of type NodeScanV2
