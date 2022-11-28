@@ -82,7 +82,7 @@ func assertNoGoroutineLeaks(t *testing.T) {
 }
 
 func (s *NodeScanHandlerTestSuite) TearDownTest() {
-	defer assertNoGoroutineLeaks(s.T())
+	assertNoGoroutineLeaks(s.T())
 }
 
 // stopAll gracefully stops stoppables
