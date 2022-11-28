@@ -226,13 +226,10 @@ func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 		s.NoError(producer.stoppedC.Wait())
 		s.NoError(consumer.stoppedC.Wait())
 		h.Stop(nil)
-
-		err := h.Start()
-		s.Error(err)
-		s.ErrorIs(err, errStartMoreThanOnce)
 		s.NoError(h.Stopped().Wait())
 
-		stopAll(s.T(), producer, consumer)
+		s.ErrorIs(h.Start(), errStartMoreThanOnce)
+		s.NoError(h.Stopped().Wait())
 	})
 }
 
