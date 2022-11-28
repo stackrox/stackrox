@@ -70,9 +70,9 @@ func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
 	toC := make(chan *central.MsgFromSensor)
 	go func() {
 		defer func() {
+			close(toC)
 			c.stoppedC.SignalWithError(c.stopC.Err())
 		}()
-		defer close(toC)
 		for !c.stopC.IsDone() {
 			select {
 			case <-c.stopC.Done():

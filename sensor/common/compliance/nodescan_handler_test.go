@@ -17,14 +17,16 @@ import (
 
 // stoppable represents a gracefully stoppable thing, e.g., async process
 type stoppable struct {
-	stopC    concurrency.ErrorSignal
-	stoppedC concurrency.ErrorSignal
+	stopC     concurrency.ErrorSignal
+	stoppedC  concurrency.ErrorSignal
+	receivedC concurrency.Signal
 }
 
 func newStoppable() stoppable {
 	return stoppable{
-		stoppedC: concurrency.NewErrorSignal(),
-		stopC:    concurrency.NewErrorSignal(),
+		stoppedC:  concurrency.NewErrorSignal(),
+		stopC:     concurrency.NewErrorSignal(),
+		receivedC: concurrency.NewSignal(),
 	}
 }
 
@@ -131,14 +133,15 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 				return
 			case nodeScans <- fakeNodeScanV2("Node"):
 				if i == 0 {
+					consumer.receivedC.Wait() // avoid race between consumer receiving the first message and hadler stopping
 					h.Stop(errTest)
 				}
 			}
 		}
 	}()
-	s.NoError(consumer.stoppedC.Wait())
+	consumer.receivedC.Wait()
 	s.ErrorIs(h.Stopped().Wait(), errTest)
-
+	s.NoError(consumer.stoppedC.Wait())
 	stopAll(s.T(), producer, consumer)
 }
 
@@ -211,6 +214,8 @@ func consumeAndCount[T any](ch <-chan *T, numToConsume int) stoppable {
 					st.stopC.SignalWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 					return
 				}
+				// in some tests we want to wait until consumer receives the first message
+				st.receivedC.Signal()
 			}
 		}
 	}()
