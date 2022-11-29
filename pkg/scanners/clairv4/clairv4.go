@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -50,9 +49,6 @@ type clairv4 struct {
 
 func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*clairv4, error) {
 	cfg := integration.GetClairV4()
-	if cfg == nil {
-		return nil, errors.New("Clair v4 configuration required")
-	}
 	if err := validate(cfg); err != nil {
 		return nil, err
 	}
@@ -91,6 +87,9 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 
 func validate(cfg *storage.ClairV4Config) error {
 	errorList := errorhelpers.NewErrorList("Clair v4 Validation")
+	if cfg == nil {
+		errorList.AddString("configuration required")
+	}
 	if cfg.GetEndpoint() == "" {
 		errorList.AddString("endpoint must be specified")
 	}
