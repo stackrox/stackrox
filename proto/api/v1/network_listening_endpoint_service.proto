@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "storage/network_flow.proto";
+
+package v1;
+
+message GetNetworkListeningEndpointsByNamespaceRequest {
+    string namespace = 1;
+}
+
+message GetNetworkListeningEndpointsByNamespaceAndDeploymentRequest {
+    string namespace = 1;
+    string deployment_id = 2;
+}
+
+message GetNetworkListeningEndpointsResponse {
+    repeated storage.NetworkEndpoint listening_endpoints = 1;
+}
+
+service NetworkListeningEndpointService {
+
+    rpc GetByNamespace (GetNetworkListeningEndpointsByNamespaceRequest) returns (GetNetworkListeningEndpointsResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkendpoint/namespace/{namespace}"
+        };
+    }
+
+    rpc GetByNamespaceAndDeployment (GetNetworkListeningEndpointsByNamespaceAndDeploymentRequest) returns (GetNetworkListeningEndpointsResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkendpoint/namespace/{namespace}/deployment/{deployment_id}"
+        };
+    }
+
+}
