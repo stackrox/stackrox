@@ -31,6 +31,12 @@ type ResourceEvent struct {
 	// DeploymentReference returns an implementation of a struct that can return a list of deployment ids
 	// that require processing
 	DeploymentReference resolver.DeploymentReference
+
+	// ParentResourceAction is the resource action that will be sent to central on the deployment event.
+	// If the ResourceEvent originated on a deployment event, this should be set to whatever action triggered
+	// the event. For related resources updates, like RBACs and services, this should always be set to
+	// UPDATE.
+	ParentResourceAction central.ResourceAction
 }
 
 // NewResourceEvent wraps the SensorEvents, CompatibilityDetectionMessages, and the CompatibilityReprocessDeployments into a ResourceEvent message
@@ -43,9 +49,10 @@ func NewResourceEvent(sensorMessages []*central.SensorEvent, detectionDeployment
 }
 
 // NewDeploymentRefEvent generates a resource event given a deployment reference.
-func NewDeploymentRefEvent(ref resolver.DeploymentReference) *ResourceEvent {
+func NewDeploymentRefEvent(ref resolver.DeploymentReference, action central.ResourceAction) *ResourceEvent {
 	return &ResourceEvent{
-		DeploymentReference: ref,
+		DeploymentReference:  ref,
+		ParentResourceAction: action,
 	}
 }
 
