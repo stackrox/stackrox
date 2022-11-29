@@ -69,6 +69,38 @@ export function visit(pageUrl, routeMatcherMap, staticResponseMap) {
 }
 
 /**
+ * Visit page to test conditional rendering for authentication status specified as response or fixture.
+ *
+ * { body: { resourceToAccess: { … } } }
+ * { fixture: 'fixtures/wherever/whatever.json' }
+ *
+ * @param {string} pageUrl
+ * @param {{ body: { userInfo: Record<string, unknown> } } | { fixture: string }} staticResponseForAuthStatus
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitWithStaticResponseForAuthStatus(
+    pageUrl,
+    staticResponseForAuthStatus,
+    routeMatcherMap,
+    staticResponseMap
+) {
+    const staticResponseMapForAuthenticatedRoutes = {
+        [authStatusAlias]: staticResponseForAuthStatus,
+    };
+    interceptRequests(
+        routeMatcherMapForAuthenticatedRoutes,
+        staticResponseMapForAuthenticatedRoutes
+    );
+    interceptRequests(routeMatcherMap, staticResponseMap);
+
+    cy.visit(pageUrl);
+
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
+    waitForResponses(routeMatcherMap);
+}
+
+/**
  * Visit page to test conditional rendering for user role permissions specified as response or fixture.
  *
  * { body: { resourceToAccess: { … } } }
