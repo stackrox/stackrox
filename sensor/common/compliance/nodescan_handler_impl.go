@@ -77,21 +77,21 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 			select {
 			case <-c.stopC.Done():
 				return
-			case scan, ok := <-c.inventories:
+			case inventory, ok := <-c.inventories:
 				if !ok {
 					c.stopC.SignalWithError(errInputChanClosed)
 					return
 				}
 				// TODO(ROX-12943): Do something with the inventory, e.g., attach NodeID
-				c.sendInventory(toC, scan)
+				c.sendInventory(toC, inventory)
 			}
 		}
 	}()
 	return toC
 }
 
-func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor, scan *storage.NodeInventory) {
-	if scan == nil {
+func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
+	if inventory == nil {
 		return
 	}
 	select {
@@ -100,7 +100,7 @@ func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
 				Resource: &central.SensorEvent_NodeInventory{
-					NodeInventory: scan,
+					NodeInventory: inventory,
 				},
 			},
 		},
