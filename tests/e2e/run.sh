@@ -31,6 +31,8 @@ test_e2e() {
 
     deploy_stackrox
 
+    rm -f FAIL
+
     prepare_for_endpoints_test
 
     run_roxctl_tests
