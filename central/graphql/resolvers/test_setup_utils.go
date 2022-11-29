@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -58,11 +57,7 @@ import (
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -345,21 +340,4 @@ func registerNodeCVELoader(_ testing.TB, ds nodeCVEDataStore.DataStore) {
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.NodeCVE{}), func() interface{} {
 		return loaders.NewNodeCVELoader(ds)
 	})
-}
-
-func getTestImages(imageCount int) []*storage.Image {
-	images := make([]*storage.Image, 0, imageCount)
-	for i := 0; i < imageCount; i++ {
-		img := fixtures.GetImageWithUniqueComponents(100)
-		id := fmt.Sprintf("%d", i)
-		img.Id = id
-		images = append(images, img)
-	}
-	return images
-}
-
-func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
-	id := mockIdentity.NewMockIdentity(ctrl)
-	id.EXPECT().Permissions().Return(map[string]storage.Access{"Image": storage.Access_READ_ACCESS}).AnyTimes()
-	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
 }

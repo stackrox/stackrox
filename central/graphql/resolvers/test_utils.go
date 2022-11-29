@@ -2,15 +2,22 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/cve/converter/v2"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
@@ -636,4 +643,21 @@ func getNodeVulnerabilityResolver(ctx context.Context, t *testing.T, resolver *R
 	require.NoError(t, err)
 	require.Equal(t, vulnID, vuln.Id(ctx))
 	return vuln
+}
+
+func getTestImages(imageCount int) []*storage.Image {
+	images := make([]*storage.Image, 0, imageCount)
+	for i := 0; i < imageCount; i++ {
+		img := fixtures.GetImageWithUniqueComponents(100)
+		id := fmt.Sprintf("%d", i)
+		img.Id = id
+		images = append(images, img)
+	}
+	return images
+}
+
+func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
+	id := mockIdentity.NewMockIdentity(ctrl)
+	id.EXPECT().Permissions().Return(map[string]storage.Access{"Image": storage.Access_READ_ACCESS}).AnyTimes()
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
 }
