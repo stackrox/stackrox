@@ -13,30 +13,6 @@ import (
 	"go.uber.org/goleak"
 )
 
-// stoppable represents a gracefully stoppable thing, e.g., async process
-type stoppable struct {
-	stopC    concurrency.ErrorSignal
-	stoppedC concurrency.ErrorSignal
-}
-
-func newStoppable() stoppable {
-	return stoppable{
-		stoppedC: concurrency.NewErrorSignal(),
-		stopC:    concurrency.NewErrorSignal(),
-	}
-}
-
-// signalStopped marks the stoppaple thing as stopped
-func (st *stoppable) signalStopped() {
-	st.stoppedC.SignalWithError(st.stopC.Err())
-}
-
-// signalAndWait sends a command to stop the stoppaple thing with an error and waits until it stops
-func (st *stoppable) signalAndWait(err error) error {
-	st.stopC.SignalWithError(err)
-	return st.stoppedC.Wait()
-}
-
 func TestNodeInventoryHandler(t *testing.T) {
 	suite.Run(t, &NodeInventoryHandlerTestSuite{})
 }
@@ -73,8 +49,6 @@ type NodeInventoryHandlerTestSuite struct {
 	suite.Suite
 }
 
-func (s *NodeInventoryHandlerTestSuite) SetupTest() {}
-
 func assertNoGoroutineLeaks(t *testing.T) {
 	goleak.VerifyNone(t,
 		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
@@ -102,28 +76,31 @@ func (s *NodeInventoryHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted(
 func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
-	producer := newStoppable()
+	producer := concurrency.NewStopper()
 	errTest := errors.New("example-stop-error")
 	h := NewNodeInventoryHandler(inventories)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 1)
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages.
 	go func() {
-		defer producer.signalStopped()
+		defer producer.Flow().ReportStopped()
 		for i := 0; i < 30; i++ {
 			select {
-			case <-producer.stopC.Done():
+			case <-producer.Flow().StopRequested():
 				return
 			case inventories <- fakeNodeInventory("Node"):
 				if i == 0 {
-					s.NoError(consumer.stoppedC.Wait()) // This blocks until consumer receives its 1 message
+					s.NoError(consumer.Stopped().Wait()) // This blocks until consumer receives its 1 message
 					h.Stop(errTest)
 				}
 			}
 		}
 	}()
+
 	s.ErrorIs(h.Stopped().Wait(), errTest)
-	s.NoError(producer.signalAndWait(nil))
+
+	producer.Client().Stop()
+	s.NoError(producer.Client().Stopped().Wait())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
@@ -132,8 +109,8 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	h := NewNodeInventoryHandler(ch)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
-	s.NoError(producer.stoppedC.Wait())
-	s.NoError(consumer.stoppedC.Wait())
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(consumer.Stopped().Wait())
 
 	h.Stop(nil)
 	s.NoError(h.Stopped().Wait())
@@ -145,8 +122,8 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStoppedError() {
 	h := NewNodeInventoryHandler(ch)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
-	s.NoError(producer.stoppedC.Wait())
-	s.NoError(consumer.stoppedC.Wait())
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(consumer.Stopped().Wait())
 
 	errTest := errors.New("example-stop-error")
 	h.Stop(errTest)
@@ -155,43 +132,43 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStoppedError() {
 
 // generateTestInputNoClose generates numToProduce messages of type NodeInventory.
 // It returns a channel that must be closed by the caller.
-func (s *NodeInventoryHandlerTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, stoppable) {
+func (s *NodeInventoryHandlerTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, concurrency.StopperClient) {
 	input := make(chan *storage.NodeInventory)
-	st := newStoppable()
+	st := concurrency.NewStopper()
 	go func() {
-		defer st.signalStopped()
+		defer st.Flow().ReportStopped()
 		for i := 0; i < numToProduce; i++ {
 			select {
-			case <-st.stopC.Done():
+			case <-st.Flow().StopRequested():
 				return
 			case input <- fakeNodeInventory(fmt.Sprintf("Node-%d", i)):
 			}
 		}
 	}()
-	return input, st
+	return input, st.Client()
 }
 
 // consumeAndCount consumes maximally numToConsume messages from the channel and counts the consumed messages
 // It sets error of stoppable.stopC if the number of messages consumed were less than numToConsume
-func consumeAndCount[T any](ch <-chan *T, numToConsume int) stoppable {
-	st := newStoppable()
+func consumeAndCount[T any](ch <-chan *T, numToConsume int) concurrency.StopperClient {
+	st := concurrency.NewStopper()
 	go func() {
-		defer st.signalStopped()
+		defer st.Flow().ReportStopped()
 		for i := 0; i < numToConsume; i++ {
 			select {
-			case <-st.stopC.Done():
-				st.stopC.Reset()
-				st.stopC.SignalWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
+			case <-st.Flow().StopRequested():
+				st.LowLevel().ResetStopRequest()
+				st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 				return
 			case _, ok := <-ch:
 				if !ok {
-					st.stopC.SignalWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
+					st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 					return
 				}
 			}
 		}
 	}()
-	return st
+	return st.Client()
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
@@ -206,8 +183,8 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 
 	s.ErrorIs(h.Start(), errStartMoreThanOnce)
 
-	s.NoError(producer.stoppedC.Wait())
-	s.NoError(consumer.stoppedC.Wait())
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(consumer.Stopped().Wait())
 
 	h.Stop(nil)
 	s.NoError(h.Stopped().Wait())
@@ -222,8 +199,8 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	h := NewNodeInventoryHandler(ch)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
-	s.NoError(producer.stoppedC.Wait())
-	s.NoError(consumer.stoppedC.Wait())
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(consumer.Stopped().Wait())
 	h.Stop(nil)
 	h.Stop(nil)
 	s.NoError(h.Stopped().Wait())
@@ -236,8 +213,8 @@ func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	h := NewNodeInventoryHandler(ch)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
-	s.NoError(producer.stoppedC.Wait())
-	s.NoError(consumer.stoppedC.Wait())
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(consumer.Stopped().Wait())
 
 	// By closing the channel ch, we mark that the producer finished writing all messages to ch
 	close(ch)
