@@ -87,24 +87,24 @@ func (s *NodeInventoryTestSuite) TearDownTest() {
 }
 
 func (s *NodeInventoryTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
-	nodeScans := make(chan *storage.NodeInventory)
-	defer close(nodeScans)
-	h := NewNodeInventoryHandler(nodeScans)
+	inventories := make(chan *storage.NodeInventory)
+	defer close(inventories)
+	h := NewNodeInventoryHandler(inventories)
 	s.Panics(func() {
 		h.ResponsesC()
 	})
 }
 
 // TestStopHandler goal is to stop handler while there are still some messages to process
-// in the channel passed into NewNodeScanHandler.
+// in the channel passed into NewNodeInventoryHandler.
 // We expect that premature stop of the handler results in a clean stop without any race conditions or goroutine leaks.
-// Exec with: go test -race -count=1 -v -run ^TestNodeScanHandler$ ./sensor/common/compliance
+// Exec with: go test -race -count=1 -v -run ^TestNodeInventoryHandler$ ./sensor/common/compliance
 func (s *NodeInventoryTestSuite) TestStopHandler() {
-	nodeScans := make(chan *storage.NodeInventory)
-	defer close(nodeScans)
+	inventories := make(chan *storage.NodeInventory)
+	defer close(inventories)
 	producer := newStoppable()
 	errTest := errors.New("example-stop-error")
-	h := NewNodeInventoryHandler(nodeScans)
+	h := NewNodeInventoryHandler(inventories)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 1)
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages.
@@ -114,7 +114,7 @@ func (s *NodeInventoryTestSuite) TestStopHandler() {
 			select {
 			case <-producer.stopC.Done():
 				return
-			case nodeScans <- fakeNodeInventory("Node"):
+			case inventories <- fakeNodeInventory("Node"):
 				if i == 0 {
 					s.NoError(consumer.stoppedC.Wait()) // This blocks until consumer receives its 1 message
 					h.Stop(errTest)
@@ -153,7 +153,7 @@ func (s *NodeInventoryTestSuite) TestHandlerStoppedError() {
 	s.ErrorIs(h.Stopped().Wait(), errTest)
 }
 
-// generateTestInputNoClose generates numToProduce messages of type NodeScanV2.
+// generateTestInputNoClose generates numToProduce messages of type NodeInventory.
 // It returns a channel that must be closed by the caller.
 func (s *NodeInventoryTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, stoppable) {
 	input := make(chan *storage.NodeInventory)
