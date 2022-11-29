@@ -32,20 +32,19 @@ type centralCommunicationImpl struct {
 	sender     CentralSender
 	components []common.SensorComponent
 
-	stopC    concurrency.ErrorSignal
-	stoppedC concurrency.ErrorSignal
+	stopper concurrency.Stopper
 }
 
 func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
 	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
-func (s *centralCommunicationImpl) Stop(err error) {
-	s.stopC.SignalWithError(err)
+func (s *centralCommunicationImpl) Stop(_ error) {
+	s.stopper.Client().Stop()
 }
 
 func (s *centralCommunicationImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &s.stoppedC
+	return s.stopper.Client().Stopped()
 }
 
 func isUnimplemented(err error) bool {
@@ -84,8 +83,8 @@ func communicateWithAutoSensedEncoding(ctx context.Context, client central.Senso
 
 func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
 	defer func() {
-		s.stoppedC.SignalWithError(s.stopC.Err())
-		runAll(s.stopC.Err(), onStops...)
+		s.stopper.Flow().ReportStopped()
+		runAll(s.stopper.Client().Stopped().Err(), onStops...)
 	}()
 
 	// Start the stream client.
@@ -127,18 +126,18 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
 	if err != nil {
-		s.stopC.SignalWithError(err)
+		s.stopper.Flow().StopWithError(err)
 		return
 	}
 
 	stream, err := communicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
-		s.stopC.SignalWithError(err)
+		s.stopper.Flow().StopWithError(err)
 		return
 	}
 
 	if err := s.initialSync(stream, sensorHello, configHandler, detector); err != nil {
-		s.stopC.SignalWithError(err)
+		s.stopper.Flow().StopWithError(err)
 		return
 	}
 
@@ -160,7 +159,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	// Wait for stop.
 	/////////////////
-	_ = s.stopC.Wait()
+	<-s.stopper.Flow().StopRequested()
 	log.Info("Communication with central ended.")
 }
 
