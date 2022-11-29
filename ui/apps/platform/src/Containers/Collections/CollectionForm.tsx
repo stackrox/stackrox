@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
@@ -160,10 +160,7 @@ function CollectionForm({
         submitForm,
         isSubmitting,
     } = useFormik({
-        initialValues:
-            action.type === 'clone'
-                ? { ...initialData, name: `${initialData.name} (COPY)` }
-                : initialData,
+        initialValues: initialData,
         onSubmit: (collection, { setSubmitting }) => {
             onSubmit(collection).catch(() => {
                 setSubmitting(false);
@@ -180,6 +177,21 @@ function CollectionForm({
             }),
         }),
     });
+
+    // Synchronize the value of "name" in the form field when the page action changes
+    // e.g. from 'view' -> 'clone'
+    useEffect(() => {
+        const nameValue = {
+            create: '',
+            view: initialData.name,
+            edit: initialData.name,
+            clone: `${initialData.name} (COPY)`,
+        }[action.type];
+
+        setFieldValue('name', nameValue).catch(() => {
+            // Nothing to do on error
+        });
+    }, [action.type, initialData.name, setFieldValue]);
 
     const errors = {
         ...formikErrors,
