@@ -47,7 +47,7 @@ func (t *segmentTelemeter) Identify(props map[string]any) {
 // NewTelemeter creates and initializes a Segment telemeter instance.
 func NewTelemeter(userID string, identity map[string]any) *segmentTelemeter {
 	key := env.TelemetryStorageKey.Setting()
-	server := ""
+	server := env.TelemetryEndpoint.Setting()
 	return initSegment(userID, identity, key, server)
 }
 
