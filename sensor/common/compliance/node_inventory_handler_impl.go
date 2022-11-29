@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	errInputChanClosed   = errors.New("channel receiving node scans v2 is closed")
+	errInputChanClosed   = errors.New("channel receiving node inventories is closed")
 	errStartMoreThanOnce = errors.New("unable to start the component more than once")
 )
 
