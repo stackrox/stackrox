@@ -43,13 +43,13 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeInventory)
 
 	event := msg.GetEvent()
-	nodeScan := event.GetNodeInventory()
-	if nodeScan == nil {
+	nodeInventory := event.GetNodeInventory()
+	if nodeInventory == nil {
 		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
 
-	// TODO(ROX-12240, ROX-13053): Do something meaningful with the nodeScan
-	log.Infof("Central received NodeInventory: %+v", nodeScan)
+	// TODO(ROX-12240, ROX-13053): Do something meaningful with the nodeInventory
+	log.Infof("Central received NodeInventory: %+v", nodeInventory)
 
 	return nil
 }
