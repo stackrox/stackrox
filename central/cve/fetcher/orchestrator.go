@@ -201,7 +201,7 @@ func openShiftScan(version string, scanners map[string]types.OrchestratorScanner
 func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveType utils.CVEType) error {
 	versionToClusters := make(map[string][]*storage.Cluster)
 	for _, cluster := range clusters {
-		var version string
+		var versions []string
 		metadata := cluster.GetStatus().GetOrchestratorMetadata()
 		switch cveType {
 		case utils.K8s:
@@ -209,26 +209,29 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 			if metadata.GetIsOpenshift() != nil {
 				continue
 			}
-			version = metadata.GetVersion()
+			version := metadata.GetVersion()
+			versions = append(versions, version)
+
 		case utils.OpenShift:
-			version = metadata.GetOpenshiftVersion()
+			version := metadata.GetOpenshiftVersion()
+			versions = append(versions, version)
 		case utils.Istio:
-			versions, err := m.cveMatcher.GetValidIstioVersions(allAccessCtx, cluster)
-			if err != nil || len(versions) < 1 {
+			versionList, err := m.cveMatcher.GetValidIstioVersions(allAccessCtx, cluster)
+			if err != nil {
 				continue
 			}
-			for v := range versions {
-				if v != "" {
-					versionToClusters[v] = append(versionToClusters[v], cluster)
-				}
-			}
-			continue
+			versions = versionList.AsSlice()
 		}
 
-		if version == "" {
+		if len(versions) < 1 {
 			continue
 		}
-		versionToClusters[version] = append(versionToClusters[version], cluster)
+		for _, v := range versions {
+			if v != "" {
+				versionToClusters[v] = append(versionToClusters[v], cluster)
+			}
+		}
+
 	}
 
 	embeddedCVEIDToClusters := make(map[string][]*storage.Cluster)

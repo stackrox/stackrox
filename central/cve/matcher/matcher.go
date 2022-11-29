@@ -128,6 +128,9 @@ func (m *CVEMatcher) IsClusterAffectedByK8sCVE(_ context.Context, cluster *stora
 // IsClusterAffectedByIstioCVE returns true if cluster is affected by istio cve
 func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *storage.Cluster, cve *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
 	versions, err := m.GetValidIstioVersions(ctx, cluster)
+	if len(versions) == 0 {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
