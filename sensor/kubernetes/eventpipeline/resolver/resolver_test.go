@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -112,9 +113,9 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 			s.givenPermissionLevelForDeployment(testCase.deploymentID, testCase.permissionLevel)
 
 			expectedDeployment := deploymentMatcher{
-				id:              testCase.deploymentID,
-				permissionLevel: testCase.permissionLevel,
-				exposure:        nil,
+				id:                    testCase.deploymentID,
+				permissionLevel:       testCase.permissionLevel,
+				expectedExposureInfos: nil,
 			}
 
 			s.mockOutput.EXPECT().Send(&expectedDeployment).Times(1).Do(func(arg0 interface{}) {
@@ -141,7 +142,19 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 		s.givenStubPortExposure(),
 	})
 
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 1}).Times(1).Do(func(arg0 interface{}) {
+	expectedDeployment := deploymentMatcher{
+		id:              "1234",
+		permissionLevel: storage.PermissionLevel_NONE,
+		expectedExposureInfos: []*storage.PortConfig_ExposureInfo{
+			{
+				Level:       storage.PortConfig_EXTERNAL,
+				ServiceName: "my.service",
+				ServicePort: 80,
+			},
+		},
+	}
+
+	s.mockOutput.EXPECT().Send(&expectedDeployment).Times(1).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
 	})
 
@@ -397,6 +410,13 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return exposure })
 
+	var flatExposures []*storage.PortConfig_ExposureInfo
+	for _, e := range exposure {
+		for _, list := range e {
+			flatExposures = append(flatExposures, list...)
+		}
+	}
+
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
 			PermissionLevel: storage.PermissionLevel_NONE,
@@ -407,6 +427,11 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 			return &storage.Deployment{
 				Id:                            deployment,
 				ServiceAccountPermissionLevel: storage.PermissionLevel_NONE,
+				Ports: []*storage.PortConfig{
+					{
+						ExposureInfos: flatExposures,
+					},
+				},
 			}, nil
 		})
 }
@@ -430,10 +455,10 @@ func (s *resolverSuite) givenAnyDeploymentProcessedNTimes(times int) {
 }
 
 type deploymentMatcher struct {
-	id              string
-	permissionLevel storage.PermissionLevel
-	exposure        interface{}
-	error           string
+	id                    string
+	permissionLevel       storage.PermissionLevel
+	expectedExposureInfos []*storage.PortConfig_ExposureInfo
+	error                 string
 }
 
 func (m *deploymentMatcher) Matches(target interface{}) bool {
@@ -462,6 +487,19 @@ func (m *deploymentMatcher) Matches(target interface{}) bool {
 	if deployment.GetServiceAccountPermissionLevel() != m.permissionLevel {
 		m.error = fmt.Sprintf("Permission level doesn't match %s != %s", m.permissionLevel, deployment.GetServiceAccountPermissionLevel())
 		return false
+	}
+
+	if m.expectedExposureInfos != nil && len(m.expectedExposureInfos) > 0 {
+		if len(deployment.GetPorts()) == 0 {
+			m.error = fmt.Sprintf("No ports on deployment object: %v", deployment)
+			return false
+		}
+
+		if !cmp.Equal(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos()) {
+			diff := cmp.Diff(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos())
+			m.error = fmt.Sprintf("Exposure info differs: %s", diff)
+			return false
+		}
 	}
 
 	return true
