@@ -93,10 +93,10 @@
                     "type": "HostPath"
                 },
                 {
-                    "name": "sys-rw",
+                    "name": "sys-ro",
                     "source": "/sys/",
                     "destination": "/host/sys",
-                    "readOnly": false,
+                    "readOnly": true,
                     "type": "HostPath"
                 },
                 {
