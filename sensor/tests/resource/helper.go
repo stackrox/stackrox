@@ -129,16 +129,16 @@ func NewContext(t *testing.T) (*TestContext, error) {
 // NewContextWithConfig creates a new test context with custom central configuration.
 func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
-	r, err := resources.New(envConfig.Client().RESTConfig())
 	data, _ := os.Open(conf.ResolveKubeConfigFile())
 	fileScanner := bufio.NewScanner(data)
 	fileScanner.Split(bufio.ScanLines)
 	for fileScanner.Scan() {
 		line := fileScanner.Text()
 		if strings.Contains(line, "cluster: ") {
-			log.Printf("KUBECONFIG = %s", line)
+			t.Logf("KUBECONFIG = %s\n", line)
 		}
 	}
+	r, err := resources.New(envConfig.Client().RESTConfig())
 	if err != nil {
 		return nil, err
 	}
