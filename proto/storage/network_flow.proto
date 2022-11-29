@@ -83,12 +83,17 @@ message NetworkEntityInfo {
         bool       default  = 3 [(gogoproto.moretags) = 'search:"Default External Source,hidden"'];
     }
 
+    message ListenEndpoint {
+        ProcessIndicator originator = 1;
+    }
+
     Type               type            = 1 [(gogoproto.moretags) = 'sql:"index"'];
     string             id              = 2 [(gogoproto.moretags) = 'sql:"pk"'];
 
     oneof desc {
         Deployment     deployment      = 3;
         ExternalSource external_source = 4;
+        ListenEndpoint listen_endpoint = 5;
     }
 }
 
