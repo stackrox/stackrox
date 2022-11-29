@@ -58,6 +58,7 @@ linters-settings:
     - G101
     - G102
     - G103
+    - G104
     - G106
     - G108
     - G109

@@ -30,6 +30,7 @@ import { collectionsBasePath } from 'routePaths';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
+import PageTitle from 'Components/PageTitle';
 import { CollectionPageAction } from './collections.utils';
 import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import { generateRequest } from './converter';
@@ -43,6 +44,20 @@ export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
     pageAction: CollectionPageAction;
 };
+
+function getPageTitle(
+    pageAction: CollectionPageAction,
+    pageData: ReturnType<typeof useCollection>['data']
+): string {
+    const pageTitleSuffix = pageData ? ` - ${pageData.collection.name}` : '';
+    const titles = {
+        create: `Create Collection`,
+        clone: `Clone Collection${pageTitleSuffix}`,
+        edit: `Edit Collection${pageTitleSuffix}`,
+        view: `Collection${pageTitleSuffix}`,
+    };
+    return titles[pageAction.type];
+}
 
 function CollectionsFormPage({
     hasWriteAccessForCollections,
@@ -212,7 +227,7 @@ function CollectionsFormPage({
             </Bullseye>
         );
     } else if (data) {
-        const pageTitle = pageAction.type === 'create' ? 'Create collection' : data.collection.name;
+        const pageName = pageAction.type === 'create' ? 'Create collection' : data.collection.name;
         content = (
             <CollectionFormDrawer
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
@@ -231,7 +246,7 @@ function CollectionsFormPage({
                             <BreadcrumbItemLink to={collectionsBasePath}>
                                 Collections
                             </BreadcrumbItemLink>
-                            <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
+                            <BreadcrumbItem>{pageName}</BreadcrumbItem>
                         </Breadcrumb>
                         <Divider component="div" />
                         <Flex
@@ -240,7 +255,7 @@ function CollectionsFormPage({
                             alignItems={{ default: 'alignItemsFlexStart', md: 'alignItemsCenter' }}
                         >
                             <Title className="pf-u-flex-grow-1" headingLevel="h1">
-                                {pageTitle}
+                                {pageName}
                             </Title>
                             <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
                                 {pageAction.type === 'view' && hasWriteAccessForCollections && (
@@ -330,6 +345,7 @@ function CollectionsFormPage({
 
     return (
         <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
+            <PageTitle title={getPageTitle(pageAction, data)} />
             {content}
             {modalCollectionId && (
                 <CollectionsFormModal

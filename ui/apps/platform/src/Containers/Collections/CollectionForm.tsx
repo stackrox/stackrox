@@ -236,7 +236,7 @@ function CollectionForm({
                             <FormGroup
                                 label="Name"
                                 fieldId="name"
-                                isRequired
+                                isRequired={!isReadOnly}
                                 helperTextInvalid={errors.name}
                                 validated={errors.name ? 'error' : 'default'}
                             >
@@ -252,7 +252,7 @@ function CollectionForm({
                                         handleChange(e);
                                     }}
                                     onBlur={handleBlur}
-                                    isDisabled={isReadOnly}
+                                    readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />
                             </FormGroup>
                         </FlexItem>
@@ -264,7 +264,7 @@ function CollectionForm({
                                     value={values.description}
                                     onChange={(_, e) => handleChange(e)}
                                     onBlur={handleBlur}
-                                    isDisabled={isReadOnly}
+                                    readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />
                             </FormGroup>
                         </FlexItem>

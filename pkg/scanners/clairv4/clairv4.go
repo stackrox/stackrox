@@ -18,7 +18,6 @@ import (
 	imageutils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -66,9 +65,6 @@ type clairv4 struct {
 
 func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*clairv4, error) {
 	cfg := integration.GetClairV4()
-	if cfg == nil {
-		return nil, errors.New("Clair v4 configuration required")
-	}
 	if err := validate(cfg); err != nil {
 		return nil, err
 	}
@@ -108,6 +104,9 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 
 func validate(cfg *storage.ClairV4Config) error {
 	errorList := errorhelpers.NewErrorList("Clair v4 Validation")
+	if cfg == nil {
+		errorList.AddString("configuration required")
+	}
 	if cfg.GetEndpoint() == "" {
 		errorList.AddString("endpoint must be specified")
 	}
@@ -169,50 +168,24 @@ func (c *clairv4) indexReportExists(digest string) (bool, error) {
 		return false, err
 	}
 
-	// TODO: add retry.
-	var exists bool
+	// TODO: add retries.
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
 	switch resp.StatusCode {
 	case http.StatusNotModified:
 		// This is the only status code which indicates the index already exists.
-		exists = true
-		return nil
+		return true, nil
 	case http.StatusOK, http.StatusNotFound:
-		return nil
+		return false, nil
 	case http.StatusInternalServerError:
-		return retry.MakeRetryable(errInternal)
+		return false, errInternal
 	default:
-		return newUnexpectedStatusCodeError(resp.StatusCode)
+		return false, newUnexpectedStatusCodeError(resp.StatusCode)
 	}
-
-	// Ignore any error returned. Just assume
-	err = retry.WithRetry(func() error {
-		resp, err := c.client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer utils.IgnoreError(resp.Body.Close)
-
-		switch resp.StatusCode {
-		case http.StatusNotModified:
-			// This is the only status code which indicates the index already exists.
-			exists = true
-			return nil
-		case http.StatusOK, http.StatusNotFound:
-			return nil
-		case http.StatusInternalServerError:
-			return retry.MakeRetryable(errInternal)
-		default:
-			return newUnexpectedStatusCodeError(resp.StatusCode)
-		}
-	}, retry.Tries(3), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
-
-	return exists, err
 }
 
 func (c *clairv4) index(manifest *claircore.Manifest) error {
@@ -221,38 +194,37 @@ func (c *clairv4) index(manifest *claircore.Manifest) error {
 		return err
 	}
 
-	return retry.WithRetry(func() error {
-		// Make a new request per retry to ensure the body is fully populated for each retry.
-		req, err := http.NewRequest(http.MethodPost, c.indexEndpoint, bytes.NewReader(body))
-		if err != nil {
-			return err
-		}
+	// TODO: add retries
 
-		resp, err := c.client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer utils.IgnoreError(resp.Body.Close)
+	req, err := http.NewRequest(http.MethodPost, c.indexEndpoint, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
 
-		switch resp.StatusCode {
-		case http.StatusOK, http.StatusCreated:
-			// The index report was created, hopefully...
-		case http.StatusInternalServerError:
-			return retry.MakeRetryable(errInternal)
-		default:
-			return newUnexpectedStatusCodeError(resp.StatusCode)
-		}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer utils.IgnoreError(resp.Body.Close)
 
-		var ir claircore.IndexReport
-		if err := json.NewDecoder(resp.Body).Decode(&ir); err != nil {
-			return err
-		}
-		if !ir.Success && ir.Err != "" {
-			return errors.Errorf("indexing error: %s", ir.Err)
-		}
+	switch resp.StatusCode {
+	case http.StatusOK, http.StatusCreated:
+		// The index report was created, hopefully...
+	case http.StatusInternalServerError:
+		return errInternal
+	default:
+		return newUnexpectedStatusCodeError(resp.StatusCode)
+	}
 
-		return nil
-	}, retry.Tries(3), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
+	var ir claircore.IndexReport
+	if err := json.NewDecoder(resp.Body).Decode(&ir); err != nil {
+		return err
+	}
+	if !ir.Success && ir.Err != "" {
+		return errors.Errorf("indexing error: %s", ir.Err)
+	}
+
+	return nil
 }
 
 func (c *clairv4) getVulnerabilityReport(digest claircore.Digest) (*claircore.VulnerabilityReport, error) {
@@ -263,28 +235,29 @@ func (c *clairv4) getVulnerabilityReport(digest claircore.Digest) (*claircore.Vu
 		return nil, err
 	}
 
-	vulnReport := new(claircore.VulnerabilityReport)
-	// Ignore any error returned. Just assume
-	err = retry.WithRetry(func() error {
-		resp, err := c.client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer utils.IgnoreError(resp.Body.Close)
+	// TODO: add retries
 
-		switch resp.StatusCode {
-		case http.StatusOK:
-		case http.StatusAccepted, http.StatusInternalServerError:
-			// http.StatusAccepted is treated like an internal error.
-			return retry.MakeRetryable(errInternal)
-		default:
-			return newUnexpectedStatusCodeError(resp.StatusCode)
-		}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer utils.IgnoreError(resp.Body.Close)
 
-		return json.NewDecoder(resp.Body).Decode(vulnReport)
-	}, retry.Tries(3), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
+	switch resp.StatusCode {
+	case http.StatusOK:
+	case http.StatusAccepted, http.StatusInternalServerError:
+		// http.StatusAccepted is treated like an internal error.
+		return nil, errInternal
+	default:
+		return nil, newUnexpectedStatusCodeError(resp.StatusCode)
+	}
 
-	return vulnReport, err
+	vulnReport := &claircore.VulnerabilityReport{}
+	if err := json.NewDecoder(resp.Body).Decode(vulnReport); err != nil {
+		return nil, err
+	}
+
+	return vulnReport, nil
 }
 
 func (c *clairv4) Match(_ *storage.ImageName) bool {
