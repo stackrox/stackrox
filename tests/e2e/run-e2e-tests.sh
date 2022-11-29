@@ -71,86 +71,87 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
     exit 0
 fi
 
-config_only="false"
-orchestrator="k8s"
-prompt="true"
+main() {
+    config_only="false"
+    orchestrator="k8s"
+    prompt="true"
 
-while getopts ":cdyo:m:" option; do
-    case "$option" in
-        c)
-            config_only="true"
+    while getopts ":cdyo:m:" option; do
+        case "$option" in
+            c)
+                config_only="true"
+                ;;
+            d)
+                export GATHER_QA_TEST_DEBUG_LOGS="true"
+                ;;
+            o)
+                orchestrator="${OPTARG}"
+                ;;
+            m)
+                export MAIN_IMAGE_TAG="${OPTARG}"
+                ;;
+            y)
+                prompt="false"
+                ;;
+            *)
+                usage
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    flavor="${1:-qa}"
+    case "$flavor" in
+        qa)
             ;;
-        d)
-            export GATHER_QA_TEST_DEBUG_LOGS="true"
+        *)
+            die "flavor $flavor not supported"
             ;;
-        o)
-            orchestrator="${OPTARG}"
-            ;;
-        m)
-            export MAIN_IMAGE_TAG="${OPTARG}"
-            ;;
-        y)
-            prompt="false"
+    esac
+
+    case "$orchestrator" in
+        k8s|openshift)
             ;;
         *)
             usage
             ;;
     esac
-done
-shift $((OPTIND-1))
 
-flavor="${1:-qa}"
-case "$flavor" in
-    qa)
-        ;;
-    *)
-        die "flavor $flavor not supported"
-        ;;
-esac
+    suite="${2:-}"
+    case="${3:-}"
 
-case "$orchestrator" in
-    k8s|openshift)
-        ;;
-    *)
-        usage
-        ;;
-esac
+    cd "$ROOT"
 
-suite="${2:-}"
-case="${3:-}"
-
-cd "$ROOT"
-
-tag="$(make tag)"
-if [[ -z "${MAIN_IMAGE_TAG:-}" && "$tag" =~ -dirty ]]; then
-    cat <<_EODIRTY_
+    tag="$(make tag)"
+    if [[ -z "${MAIN_IMAGE_TAG:-}" && "$tag" =~ -dirty ]]; then
+        cat <<_EODIRTY_
 ERROR: The tag for the working directory includes a '-dirty' tag. 
 It is unlikely that that has been pushed to registries. Specify a
 valid tag with -m or set MAIN_IMAGE_TAG.
 _EODIRTY_
-    exit 1
-fi
+        exit 1
+    fi
 
-export PATH="${ROOT}/bin/linux_amd64:${PATH}"
-main_version="${MAIN_IMAGE_TAG:-$tag}"
-roxctl_version="$(roxctl version)"
-if [[ "${main_version}" != "${roxctl_version}" ]]; then
-    cat <<_EOVERSION_
+    export PATH="${ROOT}/bin/linux_amd64:${PATH}"
+    main_version="${MAIN_IMAGE_TAG:-$tag}"
+    roxctl_version="$(roxctl version)"
+    if [[ "${main_version}" != "${roxctl_version}" ]]; then
+        cat <<_EOVERSION_
 ERROR: main and roxctl versions do not match. main: ${main_version} != roxctl: ${roxctl_version}.
 They are required to match for the ./deploy scripts to run without docker.
 Run 'make cli' to get matching versions.
 _EOVERSION_
-    exit 1
-fi
+        exit 1
+    fi
 
-# Do we need to login to vault?
-export VAULT_ADDR=https://vault.ci.openshift.org/
-if ! vault kv list kv/selfservice/stackrox-stackrox-e2e-tests > /dev/null 2>&1; then
-    echo "Login to OpenShift CI Vault."
-    vault login || true
+    # Do we need to login to vault?
+    export VAULT_ADDR=https://vault.ci.openshift.org/
+    if ! vault kv list kv/selfservice/stackrox-stackrox-e2e-tests > /dev/null 2>&1; then
+        echo "Login to OpenShift CI Vault."
+        vault login || true
 
-    if ! vault kv list kv/selfservice/stackrox-stackrox-e2e-tests 2>&1 | sed -e 's/^/vault output: /'; then
-        cat <<_EOVAULTHELP_
+        if ! vault kv list kv/selfservice/stackrox-stackrox-e2e-tests 2>&1 | sed -e 's/^/vault output: /'; then
+            cat <<_EOVAULTHELP_
 ERROR: Cannot list vault secrets.
 There are a number of required steps to get access to vault:
 1. Log in to the secrets collection manager at https://selfservice.vault.ci.openshift.org/secretcollection?ui=true
@@ -162,64 +163,67 @@ You should see these secrets under kv/
 4. Copy a 'token' from that UI and rerun this script.
 The 'token' will expire periodically and you will need to renew it through the vault UI.
 _EOVAULTHELP_
-        exit 1
+            exit 1
+        fi
     fi
-fi
 
-context="$(kubectl config current-context)"
-echo "This script will tear down resources, install ACS and run tests against '$context'."
+    context="$(kubectl config current-context)"
+    echo "This script will tear down resources, install ACS and run tests against '$context'."
 
-if [[ "$prompt" == "true" ]]; then
-    read -p "Are you sure? " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Quit."
-        exit 1
+    if [[ "$prompt" == "true" ]]; then
+        read -p "Are you sure? " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Quit."
+            exit 1
+        fi
     fi
-fi
 
-# TODO got image? - for a 'full' test run we might want to poll for 'canonical'
-# images - poll_for_system_test_images
+    # TODO got image? - for a 'full' test run we might want to poll for 'canonical'
+    # images - poll_for_system_test_images
 
-echo "Importing KV from vault. The following keys will be ignored because they do not match: ^[A-Z]."
-vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
-  | jq -r '.data.data | to_entries[] | select( .key|test("^[A-Z]")|not ) | .key'
+    echo "Importing KV from vault. The following keys will be ignored because they do not match: ^[A-Z]."
+    vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
+    | jq -r '.data.data | to_entries[] | select( .key|test("^[A-Z]")|not ) | .key'
 
-eval "$(vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
-  | jq -r '.data.data | to_entries[] | select( .key|test("^[A-Z]") ) | "export \(.key|@sh)=\(.value|@sh)"')"
+    eval "$(vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
+    | jq -r '.data.data | to_entries[] | select( .key|test("^[A-Z]") ) | "export \(.key|@sh)=\(.value|@sh)"')"
 
-# GCP login using the CI service account is required to access infra GKE clusters.
-setup_gcp
+    # GCP login using the CI service account is required to access infra GKE clusters.
+    setup_gcp
 
-if ! kubectl get nodes > /dev/null; then
-    die "ERROR: Cannot access a cluster in your environment. Check KUBECONFIG, etc"
-fi
-
-info "Running the test."
-
-export ORCHESTRATOR_FLAVOR="$orchestrator"
-
-# required to get a running central
-export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
-
-if [[ -z "$suite" && -z "$case" ]]; then
-    source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
-    config_part_1 2>&1 | sed -e 's/^/config output: /'
-    if [[ "${config_only}" == "false" ]]; then
-        test_part_1 2>&1 | sed -e 's/^/test output: /'
+    if ! kubectl get nodes > /dev/null; then
+        die "ERROR: Cannot access a cluster in your environment. Check KUBECONFIG, etc"
     fi
-else
-    export_test_environment
-    setup_deployment_env false false
-    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
-    wait_for_api
-    export DEPLOY_DIR="$ROOT/deploy/${ORCHESTRATOR_FLAVOR}"
-    get_central_basic_auth_creds
 
-    pushd qa-tests-backend
-    if [[ -z "$case" ]]; then
-        ./gradlew test --console=plain --tests="$suite"
+    info "Running the test."
+
+    export ORCHESTRATOR_FLAVOR="$orchestrator"
+
+    # required to get a running central
+    export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
+
+    if [[ -z "$suite" && -z "$case" ]]; then
+        source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+        config_part_1 2>&1 | sed -e 's/^/config output: /'
+        if [[ "${config_only}" == "false" ]]; then
+            test_part_1 2>&1 | sed -e 's/^/test output: /'
+        fi
     else
-        ./gradlew test --console=plain --tests="$suite.$case"
+        export_test_environment
+        setup_deployment_env false false
+        export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
+        wait_for_api
+        export DEPLOY_DIR="$ROOT/deploy/${ORCHESTRATOR_FLAVOR}"
+        get_central_basic_auth_creds
+
+        pushd qa-tests-backend
+        if [[ -z "$case" ]]; then
+            ./gradlew test --console=plain --tests="$suite"
+        else
+            ./gradlew test --console=plain --tests="$suite.$case"
+        fi
+        popd
     fi
-    popd
-fi
+}
+
+main "$@"
