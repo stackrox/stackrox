@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 
-# Run a full suite of e2e tests using the code via the rox-ci-image / stackrox-test container,
-# against the cluster defined in the calling environment.
+# Run e2e tests using the working directory code via the rox-ci-image /
+# stackrox-test container, against the cluster defined in the calling
+# environment.
 
 set -euo pipefail
 
@@ -26,6 +27,10 @@ Usage:
  
    Expects a previously configured cluster and runs only selected suite/case.
  
+
+Run e2e tests using the working directory code via the rox-ci-image /
+stackrox-test container, against the cluster defined in the calling
+environment.
 
 Options:
   -c - configure the cluster for test but do not run any tests.
@@ -62,6 +67,7 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -e "KUBECONFIG=${kubeconfig}" \
       -v "${kubeconfig}:${kubeconfig}:z" \
       -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
+      -v "${GOPATH}/pkg/mod/cache:/go/pkg/mod/cache:z" \
       -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
       -e VAULT_TOKEN \
       --platform linux/amd64 \
@@ -102,7 +108,7 @@ main() {
 
     flavor="${1:-qa}"
     case "$flavor" in
-        qa)
+        qa|e2e)
             ;;
         *)
             die "flavor $flavor not supported"
@@ -202,6 +208,20 @@ _EOVAULTHELP_
     # required to get a running central
     export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
 
+    case "$flavor" in
+        qa)
+            run_qa_flavor
+            ;;
+        e2e)
+            run_e2e_flavor
+            ;;
+        *)
+            die "flavor $flavor not supported"
+            ;;
+    esac
+}
+
+run_qa_flavor() {
     if [[ -z "$suite" && -z "$case" ]]; then
         source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
         config_part_1 2>&1 | sed -e 's/^/config output: /'
@@ -224,6 +244,10 @@ _EOVAULTHELP_
         fi
         popd
     fi
+}
+
+run_e2e_flavor() {
+    "$ROOT/tests/e2e/run.sh" | sed -e 's/^/test output: /'
 }
 
 main "$@"
