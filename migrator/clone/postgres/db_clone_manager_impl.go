@@ -74,10 +74,12 @@ func (d *dbCloneManagerImpl) Scan() error {
 		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
 		prevClone, prevExists := d.cloneMap[PreviousClone]
 		if !prevExists {
-			if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
-				return errors.New(metadata.ErrNoPrevious)
+			if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
+				if version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
+					return errors.New(metadata.ErrNoPrevious)
+				}
+				return errors.New(metadata.ErrNoPreviousInDevEnv)
 			}
-			return errors.New(metadata.ErrNoPreviousInDevEnv)
 		}
 
 		// Force rollback is not requested.
@@ -86,7 +88,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		}
 
 		// If previous clone does not match
-		if prevClone.GetVersion() != version.GetMainVersion() {
+		if prevExists && prevClone.GetVersion() != version.GetMainVersion() {
 			return errors.Errorf(metadata.ErrPreviousMismatchWithVersions, prevClone.GetVersion(), version.GetMainVersion())
 		}
 	}
