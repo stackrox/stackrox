@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 )
 
-// NodeInventoryHandler is responsible for handling the arriving NodeInventory messages, processing then, and sending them to central
+// NodeInventoryHandler is responsible for handling arriving NodeInventory messages, processing them, and sending them to central
 type NodeInventoryHandler interface {
 	common.SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal
