@@ -255,6 +255,31 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 	messageReceived.Wait()
 }
 
+func (s *resolverSuite) Test_Send_DetectorReference() {
+	err := s.resolver.Start()
+	s.NoError(err)
+
+	messageReceived := sync.WaitGroup{}
+	messageReceived.Add(1)
+
+	detectionObject := []component.CompatibilityDetectionMessage{
+		{
+			Object: &storage.Deployment{Id: "1234"},
+			Action: central.ResourceAction_UPDATE_RESOURCE,
+		},
+	}
+
+	s.mockOutput.EXPECT().Send(&detectionObjectMatcher{expected: detectionObject}).Times(1).Do(func(arg0 interface{}) {
+		defer messageReceived.Done()
+	})
+
+	s.resolver.Send(&component.ResourceEvent{
+		CompatibilityDetectionDeployment: detectionObject,
+	})
+
+	messageReceived.Wait()
+}
+
 func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 	err := s.resolver.Start()
 	s.NoError(err)
@@ -507,6 +532,30 @@ func (m *deploymentMatcher) Matches(target interface{}) bool {
 
 func (m *deploymentMatcher) String() string {
 	return fmt.Sprintf("Deployment (%s) (Permission: %s): %s", m.id, m.permissionLevel, m.error)
+}
+
+type detectionObjectMatcher struct {
+	expected []component.CompatibilityDetectionMessage
+	error    string
+}
+
+func (m *detectionObjectMatcher) Matches(target interface{}) bool {
+	event, ok := target.(*component.ResourceEvent)
+	if !ok {
+		m.error = "received message isn't a resource event"
+		return false
+	}
+
+	if !cmp.Equal(m.expected, event.CompatibilityDetectionDeployment) {
+		m.error = fmt.Sprintf("received detection deployment doesn't match expected: %s", cmp.Diff(m.expected, event.CompatibilityReprocessDeployments))
+		return false
+	}
+
+	return true
+}
+
+func (m *detectionObjectMatcher) String() string {
+	return fmt.Sprintf("expected %v: error %s", m.expected, m.error)
 }
 
 type messageCounterMatcher struct {
