@@ -110,7 +110,7 @@
         "build": "DISABLE_ESLINT_PLUGIN=true CI=false GENERATE_SOURCEMAP=false react-scripts build",
         "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports react-scripts test --verbose=true --slowTestThreshold=1  --coverage --reporters=default --reporters=jest-junit",
         "test-watch": "react-scripts test",
-        "lint": "NODE_PATH=src eslint --quiet --ext .js,.ts,.tsx src cypress tailwind.config.js .prettierrc.js .eslintrc.js",
+        "lint": "NODE_PATH=src eslint --cache --quiet --ext .js,.ts,.tsx src cypress tailwind.config.js .prettierrc.js .eslintrc.js",
         "cypress-open": "./scripts/cypress.sh open --config defaultCommandTimeout=8000",
         "cypress-spec": "./scripts/cypress.sh run --spec",
         "test-e2e": "./scripts/cypress.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js",
