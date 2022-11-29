@@ -10,6 +10,7 @@ import {
 import { Cluster } from 'types/cluster.proto';
 import useURLSearch from 'hooks/useURLSearch';
 import useFetchClusterNamespaces from 'hooks/useFetchClusterNamespaces';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { ClusterIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
 import getScopeHierarchy from '../utils/getScopeHierarchy';
 
@@ -31,8 +32,16 @@ type NetworkBreadcrumbsProps = {
 };
 
 function NetworkBreadcrumbs({ clusters = [] }: NetworkBreadcrumbsProps) {
-    const [isClusterOpen, setIsClusterOpen] = React.useState(false);
-    const [isNamespaceOpen, setIsNamespaceOpen] = React.useState(false);
+    const {
+        isOpen: isClusterOpen,
+        toggleSelect: toggleIsClusterOpen,
+        closeSelect: closeClusterSelect,
+    } = useSelectToggle();
+    const {
+        isOpen: isNamespaceOpen,
+        toggleSelect: toggleIsNamespaceOpen,
+        closeSelect: closeNamespaceSelect,
+    } = useSelectToggle();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -48,13 +57,8 @@ function NetworkBreadcrumbs({ clusters = [] }: NetworkBreadcrumbsProps) {
         clusters.find((cluster) => cluster.name === selectedClusterName)?.id || '';
     const { loading, error, namespaces } = useFetchClusterNamespaces(selectedClusterId);
 
-    const onClusterToggle = (newClusterOpenValue) => setIsClusterOpen(newClusterOpenValue);
-
-    const onNamespaceToggle = (newNamespaceOpenValue: boolean) =>
-        setIsNamespaceOpen(newNamespaceOpenValue);
-
     const onClusterSelect = (_, value) => {
-        setIsClusterOpen((prevIsOpen: boolean) => !prevIsOpen);
+        closeClusterSelect();
 
         if (value !== selectedClusterName) {
             const modifiedSearchObject = { ...searchFilter };
@@ -79,7 +83,7 @@ function NetworkBreadcrumbs({ clusters = [] }: NetworkBreadcrumbsProps) {
     );
 
     const onNamespaceSelect = (_, selected) => {
-        setIsNamespaceOpen((prevIsOpen: boolean) => !prevIsOpen);
+        closeNamespaceSelect();
 
         const newSelection = selectedNamespaces.find((nsFilter) => nsFilter === selected)
             ? selectedNamespaces.filter((nsFilter) => nsFilter !== selected)
@@ -113,7 +117,7 @@ function NetworkBreadcrumbs({ clusters = [] }: NetworkBreadcrumbsProps) {
                         isPlain
                         placeholderText={<em>Select a cluster</em>}
                         aria-label="Select a cluster"
-                        onToggle={onClusterToggle}
+                        onToggle={toggleIsClusterOpen}
                         onSelect={onClusterSelect}
                         isOpen={isClusterOpen}
                         selections={selectedClusterName}
@@ -124,7 +128,7 @@ function NetworkBreadcrumbs({ clusters = [] }: NetworkBreadcrumbsProps) {
                 <BreadcrumbItem isDropdown>
                     <Select
                         isOpen={isNamespaceOpen}
-                        onToggle={onNamespaceToggle}
+                        onToggle={toggleIsNamespaceOpen}
                         onSelect={onNamespaceSelect}
                         onFilter={onFilterNamespaces}
                         className="namespace-select"
