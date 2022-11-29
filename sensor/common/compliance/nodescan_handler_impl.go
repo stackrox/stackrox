@@ -14,7 +14,7 @@ var (
 	errStartMoreThanOnce = errors.New("unable to start the component more than once")
 )
 
-type nodeScanHandlerImpl struct {
+type nodeInventoryHandlerImpl struct {
 	inventories <-chan *storage.NodeInventory
 	toCentral   <-chan *central.MsgFromSensor
 
@@ -26,16 +26,16 @@ type nodeScanHandlerImpl struct {
 	stoppedC concurrency.ErrorSignal
 }
 
-func (c *nodeScanHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
+func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &c.stoppedC
 }
 
-func (c *nodeScanHandlerImpl) Capabilities() []centralsensor.SensorCapability {
+func (c *nodeInventoryHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.NodeScanningCap}
 }
 
 // ResponsesC returns a channel with messages to Central. It must be called after Start() for the channel to be not nil
-func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.toCentral == nil {
@@ -44,7 +44,7 @@ func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return c.toCentral
 }
 
-func (c *nodeScanHandlerImpl) Start() error {
+func (c *nodeInventoryHandlerImpl) Start() error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.toCentral != nil {
@@ -54,11 +54,11 @@ func (c *nodeScanHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *nodeScanHandlerImpl) Stop(err error) {
+func (c *nodeInventoryHandlerImpl) Stop(err error) {
 	c.stopC.SignalWithError(err)
 }
 
-func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	// This component doesn't actually process or handle any messages sent from Central to Sensor (yet).
 	// It uses the sensor component so that the lifecycle (start, stop) can be handled when Sensor starts up.
 	return nil
@@ -66,7 +66,7 @@ func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 // run handles the messages from Compliance and forwards them to Central
 // This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
-func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
+func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 	toC := make(chan *central.MsgFromSensor)
 	go func() {
 		defer func() {
@@ -90,7 +90,7 @@ func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
 	return toC
 }
 
-func (c *nodeScanHandlerImpl) sendInventory(toC chan *central.MsgFromSensor, scan *storage.NodeInventory) {
+func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor, scan *storage.NodeInventory) {
 	if scan == nil {
 		return
 	}

@@ -15,7 +15,7 @@ type NodeInventoryHandler interface {
 
 // NewNodeInventoryHandler returns a new instance of a NodeInventoryHandler
 func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory) NodeInventoryHandler {
-	return &nodeScanHandlerImpl{
+	return &nodeInventoryHandlerImpl{
 		inventories: ch,
 		toCentral:   nil,
 		stopC:       concurrency.NewErrorSignal(),
