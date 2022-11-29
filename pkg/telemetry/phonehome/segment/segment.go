@@ -23,6 +23,9 @@ type segmentTelemeter struct {
 }
 
 func (t *segmentTelemeter) Identify(props map[string]any) {
+	if t == nil {
+		return
+	}
 	traits := segment.NewTraits()
 	identity := segment.Identify{
 		UserId: t.userID,

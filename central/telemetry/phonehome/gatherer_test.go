@@ -40,11 +40,11 @@ func (s *gathererTestSuite) TestGatherer() {
 
 	var i int64
 	stop := concurrency.NewSignal()
-	gptr := newGatherer(nil, 1*time.Second, func(context.Context) map[string]any {
+	gptr := newGatherer(nil, 1*time.Second, func(context.Context) (map[string]any, error) {
 		if atomic.AddInt64(&i, 1) > 1 {
 			stop.Signal()
 		}
-		return nil
+		return nil, nil
 	})
 	go func() {
 		stop.Wait()

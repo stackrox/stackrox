@@ -3,6 +3,7 @@ package phonehome
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	apDataStore "github.com/stackrox/rox/central/authprovider/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roles "github.com/stackrox/rox/central/role/datastore"
@@ -18,7 +19,7 @@ func addTotal[T any](ctx context.Context, props map[string]any, key string, f fu
 	}
 }
 
-func gather(ctx context.Context) map[string]any {
+func gather(ctx context.Context) (map[string]any, error) {
 	log.Debug("Starting telemetry data collection.")
 	defer log.Debug("Done with telemetry data collection.")
 
@@ -33,13 +34,11 @@ func gather(ctx context.Context) map[string]any {
 
 	groups, err := groupDataStore.Singleton().GetAll(ctx)
 	if err != nil {
-		log.Error("Failed to get Groups: ", err)
-		return nil
+		return nil, errors.Wrap(err, "failed to get Groups")
 	}
 	providers, err := apDataStore.Singleton().GetAllAuthProviders(ctx)
 	if err != nil {
-		log.Error("Failed to get AuthProviders: ", err)
-		return nil
+		return nil, errors.Wrap(err, "failed to get AuthProviders")
 	}
 
 	providerIDNames := make(map[string]string)
@@ -59,5 +58,5 @@ func gather(ctx context.Context) map[string]any {
 	for id, n := range providerGroups {
 		totals["Total Groups of "+providerIDNames[id]] = n
 	}
-	return totals
+	return totals, nil
 }

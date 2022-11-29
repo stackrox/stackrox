@@ -25,7 +25,7 @@ type gatherer struct {
 	stopSig    concurrency.Signal
 	ctx        context.Context
 	mu         sync.Mutex
-	gatherFunc func(context.Context) map[string]any
+	gatherFunc func(context.Context) (map[string]any, error)
 }
 
 // Gatherer interface for interacting with telemetry gatherer.
@@ -39,7 +39,7 @@ func (g *gatherer) reset() {
 	g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 }
 
-func newGatherer(t pkgPH.Telemeter, p time.Duration, f func(context.Context) map[string]any) *gatherer {
+func newGatherer(t pkgPH.Telemeter, p time.Duration, f func(context.Context) (map[string]any, error)) *gatherer {
 	return &gatherer{
 		telemeter:  t,
 		period:     p,
@@ -63,8 +63,10 @@ func (g *gatherer) loop() {
 		select {
 		case <-ticker.C:
 			go func() {
-				if props := g.gatherFunc(g.ctx); props != nil {
+				if props, err := g.gatherFunc(g.ctx); err == nil && g.telemeter != nil {
 					g.telemeter.Identify(props)
+				} else {
+					log.Error(err)
 				}
 			}()
 		case <-g.stopSig.Done():
