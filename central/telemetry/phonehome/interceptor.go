@@ -12,14 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"google.golang.org/grpc"
 )
 
 var (
 	ignoredPaths = []string{"/v1/ping", "/v1/metadata", "/static/"}
-	once         sync.Once
 )
 
 func track(ctx context.Context, t pkgPH.Telemeter, err error, info *grpc.UnaryServerInfo, trackedPaths set.FrozenSet[string]) {

@@ -32,10 +32,8 @@ func TestConfig(t *testing.T) {
 
 func (s *configTestSuite) TestConfig_GetUserMetadata() {
 	config := &Config{
-		ID:       "id",
-		OrgID:    "orgid",
-		TenantID: "tenantid",
-		Identity: map[string]any{},
+		CentralID: "id",
+		Identity:  map[string]any{},
 	}
 
 	m := config.GetUserMetadata(nil)

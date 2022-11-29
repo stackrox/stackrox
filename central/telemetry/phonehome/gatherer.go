@@ -13,12 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 var (
 	log              = logging.LoggerForModule()
 	gathererInstance *gatherer
+	onceGatherer     sync.Once
 )
 
 const period = 5 * time.Minute
@@ -30,7 +30,6 @@ type gatherer struct {
 	stopSig   concurrency.Signal
 	ctx       context.Context
 	cancel    context.CancelFunc
-	userAgent string
 	mu        sync.Mutex
 	f         func(*gatherer)
 }
@@ -52,7 +51,6 @@ func newGatherer(t pkgPH.Telemeter, p time.Duration, f func(*gatherer)) *gathere
 	g := &gatherer{
 		telemeter: t,
 		period:    p,
-		userAgent: "central/" + version.GetMainVersion(),
 		f:         f,
 	}
 	g.reset()
@@ -62,7 +60,7 @@ func newGatherer(t pkgPH.Telemeter, p time.Duration, f func(*gatherer)) *gathere
 // GathererSingleton returns the telemetry gatherer instance.
 func GathererSingleton() Gatherer {
 	if Enabled() {
-		once.Do(func() {
+		onceGatherer.Do(func() {
 			gathererInstance = newGatherer(TelemeterSingleton(), period, func(g *gatherer) { g.gather() })
 		})
 	}

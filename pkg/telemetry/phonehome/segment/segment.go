@@ -6,7 +6,6 @@ import (
 	segment "github.com/segmentio/analytics-go"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -20,21 +19,20 @@ func Enabled() bool {
 }
 
 type segmentTelemeter struct {
-	client segment.Client
-	config *phonehome.Config
+	client   segment.Client
+	userID   string
+	identity map[string]any
 }
-
-// Ensure Telemeter interface implementation.
-var _ = phonehome.Telemeter((*segmentTelemeter)(nil))
 
 func (t *segmentTelemeter) Identify(props map[string]any) {
 	traits := segment.NewTraits()
 	identity := segment.Identify{
-		UserId: t.config.ID,
+		UserId: t.userID,
 		Traits: traits,
 	}
-	if t.config.Identity != nil {
-		for k, v := range t.config.Identity {
+
+	if t.identity != nil {
+		for k, v := range t.identity {
 			traits.Set(k, v)
 		}
 	}
@@ -48,10 +46,10 @@ func (t *segmentTelemeter) Identify(props map[string]any) {
 }
 
 // NewTelemeter creates and initializes a Segment telemeter instance.
-func NewTelemeter(config *phonehome.Config) phonehome.Telemeter {
+func NewTelemeter(userID string, identity map[string]any) *segmentTelemeter {
 	key := env.TelemetryStorageKey.Setting()
 	server := ""
-	return initSegment(config, key, server)
+	return initSegment(userID, identity, key, server)
 }
 
 type logWrapper struct {
@@ -66,15 +64,14 @@ func (l *logWrapper) Errorf(format string, args ...any) {
 	l.internal.Errorf(format, args...)
 }
 
-func initSegment(config *phonehome.Config, key, server string) *segmentTelemeter {
+func initSegment(userID string, identity map[string]any, key, server string) *segmentTelemeter {
 	segmentConfig := segment.Config{
 		Endpoint: server,
 		Interval: 5 * time.Minute,
 		Logger:   &logWrapper{internal: log},
 		DefaultContext: &segment.Context{
 			Extra: map[string]any{
-				"Central ID": config.ID,
-				"Tenant ID":  config.TenantID,
+				"Central ID": userID,
 			},
 		},
 	}
@@ -86,8 +83,9 @@ func initSegment(config *phonehome.Config, key, server string) *segmentTelemeter
 	}
 
 	return &segmentTelemeter{
-		client: client,
-		config: config,
+		client:   client,
+		userID:   userID,
+		identity: identity,
 	}
 }
 
@@ -107,11 +105,17 @@ func (t *segmentTelemeter) Track(event, userID string, props map[string]any) {
 		return
 	}
 
-	if err := t.client.Enqueue(segment.Track{
+	track := segment.Track{
 		UserId:     userID,
 		Event:      event,
 		Properties: props,
-	}); err != nil {
+	}
+
+	if userID == "unauthenticated" {
+		track.AnonymousId = userID
+	}
+
+	if err := t.client.Enqueue(track); err != nil {
 		log.Error("Cannot enqueue Segment track event: ", err)
 	}
 }

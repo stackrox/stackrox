@@ -1,12 +1,14 @@
 package phonehome
 
 import (
-	mPkg "github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/sync"
+	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
 )
 
 var (
-	telemeter mPkg.Telemeter
+	telemeter     pkgPH.Telemeter
+	onceTelemeter sync.Once
 )
 
 // Enabled returns true if telemetry data collection is enabled.
@@ -15,9 +17,10 @@ func Enabled() bool {
 }
 
 // TelemeterSingleton returns the instance of the telemeter.
-func TelemeterSingleton() mPkg.Telemeter {
-	once.Do(func() {
-		telemeter = segment.NewTelemeter(mPkg.InstanceConfig())
+func TelemeterSingleton() pkgPH.Telemeter {
+	onceTelemeter.Do(func() {
+		cfg := pkgPH.InstanceConfig()
+		telemeter = segment.NewTelemeter(cfg.CentralID, cfg.Identity)
 	})
 	return telemeter
 }
