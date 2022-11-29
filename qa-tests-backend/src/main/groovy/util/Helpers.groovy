@@ -88,13 +88,7 @@ class Helpers {
     }
 
     static void collectDebugForFailure(Throwable exception) {
-        if (!Env.IN_CI && !Env.GATHER_QA_TEST_DEBUG_LOGS) {
-            log.info "Won't collect logs without CI=true or GATHER_QA_TEST_DEBUG_LOGS=true"
-            return
-        }
-
-        if (Env.QA_TEST_DEBUG_LOGS == "") {
-            log.info "Won't collect logs when QA_TEST_DEBUG_LOGS is not set"
+        if (collectDebug()) {
             return
         }
 
@@ -133,13 +127,7 @@ class Helpers {
 
     // collectImageScanForDebug(image) - a best effort debug tool to get a complete image scan.
     static void collectImageScanForDebug(String image, String saveName) {
-        if (!Env.IN_CI && !Env.GATHER_QA_TEST_DEBUG_LOGS) {
-            log.info "Won't collect image scans without CI=true or GATHER_QA_TEST_DEBUG_LOGS=true"
-            return
-        }
-
-        if (Env.QA_TEST_DEBUG_LOGS == "") {
-            log.info "Won't collect image scans when QA_TEST_DEBUG_LOGS is not set"
+        if (collectDebug()) {
             return
         }
 
@@ -172,5 +160,18 @@ class Helpers {
         proc.consumeProcessOutput(sout, serr)
         proc.waitFor()
         log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
+    }
+
+    private Boolean collectDebug() {
+        if ((Env.IN_CI || Env.GATHER_QA_TEST_DEBUG_LOGS) && (Env.QA_TEST_DEBUG_LOGS != "")) {
+            return true
+        }
+
+        log.warn("Debug collection will be skipped. "+
+                 "[CI: ${Env.IN_CI},"+
+                 " GATHER_QA_TEST_DEBUG_LOGS: ${Env.GATHER_QA_TEST_DEBUG_LOGS},"+
+                 " QA_TEST_DEBUG_LOGS: ${Env.QA_TEST_DEBUG_LOGS}]")
+
+        return false
     }
 }
