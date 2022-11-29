@@ -38,8 +38,6 @@ func (s *configTestSuite) TestConfig_GetUserMetadata() {
 
 	m := config.GetUserMetadata(nil)
 	s.Equal("id", m["CentralId"])
-	s.Equal("orgid", m["OrganizationId"])
-	s.Equal("tenantid", m["TenantId"])
 	s.Equal("unauthenticated", m["UserId"])
 
 	id := mocks.NewMockIdentity(s.mockCtrl)
