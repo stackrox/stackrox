@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/suite"
 )
@@ -16,17 +17,10 @@ type gathererTestSuite struct {
 	mockCtrl *gomock.Controller
 }
 
-var _ interface {
-	suite.SetupTestSuite
-	suite.TearDownTestSuite
-} = (*gathererTestSuite)(nil)
+var _ suite.SetupTestSuite = (*gathererTestSuite)(nil)
 
 func (s *gathererTestSuite) SetupTest() {
-	s.mockCtrl = gomock.NewController(s.T())
-}
-
-func (s *gathererTestSuite) TearDownTest() {
-	s.mockCtrl.Finish()
+	s.mockCtrl = gomock.NewController(&testing.T{})
 }
 
 func TestConfig(t *testing.T) {
@@ -45,20 +39,31 @@ func (s *gathererTestSuite) TestGatherer() {
 	s.T().Setenv(env.TelemetryStorageKey.EnvVar(), "testkey")
 
 	var i int64
-	gptr := newGatherer(nil, 10*time.Millisecond, func(g *gatherer) {
+	stop := concurrency.NewSignal()
+	gptr := newGatherer(nil, 1*time.Second, func(context.Context) map[string]any {
 		if atomic.AddInt64(&i, 1) > 1 {
-			g.Stop()
+			stop.Signal()
 		}
+		return nil
 	})
+	go func() {
+		stop.Wait()
+		gptr.Stop()
+	}()
 	s.NotNil(gptr)
 	gptr.Start()
 
 	<-gptr.ctx.Done()
 	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
 
-	s.Nil(gptr.ticker)
 	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
 	s.Equal(int64(2), i)
+
+	stop.Reset()
+	go func() {
+		stop.Wait()
+		gptr.Stop()
+	}()
 
 	// Should start again.
 	gptr.Start()

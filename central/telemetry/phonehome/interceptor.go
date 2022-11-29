@@ -67,6 +67,7 @@ func getRequestDetails(ctx context.Context, centralID string, err error, info *g
 		method = info.FullMethod
 		code = int(erroxGRPC.RoxErrorToGRPCCode(err))
 	} else {
+		// Something not expected:
 		method = "unknown"
 		code = -1
 	}

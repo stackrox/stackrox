@@ -1,8 +1,6 @@
 package segment
 
 import (
-	"time"
-
 	segment "github.com/segmentio/analytics-go"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -71,7 +69,7 @@ func (l *logWrapper) Errorf(format string, args ...any) {
 func initSegment(userID string, identity map[string]any, key, server string) *segmentTelemeter {
 	segmentConfig := segment.Config{
 		Endpoint: server,
-		Interval: 1 * time.Minute,
+		Interval: env.TelemetryFrequency.DurationSetting(),
 		Logger:   &logWrapper{internal: log},
 		DefaultContext: &segment.Context{
 			Extra: map[string]any{
