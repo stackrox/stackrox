@@ -43,7 +43,7 @@ deploy_stackrox_with_custom_sensor() {
 
     # generate init bundle
     password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
-    if [ ! -f "$password_file" ]; then 
+    if [ ! -f "$password_file" ]; then
         die "password file $password_file not found after deploying central"
     fi
     kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
@@ -82,6 +82,7 @@ export_test_environment() {
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SEARCH_PAGE_UI "${ROX_SEARCH_PAGE_UI:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
+    ci_export ROX_NETWORK_GRAPH_PATTERNFLY "${ROX_NETWORK_GRAPH_PATTERNFLY:-true}"
 }
 
 deploy_central() {

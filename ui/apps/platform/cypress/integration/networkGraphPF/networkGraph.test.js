@@ -5,10 +5,13 @@ import { visitNetworkGraph, visitNetworkGraphFromLeftNav } from '../../helpers/n
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { hasFeatureFlag } from '../../helpers/features';
 
-describe('Network page', function () {
-    if (!hasFeatureFlag('ROX_NETWORK_GRAPH_PATTERNFLY')) {
-        this.skip();
-    }
+describe('Network page', () => {
+    before(function beforeHook() {
+        if (!hasFeatureFlag('ROX_NETWORK_GRAPH_PATTERNFLY')) {
+            this.skip();
+        }
+    });
+
     withAuth();
 
     it('should visit using the left nav', () => {
