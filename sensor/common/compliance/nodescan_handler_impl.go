@@ -82,15 +82,15 @@ func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
 					c.stopC.SignalWithError(errInputChanClosed)
 					return
 				}
-				// TODO(ROX-12943): Do something with the scan, e.g., attach NodeID
-				c.sendScan(toC, scan)
+				// TODO(ROX-12943): Do something with the inventory, e.g., attach NodeID
+				c.sendInventory(toC, scan)
 			}
 		}
 	}()
 	return toC
 }
 
-func (c *nodeScanHandlerImpl) sendScan(toC chan *central.MsgFromSensor, scan *storage.NodeInventory) {
+func (c *nodeScanHandlerImpl) sendInventory(toC chan *central.MsgFromSensor, scan *storage.NodeInventory) {
 	if scan == nil {
 		return
 	}
