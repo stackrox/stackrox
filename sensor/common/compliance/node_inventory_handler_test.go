@@ -77,7 +77,6 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
 	producer := concurrency.NewStopper()
-	errTest := errors.New("example-stop-error")
 	h := NewNodeInventoryHandler(inventories)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 1)
@@ -91,13 +90,13 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 			case inventories <- fakeNodeInventory("Node"):
 				if i == 0 {
 					s.NoError(consumer.Stopped().Wait()) // This blocks until consumer receives its 1 message
-					h.Stop(errTest)
+					h.Stop(nil)
 				}
 			}
 		}
 	}()
 
-	s.ErrorIs(h.Stopped().Wait(), errTest)
+	s.NoError(h.Stopped().Wait())
 
 	producer.Client().Stop()
 	s.NoError(producer.Client().Stopped().Wait())
@@ -116,7 +115,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	s.NoError(h.Stopped().Wait())
 }
 
-func (s *NodeInventoryHandlerTestSuite) TestHandlerStoppedError() {
+func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch)
@@ -127,7 +126,9 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStoppedError() {
 
 	errTest := errors.New("example-stop-error")
 	h.Stop(errTest)
-	s.ErrorIs(h.Stopped().Wait(), errTest)
+	// This test indicates that the handler ignores an error that's supplied to its Stop function.
+	// The handler will report either an internal error if it occurred during processing or nil otherwise.
+	s.NoError(h.Stopped().Wait())
 }
 
 // generateTestInputNoClose generates numToProduce messages of type NodeInventory.
@@ -149,7 +150,7 @@ func (s *NodeInventoryHandlerTestSuite) generateTestInputNoClose(numToProduce in
 }
 
 // consumeAndCount consumes maximally numToConsume messages from the channel and counts the consumed messages
-// It sets error of stoppable.stopC if the number of messages consumed were less than numToConsume
+// It sets the Stopper in error state if the number of messages consumed were less than numToConsume.
 func consumeAndCount[T any](ch <-chan *T, numToConsume int) concurrency.StopperClient {
 	st := concurrency.NewStopper()
 	go func() {

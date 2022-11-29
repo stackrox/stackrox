@@ -19,15 +19,12 @@ type nodeInventoryHandlerImpl struct {
 	toCentral   <-chan *central.MsgFromSensor
 
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
-	lock *sync.Mutex
-	// stopC is a command that tells this component to stop
-	stopC concurrency.ErrorSignal
-	// stoppedC is signaled when the goroutine inside of run() finishes
-	stoppedC concurrency.ErrorSignal
+	lock    *sync.Mutex
+	stopper concurrency.Stopper
 }
 
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &c.stoppedC
+	return c.stopper.Client().Stopped()
 }
 
 func (c *nodeInventoryHandlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -54,8 +51,8 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *nodeInventoryHandlerImpl) Stop(err error) {
-	c.stopC.SignalWithError(err)
+func (c *nodeInventoryHandlerImpl) Stop(_ error) {
+	c.stopper.Client().Stop()
 }
 
 func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
@@ -69,17 +66,15 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error 
 func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 	toC := make(chan *central.MsgFromSensor)
 	go func() {
-		defer func() {
-			c.stoppedC.SignalWithError(c.stopC.Err())
-		}()
+		defer c.stopper.Flow().ReportStopped()
 		defer close(toC)
-		for !c.stopC.IsDone() {
+		for {
 			select {
-			case <-c.stopC.Done():
+			case <-c.stopper.Flow().StopRequested():
 				return
 			case inventory, ok := <-c.inventories:
 				if !ok {
-					c.stopC.SignalWithError(errInputChanClosed)
+					c.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
 				// TODO(ROX-12943): Do something with the inventory, e.g., attach NodeID
@@ -95,7 +90,7 @@ func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor
 		return
 	}
 	select {
-	case <-c.stopC.Done():
+	case <-c.stopper.Flow().StopRequested():
 	case toC <- &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
