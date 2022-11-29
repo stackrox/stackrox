@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
+	k8s2 "github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/tests/resource"
 	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/require"
@@ -117,8 +118,6 @@ type DeploymentExposureSuite struct {
 }
 
 func Test_DeploymentExposure(t *testing.T) {
-	// TODO(ROX-13644): reenable the test
-	t.Skip("Disabling these tests until we refactor the helper.go to enable fake k8s clients (ROX-13644)")
 	suite.Run(t, new(DeploymentExposureSuite))
 }
 
@@ -135,8 +134,9 @@ func (s *DeploymentExposureSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	config := resource.CentralConfig{
+	config := resource.ContextConfig{
 		InitialSystemPolicies: policies,
+		FakeK8sClient:         k8s2.MakeFakeClient(),
 	}
 	if testContext, err := resource.NewContextWithConfig(s.T(), config); err != nil {
 		s.Fail("failed to setup test context: %s", err)

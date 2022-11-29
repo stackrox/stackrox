@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -28,6 +29,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 
 	// import gcp
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -91,6 +95,84 @@ func objByKind(kind string) k8s.Object {
 	}
 }
 
+// Resources interface to create and delete k8s resources
+type Resources interface {
+	Create(ctx context.Context, obj k8s.Object, opts ...resources.CreateOption) error
+	Delete(ctx context.Context, obj k8s.Object, opts ...resources.DeleteOption) error
+}
+
+// NewFakeResources initializes a new fakeResources struct
+func NewFakeResources(cl kubernetes.Interface) (*fakeResources, error) {
+	r := &fakeResources{
+		clMap: map[string]func(string) interface{}{
+			"*v1.Namespace":  func(string) interface{} { return cl.CoreV1().Namespaces() },
+			"*v1.Deployment": func(namespace string) interface{} { return cl.AppsV1().Deployments(namespace) },
+			"*v1.Service":    func(namespace string) interface{} { return cl.CoreV1().Services(namespace) },
+			"*v1.Pod":        func(namespace string) interface{} { return cl.CoreV1().Pods(namespace) },
+		},
+	}
+
+	return r, nil
+}
+
+// fakeResources used to create resources using a fake k8s client
+type fakeResources struct {
+	clMap map[string]func(string) interface{}
+}
+
+// Create creates a resource
+func (r *fakeResources) Create(ctx context.Context, obj k8s.Object, opts ...resources.CreateOption) error {
+	kind := reflect.TypeOf(obj).String()
+	clFunc := r.clMap[kind]
+	cl := clFunc(obj.GetNamespace())
+	clValue := reflect.ValueOf(cl)
+	objValue := reflect.ValueOf(obj)
+	createOptions := &metav1.CreateOptions{}
+	for _, fn := range opts {
+		fn(createOptions)
+	}
+	returnVals := clValue.MethodByName("Create").Call([]reflect.Value{
+		reflect.ValueOf(ctx),
+		objValue,
+		reflect.ValueOf(*createOptions),
+	})
+	if len(returnVals) != 2 {
+		return fmt.Errorf("expected 2 values from Create. Received: %d", len(returnVals))
+	}
+	errInt := returnVals[len(returnVals)-1].Interface()
+	if errInt != nil {
+		return errInt.(error)
+	}
+
+	return nil
+}
+
+// Delete deletes a resource
+func (r *fakeResources) Delete(ctx context.Context, obj k8s.Object, opts ...resources.DeleteOption) error {
+	kind := reflect.TypeOf(obj).String()
+	clFunc := r.clMap[kind]
+	cl := clFunc(obj.GetNamespace())
+	clValue := reflect.ValueOf(cl)
+	deleteOptions := &metav1.DeleteOptions{}
+	for _, fn := range opts {
+		fn(deleteOptions)
+	}
+	returnVals := clValue.MethodByName("Delete").Call([]reflect.Value{
+		reflect.ValueOf(ctx),
+		reflect.ValueOf(obj.GetName()),
+		reflect.ValueOf(*deleteOptions),
+	})
+	if len(returnVals) != 1 {
+		return fmt.Errorf("expected 1 value from Delete. Received: %d", len(returnVals))
+	}
+	errInt := returnVals[len(returnVals)-1].Interface()
+	if errInt != nil {
+		return errInt.(error)
+	}
+
+	return nil
+}
+
 // TestCallback represents the test case function written in the go test file.
 type TestCallback func(t *testing.T, testContext *TestContext, objects map[string]k8s.Object)
 
@@ -100,14 +182,14 @@ type TestCallback func(t *testing.T, testContext *TestContext, objects map[strin
 // and assertions.
 type TestContext struct {
 	t               *testing.T
-	r               *resources.Resources
+	r               Resources
 	env             *envconf.Config
 	fakeCentral     *centralDebug.FakeService
 	centralReceived chan *central.MsgFromSensor
 	stopFn          func()
 }
 
-func defaultCentralConfig() CentralConfig {
+func defaultCentralConfig() ContextConfig {
 	// Uses replayed policies.json file as default policies for tests.
 	// These are all policies in ACS, which means many alerts might be generated.
 	policies, err := testutils.GetPoliciesFromFile("../../replay/data/policies.json")
@@ -115,7 +197,7 @@ func defaultCentralConfig() CentralConfig {
 		log.Fatalln(err)
 	}
 
-	return CentralConfig{
+	return ContextConfig{
 		InitialSystemPolicies: policies,
 	}
 }
@@ -126,11 +208,20 @@ func NewContext(t *testing.T) (*TestContext, error) {
 }
 
 // NewContextWithConfig creates a new test context with custom central configuration.
-func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, error) {
+func NewContextWithConfig(t *testing.T, config ContextConfig) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
-	r, err := resources.New(envConfig.Client().RESTConfig())
-	if err != nil {
-		return nil, err
+	var r Resources
+	var err error
+	if config.FakeK8sClient != nil {
+		r, err = NewFakeResources(config.FakeK8sClient.Kubernetes())
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		r, err = resources.New(envConfig.Client().RESTConfig())
+		if err != nil {
+			return nil, err
+		}
 	}
 	fakeCentral, startFn, stopFn := startSensorAndFakeCentral(envConfig, config)
 	ch := make(chan *central.MsgFromSensor, 100)
@@ -150,11 +241,11 @@ func (c *TestContext) Stop() {
 }
 
 // Resources object is used to interact with the cluster and apply new resources.
-func (c *TestContext) Resources() *resources.Resources {
+func (c *TestContext) Resources() Resources {
 	return c.r
 }
 
-func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1.Namespace, func() error, error) {
+func createTestNs(ctx context.Context, r Resources, name string) (*v1.Namespace, func() error, error) {
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
 	if err := r.Create(ctx, &nsObj); err != nil {
@@ -167,7 +258,7 @@ func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1
 		}
 
 		// wait for deletion to be finished
-		if err := wait.For(conditions.New(r).ResourceDeleted(&nsObj)); err != nil {
+		if err := wait.For(waitForResourceDeletedFunc(r)(&nsObj)); err != nil {
 			fmt.Println("failed to wait for namespace deletion")
 		}
 		return nil
@@ -329,12 +420,13 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 	return selected
 }
 
-// CentralConfig allows tests to inject ACS policies in the tests
-type CentralConfig struct {
+// ContextConfig allows tests to inject ACS policies in the tests
+type ContextConfig struct {
 	InitialSystemPolicies []*storage.Policy
+	FakeK8sClient         client.Interface
 }
 
-func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*centralDebug.FakeService, func(), func()) {
+func startSensorAndFakeCentral(env *envconf.Config, config ContextConfig) (*centralDebug.FakeService, func(), func()) {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../../tools/local-sensor/certs/key.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../../tools/local-sensor/certs/caCert.pem"))
@@ -349,8 +441,14 @@ func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*cent
 	conn, spyCentral, _ := createConnectionAndStartServer(fakeCentral)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
+	var cl client.Interface
+	if config.FakeK8sClient != nil {
+		cl = config.FakeK8sClient
+	} else {
+		cl = client.MustCreateInterfaceFromRest(env.Client().RESTConfig())
+	}
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
-		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
+		WithK8sClient(cl).
 		WithLocalSensor(true).
 		WithResyncPeriod(1 * time.Second).
 		WithCentralConnectionFactory(fakeConnectionFactory))
@@ -441,13 +539,37 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 			}
 
 			// wait for deletion to be finished
-			if err := wait.For(conditions.New(c.r).ResourceDeleted(obj)); err != nil {
+			if err := wait.For(waitForResourceDeletedFunc(c.r)(obj)); err != nil {
 				fmt.Println("failed to wait for resource deletion")
 			}
 			return nil
 		}
 		return c.r.Delete(ctx, obj)
 	}, nil
+}
+
+// waitForResourceDeletedFunc waits for a resource to be deleted
+func waitForResourceDeletedFunc(r Resources) func(obj k8s.Object) apimachinerywait.ConditionFunc {
+	// if we are using the fake k8s client we don't need to wait
+	if reflect.TypeOf(r) == reflect.TypeOf(&fakeResources{}) {
+		return func(obj k8s.Object) apimachinerywait.ConditionFunc {
+			return func() (done bool, err error) { return true, nil }
+		}
+	}
+	res := r.(*resources.Resources)
+	return conditions.New(res).ResourceDeleted
+}
+
+// WaitForResourceMatchFunc waits for a resource to match given a matching function
+func WaitForResourceMatchFunc(r Resources) func(obj k8s.Object, matchFunc func(obj k8s.Object) bool) apimachinerywait.ConditionFunc {
+	// This is unimplemented for the fake k8s client since we don't use it for the test in which we use the fake client
+	if reflect.TypeOf(r) == reflect.TypeOf(&fakeResources{}) {
+		return func(obj k8s.Object, matchFunc func(obj k8s.Object) bool) apimachinerywait.ConditionFunc {
+			return func() (done bool, err error) { return true, nil }
+		}
+	}
+	res := r.(*resources.Resources)
+	return conditions.New(res).ResourceMatch
 }
 
 func execWithRetry(timeout, interval time.Duration, fn backoff.Operation) error {

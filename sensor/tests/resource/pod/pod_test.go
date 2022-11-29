@@ -13,7 +13,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 )
 
 var (
@@ -77,7 +76,7 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 		NginxDeployment,
 	}, func(t *testing.T, testC *resource.TestContext, objects map[string]k8s.Object) {
 		// wait until pods are created
-		err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.File], func(object k8s.Object) bool {
+		err := wait.For(resource.WaitForResourceMatchFunc(testC.Resources())(objects[NginxDeployment.File], func(object k8s.Object) bool {
 			d := object.(*appsv1.Deployment)
 			return d.Status.AvailableReplicas == 3 && d.Status.ReadyReplicas == 3
 		}), wait.WithTimeout(time.Second*10))
@@ -100,7 +99,7 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 		NginxPod,
 	}, func(t *testing.T, testC *resource.TestContext, objects map[string]k8s.Object) {
 		// wait until pods are created
-		err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.File], func(object k8s.Object) bool {
+		err := wait.For(resource.WaitForResourceMatchFunc(testC.Resources())(objects[NginxDeployment.File], func(object k8s.Object) bool {
 			d := object.(*appsv1.Deployment)
 			return d.Status.AvailableReplicas == 3 && d.Status.ReadyReplicas == 3
 		}), wait.WithTimeout(time.Second*10))
