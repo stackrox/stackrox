@@ -149,17 +149,21 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return err
 	}
-	// Clean up correlated ProcessListeningOnPort objects. Probably could be
-	// done using a proper FK and CASCADE, but it's usually a thing you would
-	// not like to do automatically. search.ProcessID is not a PID, but UUID of
-	// the record in the table
-	deleteQuery := pkgSearch.NewQueryBuilder().
-		AddStrings(pkgSearch.ProcessID, ids...).
-		ProtoQuery()
 
-	if err := ds.plopStorage.DeleteByQuery(ctx, deleteQuery); err != nil {
-		return err
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		// Clean up correlated ProcessListeningOnPort objects. Probably could be
+		// done using a proper FK and CASCADE, but it's usually a thing you would
+		// not like to do automatically. search.ProcessID is not a PID, but UUID of
+		// the record in the table
+		deleteQuery := pkgSearch.NewQueryBuilder().
+			AddStrings(pkgSearch.ProcessID, ids...).
+			ProtoQuery()
+
+		if err := ds.plopStorage.DeleteByQuery(ctx, deleteQuery); err != nil {
+			return err
+		}
 	}
+
 	if err := ds.indexer.DeleteProcessIndicators(ids); err != nil {
 		return err
 	}

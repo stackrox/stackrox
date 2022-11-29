@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/central/processindicator/store/postgres"
 	"github.com/stackrox/rox/central/processindicator/store/rocksdb"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -33,12 +34,16 @@ var (
 
 func initialize() {
 	var storage store.Store
+	var plopStorage plopStore.Store
 	var indexer index.Indexer
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = postgres.New(globaldb.GetPostgres())
+		plopStorage = plopStore.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())
+		// PLOP storage is only supported for PostgreSQL
+		// plopStorage = rocksdb.New(globaldb.GetRocksDB())
 		indexer = index.New(globalindex.GetProcessIndex())
 	}
 	searcher := search.New(storage, indexer)
@@ -46,7 +51,7 @@ func initialize() {
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)
 
 	var err error
-	ad, err = New(storage, indexer, searcher, p)
+	ad, err = New(storage, plopStorage, indexer, searcher, p)
 	utils.CrashOnError(errors.Wrap(err, "unable to load datastore for process indicators"))
 }
 
