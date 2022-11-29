@@ -49,7 +49,7 @@ message NetworkEndpoint {
     // was shutdown. If this is unset, we treat it as an actively listening endpoint.
     google.protobuf.Timestamp close_timestamp = 5;
 
-    storage.NetworkProcessUniqueKey originator      = 6;
+    storage.ProcessSignal originator      = 6;
 }
 
 message NetworkAddress {
