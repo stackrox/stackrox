@@ -29,7 +29,10 @@ func (n *NodeScan) Scan(nodeName string) (*storage.NodeInventory, error) {
 		return nil, err
 	}
 
-	protoComponents := protoComponentsFromScanComponents(componentsHost)
+	var protoComponents *scannerV1.Components
+	if componentsHost != nil {
+		protoComponents = protoComponentsFromScanComponents(componentsHost)
+	}
 	m := &storage.NodeInventory{
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
@@ -39,11 +42,15 @@ func (n *NodeScan) Scan(nodeName string) (*storage.NodeInventory, error) {
 }
 
 func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Components {
+	var components []*scannerV1.RHELComponent
 	// For now, we only care about RHEL components, but this must be extended once we support non-RHCOS
+	if c.CertifiedRHELComponents != nil {
+		components = convertRHELComponents(c.CertifiedRHELComponents)
+	}
 	pc := scannerV1.Components{
 		Namespace:          c.OSNamespace.Name,
 		OsComponents:       nil,
-		RhelComponents:     convertRHELComponents(c.CertifiedRHELComponents),
+		RhelComponents:     components,
 		LanguageComponents: nil,
 	}
 	return &pc
@@ -53,7 +60,7 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 	v1rhelc := make([]*scannerV1.RHELComponent, 0)
 	if rc.Packages == nil {
 		log.Warn("No RHEL packages found in scan result")
-		return nil
+		return v1rhelc
 	}
 	for _, rhelc := range rc.Packages {
 		v1rhelc = append(v1rhelc, &scannerV1.RHELComponent{
