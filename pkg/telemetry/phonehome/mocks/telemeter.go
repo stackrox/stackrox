@@ -33,6 +33,32 @@ func (m *MockTelemeter) EXPECT() *MockTelemeterMockRecorder {
 	return m.recorder
 }
 
+// GetID mocks base method.
+func (m *MockTelemeter) GetID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetID indicates an expected call of GetID.
+func (mr *MockTelemeterMockRecorder) GetID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetID", reflect.TypeOf((*MockTelemeter)(nil).GetID))
+}
+
+// Group mocks base method.
+func (m *MockTelemeter) Group(groupID, userID string, props map[string]any) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Group", groupID, userID, props)
+}
+
+// Group indicates an expected call of Group.
+func (mr *MockTelemeterMockRecorder) Group(groupID, userID, props interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), groupID, userID, props)
+}
+
 // Identify mocks base method.
 func (m *MockTelemeter) Identify(props map[string]any) {
 	m.ctrl.T.Helper()

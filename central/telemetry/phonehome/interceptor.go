@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/auth/userpass"
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
@@ -21,7 +22,7 @@ var (
 )
 
 func track(ctx context.Context, t pkgPH.Telemeter, err error, info *grpc.UnaryServerInfo, trackedPaths set.FrozenSet[string]) {
-	userAgent, userID, path, code := getRequestDetails(ctx, err, info)
+	userAgent, userID, path, code := getRequestDetails(ctx, t.GetID(), err, info)
 
 	// Track the API path and error code of some requests:
 
@@ -38,16 +39,23 @@ func track(ctx context.Context, t pkgPH.Telemeter, err error, info *grpc.UnarySe
 			"User-Agent": userAgent,
 		})
 	}
+
+	// Add UI user to the tenant group without extra group properties:
+	if path == "/v1/availableAuthProviders" {
+		t.Group(t.GetID(), userID, nil)
+	}
+	// TODO: ROX-13671 - Add non-UI users to the Tenant group
 }
 
-func getRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInfo) (userAgent string, userID string, method string, code int) {
+func getRequestDetails(ctx context.Context, centralID string, err error, info *grpc.UnaryServerInfo) (userAgent string, userID string, method string, code int) {
 	ri := requestinfo.FromContext(ctx)
 	userAgent = strings.Join(ri.Metadata.Get("User-Agent"), ", ")
 
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
-		userID = "unauthenticated"
 		log.Debug("Cannot identify user from context: ", iderr)
+	} else if userpass.IsLocalAdmin(id) {
+		userID = "local:" + centralID + ":admin"
 	} else {
 		userID = pkgPH.HashUserID(id.UID())
 	}

@@ -4,13 +4,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -22,7 +20,7 @@ import (
 
 const (
 	apiPathsAnnotation = "rhacs.redhat.com/telemetry-apipaths"
-	csIDAnnotation     = "rhacs.redhat.com/cs-identity"
+	tenantIDAnnotation = "rhacs.redhat.com/tenant-id"
 )
 
 var (
@@ -51,7 +49,8 @@ func getInstanceConfig() (*Config, error) {
 		return nil, errors.Wrap(err, "cannot get central deployment")
 	}
 
-	paths, ok := central.GetAnnotations()[apiPathsAnnotation]
+	centralAnnotations := central.GetAnnotations()
+	paths, ok := centralAnnotations[apiPathsAnnotation]
 	if !ok {
 		paths = "*"
 	}
@@ -61,8 +60,16 @@ func getInstanceConfig() (*Config, error) {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
+	centralID := string(central.GetUID())
+	tenantID := centralAnnotations[tenantIDAnnotation]
+	// Consider on-prem central a tenant of itself:
+	if tenantID == "" {
+		tenantID = centralID
+	}
+
 	config = &Config{
-		CentralID: string(central.GetUID()),
+		CentralID: centralID,
+		TenantID:  tenantID,
 		APIPaths:  set.NewFrozenSet(strings.Split(paths, ",")...),
 		Identity: map[string]any{
 			"Central version":    version.GetMainVersion(),
@@ -70,17 +77,6 @@ func getInstanceConfig() (*Config, error) {
 			"Orchestrator":       orchestrator,
 			"Kubernetes version": v.GitVersion,
 		},
-	}
-
-	// Add Cloud Services identity properties to the central identity.
-	if props := central.GetAnnotations()[csIDAnnotation]; props != "" {
-		if err = json.Unmarshal(([]byte)(props), &config.CSProperties); err != nil {
-			log.Errorf("Failed to unmarshal %s annotation: %v", csIDAnnotation, err)
-		} else if config.CSProperties != nil {
-			for k, v := range config.CSProperties {
-				config.Identity[k] = v
-			}
-		}
 	}
 
 	return config, nil
@@ -95,11 +91,9 @@ func InstanceConfig() *Config {
 		if config, err = getInstanceConfig(); err != nil {
 			log.Error("Failed to get telemetry configuration: ", err)
 		} else {
-			log.Info("Telemetry device ID:", config.CentralID)
+			log.Info("Central ID:", config.CentralID)
+			log.Info("Tenant ID:", config.TenantID)
 			log.Info("API path telemetry enabled for: ", config.APIPaths)
-			if config.CSProperties != nil {
-				log.Info("Cloud Services identity: ", config.CSProperties)
-			}
 		}
 	})
 	return config
@@ -111,21 +105,4 @@ func HashUserID(id string) string {
 	sha := sha256.New()
 	_, _ = sha.Write([]byte(id))
 	return base64.StdEncoding.EncodeToString(sha.Sum(nil))
-}
-
-// GetUserMetadata returns user identification information map, including
-// central instance ID, for being used by the frontend when reporting
-// product telemetry data, as well as Cloud Services identity properties.
-func (config *Config) GetUserMetadata(id authn.Identity) map[string]string {
-	metadata := map[string]string{
-		"UserId":    "unauthenticated",
-		"CentralId": config.CentralID,
-	}
-	if id != nil {
-		metadata["UserId"] = HashUserID(id.UID())
-	}
-	for k, v := range config.CSProperties {
-		metadata[k] = v
-	}
-	return metadata
 }

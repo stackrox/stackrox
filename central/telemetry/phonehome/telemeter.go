@@ -21,6 +21,9 @@ func TelemeterSingleton() pkgPH.Telemeter {
 	onceTelemeter.Do(func() {
 		cfg := pkgPH.InstanceConfig()
 		telemeter = segment.NewTelemeter(cfg.CentralID, cfg.Identity)
+		// Central adds itself to the tenant group:
+		telemeter.Group(cfg.TenantID, cfg.CentralID, cfg.Identity)
+		log.Info("Central added to group with: ", cfg.Identity)
 	})
 	return telemeter
 }

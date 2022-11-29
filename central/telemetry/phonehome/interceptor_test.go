@@ -43,10 +43,10 @@ func (s *interceptorTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *interceptorTestSuite) expect(path string) {
-	s.mockTelemeter.EXPECT().Track("API Call", "unauthenticated", map[string]any{
+func (s *interceptorTestSuite) expect(path string, code int) {
+	s.mockTelemeter.EXPECT().Track("API Call", "", map[string]any{
 		"Path":       path,
-		"Code":       200,
+		"Code":       code,
 		"User-Agent": "test",
 	})
 }
@@ -66,26 +66,25 @@ func (s *interceptorTestSuite) testSpecific(path, allowed string) {
 }
 
 func (s *interceptorTestSuite) TestInterceptorHttp() {
+	s.mockTelemeter.EXPECT().GetID().Times(6).Return("unauthenticated")
+
 	s.testSpecific("/v1/one", "/v1/two")
 	s.testSpecific("/v1/one", "/v1/two,/v1/three")
 
-	s.expect("/v1/abc")
+	s.expect("/v1/abc", 200)
 	s.testSpecific("/v1/abc", "*")
 	s.testSpecific("/v1/ping", "*")
 
-	s.expect("/v1/pong")
+	s.expect("/v1/pong", 200)
 	s.testSpecific("/v1/pong", "/v1/pong")
 
-	s.expect("/v1/four")
+	s.expect("/v1/four", 200)
 	s.testSpecific("/v1/four", "/v1/two,/v1/three,/v1/four")
 }
 
 func (s *interceptorTestSuite) TestInterceptorGrpc() {
-	s.mockTelemeter.EXPECT().Track("API Call", "unauthenticated", map[string]any{
-		"Path":       "/v1.Abc",
-		"Code":       0,
-		"User-Agent": "test",
-	})
+	s.mockTelemeter.EXPECT().GetID().Times(1).Return("unauthenticated")
+	s.expect("/v1.Abc", 0)
 
 	md := metadata.New(nil)
 	md.Set("User-Agent", "test")

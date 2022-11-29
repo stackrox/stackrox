@@ -25,9 +25,9 @@ message Metadata {
     LicenseStatus license_status = 4 [deprecated = true];
 
     // telemetry storage service write key
-    string storage_key_v1        = 5;
-    // holds various user and central instance identification data
-    map<string, string> identity = 6;
+    string user_id            = 5;
+    string telemetry_endpoint = 6;
+    string storage_key_v1     = 7;
 }
 
 message TrustInfo {

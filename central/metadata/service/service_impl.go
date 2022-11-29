@@ -56,7 +56,10 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		// config could be nil if there was an error during initialization.
 		if config := pkgPH.InstanceConfig(); config != nil {
 			metadata.StorageKeyV1 = env.TelemetryStorageKey.Setting()
-			metadata.Identity = config.GetUserMetadata(id)
+			metadata.TelemetryEndpoint = env.TelemetryEndpoint.Setting()
+			if id != nil {
+				metadata.UserId = pkgPH.HashUserID(id.UID())
+			}
 		}
 	}
 	// Only return the version to logged in users, not anonymous users.
