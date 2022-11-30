@@ -58,7 +58,8 @@ function NetworkGraphPage() {
     const { clusters } = useFetchClusters();
 
     useDeepCompareEffect(() => {
-        if (clusters.length > 0 && clusterFromUrl) {
+        // only refresh the graph data from the API if both a cluster and at least one namespace are selected
+        if (clusterFromUrl && namespacesFromUrl.length > 0) {
             const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
             if (selectedClusterId) {
                 setIsLoading(true);
