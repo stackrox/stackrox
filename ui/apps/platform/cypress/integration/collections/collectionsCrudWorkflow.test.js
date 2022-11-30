@@ -8,13 +8,14 @@ function tryDeleteCollection(collectionName) {
     const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
 
     cy.request({
-        url: `${collectionsApi.baseUrl}?query.query=Collection Name:${collectionName}`,
+        url: `${collectionsApi.baseUrl}?query.query=Collection Name:"${collectionName}"`,
         auth,
     }).as('listCollections');
 
     cy.get('@listCollections').then((res) => {
-        if (res.body.collections.length > 0) {
-            const { id } = res.body.collections[0];
+        const collection = res.body.collections.find(({ name }) => name === collectionName);
+        if (collection) {
+            const { id } = collection;
             const url = `${collectionsApi.baseUrl}/${id}`;
             cy.request({ url, auth, method: 'DELETE' });
         }
