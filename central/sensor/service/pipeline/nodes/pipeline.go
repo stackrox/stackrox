@@ -69,7 +69,7 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 }
 
 func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetNode() != nil && msg.GetEvent().GetNode().GetNodeInventory() == nil
+	return msg.GetEvent().GetNode() != nil
 }
 
 func (p *pipelineImpl) processRemove(ds datastore.DataStore, n *storage.Node) error {
