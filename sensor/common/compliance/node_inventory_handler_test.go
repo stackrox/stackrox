@@ -38,7 +38,7 @@ func (st *stoppable) signalAndWait(err error) error {
 }
 
 func TestNodeInventoryHandler(t *testing.T) {
-	suite.Run(t, &NodeInventoryTestSuite{})
+	suite.Run(t, &NodeInventoryHandlerTestSuite{})
 }
 
 func fakeNodeInventory(nodeName string) *storage.NodeInventory {
@@ -67,13 +67,13 @@ func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 	return msg
 }
 
-var _ suite.TearDownTestSuite = (*NodeInventoryTestSuite)(nil)
+var _ suite.TearDownTestSuite = (*NodeInventoryHandlerTestSuite)(nil)
 
-type NodeInventoryTestSuite struct {
+type NodeInventoryHandlerTestSuite struct {
 	suite.Suite
 }
 
-func (s *NodeInventoryTestSuite) SetupTest() {}
+func (s *NodeInventoryHandlerTestSuite) SetupTest() {}
 
 func assertNoGoroutineLeaks(t *testing.T) {
 	goleak.VerifyNone(t,
@@ -82,11 +82,11 @@ func assertNoGoroutineLeaks(t *testing.T) {
 	)
 }
 
-func (s *NodeInventoryTestSuite) TearDownTest() {
+func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
 	assertNoGoroutineLeaks(s.T())
 }
 
-func (s *NodeInventoryTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
+func (s *NodeInventoryHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
 	h := NewNodeInventoryHandler(inventories)
@@ -99,7 +99,7 @@ func (s *NodeInventoryTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
 // in the channel passed into NewNodeInventoryHandler.
 // We expect that premature stop of the handler results in a clean stop without any race conditions or goroutine leaks.
 // Exec with: go test -race -count=1 -v -run ^TestNodeInventoryHandler$ ./sensor/common/compliance
-func (s *NodeInventoryTestSuite) TestStopHandler() {
+func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
 	producer := newStoppable()
@@ -126,7 +126,7 @@ func (s *NodeInventoryTestSuite) TestStopHandler() {
 	s.NoError(producer.signalAndWait(nil))
 }
 
-func (s *NodeInventoryTestSuite) TestHandlerRegularRoutine() {
+func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch)
@@ -139,7 +139,7 @@ func (s *NodeInventoryTestSuite) TestHandlerRegularRoutine() {
 	s.NoError(h.Stopped().Wait())
 }
 
-func (s *NodeInventoryTestSuite) TestHandlerStoppedError() {
+func (s *NodeInventoryHandlerTestSuite) TestHandlerStoppedError() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch)
@@ -155,7 +155,7 @@ func (s *NodeInventoryTestSuite) TestHandlerStoppedError() {
 
 // generateTestInputNoClose generates numToProduce messages of type NodeInventory.
 // It returns a channel that must be closed by the caller.
-func (s *NodeInventoryTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, stoppable) {
+func (s *NodeInventoryHandlerTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, stoppable) {
 	input := make(chan *storage.NodeInventory)
 	st := newStoppable()
 	go func() {
@@ -194,7 +194,7 @@ func consumeAndCount[T any](ch <-chan *T, numToConsume int) stoppable {
 	return st
 }
 
-func (s *NodeInventoryTestSuite) TestMultipleStartHandler() {
+func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch)
@@ -216,7 +216,7 @@ func (s *NodeInventoryTestSuite) TestMultipleStartHandler() {
 	s.ErrorIs(h.Start(), errStartMoreThanOnce)
 }
 
-func (s *NodeInventoryTestSuite) TestDoubleStopHandler() {
+func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch)
@@ -231,7 +231,7 @@ func (s *NodeInventoryTestSuite) TestDoubleStopHandler() {
 	s.NoError(h.Stopped().Wait())
 }
 
-func (s *NodeInventoryTestSuite) TestInputChannelClosed() {
+func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	ch, producer := s.generateTestInputNoClose(10)
 	h := NewNodeInventoryHandler(ch)
 	s.NoError(h.Start())
