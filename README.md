@@ -109,7 +109,7 @@ STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
 From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 ```sh
-helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
+helm upgrade --install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
 ```
 
 #### Install Central in Clusters With Limited Resources
