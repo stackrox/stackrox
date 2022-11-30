@@ -9,3 +9,5 @@ unexpected status code 520 when retrieving image scan
 FATAL:  terminating autovacuum process due to administrator command
 # fetching signature was unsuccessful due to issues with contacting registry, i.e. quay outage.
 Error: Fetching signature for image .* unexpected status code 500
+# postgres trying to send data on a connection closed by the client (ROX-13258)
+FATAL:  connection to client lost
