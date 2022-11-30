@@ -15,8 +15,8 @@ type Telemeter interface {
 
 // Config represents the central instance telemetry configuration.
 type Config struct {
-	CentralID string
-	TenantID  string
-	APIPaths  set.FrozenSet[string]
-	Identity  map[string]any
+	CentralID  string
+	TenantID   string
+	APIPaths   set.FrozenSet[string]
+	Properties map[string]any
 }

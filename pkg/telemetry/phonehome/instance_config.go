@@ -71,7 +71,7 @@ func getInstanceConfig() (*Config, error) {
 		CentralID: centralID,
 		TenantID:  tenantID,
 		APIPaths:  set.NewFrozenSet(strings.Split(paths, ",")...),
-		Identity: map[string]any{
+		Properties: map[string]any{
 			"Central version":    version.GetMainVersion(),
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,

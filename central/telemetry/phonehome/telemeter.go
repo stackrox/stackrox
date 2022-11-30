@@ -20,10 +20,10 @@ func Enabled() bool {
 func TelemeterSingleton() pkgPH.Telemeter {
 	onceTelemeter.Do(func() {
 		cfg := pkgPH.InstanceConfig()
-		telemeter = segment.NewTelemeter(cfg.CentralID, cfg.Identity)
-		// Central adds itself to the tenant group:
-		telemeter.Group(cfg.TenantID, cfg.CentralID, cfg.Identity)
-		log.Info("Central added to group with: ", cfg.Identity)
+		telemeter = segment.NewTelemeter(cfg.CentralID, cfg.Properties)
+		// Central adds itself to the tenant group, adding its properties to the
+		// group properties:
+		telemeter.Group(cfg.TenantID, cfg.CentralID, cfg.Properties)
 	})
 	return telemeter
 }
