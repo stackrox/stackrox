@@ -59,10 +59,10 @@ func GathererSingleton() Gatherer {
 
 func (g *gatherer) collect() pkgPH.Properties {
 	result := make(pkgPH.Properties)
-	for _, f := range g.gatherFuncs {
+	for i, f := range g.gatherFuncs {
 		props, err := f(g.ctx)
 		if err != nil {
-			log.Errorf("failed to gather from %s: %v", f, err)
+			log.Errorf("gatherer %d failure: %v", i, err)
 		}
 		for k, v := range props {
 			result[k] = v
