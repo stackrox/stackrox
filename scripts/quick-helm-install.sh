@@ -70,11 +70,11 @@ helm install -n stackrox --create-namespace stackrox-central-services stackrox/s
  --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}" \
  "${installflags[@]+"${installflags[@]}"}"
 
-kubectl -n stackrox rollout status deploy/central --timeout=3m
+kubectl -n stackrox rollout status deploy/central --timeout=30m
 
 echo "Setting up central port-forward"
 
-kubectl -n stackrox port-forward deploy/central --pod-running-timeout=1m0s 8000:8443 > /dev/null 2>&1 &
+kubectl -n stackrox port-forward deploy/central --pod-running-timeout=10m0s 8000:8443 > /dev/null 2>&1 &
 
 echo "Generating an init bundle with stackrox-secured-cluster-services provisioning secrets"
 
