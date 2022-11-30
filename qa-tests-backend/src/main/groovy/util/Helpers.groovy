@@ -162,7 +162,7 @@ class Helpers {
         log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
     }
 
-    private static Boolean collectDebug() {
+    private static boolean collectDebug() {
         if ((Env.IN_CI || Env.GATHER_QA_TEST_DEBUG_LOGS) && (Env.QA_TEST_DEBUG_LOGS != "")) {
             return true
         }

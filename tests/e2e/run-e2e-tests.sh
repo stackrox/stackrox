@@ -17,7 +17,15 @@ require_environment "QA_TEST_DEBUG_LOGS"
 usage() {
     script=$(basename "$0")
     cat <<_EOH_
-Usage: $script [Options...] [E2e flavor] [Suite] [Case]
+Usage:
+ $script [Options...] [E2e flavor]
+ 
+   Configures the cluster and runs all suites.
+ 
+ $script [Options...] [E2e flavor] Suite [Case]
+ 
+   Expects a previously configured cluster and runs only selected suite/case.
+ 
 
 Options:
   -c - configure the cluster for test but do not run any tests.
