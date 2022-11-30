@@ -10,6 +10,7 @@ import (
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/ranking"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -22,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -118,55 +118,33 @@ func TestLabelsMap(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			rocksDB := rocksdbtest.RocksDBForT(t)
+			defer rocksDB.Close()
+
+			bleveIndex, err := globalindex.MemOnlyIndex()
+			require.NoError(t, err)
+
+			dacky, registry, indexingQ := testDackBoxInstance(t, rocksDB, bleveIndex)
+			registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
+
 			var pool *pgxpool.Pool
-			var deploymentsDS datastore.DataStore
-			var err error
-			var indexingQ queue.WaitableQueue
-			var dacky *dackbox.DackBox
-			var registry indexer.WrapperRegistry
-			//if env.PostgresDatastoreEnabled.BooleanSetting() {
-			//	pool = globaldb.GetPostgresTest(t)
-			//	deploymentStore := deploymentPostgres.NewFullTestStore(s.T(), deploymentPostgres.CreateTableAndNewStore(ctx, s.pool, s.gormDB))
-			//	deployments, err = deploymentDatastore.NewTestDataStore(s.T(), deploymentStore, nil, s.pool, nil, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-			//} else {
-			//	deployments, err = deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-			//}
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				testingDB := pgtest.ForT(t)
-				pool = testingDB.Pool
-				//deploymentStore := deploymentPostgres.NewFullTestStore(t, deploymentPostgres.CreateTableAndNewStore(ctx, pool, testingDB.GormDB))
-				//deploymentsDS, err = datastore.NewTestDataStore(t, deploymentStore, nil, pool, nil, nil, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-				deploymentsDS, err = datastore.GetTestPostgresDataStore(t, pool)
-			} else {
-				rocksDB := rocksdbtest.RocksDBForT(t)
-				defer rocksDB.Close()
-
-				bleveIndex, err := globalindex.MemOnlyIndex()
-				require.NoError(t, err)
-
-				dacky, registry, indexingQ = testDackBoxInstance(t, rocksDB, bleveIndex)
-				registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-
-				deploymentsDS, err = datastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+				pool = globaldb.GetPostgresTest(t)
 			}
+			deploymentsDS, err := datastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {
 				assert.NoError(t, deploymentsDS.UpsertDeployment(ctx, deployment))
 			}
 
-			if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				indexingDone := concurrency.NewSignal()
-				indexingQ.PushSignal(&indexingDone)
-				indexingDone.Wait()
-			}
+			indexingDone := concurrency.NewSignal()
+			indexingQ.PushSignal(&indexingDone)
+			indexingDone.Wait()
 
 			results, err := deploymentsDS.Search(ctx, queryForLabels())
-			log.Infof("Results %v", results)
 			assert.NoError(t, err)
 			actualMap, actualValues := labelsMapFromSearchResults(results)
-			log.Infof("actualMap %v", actualMap)
-			log.Infof("actualValues %v", actualValues)
 
 			assert.Equal(t, c.expectedMap, actualMap)
 			assert.ElementsMatch(t, c.expectedValues, actualValues)
