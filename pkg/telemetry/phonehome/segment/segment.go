@@ -22,39 +22,11 @@ type segmentTelemeter struct {
 	identity map[string]any
 }
 
-func (t *segmentTelemeter) Identify(props map[string]any) {
-	if t == nil {
-		return
-	}
-	traits := segment.NewTraits()
-	identity := segment.Identify{
-		UserId: t.userID,
-		Traits: traits,
-	}
-
-	if t.identity != nil {
-		for k, v := range t.identity {
-			traits.Set(k, v)
-		}
-	}
-	for k, v := range props {
-		traits.Set(k, v)
-	}
-	if err := t.client.Enqueue(identity); err != nil {
-		log.Error("Cannot enqueue Segment identity event: ", err)
-	}
-}
-
 // NewTelemeter creates and initializes a Segment telemeter instance.
 func NewTelemeter(userID string, identity map[string]any) *segmentTelemeter {
 	key := env.TelemetryStorageKey.Setting()
 	server := env.TelemetryEndpoint.Setting()
 	return initSegment(userID, identity, key, server)
-}
-
-// GetID returns the user ID set on initialization.
-func (t *segmentTelemeter) GetID() string {
-	return t.userID
 }
 
 type logWrapper struct {
@@ -105,6 +77,33 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
+func (t *segmentTelemeter) GetID() string {
+	return t.userID
+}
+
+func (t *segmentTelemeter) Identify(props map[string]any) {
+	if t == nil {
+		return
+	}
+	traits := segment.NewTraits()
+	identity := segment.Identify{
+		UserId: t.userID,
+		Traits: traits,
+	}
+
+	if t.identity != nil {
+		for k, v := range t.identity {
+			traits.Set(k, v)
+		}
+	}
+	for k, v := range props {
+		traits.Set(k, v)
+	}
+	if err := t.client.Enqueue(identity); err != nil {
+		log.Error("Cannot enqueue Segment identity event: ", err)
+	}
+}
+
 func (t *segmentTelemeter) Group(groupID, userID string, props map[string]any) {
 	if t == nil {
 		return
@@ -114,6 +113,10 @@ func (t *segmentTelemeter) Group(groupID, userID string, props map[string]any) {
 		GroupId: groupID,
 		UserId:  userID,
 		Traits:  props,
+	}
+
+	if userID == "" {
+		group.AnonymousId = "local:" + t.userID + ":unauthenticated"
 	}
 
 	if err := t.client.Enqueue(group); err != nil {
