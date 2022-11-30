@@ -57,16 +57,13 @@ describe('Create collection', () => {
         cy.get('button:contains("All deployments")').click();
         cy.get('button:contains("Deployments with labels matching")').click();
         cy.get('input[aria-label="Select label key for deployment rule 1 of 1"]').type('meta/name');
-        cy.get(`button:contains('Add "meta/name"')`).click();
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
             'visa.*'
         );
-        cy.get(`button:contains('Add "visa.*"')`).click();
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 2 of 2 for deployment rule 1 of 1"]').type(
             'mastercard.*'
         );
-        cy.get(`button:contains('Add "mastercard.*"')`).click();
 
         cy.get('button:contains("All namespaces")').click();
         cy.get('button:contains("Namespaces with names matching")').click();
@@ -95,17 +92,14 @@ describe('Create collection', () => {
         cy.get('input[aria-label="Select label key for deployment rule 2 of 2"]').type(
             'meta/net-visibility'
         );
-        cy.get(`button:contains('Add "meta/net-visibility"')`).click();
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 2 of 2"]').type(
             'public-facing'
         );
-        cy.get(`button:contains('Add "public-facing"')`).click();
 
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 3 of 3 for deployment rule 1 of 2"]').type(
             'discover.*'
         );
-        cy.get(`button:contains('Add "discover.*"')`).click();
 
         cy.get(`button[aria-label='Delete mastercard.*']`).click();
 
