@@ -144,12 +144,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	var deploymentDS deploymentDatastore.DataStore
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		deploymentDS, err = deploymentDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	} else {
-		deploymentDS, err = deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	}
+	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -212,7 +207,6 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 			query: search.NewQueryBuilder().AddStrings(search.DeploymentName, "name").Query(),
 			// This is odd, but this is correct. Bleve scores name12 higher than name1
 			expectedResults: []string{"name12", "name1"},
-			postgresResults: []string{"name1", "name12"},
 		},
 		{
 			query:           fmt.Sprintf("%s:", search.DeploymentName),
@@ -246,11 +240,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 			if testCase.ignoreOrder {
 				s.ElementsMatch(testCase.expectedResults, results)
 			} else {
-				if env.PostgresDatastoreEnabled.BooleanSetting() && testCase.postgresResults != nil {
-					s.Equal(testCase.postgresResults, results)
-				} else {
-					s.Equal(testCase.expectedResults, results)
-				}
+				s.Equal(testCase.expectedResults, results)
 			}
 		})
 	}
