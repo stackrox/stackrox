@@ -23,6 +23,8 @@ func TelemeterSingleton() Telemeter {
 		// Central adds itself to the tenant group, adding its properties to the
 		// group properties:
 		telemeter.Group(cfg.TenantID, cfg.CentralID, cfg.Properties)
+		// Add the local admin user as well:
+		telemeter.Group(cfg.TenantID, "local:"+cfg.CentralID+":admin", cfg.Properties)
 	})
 	return telemeter
 }

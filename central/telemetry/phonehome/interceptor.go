@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/auth/userpass"
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
@@ -48,11 +47,8 @@ func getRequestDetails(ctx context.Context, centralID string, err error, info *g
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
-	} else if userpass.IsLocalAdmin(id) {
-		userID = "local:" + centralID + ":admin"
-	} else {
-		userID = pkgPH.HashUserID(id.UID())
 	}
+	userID = HashUserID(id)
 
 	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
 		method = ri.HTTPRequest.URL.Path

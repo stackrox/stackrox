@@ -115,10 +115,6 @@ func (t *segmentTelemeter) Group(groupID, userID string, props map[string]any) {
 		Traits:  props,
 	}
 
-	if userID == "" {
-		group.AnonymousId = "local:" + t.userID + ":unauthenticated"
-	}
-
 	if err := t.client.Enqueue(group); err != nil {
 		log.Error("Cannot enqueue Segment group event: ", err)
 	}
@@ -133,10 +129,6 @@ func (t *segmentTelemeter) Track(event, userID string, props map[string]any) {
 		UserId:     userID,
 		Event:      event,
 		Properties: props,
-	}
-
-	if userID == "" {
-		track.AnonymousId = "local:" + t.userID + ":unauthenticated"
 	}
 
 	if err := t.client.Enqueue(track); err != nil {
