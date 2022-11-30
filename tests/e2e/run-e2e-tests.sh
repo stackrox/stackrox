@@ -33,9 +33,9 @@ stackrox-test container, against the cluster defined in the calling
 environment.
 
 Options:
-  -c - configure the cluster for test but do not run any tests.
-  -d - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'.
-  -m - override 'make tag' for the version to install.
+  -c - configure the cluster for test but do not run any tests. [qa flavor only]
+  -d - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. [qa flavor only]
+  -m - override 'make tag' for the version to install. [qa flavor only]
   -o - choose the cluster variety. defaults to k8s.
   -y - run without prompts.
 
@@ -51,12 +51,8 @@ $script -c qa
 $script qa DeploymentTest 'Verify deployment of type Job is deleted once it completes'
 
 # Run the full set of qa-tests-backend/ tests. This is similar to what CI runs
-# for a PR as *-qa-e2e-tests.
+# for a PR.
 $script qa
-
-# Run the full set of tests/ e2e tests. This is similar to what CI runs
-# for a PR as *-nongroovy-e2e-tests.
-$script e2e
 _EOH_
     exit 1
 }
@@ -133,6 +129,19 @@ main() {
     cd "$ROOT"
 
     tag="$(make tag)"
+
+    if [[ "$flavor" == "e2e" ]]; then
+        if [[ -n "${MAIN_IMAGE_TAG:-}" ]]; then
+            die "ERROR: Specifying a MAIN_IMAGE_TAG is not supported with e2e flavor"
+        fi
+        if [[ -n "${suite}" || -n "${case}" ]]; then
+            die "ERROR: Suite and Case are not supported with e2e flavor"
+        fi
+        if [[ "$tag" =~ -dirty ]]; then
+            die "ERROR: -dirty tags are not supported with e2e flavor"
+        fi
+    fi
+
     if [[ -z "${MAIN_IMAGE_TAG:-}" && "$tag" =~ -dirty ]]; then
         cat <<_EODIRTY_
 ERROR: The tag for the working directory includes a '-dirty' tag. 
@@ -177,6 +186,8 @@ _EOVAULTHELP_
         fi
     fi
 
+    check_rhacs_eng_image_exists "main" "$main_version"
+
     context="$(kubectl config current-context)"
     echo "This script will tear down resources, install ACS and run tests against '$context'."
 
@@ -187,9 +198,6 @@ _EOVAULTHELP_
             exit 1
         fi
     fi
-
-    # TODO got image? - for a 'full' test run we might want to poll for 'canonical'
-    # images - poll_for_system_test_images
 
     echo "Importing KV from vault. The following keys will be ignored because they do not match: ^[A-Z]."
     vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
