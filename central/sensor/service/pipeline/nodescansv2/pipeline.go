@@ -35,21 +35,21 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 }
 
 func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetNodeScanV2() != nil
+	return msg.GetEvent().GetNodeInventory() != nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeScanV2)
+	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeInventory)
 
 	event := msg.GetEvent()
-	nodeScan := event.GetNodeScanV2()
-	if nodeScan == nil {
-		return errors.Errorf("unexpected resource type %T for node scan v2", event.GetResource())
+	nodeInventory := event.GetNodeInventory()
+	if nodeInventory == nil {
+		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
 
-	// TODO(ROX-12240, ROX-13053): Do something meaningful with the nodeScan
-	log.Infof("Central received NodeScanV2: %+v", nodeScan)
+	// TODO(ROX-12240, ROX-13053): Do something meaningful with the nodeInventory
+	log.Infof("Central received NodeInventory: %+v", nodeInventory)
 
 	return nil
 }

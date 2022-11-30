@@ -187,7 +187,7 @@ func scanNode(nodeName string, scanner nodescanv2.NodeScanner) (*sensor.MsgFromC
 	}
 	return &sensor.MsgFromCompliance{
 		Node: nodeName,
-		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
+		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: result},
 	}, nil
 }
 
@@ -278,14 +278,14 @@ func main() {
 
 		// TODO(ROX-12971): Replace with real scanner
 		scanner := nodescanv2.FakeNodeScanner{}
-		nodeScansC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), &scanner)
-		// multiplex producers (nodeScansC) into the output channel (sensorC)
+		nodeInventoriesC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), &scanner)
+		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
 		go func() {
 			for {
 				select {
 				case <-ctx.Done():
 					return
-				case sensorC <- <-nodeScansC:
+				case sensorC <- <-nodeInventoriesC:
 				}
 			}
 		}()
