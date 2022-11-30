@@ -5,8 +5,6 @@ on: pull_request
 jobs:
   create-cluster:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -16,6 +14,9 @@ jobs:
 
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.3.0
+        
+      - name: Check
+        run: kubectl get nodes
         
       - name: Deploy stackrox
         run: MAIN_IMAGE_TAG="3.72.0" ./deploy/k8s/deploy-local.sh
