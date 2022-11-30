@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	phonehome "github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
 // MockTelemeter is a mock of Telemeter interface.
@@ -48,7 +49,7 @@ func (mr *MockTelemeterMockRecorder) GetID() *gomock.Call {
 }
 
 // Group mocks base method.
-func (m *MockTelemeter) Group(groupID, userID string, props map[string]any) {
+func (m *MockTelemeter) Group(groupID, userID string, props phonehome.Properties) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Group", groupID, userID, props)
 }
@@ -60,7 +61,7 @@ func (mr *MockTelemeterMockRecorder) Group(groupID, userID, props interface{}) *
 }
 
 // Identify mocks base method.
-func (m *MockTelemeter) Identify(props map[string]any) {
+func (m *MockTelemeter) Identify(props phonehome.Properties) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Identify", props)
 }
@@ -96,7 +97,7 @@ func (mr *MockTelemeterMockRecorder) Stop() *gomock.Call {
 }
 
 // Track mocks base method.
-func (m *MockTelemeter) Track(event, userID string, props map[string]any) {
+func (m *MockTelemeter) Track(event, userID string, props phonehome.Properties) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Track", event, userID, props)
 }
