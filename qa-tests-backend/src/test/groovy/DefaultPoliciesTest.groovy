@@ -362,7 +362,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     String team(String img) {
-        if (img.contains('canner')) {
+        if (img.contains('scanner')) {
             return '@acs-scanner-team'
         }
         if (img.contains('collector')) {
