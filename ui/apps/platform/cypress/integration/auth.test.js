@@ -35,7 +35,7 @@ function interactAndWaitForAuthStatus(interactionCallback, staticResponseForAuth
 const systemConfigAlias = 'config';
 
 function reachSystemConfiguration(interactionCallback) {
-    cy.intercept('GET', api.system.config).as(systemConfigAlias);
+    cy.intercept('GET', '/v1/config').as(systemConfigAlias);
 
     interactionCallback();
 
