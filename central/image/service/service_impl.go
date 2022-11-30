@@ -209,8 +209,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	defer s.internalScanSemaphore.Release(1)
 
 	var (
-		img      *storage.Image
-		fetchOpt enricher.FetchOption
+		img       *storage.Image
+		fetchOpt  enricher.FetchOption
+		imgExists bool
 	)
 
 	imgID := request.GetImage().GetId()
@@ -233,6 +234,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			// We only want to force re-fetching of signatures and verification data, the additional image name has no
 			// impact on image scan data.
 			fetchOpt = enricher.ForceRefetchSignaturesOnly
+			imgExists = true
 		}
 	}
 
@@ -246,7 +248,11 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		img = types.ToImage(request.GetImage())
 	}
 
-	s.enrichImage(ctx, img, fetchOpt, request.GetSource())
+	if err := s.enrichImage(ctx, img, fetchOpt, request.GetSource()); err != nil && imgExists {
+		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
+		// central, since it could lead to us overriding an enriched image with a non-enriched image.
+		return internalScanRespFromImage(img), nil
+	}
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest.
 	if imgID != "" {
@@ -260,7 +266,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 // Any occurred error will be logged, and the given image will be modified, after execution it will contain the enriched
 // image data (i.e. scan results, signature data etc.).
 func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetchOpt enricher.FetchOption,
-	requestSource *v1.ScanImageInternalRequest_Source) {
+	requestSource *v1.ScanImageInternalRequest_Source) error {
 	var source *enricher.RequestSource
 	if requestSource != nil {
 		source = &enricher.RequestSource{
@@ -280,7 +286,9 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 		log.Errorf("error enriching image %q: %v", img.GetName().GetFullName(), err)
 		// Purposefully, don't return here because we still need to save it into the DB so there is a reference
 		// even if we weren't able to enrich it.
+		return err
 	}
+	return nil
 }
 
 // ScanImage scans an image and returns the result

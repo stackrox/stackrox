@@ -155,7 +155,7 @@ func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
 
 func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	// Cache key is either going to be image full name or image ID.
-	// In cae of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
+	// In case of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
 	// is equal / contained in the images `Names` field.
 	key := imagecacheutils.GetImageCacheKey(req.containerImage)
 
