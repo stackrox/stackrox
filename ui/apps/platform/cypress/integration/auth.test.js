@@ -2,7 +2,8 @@ import addSeconds from 'date-fns/add_seconds';
 
 import * as api from '../constants/apiEndpoints';
 import { url as loginUrl, selectors } from '../constants/LoginPage';
-import { systemConfigUrl } from '../constants/SystemConfigPage';
+
+const pagePath = '/main/systemconfig';
 
 // Authentication providers
 
@@ -38,7 +39,7 @@ function reachSystemConfiguration(interactionCallback) {
 
     interactionCallback();
 
-    cy.location('pathname').should('eq', systemConfigUrl);
+    cy.location('pathname').should('eq', pagePath);
     cy.wait(`@${systemConfigAlias}`);
     cy.get('h1:contains("System Configuration")');
 }
@@ -48,11 +49,11 @@ describe('Authentication', () => {
 
     it('should redirect user to login page, authenticate and redirect to the requested page', () => {
         const staticResponseForAuthStatusOK = {
-            status: 200,
+            statusCode: 200,
             body: {},
         };
 
-        visitAndWaitForAuthProviders(systemConfigUrl);
+        visitAndWaitForAuthProviders(pagePath);
 
         cy.location('pathname').should('eq', loginUrl);
         // Assertion corresponds to value of name property in fixture for visit function call above.
@@ -69,7 +70,7 @@ describe('Authentication', () => {
 
     it('should allow authenticated user to enter', () => {
         const staticResponseForAuthStatusOK = {
-            status: 200,
+            statusCode: 200,
             body: {},
         };
 
@@ -77,21 +78,21 @@ describe('Authentication', () => {
 
         reachSystemConfiguration(() => {
             interactAndWaitForAuthStatus(() => {
-                visitAndWaitForAuthProviders(systemConfigUrl);
+                visitAndWaitForAuthProviders(pagePath);
             }, staticResponseForAuthStatusOK);
         });
     });
 
     it('should logout previously authenticated user with invalid token', () => {
         const staticResponseForAuthStatusUnauthorized = {
-            status: 401,
+            statusCode: 401,
             body: {},
         };
 
         localStorage.setItem('access_token', 'my-token'); // invalid token
 
         interactAndWaitForAuthStatus(() => {
-            visitAndWaitForAuthProviders(systemConfigUrl);
+            visitAndWaitForAuthProviders(pagePath);
         }, staticResponseForAuthStatusUnauthorized);
 
         cy.location('pathname').should('eq', loginUrl);
@@ -100,7 +101,7 @@ describe('Authentication', () => {
     // TODO: Fix it, see ROX-4983 for more explanation
     it.skip('should request token refresh 30 sec in advance', () => {
         const staticResponseForAuthStatusOK = {
-            status: 200,
+            statusCode: 200,
             body: {
                 expires: addSeconds(Date.now(), 33).toISOString(), // +3 sec should be enough
             },
@@ -112,7 +113,7 @@ describe('Authentication', () => {
             cy.intercept('POST', api.auth.tokenRefresh, { body: {} }).as('tokenRefresh');
 
             interactAndWaitForAuthStatus(() => {
-                visitAndWaitForAuthProviders(systemConfigUrl);
+                visitAndWaitForAuthProviders(pagePath);
             }, staticResponseForAuthStatusOK);
 
             cy.wait('@tokenRefresh');
