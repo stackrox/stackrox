@@ -2283,29 +2283,32 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified_WithDeployment() {
 		verifier3 = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000004"
 	)
 
-	images := []*storage.Image{
-		imageWithSignatureVerificationResults("image_verified_by_1", []*storage.ImageSignatureVerificationResult{
+	imgVerifiedAndMatchingReference := imageWithSignatureVerificationResults("image_verified_by_1",
+		[]*storage.ImageSignatureVerificationResult{
 			{
 				VerifierId:              verifier1,
 				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 				VerifiedImageReferences: []string{"image_verified_by_1"},
 			},
-		}),
-		imageWithSignatureVerificationResults("image_with_alternative_verified_reference", []*storage.ImageSignatureVerificationResult{
-			{
-				VerifierId:              verifier2,
-				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
-				VerifiedImageReferences: []string{"image_verified_by_2"},
-			},
-		}),
-		imageWithSignatureVerificationResults("image_verified_by_2", []*storage.ImageSignatureVerificationResult{
+		})
+
+	imgVerifiedAndMatchingMultipleReferences := imageWithSignatureVerificationResults("image_verified_by_2",
+		[]*storage.ImageSignatureVerificationResult{
 			{
 				VerifierId:              verifier3,
 				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 				VerifiedImageReferences: []string{"image_with_alternative_verified_reference", "image_verified_by_2"},
 			},
-		}),
-	}
+		})
+
+	imgVerifiedButNotMatchingReference := imageWithSignatureVerificationResults("image_with_alternative_verified_reference",
+		[]*storage.ImageSignatureVerificationResult{
+			{
+				VerifierId:              verifier2,
+				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+				VerifiedImageReferences: []string{"image_verified_by_2"},
+			},
+		})
 
 	cases := map[string]struct {
 		deployment       *storage.Deployment
@@ -2314,19 +2317,19 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified_WithDeployment() {
 		expectViolation  bool
 	}{
 		"deployment with matching verified image reference shouldn't lead in alert message": {
-			deployment:       deploymentWithImage("deployment_with_image_verified_by_1", images[0]),
-			image:            images[0],
+			deployment:       deploymentWithImage("deployment_with_image_verified_by_1", imgVerifiedAndMatchingReference),
+			image:            imgVerifiedAndMatchingReference,
 			matchingVerifier: verifier1,
 		},
 		"deployment with verified result but no matching verified image reference should lead to alert message": {
-			deployment:       deploymentWithImage("deployment_with_image_alternative_verified_reference", images[1]),
-			image:            images[1],
+			deployment:       deploymentWithImage("deployment_with_image_alternative_verified_reference", imgVerifiedButNotMatchingReference),
+			image:            imgVerifiedButNotMatchingReference,
 			matchingVerifier: verifier2,
 			expectViolation:  true,
 		},
 		"deployment with verified result and multiple matching verified image references shouldn't lead to alert message": {
-			deployment:       deploymentWithImage("deployment_with_image_verified_by_2", images[2]),
-			image:            images[2],
+			deployment:       deploymentWithImage("deployment_with_image_verified_by_2", imgVerifiedAndMatchingMultipleReferences),
+			image:            imgVerifiedAndMatchingMultipleReferences,
 			matchingVerifier: verifier3,
 		},
 	}

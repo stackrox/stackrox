@@ -138,6 +138,8 @@ func ConstructDeploymentWithNetworkFlowInfo(
 }
 
 // ConstructDeployment constructs the augmented deployment object.
+// It assumes that the given images are in the same order as the containers specified within the given deployment.
+// If there's a mismatch in the amount of containers on the deployment and the given images, an error will be returned.
 func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, error) {
 	obj := pathutil.NewAugmentedObj(deployment)
 	if len(images) != len(deployment.GetContainers()) {
