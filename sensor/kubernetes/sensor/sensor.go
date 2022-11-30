@@ -135,7 +135,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
 	}
 	if features.RHCOSNodeScanning.Enabled() {
-		components = append(components, compliance.NewNodeScanHandler(complianceService.NodeScans()))
+		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories()))
 	}
 
 	if !cfg.localSensor {
