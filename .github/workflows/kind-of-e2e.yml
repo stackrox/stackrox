@@ -20,4 +20,4 @@ jobs:
         run: kubectl get nodes
         
       - name: Deploy stackrox
-        run: MAIN_IMAGE_TAG="latest" ./deploy/k8s/deploy-local.sh || kubectl get pods
+        run: MAIN_IMAGE_TAG="latest" ./deploy/k8s/deploy-local.sh || kubectl -n stackrox get pods
