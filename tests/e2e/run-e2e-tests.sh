@@ -51,8 +51,12 @@ $script -c qa
 $script qa DeploymentTest 'Verify deployment of type Job is deleted once it completes'
 
 # Run the full set of qa-tests-backend/ tests. This is similar to what CI runs
-# for a PR.
+# for a PR as *-qa-e2e-tests.
 $script qa
+
+# Run the full set of tests/ e2e tests. This is similar to what CI runs
+# for a PR as *-nongroovy-e2e-tests.
+$script e2e
 _EOH_
     exit 1
 }
