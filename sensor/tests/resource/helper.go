@@ -28,7 +28,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
-
 	// import gcp
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/e2e-framework/klient/conf"
@@ -154,23 +153,32 @@ func (c *TestContext) Resources() *resources.Resources {
 	return c.r
 }
 
+func deleteNs(ctx context.Context, name string, r *resources.Resources) error {
+	nsObj := v1.Namespace{}
+	nsObj.Name = name
+	err := r.Delete(ctx, &nsObj)
+	if err != nil {
+		return err
+	}
+
+	// wait for deletion to be finished
+	if err := wait.For(conditions.New(r).ResourceDeleted(&nsObj)); err != nil {
+		fmt.Println("failed to wait for namespace deletion")
+	}
+	return nil
+}
+
 func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1.Namespace, func() error, error) {
+	utils.IgnoreError(func() error {
+		return deleteNs(ctx, name, r)
+	})
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
 	if err := r.Create(ctx, &nsObj); err != nil {
 		return nil, nil, err
 	}
 	return &nsObj, func() error {
-		err := r.Delete(ctx, &nsObj)
-		if err != nil {
-			return err
-		}
-
-		// wait for deletion to be finished
-		if err := wait.For(conditions.New(r).ResourceDeleted(&nsObj)); err != nil {
-			fmt.Println("failed to wait for namespace deletion")
-		}
-		return nil
+		return deleteNs(ctx, name, r)
 	}, nil
 }
 
