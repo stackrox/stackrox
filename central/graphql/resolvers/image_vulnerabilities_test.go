@@ -5,32 +5,18 @@ package resolvers
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
-	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
 	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
-	componentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
-	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
 	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
-	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
-	"github.com/stackrox/rox/central/ranking"
-	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -75,79 +61,22 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	s.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.NoError(err)
-
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
-	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.db = pool
-
-	// destroy datastores if they exist
-	imagePostgres.Destroy(s.ctx, s.db)
-	imageComponentPostgres.Destroy(s.ctx, s.db)
-	imageCVEPostgres.Destroy(s.ctx, s.db)
-	imageCVEEdgePostgres.Destroy(s.ctx, s.db)
-	componentCVEEdgePostgres.Destroy(s.ctx, s.db)
-
-	// create mock resolvers, set relevant ones
-	s.resolver = NewMock()
-
-	// imageCVE datastore
-	imageCVEStore := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	imageCVEIndexer := imageCVEPostgres.NewIndexer(s.db)
-	imageCVESearcher := imageCVESearch.New(imageCVEStore, imageCVEIndexer)
-	imageCVEDatastore, err := imageCVEDataStore.New(imageCVEStore, imageCVEIndexer, imageCVESearcher, dackboxConcurrency.NewKeyFence())
-	s.NoError(err, "Failed to create ImageCVEDatastore")
-	s.resolver.ImageCVEDataStore = imageCVEDatastore
-
-	// image datastore
-	riskMock := mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	imageStore := imagePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false)
-	imageDatastore := imageDataStore.NewWithPostgres(imageStore, imagePostgres.NewIndexer(s.db), riskMock, ranking.NewRanker(), ranking.NewRanker())
-	s.resolver.ImageDataStore = imageDatastore
-
-	// imageComponent datastore
-	imageCompStore := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	imageCompIndexer := imageComponentPostgres.NewIndexer(s.db)
-	imageCompSearcher := imageComponentSearch.NewV2(imageCompStore, imageCompIndexer)
-	s.resolver.ImageComponentDataStore = imageComponentDataStore.New(nil, imageCompStore, imageCompIndexer, imageCompSearcher, riskMock, ranking.NewRanker())
-
-	// imageCVEEdge datastore
-	imageCveEdgeStore := imageCVEEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	imageCveEdgeIndexer := imageCVEEdgePostgres.NewIndexer(s.db)
-	imageCveEdgeSearcher := imageCVEEdgeSearch.NewV2(imageCveEdgeStore, imageCveEdgeIndexer)
-	s.resolver.ImageCVEEdgeDataStore = imageCVEEdgeDataStore.New(nil, imageCveEdgeStore, imageCveEdgeSearcher)
-
-	// componentCVEEdge datastore
-	componentCveEdgeStore := componentCVEEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	componentCveEdgeIndexer := componentCVEEdgePostgres.NewIndexer(s.db)
-	componentCveEdgeSearcher := componentCVEEdgeSearch.NewV2(componentCveEdgeStore, componentCveEdgeIndexer)
-	componentCveEdgeDatastore := componentCVEEdgeDataStore.New(nil, componentCveEdgeStore, componentCveEdgeIndexer, componentCveEdgeSearcher)
-	s.resolver.ComponentCVEEdgeDataStore = componentCveEdgeDatastore
-
-	// Sac permissions
-	s.ctx = sac.WithAllAccess(s.ctx)
-
-	// loaders used by graphql layer
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
-		return loaders.NewImageLoader(s.resolver.ImageDataStore)
-	})
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageComponent{}), func() interface{} {
-		return loaders.NewComponentLoader(s.resolver.ImageComponentDataStore)
-	})
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageCVE{}), func() interface{} {
-		return loaders.NewImageCVELoader(s.resolver.ImageCVEDataStore)
-	})
-	s.ctx = loaders.WithLoaderContext(s.ctx)
+	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
+	mockCtrl := gomock.NewController(s.T())
+	s.db, s.gormDB = setupPostgresConn(s.T())
+	resolver, _ := setupResolver(s.T(),
+		createImageDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		createImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		createImageCVEDatastore(s.T(), s.db, s.gormDB),
+		createImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		createImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+	)
+	s.resolver = resolver
 
 	// Add Test Data to DataStores
 	testImages := testImages()
 	for _, image := range testImages {
-		err = imageDatastore.UpsertImage(s.ctx, image)
+		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
 		s.NoError(err)
 	}
 }

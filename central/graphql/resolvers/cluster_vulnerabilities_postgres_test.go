@@ -5,28 +5,16 @@ package resolvers
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	clusterCVEEdgePostgres "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
-	clusterCVEEdgeSearch "github.com/stackrox/rox/central/clustercveedge/search"
-	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	clusterCVESearch "github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	namespacePostgres "github.com/stackrox/rox/central/namespace/store/postgres"
-	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
-	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
-	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -66,88 +54,32 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	s.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.NoError(err)
-
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
-	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.db = pool
-
-	// destroy datastores if they exist
-	clusterCVEPostgres.Destroy(s.ctx, s.db)
-	clusterCVEEdgePostgres.Destroy(s.ctx, s.db)
-	clusterPostgres.Destroy(s.ctx, s.db)
-	namespacePostgres.Destroy(s.ctx, s.db)
-
-	// create mock resolvers, set relevant ones
-	s.resolver = NewMock()
-
-	// clusterCVE datastore
-	clusterCVEStore := clusterCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	clusterCVEFullStore := clusterCVEPostgres.NewFullTestStore(s.T(), s.db, clusterCVEStore)
-	clusterCVEIndexer := clusterCVEPostgres.NewIndexer(s.db)
-	clusterCVESearcher := clusterCVESearch.New(clusterCVEFullStore, clusterCVEIndexer)
-	clusterCVEDatastore, err := clusterCVEDataStore.New(clusterCVEFullStore, clusterCVEIndexer, clusterCVESearcher)
-	s.NoError(err, "Failed to create ClusterCVEDatastore")
-	s.resolver.ClusterCVEDataStore = clusterCVEDatastore
-
-	// clusterCVEEdge datastore
-	clusterCVEEdgeStore := clusterCVEEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	clusterCVEEdgeFullStore := clusterCVEEdgePostgres.NewFullTestStore(s.T(), clusterCVEEdgeStore)
-	clusterCVEEdgeIndexer := clusterCVEEdgePostgres.NewIndexer(s.db)
-	clusterCVEEdgeSearcher := clusterCVEEdgeSearch.NewV2(clusterCVEEdgeFullStore, clusterCVEEdgeIndexer)
-	clusterCVEEdgeDatastore, err := clusterCVEEdgeDataStore.New(nil, clusterCVEEdgeFullStore, clusterCVEEdgeIndexer, clusterCVEEdgeSearcher)
-	s.NoError(err, "Failed to create ClusterCVEEdgeDatastore")
-	s.resolver.ClusterCVEEdgeDataStore = clusterCVEEdgeDatastore
-
-	// namespace datastore
-	namespaceStore := namespacePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	namespaceIndexer := namespacePostgres.NewIndexer(s.db)
-	namespaceDatastore, err := namespaceDataStore.New(namespaceStore, nil, namespaceIndexer, nil, ranking.NamespaceRanker(), nil)
-	s.NoError(err, "Failed to create NamespaceDatastore")
-	s.resolver.NamespaceDataStore = namespaceDatastore
-
-	// cluster datastore
-	clusterStore := clusterPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	clusterIndexer := clusterPostgres.NewIndexer(s.db)
-
+	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	netEntities := netEntitiesMocks.NewMockEntityDataStore(mockCtrl)
-	nodeDataStore := nodeMocks.NewMockGlobalDataStore(mockCtrl)
-	netFlows := netFlowsMocks.NewMockClusterDataStore(mockCtrl)
+	s.db, s.gormDB = setupPostgresConn(s.T())
 
-	nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(mockCtrl), nil).AnyTimes()
-
-	clusterDatastore, err := clusterDataStore.New(clusterStore, clusterHealthPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB), clusterCVEDatastore, nil, nil, namespaceDatastore, nil, nodeDataStore, nil, nil, netFlows, netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), clusterIndexer, nil)
-	s.NoError(err, "Failed to create ClusterDatastore")
-	s.resolver.ClusterDataStore = clusterDatastore
-
-	// Sac permissions
-	s.ctx = sac.WithAllAccess(s.ctx)
-
-	// loaders used by graphql layer
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ClusterCVE{}), func() interface{} {
-		return loaders.NewClusterCVELoader(s.resolver.ClusterCVEDataStore)
-	})
-	s.ctx = loaders.WithLoaderContext(s.ctx)
+	clusterCVEDS := createClusterCVEDatastore(s.T(), s.db, s.gormDB)
+	_, nodeGlobalDS := createNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	namespaceDS := createNamespaceDatastore(s.T(), s.db, s.gormDB)
+	resolver, _ := setupResolver(s.T(),
+		clusterCVEDS,
+		createClusterCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		namespaceDS,
+		createClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, clusterCVEDS, namespaceDS, nodeGlobalDS),
+	)
+	s.resolver = resolver
 
 	// Add Test Data to DataStores
 	clusters := testCluster()
 	s.clusterIDs = make([]string, 0, len(clusters))
 	for _, c := range clusters {
-		clusterID, err := clusterDatastore.AddCluster(s.ctx, c)
+		clusterID, err := s.resolver.ClusterDataStore.AddCluster(s.ctx, c)
 		s.NoError(err)
 		s.clusterIDs = append(s.clusterIDs, clusterID)
 	}
 
 	clusterCVEParts := testClusterCVEParts(s.clusterIDs)
-	err = clusterCVEDatastore.UpsertClusterCVEsInternal(s.ctx, clusterCVEParts[0].CVE.Type, clusterCVEParts...)
+	err := s.resolver.ClusterCVEDataStore.UpsertClusterCVEsInternal(s.ctx, clusterCVEParts[0].CVE.Type, clusterCVEParts...)
 	s.NoError(err)
 }
 

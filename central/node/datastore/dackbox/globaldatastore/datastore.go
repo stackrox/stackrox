@@ -28,10 +28,10 @@ type globalDataStore struct {
 }
 
 // New creates and returns a new GlobalDataStore.
-func New(datastore dackboxDatastore.DataStore) (*globalDataStore, error) {
+func New(datastore dackboxDatastore.DataStore) *globalDataStore {
 	return &globalDataStore{
 		datastore: datastore,
-	}, nil
+	}
 }
 
 func (s *globalDataStore) GetAllClusterNodeStores(ctx context.Context, writeAccess bool) (map[string]datastore.DataStore, error) {
