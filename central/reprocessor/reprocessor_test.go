@@ -64,12 +64,11 @@ func TestGetActiveImageIDs(t *testing.T) {
 	var pool *pgxpool.Pool
 	var imageDS imageDatastore.DataStore
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		testingDB := pgtest.ForTIncludeGorm(t)
+		testingDB := pgtest.ForT(t)
 		pool = testingDB.Pool
-		defer pgtest.CloseGormDB(t, testingDB.GormDB)
 		defer pool.Close()
 
-		imageDS = imageDatastore.NewWithPostgres(imagePG.CreateTableAndNewStore(testCtx, pool, testingDB.GormDB, false), imagePG.NewIndexer(pool), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+		imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, dackboxConcurrency.NewKeyFence()), imagePG.NewIndexer(pool), nil, ranking.ImageRanker(), ranking.ComponentRanker())
 	} else {
 		imageDS = imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
 	}
