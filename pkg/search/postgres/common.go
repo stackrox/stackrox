@@ -697,6 +697,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		}
 	}()
 
+	log.Infof("SHREWS -> %v", q)
 	query, err = standardizeQueryAndPopulatePath(q, schema, SEARCH)
 	if err != nil {
 		return nil, err
@@ -705,6 +706,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	if query == nil {
 		return nil, nil
 	}
+	log.Infof("SHREWS -> %q", query.AsSQL())
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
 		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
 		return retryableRunSearchRequestForSchema(ctx, query, schema, db)

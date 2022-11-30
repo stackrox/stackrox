@@ -15,7 +15,6 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIntegrationDataStoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
@@ -26,6 +25,7 @@ import (
 	policyIndex "github.com/stackrox/rox/central/policy/index"
 	policySearcher "github.com/stackrox/rox/central/policy/search"
 	policyStoreMocks "github.com/stackrox/rox/central/policy/store/mocks"
+	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
 	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
@@ -46,6 +46,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -110,6 +111,8 @@ type SearchOperationsTestSuite struct {
 	mockCtrl *gomock.Controller
 	rocksDB  *rocksdb.RocksDB
 	boltDB   *bolt.DB
+
+	pool *pgxpool.Pool
 }
 
 func (s *SearchOperationsTestSuite) SetupTest() {
@@ -119,6 +122,11 @@ func (s *SearchOperationsTestSuite) SetupTest() {
 	var err error
 	s.boltDB, err = bolthelper.NewTemp(s.T().Name() + "-bolt.db")
 	s.NoError(err)
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testingDB := pgtest.ForT(s.T())
+		s.pool = testingDB.Pool
+	}
 }
 
 func (s *SearchOperationsTestSuite) TearDownTest() {
@@ -136,11 +144,12 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	var pool *pgxpool.Pool
+	var deploymentDS deploymentDatastore.DataStore
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool = globaldb.GetPostgresTest(s.T())
+		deploymentDS, err = deploymentDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	} else {
+		deploymentDS, err = deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	}
-	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -192,6 +201,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	for _, testCase := range []struct {
 		query           string
 		expectedResults []string
+		postgresResults []string
 		ignoreOrder     bool
 	}{
 		{
@@ -202,6 +212,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 			query: search.NewQueryBuilder().AddStrings(search.DeploymentName, "name").Query(),
 			// This is odd, but this is correct. Bleve scores name12 higher than name1
 			expectedResults: []string{"name12", "name1"},
+			postgresResults: []string{"name1", "name12"},
 		},
 		{
 			query:           fmt.Sprintf("%s:", search.DeploymentName),
@@ -229,12 +240,17 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		},
 	} {
 		s.Run(fmt.Sprintf("Test case %q", testCase.query), func() {
+			log.Info(testCase.query)
 			results, err := service.autocomplete(allAccessCtx, testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
 			s.NoError(err)
 			if testCase.ignoreOrder {
 				s.ElementsMatch(testCase.expectedResults, results)
 			} else {
-				s.Equal(testCase.expectedResults, results)
+				if env.PostgresDatastoreEnabled.BooleanSetting() && testCase.postgresResults != nil {
+					s.Equal(testCase.postgresResults, results)
+				} else {
+					s.Equal(testCase.expectedResults, results)
+				}
 			}
 		})
 	}
@@ -244,14 +260,25 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
 	// Create Policy Searcher
-	policyStore := policyStoreMocks.NewMockStore(s.mockCtrl)
-	policyStore.EXPECT().GetAll(gomock.Any())
-	idx, err := globalindex.MemOnlyIndex()
-	s.NoError(err)
-	policyIndexer := policyIndex.New(idx)
-	s.NoError(policyIndexer.AddPolicy(fixtures.GetPolicy()))
-	policySearcher := policySearcher.New(policyStore, policyIndexer)
-	ds := policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
+	var policyIndexer policyIndex.Indexer
+	var ds policyDatastore.DataStore
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		policyStore := policyPostgres.New(s.pool)
+		policyIndexer = policyPostgres.NewIndexer(s.pool)
+		s.NoError(policyIndexer.AddPolicy(fixtures.GetPolicy()))
+		s.NoError(policyStore.Upsert(ctx, fixtures.GetPolicy()))
+		policySearcher := policySearcher.New(policyStore, policyIndexer)
+		ds = policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
+	} else {
+		policyStore := policyStoreMocks.NewMockStore(s.mockCtrl)
+		policyStore.EXPECT().GetAll(gomock.Any())
+		idx, err := globalindex.MemOnlyIndex()
+		s.NoError(err)
+		policyIndexer = policyIndex.New(idx)
+		s.NoError(policyIndexer.AddPolicy(fixtures.GetPolicy()))
+		policySearcher := policySearcher.New(policyStore, policyIndexer)
+		ds = policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
+	}
 
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
@@ -296,14 +323,16 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	var pool *pgxpool.Pool
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool = globaldb.GetPostgresTest(s.T())
-	}
-	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
-	alertsDS := alertDatastore.NewWithDb(s.rocksDB, idx)
+	var alertsDS alertDatastore.DataStore
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+		s.NoError(err)
+	} else {
+		alertsDS = alertDatastore.NewWithDb(s.rocksDB, idx)
+	}
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))
@@ -378,14 +407,16 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	var pool *pgxpool.Pool
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool = globaldb.GetPostgresTest(s.T())
-	}
-	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
-	alertsDS := alertDatastore.NewWithDb(s.rocksDB, idx)
+	var alertsDS alertDatastore.DataStore
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+		s.NoError(err)
+	} else {
+		alertsDS = alertDatastore.NewWithDb(s.rocksDB, idx)
+	}
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))

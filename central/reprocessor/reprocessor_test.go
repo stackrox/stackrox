@@ -12,10 +12,10 @@ import (
 	deploymentDackbox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	indexDackbox "github.com/stackrox/rox/central/image/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	imageComponentDackbox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	imageComponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -37,6 +38,8 @@ import (
 
 func TestGetActiveImageIDs(t *testing.T) {
 	t.Parallel()
+
+	testCtx := sac.WithAllAccess(context.Background())
 
 	rocksDB := rocksdbtest.RocksDBForT(t)
 
@@ -58,12 +61,19 @@ func TestGetActiveImageIDs(t *testing.T) {
 	reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
 	reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
 
-	imageDS := imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
-
 	var pool *pgxpool.Pool
+	var imageDS imageDatastore.DataStore
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool = globaldb.GetPostgresTest(t)
+		testingDB := pgtest.ForTIncludeGorm(t)
+		pool = testingDB.Pool
+		defer pgtest.CloseGormDB(t, testingDB.GormDB)
+		defer pool.Close()
+
+		imageDS = imageDatastore.NewWithPostgres(imagePG.CreateTableAndNewStore(testCtx, pool, testingDB.GormDB, false), imagePG.NewIndexer(pool), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	} else {
+		imageDS = imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
 	}
+
 	deploymentsDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, nil, nil, nil,
 		nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
@@ -73,8 +83,6 @@ func TestGetActiveImageIDs(t *testing.T) {
 	ids, err := loop.getActiveImageIDs()
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ids))
-
-	testCtx := sac.WithAllAccess(context.Background())
 
 	deployment := fixtures.GetDeployment()
 	require.NoError(t, deploymentsDS.UpsertDeployment(testCtx, deployment))

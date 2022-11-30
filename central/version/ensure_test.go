@@ -1,7 +1,6 @@
 package version
 
 import (
-	"context"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -13,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -36,16 +34,10 @@ type EnsurerTestSuite struct {
 
 func (suite *EnsurerTestSuite) SetupTest() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		source := pgtest.GetConnectionString(suite.T())
-		config, err := pgxpool.ParseConfig(source)
-		suite.Require().NoError(err)
-		ctx := sac.WithAllAccess(context.Background())
-		pool, _ := pgxpool.ConnectConfig(ctx, config)
-		suite.pool = pool
+		testDB := pgtest.ForT(suite.T())
+		suite.pool = testDB.Pool
 
-		// Ensure we are starting fresh
-		postgres.Destroy(ctx, pool)
-		suite.versionStore = store.NewPostgres(pool)
+		suite.versionStore = store.NewPostgres(suite.pool)
 	} else {
 		boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 		suite.Require().NoError(err, "Failed to make BoltDB")

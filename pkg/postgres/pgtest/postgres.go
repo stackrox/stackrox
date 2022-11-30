@@ -22,6 +22,7 @@ import (
 type TestPostgres struct {
 	*pgxpool.Pool
 	database string
+	GormDB   *gorm.DB
 }
 
 // CreateADatabaseForT creates a postgres database for test
@@ -76,6 +77,16 @@ func DropDatabase(t testing.TB, database string) {
 
 // ForT creates and returns a Postgres for the test
 func ForT(t testing.TB) *TestPostgres {
+	testPostgres := ForTIncludeGorm(t)
+	CloseGormDB(t, testPostgres.GormDB)
+
+	testPostgres.GormDB = nil
+
+	return testPostgres
+}
+
+// ForTIncludeGorm creates and returns a Postgres and Gorm for the test
+func ForTIncludeGorm(t testing.TB) *TestPostgres {
 	// Bootstrap a test database
 	database := CreateADatabaseForT(t)
 
@@ -86,7 +97,6 @@ func ForT(t testing.TB) *TestPostgres {
 	// Create all the tables for the database
 	gormDB := OpenGormDB(t, sourceWithDatabase)
 	pkgSchema.ApplyAllSchemasIncludingTests(context.Background(), gormDB, t)
-	CloseGormDB(t, gormDB)
 
 	// initialize pool to be used
 	pool := ForTCustomPool(t, database)
@@ -94,6 +104,7 @@ func ForT(t testing.TB) *TestPostgres {
 	return &TestPostgres{
 		Pool:     pool,
 		database: database,
+		GormDB:   gormDB,
 	}
 }
 
