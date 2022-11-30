@@ -204,7 +204,9 @@ _EOVAULTHELP_
     eval "$(vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
     | jq -r '.data.data | to_entries[] | select( .key|test("^[A-Z]") ) | "export \(.key|@sh)=\(.value|@sh)"')"
 
-    check_rhacs_eng_image_exists "main" "$main_version"
+    if ! check_rhacs_eng_image_exists "main" "$main_version"; then
+        die "ERROR: The main image is not present"
+    fi
 
     # GCP login using the CI service account is required to access infra GKE clusters.
     setup_gcp
