@@ -362,16 +362,13 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     String team(String img) {
-        if (img.contains("scanner")) {
-            return "@acs-scanner-team"
+        if (img.contains('canner')) {
+            return '@acs-scanner-team'
         }
-        if (img.contains("collector")) {
-            return "@collector-team"
+        if (img.contains('collector')) {
+            return '@collector-team'
         }
-        if (img.contains("roxctl")) {
-            return "@merlin-team"
-        }
-        return "@support-oncall-eng"
+        return img.contains('roxctl') ? '@merlin-team' : '@support-oncall-eng'
     }
 
     @Unroll
