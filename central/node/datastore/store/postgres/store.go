@@ -926,7 +926,7 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
+func CreateTableAndNewStore(ctx context.Context, t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)

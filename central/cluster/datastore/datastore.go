@@ -60,6 +60,7 @@ var (
 )
 
 // DataStore is the entry point for modifying Cluster data.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
@@ -179,10 +180,7 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	if err != nil {
 		return nil, err
 	}
-	nodeStore, err := nodeGlobalDataStore.New(nodeInternalStore)
-	if err != nil {
-		return nil, err
-	}
+	nodeStore := nodeGlobalDataStore.New(nodeInternalStore)
 	podStore, err := podDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -261,10 +259,7 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	nodeStore, err := nodeGlobalDataStore.New(nodeInternalStore)
-	if err != nil {
-		return nil, err
-	}
+	nodeStore := nodeGlobalDataStore.New(nodeInternalStore)
 	podStore, err := podDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
 	if err != nil {
 		return nil, err

@@ -47,8 +47,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool := s.dackboxTestStore.GetPostgresPool()
-		s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
+		s.datastore = GetTestPostgresDataStore(s.T(), pool)
 	} else {
 		rocksengine := s.dackboxTestStore.GetRocksEngine()
 		bleveIndex := s.dackboxTestStore.GetBleveIndex()
