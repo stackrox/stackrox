@@ -42,7 +42,6 @@ spec:
         - name: RELATED_IMAGE_COLLECTOR_SLIM
         - name: RELATED_IMAGE_COLLECTOR_FULL
         - name: RELATED_IMAGE_ROXCTL
-        - name: RELATED_IMAGE_DOCS
         - name: RELATED_IMAGE_CENTRAL_DB
         image: controller:latest
         name: manager
