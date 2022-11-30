@@ -124,13 +124,13 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 	proto := &storage.ProcessListeningOnPort{
 		Port:     uint32(i.port),
 		Protocol: i.protocol,
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               i.key.podID,
-			ContainerName:       i.key.containerName,
-			ProcessName:         i.key.process.processName,
-			ProcessExecFilePath: i.key.process.processExec,
-			ProcessArgs:         i.key.process.processArgs,
-		},
+		//Process: &storage.ProcessIndicatorUniqueKey{
+		//	PodId:               i.key.podID,
+		//	ContainerName:       i.key.containerName,
+		//	ProcessName:         i.key.process.processName,
+		//	ProcessExecFilePath: i.key.process.processExec,
+		//	ProcessArgs:         i.key.process.processArgs,
+		// },
 	}
 
 	return proto
@@ -789,16 +789,18 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	return nil
 }
 
-func getProcessKey(originator *storage.NetworkProcessUniqueKey) *processInfo {
+func getProcessKey(originator *storage.ProcessSignal) *processInfo {
+
 	if originator == nil {
 		return nil
 	}
 
-	return &processInfo{
-		processName: originator.ProcessName,
-		processArgs: originator.ProcessArgs,
-		processExec: originator.ProcessExecFilePath,
-	}
+	return nil
+	// return &processInfo{
+	//	processName: originator.ProcessName,
+	//	processArgs: originator.ProcessArgs,
+	//	processExec: originator.ProcessExecFilePath,
+	//}
 }
 
 func getIPAndPort(address *sensor.NetworkAddress) net.NetworkPeerID {
@@ -876,6 +878,7 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 				L4Proto:   net.L4ProtoFromProtobuf(endpoint.GetProtocol()),
 			},
 			processKey: getProcessKey(endpoint.GetOriginator()),
+			//processKey: getProcessKey(endpoint.GetOriginator()),
 		}
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.

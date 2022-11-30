@@ -47,13 +47,6 @@ message ProcessIndicatorUniqueKey {
     string process_args           = 5;
 }
 
-// This is the processes information which is added to endpoint data
-message NetworkProcessUniqueKey {
-    string process_name           = 1;
-    string process_exec_file_path = 2;
-    string process_args           = 3;
-}
-
 message ProcessSignal {
     // A unique UUID for identifying the message
     // We have this here instead of at the top level
