@@ -77,9 +77,7 @@ func (g *gatherer) loop() {
 		select {
 		case <-ticker.C:
 			go func() {
-				if props := g.collect(); g.telemeter != nil {
-					g.telemeter.Identify(props)
-				}
+				g.telemeter.Identify(g.collect())
 			}()
 		case <-g.stopSig.Done():
 			ticker.Stop()

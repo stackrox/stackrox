@@ -10,11 +10,11 @@ import (
 )
 
 func addTotal[T any](ctx context.Context, props phonehome.Properties, key string, f func(context.Context) ([]*T, error)) error {
-	if ps, err := f(ctx); err != nil {
+	ps, err := f(ctx)
+	if err != nil {
 		return errors.Wrapf(err, "failed to get %s", key)
-	} else {
-		props["Total "+key] = len(ps)
 	}
+	props["Total "+key] = len(ps)
 	return nil
 }
 
