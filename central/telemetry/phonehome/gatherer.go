@@ -49,9 +49,9 @@ func newGatherer(t pkgPH.Telemeter, p time.Duration) *gatherer {
 
 // GathererSingleton returns the telemetry gatherer instance.
 func GathererSingleton() Gatherer {
-	if Enabled() {
+	if pkgPH.Enabled() {
 		onceGatherer.Do(func() {
-			gathererInstance = newGatherer(TelemeterSingleton(), period)
+			gathererInstance = newGatherer(pkgPH.TelemeterSingleton(), period)
 		})
 	}
 	return gathererInstance

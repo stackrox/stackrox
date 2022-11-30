@@ -2,12 +2,11 @@ package phonehome
 
 import (
 	"github.com/stackrox/rox/pkg/sync"
-	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
 )
 
 var (
-	telemeter     pkgPH.Telemeter
+	telemeter     Telemeter
 	onceTelemeter sync.Once
 )
 
@@ -17,9 +16,9 @@ func Enabled() bool {
 }
 
 // TelemeterSingleton returns the instance of the telemeter.
-func TelemeterSingleton() pkgPH.Telemeter {
+func TelemeterSingleton() Telemeter {
 	onceTelemeter.Do(func() {
-		cfg := pkgPH.InstanceConfig()
+		cfg := InstanceConfig()
 		telemeter = segment.NewTelemeter(cfg.CentralID, cfg.Properties)
 		// Central adds itself to the tenant group, adding its properties to the
 		// group properties:

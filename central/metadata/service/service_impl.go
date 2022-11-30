@@ -8,7 +8,6 @@ import (
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/telemetry/phonehome"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -19,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/mtls"
-	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 )
@@ -54,11 +53,11 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 	id, _ := authn.IdentityFromContext(ctx)
 	if phonehome.Enabled() {
 		// config could be nil if there was an error during initialization.
-		if config := pkgPH.InstanceConfig(); config != nil {
+		if config := phonehome.InstanceConfig(); config != nil {
 			metadata.StorageKeyV1 = env.TelemetryStorageKey.Setting()
 			metadata.TelemetryEndpoint = env.TelemetryEndpoint.Setting()
 			if id != nil {
-				metadata.UserId = pkgPH.HashUserID(id.UID())
+				metadata.UserId = phonehome.HashUserID(id.UID())
 			}
 		}
 	}

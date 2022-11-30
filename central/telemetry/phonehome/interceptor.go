@@ -39,12 +39,6 @@ func track(ctx context.Context, t pkgPH.Telemeter, err error, info *grpc.UnarySe
 			"User-Agent": userAgent,
 		})
 	}
-
-	// Add UI user to the tenant group without extra group properties:
-	if path == "/v1/availableAuthProviders" {
-		t.Group(t.GetID(), userID, nil)
-	}
-	// TODO: ROX-13671 - Add non-UI users to the Tenant group
 }
 
 func getRequestDetails(ctx context.Context, centralID string, err error, info *grpc.UnaryServerInfo) (userAgent string, userID string, method string, code int) {

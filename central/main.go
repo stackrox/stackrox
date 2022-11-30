@@ -179,6 +179,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
+	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
@@ -425,7 +426,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
-	if phonehome.Enabled() {
+	if pkgPH.Enabled() {
 		phonehome.GathererSingleton().AddGatherer(authProviderDS.Gather)
 		phonehome.GathererSingleton().AddGatherer(signatureIntegrationDS.Gather)
 		phonehome.GathererSingleton().AddGatherer(roleDataStore.Gather)
@@ -534,9 +535,9 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	if phonehome.Enabled() {
-		config.HTTPInterceptors = append(config.HTTPInterceptors, phonehome.GetHTTPInterceptor(phonehome.TelemeterSingleton()))
-		config.UnaryInterceptors = append(config.UnaryInterceptors, phonehome.GetGRPCInterceptor(phonehome.TelemeterSingleton()))
+	if pkgPH.Enabled() {
+		config.HTTPInterceptors = append(config.HTTPInterceptors, phonehome.GetHTTPInterceptor(pkgPH.TelemeterSingleton()))
+		config.UnaryInterceptors = append(config.UnaryInterceptors, phonehome.GetGRPCInterceptor(pkgPH.TelemeterSingleton()))
 	}
 
 	// Before authorization is checked, we want to inject the sac client into the context.
@@ -828,7 +829,7 @@ func waitForTerminationSignal() {
 		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{phonehome.GathererSingleton(), "telemetry gatherer"},
-		{phonehome.TelemeterSingleton(), "telemetry client"},
+		{pkgPH.TelemeterSingleton(), "telemetry client"},
 	}
 
 	var wg sync.WaitGroup

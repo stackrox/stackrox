@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
 var (
@@ -36,6 +37,14 @@ func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *perm
 	if err := rm.users.Upsert(ctx, user); err != nil {
 		// Just log since we don't actually need the user information.
 		log.Errorf("unable to log user: %s: %v", proto.MarshalTextString(user), err)
+	}
+	if phonehome.Enabled() {
+		// Add the user to the tenant group.
+		groupID := phonehome.InstanceConfig().TenantID
+		if groupID == "" {
+			groupID = phonehome.InstanceConfig().CentralID
+		}
+		phonehome.TelemeterSingleton().Group(groupID, user.Id, nil)
 	}
 }
 
