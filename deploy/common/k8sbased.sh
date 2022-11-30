@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 function realpath {
 	[[ -n "$1" ]] || return 0
 	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
