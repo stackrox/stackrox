@@ -46,6 +46,134 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestReconcileIstioCVEsInPostgres(t *testing.T) {
+	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("Skip postgres store tests")
+		t.SkipNow()
+	}
+
+	cluster := &storage.Cluster{
+		Id:   "test_cluster_id1",
+		Name: "cluster1",
+		Status: &storage.ClusterStatus{
+			OrchestratorMetadata: &storage.OrchestratorMetadata{
+				Version: "v1.10.6",
+			},
+		},
+	}
+
+	istioNvdCVEs := []*schema.NVDCVEFeedJSON10DefCVEItem{
+		{
+			CVE: &schema.CVEJSON40{
+				CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
+					ID: "CVE-4",
+				},
+			},
+			Configurations: &schema.NVDCVEFeedJSON10DefConfigurations{
+				Nodes: []*schema.NVDCVEFeedJSON10DefNode{
+					{
+						Operator: "OR",
+						CPEMatch: []*schema.NVDCVEFeedJSON10DefCPEMatch{
+							{
+								Vulnerable:            true,
+								Cpe23Uri:              "cpe:2.3:a:istio:istio:*:*:*:*:*:*:*:*",
+								VersionStartIncluding: "1.13.12",
+								VersionEndIncluding:   "1.13.17",
+							},
+						},
+					},
+				},
+			},
+			Impact: &schema.NVDCVEFeedJSON10DefImpact{
+				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+					CVSSV3: &schema.CVSSV30{
+						BaseScore:    6.1,
+						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Version:      "3.0",
+					},
+					ExploitabilityScore: 1.8,
+					ImpactScore:         4.2,
+				},
+			},
+		},
+	}
+
+	istioEmbeddedCVEs, err := utils.NVDCVEsToEmbeddedCVEs(istioNvdCVEs, utils.Istio)
+	require.NoError(t, err)
+
+	istioEmbeddedCVEToClusters := map[string][]*storage.Cluster{
+		"CVE-4": {
+			cluster,
+		},
+	}
+
+	istioCvesToUpsert := []converter.ClusterCVEParts{
+		{
+			CVE: &storage.ClusterCVE{
+				Id: cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String()),
+				CveBaseInfo: &storage.CVEInfo{
+					Cve:          "CVE-4",
+					Link:         "https://nvd.nist.gov/vuln/detail/CVE-4",
+					ScoreVersion: storage.CVEInfo_V3,
+					CvssV3: &storage.CVSSV3{
+						Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+						AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
+						AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+						PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+						UserInteraction:     storage.CVSSV3_UI_NONE,
+						Scope:               storage.CVSSV3_UNCHANGED,
+						Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+						Integrity:           storage.CVSSV3_IMPACT_LOW,
+						Availability:        storage.CVSSV3_IMPACT_HIGH,
+						Score:               6.1,
+					},
+				},
+				Cvss:        6.1,
+				ImpactScore: 4.2,
+				Type:        storage.CVE_ISTIO_CVE,
+			},
+			Children: []converter.EdgeParts{
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:        postgres.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String())}),
+						IsFixable: false,
+						ClusterId: "test_cluster_id1",
+						CveId:     cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String()),
+					},
+					ClusterID: "test_cluster_id1",
+				},
+			},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClusters := mockClusterDataStore.NewMockDataStore(ctrl)
+	mockNamespaces := mockNSDataStore.NewMockDataStore(ctrl)
+	mockImages := mockImageDataStore.NewMockDataStore(ctrl)
+	mockCVEs := mockCVEDataStore.NewMockDataStore(ctrl)
+
+	cveMatcher, err := matcher.NewCVEMatcher(mockClusters, mockNamespaces, mockImages)
+	require.NoError(t, err)
+
+	cveManager := &orchestratorIstioCVEManagerImpl{
+		orchestratorCVEMgr: &orchestratorCVEManager{
+			clusterDataStore:    mockClusters,
+			clusterCVEDataStore: mockCVEs,
+			cveMatcher:          cveMatcher,
+		},
+	}
+
+	mockCVEs.EXPECT().UpsertClusterCVEsInternal(gomock.Any(), storage.CVE_ISTIO_CVE, istioCvesToUpsert).Return(nil)
+	err = cveManager.orchestratorCVEMgr.updateCVEs(istioEmbeddedCVEs, istioEmbeddedCVEToClusters, utils.Istio)
+	assert.NoError(t, err)
+}
+
 func TestReconcileCVEsInPostgres(t *testing.T) {
 	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
