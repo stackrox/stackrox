@@ -106,6 +106,44 @@ jobs:
           name: go-binaries-build
           path: go-binaries-build.tgz
 
+  pre-build-go-binaries-rcd:
+    if: |
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: PR labels
+      uses: joerick/pr-labels-action@v1.0.6
+
+    - name: Setup Go build environment
+      run: |
+        if [[ -n "$GITHUB_PR_LABEL_CI_RELEASE_BUILD" ]]; then
+          cci-export GOTAGS release
+        fi
+        echo "GOTAGS: ${GOTAGS:-}"
+
+    - name: Build Go Binaries
+      run: make RACE=true build-prep main-build-nodeps
+
+    - name: Bundle the build to preserve permissions
+      run: tar -cvzf go-binaries-build-rcd.tgz bin/linux_amd64
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: go-binaries-build-rcd
+        path: go-binaries-build-rcd.tgz
+
   pre-build-docs:
     if: |
       (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
@@ -230,6 +268,88 @@ jobs:
         run: |
             source ./scripts/ci/lib.sh
             add_build_comment_to_pr
+
+  build-and-push-main-rcd:
+    if: |
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+    runs-on: ubuntu-latest
+    needs:
+    - pre-build-ui
+    - pre-build-cli
+    - pre-build-go-binaries-rcd
+    - pre-build-docs
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Checkout submodules
+      run: |
+        git submodule update --init
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: ui-build
+        path: ui
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: cli-build
+
+    - name: Unpack cli build
+      run: |
+        tar xvzf cli-build.tgz
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: go-binaries-build-rcd
+
+    - name: Unpack Go binaries build
+      run: |
+        tar xvzf go-binaries-build-rcd.tgz
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: docs-build
+        path: image/docs
+
+    # needed to restore node_modules for ossls-nostice
+    - uses: ./.github/actions/cache-ui-dependencies
+
+    - name: Generate OSS notice
+      run: make ossls-notice
+
+    - name: Get tag
+      id: tag
+      run: |
+        echo "TAG=$(make --quiet tag)" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    - name: Login to quay.io/rhacs-eng
+      uses: docker/login-action@v2
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+    - name: Build main images
+      run: make docker-build-main-image
+
+    - name: Push to quay.io/rhacs-eng
+      uses: docker/build-push-action@v3
+      with:
+        context: image/rhel
+        push: true
+        build-args: |
+          ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
+        file: image/rhel/Dockerfile.gen
+        tags: quay.io/rhacs-eng/main:${{ steps.tag.outputs.TAG }}-rcd
 
   build-and-push-operator:
     if: |
