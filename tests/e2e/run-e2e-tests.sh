@@ -19,15 +19,15 @@ usage() {
     script=$(basename "$0")
     cat <<_EOH_
 Usage:
- $script [Options...] [E2e flavor]
+$script [Options...] [E2e flavor]
  
    Configures the cluster and runs all suites.
  
- $script [Options...] [E2e flavor] Suite [Case]
+$script [Options...] [E2e flavor] Suite [Case]
  
-   Expects a previously configured cluster and runs only selected suite/case.
+   Expects a previously configured cluster and runs only selected 
+   suite/case. [qa flavor only].
  
-
 Run e2e tests using the working directory code via the rox-ci-image /
 stackrox-test container, against the cluster defined in the calling
 environment.
@@ -35,8 +35,9 @@ environment.
 Options:
   -c - configure the cluster for test but do not run any tests. [qa flavor only]
   -d - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. [qa flavor only]
-  -m - override 'make tag' for the version to install. [qa flavor only]
-  -o - choose the cluster variety. defaults to k8s.
+  -t - override 'make tag' which sets the main version to install and is used by 
+       some tests.
+  -o - choose the cluster orchestrator. Either k8s or openshift. defaults to k8s.
   -y - run without prompts.
 
 E2e flavor:
@@ -56,7 +57,7 @@ $script qa
 
 # Run the full set of 'non groovy' e2e tests. This is similar to what CI runs
 # for *-nongroovy-e2e-tests jobs on a PR.
-$script qa
+$script e2e
 _EOH_
     exit 1
 }
