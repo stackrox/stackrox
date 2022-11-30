@@ -5,24 +5,10 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/pkg/grpc/authz"
-        "github.com/stackrox/rox/pkg/grpc/authz/perrpc"
-        "github.com/stackrox/rox/pkg/grpc/authz/user"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"google.golang.org/grpc"
-	// "github.com/stackrox/rox/pkg/grpc/authz/allow"
-)
-
-var (
-        authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-                user.With(permissions.View(resources.ProcessListeningOnPort)): {
-			"/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespace",
-			"/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespaceAndDeployment",
-                },
-        })
 )
 
 type serviceImpl struct {
@@ -41,9 +27,8 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	//// XXX: An anonymous access only for development
-	//  return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
+	// XXX: An anonymous access only for development
+	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Context, req *v1.GetProcessesListeningOnPortsByNamespaceRequest) (*v1.GetProcessesListeningOnPortsWithDeploymentResponse, error) {
