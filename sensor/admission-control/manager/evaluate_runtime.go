@@ -145,7 +145,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 
 func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.KubernetesEvent) {
 	select {
-	case <-m.stopSig.Done():
+	case <-m.stopper.Flow().StopRequested():
 		return
 	case <-m.initialSyncSig.Done():
 		deployment := m.getDeploymentForPod(event.GetObject().GetNamespace(), event.GetObject().GetName())
