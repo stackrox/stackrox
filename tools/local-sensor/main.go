@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"path"
@@ -32,6 +33,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+
+	_ "net/http/pprof"
 )
 
 // local-sensor is an application that allows you to run sensor in your host machine, while mocking a
@@ -84,6 +87,7 @@ type localSensorConfig struct {
 	WithMetrics        bool
 	NoCPUProfile       bool
 	NoMemProfile       bool
+	PprofServer        bool
 }
 
 const (
@@ -151,6 +155,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		WithMetrics:        false,
 		NoCPUProfile:       false,
 		NoMemProfile:       false,
+		PprofServer:        false,
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -168,6 +173,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.PoliciesFile, "with-policies", sensorConfig.PoliciesFile, " a file containing a list of policies")
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
+	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
@@ -260,6 +266,16 @@ func main() {
 		if err := pprof.StartCPUProfile(f); err != nil {
 			log.Fatal("could not start CPU profile: ", err)
 		}
+	}
+
+	if localConfig.PprofServer {
+		go func() {
+			log.Printf("Started pprof server in port :6060\n")
+			err := http.ListenAndServe("localhost:6060", nil)
+			if err != nil {
+				log.Fatalf("%s\n", err)
+			}
+		}()
 	}
 
 	startTime := time.Now()
