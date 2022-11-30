@@ -140,9 +140,6 @@ function NetworkBreadcrumbs({ clusters = [] }: NetworkBreadcrumbsProps) {
                         hasInlineFilter
                     >
                         {namespaceSelectOptions}
-                        {/* {availableNamespaceFilters.map((nsFilter) => (
-                            <SelectOption key={nsFilter} value={nsFilter} />
-                        ))} */}
                     </Select>
                 </BreadcrumbItem>
             </Breadcrumb>
