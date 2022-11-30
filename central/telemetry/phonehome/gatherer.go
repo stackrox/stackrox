@@ -20,18 +20,19 @@ var (
 const period = 5 * time.Minute
 
 type gatherer struct {
-	telemeter  pkgPH.Telemeter
-	period     time.Duration
-	stopSig    concurrency.Signal
-	ctx        context.Context
-	mu         sync.Mutex
-	gatherFunc func(context.Context) (map[string]any, error)
+	telemeter   pkgPH.Telemeter
+	period      time.Duration
+	stopSig     concurrency.Signal
+	ctx         context.Context
+	mu          sync.Mutex
+	gatherFuncs []pkgPH.GatherFunc
 }
 
 // Gatherer interface for interacting with telemetry gatherer.
 type Gatherer interface {
 	Start()
 	Stop()
+	AddGatherer(pkgPH.GatherFunc)
 }
 
 func (g *gatherer) reset() {
@@ -39,11 +40,10 @@ func (g *gatherer) reset() {
 	g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 }
 
-func newGatherer(t pkgPH.Telemeter, p time.Duration, f func(context.Context) (map[string]any, error)) *gatherer {
+func newGatherer(t pkgPH.Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
-		telemeter:  t,
-		period:     p,
-		gatherFunc: f,
+		telemeter: t,
+		period:    p,
 	}
 }
 
@@ -51,10 +51,24 @@ func newGatherer(t pkgPH.Telemeter, p time.Duration, f func(context.Context) (ma
 func GathererSingleton() Gatherer {
 	if Enabled() {
 		onceGatherer.Do(func() {
-			gathererInstance = newGatherer(TelemeterSingleton(), period, gather)
+			gathererInstance = newGatherer(TelemeterSingleton(), period)
 		})
 	}
 	return gathererInstance
+}
+
+func (g *gatherer) collect() pkgPH.Properties {
+	result := make(pkgPH.Properties)
+	for _, f := range g.gatherFuncs {
+		props, err := f(g.ctx)
+		if err != nil {
+			log.Errorf("failed to gather from %s: %v", f, err)
+		}
+		for k, v := range props {
+			result[k] = v
+		}
+	}
+	return result
 }
 
 func (g *gatherer) loop() {
@@ -63,10 +77,8 @@ func (g *gatherer) loop() {
 		select {
 		case <-ticker.C:
 			go func() {
-				if props, err := g.gatherFunc(g.ctx); err == nil && g.telemeter != nil {
+				if props := g.collect(); g.telemeter != nil {
 					g.telemeter.Identify(props)
-				} else {
-					log.Error(err)
 				}
 			}()
 		case <-g.stopSig.Done():
@@ -95,4 +107,8 @@ func (g *gatherer) Stop() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.stopSig.Signal()
+}
+
+func (g *gatherer) AddGatherer(f pkgPH.GatherFunc) {
+	g.gatherFuncs = append(g.gatherFuncs, f)
 }

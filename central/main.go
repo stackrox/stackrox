@@ -124,6 +124,7 @@ import (
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
+	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
@@ -424,6 +425,11 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
+	if phonehome.Enabled() {
+		phonehome.GathererSingleton().AddGatherer(authProviderDS.Gather)
+		phonehome.GathererSingleton().AddGatherer(signatureIntegrationDS.Gather)
+		phonehome.GathererSingleton().AddGatherer(roleDataStore.Gather)
+	}
 	return servicesToRegister
 }
 

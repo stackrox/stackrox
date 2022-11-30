@@ -40,7 +40,8 @@ func (s *gathererTestSuite) TestGatherer() {
 
 	var i int64
 	stop := concurrency.NewSignal()
-	gptr := newGatherer(nil, 10*time.Millisecond, func(context.Context) (map[string]any, error) {
+	gptr := newGatherer(nil, 10*time.Millisecond)
+	gptr.AddGatherer(func(context.Context) (map[string]any, error) {
 		if atomic.AddInt64(&i, 1) > 1 {
 			stop.Signal()
 		}
@@ -69,18 +70,4 @@ func (s *gathererTestSuite) TestGatherer() {
 	gptr.Start()
 	<-gptr.ctx.Done()
 	s.Equal(int64(3), i)
-}
-
-func (s *gathererTestSuite) TestAddTotal() {
-	m := make(map[string]any)
-	addTotal(context.Background(), m, "key", func(ctx context.Context) ([]*string, error) {
-		return []*string{}, nil
-	})
-	s.Equal(0, m["Total key"])
-
-	addTotal(context.Background(), m, "key1", func(ctx context.Context) ([]*string, error) {
-		one := ""
-		return []*string{&one}, nil
-	})
-	s.Equal(1, m["Total key1"])
 }
