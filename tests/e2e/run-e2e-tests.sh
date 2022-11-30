@@ -186,8 +186,6 @@ _EOVAULTHELP_
         fi
     fi
 
-    check_rhacs_eng_image_exists "main" "$main_version"
-
     context="$(kubectl config current-context)"
     echo "This script will tear down resources, install ACS and run tests against '$context'."
 
@@ -205,6 +203,8 @@ _EOVAULTHELP_
 
     eval "$(vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
     | jq -r '.data.data | to_entries[] | select( .key|test("^[A-Z]") ) | "export \(.key|@sh)=\(.value|@sh)"')"
+
+    check_rhacs_eng_image_exists "main" "$main_version"
 
     # GCP login using the CI service account is required to access infra GKE clusters.
     setup_gcp
