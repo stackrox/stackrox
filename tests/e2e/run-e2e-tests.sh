@@ -158,7 +158,7 @@ _EODIRTY_
         cat <<_EOVERSION_
 ERROR: main and roxctl versions do not match. main: ${main_version} != roxctl: ${roxctl_version}.
 They are required to match for the ./deploy scripts to run without docker.
-Run 'make cli' to get matching versions.
+Run 'make cli-linux' to get matching versions.
 _EOVERSION_
         exit 1
     fi
