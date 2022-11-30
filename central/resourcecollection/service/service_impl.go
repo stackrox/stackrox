@@ -305,7 +305,7 @@ func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *sto
 	if err != nil {
 		return nil, err
 	}
-	filterQuery, err := search.ParseQuery(matchOptions.GetFilterQuery().GetQuery())
+	filterQuery, err := search.ParseQuery(matchOptions.GetFilterQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, err
 	}
