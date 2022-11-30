@@ -344,18 +344,20 @@ func (resolver *policyResolver) UnusedVarSink(ctx context.Context, args RawQuery
 }
 
 func inverseFilterFailingDeploymentsQuery(q *v1.Query) (*v1.Query, bool) {
-	failingDeploymentsQuery := false
+	isFailingDeploymentsQuery := false
 	local := q.Clone()
 	filtered, _ := search.FilterQuery(local, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok {
 			if matchFieldQuery.MatchFieldQuery.GetField() == search.PolicyViolated.String() {
-				failingDeploymentsQuery = true
+				isFailingDeploymentsQuery = true
 				return false
 			}
 		}
 		return true
 	})
-
-	return filtered, failingDeploymentsQuery
+	if filtered != nil {
+		filtered.Pagination = q.Pagination
+	}
+	return filtered, isFailingDeploymentsQuery
 }
