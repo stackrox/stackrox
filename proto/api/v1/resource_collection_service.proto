@@ -25,7 +25,7 @@ message GetCollectionRequest {
 
 message CollectionDeploymentMatchOptions {
     bool with_matches = 1;
-    Pagination matches_pagination = 2;
+    RawQuery filter_query = 3;
 }
 
 message GetCollectionResponse {
