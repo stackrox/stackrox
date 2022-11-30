@@ -49,6 +49,8 @@ message Node {
     // Time we received an update from Kubernetes.
     google.protobuf.Timestamp k8s_updated  = 26 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
 
+    // NodeInventory contains a list of components discovered on the node.
+    // It will not be saved to the DB, but will be used as input to Scanner's GetNodeVulnerabilities API.
     NodeInventory node_inventory           = 28 [(gogoproto.moretags) = 'policy:"Node Inventory" sql:"-"'];
     NodeScan scan                          = 18 [(gogoproto.moretags) = 'policy:"Node Scan"'];
     oneof set_components {
