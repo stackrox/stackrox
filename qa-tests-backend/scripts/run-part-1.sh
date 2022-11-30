@@ -15,6 +15,13 @@ set -euo pipefail
 test_part_1() {
     info "Starting test (qa-tests-backend part I)"
 
+    config_part_1
+    run_tests_part_1
+}
+
+config_part_1() {
+    info "Configuring the cluster to run part 1 of e2e tests"
+
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
@@ -30,8 +37,6 @@ test_part_1() {
     deploy_default_psp
     deploy_webhook_server
     get_ECR_docker_pull_password
-
-    run_tests_part_1
 }
 
 run_tests_part_1() {
@@ -72,4 +77,6 @@ run_tests_part_1() {
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
 }
 
-test_part_1
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    test_part_1 "$*"
+fi
