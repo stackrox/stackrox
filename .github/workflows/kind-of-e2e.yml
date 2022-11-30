@@ -1,0 +1,21 @@
+name: Create Cluster
+
+on: pull_request
+
+jobs:
+  create-cluster:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.3.0
+        
+      - name: Deploy stackrox
+        run: MAIN_IMAGE_TAG="3.72.0" ./deploy/k8s/deploy-local.sh
