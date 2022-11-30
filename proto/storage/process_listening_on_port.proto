@@ -29,5 +29,5 @@ message ProcessListeningOnPortStorage {
     google.protobuf.Timestamp close_timestamp = 4;
 
     string process_indicator_id = 5
-        [(gogoproto.moretags) = 'search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree"'];
+        [(gogoproto.moretags) = 'search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"'];
 }
