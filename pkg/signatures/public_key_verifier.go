@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/ternary"
 )
 
 const (
@@ -102,6 +103,7 @@ func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
 		verifiedImageReferences, err := verifyImageSignatures(ctx, sigs, hash, image, opts)
 		if err == nil {
 			if len(verifiedImageReferences) == 0 {
+				log.Infof("no verified image references found, defaulting to default image name %q", image.GetName().GetFullName())
 				// Fallback to the default name of the image if the reference is empty.
 				verifiedImageReferences = []string{image.GetName().GetFullName()}
 			}
@@ -190,6 +192,11 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 	return signatures, hash, nil
 }
 
+const (
+	defaultDockerRegistry   = "docker.io"
+	cosignDockerHubRegistry = "index.docker.io"
+)
+
 // getVerifiedImageReferenceFromSignature retrieves the verified docker reference in the format of
 // <registry>/<repository> from the payload of the oci.Signature and filters out image names that are verified by
 // the docker reference using the image names associated with the storage.Image.
@@ -219,7 +226,12 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	var verifiedImageReferences []string
 	for _, name := range image.GetNames() {
 		if signatureImageReference == fmt.Sprintf("%s/%s",
-			name.GetRegistry(), name.GetRemote()) {
+			// Special case for the default registry we use internally for docker hub:
+			// We use docker.io, whilst the cosign / go-containerregistry library uses index.docker.io.
+			// Ensuring we get a match for the default docker registry, we conditionally replace the registry name
+			// here.
+			ternary.String(name.GetRegistry() == defaultDockerRegistry, cosignDockerHubRegistry,
+				name.GetRegistry()), name.GetRemote()) {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
 		}
 	}
