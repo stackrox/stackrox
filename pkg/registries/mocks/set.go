@@ -61,6 +61,20 @@ func (mr *MockSetMockRecorder) GetAll() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockSet)(nil).GetAll))
 }
 
+// GetRegistryByImage mocks base method.
+func (m *MockSet) GetRegistryByImage(image *storage.Image) types.Registry {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRegistryByImage", image)
+	ret0, _ := ret[0].(types.Registry)
+	return ret0
+}
+
+// GetRegistryByImage indicates an expected call of GetRegistryByImage.
+func (mr *MockSetMockRecorder) GetRegistryByImage(image interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistryByImage", reflect.TypeOf((*MockSet)(nil).GetRegistryByImage), image)
+}
+
 // GetRegistryMetadataByImage mocks base method.
 func (m *MockSet) GetRegistryMetadataByImage(image *storage.Image) *types.Config {
 	m.ctrl.T.Helper()
