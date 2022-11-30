@@ -1,42 +1,28 @@
+import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
-import { visitIntegrationsUrl } from '../../helpers/integrations';
-import { labels, selectors, url } from '../../constants/IntegrationsPage';
 import {
     generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
-import * as api from '../../constants/apiEndpoints';
-import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
+import {
+    clickCreateNewIntegrationInTable,
+    clickIntegrationSourceLinkInForm,
+    deleteIntegrationInTable,
+    saveCreatedIntegrationInForm,
+    visitIntegrationsTable,
+} from '../../helpers/integrations';
 
-const visitSignatureIntegrationsUrl = `${url}/signatureIntegrations/signature`;
+// Page address segments are the source of truth for integrationSource and integrationType.
+const integrationSource = 'signatureIntegrations';
 
-function assertSignatureIntegrationTable() {
-    const label = labels.signatureIntegrations.signature;
-    cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
-}
-
-function visitSignatureIntegrations() {
-    visitIntegrationsUrl(visitSignatureIntegrationsUrl);
-    assertSignatureIntegrationTable();
-}
-
-function saveSignatureIntegration() {
-    cy.intercept('GET', api.integrations.signatureIntegrations).as('getSignatureIntegrations');
-    // Mock request.
-    cy.intercept('POST', api.integrations.signatureIntegrations).as('postSignatureIntegration');
-    cy.get(selectors.buttons.save).should('be.enabled').click();
-    cy.wait(['@postSignatureIntegration', '@getSignatureIntegrations']);
-    assertSignatureIntegrationTable();
-    cy.location('pathname').should('eq', visitSignatureIntegrationsUrl);
-}
-
-describe('Signature Integrations Test', () => {
+describe('Signature Integrations', () => {
     withAuth();
 
-    const integrationName = generateNameWithDate('Signature Integration');
+    it('should create a new signature integration and then view and delete', () => {
+        const integrationName = generateNameWithDate('Signature Integration');
+        const integrationType = 'signature';
 
-    it('should create a new signature integration', () => {
         const publicKeyValue =
             '-----BEGIN PUBLIC KEY-----\n' +
             'MIIBigKCAYEAnLceC91dTu1Lj6pMcLL3zcmps+NkczJPIaHDn8OtEnj+XzdmsMjO\n' +
@@ -49,8 +35,9 @@ describe('Signature Integrations Test', () => {
             'xPP9jtUUiPdAw4uL71gLncP/YRYYyvjH3/aveFSlc83mS808FTRHiNfwBKHppuLW\n' +
             'HS1I6y+PPPrVAgMBAAE=\n' +
             '-----END PUBLIC KEY-----\n';
-        visitSignatureIntegrations();
-        cy.get(selectors.buttons.newIntegration).click();
+
+        visitIntegrationsTable(integrationSource, integrationType);
+        clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
         // Check inital state.
         cy.get(selectors.buttons.save).should('be.disabled');
@@ -70,32 +57,21 @@ describe('Signature Integrations Test', () => {
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Public key name').clear().type('keyName');
         getInputByLabel('Public key value').clear().type(publicKeyValue);
-        cy.get(selectors.buttons.save).should('be.enabled');
-        saveSignatureIntegration();
-    });
 
-    it('should show created signature integration in the table, and be clickable', () => {
-        visitSignatureIntegrations();
+        saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+        // View it.
 
         cy.get(`${selectors.tableRowNameLink}:contains("${integrationName}")`).click();
-        cy.location('pathname').should('contain', visitSignatureIntegrationsUrl);
+
         cy.get(`${selectors.breadcrumbItem}:contains("${integrationName}")`);
-    });
 
-    it('should be able to delete the signature integration', () => {
-        visitSignatureIntegrations();
+        clickIntegrationSourceLinkInForm(integrationSource, integrationType);
 
-        getTableRowActionButtonByName(integrationName).click();
+        // Delete it.
 
-        cy.intercept('GET', api.integrations.signatureIntegrations).as('getSignatureIntegrations');
-        cy.intercept('DELETE', `${api.integrations.signatureIntegrations}/*`).as(
-            'deleteSignatureIntegration'
-        );
-        cy.get('button:contains("Delete Integration")').click();
-        cy.get(selectors.buttons.delete).click();
-        cy.wait(['@deleteSignatureIntegration', '@getSignatureIntegrations']);
+        deleteIntegrationInTable(integrationSource, integrationType, integrationName);
 
-        assertSignatureIntegrationTable();
         cy.get(`${selectors.tableRowNameLink}:contains("${integrationName}")`).should('not.exist');
     });
 });
