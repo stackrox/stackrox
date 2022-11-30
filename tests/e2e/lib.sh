@@ -10,6 +10,8 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
+export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+
 deploy_stackrox() {
     deploy_central
 
@@ -340,7 +342,7 @@ remove_existing_stackrox_resources() {
 # identify the source of pull/scheduling latency, request throttling, etc.
 # I tried increasing the timeout from 5m to 20m for OSD but it did not help.
 wait_for_api() {
-    info "Waiting for Central to start"
+    info "Waiting for Central to be ready"
 
     start_time="$(date '+%s')"
     max_seconds=300
