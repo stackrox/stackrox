@@ -125,8 +125,8 @@ func insertIntoProcessListeningOnPorts(ctx context.Context, batch *pgx.Batch, ob
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetProcessIndicatorId(),
+		pgutils.NilOrUUID(obj.GetId()),
+		pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 		serialized,
 	}
 
@@ -166,9 +166,9 @@ func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx pgx.
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
-			obj.GetProcessIndicatorId(),
+			pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 
 			serialized,
 		})
