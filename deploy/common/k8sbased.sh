@@ -258,6 +258,7 @@ function launch_central {
 
       # New helm setup flavor
       helm_args=(
+        --timeout 10m
         -f "$unzip_dir/values-public.yaml"
         -f "$unzip_dir/values-private.yaml"
         --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
