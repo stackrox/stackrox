@@ -52,3 +52,9 @@ type ServiceStore interface {
 type RBACStore interface {
 	GetPermissionLevelForDeployment(deployment rbac.NamespacedServiceAccount) storage.PermissionLevel
 }
+
+// Provider is a wrapper for injecting in memory stores as a dependency.
+type Provider interface {
+	Services() ServiceStore
+	RBAC() RBACStore
+}
