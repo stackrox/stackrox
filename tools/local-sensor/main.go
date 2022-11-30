@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof" // #nosec G108
 	"os"
 	"os/signal"
 	"path"
@@ -33,8 +34,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-
-	_ "net/http/pprof"
 )
 
 // local-sensor is an application that allows you to run sensor in your host machine, while mocking a
