@@ -347,7 +347,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
 
         imageFixableVulnMap.each { k, v ->
-            slackPayload += "\n${k}: ${v}"
+            slackPayload += "\n${k}: ${v} ${team(k)}"
         }
         SlackUtil.sendMessage(slackPayload)
 
@@ -359,6 +359,16 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         then:
         assert !hadGetErrors
+    }
+
+    String team(String img) {
+        if (img.contains('scanner')) {
+            return '@acs-scanner-team'
+        }
+        if (img.contains('collector')) {
+            return '@collector-team'
+        }
+        return img.contains('roxctl') ? '@merlin-team' : '@support-oncall-eng'
     }
 
     @Unroll

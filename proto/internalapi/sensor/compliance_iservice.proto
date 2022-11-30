@@ -24,9 +24,9 @@ message MsgFromCompliance {
     string node = 1;
 
     oneof msg {
-        compliance.ComplianceReturn return       = 2;
-        AuditEvents                 audit_events = 3;
-        storage.NodeScanV2          node_scan_v2 = 4;
+        compliance.ComplianceReturn            return = 2;
+        AuditEvents                      audit_events = 3;
+        storage.NodeInventory          node_inventory = 4;
     }
 }
 

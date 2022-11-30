@@ -16,7 +16,7 @@ func _() {
 	_ = x[Namespace-5]
 	_ = x[NetworkPolicy-6]
 	_ = x[Node-7]
-	_ = x[NodeScanV2-8]
+	_ = x[NodeInventory-8]
 	_ = x[ProviderMetadata-9]
 	_ = x[ComplianceReturn-10]
 	_ = x[ImageIntegration-11]
@@ -33,9 +33,9 @@ func _() {
 	_ = x[ComplianceOperatorScan-22]
 }
 
-const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNodeNodeScanV2ProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScan"
+const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScan"
 
-var _Resource_index = [...]uint16{0, 5, 15, 31, 36, 42, 51, 64, 68, 78, 94, 110, 126, 140, 153, 157, 168, 187, 190, 219, 244, 280, 302, 324}
+var _Resource_index = [...]uint16{0, 5, 15, 31, 36, 42, 51, 64, 68, 81, 97, 113, 129, 143, 156, 160, 171, 190, 193, 222, 247, 283, 305, 327}
 
 func (i Resource) String() string {
 	if i < 0 || i >= Resource(len(_Resource_index)-1) {

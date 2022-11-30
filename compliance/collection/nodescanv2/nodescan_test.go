@@ -19,5 +19,5 @@ func (n *NodeScanSuite) TestMessageFormat() {
 	fns, err := (&FakeNodeScanner{}).Scan("someNode")
 	n.Nil(err)
 	n.NotNil(fns)
-	n.IsType(&storage.NodeScanV2{}, fns)
+	n.IsType(&storage.NodeInventory{}, fns)
 }

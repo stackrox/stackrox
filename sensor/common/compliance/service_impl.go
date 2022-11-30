@@ -21,9 +21,9 @@ import (
 type serviceImpl struct {
 	sensor.UnimplementedComplianceServiceServer
 
-	output      chan *compliance.ComplianceReturn
-	auditEvents chan *sensor.AuditEvents
-	nodeScans   chan *storage.NodeScanV2
+	output          chan *compliance.ComplianceReturn
+	auditEvents     chan *sensor.AuditEvents
+	nodeInventories chan *storage.NodeInventory
 
 	auditLogCollectionManager AuditLogCollectionManager
 
@@ -144,9 +144,9 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_AuditEvents:
 			s.auditEvents <- t.AuditEvents
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
-		case *sensor.MsgFromCompliance_NodeScanV2:
+		case *sensor.MsgFromCompliance_NodeInventory:
 			if features.RHCOSNodeScanning.Enabled() {
-				s.nodeScans <- t.NodeScanV2
+				s.nodeInventories <- t.NodeInventory
 			}
 		}
 	}
@@ -175,6 +175,6 @@ func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 	return s.auditEvents
 }
 
-func (s *serviceImpl) NodeScans() <-chan *storage.NodeScanV2 {
-	return s.nodeScans
+func (s *serviceImpl) NodeInventories() <-chan *storage.NodeInventory {
+	return s.nodeInventories
 }
