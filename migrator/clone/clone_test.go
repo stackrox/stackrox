@@ -370,23 +370,26 @@ func doTestForceRollbackFailure(t *testing.T) {
 		forceRollbackClone = rocksdb.CurrentClone
 	}
 	testCases := []struct {
-		description          string
-		forceRollback        string
-		withPrevious         bool
-		expectedErrorMessage string
-		wrongVersion         bool
+		description             string
+		forceRollback           string
+		withPrevious            bool
+		expectedErrorMessage    string
+		postgresDevErrorMessage string
+		wrongVersion            bool
 	}{
 		{
-			description:          "without force rollback without previous",
-			withPrevious:         false,
-			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrNoPrevious,
+			description:             "without force rollback without previous",
+			withPrevious:            false,
+			forceRollback:           "",
+			expectedErrorMessage:    metadata.ErrNoPrevious,
+			postgresDevErrorMessage: metadata.ErrNoPreviousInDevEnv,
 		},
 		{
-			description:          "with force rollback without previous",
-			withPrevious:         false,
-			forceRollback:        forceRollbackClone,
-			expectedErrorMessage: metadata.ErrNoPrevious,
+			description:             "with force rollback without previous",
+			withPrevious:            false,
+			forceRollback:           forceRollbackClone,
+			expectedErrorMessage:    metadata.ErrNoPrevious,
+			postgresDevErrorMessage: metadata.ErrNoPreviousInDevEnv,
 		},
 		{
 			description:          "with force rollback with previous",
@@ -426,6 +429,7 @@ func doTestForceRollbackFailure(t *testing.T) {
 
 			var dbm DBCloneManager
 
+			expectedError := c.expectedErrorMessage
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				source := pgtest.GetConnectionString(t)
 				sourceMap, _ := pgconfig.ParseSource(source)
@@ -433,13 +437,17 @@ func doTestForceRollbackFailure(t *testing.T) {
 				require.NoError(t, err)
 
 				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
+
+				if c.postgresDevErrorMessage != "" && currVer != releaseVer {
+					expectedError = c.postgresDevErrorMessage
+				}
 			} else {
 				dbm = New(mock.mountPath, c.forceRollback)
 			}
 
 			err := dbm.Scan()
-			if c.expectedErrorMessage != "" {
-				assert.EqualError(t, err, c.expectedErrorMessage)
+			if expectedError != "" {
+				assert.EqualError(t, err, expectedError)
 			} else {
 				assert.NoError(t, err)
 				mock.rollbackCentral(&currVer, "", c.forceRollback)
@@ -472,23 +480,26 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 		forceRollbackClone = rocksdb.CurrentClone
 	}
 	testCases := []struct {
-		description          string
-		forceRollback        string
-		withPrevious         bool
-		expectedErrorMessage string
-		wrongVersion         bool
+		description             string
+		forceRollback           string
+		withPrevious            bool
+		expectedErrorMessage    string
+		postgresDevErrorMessage string
+		wrongVersion            bool
 	}{
 		{
-			description:          "without force rollback without previous",
-			withPrevious:         false,
-			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrNoPrevious,
+			description:             "without force rollback without previous",
+			withPrevious:            false,
+			forceRollback:           "",
+			expectedErrorMessage:    metadata.ErrNoPrevious,
+			postgresDevErrorMessage: metadata.ErrNoPreviousInDevEnv,
 		},
 		{
-			description:          "with force rollback without previous",
-			withPrevious:         false,
-			forceRollback:        forceRollbackClone,
-			expectedErrorMessage: metadata.ErrNoPrevious,
+			description:             "with force rollback without previous",
+			withPrevious:            false,
+			forceRollback:           forceRollbackClone,
+			expectedErrorMessage:    metadata.ErrNoPrevious,
+			postgresDevErrorMessage: metadata.ErrNoPreviousInDevEnv,
 		},
 		{
 			description:          "force rollback with previous",
@@ -528,6 +539,8 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 
 			var dbm DBCloneManager
 
+			expectedError := c.expectedErrorMessage
+
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				source := pgtest.GetConnectionString(t)
 				sourceMap, _ := pgconfig.ParseSource(source)
@@ -535,13 +548,17 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 				require.NoError(t, err)
 
 				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
+
+				if c.postgresDevErrorMessage != "" && currVer != releaseVer {
+					expectedError = c.postgresDevErrorMessage
+				}
 			} else {
 				dbm = New(mock.mountPath, c.forceRollback)
 			}
 
 			err := dbm.Scan()
-			if c.expectedErrorMessage != "" {
-				assert.EqualError(t, err, c.expectedErrorMessage)
+			if expectedError != "" {
+				assert.EqualError(t, err, expectedError)
 			} else {
 				assert.NoError(t, err)
 				mock.rollbackCentral(&currVer, "", c.forceRollback)
