@@ -12,3 +12,7 @@ export function NamespaceIcon() {
 export function ClusterIcon() {
     return <Badge style={{ backgroundColor: 'rgb(132,118,209)' }}>CL</Badge>;
 }
+
+export function CidrBlockIcon() {
+    return <Badge style={{ backgroundColor: 'rgb(0,0,0)' }}>IP</Badge>;
+}
