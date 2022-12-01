@@ -8,12 +8,14 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	utils "github.com/stackrox/rox/pkg/net"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 const (
@@ -169,7 +171,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	grpcServer := grpc.NewServer()
+	//grpcServer := grpc.NewServer()
+	maxMsgSize := 12 * 1024 * 1024
+	grpcServer := grpc.NewServer(
+                grpc.MaxRecvMsgSize(maxMsgSize),
+                grpc.KeepaliveParams(keepalive.ServerParameters{
+                        Time: 40 * time.Second,
+                }),
+                grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+                        MinTime:             5 * time.Second,
+                        PermitWithoutStream: true,
+                }),
+        )
+
 	sensorAPI.RegisterSignalServiceServer(grpcServer, newServer(db))
 	sensorAPI.RegisterNetworkConnectionInfoServiceServer(grpcServer, newServer(db))
 
