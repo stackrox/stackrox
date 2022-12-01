@@ -301,10 +301,15 @@ func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *sto
 		return nil, nil
 	}
 
-	query, err := s.queryResolver.ResolveCollectionQuery(ctx, collection)
+	collectionQuery, err := s.queryResolver.ResolveCollectionQuery(ctx, collection)
 	if err != nil {
 		return nil, err
 	}
-	paginated.FillPagination(query, matchOptions.GetMatchesPagination(), defaultPageSize)
+	filterQuery, err := search.ParseQuery(matchOptions.GetFilterQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+	query := search.ConjunctionQuery(collectionQuery, filterQuery)
+	paginated.FillPagination(query, matchOptions.GetFilterQuery().GetPagination(), defaultPageSize)
 	return s.deploymentDS.SearchListDeployments(ctx, query)
 }
