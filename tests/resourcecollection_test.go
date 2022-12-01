@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package tests
 
 import (
@@ -58,7 +60,6 @@ type CollectionE2ETestSuite struct {
 }
 
 func (s *CollectionE2ETestSuite) SetupSuite() {
-	s.T().Setenv(features.ObjectCollections.EnvVar(), "true")
 	if !features.ObjectCollections.Enabled() {
 		s.T().Skip("Skip collection tests")
 		s.T().SkipNow()
