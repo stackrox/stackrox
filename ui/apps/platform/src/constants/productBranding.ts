@@ -22,7 +22,7 @@ const rhacsBranding: BrandingAssets = {
     type: 'RHACS_BRANDING',
     logoSvg: rhacsLogoSvg,
     logoAltText: 'Red Hat Advanced Cluster Security Logo',
-    basePageTitle: 'Red Hat Advanced Cluster Security',
+    basePageTitle: 'Gavo`s Place Security Like',
     favicon: rhacsFavicon,
 };
 
