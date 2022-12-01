@@ -303,6 +303,7 @@ run_e2e_flavor() {
 }
 
 run_upgrade_flavor() {
+    make upgrader
     "$ROOT/tests/upgrade/run.sh" 2>&1 | sed -e 's/^/test output: /'
 }
 
