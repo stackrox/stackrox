@@ -32,6 +32,7 @@ describe('Authentication', () => {
 
     it('should redirect user to login page, authenticate and redirect to the requested page', () => {
         stubAPIs();
+        localStorage.setItem('access_token', 'my-token'); // replace possible valid token left over from previous test file
         setupAuth(pagePath, AUTHENTICATED);
         cy.location('pathname').should('eq', loginUrl);
         cy.get(selectors.providerSelect).should('have.text', 'auth-provider-name');
