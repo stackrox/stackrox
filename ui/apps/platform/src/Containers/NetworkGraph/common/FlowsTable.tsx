@@ -13,7 +13,7 @@ import {
 import { Flex, FlexItem, Text, TextContent, TextVariants } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import { Flow } from '../types';
+import { Flow } from '../types/flow.type';
 
 type FlowsTableProps = {
     label: string;

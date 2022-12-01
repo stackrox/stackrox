@@ -1,6 +1,17 @@
-import { Model, NodeModel, EdgeModel } from '@patternfly/react-topology';
+import { EdgeModel } from '@patternfly/react-topology';
 
 import { NetworkEntityInfo, Node } from 'types/networkFlow.proto';
+import {
+    CIDRBlockData,
+    CustomModel,
+    CustomNodeData,
+    CustomNodeModel,
+    DeploymentData,
+    ExternalEntitiesData,
+    ExternalNodeModel,
+    NamespaceData,
+    NamespaceNodeModel,
+} from '../types/topology.type';
 
 function getNameByEntity(entity: NetworkEntityInfo): string {
     const { type } = entity;
@@ -16,19 +27,56 @@ function getNameByEntity(entity: NetworkEntityInfo): string {
     }
 }
 
+function getDataByEntityType(entity: NetworkEntityInfo, policyIds: string[]): CustomNodeData {
+    if (entity.type === 'DEPLOYMENT') {
+        const data: DeploymentData = {
+            ...entity,
+            policyIds,
+        };
+        return data;
+    }
+    if (entity.type === 'INTERNET') {
+        const data: ExternalEntitiesData = {
+            ...entity,
+            type: 'EXTERNAL_ENTITIES',
+        };
+        return data;
+    }
+    const data: CIDRBlockData = {
+        ...entity,
+        type: 'CIDR_BLOCK',
+    };
+    return data;
+}
+
 export const graphModel = {
     id: 'stackrox-active-graph',
     type: 'graph',
     layout: 'ColaGroups',
 };
 
-export function transformData(nodes: Node[]): Model {
+export function transformData(nodes: Node[]): CustomModel {
     const dataModel = {
         graph: graphModel,
-        nodes: [] as NodeModel[],
+        nodes: [] as CustomNodeModel[],
         edges: [] as EdgeModel[],
     };
-    const groupNodes = {} as NodeModel;
+
+    const namespaceNodes: Record<string, NamespaceNodeModel> = {};
+    const externalNode: ExternalNodeModel = {
+        id: 'External to cluster',
+        type: 'group',
+        children: [],
+        group: true,
+        label: 'External to cluster',
+        style: { padding: 15 },
+        data: {
+            type: 'EXTERNAL',
+            collapsible: true,
+            showContextMenu: false,
+        },
+    };
+
     nodes.forEach(({ entity, policyIds, outEdges }) => {
         // creating each node and adding to data model
         const node = {
@@ -37,34 +85,39 @@ export function transformData(nodes: Node[]): Model {
             width: 75,
             height: 75,
             label: getNameByEntity(entity),
-            // @TODO: create a consistent data structure for "data" between all nodes
-            data: {
-                ...entity,
-                policyIds,
-            },
-        };
+            data: getDataByEntityType(entity, policyIds),
+        } as CustomNodeModel;
+
         dataModel.nodes.push(node);
 
         // to group deployments into namespaces
         if (entity.type === 'DEPLOYMENT') {
             const { namespace } = entity.deployment;
-            if (groupNodes[namespace]) {
-                groupNodes[namespace].children.push(entity.id);
+            const namespaceNode = namespaceNodes[namespace];
+            if (namespaceNode && namespaceNode?.children) {
+                namespaceNode?.children.push(entity.id);
             } else {
-                groupNodes[namespace] = {
+                const namespaceData: NamespaceData = {
+                    collapsible: true,
+                    showContextMenu: false,
+                    type: 'NAMESPACE',
+                };
+                namespaceNodes[namespace] = {
                     id: namespace,
                     type: 'group',
                     children: [entity.id],
                     group: true,
                     label: namespace,
                     style: { padding: 15 },
-                    // @TODO: create a consistent data structure for "data" between all nodes
-                    data: {
-                        collapsible: true,
-                        showContextMenu: false,
-                        type: 'NAMESPACE',
-                    },
+                    data: namespaceData,
                 };
+            }
+        }
+
+        // to group external entities and cidr blocks to external grouping
+        if (entity.type === 'EXTERNAL_SOURCE' || entity.type === 'INTERNET') {
+            if (externalNode && externalNode?.children) {
+                externalNode.children.push(entity.id);
             }
         }
 
@@ -82,6 +135,7 @@ export function transformData(nodes: Node[]): Model {
     });
 
     // add group nodes to data model
-    dataModel.nodes.push(...Object.values(groupNodes));
+    dataModel.nodes.push(...Object.values(namespaceNodes), externalNode);
+
     return dataModel;
 }
