@@ -455,8 +455,8 @@ func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
 
 	// test deployment matching
 	request.Options = &v1.CollectionDeploymentMatchOptions{
-		WithMatches:       true,
-		MatchesPagination: nil,
+		WithMatches: true,
+		FilterQuery: nil,
 	}
 	expectedResp = &v1.DryRunCollectionResponse{
 		Deployments: []*storage.ListDeployment{

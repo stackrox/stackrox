@@ -182,27 +182,33 @@
             "type": "boolean"
           },
           {
-            "name": "options.matchesPagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "options.matchesPagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "options.matchesPagination.sortOption.field",
+            "name": "options.filterQuery.query",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "options.matchesPagination.sortOption.reversed",
+            "name": "options.filterQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "options.filterQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "options.filterQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "options.filterQuery.pagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -519,8 +525,8 @@
         "withMatches": {
           "type": "boolean"
         },
-        "matchesPagination": {
-          "$ref": "#/definitions/v1Pagination"
+        "filterQuery": {
+          "$ref": "#/definitions/v1RawQuery"
         }
       }
     },
