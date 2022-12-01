@@ -131,7 +131,7 @@ func (s *CollectionE2ETestSuite) SetupSuite() {
 	}
 	for _, req := range createCollectionRequests {
 		resp, err := s.service.CreateCollection(s.ctx, req)
-		assert.NoError(s.T(), err)
+		s.NoError(err)
 		s.collectionIDs = append(s.collectionIDs, resp.GetCollection().GetId())
 	}
 
@@ -145,14 +145,16 @@ func (s *CollectionE2ETestSuite) TearDownSuite() {
 	for _, ns := range collectionNamespaces {
 		err := s.nsClient.Delete(s.ctx, ns, metav1.DeleteOptions{})
 		if err != nil {
-			log.Errorf("failed deleting %s testing namespace %q", ns, err)
+			log.Errorf("failed deleting %q testing namespace %q", ns, err)
 		}
 	}
 
 	// clean up collections
 	for _, id := range s.collectionIDs {
 		_, err := s.service.DeleteCollection(s.ctx, &v1.ResourceByID{Id: id})
-		assert.NoError(s.T(), err)
+		if err != nil {
+			log.Errorf("failed deleting %q testing collection %q", id, err)
+		}
 	}
 }
 
