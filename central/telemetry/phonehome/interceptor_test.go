@@ -37,7 +37,7 @@ func (s *interceptorTestSuite) SetupTest() {
 }
 
 func (s *interceptorTestSuite) expect(path string, code int) {
-	s.mockTelemeter.EXPECT().Track("API Call", "", map[string]any{
+	s.mockTelemeter.EXPECT().Track("API Call", "local:11102e5e-ca16-4f2b-8d2e-e9e04e8dc531:unauthenticated", map[string]any{
 		"Path":       path,
 		"Code":       code,
 		"User-Agent": "test",
@@ -59,8 +59,6 @@ func (s *interceptorTestSuite) testSpecific(path, allowed string) {
 }
 
 func (s *interceptorTestSuite) TestInterceptorHttp() {
-	s.mockTelemeter.EXPECT().GetID().Times(6).Return("unauthenticated")
-
 	s.testSpecific("/v1/one", "/v1/two")
 	s.testSpecific("/v1/one", "/v1/two,/v1/three")
 
@@ -76,7 +74,6 @@ func (s *interceptorTestSuite) TestInterceptorHttp() {
 }
 
 func (s *interceptorTestSuite) TestInterceptorGrpc() {
-	s.mockTelemeter.EXPECT().GetID().Times(1).Return("unauthenticated")
 	s.expect("/v1.Abc", 0)
 
 	md := metadata.New(nil)

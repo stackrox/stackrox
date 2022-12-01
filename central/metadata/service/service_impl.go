@@ -53,12 +53,9 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 	}
 	id, _ := authn.IdentityFromContext(ctx)
 	if pkgPH.Enabled() {
-		// config could be nil if there was an error during initialization.
-		if config := pkgPH.InstanceConfig(); config != nil {
-			metadata.StorageKeyV1 = env.TelemetryStorageKey.Setting()
-			metadata.TelemetryEndpoint = env.TelemetryEndpoint.Setting()
-			metadata.UserId = phonehome.HashUserID(id)
-		}
+		metadata.StorageKeyV1 = env.TelemetryStorageKey.Setting()
+		metadata.TelemetryEndpoint = env.TelemetryEndpoint.Setting()
+		metadata.UserId = phonehome.HashUserID(id)
 	}
 	// Only return the version to logged in users, not anonymous users.
 	if id != nil {

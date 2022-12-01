@@ -22,20 +22,15 @@ const (
 )
 
 var (
-	config *Config
-	once   sync.Once
-	log    = logging.LoggerForModule()
+	config = &Config{
+		CentralID: "11102e5e-ca16-4f2b-8d2e-e9e04e8dc531",
+		APIPaths:  set.NewFrozenSet[string](),
+	}
+	once sync.Once
+	log  = logging.LoggerForModule()
 )
 
-func getInstanceConfig() (*Config, error) {
-	rc, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot create k8s config")
-	}
-	clientset, err := kubernetes.NewForConfig(rc)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot create k8s clientset")
-	}
+func getInstanceConfig(clientset *kubernetes.Clientset) (*Config, error) {
 	v, err := clientset.ServerVersion()
 	if err != nil {
 		return nil, err
@@ -85,8 +80,17 @@ func getInstanceConfig() (*Config, error) {
 // data is used for instance identification.
 func InstanceConfig() *Config {
 	once.Do(func() {
-		var err error
-		if config, err = getInstanceConfig(); err != nil {
+		rc, err := rest.InClusterConfig()
+		if err != nil {
+			log.Errorf("Cannot create k8s config: %v. Using hardcoded values.", err)
+			return
+		}
+		clientset, err := kubernetes.NewForConfig(rc)
+		if err != nil {
+			log.Errorf("Cannot create k8s clientset: %v. Using hardcoded values.", err)
+			return
+		}
+		if config, err = getInstanceConfig(clientset); err != nil {
 			log.Error("Failed to get telemetry configuration: ", err)
 		} else {
 			log.Info("Central ID:", config.CentralID)

@@ -21,7 +21,7 @@ var (
 )
 
 func track(ctx context.Context, t pkgPH.Telemeter, err error, info *grpc.UnaryServerInfo, trackedPaths set.FrozenSet[string]) {
-	userAgent, userID, path, code := getRequestDetails(ctx, t.GetID(), err, info)
+	userAgent, userID, path, code := getRequestDetails(ctx, err, info)
 
 	// Track the API path and error code of some requests:
 
@@ -40,7 +40,7 @@ func track(ctx context.Context, t pkgPH.Telemeter, err error, info *grpc.UnarySe
 	}
 }
 
-func getRequestDetails(ctx context.Context, centralID string, err error, info *grpc.UnaryServerInfo) (userAgent string, userID string, method string, code int) {
+func getRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInfo) (userAgent string, userID string, method string, code int) {
 	ri := requestinfo.FromContext(ctx)
 	userAgent = strings.Join(ri.Metadata.Get("User-Agent"), ", ")
 
