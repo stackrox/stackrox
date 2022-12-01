@@ -30,7 +30,7 @@ const stackroxBranding: BrandingAssets = {
     type: 'STACKROX_BRANDING',
     logoSvg: stackroxLogoSvg,
     logoAltText: 'StackRox Logo',
-    basePageTitle: 'StackRox',
+    basePageTitle: 'Gavo woz ere!',
     favicon: stackroxFavicon,
 };
 
