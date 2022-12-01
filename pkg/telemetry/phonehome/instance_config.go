@@ -30,7 +30,15 @@ var (
 	log  = logging.LoggerForModule()
 )
 
-func getInstanceConfig(clientset *kubernetes.Clientset) (*Config, error) {
+func getInstanceConfig() (*Config, error) {
+	rc, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(rc)
+	if err != nil {
+		return nil, err
+	}
 	v, err := clientset.ServerVersion()
 	if err != nil {
 		return nil, err
@@ -60,7 +68,7 @@ func getInstanceConfig(clientset *kubernetes.Clientset) (*Config, error) {
 		tenantID = centralID
 	}
 
-	config = &Config{
+	return &Config{
 		CentralID: centralID,
 		TenantID:  tenantID,
 		APIPaths:  set.NewFrozenSet(strings.Split(paths, ",")...),
@@ -70,9 +78,7 @@ func getInstanceConfig(clientset *kubernetes.Clientset) (*Config, error) {
 			"Orchestrator":       orchestrator,
 			"Kubernetes version": v.GitVersion,
 		},
-	}
-
-	return config, nil
+	}, nil
 }
 
 // InstanceConfig collects the central instance telemetry configuration from
@@ -80,23 +86,15 @@ func getInstanceConfig(clientset *kubernetes.Clientset) (*Config, error) {
 // data is used for instance identification.
 func InstanceConfig() *Config {
 	once.Do(func() {
-		rc, err := rest.InClusterConfig()
+		cfg, err := getInstanceConfig()
 		if err != nil {
-			log.Errorf("Cannot create k8s config: %v. Using hardcoded values.", err)
+			log.Errorf("Failed to get telemetry configuration: %v. Using hardcoded values.", err)
 			return
 		}
-		clientset, err := kubernetes.NewForConfig(rc)
-		if err != nil {
-			log.Errorf("Cannot create k8s clientset: %v. Using hardcoded values.", err)
-			return
-		}
-		if config, err = getInstanceConfig(clientset); err != nil {
-			log.Error("Failed to get telemetry configuration: ", err)
-		} else {
-			log.Info("Central ID:", config.CentralID)
-			log.Info("Tenant ID:", config.TenantID)
-			log.Info("API path telemetry enabled for: ", config.APIPaths)
-		}
+		config = cfg
+		log.Info("Central ID:", config.CentralID)
+		log.Info("Tenant ID:", config.TenantID)
+		log.Info("API path telemetry enabled for: ", config.APIPaths)
 	})
 	return config
 }
