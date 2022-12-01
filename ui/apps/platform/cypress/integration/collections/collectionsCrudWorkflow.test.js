@@ -1,14 +1,16 @@
 import withAuth from '../../helpers/basicAuth';
-import { collections as collectionsApi } from '../../constants/apiEndpoints';
 import { visitCollections } from '../../helpers/collections';
 import { hasFeatureFlag } from '../../helpers/features';
+
+const baseUrl = '/v1/collections';
+const autocompleteUrl = `${baseUrl}/autocomplete`;
 
 // Cleanup an existing collection via API call
 function tryDeleteCollection(collectionName) {
     const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
 
     cy.request({
-        url: `${collectionsApi.baseUrl}?query.query=Collection Name:"${collectionName}"`,
+        url: `${baseUrl}?query.query=Collection Name:"${collectionName}"`,
         auth,
     }).as('listCollections');
 
@@ -16,12 +18,16 @@ function tryDeleteCollection(collectionName) {
         const collection = res.body.collections.find(({ name }) => name === collectionName);
         if (collection) {
             const { id } = collection;
-            const url = `${collectionsApi.baseUrl}/${id}`;
+            const url = `${baseUrl}/${id}`;
             cy.request({ url, auth, method: 'DELETE' });
         }
     });
 }
 
+/* 
+    Each test in this spec builds upon the previous by executing another piece
+    of the collection CRUD workflow.
+*/
 describe('Create collection', () => {
     withAuth();
 
@@ -31,7 +37,7 @@ describe('Create collection', () => {
         }
         // Ignore autocomplete requests
         // TODO Remove this once the feature is in
-        cy.intercept(`${collectionsApi.autocomplete}`, {});
+        cy.intercept(autocompleteUrl, {});
     });
 
     const collectionName = 'Financial deployments';
@@ -74,7 +80,7 @@ describe('Create collection', () => {
 
         cy.get('button:contains("Save")').click();
 
-        cy.get('a:contains("Financial deployments")');
+        cy.get(`td[data-label="Collection"] a:contains("${collectionName}")`);
     });
 
     it('should allow editing an existing collection', () => {
@@ -118,12 +124,15 @@ describe('Create collection', () => {
         // Revisit the collection page and verify that the changes have stuck
         cy.get('a:contains("Financial deployments")').click();
 
+        // Check "byLabel" inputs for deployment
         cy.get(`input[aria-label^="Select label value"][value="visa.*"]`);
         cy.get(`input[aria-label^="Select label value"][value="discover.*"]`);
         cy.get(`input[aria-label^="Select label value"][value="mastercard.*"]`).should('not.exist');
 
+        // Check "byName" inputs for namespace
         cy.get(`input[aria-label$="for the namespace name"][value="payments"]`);
 
+        // Check "byName" inputs for cluster
         cy.get(`input[aria-label$="for the cluster name"][value="staging"]`);
         cy.get(`input[aria-label$="for the cluster name"][value="security"]`);
         cy.get(`input[aria-label$="for the cluster name"][value="production"]`).should('not.exist');
@@ -144,7 +153,32 @@ describe('Create collection', () => {
         cy.get('button:contains("Save")').click();
 
         // Ensure both collections are available
-        cy.get(`a:contains("${collectionName}")`);
-        cy.get(`a:contains("${clonedName}")`);
+        cy.get(`td[data-label="Collection"] a:contains("${collectionName}")`);
+        cy.get(`td[data-label="Collection"] a:contains("${clonedName}")`);
+    });
+
+    it('should delete the previously created collections', () => {
+        // From the main table
+        visitCollections();
+
+        // Delete the clone first, since the `:contains()` selector cannot do an exact match
+        // Delete one from the main collection table
+        cy.get(`tr:has(a:contains("${clonedName}")) button[aria-label="Actions"]`).click();
+        cy.get('button:contains("Delete collection")').click();
+        cy.get('*[role="dialog"] button:contains("Delete")').click();
+        cy.get('*:contains("Successfully deleted")');
+        cy.get(`td[data-label="Collection"] a:contains("${clonedName}")`).should('not.exist');
+
+        // Delete one from the individual collection page
+        cy.get(`td[data-label="Collection"] a:contains("${collectionName}")`).click();
+        cy.get(`button:contains("Actions")`).click();
+        cy.get(`button:contains("Delete collection")`).click();
+        cy.get('*[role="dialog"] button:contains("Delete")').click();
+
+        // Should navigate back to the main collections table
+        cy.get('h1:contains("Collections")');
+
+        // Both collections should be gone from the main table
+        cy.get(`td[data-label="Collection"] a:contains("${collectionName}")`).should('not.exist');
     });
 });

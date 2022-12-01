@@ -182,10 +182,3 @@ export const extensions = {
 export const permissions = {
     mypermissions: '/v1/mypermissions',
 };
-
-export const collections = {
-    baseUrl: '/v1/collections',
-    count: '/v1/collectionscount',
-    dryRun: '/v1/collections/dryrun',
-    autocomplete: '/v1/collections/autocomplete',
-};
