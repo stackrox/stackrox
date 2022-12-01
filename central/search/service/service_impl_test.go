@@ -234,7 +234,6 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		},
 	} {
 		s.Run(fmt.Sprintf("Test case %q", testCase.query), func() {
-			log.Info(testCase.query)
 			results, err := service.autocomplete(allAccessCtx, testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
 			s.NoError(err)
 			if testCase.ignoreOrder {
@@ -255,7 +254,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		policyStore := policyPostgres.New(s.pool)
 		policyIndexer = policyPostgres.NewIndexer(s.pool)
-		s.NoError(policyIndexer.AddPolicy(fixtures.GetPolicy()))
 		s.NoError(policyStore.Upsert(ctx, fixtures.GetPolicy()))
 		policySearcher := policySearcher.New(policyStore, policyIndexer)
 		ds = policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
