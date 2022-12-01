@@ -154,23 +154,32 @@ func (c *TestContext) Resources() *resources.Resources {
 	return c.r
 }
 
-func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1.Namespace, func() error, error) {
+func (c *TestContext) deleteNs(ctx context.Context, name string) error {
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
-	if err := r.Create(ctx, &nsObj); err != nil {
+	err := c.r.Delete(ctx, &nsObj)
+	if err != nil {
+		return err
+	}
+
+	// wait for deletion to be finished
+	if err := wait.For(conditions.New(c.r).ResourceDeleted(&nsObj)); err != nil {
+		c.t.Logf("failed to wait for namespace %s deletion\n", nsObj.Name)
+	}
+	return nil
+}
+
+func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namespace, func() error, error) {
+	utils.IgnoreError(func() error {
+		return c.deleteNs(ctx, name)
+	})
+	nsObj := v1.Namespace{}
+	nsObj.Name = name
+	if err := c.r.Create(ctx, &nsObj); err != nil {
 		return nil, nil, err
 	}
 	return &nsObj, func() error {
-		err := r.Delete(ctx, &nsObj)
-		if err != nil {
-			return err
-		}
-
-		// wait for deletion to be finished
-		if err := wait.For(conditions.New(r).ResourceDeleted(&nsObj)); err != nil {
-			fmt.Println("failed to wait for namespace deletion")
-		}
-		return nil
+		return c.deleteNs(ctx, name)
 	}, nil
 }
 
@@ -181,7 +190,7 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 
 // RunWithResources runs the test case applying files in `files` slice in order.
 func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallback) {
-	_, removeNamespace, err := createTestNs(context.Background(), c.r, DefaultNamespace)
+	_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
 	defer utils.IgnoreError(removeNamespace)
 	if err != nil {
 		c.t.Fatalf("failed to create namespace: %s", err)
@@ -208,7 +217,7 @@ func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallba
 // RunBare runs a test case without applying any resources to the cluster.
 func (c *TestContext) RunBare(name string, testCase TestCallback) {
 	c.t.Run(name, func(t *testing.T) {
-		_, removeNamespace, err := createTestNs(context.Background(), c.r, DefaultNamespace)
+		_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
 		defer utils.IgnoreError(removeNamespace)
 		if err != nil {
 			t.Fatalf("failed to create namespace: %s", err)
@@ -442,7 +451,7 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 
 			// wait for deletion to be finished
 			if err := wait.For(conditions.New(c.r).ResourceDeleted(obj)); err != nil {
-				fmt.Println("failed to wait for resource deletion")
+				c.t.Logf("failed to wait for resource deletion")
 			}
 			return nil
 		}
