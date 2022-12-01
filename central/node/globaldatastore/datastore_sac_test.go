@@ -69,7 +69,7 @@ func (s *nodeDatastoreSACSuite) setupPostgres() {
 	s.Require().NotNil(s.pgtestbase)
 	s.datastore, err = dackboxDatastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
 	s.Require().NoError(err)
-	s.globalDatastore, err = globaldatastore.New(s.datastore)
+	s.globalDatastore = globaldatastore.New(s.datastore)
 	s.Require().NoError(err)
 
 	s.optionsMap = schema.NodesSchema.OptionsMap
@@ -93,7 +93,7 @@ func (s *nodeDatastoreSACSuite) setupRocks() {
 
 	s.datastore, err = dackboxDatastore.GetTestRocksBleveDataStore(s.T(), s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
 	s.Require().NoError(err)
-	s.globalDatastore, err = globaldatastore.New(s.datastore)
+	s.globalDatastore = globaldatastore.New(s.datastore)
 	s.Require().NoError(err)
 
 	s.optionsMap = mappings.OptionsMap

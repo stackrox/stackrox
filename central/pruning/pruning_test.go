@@ -258,9 +258,7 @@ func generateNodeDataStructures(t *testing.T) nodeGlobalDatastore.GlobalDataStor
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(t, err)
 
-	nodes, err := dackboxNodeGlobalDatastore.New(dackboxNodeDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker()))
-	require.NoError(t, err)
-
+	nodes := dackboxNodeGlobalDatastore.New(dackboxNodeDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker()))
 	return nodes
 }
 

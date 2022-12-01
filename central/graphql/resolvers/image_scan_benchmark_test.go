@@ -85,11 +85,12 @@ func BenchmarkImageResolver(b *testing.B) {
 	defer pgtest.CloseGormDB(b, gormDB)
 	defer db.Close()
 
-	imageDataStore := createImageDatastore(b, mockCtrl, db, gormDB)
-	imageComponentDataStore := createImageComponentDatastore(b, mockCtrl, db, gormDB)
-	cveDataStore := createImageCVEDatastore(b, db, gormDB)
-	componentCVEEdgeDataStore := createImageComponentCVEEdgeDatastore(b, db, gormDB)
-	resolver, schema := setupResolver(b, imageDataStore, imageComponentDataStore, cveDataStore, componentCVEEdgeDataStore)
+	resolver, schema := setupResolver(b,
+		createImageDatastore(b, db, gormDB, mockCtrl),
+		createImageComponentDatastore(b, db, gormDB, mockCtrl),
+		createImageCVEDatastore(b, db, gormDB),
+		createImageComponentCVEEdgeDatastore(b, db, gormDB),
+	)
 	ctx := contextWithImagePerm(b, mockCtrl)
 
 	images := getTestImages(100)
