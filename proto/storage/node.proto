@@ -89,9 +89,9 @@ message NodeScan {
 }
 
 message NodeInventory {
-    string                         node_id    = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk,type(uuid)"'];
-    string                         node_name  = 2 [(gogoproto.moretags) = 'search:"Node,store"'];
-    google.protobuf.Timestamp      scan_time  = 3 [(gogoproto.moretags) = 'search:"Node Scan Time,store"'];
+    string                         node_id    = 1;
+    string                         node_name  = 2;
+    google.protobuf.Timestamp      scan_time  = 3;
     scannerV1.Components           components = 4;
     repeated scannerV1.Note        notes      = 5;
 }
