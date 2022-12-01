@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -51,14 +50,16 @@ func TestCollectionE2E(t *testing.T) {
 type CollectionE2ETestSuite struct {
 	suite.Suite
 
-	ctx        context.Context
-	nsClient   k8scorev1.NamespaceInterface
-	service    v1.CollectionServiceClient
-	depService v1.DeploymentServiceClient
+	ctx           context.Context
+	nsClient      k8scorev1.NamespaceInterface
+	service       v1.CollectionServiceClient
+	depService    v1.DeploymentServiceClient
+	collectionIDs []string
 }
 
 func (s *CollectionE2ETestSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.ObjectCollections.Enabled() {
+	s.T().Setenv(features.ObjectCollections.EnvVar(), "true")
+	if !features.ObjectCollections.Enabled() {
 		s.T().Skip("Skip collection tests")
 		s.T().SkipNow()
 	}
@@ -89,32 +90,7 @@ func (s *CollectionE2ETestSuite) SetupSuite() {
 		}
 	}
 
-	// wait for deployments to propagate
-	qb := search.NewQueryBuilder().AddRegexes(search.Namespace, "collections-test-.")
-	waitForDeploymentCount(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
-}
-
-func (s *CollectionE2ETestSuite) TearDownSuite() {
-	for _, ns := range collectionNamespaces {
-		err := s.nsClient.Delete(s.ctx, ns, metav1.DeleteOptions{})
-		if err != nil {
-			log.Errorf("failed deleting %s testing namespace %q", ns, err)
-		}
-	}
-}
-
-func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
-	ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
-	defer cancel()
-
-	// get deployments to test against
-	deploymentQuery := search.NewQueryBuilder().AddExactMatches(search.Namespace, collectionNamespaces...).Query()
-	deploymentQueryResponse, err := s.depService.ListDeployments(ctx, &v1.RawQuery{Query: deploymentQuery})
-	s.NoError(err)
-	deploymentList := deploymentQueryResponse.GetDeployments()
-
 	// upsert some collections to use as embedded
-	var collectionIDs []string
 	createCollectionRequests := []*v1.CreateCollectionRequest{
 		{
 			Name: "dep1",
@@ -154,10 +130,41 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 		},
 	}
 	for _, req := range createCollectionRequests {
-		resp, err := s.service.CreateCollection(ctx, req)
+		resp, err := s.service.CreateCollection(s.ctx, req)
 		assert.NoError(s.T(), err)
-		collectionIDs = append(collectionIDs, resp.GetCollection().GetId())
+		s.collectionIDs = append(s.collectionIDs, resp.GetCollection().GetId())
 	}
+
+	// wait for deployments to propagate
+	qb := search.NewQueryBuilder().AddRegexes(search.Namespace, "collections-test-.")
+	waitForDeploymentCount(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
+}
+
+func (s *CollectionE2ETestSuite) TearDownSuite() {
+	// clean up namespaces
+	for _, ns := range collectionNamespaces {
+		err := s.nsClient.Delete(s.ctx, ns, metav1.DeleteOptions{})
+		if err != nil {
+			log.Errorf("failed deleting %s testing namespace %q", ns, err)
+		}
+	}
+
+	// clean up collections
+	for _, id := range s.collectionIDs {
+		_, err := s.service.DeleteCollection(s.ctx, &v1.ResourceByID{Id: id})
+		assert.NoError(s.T(), err)
+	}
+}
+
+func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
+	ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
+	defer cancel()
+
+	// get deployments to test against
+	deploymentQuery := search.NewQueryBuilder().AddExactMatches(search.Namespace, collectionNamespaces...).Query()
+	deploymentQueryResponse, err := s.depService.ListDeployments(ctx, &v1.RawQuery{Query: deploymentQuery})
+	s.NoError(err)
+	deploymentList := deploymentQueryResponse.GetDeployments()
 
 	// test cases
 	for _, tc := range []struct {
@@ -366,7 +373,7 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 						},
 					},
 				},
-				EmbeddedCollectionIds: []string{collectionIDs[0]},
+				EmbeddedCollectionIds: []string{s.collectionIDs[0]},
 				Options: &v1.CollectionDeploymentMatchOptions{
 					WithMatches: true,
 				},
@@ -403,7 +410,7 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 						},
 					},
 				},
-				EmbeddedCollectionIds: []string{collectionIDs[0]},
+				EmbeddedCollectionIds: []string{s.collectionIDs[0]},
 				Options: &v1.CollectionDeploymentMatchOptions{
 					WithMatches: true,
 				},
@@ -416,7 +423,7 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 			"embedded collection",
 			&v1.DryRunCollectionRequest{
 				Name:                  "test collection",
-				EmbeddedCollectionIds: []string{collectionIDs[1]},
+				EmbeddedCollectionIds: []string{s.collectionIDs[1]},
 				Options: &v1.CollectionDeploymentMatchOptions{
 					WithMatches: true,
 				},
@@ -429,7 +436,7 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 			"embedded collections",
 			&v1.DryRunCollectionRequest{
 				Name:                  "test collection",
-				EmbeddedCollectionIds: collectionIDs,
+				EmbeddedCollectionIds: s.collectionIDs,
 				Options: &v1.CollectionDeploymentMatchOptions{
 					WithMatches: true,
 				},
@@ -444,12 +451,6 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, tc.expectedListDeployments, resp.GetDeployments())
 		})
-	}
-
-	// clean up test
-	for _, id := range collectionIDs {
-		_, err = s.service.DeleteCollection(ctx, &v1.ResourceByID{Id: id})
-		assert.NoError(s.T(), err)
 	}
 }
 
@@ -472,7 +473,7 @@ func getTestDeployment(name string, labels ...label) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  "nginx",
-							Image: "nginx:Latest",
+							Image: "quay.io/rhacs-eng/qa:nginx-1-14-alpine",
 						},
 					},
 				},
