@@ -17,7 +17,7 @@ import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import useFetchClusters from 'hooks/useFetchClusters';
 import useURLSearch from 'hooks/useURLSearch';
-import { fetchNetworkFlowGraph } from 'services/NetworkService';
+import { fetchNetworkFlowGraph, fetchNetworkPolicyGraph } from 'services/NetworkService';
 import { getQueryString } from 'utils/queryStringUtils';
 import timeWindowToDate from 'utils/timeWindows';
 
@@ -42,6 +42,8 @@ const includePorts = true;
 
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
+    const [activeModel, setActiveModel] = useState<CustomModel>(emptyModel);
+    const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -67,16 +69,40 @@ function NetworkGraphPage() {
                 const queryToUse = getQueryString(remainingQuery).slice(1);
                 const timestampToUse = timeWindowToDate(timeWindow);
 
-                fetchNetworkFlowGraph(
-                    selectedClusterId,
-                    namespacesFromUrl,
-                    queryToUse,
-                    timestampToUse || undefined,
-                    includePorts
-                )
-                    .then(({ response }) => {
-                        const dataModel = transformData(response.nodes);
-                        setModel(dataModel);
+                Promise.all([
+                    fetchNetworkFlowGraph(
+                        selectedClusterId,
+                        namespacesFromUrl,
+                        queryToUse,
+                        timestampToUse || undefined,
+                        includePorts
+                    ),
+                    fetchNetworkPolicyGraph(
+                        selectedClusterId,
+                        namespacesFromUrl,
+                        queryToUse,
+                        timestampToUse || undefined,
+                        includePorts
+                    ),
+                ])
+                    .then((values) => {
+                        const activeNodeMap = {};
+                        const extraneousNodes = [];
+
+                        const { activeNodes } = values[0].response;
+                        activeNodes.forEach(({ entity }) => {
+                            if (!activeNodeMap[entity.id]) {
+                                activeNodeMap[entity.id] = entity;
+                            }
+                        });
+                        const { policyNodes } = values[1].response;
+                        // policyNodes.forEach(({ entity }) => {
+                        //     if (!activeNodeMap[entity.id]) {
+                        //         extraneousNodes.push(entity);
+                        //     }
+                        // });
+                        setActiveModel(transformData(activeNodes));
+                        setExtraneousFlowsModel(transformData(policyNodes));
                     })
                     .catch(() => {
                         // TODO
