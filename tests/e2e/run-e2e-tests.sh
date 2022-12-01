@@ -58,6 +58,9 @@ $script qa
 # Run the full set of 'non groovy' e2e tests. This is similar to what CI runs
 # for *-nongroovy-e2e-tests jobs on a PR.
 $script e2e
+
+# Run the upgrade test.
+$script upgrade
 _EOH_
     exit 1
 }
