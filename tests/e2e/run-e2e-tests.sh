@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1091
 
 # Run e2e tests using the working directory code via the rox-ci-image /
 # stackrox-test container, against the cluster defined in the calling
@@ -268,8 +267,8 @@ _EOVAULTHELP_
 
 run_qa_flavor() {
     if [[ -z "$suite" && -z "$case" ]]; then
+        source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
         (
-            source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
             config_part_1
             if [[ "${config_only}" == "false" ]]; then
                 test_part_1
@@ -294,7 +293,6 @@ run_qa_flavor() {
 }
 
 run_e2e_flavor() {
-    # shellcheck disable=SC2031
     "$ROOT/tests/e2e/run.sh" 2>&1 | sed -e 's/^/test output: /'
 }
 
