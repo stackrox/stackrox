@@ -337,7 +337,7 @@ func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error)
 
 	// We should only get the header row and the row for the size of $PGDATA.  If we
 	// get more than that, then $PGDATA is not defined
-	if len(rawCapacityInfo) != 2 {
+	if len(rawCapacityInfo) < 2 {
 		if err := tx.Rollback(ctx); err != nil {
 			return 0, err
 		}

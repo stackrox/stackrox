@@ -23,7 +23,7 @@ import (
 
 var (
 	preHistoryVer = versionPair{version: "3.0.56.0", seqNum: 62}
-	preVer        = versionPair{version: "3.0.57.0", seqNum: 65}
+	preVer        = versionPair{version: "3.0.57.0", seqNum: 64}
 	currVer       = versionPair{version: "3.0.58.0", seqNum: 65}
 	futureVer     = versionPair{version: "10001.0.0.0", seqNum: 6533}
 	moreFutureVer = versionPair{version: "10002.0.0.0", seqNum: 7533}
