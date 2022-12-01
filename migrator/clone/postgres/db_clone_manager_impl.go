@@ -183,7 +183,6 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	}
 
 	prevClone, prevExists := d.cloneMap[PreviousClone]
-	log.Infof("SHREWS -- %d = %d", currClone.GetSeqNum(), migrations.CurrentDBVersionSeqNum())
 	// Only need to make a copy if the migrations need to be performed
 	if d.rollbackEnabled() && currClone.GetSeqNum() != migrations.CurrentDBVersionSeqNum() {
 		// If previous clone has the same version as current version, the previous upgrade was not completed.
