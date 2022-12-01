@@ -294,6 +294,7 @@ run_qa_flavor() {
 }
 
 run_e2e_flavor() {
+    # shellcheck disable=SC2031
     "$ROOT/tests/e2e/run.sh" 2>&1 | sed -e 's/^/test output: /'
 }
 
