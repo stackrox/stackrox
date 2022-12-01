@@ -38,12 +38,12 @@ test_e2e() {
     run_roxctl_tests
     run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
     store_test_results "roxctl-test-output" "roxctl-test-output"
-    [[ ! -f FAIL ]] || die "e2e tests failed"
+    [[ ! -f FAIL ]] || die "roxctl e2e tests failed"
 
     info "E2E API tests"
     make -C tests || touch FAIL
     store_test_results "tests/all-tests-results" "all-tests-results"
-    [[ ! -f FAIL ]] || die "e2e tests failed"
+    [[ ! -f FAIL ]] || die "e2e API tests failed"
 
     info "Sensor k8s integration tests"
     make sensor-integration-test || touch FAIL
@@ -51,7 +51,7 @@ test_e2e() {
     make generate-junit-reports || touch FAIL
     store_test_results junit-reports reports
     store_test_results "test-output/test.log" "sensor-integration"
-    [[ ! -f FAIL ]] || die "e2e tests failed"
+    [[ ! -f FAIL ]] || die "sensor-integration e2e tests failed"
 
     setup_proxy_tests "localhost"
     run_proxy_tests "localhost"
@@ -62,7 +62,7 @@ test_e2e() {
     info "E2E destructive tests"
     make -C tests destructive-tests || touch FAIL
     store_test_results "tests/destructive-tests-results" "destructive-tests-results"
-    [[ ! -f FAIL ]] || die "e2e tests failed"
+    [[ ! -f FAIL ]] || die "destructive e2e tests failed"
 
     restore_56_1_backup
     wait_for_api
@@ -70,7 +70,7 @@ test_e2e() {
     info "E2E external backup tests"
     make -C tests external-backup-tests || touch FAIL
     store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
-    [[ ! -f FAIL ]] || die "e2e tests failed"
+    [[ ! -f FAIL ]] || die "external backup e2e tests failed"
 }
 
 test_preamble() {
