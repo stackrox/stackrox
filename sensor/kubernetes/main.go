@@ -47,7 +47,7 @@ func main() {
 	} else {
 		sharedClientInterface = client.MustCreateInterface()
 	}
-	clientconn.SetUserAgent("sensor")
+	clientconn.SetUserAgent(clientconn.Sensor)
 	centralConnFactory, err := centralclient.NewCentralConnectionFactory(env.CentralEndpoint.Setting())
 	if err != nil {
 		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing gRPC client to endpoint %s", env.CentralEndpoint.Setting()))

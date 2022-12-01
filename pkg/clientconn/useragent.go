@@ -11,8 +11,17 @@ import (
 
 var userAgent string
 
+const (
+	AdmissionController = "Rox Admission Controller"
+	Central             = "Rox Central"
+	Compliance          = "Rox Compliance"
+	Roxctl              = "roxctl"
+	Sensor              = "Rox Sensor"
+	Upgrader            = "Rox Upgrader"
+)
+
 func init() {
-	SetUserAgent("stackrox")
+	SetUserAgent("StackRox")
 }
 
 // SetUserAgent formats and sets a value to be used in the User-Agent HTTP
