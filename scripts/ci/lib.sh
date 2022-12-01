@@ -1391,7 +1391,7 @@ save_junit_success() {
         die "missing args. usage: save_junit_success <class> <description>"
     fi
 
-    if [[ -z "${ARTIFACT_DIR}" ]]; then
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
         info "Warning: save_junit_success() requires the \$ARTIFACT_DIR variable to be set"
         return
     fi
@@ -1412,7 +1412,7 @@ save_junit_failure() {
         die "missing args. usage: save_junit_failure <class> <description> <details>"
     fi
 
-    if [[ -z "${ARTIFACT_DIR}" ]]; then
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
         info "Warning: save_junit_failure() requires an ARTIFACT_DIR"
         return
     fi
