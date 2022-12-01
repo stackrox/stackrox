@@ -31,6 +31,7 @@ describe('Authentication', () => {
     };
 
     it('should redirect user to login page, authenticate and redirect to the requested page', () => {
+        localStorage.removeItem('access_token'); // replace possible valid token left over from previous test file
         stubAPIs();
         setupAuth(pagePath, AUTHENTICATED);
         cy.location('pathname').should('eq', loginUrl);
