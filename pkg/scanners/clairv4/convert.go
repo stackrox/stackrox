@@ -5,18 +5,18 @@ import (
 	"net/http"
 	"strings"
 
-	gogoTypes "github.com/gogo/protobuf/types"
+	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/stackrox/rox/generated/storage"
-	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	imageutils "github.com/stackrox/rox/pkg/images/utils"
+	registrytypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 // manifestForImage returns a ClairCore image manifest for the given image.
-func manifestForImage(registry registryTypes.Registry, image *storage.Image) (*claircore.Manifest, error) {
+func manifestForImage(registry registrytypes.Registry, image *storage.Image) (*claircore.Manifest, error) {
 	// Ensure this exists before bothering to continue.
 	cfg := registry.Config()
 	if cfg == nil {
@@ -25,7 +25,7 @@ func manifestForImage(registry registryTypes.Registry, image *storage.Image) (*c
 
 	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types/digest.go)
 	// to make it easier to set the (*claircore.Manifest).Hash.
-	imgDigest, err := claircore.ParseDigest(imageUtils.GetSHA(image))
+	imgDigest, err := claircore.ParseDigest(imageutils.GetSHA(image))
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing image digest")
 	}
@@ -33,13 +33,15 @@ func manifestForImage(registry registryTypes.Registry, image *storage.Image) (*c
 		Hash: imgDigest,
 	}
 
+	client := registry.HTTPClient()
+	remote := image.GetName().GetRemote()
 	for _, layerSHA := range image.GetMetadata().GetLayerShas() {
 		layerDigest, err := claircore.ParseDigest(layerSHA)
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing image layer digest")
 		}
 
-		uri, header, err := getLayerURIAndHeader(registry.HTTPClient(), cfg.URL, image.GetName().GetRemote(), layerDigest.String())
+		uri, header, err := fetchLayerURIAndHeader(client, cfg.URL, remote, layerDigest.String())
 		if err != nil {
 			return nil, err
 		}
@@ -55,14 +57,14 @@ func manifestForImage(registry registryTypes.Registry, image *storage.Image) (*c
 	return manifest, nil
 }
 
-// getLayerURIAndHeader is based on the clairctl v4.5.0 implementation for creating manifests:
+// fetchLayerURIAndHeader is based on the clairctl v4.5.0 implementation for creating manifests:
 // https://github.com/quay/clair/blob/v4.5.0/cmd/clairctl/manifest.go#L76.
 // It is assumed the given client handles auth.
-func getLayerURIAndHeader(client *http.Client, url string, repository, digest string) (string, http.Header, error) {
+func fetchLayerURIAndHeader(client *http.Client, url, repository, digest string) (string, http.Header, error) {
 	path := fmt.Sprintf("/v2/%s/blobs/%s", repository, digest)
 	req, err := http.NewRequest(http.MethodGet, url+path, nil)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "creating image pull request")
+		return "", nil, errors.Wrap(err, "creating image layer pull request")
 	}
 	// We don't actually want the layer. We just want the headers.
 	req.Header.Add("Range", "bytes=0-0")
@@ -80,9 +82,9 @@ func getLayerURIAndHeader(client *http.Client, url string, repository, digest st
 
 func imageScanFromReport(report *claircore.VulnerabilityReport) *storage.ImageScan {
 	scan := &storage.ImageScan{
-		ScanTime:        gogoTypes.TimestampNow(),
-		Components:      getComponents(report),
-		OperatingSystem: getOS(report),
+		ScanTime:        gogotypes.TimestampNow(),
+		Components:      components(report),
+		OperatingSystem: os(report),
 	}
 
 	if scan.GetOperatingSystem() == "unknown" {
@@ -92,14 +94,14 @@ func imageScanFromReport(report *claircore.VulnerabilityReport) *storage.ImageSc
 	return scan
 }
 
-func getComponents(report *claircore.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
+func components(report *claircore.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(report.PackageVulnerabilities))
 	for id, pkg := range report.Packages {
 		vulnIDs := report.PackageVulnerabilities[id]
 		component := &storage.EmbeddedImageScanComponent{
 			Name:    pkg.Name,
 			Version: pkg.Version,
-			Vulns:   getVulns(report.Vulnerabilities, vulnIDs),
+			Vulns:   vulnerabilities(report.Vulnerabilities, vulnIDs),
 		}
 
 		components = append(components, component)
@@ -108,7 +110,7 @@ func getComponents(report *claircore.VulnerabilityReport) []*storage.EmbeddedIma
 	return components
 }
 
-func getVulns(vulnerabilities map[string]*claircore.Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
+func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
 	// vulns will have at most len(ids) entries.
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(ids))
 	uniqueVulns := set.NewStringSet()
@@ -120,14 +122,14 @@ func getVulns(vulnerabilities map[string]*claircore.Vulnerability, ids []string)
 		}
 
 		// Ignore the error, as publishedTime will just be `nil` if the given time is invalid.
-		publishedTime, _ := gogoTypes.TimestampProto(ccVuln.Issued)
+		publishedTime, _ := gogotypes.TimestampProto(ccVuln.Issued)
 		vuln := &storage.EmbeddedVulnerability{
 			Cve:               ccVuln.Name,
 			Summary:           ccVuln.Description,
-			Link:              getLink(ccVuln.Links),
+			Link:              link(ccVuln.Links),
 			PublishedOn:       publishedTime,
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-			Severity:          normalizeSeverity(ccVuln.NormalizedSeverity),
+			Severity:          normalizedSeverity(ccVuln.NormalizedSeverity),
 		}
 
 		if ccVuln.FixedInVersion != "" {
@@ -142,15 +144,15 @@ func getVulns(vulnerabilities map[string]*claircore.Vulnerability, ids []string)
 	return vulns
 }
 
-// getLink returns a single link to use for the vulnerability,
+// link returns a single link to use for the vulnerability,
 // Clair v4 can possibly send over multiple, space-separated links
 // for a single vulnerability.
-func getLink(links string) string {
-	link, _, _ := strings.Cut(links, " ")
-	return link
+func link(links string) string {
+	l, _, _ := strings.Cut(links, " ")
+	return l
 }
 
-func normalizeSeverity(severity claircore.Severity) storage.VulnerabilitySeverity {
+func normalizedSeverity(severity claircore.Severity) storage.VulnerabilitySeverity {
 	switch severity {
 	case claircore.Negligible, claircore.Low:
 		return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
@@ -165,11 +167,11 @@ func normalizeSeverity(severity claircore.Severity) storage.VulnerabilitySeverit
 	}
 }
 
-// getOS retrieves the OS name:version for the image represented by the given
+// os retrieves the OS name:version for the image represented by the given
 // vulnerability report.
 // If there are zero known distributions for the image or if there are multiple distributions,
 // return "unknown", as StackRox only supports a single base-OS at this time.
-func getOS(report *claircore.VulnerabilityReport) string {
+func os(report *claircore.VulnerabilityReport) string {
 	if len(report.Distributions) == 1 {
 		for _, dist := range report.Distributions {
 			return dist.DID + ":" + dist.VersionID

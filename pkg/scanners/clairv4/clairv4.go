@@ -123,12 +123,13 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types/digest.go)
 	// to mirror clairctl (https://github.com/quay/clair/blob/v4.5.0/cmd/clairctl/report.go#L251).
-	digest, err := claircore.ParseDigest(imageutils.GetSHA(image))
+	ccDigest, err := claircore.ParseDigest(imageutils.GetSHA(image))
 	if err != nil {
 		return nil, errors.Wrapf(err, "Clair v4: parsing image digest for image %s", imgName)
 	}
+	digest := ccDigest.String()
 
-	exists, err := c.indexReportExists(digest.String())
+	exists, err := c.indexReportExists(digest)
 	// Exit early if this is an unexpected status code error.
 	// If it's not an unexpected error, then continue as normal and ignore the error.
 	if isUnexpectedStatusCodeError(err) {
@@ -227,9 +228,9 @@ func (c *clairv4) index(manifest *claircore.Manifest) error {
 	return nil
 }
 
-func (c *clairv4) getVulnerabilityReport(digest claircore.Digest) (*claircore.VulnerabilityReport, error) {
+func (c *clairv4) getVulnerabilityReport(digest string) (*claircore.VulnerabilityReport, error) {
 	// FIXME: go1.19 adds https://pkg.go.dev/net/url#JoinPath, which seems more idiomatic.
-	url := strings.Join([]string{c.vulnerabilityReportEndpoint, digest.String()}, "/")
+	url := strings.Join([]string{c.vulnerabilityReportEndpoint, digest}, "/")
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
