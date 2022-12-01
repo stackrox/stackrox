@@ -1,7 +1,5 @@
 import static com.jayway.restassured.RestAssured.given
 
-import orchestratormanager.OrchestratorTypes
-
 import groups.BAT
 import groups.Integration
 import objects.Deployment
@@ -9,7 +7,6 @@ import objects.K8sServiceAccount
 import objects.Service
 import util.Env
 import util.Helpers
-import util.NetworkGraphUtil
 
 import org.junit.experimental.categories.Category
 import spock.lang.Shared
@@ -21,18 +18,8 @@ import services.ProcessesListeningOnPortsService
 class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     // Deployment names
-    static final private String UDPCONNECTIONTARGET = "udp-connection-target"
     static final private String TCPCONNECTIONTARGET1 = "tcp-connection-target-1"
     static final private String TCPCONNECTIONTARGET2 = "tcp-connection-target-2"
-    static final private String NGINXCONNECTIONTARGET = "nginx-connection-target"
-    static final private String UDPCONNECTIONSOURCE = "udp-connection-source"
-    static final private String TCPCONNECTIONSOURCE = "tcp-connection-source"
-    //static final private String ICMPCONNECTIONSOURCE = "icmp-connection-source"
-    static final private String NOCONNECTIONSOURCE = "no-connection-source"
-    static final private String SHORTCONSISTENTSOURCE = "short-consistent-source"
-    static final private String SINGLECONNECTIONSOURCE = "single-connection-source"
-    static final private String MULTIPLEPORTSCONNECTION = "two-ports-connect-source"
-    static final private String EXTERNALDESTINATION = "external-destination-source"
 
     // Other namespace
     static final private String OTHER_NAMESPACE = "qa2"
@@ -66,7 +53,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT)" as String,]),
         ]
     }
-
 
     def createDeployments() {
         targetDeployments = buildTargetDeployments()
@@ -119,7 +105,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
             destroyDeployments()
             sleep(5000)
             createDeployments()
-            sleep(100000)
+            sleep(5000)
             log.info ">>>> Done <<<<<"
         }
     }
@@ -127,47 +113,30 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     @Category([BAT, Integration])
     def "Verify networking endpoints with processes appear in API at the namespace level"() {
         given:
-        "An nginx pod is started"
+        "Two deployments that listen on ports are started up"
         rebuildForRetries()
 
         String namespace = targetDeployments[0].getNamespace()
         String deploymentId = targetDeployments[0].getDeploymentUid()
-        String name = targetDeployments[0].getName()
+
         def processesListeningOnPorts = evaluateWithRetry(10, 10) {
                 def temp = ProcessesListeningOnPortsService
                         .getProcessesListeningOnPortsResponse(namespace, deploymentId)
                 return temp
         }
-        log.info ""
-        log.info ""
-        log.info "*************"
-        log.info "deploymentId= ${deploymentId}"
-        log.info "name= ${name}"
-        log.info "namespace= ${namespace}"
-        log.info "${processesListeningOnPorts}"
-        log.info "*************"
-        log.info ""
-        log.info ""
 
         namespace = targetDeployments[1].getNamespace()
         deploymentId = targetDeployments[1].getDeploymentUid()
-        name = targetDeployments[1].getName()
+
         processesListeningOnPorts = evaluateWithRetry(10, 10) {
                 def temp = ProcessesListeningOnPortsService
                         .getProcessesListeningOnPortsResponse(namespace, deploymentId)
                 return temp
         }
-        log.info ""
-        log.info ""
-        log.info "*************"
-        log.info "deploymentId= ${deploymentId}"
-        log.info "name= ${name}"
-        log.info "namespace= ${namespace}"
-        log.info "${processesListeningOnPorts}"
-        log.info "*************"
-        log.info ""
-        log.info ""
 
+        def gotCorrectNumElements = waitForNamespaceResponseToHaveNumElements(2, namespace, 240)
+
+        assert gotCorrectNumElements == true
 
         processesListeningOnPorts = evaluateWithRetry(10, 10) {
                 def temp = ProcessesListeningOnPortsService
@@ -175,80 +144,82 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 return temp
         }
 
-        log.info ""
-        log.info ""
-        log.info "*************"
-        log.info "${processesListeningOnPorts}"
-        log.info "*************"
-        log.info ""
-        log.info ""
-
         assert processesListeningOnPorts
 
         def list = processesListeningOnPorts.processesListeningOnPortsWithDeploymentList
 
         assert list.size() == 2
 
-	def deploymentId1 = targetDeployments[0].getDeploymentUid()
-	def deploymentId2 = targetDeployments[1].getDeploymentUid()
+        def deploymentId1 = targetDeployments[0].getDeploymentUid()
+        def deploymentId2 = targetDeployments[1].getDeploymentUid()
 
-	def processesForDeployment1 = list.find { it.deploymentId == deploymentId1 }
-	def processesForDeployment2 = list.find { it.deploymentId == deploymentId2 }
-
-        log.info "${processesForDeployment1}"
-        log.info "${processesForDeployment2}"
+        def processesForDeployment1 = list.find { it.deploymentId == deploymentId1 }
+        def processesForDeployment2 = list.find { it.deploymentId == deploymentId2 }
 
         def list1 = processesForDeployment1.processesListeningOnPortsList
 
         assert list1.size() == 2
 
-        def endpoint1_1 = list1.find { it.port == 80 }
+        def endpoint1a = list1.find { it.port == 80 }
 
-        assert endpoint1_1
-	assert endpoint1_1.process.containerName == TCPCONNECTIONTARGET1 
-	assert endpoint1_1.process.processName == "socat"
-	assert endpoint1_1.process.processExecFilePath == "/usr/bin/socat"
-	// assert endpoint1_1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+        assert endpoint1a
+        assert endpoint1a.process.containerName == TCPCONNECTIONTARGET1
+        assert endpoint1a.process.processName == "socat"
+        assert endpoint1a.process.processExecFilePath == "/usr/bin/socat"
+        // assert endpoint1a.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
 
-	def endpoint1_2 = list1.find { it.port == 8080 }
+        def endpoint1b = list1.find { it.port == 8080 }
 
-        assert endpoint1_2
-	assert endpoint1_2.process.containerName == TCPCONNECTIONTARGET1 
-	assert endpoint1_2.process.processName == "socat"
-	assert endpoint1_2.process.processExecFilePath == "/usr/bin/socat"
-	assert endpoint1_2.process.processArgs == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+        assert endpoint1b
+        assert endpoint1b.process.containerName == TCPCONNECTIONTARGET1
+        assert endpoint1b.process.processName == "socat"
+        assert endpoint1b.process.processExecFilePath == "/usr/bin/socat"
+        assert endpoint1b.process.processArgs == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
 
         def list2 = processesForDeployment2.processesListeningOnPortsList
 
-	assert list2.size() == 1
+        assert list2.size() == 1
 
-	def endpoint2 = list2.get(0)
+        def endpoint2 = list2.get(0)
 
         assert endpoint2.port == 8081
-	assert endpoint2.process.containerName == TCPCONNECTIONTARGET2
-	assert endpoint2.process.processName == "socat"
-	assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
-	assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+        assert endpoint2.process.containerName == TCPCONNECTIONTARGET2
+        assert endpoint2.process.processName == "socat"
+        assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
+        assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+
+        destroyDeployments()
+
+        gotCorrectNumElements = waitForNamespaceResponseToHaveNumElements(0, namespace, 240)
+
+        assert gotCorrectNumElements == true
+
+        log.info "Destroyed deployment"
+
+        processesListeningOnPorts = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsWithDeploymentResponse(namespace)
+                return temp
+        }
+
+        def list3 = processesListeningOnPorts.processesListeningOnPortsWithDeploymentList
+
+        assert list3.size() == 0
     }
 
     @Category([BAT, Integration])
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
-        "An nginx pod is started"
+        "Two deployments that listen on ports are started up"
         rebuildForRetries()
 
         String namespace = targetDeployments[0].getNamespace()
         String deploymentId = targetDeployments[0].getDeploymentUid()
-        String name = targetDeployments[0].getName()
-        log.info ""
-        log.info ""
-        log.info "*************"
-        log.info "deploymentId= ${deploymentId}"
-        log.info "name= ${name}"
-        log.info "namespace= ${namespace}"
-        log.info "*************"
-        log.info ""
-        log.info ""
+
+        def gotCorrectNumElements = waitForDeploymentResponseToHaveNumElements(2, namespace, deploymentId, 240)
+
+        assert gotCorrectNumElements == true
+
         def processesListeningOnPorts = evaluateWithRetry(10, 10) {
                 def temp = ProcessesListeningOnPortsService
                         .getProcessesListeningOnPortsResponse(namespace, deploymentId)
@@ -263,17 +234,78 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint1 = list.find { it.port == 80 }
 
         assert endpoint1
-	assert endpoint1.process.containerName == TCPCONNECTIONTARGET1
-	assert endpoint1.process.processName == "socat"
-	assert endpoint1.process.processExecFilePath == "/usr/bin/socat"
-	// assert endpoint1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+        assert endpoint1.process.containerName == TCPCONNECTIONTARGET1
+        assert endpoint1.process.processName == "socat"
+        assert endpoint1.process.processExecFilePath == "/usr/bin/socat"
+        // assert endpoint1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
 
-	def endpoint2 = list.find { it.port == 8080 }
+        def endpoint2 = list.find { it.port == 8080 }
 
         assert endpoint2
-	assert endpoint2.process.containerName == TCPCONNECTIONTARGET1
-	assert endpoint2.process.processName == "socat"
-	assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
-	assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+        assert endpoint2.process.containerName == TCPCONNECTIONTARGET1
+        assert endpoint2.process.processName == "socat"
+        assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
+        assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+
+        destroyDeployments()
+
+        gotCorrectNumElements = waitForDeploymentResponseToHaveNumElements(0, namespace, deploymentId, 240)
+
+        assert gotCorrectNumElements == true
+
+        processesListeningOnPorts = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(namespace, deploymentId)
+                return temp
+        }
+
+        assert processesListeningOnPorts
+
+        def list2 = processesListeningOnPorts.processesListeningOnPortsList
+        assert list2.size() == 0
+    }
+
+    private waitForNamespaceResponseToHaveNumElements(int numElements, String namespace, int timeoutSeconds = 240) {
+        int intervalSeconds = 1
+        int waitTime
+        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+            def processesListeningOnPorts = evaluateWithRetry(10, 10) {
+                    def temp = ProcessesListeningOnPortsService
+                            .getProcessesListeningOnPortsWithDeploymentResponse(namespace)
+                    return temp
+            }
+
+            def list = processesListeningOnPorts.processesListeningOnPortsWithDeploymentList
+
+            if (list.size() == numElements) {
+                return true
+            }
+            sleep intervalSeconds * 1000
+        }
+        log.info "Timedout waiting for response to have {$numElements} elements"
+        return false
+    }
+
+    private waitForDeploymentResponseToHaveNumElements(int numElements, String namespace,
+        String deploymentId, int timeoutSeconds = 240) {
+
+        int intervalSeconds = 1
+        int waitTime
+        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+            def processesListeningOnPorts = evaluateWithRetry(10, 10) {
+                    def temp = ProcessesListeningOnPortsService
+                            .getProcessesListeningOnPortsResponse(namespace, deploymentId)
+                    return temp
+            }
+
+            def list = processesListeningOnPorts.processesListeningOnPortsList
+
+            if (list.size() == numElements) {
+                return true
+            }
+            sleep intervalSeconds * 1000
+        }
+        log.info "Timedout waiting for response to have {$numElements} elements"
+        return false
     }
 }
