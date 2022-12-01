@@ -63,8 +63,10 @@ _EOH_
     exit 1
 }
 
+option_set=":cdhyo:t:"
+
 handle_tag_requirements() {
-    while getopts "ht:" option; do
+    while getopts "$option_set" option; do
         case "$option" in
             t)
                 export TAG_OVERRIDE="${OPTARG}"
@@ -93,7 +95,7 @@ handle_tag_requirements() {
         id="$(docker create "$roxctl_image")" || {
             cat <<_EOMISSING_
 ERROR: Cannot create a container to copy the roxctl binary from: $roxctl_image.
-Check that the git commit at $tag was pushed and that image build/push succeeded.
+Check that the git commit at $tag was pushed and that that image build/push succeeded.
 _EOMISSING_
             exit 1
         }
@@ -107,6 +109,7 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
     mkdir -p "${HOME}/.gradle/caches"
     mkdir -p "$QA_TEST_DEBUG_LOGS"
+    info "Running in a container..."
     docker run \
       -v "$ROOT:$ROOT:z" \
       -w "$ROOT" \
@@ -130,7 +133,7 @@ main() {
     orchestrator="k8s"
     prompt="true"
 
-    while getopts ":cdyo:t:" option; do
+    while getopts "$option_set" option; do
         case "$option" in
             c)
                 config_only="true"
@@ -182,8 +185,8 @@ main() {
         fi
     fi
 
-    # Sanity check that the roxctl in use matches 'make tag'. This should be
-    # already true due to the container copy in handle_tag_requirements() but
+    # Sanity check that the roxctl in use matches 'make tag'. This should
+    # already be true due to the container copy in handle_tag_requirements() but
     # changes to PATH might break that assumption.
     tag="$(make tag)"
     roxctl_version="$(roxctl version)"
@@ -265,11 +268,13 @@ _EOVAULTHELP_
 
 run_qa_flavor() {
     if [[ -z "$suite" && -z "$case" ]]; then
-        source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
-        config_part_1 2>&1 | sed -e 's/^/config output: /'
-        if [[ "${config_only}" == "false" ]]; then
-            test_part_1 2>&1 | sed -e 's/^/test output: /'
-        fi
+        (
+            source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+            config_part_1
+            if [[ "${config_only}" == "false" ]]; then
+                test_part_1
+            fi
+        ) 2>&1 | sed -e 's/^/test output: /'
     else
         export_test_environment
         setup_deployment_env false false
@@ -289,7 +294,7 @@ run_qa_flavor() {
 }
 
 run_e2e_flavor() {
-    "$ROOT/tests/e2e/run.sh" | sed -e 's/^/test output: /'
+    "$ROOT/tests/e2e/run.sh" 2>&1 | sed -e 's/^/test output: /'
 }
 
 main "$@"
