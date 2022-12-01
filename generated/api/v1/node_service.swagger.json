@@ -823,7 +823,8 @@
           "description": "Time we received an update from Kubernetes."
         },
         "nodeInventory": {
-          "$ref": "#/definitions/storageNodeInventory"
+          "$ref": "#/definitions/storageNodeInventory",
+          "description": "NodeInventory contains a list of components discovered on the node.\nIt will not be saved to the DB, but will be used as input to Scanner's GetNodeVulnerabilities API."
         },
         "scan": {
           "$ref": "#/definitions/storageNodeScan"

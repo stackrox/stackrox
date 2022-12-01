@@ -107,9 +107,11 @@ type Node struct {
 	KubeProxyVersion string           `protobuf:"bytes,16,opt,name=kube_proxy_version,json=kubeProxyVersion,proto3" json:"kube_proxy_version,omitempty"`
 	LastUpdated      *types.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"`
 	// Time we received an update from Kubernetes.
-	K8SUpdated    *types.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty" sensorhash:"ignore"`
-	NodeInventory *NodeInventory   `protobuf:"bytes,28,opt,name=node_inventory,json=nodeInventory,proto3" json:"node_inventory,omitempty" policy:"Node Inventory" sql:"-"`
-	Scan          *NodeScan        `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty" policy:"Node Scan"`
+	K8SUpdated *types.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty" sensorhash:"ignore"`
+	// NodeInventory contains a list of components discovered on the node.
+	// It will not be saved to the DB, but will be used as input to Scanner's GetNodeVulnerabilities API.
+	NodeInventory *NodeInventory `protobuf:"bytes,28,opt,name=node_inventory,json=nodeInventory,proto3" json:"node_inventory,omitempty" policy:"Node Inventory" sql:"-"`
+	Scan          *NodeScan      `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty" policy:"Node Scan"`
 	// Types that are valid to be assigned to SetComponents:
 	//	*Node_Components
 	SetComponents isNode_SetComponents `protobuf_oneof:"set_components"`
