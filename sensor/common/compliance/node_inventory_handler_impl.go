@@ -92,16 +92,38 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 }
 
 func (c *nodeInventoryHandlerImpl) handleNodeInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
-	// TODO(ROX-12943): Replace fakeAndSendToCentral with the proper solution for finding the node
-	c.fakeAndSendToCentral(toC, inventory)
+	// TODO(ROX-12943): Replace fakeNode with the proper solution for finding the node
+	node := c.fakeNode(inventory)
+	c.sendNode(toC, node)
 }
 
-func (c *nodeInventoryHandlerImpl) fakeAndSendToCentral(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
-	if inventory == nil {
+func (c *nodeInventoryHandlerImpl) sendNode(toC chan *central.MsgFromSensor, node *storage.Node) {
+	if node == nil {
 		return
 	}
+	select {
+	case <-c.stopC.Done():
+		return
+	case toC <- &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     node.GetId(),
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_Node{
+					Node: node,
+				},
+			},
+		},
+	}:
+	}
+}
+
+func (c *nodeInventoryHandlerImpl) fakeNode(inventory *storage.NodeInventory) *storage.Node {
+	if inventory == nil {
+		return nil
+	}
 	creation := inventory.ScanTime
-	nodeResource := &storage.Node{
+	return &storage.Node{
 		// this is arbitrary selected UUID - we want to see only 1 fake node in the UI
 		Id:                      "bf5bf7d4-2d77-4194-9ab5-570848c55777",
 		Name:                    inventory.GetNodeName(),
@@ -120,21 +142,5 @@ func (c *nodeInventoryHandlerImpl) fakeAndSendToCentral(toC chan *central.MsgFro
 		KubeletVersion:          "v1.25.0+k3s1",
 		KubeProxyVersion:        "v1.25.0+k3s1",
 		K8SUpdated:              types.TimestampNow(),
-	}
-
-	select {
-	case <-c.stopC.Done():
-		return
-	case toC <- &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     nodeResource.GetId(),
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_Node{
-					Node: nodeResource,
-				},
-			},
-		},
-	}:
 	}
 }
