@@ -147,6 +147,8 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 			return nil, errors.Wrapf(err, "Clair v4: creating manifest for %s", imgName)
 		}
 
+		log.Infof("Manifest for %s: %+v", imgName, manifest)
+
 		if err := c.index(manifest); err != nil {
 			return nil, errors.Wrapf(err, "Clair v4: indexing manifest for %s", imgName)
 		}
