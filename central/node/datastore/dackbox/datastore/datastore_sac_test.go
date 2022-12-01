@@ -242,6 +242,7 @@ func (s *nodeDatastoreSACSuite) TestExists() {
 		s.Run(name, func() {
 			ctx := c.Context
 			exists, err := s.datastore.Exists(ctx, nodeID)
+			// node is not being found on cluster 3 (index 2), because it exists on cluster 2 (index 1)
 			s.NoError(err)
 			s.Equal(c.ExpectedFound, exists)
 		})
