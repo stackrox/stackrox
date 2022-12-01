@@ -23,6 +23,7 @@ type FlowsTableProps = {
     setExpandedRows: React.Dispatch<React.SetStateAction<string[]>>;
     selectedRows: string[];
     setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
+    isEditable?: boolean;
 };
 
 const columnNames = {
@@ -40,6 +41,7 @@ function FlowsTable({
     setExpandedRows,
     selectedRows,
     setSelectedRows,
+    isEditable = false,
 }: FlowsTableProps): ReactElement {
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
@@ -75,12 +77,14 @@ function FlowsTable({
             <Thead>
                 <Tr>
                     <Th />
-                    <Th
-                        select={{
-                            onSelect: (_event, isSelecting) => selectAllRows(isSelecting),
-                            isSelected: areAllRowsSelected,
-                        }}
-                    />
+                    {isEditable && (
+                        <Th
+                            select={{
+                                onSelect: (_event, isSelecting) => selectAllRows(isSelecting),
+                                isSelected: areAllRowsSelected,
+                            }}
+                        />
+                    )}
                     <Th width={40}>{columnNames.entity}</Th>
                     <Th>{columnNames.direction}</Th>
                     <Th>{columnNames.portAndProtocol}</Th>
@@ -121,19 +125,21 @@ function FlowsTable({
                                         : undefined
                                 }
                             />
-                            <Td
-                                select={
-                                    row.children && row.children.length === 0
-                                        ? {
-                                              rowIndex,
-                                              onSelect: (_event, isSelecting) =>
-                                                  setRowSelected(row, isSelecting),
-                                              isSelected: isRowSelected(row),
-                                              disable: !!row.children.length,
-                                          }
-                                        : undefined
-                                }
-                            />
+                            {isEditable && (
+                                <Td
+                                    select={
+                                        row.children && row.children.length === 0
+                                            ? {
+                                                  rowIndex,
+                                                  onSelect: (_event, isSelecting) =>
+                                                      setRowSelected(row, isSelecting),
+                                                  isSelected: isRowSelected(row),
+                                                  disable: !!row.children.length,
+                                              }
+                                            : undefined
+                                    }
+                                />
+                            )}
                             <Td dataLabel={columnNames.entity}>
                                 <Flex direction={{ default: 'row' }}>
                                     <FlexItem>
@@ -161,11 +167,13 @@ function FlowsTable({
                             <Td dataLabel={columnNames.portAndProtocol}>
                                 {row.port} / {row.protocol}
                             </Td>
-                            <Td isActionCell>
-                                {row.children && !row.children.length && (
-                                    <ActionsColumn items={rowActions} />
-                                )}
-                            </Td>
+                            {isEditable && (
+                                <Td isActionCell>
+                                    {row.children && !row.children.length && (
+                                        <ActionsColumn items={rowActions} />
+                                    )}
+                                </Td>
+                            )}
                         </Tr>
                         {isExpanded &&
                             row.children &&
@@ -187,14 +195,16 @@ function FlowsTable({
                                 return (
                                     <Tr key={child.id} isExpanded={isExpanded}>
                                         <Td />
-                                        <Td
-                                            select={{
-                                                rowIndex,
-                                                onSelect: (_event, isSelecting) =>
-                                                    setRowSelected(child, isSelecting),
-                                                isSelected: isRowSelected(child),
-                                            }}
-                                        />
+                                        {isEditable && (
+                                            <Td
+                                                select={{
+                                                    rowIndex,
+                                                    onSelect: (_event, isSelecting) =>
+                                                        setRowSelected(child, isSelecting),
+                                                    isSelected: isRowSelected(child),
+                                                }}
+                                            />
+                                        )}
                                         <Td>
                                             <ExpandableRowContent>
                                                 <Flex direction={{ default: 'row' }}>
@@ -217,9 +227,11 @@ function FlowsTable({
                                                 {child.port} / {child.protocol}
                                             </ExpandableRowContent>
                                         </Td>
-                                        <Td isActionCell>
-                                            <ActionsColumn items={childActions} />
-                                        </Td>
+                                        {isEditable && (
+                                            <Td isActionCell>
+                                                <ActionsColumn items={childActions} />
+                                            </Td>
+                                        )}
                                     </Tr>
                                 );
                             })}

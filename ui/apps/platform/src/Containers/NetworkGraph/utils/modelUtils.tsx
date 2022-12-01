@@ -16,7 +16,7 @@ function getNameByEntity(entity: NetworkEntityInfo): string {
         case 'DEPLOYMENT':
             return entity.deployment.name;
         case 'INTERNET':
-            return 'Internet';
+            return 'External Entities';
         case 'EXTERNAL_SOURCE':
             return entity.externalSource.name;
         default:

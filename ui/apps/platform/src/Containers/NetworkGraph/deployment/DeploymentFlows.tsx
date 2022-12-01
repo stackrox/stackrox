@@ -154,6 +154,7 @@ function DeploymentFlow() {
                         setExpandedRows={setExpandedRows}
                         selectedRows={selectedRows}
                         setSelectedRows={setSelectedRows}
+                        isEditable
                     />
                 </StackItem>
             </Stack>
