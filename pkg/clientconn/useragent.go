@@ -11,6 +11,7 @@ import (
 
 var userAgent string
 
+// The following is the list of component names that tune their User-Agent.
 const (
 	AdmissionController = "Rox Admission Controller"
 	Central             = "Rox Central"
