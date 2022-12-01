@@ -173,15 +173,15 @@ func main() {
 
 	maxMsgSize := 12 * 1024 * 1024
 	grpcServer := grpc.NewServer(
-                grpc.MaxRecvMsgSize(maxMsgSize),
-                grpc.KeepaliveParams(keepalive.ServerParameters{
-                        Time: 40 * time.Second,
-                }),
-                grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-                        MinTime:             5 * time.Second,
-                        PermitWithoutStream: true,
-                }),
-        )
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time: 40 * time.Second,
+		}),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             5 * time.Second,
+			PermitWithoutStream: true,
+		}),
+	)
 
 	sensorAPI.RegisterSignalServiceServer(grpcServer, newServer(db))
 	sensorAPI.RegisterNetworkConnectionInfoServiceServer(grpcServer, newServer(db))
