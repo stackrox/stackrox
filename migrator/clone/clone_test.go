@@ -438,6 +438,8 @@ func doTestForceRollbackFailure(t *testing.T) {
 
 				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
 
+				// Since postgres version no longer makes a previous if the sequence number doesn't change
+				// the error message for a dev build may differ
 				if c.postgresDevErrorMessage != "" && currVer != releaseVer {
 					expectedError = c.postgresDevErrorMessage
 				}
