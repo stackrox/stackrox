@@ -35,6 +35,7 @@ function ByLabelSelector({
     isDisabled,
 }: ByLabelSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
+    const lowerCaseEntity = entityType.toLowerCase();
     function onChangeLabelKey(resourceSelector: ByLabelResourceSelector, ruleIndex, value) {
         const newSelector = cloneDeep(resourceSelector);
         newSelector.rules[ruleIndex].key = value;
@@ -129,7 +130,7 @@ function ByLabelSelector({
                                 >
                                     <AutoCompleteSelect
                                         id={`${entityType}-label-key-${ruleIndex}`}
-                                        typeAheadAriaLabel={`Select label key for ${entityType.toLowerCase()} rule ${
+                                        typeAheadAriaLabel={`Select label key for ${lowerCaseEntity} rule ${
                                             ruleIndex + 1
                                         } of ${scopedResourceSelector.rules.length}`}
                                         selectedOption={rule.key}
@@ -177,7 +178,7 @@ function ByLabelSelector({
                                                         valueIndex + 1
                                                     } of ${
                                                         rule.values.length
-                                                    } for ${entityType.toLowerCase()} rule ${
+                                                    } for ${lowerCaseEntity} rule ${
                                                         ruleIndex + 1
                                                     } of ${scopedResourceSelector.rules.length}`}
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
@@ -195,13 +196,13 @@ function ByLabelSelector({
                                                 />
                                                 {!isDisabled && (
                                                     <Button
+                                                        aria-label={`Delete ${value}`}
                                                         variant="plain"
                                                         onClick={() =>
                                                             onDeleteValue(ruleIndex, valueIndex)
                                                         }
                                                     >
                                                         <TrashIcon
-                                                            aria-label={`Delete ${value}`}
                                                             style={{ cursor: 'pointer' }}
                                                             color="var(--pf-global--Color--dark-200)"
                                                         />
@@ -213,6 +214,9 @@ function ByLabelSelector({
                                 </Flex>
                                 {!isDisabled && (
                                     <Button
+                                        aria-label={`Add ${lowerCaseEntity} label value for rule ${
+                                            ruleIndex + 1
+                                        }`}
                                         className="pf-u-pl-0 pf-u-pt-md"
                                         variant="link"
                                         onClick={() => onAddLabelValue(ruleIndex)}
@@ -229,6 +233,7 @@ function ByLabelSelector({
                 <>
                     <Divider component="div" className="pf-u-pt-lg" />
                     <Button
+                        aria-label={`Add ${lowerCaseEntity} label rule`}
                         className="pf-u-pl-0 pf-u-pt-md"
                         variant="link"
                         onClick={onAddLabelRule}

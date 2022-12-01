@@ -38,6 +38,7 @@ function ByNameSelector({
     OptionComponent,
 }: ByNameSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
+    const lowerCaseEntity = entityType.toLowerCase();
     const autocompleteProvider = useCallback(
         (search: string) => {
             const req = generateRequest(collection);
@@ -85,7 +86,7 @@ function ByNameSelector({
                             id={`${entityType}-name-value-${index}`}
                             typeAheadAriaLabel={`Select value ${index + 1} of ${
                                 scopedResourceSelector.rule.values.length
-                            } for the ${entityType.toLowerCase()} name`}
+                            } for the ${lowerCaseEntity} name`}
                             className="pf-u-flex-grow-1 pf-u-w-auto"
                             selectedOption={value}
                             onChange={onChangeValue(scopedResourceSelector, index)}
@@ -99,9 +100,12 @@ function ByNameSelector({
                             OptionComponent={OptionComponent}
                         />
                         {!isDisabled && (
-                            <Button variant="plain" onClick={() => onDeleteValue(index)}>
+                            <Button
+                                aria-label={`Delete ${value}`}
+                                variant="plain"
+                                onClick={() => onDeleteValue(index)}
+                            >
                                 <TrashIcon
-                                    aria-label={`Delete ${value}`}
                                     className="pf-u-flex-shrink-1"
                                     style={{ cursor: 'pointer' }}
                                     color="var(--pf-global--Color--dark-200)"
@@ -112,7 +116,12 @@ function ByNameSelector({
                 ))}
             </Flex>
             {!isDisabled && (
-                <Button className="pf-u-pl-0 pf-u-pt-md" variant="link" onClick={onAddValue}>
+                <Button
+                    aria-label={`Add ${lowerCaseEntity} name value`}
+                    className="pf-u-pl-0 pf-u-pt-md"
+                    variant="link"
+                    onClick={onAddValue}
+                >
                     Add value
                 </Button>
             )}
