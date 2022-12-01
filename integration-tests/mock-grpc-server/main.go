@@ -171,7 +171,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//grpcServer := grpc.NewServer()
 	maxMsgSize := 12 * 1024 * 1024
 	grpcServer := grpc.NewServer(
                 grpc.MaxRecvMsgSize(maxMsgSize),
