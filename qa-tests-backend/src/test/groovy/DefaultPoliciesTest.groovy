@@ -362,13 +362,16 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     String team(String img) {
+        // To notify slack group we need to provide its ID.
+        // It can be found with https://app.slack.com/client/T030RBGDB/browse-user-groups/user_groups
+        // To validate it's correct you can use: https://app.slack.com/block-kit-builder
         if (img.contains('scanner')) {
-            return '@acs-scanner-team'
+            return '<!subteam^S0499T54CAC>'
         }
         if (img.contains('collector')) {
-            return '@collector-team'
+            return '<!subteam^S01HCU3RQ0H>'
         }
-        return img.contains('roxctl') ? '@merlin-team' : '@support-oncall-eng'
+        return img.contains('roxctl') ? '<!subteam^S02KY64PK8U>' : '<!subteam^STZRGPQ78>'
     }
 
     @Unroll
