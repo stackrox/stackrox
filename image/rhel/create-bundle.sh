@@ -23,7 +23,6 @@ extract_from_image() {
   [[ -n "$image" && -n "$src" && -n "$dst" ]] \
       || die "extract_from_image: <image> <src> <dst>"
 
-  mkdir -p "${dst}"
   docker create --name copier "${image}"
   docker cp "copier:${src}" "${dst}"
   docker rm copier
@@ -109,6 +108,7 @@ fi
 
 if [[ "${DATA_IMAGE}" != "local" ]]; then
   # Extract data from data container image
+  mkdir -p "${bundle_root}/stackrox/static-data/"
   extract_from_image "${DATA_IMAGE}" "/stackrox-data" "${bundle_root}/stackrox/static-data/"
   extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
 else
