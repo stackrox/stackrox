@@ -9,10 +9,14 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Divider,
+    Tooltip,
 } from '@patternfly/react-core';
 
 import { integrationsPath } from 'routePaths';
-import { getIntegrationLabel } from 'Containers/Integrations/utils/integrationUtils';
+import {
+    getEditDisabledMessage,
+    getIntegrationLabel,
+} from 'Containers/Integrations/utils/integrationUtils';
 import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -35,6 +39,8 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
     const integrationsListPath = `${integrationsPath}/${source}/${type}`;
     const integrationEditPath = `${integrationsPath}/${source}/${type}/edit/${id as string}`;
 
+    const editDisabledMessage = getEditDisabledMessage(type);
+
     return (
         <>
             <PageTitle title={title} />
@@ -55,13 +61,26 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
                     </FlexItem>
                     {pageState === 'VIEW_DETAILS' && permissions[source].write && (
                         <FlexItem align={{ default: 'alignRight' }}>
-                            <Button
-                                variant={ButtonVariant.secondary}
-                                component={LinkShim}
-                                href={integrationEditPath}
-                            >
-                                Edit
-                            </Button>
+                            {editDisabledMessage ? (
+                                <Tooltip content={editDisabledMessage}>
+                                    <Button
+                                        variant={ButtonVariant.secondary}
+                                        component={LinkShim}
+                                        href={integrationEditPath}
+                                        isAriaDisabled={!!editDisabledMessage}
+                                    >
+                                        Edit
+                                    </Button>
+                                </Tooltip>
+                            ) : (
+                                <Button
+                                    variant={ButtonVariant.secondary}
+                                    component={LinkShim}
+                                    href={integrationEditPath}
+                                >
+                                    Edit
+                                </Button>
+                            )}
                         </FlexItem>
                     )}
                 </Flex>
