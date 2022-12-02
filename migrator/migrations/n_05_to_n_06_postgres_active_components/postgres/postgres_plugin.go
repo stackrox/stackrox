@@ -77,7 +77,7 @@ func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *stor
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetDeploymentId(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		obj.GetComponentId(),
 		serialized,
 	}
