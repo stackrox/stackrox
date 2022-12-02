@@ -96,6 +96,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	plopObjects := make([]*storage.ProcessListeningOnPortStorage, len(portProcesses))
+	log.Warnf("len(portProcesses)= %i", len(portProcesses))
 	for i, val := range portProcesses {
 		indicatorID := ""
 
@@ -124,6 +125,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			ProcessIndicatorId: indicatorID,
 			CloseTimestamp:     val.CloseTimestamp,
 		}
+		log.Warnf("plopObjects[%i].Id= %s", i, plopObjects[i].Id)
+
 	}
 
 	// Now save actual PLOP objects
