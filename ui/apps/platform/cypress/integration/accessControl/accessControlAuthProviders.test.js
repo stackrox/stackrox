@@ -175,9 +175,6 @@ describe('Access Control Auth providers', () => {
         };
         saveUpdatedAuthProvider(entityId, staticResponseMapForUpdatedAuthProvider);
 
-        cy.get(selectors.form.saveButton).click();
-        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']);
-
         cy.get(inputClientSecret)
             .should('be.disabled')
             .should('have.value', '')
