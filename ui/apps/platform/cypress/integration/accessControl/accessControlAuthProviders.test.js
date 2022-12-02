@@ -1,5 +1,4 @@
 import { selectors, accessModalSelectors } from '../../constants/AccessControlPage';
-import * as api from '../../constants/apiEndpoints';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
 import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
@@ -11,9 +10,12 @@ import {
     assertAccessControlEntityDoesNotExist,
     assertAccessControlEntityPage,
     authProvidersAlias,
+    authProvidersAliasForDELETE,
     authProvidersAliasForPOST,
     authProvidersAliasForPUT,
     authProvidersKey as entitiesKey,
+    clickConfirmationToDeleteAuthProvider,
+    clickRowActionMenuItemInTable,
     groupsAlias,
     groupsBatchAliasForPOST,
     saveCreatedAuthProvider,
@@ -356,6 +358,7 @@ describe('Access Control Auth providers', () => {
 
     describe('empty state', () => {
         it('should show a confirmation before deleting a provider', () => {
+            const entityName = 'auth-provider-1'; // corresponds to fixture
             const staticResponseMap = {
                 [authProvidersAlias]: {
                     fixture: 'auth/authProviders-id1.json',
@@ -363,19 +366,19 @@ describe('Access Control Auth providers', () => {
             };
             visitAccessControlEntities(entitiesKey, staticResponseMap);
 
-            cy.get(selectors.list.authProviders.tdActions).click();
-
-            cy.get(selectors.list.authProviders.deleteActionItem).click();
+            clickRowActionMenuItemInTable(entityName, 'Delete auth provider');
 
             cy.get(accessModalSelectors.title);
             cy.get(accessModalSelectors.body);
             cy.get(accessModalSelectors.delete);
             cy.get(accessModalSelectors.cancel).click();
 
-            cy.get(selectors.list.authProviders.dataRows);
+            assertAccessControlEntitiesPage(entitiesKey);
         });
 
         it('should show empty state after deleting the last provider', () => {
+            const entityId = 'authProvider-id1'; // corresponds to fixture
+            const entityName = 'auth-provider-1'; // corresponds to fixture
             const staticResponseMap = {
                 [authProvidersAlias]: {
                     fixture: 'auth/authProviders-id1.json',
@@ -383,19 +386,19 @@ describe('Access Control Auth providers', () => {
             };
             visitAccessControlEntities(entitiesKey, staticResponseMap);
 
-            const id = 'authProvider-id1';
-            cy.intercept('DELETE', `${api.auth.authProviders}/${id}`, {}).as('DeleteAuthProvider');
-            cy.get(selectors.list.authProviders.tdActions).click();
+            clickRowActionMenuItemInTable(entityName, 'Delete auth provider');
 
-            cy.get(selectors.list.authProviders.deleteActionItem).click();
+            const staticResponseMapToDeleteAuthProvider = {
+                [authProvidersAliasForDELETE]: {
+                    body: {},
+                },
+                [authProvidersAlias]: {
+                    body: { authProviders: [] }, // empty array like nothing is left
+                },
+            };
+            clickConfirmationToDeleteAuthProvider(entityId, staticResponseMapToDeleteAuthProvider);
 
-            // Mock now with empty list of providers like nothing is left.
-            // Same alias as in staticResponseMap above.
-            cy.intercept('GET', api.auth.authProviders, { authProviders: [] }).as('authProviders');
-            cy.get(accessModalSelectors.delete).click();
-            cy.wait(['@DeleteAuthProvider', '@authProviders']);
-
-            cy.get(selectors.list.authProviders.emptyState);
+            cy.get('.pf-c-empty-state__content:contains("No auth providers")');
         });
     });
 

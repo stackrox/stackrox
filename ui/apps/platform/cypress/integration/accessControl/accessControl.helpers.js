@@ -221,6 +221,36 @@ export function clickEntityNameInTable(entitiesKey, entityName) {
     assertAccessControlEntityPage(entitiesKey);
 }
 
+export function clickRowActionMenuItemInTable(entityName, menuItemText) {
+    cy.get(
+        `tr:has(td[data-label="Name"] a:contains("${entityName}")) td.pf-c-table__action .pf-c-dropdown__toggle`
+    ).click();
+    cy.get(`td.pf-c-table__action button[role="menuitem"]:contains("${menuItemText}")`);
+}
+
+export const authProvidersAliasForDELETE = 'DELETE_authProviders';
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function clickConfirmationToDeleteAuthProvider(entityId, staticResponseMap) {
+    const routeMatcherMap = {
+        [authProvidersAliasForDELETE]: {
+            method: 'DELETE',
+            url: `/v1/authProviders/${entityId}`,
+        },
+        [authProvidersAlias]: authProvidersRouteMatcher,
+    };
+
+    interactAndWaitForResponses(
+        () => {
+            cy.get('.pf-c-modal-box__footer button:contains("Delete")');
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
+}
+
 // interact in entity page
 
 // Auth providers
