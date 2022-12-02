@@ -8,6 +8,7 @@ import (
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
+	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	accessScopeMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -34,8 +35,9 @@ func (s *TestReportConfigurationServiceTestSuite) SetupTest() {
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.accessScopeStore = accessScopeMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
-
-	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.accessScopeStore, s.manager)
+	collectionDataStore := collectionMocks.NewMockDataStore(s.mockCtrl)
+	collectionQueryResolver := collectionMocks.NewMockQueryResolver(s.mockCtrl)
+	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.accessScopeStore, collectionDataStore, collectionQueryResolver, s.manager)
 }
 
 func (s *TestReportConfigurationServiceTestSuite) TearDownTest() {
