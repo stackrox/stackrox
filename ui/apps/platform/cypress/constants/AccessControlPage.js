@@ -1,6 +1,5 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 
-export const accessControlUrl = '/main/access-control';
 export const authProvidersUrl = '/main/access-control/auth-providers';
 export const rolesUrl = '/main/access-control/roles';
 export const permissionSetsUrl = '/main/access-control/permission-sets';
@@ -14,8 +13,6 @@ export const selectors = scopeSelectors('main', {
     breadcrumbNav: '.pf-c-breadcrumb',
     breadcrumbItem: '.pf-c-breadcrumb__item',
     breadcrumbLink: 'a.pf-c-breadcrumb__link',
-    h1: 'h1',
-    h2: 'h2',
     navLink: 'nav a',
     navLinkCurrent: 'nav a.pf-m-current',
     alertTitle: '.pf-c-alert__title',
@@ -26,8 +23,6 @@ export const selectors = scopeSelectors('main', {
 
     list: {
         createButton: 'button:contains("Create")',
-        th: 'th',
-        tdName: 'td[data-label="Name"]',
         tdNameLink: 'td[data-label="Name"] a',
         tdDescription: 'td[data-label="Description"]',
 
