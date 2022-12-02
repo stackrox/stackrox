@@ -1,3 +1,4 @@
+import { interactAndWaitForResponses } from '../../helpers/request';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
 
@@ -221,3 +222,48 @@ export function clickEntityNameInTable(entitiesKey, entityName) {
 }
 
 // interact in entity page
+
+// Auth providers
+
+export const authProvidersAliasForPUT = 'PUT_authProviders';
+export const groupsBatchAliasForPOST = 'POST_groupsbatch';
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function saveUpdatedAuthProvider(entityId, staticResponseMap) {
+    const routeMatcherMap = {
+        [authProvidersAliasForPUT]: {
+            method: 'PUT',
+            url: `/v1/authProviders/${entityId}`,
+        },
+        [groupsBatchAliasForPOST]: {
+            method: 'POST',
+            url: '/v1/groupsbatch',
+        },
+    };
+
+    return interactAndWaitForResponses(
+        () => {
+            cy.get('button:contains("Save")').click();
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
+}
+
+// Roles
+
+export function saveCreatedRole(entityName) {
+    const rolesAliasForPOST = 'POST_roles';
+    const routeMatcherMap = {
+        [rolesAliasForPOST]: {
+            method: 'POST',
+            url: `/v1/roles/${entityName}`, // url has entityName!
+        },
+    };
+
+    return interactAndWaitForResponses(() => {
+        cy.get('button:contains("Save")').click();
+    }, routeMatcherMap);
+}

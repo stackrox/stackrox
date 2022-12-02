@@ -6,15 +6,11 @@ import {
     assertAccessControlEntityDoesNotExist,
     clickEntityNameInTable,
     rolesKey as entitiesKey,
+    saveCreatedRole,
     visitAccessControlEntities,
     visitAccessControlEntitiesWithStaticResponseForPermissions,
     visitAccessControlEntity,
 } from './accessControl.helpers';
-
-// Migration from cy.server and cy.route to cy.intercept fails for /v1/roles/* imported from apiEndpoints.
-const rolesApi = {
-    list: '/v1/roles',
-};
 
 const defaultNames = ['Admin', 'Analyst', 'Continuous Integration', 'None', 'Sensor Creator'];
 
@@ -136,9 +132,7 @@ describe('Access Control Roles', () => {
             .should('be.enabled')
             .should('be.checked');
 
-        cy.intercept('POST', `${rolesApi.list}/${name}`).as('PostRoles');
-        cy.get(selectors.form.saveButton).click();
-        cy.wait('@PostRoles');
+        saveCreatedRole(name);
 
         cy.contains('h2', /^\d+ results? found$/).should('exist');
         cy.get(`td[data-label="Name"] a:contains("${name}")`).click();

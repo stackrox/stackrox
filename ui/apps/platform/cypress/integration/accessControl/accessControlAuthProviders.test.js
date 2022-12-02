@@ -11,8 +11,11 @@ import {
     assertAccessControlEntityDoesNotExist,
     assertAccessControlEntityPage,
     authProvidersAlias,
+    authProvidersAliasForPUT,
     authProvidersKey as entitiesKey,
     groupsAlias,
+    groupsBatchAliasForPOST,
+    saveUpdatedAuthProvider,
     visitAccessControlEntities,
     visitAccessControlEntitiesWithStaticResponseForPermissions,
     visitAccessControlEntity,
@@ -131,7 +134,8 @@ describe('Access Control Auth providers', () => {
     });
 
     it('edits OpenID Connect with a client secret without losing the value', () => {
-        const staticResponseMap = {
+        const entityId = 'auth-provider-1'; // corresponds to fixtures
+        const staticResponseMapForAuthProvider = {
             [authProvidersAlias]: {
                 fixture: 'auth/authProvidersWithClientSecret.json',
             },
@@ -139,16 +143,7 @@ describe('Access Control Auth providers', () => {
                 fixture: 'auth/groupsWithClientSecret.json', // to compute default access role
             },
         };
-
-        cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
-            body: {},
-        }).as('PutAuthProvider');
-        cy.intercept('POST', api.groups.batch, {
-            body: {},
-        }).as('PostGroupsBatch');
-
-        const entityId = 'auth-provider-1';
-        visitAccessControlEntity(entitiesKey, entityId, staticResponseMap);
+        visitAccessControlEntity(entitiesKey, entityId, staticResponseMapForAuthProvider);
 
         const { inputIssuer, inputClientSecret, checkboxDoNotUseClientSecret } =
             selectors.form.authProvider.oidc;
@@ -169,6 +164,17 @@ describe('Access Control Auth providers', () => {
 
         cy.get(inputIssuer).clear().type('irrelevant-updated');
 
+        // Mock responses to save updated auth provider.
+        const staticResponseMapForUpdatedAuthProvider = {
+            [authProvidersAliasForPUT]: {
+                body: {},
+            },
+            [groupsBatchAliasForPOST]: {
+                body: {},
+            },
+        };
+        saveUpdatedAuthProvider(entityId, staticResponseMapForUpdatedAuthProvider);
+
         cy.get(selectors.form.saveButton).click();
         cy.wait(['@PutAuthProvider', '@PostGroupsBatch']);
 
@@ -180,7 +186,8 @@ describe('Access Control Auth providers', () => {
     });
 
     it('edit OpenID Connect minimum access role', () => {
-        const staticResponseMap = {
+        const entityId = 'auth-provider-1'; // corresponds to fixtures
+        const staticResponseMapForAuthProvider = {
             [authProvidersAlias]: {
                 fixture: 'auth/authProvidersWithClientSecret.json',
             },
@@ -188,16 +195,7 @@ describe('Access Control Auth providers', () => {
                 fixture: 'auth/groupsWithClientSecret.json', // to compute default access role
             },
         };
-
-        cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
-            body: {},
-        }).as('PutAuthProvider');
-        cy.intercept('POST', api.groups.batch, {
-            body: {},
-        }).as('PostGroupsBatch');
-
-        const entityId = 'auth-provider-1';
-        visitAccessControlEntity(entitiesKey, entityId, staticResponseMap);
+        visitAccessControlEntity(entitiesKey, entityId, staticResponseMapForAuthProvider);
 
         const { selectMinimumAccessRole, selectMinimumAccessRoleItem } =
             selectors.form.minimumAccessRole;
@@ -208,15 +206,25 @@ describe('Access Control Auth providers', () => {
         cy.get(selectMinimumAccessRole).click();
         cy.get(`${selectMinimumAccessRoleItem}:contains("Analyst")`).click();
 
-        cy.get(selectors.form.saveButton).click();
-        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']).then(([, { request }]) => {
-            expect(request.body).to.deep.equal(
-                updateMinimumAccessRoleRequest,
-                `request: ${JSON.stringify(request.body)} expected: ${JSON.stringify(
-                    updateMinimumAccessRoleRequest
-                )}`
-            );
-        });
+        // Mock responses to save updated auth provider.
+        const staticResponseMapForUpdatedAuthProvider = {
+            [authProvidersAliasForPUT]: {
+                body: {},
+            },
+            [groupsBatchAliasForPOST]: {
+                body: {},
+            },
+        };
+        saveUpdatedAuthProvider(entityId, staticResponseMapForUpdatedAuthProvider).then(
+            ([, { request }]) => {
+                expect(request.body).to.deep.equal(
+                    updateMinimumAccessRoleRequest,
+                    `request: ${JSON.stringify(request.body)} expected: ${JSON.stringify(
+                        updateMinimumAccessRoleRequest
+                    )}`
+                );
+            }
+        );
 
         cy.get(selectMinimumAccessRole).should('contain', 'Analyst');
     });

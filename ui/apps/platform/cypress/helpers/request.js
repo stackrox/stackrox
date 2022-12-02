@@ -64,8 +64,10 @@ export function waitForResponses(routeMatcherMap) {
     if (routeMatcherMap) {
         const aliases = Object.keys(routeMatcherMap).map((alias) => `@${alias}`);
 
-        cy.wait(aliases);
+        return cy.wait(aliases);
     }
+
+    return [];
 }
 
 /**
@@ -84,5 +86,5 @@ export function interactAndWaitForResponses(
 
     interactionCallback();
 
-    waitForResponses(routeMatcherMap);
+    return waitForResponses(routeMatcherMap);
 }
