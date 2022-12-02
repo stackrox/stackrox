@@ -77,6 +77,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         scope,
         exclusions,
         deployments,
+        deploymentCount,
     } = safeData;
     const [currentDisabledState, setCurrentDisabledState] = useState(disabled);
 
@@ -121,20 +122,6 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
             </ButtonLink>
         </div>
     );
-
-    // @TODO: extract this out to make it re-usable and easier to test
-    const failingDeployments = deployments.filter((singleDeploy) => {
-        if (
-            singleDeploy.policyStatus === 'pass' ||
-            !singleDeploy.deployAlerts ||
-            !singleDeploy.deployAlerts.length
-        ) {
-            return false;
-        }
-        return singleDeploy.deployAlerts.some((alert) => {
-            return alert && alert.policy && alert.policy.id === id;
-        });
-    });
 
     const descriptionBlockMetadata = [
         {
@@ -216,18 +203,27 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     } else {
         const getDeploymentTableColumns = getCurriedDeploymentTableColumns(isFeatureFlagEnabled);
 
+        console.log(workflowState);
+        // TODO Extract deploymentCount and deployments section of query here, wrap in `<QUERY>` to allow for
+        // conditional rendering w.o. hook
+
         policyFindingsContent = (
             <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relativebg-base-100 mb-4 mx-4">
                 <TableWidget
-                    header={`${failingDeployments.length} ${pluralize(
+                    header={`${deploymentCount} ${pluralize(
                         entityTypes.DEPLOYMENT,
-                        failingDeployments.length
-                    )} ${pluralizeHas(failingDeployments.length)} failed across this policy`}
-                    rows={failingDeployments}
+                        deploymentCount
+                    )} ${pluralizeHas(deploymentCount)} failed across this policy`}
+                    rows={deployments}
                     entityType={entityTypes.DEPLOYMENT}
                     noDataText="No deployments have failed across this policy"
                     className="bg-base-100"
                     columns={getDeploymentTableColumns(workflowState)}
+                    pageSize={2}
+                    parentPageState={{
+                        setPage: (page) => workflowState.setPage(page),
+                        totalCount: 10,
+                    }}
                     defaultSorted={[
                         {
                             id: 'priority',

@@ -16,9 +16,10 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
 import VulnMgmtPolicyOverview from './VulnMgmtPolicyOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
+import { entityPriorityField } from '../../VulnMgmt.constants';
 import { getScopeQuery, vulMgmtPolicyQuery } from '../VulnMgmtPolicyQueryUtil';
 
-const VulmMgmtEntityPolicy = ({
+const VulnMgmtEntityPolicy = ({
     entityId,
     entityListType,
     search,
@@ -38,7 +39,7 @@ const VulmMgmtEntityPolicy = ({
         : DEPLOYMENT_LIST_FRAGMENT;
 
     const overviewQuery = gql`
-        query getPolicy($id: ID!, $policyQuery: String, $scopeQuery: String) {
+        query getPolicy($id: ID!, $policyQuery: String, $scopeQuery: String, $deploymentQuery: String, $deploymentPagination: Pagination) {
             result: policy(id: $id) {
                 id
                 name
@@ -81,8 +82,8 @@ const VulmMgmtEntityPolicy = ({
                         name
                     }
                 }
-                deploymentCount${queryVarParam}
-                deployments${queryVarParam} {
+                deploymentCount(query: $deploymentQuery)
+                deployments(query: $deploymentQuery, pagination: $deploymentPagination) {
                     ...deploymentFields
                 }
                 unusedVarSink(query: $scopeQuery)
@@ -110,7 +111,13 @@ const VulmMgmtEntityPolicy = ({
     `;
     }
 
+    console.log('parent workflowstate', workflowState.getCurrentPagingState());
+
     const fullEntityContext = workflowState.getEntityContext();
+    const deploymentQueryObject = {
+        'Policy Violated': true,
+        ...queryService.entityContextToQueryObject(fullEntityContext),
+    };
     const queryOptions = {
         variables: {
             id: entityId,
@@ -120,6 +127,15 @@ const VulmMgmtEntityPolicy = ({
             }),
             ...vulMgmtPolicyQuery,
             scopeQuery: getScopeQuery(fullEntityContext),
+            deploymentQuery: queryService.objectToWhereClause(deploymentQueryObject),
+            deploymentPagination: {
+                offset: 0,
+                limit: 5,
+                sortOption: {
+                    field: entityPriorityField.DEPLOYMENT,
+                    reversed: false,
+                },
+            },
         },
     };
 
@@ -143,10 +159,10 @@ const VulmMgmtEntityPolicy = ({
     );
 };
 
-VulmMgmtEntityPolicy.propTypes = {
+VulnMgmtEntityPolicy.propTypes = {
     ...workflowEntityPropTypes,
     setRefreshTrigger: PropTypes.func,
 };
-VulmMgmtEntityPolicy.defaultProps = workflowEntityDefaultProps;
+VulnMgmtEntityPolicy.defaultProps = workflowEntityDefaultProps;
 
-export default VulmMgmtEntityPolicy;
+export default VulnMgmtEntityPolicy;
