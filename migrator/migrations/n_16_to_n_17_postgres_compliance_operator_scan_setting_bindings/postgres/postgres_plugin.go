@@ -23,7 +23,7 @@ import (
 const (
 	baseTable = "compliance_operator_scan_setting_bindings"
 
-	batchAfter = 100
+	batchAfter = 1
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
