@@ -148,7 +148,7 @@ func (s *storeImpl) copyFromActiveComponents(ctx context.Context, tx pgx.Tx, obj
 
 			obj.GetId(),
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
 			obj.GetComponentId(),
 
