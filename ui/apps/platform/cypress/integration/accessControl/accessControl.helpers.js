@@ -23,42 +23,42 @@ function getEntityPath(entitiesKey, entityId) {
     return `${basePath}/${entitiesKey}/${entityId}`;
 }
 
-// Export endpoint aliases and route matchers for entities.
+// Export endpoint aliases for entities.
 
 export const authProvidersAlias = 'authProviders';
-export const authProvidersRouteMatcher = {
+const authProvidersRouteMatcher = {
     method: 'GET',
     url: '/v1/authProviders',
 };
 
 export const rolesAlias = 'roles';
-export const rolesRouteMatcher = {
+const rolesRouteMatcher = {
     method: 'GET',
     url: '/v1/roles',
 };
 
 export const permissionSetsAlias = 'permissionsets';
-export const permissionSetsRouteMatcher = {
+const permissionSetsRouteMatcher = {
     method: 'GET',
     url: '/v1/permissionsets',
 };
 
 export const accessScopesAlias = 'simpleaccessscopes';
-export const accessScopesRouteMatcher = {
+const accessScopesRouteMatcher = {
     method: 'GET',
     url: '/v1/simpleaccessscopes',
 };
 
-// Export endpoint aliases and route matchers for related information.
+// Export endpoint aliases for related information.
 
 export const groupsAlias = 'groups';
-export const groupsRouteMatcher = {
+const groupsRouteMatcher = {
     method: 'GET',
     url: '/v1/groups',
 };
 
 export const resourcesAlias = 'resources';
-export const resourcesRouteMatcher = {
+const resourcesRouteMatcher = {
     method: 'GET',
     url: '/v1/resources',
 };
