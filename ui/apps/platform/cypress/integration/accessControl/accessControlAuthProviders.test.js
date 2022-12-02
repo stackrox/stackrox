@@ -132,6 +132,11 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectCallbackModeItem}:contains("HTTP POST")`).click();
         cy.get(checkboxDoNotUseClientSecret).check();
         cy.get(inputClientSecret).should('be.disabled').should('not.have.attr', 'required');
+
+        cy.get(selectors.form.saveButton).should('be.disabled');
+        cy.get(selectors.form.cancelButton).click();
+
+        assertAccessControlEntitiesPage(entitiesKey);
     });
 
     it('edits OpenID Connect with a client secret without losing the value', () => {
