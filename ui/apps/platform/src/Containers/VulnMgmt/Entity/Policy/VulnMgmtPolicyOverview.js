@@ -28,7 +28,6 @@ import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Step3/BooleanPolicyLogicSection';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import usePagination from 'hooks/patternfly/usePagination';
 import { getExcludedNamesByType } from 'utils/policyUtils';
 import queryService from 'utils/queryService';
 import { pluralizeHas } from 'utils/textUtils';
@@ -64,7 +63,7 @@ const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(0);
     const [sort, setSort] = useState({
         field: entityPriorityField.DEPLOYMENT,
         reversed: false,
