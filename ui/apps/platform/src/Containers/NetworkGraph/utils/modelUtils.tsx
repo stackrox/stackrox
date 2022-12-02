@@ -1,21 +1,18 @@
 import { EdgeModel } from '@patternfly/react-topology';
 
 import { NetworkEntityInfo, Node } from 'types/networkFlow.proto';
+import { ensureExhaustive } from 'utils/type.utils';
 import {
-    CIDRBlockData,
     CustomModel,
     CustomNodeData,
     CustomNodeModel,
-    DeploymentData,
-    ExternalEntitiesData,
     ExternalNodeModel,
     NamespaceData,
     NamespaceNodeModel,
 } from '../types/topology.type';
 
 function getNameByEntity(entity: NetworkEntityInfo): string {
-    const { type } = entity;
-    switch (type) {
+    switch (entity.type) {
         case 'DEPLOYMENT':
             return entity.deployment.name;
         case 'INTERNET':
@@ -23,30 +20,21 @@ function getNameByEntity(entity: NetworkEntityInfo): string {
         case 'EXTERNAL_SOURCE':
             return entity.externalSource.name;
         default:
-            return '';
+            return ensureExhaustive(entity);
     }
 }
 
 function getDataByEntityType(entity: NetworkEntityInfo, policyIds: string[]): CustomNodeData {
-    if (entity.type === 'DEPLOYMENT') {
-        const data: DeploymentData = {
-            ...entity,
-            policyIds,
-        };
-        return data;
+    switch (entity.type) {
+        case 'DEPLOYMENT':
+            return { ...entity, policyIds };
+        case 'INTERNET':
+            return { ...entity, type: 'EXTERNAL_ENTITIES' };
+        case 'EXTERNAL_SOURCE':
+            return { ...entity, type: 'CIDR_BLOCK' };
+        default:
+            return ensureExhaustive(entity);
     }
-    if (entity.type === 'INTERNET') {
-        const data: ExternalEntitiesData = {
-            ...entity,
-            type: 'EXTERNAL_ENTITIES',
-        };
-        return data;
-    }
-    const data: CIDRBlockData = {
-        ...entity,
-        type: 'CIDR_BLOCK',
-    };
-    return data;
 }
 
 export const graphModel = {

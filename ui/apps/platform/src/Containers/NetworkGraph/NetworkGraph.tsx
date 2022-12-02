@@ -150,7 +150,7 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
                             edges={model?.edges || []}
                         />
                     )}
-                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_SOURCE' && (
+                    {selectedEntity && selectedEntity?.data?.type === 'CIDR_BLOCK' && (
                         <CidrBlockSideBar
                             id={selectedEntity.id}
                             nodes={model?.nodes || []}

@@ -1,8 +1,7 @@
 import { Model, NodeModel } from '@patternfly/react-topology';
 
 import { ListenPort } from 'types/networkFlow.proto';
-
-type Override<T1, T2> = Omit<T1, keyof T2> & T2;
+import { Override } from 'utils/type.utils';
 
 export type CustomModel = Override<Model, { nodes?: CustomNodeModel[] }>;
 

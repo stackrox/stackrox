@@ -12,12 +12,13 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { EdgeModel, NodeModel } from '@patternfly/react-topology';
+import { EdgeModel } from '@patternfly/react-topology';
 
 import { getNodeById } from '../utils/networkGraphUtils';
 import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types';
+import { Flow } from '../types/flow.type';
+import { CIDRBlockNodeModel, CustomNodeModel } from '../types/topology.type';
 
 import { CidrBlockIcon } from '../common/NetworkGraphIcons';
 import AdvancedFlowsFilter, {
@@ -30,7 +31,7 @@ import FlowsBulkActions from '../common/FlowsBulkActions';
 
 type CidrBlockSideBarProps = {
     id: string;
-    nodes: NodeModel[];
+    nodes: CustomNodeModel[];
     edges: EdgeModel[];
 };
 
@@ -84,7 +85,7 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
     const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
 
     // derived data
-    const cidrBlockNode = getNodeById(nodes, id);
+    const cidrBlockNode = getNodeById(nodes, id) as CIDRBlockNodeModel;
     const numFlows = getNumFlows(flows);
     const allUniquePorts = getAllUniquePorts(flows);
 
