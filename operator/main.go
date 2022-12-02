@@ -17,9 +17,11 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
@@ -29,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -48,7 +51,8 @@ var (
 	scheme          = runtime.NewScheme()
 	enableWebhooks  = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
 	enableProfiling = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
-
+	memLimit        = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)
+	heapDumpDir     = env.RegisterSetting("HEAP_DUMP_DIR", env.AllowEmpty())
 	// Default place where controller-runtime looks for TLS artifacts.
 	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
 	defaultCertDir  = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
@@ -106,6 +110,14 @@ func run() error {
 			return errors.Wrap(err, "unable to create Central webhook")
 		}
 	}
+
+	if enableProfiling.BooleanSetting() {
+		heapProfiler := profiling.NewHeapProfiler(0.80, uint64(memLimit.IntegerSetting()), heapDumpDir.EnvVar())
+		ctx, cancelProfiler := context.WithCancel(context.Background())
+		heapProfiler.DumpHeapOnThreshhold(ctx, time.Second)
+		defer cancelProfiler()
+	}
+
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
