@@ -14,9 +14,6 @@ export const selectors = scopeSelectors('main', {
             tdType: 'td[data-label="Type"]',
             tdMinimumAccessRole: 'td[data-label="Minimum access role',
             tdRules: 'td[data-label="Rules"]',
-            tdActions: 'td.pf-c-table__action .pf-c-dropdown__toggle',
-            deleteActionItem: 'td.pf-c-table__action button:contains("Delete auth provider")',
-            emptyState: '.pf-c-empty-state__content:contains("No auth providers")',
         },
 
         roles: {
