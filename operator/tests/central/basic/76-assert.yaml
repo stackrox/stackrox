@@ -9,6 +9,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central-db
+spec:
+  thisShouldFail: yes
 status:
   availableReplicas: 1
 ---
