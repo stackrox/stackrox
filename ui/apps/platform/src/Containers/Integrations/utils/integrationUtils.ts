@@ -53,6 +53,16 @@ export function clearStoredCredentials<I extends IntegrationBase>(
     return integration;
 }
 
+export function getEditDisabledMessage(type) {
+    if (type === 'clusterInitBundle') {
+        return 'This Cluster Init Bundle can not be edited. Create a new Cluster Init Bundle or delete an existing one';
+    }
+    if (type === 'apitoken') {
+        return 'This API Token can not be edited. Create a new API Token or delete an existing one.';
+    }
+    return '';
+}
+
 export const daysOfWeek = [
     'Sunday',
     'Monday',
