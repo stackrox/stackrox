@@ -193,12 +193,7 @@ export function visitAccessControlEntitiesWithStaticResponseForPermissions(
     staticResponseForPermissions
 ) {
     const entitiesPath = getEntitiesPath(entitiesKey);
-    const routeMatcherMap = routeMatcherMapForEntitiesMap[entitiesKey];
-    visitWithStaticResponseForPermissions(
-        entitiesPath,
-        staticResponseForPermissions,
-        routeMatcherMap
-    );
+    visitWithStaticResponseForPermissions(entitiesPath, staticResponseForPermissions);
 
     cy.get(`h1:contains("${containerTitle}")`);
 }
