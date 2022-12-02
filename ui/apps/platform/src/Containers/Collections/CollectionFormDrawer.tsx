@@ -18,6 +18,7 @@ import CollectionResults from './CollectionResults';
 import { isCollectionParseError, parseCollection } from './converter';
 import CollectionForm, { CollectionFormProps } from './CollectionForm';
 import UnsupportedCollectionState from './UnsupportedCollectionState';
+import useDryRunConfiguration from './hooks/useDryRunConfiguration';
 
 export type CollectionFormDrawerProps = {
     hasWriteAccessForCollections: boolean;
@@ -54,6 +55,11 @@ function CollectionFormDrawer({
 }: CollectionFormDrawerProps) {
     const initialData = parseCollection(collectionData.collection);
     const initialEmbeddedCollections = collectionData.embeddedCollections;
+    const collectionId = action.type !== 'create' ? action.collectionId : undefined;
+    const { dryRunConfig, updateDryRunConfig } = useDryRunConfiguration(
+        collectionId,
+        collectionData.collection
+    );
 
     useEffect(() => {
         toggleDrawer(isInlineDrawer);
@@ -79,7 +85,7 @@ function CollectionFormDrawer({
                                 )}
                             </DrawerHead>
                             <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
-                                <CollectionResults />
+                                <CollectionResults dryRunConfig={dryRunConfig} />
                             </DrawerPanelBody>
                         </DrawerPanelContent>
                     }
@@ -97,6 +103,7 @@ function CollectionFormDrawer({
                                 action={action}
                                 initialData={initialData}
                                 initialEmbeddedCollections={initialEmbeddedCollections}
+                                onFormChange={updateDryRunConfig}
                                 onSubmit={onSubmit}
                                 saveError={saveError}
                                 clearSaveError={clearSaveError}

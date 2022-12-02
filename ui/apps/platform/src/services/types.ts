@@ -6,4 +6,9 @@ export type Pagination = {
     sortOption: ApiSortOption;
 };
 
+export type FilterQuery = {
+    query: string;
+    pagination: Pagination;
+};
+
 export type Empty = Record<string, never>;

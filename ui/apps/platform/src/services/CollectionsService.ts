@@ -5,7 +5,7 @@ import { SearchFilter, ApiSortOption } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
-import { Empty, Pagination } from './types';
+import { Empty, FilterQuery } from './types';
 
 export const collectionsBaseUrl = '/v1/collections';
 export const collectionsCountUrl = '/v1/collectionscount';
@@ -159,8 +159,8 @@ export function deleteCollection(id: string): CancellableRequest<Empty> {
 
 export type CollectionDryRunRequest = CollectionRequest & {
     options: {
-        pagination: Pagination;
-        skipDeploymentMatching: boolean;
+        filterQuery: FilterQuery;
+        withMatches: boolean;
     };
 };
 
@@ -188,12 +188,28 @@ export type CollectionDryRunResponse = {
  * @returns A list of deployments that are resolved by the collection.
  */
 export function dryRunCollection(
-    dryRunRequest: CollectionDryRunRequest
-    // TODO `ListDeployment` will make this impossible to paginate without loading the entire
-    // dataset client side. Ask [BE] if there is an efficient way to aggregate namespaces/clusters
-    // under a matching deployment name similar to the graphql query. An alternative might be to
-    // change the rendering of the list to not group deployments, but to sort alphabetically.
+    collectionRequest: CollectionRequest,
+    searchFilter: string,
+    page: number,
+    pageSize: number
 ): CancellableRequest<ListDeployment[]> {
+    const dryRunRequest: CollectionDryRunRequest = {
+        ...collectionRequest,
+        options: {
+            filterQuery: {
+                query: searchFilter,
+                pagination: {
+                    offset: page * pageSize,
+                    limit: pageSize,
+                    sortOption: {
+                        field: '',
+                        reversed: false,
+                    },
+                },
+            },
+            withMatches: true,
+        },
+    };
     return makeCancellableAxiosRequest((signal) =>
         axios
             .post<CollectionDryRunResponse>(collectionsDryRunUrl, dryRunRequest, {
