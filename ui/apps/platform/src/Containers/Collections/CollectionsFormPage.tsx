@@ -23,7 +23,7 @@ import {
 } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
 
-import { createCollection, deleteCollection, updateCollection } from 'services/CollectionsService';
+import { deleteCollection } from 'services/CollectionsService';
 import { CaretDownIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { collectionsBasePath } from 'routePaths';
@@ -33,12 +33,10 @@ import useToasts from 'hooks/patternfly/useToasts';
 import PageTitle from 'Components/PageTitle';
 import { CollectionPageAction } from './collections.utils';
 import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
-import { generateRequest } from './converter';
-import { Collection } from './types';
 import useCollection from './hooks/useCollection';
 import CollectionsFormModal from './CollectionFormModal';
-import { CollectionSaveError, parseSaveError } from './errorUtils';
 import CollectionLoadError from './CollectionLoadError';
+import { useCollectionFormSubmission } from './hooks/useCollectionFormSubmission';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -75,7 +73,7 @@ function CollectionsFormPage({
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [modalCollectionId, setModalCollectionId] = useState<string | null>(null);
 
-    const [saveError, setSaveError] = useState<CollectionSaveError | undefined>();
+    const { saveError, setSaveError, onSubmit } = useCollectionFormSubmission(pageAction);
     const saveErrorAlertElem = useRef<HTMLDivElement | null>(null);
 
     const {
@@ -127,42 +125,6 @@ function CollectionsFormPage({
 
     function onCancelDeleteCollection() {
         setDeleteId(null);
-    }
-
-    function onSubmit(collection: Collection): Promise<void> {
-        setSaveError(undefined);
-
-        return new Promise((resolve, reject) => {
-            if (pageAction.type === 'view') {
-                // Logically should not happen, but just in case
-                return reject(new Error('A Collection form has been submitted in read-only view'));
-            }
-            const isEmptyCollection =
-                Object.values(collection.resourceSelector).every(({ type }) => type === 'All') &&
-                collection.embeddedCollectionIds.length === 0;
-
-            if (isEmptyCollection) {
-                return reject(new Error('Cannot save an empty collection'));
-            }
-
-            const saveServiceCall =
-                pageAction.type === 'edit'
-                    ? (payload) => updateCollection(pageAction.collectionId, payload)
-                    : (payload) => createCollection(payload);
-
-            const requestPayload = generateRequest(collection);
-            const { request } = saveServiceCall(requestPayload);
-
-            return resolve(request);
-        })
-            .then(() => {
-                history.push({ pathname: `${collectionsBasePath}` });
-            })
-            .catch((err) => {
-                setSaveError(parseSaveError(err));
-                scrollToTop();
-                return Promise.reject(err);
-            });
     }
 
     function scrollToTop() {
@@ -236,7 +198,16 @@ function CollectionsFormPage({
                 isInlineDrawer={isLargeScreen}
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
-                onSubmit={onSubmit}
+                onSubmit={(collection) =>
+                    onSubmit(collection)
+                        .then(() => {
+                            history.push({ pathname: `${collectionsBasePath}` });
+                        })
+                        .catch((err) => {
+                            scrollToTop();
+                            return Promise.reject(err);
+                        })
+                }
                 saveError={saveError}
                 clearSaveError={() => setSaveError(undefined)}
                 getCollectionTableCells={getCollectionTableCells}
