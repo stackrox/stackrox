@@ -3,7 +3,7 @@ module github.com/stackrox/rox
 go 1.18
 
 require (
-	cloud.google.com/go/compute/metadata v0.2.1
+	cloud.google.com/go/compute/metadata v0.2.2
 	cloud.google.com/go/containeranalysis v0.6.0
 	cloud.google.com/go/storage v1.28.0
 	github.com/BurntSushi/toml v1.2.1
