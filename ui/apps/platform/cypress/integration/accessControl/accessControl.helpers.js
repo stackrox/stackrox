@@ -162,6 +162,9 @@ export function assertAccessControlEntityPage(entitiesKey) {
 }
 
 export function assertAccessControlEntityDoesNotExist(entitiesKey) {
+    cy.get('h2').should('not.exist');
+    cy.get('li.pf-c-breadcrumb__item:nth-child(2)').should('not.exist');
+
     cy.get('.pf-c-empty-state h4').should(
         'have.text',
         `${entityTitleMap[entitiesKey]} does not exist`

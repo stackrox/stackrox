@@ -69,11 +69,7 @@ describe('Access Control Access scopes', () => {
 
     it('displays message instead of form if entity id does not exist', () => {
         const entityId = 'bogus';
-
         visitAccessControlEntity(entitiesKey, entityId);
-
-        cy.get('h2').should('not.exist');
-        cy.get('li.pf-c-breadcrumb__item:nth-child(2)').should('not.exist');
 
         assertAccessControlEntityDoesNotExist(entitiesKey);
     });
