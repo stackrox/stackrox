@@ -44,8 +44,6 @@ const TableWidget = ({
     const totalCount = parentPageState?.totalCount || rows.length;
     const useServerSidePagination = !!sortHandler;
 
-    console.log('table pagination', pageSize, currentPage, totalCount);
-
     const headerComponents = (
         <div className="flex">
             {headerActions}
