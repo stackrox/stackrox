@@ -162,11 +162,12 @@ export function assertAccessControlEntityPage(entitiesKey) {
 }
 
 export function assertAccessControlEntityDoesNotExist(entitiesKey) {
-    const entityTitle = entityTitleMap[entitiesKey];
-
-    cy.get('.pf-c-empty-state h4').should('have.text', `${entityTitle} does not exist`);
+    cy.get('.pf-c-empty-state h4').should(
+        'have.text',
+        `${entityTitleMap[entitiesKey]} does not exist`
+    );
     cy.get('.pf-c-empty-state a')
-        .should('have.text', entityTitle)
+        .should('have.text', entitiesTitleMap[entitiesKey])
         .should('have.attr', 'href', getEntitiesPath(entitiesKey));
 }
 
