@@ -1,3 +1,4 @@
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
 
 // Keys are path segments which correspond to entitiesKey arguments of functions below.
@@ -98,24 +99,75 @@ const entitiesTitleMap = {
     [accessScopesKey]: 'Access scopes',
 };
 
+const entityTitleMap = {
+    [authProvidersKey]: 'Auth provider',
+    [rolesKey]: 'Role',
+    [permissionSetsKey]: 'Permission set',
+    [accessScopesKey]: 'Access scope',
+};
+
 // assert helpers
 
-function assertAccessControlNavLinks(entitiesKeySelected) {
-    entitiesKeys.forEach((entitiesKey) => {
-        const entitiesTitle = entitiesTitleMap[entitiesKey];
-        const isSelected = entitiesKey === entitiesKeySelected;
+export function assertAccessControlEntitiesPage(entitiesKey) {
+    // Positive assertions.
 
-        cy.get(`nav a.pf-c-nav__link:contains("${entitiesTitle}")`).should(
+    cy.get(`h1:contains("${containerTitle}")`);
+
+    cy.title().should(
+        'match',
+        getRegExpForTitleWithBranding(`${containerTitle} - ${entitiesTitleMap[entitiesKey]}`)
+    );
+
+    entitiesKeys.forEach((entitiesKeyAsserted) => {
+        const entitiesTitle = entitiesTitleMap[entitiesKeyAsserted];
+        const isSelected = entitiesKey === entitiesKeyAsserted;
+
+        cy.get(`nav.pf-m-tertiary a.pf-c-nav__link:contains("${entitiesTitle}")`).should(
             isSelected ? 'have.class' : 'not.have.class',
             'pf-m-current'
         );
     });
+
+    // Negative assertion.
+
+    cy.get('.pf-c-breadcrumb').should('not.exist');
 }
 
-export function assertAccessControlEntitiesTable(entitiesKey) {
-    cy.get(`h1:contains("${containerTitle}")`);
-    cy.get('.pf-c-breadcrumb').should('not.exist');
-    assertAccessControlNavLinks(entitiesKey);
+export function assertAccessControlEntityPage(entitiesKey) {
+    // Positive assertions.
+
+    // Caller is responsible to assert h2 element.
+
+    cy.title().should(
+        'match',
+        getRegExpForTitleWithBranding(`${containerTitle} - ${entityTitleMap[entitiesKey]}`)
+    );
+
+    cy.get(
+        `li.pf-c-breadcrumb__item:nth-child(1) a.pf-c-breadcrumb__link:contains("${entitiesTitleMap[entitiesKey]}")`
+    );
+    // Caller is reponsible to assert second breadcrumb item.
+
+    // Negative assertion.
+
+    cy.get('h1').should('not.exist');
+
+    entitiesKeys.forEach((entitiesKeyAsserted) => {
+        const entitiesTitle = entitiesTitleMap[entitiesKeyAsserted];
+
+        cy.get(`nav.pf-m-tertiary a.pf-c-nav__link:contains("${entitiesTitle}")`).should(
+            'not.exist'
+        );
+    });
+}
+
+export function assertAccessControlEntityDoesNotExist(entitiesKey) {
+    const entityTitle = entityTitleMap[entitiesKey];
+
+    cy.get('.pf-c-empty-state h4').should('have.text', `${entityTitle} does not exist`);
+    cy.get('.pf-c-empty-state a')
+        .should('have.text', entityTitle)
+        .should('have.attr', 'href', getEntitiesPath(entitiesKey));
 }
 
 // visit helpers
@@ -124,13 +176,11 @@ export function assertAccessControlEntitiesTable(entitiesKey) {
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitAccessControlEntities(entitiesKey, staticResponseMap) {
-    visit(
-        getEntitiesPath(entitiesKey),
-        routeMatcherMapForEntitiesMap[entitiesKey],
-        staticResponseMap
-    );
+    const entitiesPath = getEntitiesPath(entitiesKey);
+    const routeMatcherMap = routeMatcherMapForEntitiesMap[entitiesKey];
+    visit(entitiesPath, routeMatcherMap, staticResponseMap);
 
-    assertAccessControlEntitiesTable(entitiesKey);
+    assertAccessControlEntitiesPage(entitiesKey);
 }
 
 /**
@@ -141,10 +191,12 @@ export function visitAccessControlEntitiesWithStaticResponseForPermissions(
     entitiesKey,
     staticResponseForPermissions
 ) {
+    const entitiesPath = getEntitiesPath(entitiesKey);
+    const routeMatcherMap = routeMatcherMapForEntitiesMap[entitiesKey];
     visitWithStaticResponseForPermissions(
-        getEntitiesPath(entitiesKey),
+        entitiesPath,
         staticResponseForPermissions,
-        routeMatcherMapForEntitiesMap[entitiesKey]
+        routeMatcherMap
     );
 
     cy.get(`h1:contains("${containerTitle}")`);
@@ -154,18 +206,19 @@ export function visitAccessControlEntitiesWithStaticResponseForPermissions(
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitAccessControlEntity(entitiesKey, entityId, staticResponseMap) {
-    visit(
-        getEntityPath(entitiesKey, entityId),
-        routeMatcherMapForEntitiesMap[entitiesKey],
-        staticResponseMap
-    );
+    const entityPath = getEntityPath(entitiesKey, entityId);
+    const routeMatcherMap = routeMatcherMapForEntitiesMap[entitiesKey];
+    visit(entityPath, routeMatcherMap, staticResponseMap);
+
+    assertAccessControlEntityPage(entitiesKey);
 }
 
 // interact in entities table
 
-export function clickEntityNameInTable(_entitiesKey, entityName) {
-    // Use entitiesKey if page ever makes a request.
+export function clickEntityNameInTable(entitiesKey, entityName) {
     cy.get(`td[data-label="Name"] a:contains("${entityName}")`).click();
+
+    assertAccessControlEntityPage(entitiesKey);
 }
 
 // interact in entity page

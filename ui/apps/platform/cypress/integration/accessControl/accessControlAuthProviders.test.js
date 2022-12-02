@@ -1,18 +1,15 @@
-import {
-    authProvidersUrl,
-    selectors,
-    accessModalSelectors,
-} from '../../constants/AccessControlPage';
+import { selectors, accessModalSelectors } from '../../constants/AccessControlPage';
 import * as api from '../../constants/apiEndpoints';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
 
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    assertAccessControlEntitiesTable,
+    assertAccessControlEntitiesPage,
+    assertAccessControlEntityDoesNotExist,
+    assertAccessControlEntityPage,
     authProvidersAlias,
     authProvidersKey as entitiesKey,
     groupsAlias,
@@ -20,8 +17,6 @@ import {
     visitAccessControlEntitiesWithStaticResponseForPermissions,
     visitAccessControlEntity,
 } from './accessControl.helpers';
-
-const h2 = 'Auth providers';
 
 describe('Access Control Auth providers', () => {
     withAuth();
@@ -49,12 +44,6 @@ describe('Access Control Auth providers', () => {
         };
         visitAccessControlEntities(entitiesKey, staticResponseMap);
 
-        // Table has plural noun in title.
-        cy.title().should(
-            'match',
-            getRegExpForTitleWithBranding(`Access Control - Auth Providers`)
-        );
-
         cy.get('th:contains("Name")');
         cy.get('th:contains("Type")');
         cy.get('th:contains("Minimum access role")');
@@ -66,19 +55,13 @@ describe('Access Control Auth providers', () => {
 
         const type = 'Auth0';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        // Form has singular noun in title.
-        cy.title().should('match', getRegExpForTitleWithBranding(`Access Control - Auth provider`));
-
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
+        assertAccessControlEntityPage(entitiesKey);
 
         cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -95,7 +78,7 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.form.saveButton).should('be.disabled');
         cy.get(selectors.form.cancelButton).click();
 
-        assertAccessControlEntitiesTable(entitiesKey);
+        assertAccessControlEntitiesPage(entitiesKey);
     });
 
     it('add OpenID Connect', () => {
@@ -103,16 +86,13 @@ describe('Access Control Auth providers', () => {
 
         const type = 'OpenID Connect';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
+        assertAccessControlEntityPage(entitiesKey);
 
         cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -246,16 +226,13 @@ describe('Access Control Auth providers', () => {
 
         const type = 'SAML 2.0';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
+        assertAccessControlEntityPage(entitiesKey);
 
         cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -275,7 +252,7 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.form.saveButton).should('be.disabled');
         cy.get(selectors.form.cancelButton).click();
 
-        assertAccessControlEntitiesTable(entitiesKey);
+        assertAccessControlEntitiesPage(entitiesKey);
     });
 
     it('add User Certificates', () => {
@@ -300,16 +277,13 @@ describe('Access Control Auth providers', () => {
 
         const type = 'User Certificates';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
+        assertAccessControlEntityPage(entitiesKey);
 
         cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         getInputByLabel('Name').should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -345,16 +319,13 @@ describe('Access Control Auth providers', () => {
 
         const type = 'Google IAP';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
+        assertAccessControlEntityPage(entitiesKey);
 
         cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -368,7 +339,7 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.form.saveButton).should('be.disabled');
         cy.get(selectors.form.cancelButton).click();
 
-        assertAccessControlEntitiesTable(entitiesKey);
+        assertAccessControlEntitiesPage(entitiesKey);
     });
 
     describe('empty state', () => {
@@ -421,16 +392,9 @@ describe('Access Control Auth providers', () => {
 
         visitAccessControlEntity(entitiesKey, entityId);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
         cy.get('h2').should('not.exist');
+        cy.get('li.pf-c-breadcrumb__item:nth-child(2)').should('not.exist');
 
-        cy.get(selectors.notFound.title).should('have.text', 'Auth provider does not exist');
-        cy.get(selectors.notFound.a)
-            .should('have.text', h2)
-            .should('have.attr', 'href', authProvidersUrl);
+        assertAccessControlEntityDoesNotExist(entitiesKey);
     });
 });

@@ -1,18 +1,16 @@
-import { permissionSetsUrl, selectors } from '../../constants/AccessControlPage';
+import { selectors } from '../../constants/AccessControlPage';
 
 import withAuth from '../../helpers/basicAuth';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { hasFeatureFlag } from '../../helpers/features';
 
 import {
+    assertAccessControlEntityDoesNotExist,
     clickEntityNameInTable,
     permissionSetsKey as entitiesKey,
     visitAccessControlEntities,
     visitAccessControlEntitiesWithStaticResponseForPermissions,
     visitAccessControlEntity,
 } from './accessControl.helpers';
-
-const h2 = 'Permission sets';
 
 const defaultNames = ['Admin', 'Analyst', 'Continuous Integration', 'None', 'Sensor Creator'];
 
@@ -37,14 +35,9 @@ describe('Access Control Permission sets', () => {
     it('list has heading, button, and table head cells', () => {
         visitAccessControlEntities(entitiesKey);
 
-        // Table has plural noun in title.
-        cy.title().should(
-            'match',
-            getRegExpForTitleWithBranding(`Access Control - Permission sets`)
-        );
-
         cy.contains('h2', /^\d+ results? found$/);
-        cy.get(selectors.list.createButton).should('have.text', 'Create permission set');
+
+        cy.get('button:contains("Create permission set")');
 
         cy.get('th:contains("Name")');
         cy.get('th:contains("Description")');
@@ -54,30 +47,20 @@ describe('Access Control Permission sets', () => {
     it('list has default names', () => {
         visitAccessControlEntities(entitiesKey);
 
-        defaultNames.forEach((name) => {
-            cy.get(`td[data-label="Name"] a:contains("${name}")`);
+        defaultNames.forEach((defaultName) => {
+            cy.get(`td[data-label="Name"] a:contains("${defaultName}")`);
         });
     });
 
     it('list link for default Admin goes to form which has label instead of button and disabled input values', () => {
         visitAccessControlEntities(entitiesKey);
 
-        const name = 'Admin';
-        clickEntityNameInTable(entitiesKey, name);
+        const entityName = 'Admin';
+        clickEntityNameInTable(entitiesKey, entityName);
 
-        // Form has singular noun in title.
-        cy.title().should(
-            'match',
-            getRegExpForTitleWithBranding(`Access Control - Permission set`)
-        );
+        cy.get('h2').should('have.text', entityName);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${name}")`);
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
-
-        cy.get('h2').should('have.text', name);
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');
 
@@ -405,16 +388,9 @@ describe('Access Control Permission sets', () => {
 
         visitAccessControlEntity(entitiesKey, entityId);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
         cy.get('h2').should('not.exist');
+        cy.get('li.pf-c-breadcrumb__item:nth-child(2)').should('not.exist');
 
-        cy.get(selectors.notFound.title).should('have.text', 'Permission set does not exist');
-        cy.get(selectors.notFound.a)
-            .should('have.text', h2)
-            .should('have.attr', 'href', permissionSetsUrl);
+        assertAccessControlEntityDoesNotExist(entitiesKey);
     });
 });

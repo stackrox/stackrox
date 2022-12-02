@@ -1,9 +1,9 @@
-import { rolesUrl, selectors } from '../../constants/AccessControlPage';
+import { selectors } from '../../constants/AccessControlPage';
 
 import withAuth from '../../helpers/basicAuth';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
+    assertAccessControlEntityDoesNotExist,
     clickEntityNameInTable,
     rolesKey as entitiesKey,
     visitAccessControlEntities,
@@ -15,8 +15,6 @@ import {
 const rolesApi = {
     list: '/v1/roles',
 };
-
-const h2 = 'Roles';
 
 const defaultNames = ['Admin', 'Analyst', 'Continuous Integration', 'None', 'Sensor Creator'];
 
@@ -41,13 +39,9 @@ describe('Access Control Roles', () => {
     it('list has heading, button, and table head cells', () => {
         visitAccessControlEntities(entitiesKey);
 
-        // Table has plural noun in title.
-        cy.title().should('match', getRegExpForTitleWithBranding(`Access Control - Roles`));
-
-        cy.get(selectors.breadcrumbNav).should('not.exist');
-
         cy.contains('h2', /^\d+ results? found$/);
-        cy.get(selectors.list.createButton).should('have.text', 'Create role');
+
+        cy.get('button:contains("Create role")');
 
         cy.get('th:contains("Name")');
         cy.get('th:contains("Description")');
@@ -60,7 +54,7 @@ describe('Access Control Roles', () => {
 
         const { tdPermissionSetLink, tdAccessScope } = selectors.list.roles;
 
-        cy.get(selectors.list.tdNameLink).then(($tds) => {
+        cy.get('td[data-label="Name"] a').then(($tds) => {
             $tds.get().forEach((td, index) => {
                 const roleName = td.textContent;
                 if (defaultNames.includes(roleName)) {
@@ -74,16 +68,12 @@ describe('Access Control Roles', () => {
     it('list link goes to form which has label instead of button and disabled input values', () => {
         visitAccessControlEntities(entitiesKey);
 
-        const name = 'Admin';
-        clickEntityNameInTable(entitiesKey, name);
+        const entityName = 'Admin';
+        clickEntityNameInTable(entitiesKey, entityName);
 
-        // Form has singular noun in title.
-        cy.title().should('match', getRegExpForTitleWithBranding(`Access Control - Role`));
+        cy.get('h2').should('have.text', entityName);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
-
-        cy.get('h2').should('have.text', name);
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');
 
@@ -122,7 +112,7 @@ describe('Access Control Roles', () => {
     it('adds a new role and form disables name input when editing an existing role', () => {
         visitAccessControlEntities(entitiesKey);
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create role")').click();
 
         cy.get('h2').should('have.text', 'Create role');
         cy.get(selectors.form.notEditableLabel).should('not.exist');
@@ -151,7 +141,7 @@ describe('Access Control Roles', () => {
         cy.wait('@PostRoles');
 
         cy.contains('h2', /^\d+ results? found$/).should('exist');
-        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+        cy.get(`td[data-label="Name"] a:contains("${name}")`).click();
 
         cy.get('h2').should('have.text', name);
         cy.get(selectors.form.inputName).should('be.disabled').should('have.value', name);
@@ -175,14 +165,9 @@ describe('Access Control Roles', () => {
 
         visitAccessControlEntity(entitiesKey, entityId);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
-
-        cy.get('h1').should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
         cy.get('h2').should('not.exist');
+        cy.get('li.pf-c-breadcrumb__item:nth-child(2)').should('not.exist');
 
-        cy.get(selectors.notFound.title).should('have.text', 'Role does not exist');
-        cy.get(selectors.notFound.a).should('have.text', h2).should('have.attr', 'href', rolesUrl);
+        assertAccessControlEntityDoesNotExist(entitiesKey);
     });
 });

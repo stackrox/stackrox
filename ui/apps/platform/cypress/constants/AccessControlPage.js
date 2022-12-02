@@ -1,31 +1,13 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 
-export const authProvidersUrl = '/main/access-control/auth-providers';
-export const rolesUrl = '/main/access-control/roles';
-export const permissionSetsUrl = '/main/access-control/permission-sets';
-export const accessScopesUrl = '/main/access-control/access-scopes';
-
 function getFormGroupControlForLabel(label) {
     return `.pf-c-form__group-label:contains("${label}") + .pf-c-form__group-control`;
 }
 
 export const selectors = scopeSelectors('main', {
-    breadcrumbNav: '.pf-c-breadcrumb',
-    breadcrumbItem: '.pf-c-breadcrumb__item',
-    breadcrumbLink: 'a.pf-c-breadcrumb__link',
-    navLink: 'nav a',
-    navLinkCurrent: 'nav a.pf-m-current',
     alertTitle: '.pf-c-alert__title',
-    notFound: scopeSelectors('.pf-c-empty-state', {
-        title: 'h4',
-        a: 'a',
-    }),
 
     list: {
-        createButton: 'button:contains("Create")',
-        tdNameLink: 'td[data-label="Name"] a',
-        tdDescription: 'td[data-label="Description"]',
-
         authProviders: {
             dataRows: 'tbody tr',
             createDropdownItem: 'button:contains("Create auth provider") + ul button',
