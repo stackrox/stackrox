@@ -225,8 +225,34 @@ export function clickEntityNameInTable(entitiesKey, entityName) {
 
 // Auth providers
 
+export const authProvidersAliasForPOST = 'POST_authProviders';
 export const authProvidersAliasForPUT = 'PUT_authProviders';
 export const groupsBatchAliasForPOST = 'POST_groupsbatch';
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function saveCreatedAuthProvider(staticResponseMap) {
+    const routeMatcherMap = {
+        [authProvidersAliasForPOST]: {
+            method: 'POST',
+            url: `/v1/authProviders`,
+        },
+        [groupsBatchAliasForPOST]: {
+            method: 'POST',
+            url: '/v1/groupsbatch',
+        },
+        [authProvidersAlias]: authProvidersRouteMatcher,
+    };
+
+    return interactAndWaitForResponses(
+        () => {
+            cy.get('button:contains("Save")').click();
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
+}
 
 /**
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
@@ -241,6 +267,7 @@ export function saveUpdatedAuthProvider(entityId, staticResponseMap) {
             method: 'POST',
             url: '/v1/groupsbatch',
         },
+        [authProvidersAlias]: authProvidersRouteMatcher,
     };
 
     return interactAndWaitForResponses(

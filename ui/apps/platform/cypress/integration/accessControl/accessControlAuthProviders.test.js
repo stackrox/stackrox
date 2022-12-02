@@ -11,10 +11,12 @@ import {
     assertAccessControlEntityDoesNotExist,
     assertAccessControlEntityPage,
     authProvidersAlias,
+    authProvidersAliasForPOST,
     authProvidersAliasForPUT,
     authProvidersKey as entitiesKey,
     groupsAlias,
     groupsBatchAliasForPOST,
+    saveCreatedAuthProvider,
     saveUpdatedAuthProvider,
     visitAccessControlEntities,
     visitAccessControlEntitiesWithStaticResponseForPermissions,
@@ -313,15 +315,14 @@ describe('Access Control Auth providers', () => {
             delay: 1,
         });
 
-        cy.intercept('POST', api.auth.authProviders, { body: mockUserCertResponse }).as(
-            'CreateAuthProvider'
-        ); // mock POST means that the list is empty after save
+        const staticResponseMapForCreatedAuthProvider = {
+            [authProvidersAliasForPOST]: {
+                body: mockUserCertResponse,
+            },
+        };
+        saveCreatedAuthProvider(staticResponseMapForCreatedAuthProvider);
 
-        cy.get(selectors.form.saveButton).should('be.enabled').click();
-
-        cy.wait('@CreateAuthProvider'); // wait for POST to finish
-        cy.wait('@authProviders'); // wait for GET to finish, which means redirect back to list page
-        cy.location('pathname').should('eq', '/main/access-control/auth-providers');
+        assertAccessControlEntitiesPage(entitiesKey);
         cy.location('search').should('eq', '');
     });
 
