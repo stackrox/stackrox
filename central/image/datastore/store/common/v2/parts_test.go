@@ -120,12 +120,12 @@ func TestSplitAndMergeImage(t *testing.T) {
 			},
 		},
 		ImageCVEEdges: map[string]*storage.ImageCVEEdge{
-			"cve1": {
+			cve.ID("cve1", ""): {
 				Id:         postgres.IDFromPks([]string{"sha", cve.ID("cve1", "")}),
 				ImageId:    "sha",
 				ImageCveId: cve.ID("cve1", ""),
 			},
-			"cve2": {
+			cve.ID("cve2", ""): {
 				Id:         postgres.IDFromPks([]string{"sha", cve.ID("cve2", "")}),
 				ImageId:    "sha",
 				ImageCveId: cve.ID("cve2", ""),
