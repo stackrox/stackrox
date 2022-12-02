@@ -3,9 +3,12 @@ import { format } from 'date-fns';
 import { Formik } from 'formik';
 import pluralize from 'pluralize';
 import { Power, Edit } from 'react-feather';
+import { gql } from '@apollo/client';
+import { Query } from '@apollo/client/react/components';
 
 import ButtonLink from 'Components/ButtonLink';
 import CollapsibleSection from 'Components/CollapsibleSection';
+import Loader from 'Components/Loader';
 import Metadata from 'Components/Metadata';
 import PanelButton from 'Components/PanelButton';
 import SeverityLabel from 'Components/SeverityLabel';
@@ -17,22 +20,28 @@ import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 import { getCurriedDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
+import {
+    DEPLOYMENT_LIST_FRAGMENT,
+    DEPLOYMENT_LIST_FRAGMENT_UPDATED,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Step3/BooleanPolicyLogicSection';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePagination from 'hooks/patternfly/usePagination';
 import { getExcludedNamesByType } from 'utils/policyUtils';
+import queryService from 'utils/queryService';
 import { pluralizeHas } from 'utils/textUtils';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import MitreAttackVectors from 'Containers/MitreAttackVectors';
 import { FormSection, FormSectionBody } from './FormSection';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
+import { entityPriorityField } from '../../VulnMgmt.constants';
+import { vulMgmtPolicyQuery } from '../VulnMgmtPolicyQueryUtil';
 
 const emptyPolicy = {
     categories: [],
-    deploymentCount: 0,
-    deployments: [],
     description: '',
     disabled: true,
     enforcementActions: [],
@@ -55,6 +64,11 @@ const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { page, onSetPage } = usePagination();
+    const [sort, setSort] = useState({
+        field: entityPriorityField.DEPLOYMENT,
+        reversed: false,
+    });
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyPolicy, ...data };
@@ -76,7 +90,6 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         policySections,
         scope,
         exclusions,
-        deployments,
     } = safeData;
     const [currentDisabledState, setCurrentDisabledState] = useState(disabled);
 
@@ -121,20 +134,6 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
             </ButtonLink>
         </div>
     );
-
-    // @TODO: extract this out to make it re-usable and easier to test
-    const failingDeployments = deployments.filter((singleDeploy) => {
-        if (
-            singleDeploy.policyStatus === 'pass' ||
-            !singleDeploy.deployAlerts ||
-            !singleDeploy.deployAlerts.length
-        ) {
-            return false;
-        }
-        return singleDeploy.deployAlerts.some((alert) => {
-            return alert && alert.policy && alert.policy.id === id;
-        });
-    });
 
     const descriptionBlockMetadata = [
         {
@@ -216,26 +215,72 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     } else {
         const getDeploymentTableColumns = getCurriedDeploymentTableColumns(isFeatureFlagEnabled);
 
+        const fragmentToUse = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')
+            ? DEPLOYMENT_LIST_FRAGMENT_UPDATED
+            : DEPLOYMENT_LIST_FRAGMENT;
+
+        const failingDeploymentQuery = gql`
+            query getDeploymentsFailingForPolicy(
+                $id: ID!
+                $policyQuery: String
+                $deploymentQuery: String
+                $pagination: Pagination
+            ) {
+                policy(id: $id) {
+                    id
+                    deploymentCount(query: $deploymentQuery)
+                    deployments(query: $deploymentQuery, pagination: $pagination) {
+                        ...deploymentFields
+                    }
+                }
+            }
+            ${fragmentToUse}
+        `;
+
+        const fullEntityContext = workflowState.getEntityContext();
+        const failingDeploymentQueryVariables = {
+            id,
+            deploymentQuery: queryService.objectToWhereClause({
+                'Policy Violated': true,
+                ...queryService.entityContextToQueryObject(fullEntityContext),
+            }),
+            ...vulMgmtPolicyQuery,
+            pagination: queryService.getPagination(sort, page, 2 /* TODO Remove this param */),
+        };
+
         policyFindingsContent = (
-            <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relativebg-base-100 mb-4 mx-4">
-                <TableWidget
-                    header={`${failingDeployments.length} ${pluralize(
-                        entityTypes.DEPLOYMENT,
-                        failingDeployments.length
-                    )} ${pluralizeHas(failingDeployments.length)} failed across this policy`}
-                    rows={failingDeployments}
-                    entityType={entityTypes.DEPLOYMENT}
-                    noDataText="No deployments have failed across this policy"
-                    className="bg-base-100"
-                    columns={getDeploymentTableColumns(workflowState)}
-                    defaultSorted={[
-                        {
-                            id: 'priority',
-                            desc: false,
-                        },
-                    ]}
-                />
-            </div>
+            <Query query={failingDeploymentQuery} variables={failingDeploymentQueryVariables}>
+                {({ loading, data: deploymentData, previousData }) => {
+                    const policyData = deploymentData?.policy || previousData?.policy;
+                    if (loading && !policyData) {
+                        return <Loader />;
+                    }
+                    const { deployments, deploymentCount } = policyData;
+                    return (
+                        <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relative bg-base-100 mb-4 mx-4">
+                            <TableWidget
+                                header={`${deploymentCount} ${pluralize(
+                                    entityTypes.DEPLOYMENT,
+                                    deploymentCount
+                                )} ${pluralizeHas(deploymentCount)} failed across this policy`}
+                                rows={deployments}
+                                entityType={entityTypes.DEPLOYMENT}
+                                noDataText="No deployments have failed across this policy"
+                                className="bg-base-100"
+                                columns={getDeploymentTableColumns(workflowState)}
+                                pageSize={2}
+                                parentPageState={{
+                                    page,
+                                    setPage: (newPage) => onSetPage(undefined, newPage),
+                                    totalCount: deploymentCount,
+                                }}
+                                sortHandler={setSort}
+                                defaultSorted={[sort]}
+                            />
+                        </div>
+                    );
+                }}
+            </Query>
         );
     }
 
