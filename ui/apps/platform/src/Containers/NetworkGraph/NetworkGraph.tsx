@@ -100,7 +100,7 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
     }
 
     function closeSidebar() {
-        history.push(`${networkBasePathPF}`);
+        history.push(`${networkBasePathPF}${history.location.search as string}`);
     }
 
     function onSelect(ids: string[]) {
@@ -112,10 +112,14 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
             const [newDetailType, newDetailId] = getUrlParamsForEntity(newSelectedEntity);
             // if found, and it's not the logical grouping of all external sources, then trigger URL update
             if (newDetailId !== 'EXTERNAL') {
-                history.push(`${networkBasePathPF}/${newDetailType}/${newDetailId}`);
+                history.push(
+                    `${networkBasePathPF}/${newDetailType}/${newDetailId}${
+                        history.location.search as string
+                    }`
+                );
             } else {
                 // otherwise, return to the graph-only state
-                history.push(`${networkBasePathPF}`);
+                history.push(`${networkBasePathPF}${history.location.search as string}`);
             }
         }
     }
