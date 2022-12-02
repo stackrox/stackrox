@@ -9,6 +9,7 @@ import (
 	"runtime/pprof"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -76,10 +77,10 @@ func (p *HeapProfiler) dumpHeapOnThreshhold(ctx context.Context, runCheck <-chan
 func writeHeapProfile(t time.Time, path string) error {
 	file, err := os.Create(path)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "creating heap dump file at: %s", path)
 	}
 
-	return pprof.Lookup("heap").WriteTo(file, 0)
+	return errors.Wrapf(pprof.Lookup("heap").WriteTo(file, 0), "writing heap profile to file at: %s", path)
 }
 
 func dumpFilePath(t time.Time, dir string) string {
