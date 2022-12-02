@@ -64,7 +64,7 @@ const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const { page, onSetPage } = usePagination();
+    const [page, setPage] = useState(1);
     const [sort, setSort] = useState({
         field: entityPriorityField.DEPLOYMENT,
         reversed: false,
@@ -255,27 +255,25 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                     if (loading && !policyData) {
                         return <Loader />;
                     }
-                    const { deployments, deploymentCount } = policyData;
+                    const failingDeployments = policyData.deployments;
+                    const totalCount = policyData.deploymentCount;
+                    const headerText = `${totalCount} ${pluralize(
+                        entityTypes.DEPLOYMENT,
+                        totalCount
+                    )} ${pluralizeHas(totalCount)} failed across this policy`;
                     return (
                         <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relative bg-base-100 mb-4 mx-4">
                             <TableWidget
-                                header={`${deploymentCount} ${pluralize(
-                                    entityTypes.DEPLOYMENT,
-                                    deploymentCount
-                                )} ${pluralizeHas(deploymentCount)} failed across this policy`}
-                                rows={deployments}
+                                header={headerText}
+                                rows={failingDeployments}
                                 entityType={entityTypes.DEPLOYMENT}
                                 noDataText="No deployments have failed across this policy"
                                 className="bg-base-100"
                                 columns={getDeploymentTableColumns(workflowState)}
+                                /* TODO Remove `pageSize` */
                                 pageSize={2}
-                                parentPageState={{
-                                    page,
-                                    setPage: (newPage) => onSetPage(undefined, newPage),
-                                    totalCount: deploymentCount,
-                                }}
+                                parentPageState={{ page, setPage, totalCount }}
                                 sortHandler={setSort}
-                                defaultSorted={[sort]}
                             />
                         </div>
                     );
