@@ -1,4 +1,4 @@
-package debug
+package profiling
 
 import (
 	"context"
@@ -11,7 +11,8 @@ import (
 func TestHeapDump(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	p := NewHeapProfiler(0.80, 2, tmpDir)
+	var limitBytes int64 = 2 // to be sure the test blows this limit
+	p := NewHeapProfiler(0.80, uint64(limitBytes), tmpDir)
 	runCheck := make(chan time.Time)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	now := time.Now()
@@ -29,6 +30,6 @@ func TestHeapDump(t *testing.T) {
 
 	expectedFilePath := dumpFilePath(now, tmpDir)
 	if _, err := os.Stat(expectedFilePath); err != nil {
-		t.Fatalf("expected file: %s not found", expectedFilePath)
+		t.Fatalf("expected heap dump file: %s not found", expectedFilePath)
 	}
 }
