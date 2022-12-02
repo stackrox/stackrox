@@ -196,11 +196,7 @@ class IntegrationsTest extends BaseSpecification {
         when:
         "call the grpc API for the splunk integration."
         SplunkNotifier notifier = new SplunkNotifier(legacy, parts.collectorSvc.name, parts.splunkPortForward.localPort)
-        try {
-            notifier.createNotifier()
-        } catch (Exception e) {
-            throw new AssumptionViolatedException("Could not create Splunk notifier. Skipping test!", e)
-        }
+        notifier.createNotifier()
 
         and:
         "Edit the policy with the latest keyword."
