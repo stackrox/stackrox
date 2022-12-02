@@ -65,3 +65,11 @@ func (b *storeImpl) Upsert(_ context.Context, log *storage.LogImbue) error {
 		return bucket.Put(b, log.GetLog())
 	})
 }
+
+func (b *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+	return nil
+}
+
+func (b *storeImpl) Walk(ctx context.Context, fn func(obj *storage.LogImbue) error) error {
+	return nil
+}

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -44,12 +45,15 @@ const (
 	orphanWindow       = 30 * time.Minute
 	baselineBatchLimit = 10000
 	clusterGCFreq      = 24 * time.Hour
+	logImbueGCFreq     = 24 * time.Hour
+	logImbueWindow     = 24 * 7 * time.Hour
 )
 
 var (
-	log                  = logging.LoggerForModule()
-	pruningCtx           = sac.WithAllAccess(context.Background())
-	lastClusterPruneTime time.Time
+	log                   = logging.LoggerForModule()
+	pruningCtx            = sac.WithAllAccess(context.Background())
+	lastClusterPruneTime  time.Time
+	lastLogImbuePruneTime time.Time
 )
 
 // GarbageCollector implements a generic garbage collection mechanism
@@ -73,7 +77,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	vulnReqs vulnReqDataStore.DataStore,
 	serviceAccts serviceAccountDataStore.DataStore,
 	k8sRoles k8sRoleDataStore.DataStore,
-	k8sRoleBindings roleBindingDataStore.DataStore) GarbageCollector {
+	k8sRoleBindings roleBindingDataStore.DataStore,
+	logimbueStore logimbueDataStore.Store) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -91,6 +96,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		serviceAccts:    serviceAccts,
 		k8sRoles:        k8sRoles,
 		k8sRoleBindings: k8sRoleBindings,
+		logimbueStore:   logimbueStore,
 		stopSig:         concurrency.NewSignal(),
 		stoppedSig:      concurrency.NewSignal(),
 	}
@@ -113,6 +119,7 @@ type garbageCollectorImpl struct {
 	serviceAccts    serviceAccountDataStore.DataStore
 	k8sRoles        k8sRoleDataStore.DataStore
 	k8sRoleBindings roleBindingDataStore.DataStore
+	logimbueStore   logimbueDataStore.Store
 	stopSig         concurrency.Signal
 	stoppedSig      concurrency.Signal
 }
@@ -144,6 +151,8 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		postgres.PruneActiveComponents(pruningCtx, globaldb.GetPostgres())
 		postgres.PruneClusterHealthStatuses(pruningCtx, globaldb.GetPostgres())
+
+		g.pruneLogImbues()
 	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
@@ -151,6 +160,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 
 func (g *garbageCollectorImpl) runGC() {
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
+	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
 	g.pruneBasedOnConfig()
 
 	t := time.NewTicker(pruneInterval)
@@ -828,6 +838,40 @@ func (g *garbageCollectorImpl) removeRisks(riskType storage.RiskSubjectType, ids
 		if err := g.risks.RemoveRisk(pruningCtx, id, riskType); err != nil {
 			log.Error(err)
 		}
+	}
+}
+
+func (g *garbageCollectorImpl) pruneLogImbues() {
+	// Check to see if enough time has elapsed to run again
+	if lastLogImbuePruneTime.Add(logImbueGCFreq).After(time.Now()) {
+		// Only log imbue pruning if it's been at least logImbueGCFreq since last time those were pruned
+		return
+	}
+	defer func() {
+		lastLogImbuePruneTime = time.Now()
+	}()
+
+	var logImbuesToPrune []string
+	now := types.TimestampNow()
+	walkFn := func() error {
+		logImbuesToPrune = logImbuesToPrune[:0]
+		return g.logimbueStore.Walk(pruningCtx, func(li *storage.LogImbue) error {
+			if protoutils.Sub(now, li.Timestamp) < logImbueWindow {
+				return nil
+			}
+			logImbuesToPrune = append(logImbuesToPrune, li.GetId())
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		log.Error(errors.Wrap(err, "unable to walk log imbues and mark for pruning"))
+		return
+	}
+
+	// call DeleteMany or whatever with the IDs.
+	err := g.logimbueStore.DeleteMany(pruningCtx, logImbuesToPrune)
+	if err != nil {
+		log.Error(errors.Wrap(err, "error removing process indicators"))
 	}
 }
 
