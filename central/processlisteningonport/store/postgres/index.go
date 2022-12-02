@@ -20,7 +20,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, schema)
 }
 
-// NewIndexer returns new indexer for `storage.ProcessListeningOnPort`.
+// NewIndexer returns new indexer for `storage.ProcessListeningOnPortStorage`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -32,32 +32,32 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ProcessListeningOnPort")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ProcessListeningOnPortStorage")
 
 	return postgres.RunCountRequest(ctx, v1.SearchCategory_PROCESS_LISTENING_ON_PORT, q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessListeningOnPort")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessListeningOnPortStorage")
 
 	return postgres.RunSearchRequest(ctx, v1.SearchCategory_PROCESS_LISTENING_ON_PORT, q, b.db)
 }
 
 //// Stubs for satisfying interfaces
 
-func (b *indexerImpl) AddProcessListeningOnPort(deployment *storage.ProcessListeningOnPort) error {
+func (b *indexerImpl) AddProcessListeningOnPortStorage(deployment *storage.ProcessListeningOnPortStorage) error {
 	return nil
 }
 
-func (b *indexerImpl) AddProcessListeningOnPorts(_ []*storage.ProcessListeningOnPort) error {
+func (b *indexerImpl) AddProcessListeningOnPortStorages(_ []*storage.ProcessListeningOnPortStorage) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteProcessListeningOnPort(id string) error {
+func (b *indexerImpl) DeleteProcessListeningOnPortStorage(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteProcessListeningOnPorts(_ []string) error {
+func (b *indexerImpl) DeleteProcessListeningOnPortStorages(_ []string) error {
 	return nil
 }
 
