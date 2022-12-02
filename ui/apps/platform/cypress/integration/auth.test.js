@@ -33,7 +33,7 @@ describe.skip('Authentication', () => {
     };
 
     it('should redirect user to login page, authenticate and redirect to the requested page', () => {
-        // Added in 3985 and changed the failures without solving them.
+        // Added in 3985 and replaced intermittent failures for this test to frequent failures for the next test.
         localStorage.removeItem('access_token'); // replace possible valid token left over from previous test file
 
         stubAPIs();
