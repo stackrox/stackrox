@@ -568,6 +568,16 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	})
 	s.NoError(err)
 
+	// Upsert cluster.
+	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
+	c3ID, err := s.clusterDataStore.AddCluster(s.ctx, &storage.Cluster{
+		Name:               "c3",
+		Labels:             map[string]string{"env": "test", "team": "team"},
+		MainImage:          "docker.io/stackrox/rox:latest",
+		CentralApiEndpoint: "central.stackrox:443",
+	})
+	s.NoError(err)
+
 	// Upsert K8s CVEs.
 
 	vulns, clusterMap := getTestClusterCVEParts(10, c1ID, c2ID)
@@ -583,6 +593,11 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 
 	// Search by non-matching type.
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 0)
+
+	// Search by non-matching type.
+	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_ISTIO_CVE.String()).ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 0)
 
@@ -615,7 +630,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.True(found)
 	s.True(storedCVE.GetSnoozed())
 
-	// Upsert istio CVEs.
+	// Upsert OpenShift CVEs.
 	vulns, clusterMap = getTestClusterCVEParts(10, c2ID)
 	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.OpenShift))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
@@ -630,12 +645,24 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(err)
 	s.Len(results, 10)
 
+	// Upsert Istio CVEs.
+	vulns, clusterMap = getTestClusterCVEParts(10, c3ID)
+	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.Istio))
+	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(30, count)
+
+	// Search by cluster.
+	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.Cluster, "c3").ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 10)
+
 	// Upsert more cves and ensure that they are reconciled.
 	vulns, clusterMap = getTestClusterCVEParts(20, c1ID)
 	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.K8s))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(30, count)
+	s.Equal(40, count)
 
 	// Search by cluster.
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.Cluster, "c2").ProtoQuery())
@@ -652,6 +679,9 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 10)
+	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_ISTIO_CVE.String()).ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 10)
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_K8S_CVE.String()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.Cluster, "c2").ProtoQuery(),
@@ -664,7 +694,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.OpenShift))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(25, count)
+	s.Equal(35, count)
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.Cluster, "c2").ProtoQuery(),
@@ -681,9 +711,14 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(s.clusterCVEDatastore.DeleteClusterCVEsInternal(s.ctx, c2ID))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(20, count)
+	s.Equal(30, count)
 
 	s.NoError(s.clusterCVEDatastore.DeleteClusterCVEsInternal(s.ctx, c1ID))
+	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(10, count)
+
+	s.NoError(s.clusterCVEDatastore.DeleteClusterCVEsInternal(s.ctx, c3ID))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, count)
