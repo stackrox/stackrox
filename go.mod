@@ -54,7 +54,7 @@ require (
 	github.com/heimdalr/dag v1.2.1
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgconn v1.13.0
-	github.com/jackc/pgtype v1.12.0
+	github.com/jackc/pgtype v1.13.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
 	github.com/lib/pq v1.10.7
