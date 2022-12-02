@@ -211,7 +211,7 @@ There are a number of required steps to get access to vault:
 2. Ask a team member to add you to the collections required for this test:
 stackrox-stackrox-initial and stackrox-stackrox-e2e-tests.
 3. Login to the vault at: https://vault.ci.openshift.org/ui/vault/secrets (Use *OIDC*)
-You should see these secrets under kv/
+You should see these secret collections under kv/
 4. Copy a 'token' from that UI and rerun this script.
 The 'token' will expire hourly and you will need to renew it through the vault UI.
 _EOVAULTHELP_
