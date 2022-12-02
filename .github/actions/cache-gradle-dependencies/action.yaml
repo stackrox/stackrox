@@ -10,7 +10,7 @@ runs:
           ~/.gradle/caches
           ~/.gradle/wrapper
           ~/.m2/repository
-        key: npm-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-${{ github.job }}
+        key: gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-${{ github.job }}
         restore-keys: |
           gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-${{ github.job }}
           gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-

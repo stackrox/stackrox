@@ -2,9 +2,10 @@ name: Style
 on:
   pull_request:
     types:
-    - opened
-    - synchronize
     - labeled
+    - opened
+    - reopened
+    - synchronize
 
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
@@ -12,9 +13,6 @@ env:
 jobs:
 
   style-check:
-    if: |
-      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
-      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.50
@@ -35,16 +33,6 @@ jobs:
 
       - name: Cache QA Test dependencies
         uses: ./.github/actions/cache-gradle-dependencies
-
-      - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.6
-
-      - name: Setup Go build environment
-        run: |
-          if [[ -n "$GITHUB_PR_LABEL_CI_RELEASE_BUILD" ]]; then
-            cci-export GOTAGS release
-          fi
-          echo "GOTAGS: ${GOTAGS:-}"
 
       - name: Fetch UI deps
         run: make -C ui deps
