@@ -29,20 +29,13 @@ test_upgrade() {
 
     REPO_FOR_TIME_TRAVEL="/tmp/rox-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="rhacs-eng"
-    if is_CI; then
-        REGISTRY="quay.io/$QUAY_REPO"
-    else
-        REGISTRY="stackrox"
-    fi
+    REGISTRY="quay.io/rhacs-eng"
 
     export OUTPUT_FORMAT="helm"
     export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
 
-    if is_CI; then
-        export ROXCTL_IMAGE_REPO="quay.io/$QUAY_REPO/roxctl"
-    fi
+    export ROXCTL_IMAGE_REPO="$REGISTRY/roxctl"
 
     preamble
     setup_deployment_env false false
