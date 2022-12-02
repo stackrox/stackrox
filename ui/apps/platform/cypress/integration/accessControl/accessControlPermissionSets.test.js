@@ -42,6 +42,7 @@ describe('Access Control Permission sets', () => {
         cy.get('th:contains("Name")');
         cy.get('th:contains("Description")');
         cy.get('th:contains("Roles")');
+        cy.get('th[aria-label="Row actions"]');
     });
 
     it('list has default names', () => {

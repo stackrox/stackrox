@@ -51,6 +51,7 @@ describe('Access Control Auth providers', () => {
         cy.get('th:contains("Type")');
         cy.get('th:contains("Minimum access role")');
         cy.get('th:contains("Assigned rules")');
+        cy.get('th[aria-label="Row actions"]');
     });
 
     it('add Auth0', () => {
