@@ -7,6 +7,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -43,7 +44,8 @@ func Singleton() GarbageCollector {
 			vulnReqDataStore.Singleton(),
 			serviceAccountDataStore.Singleton(),
 			k8sRoleDataStore.Singleton(),
-			k8srolebindingStore.Singleton())
+			k8srolebindingStore.Singleton(),
+			logimbueStore.Singleton())
 	})
 	return gc
 }
