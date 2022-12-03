@@ -41,20 +41,36 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	//// XXX: An anonymous access only for development
-	//  return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
+
+func IsServiceDisabled() bool {
+	if os.Getenv("ROX_POSTGRES_DATASTORE") == "false" {
+		log.Warnf("Process listening on port service is disabled when ROX_POSTGRES_DATASTORE is false")
+		return true
+	}
+
+	if os.Getenv("ROX_PROCESSES_LISTENING_ON_PORT") == "false" {
+		log.Warnf("Process listening on port service is disabled when ROX_PROCESSES_LISTENING_ON_PORT is false")
+		return true
+	}
+
+	return false
+}
+
+func EmptyProcessesListeningOnPortsWithDeploymentResponse() (*v1.GetProcessesListeningOnPortsWithDeploymentResponse, error) {
+	result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
+		ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
+	}
+	return result, nil
+}
+
 
 func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Context, req *v1.GetProcessesListeningOnPortsByNamespaceRequest) (*v1.GetProcessesListeningOnPortsWithDeploymentResponse, error) {
 	namespace := req.GetNamespace()
 
-	if os.Getenv("ROX_POSTGRES_DATASTORE") == "false" || os.Getenv("ROX_PROCESSES_LISTENING_ON_PORT") == "false" {
-		log.Warnf("Process listening on port service is disabled when ROX_POSTGRES_DATASTORE or ROX_PROCESSES_LISTENING_ON_PORT is false")
-		result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
-			ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
-		}
-		return result, nil
+	if IsServiceDisabled() {
+		return EmptyProcessesListeningOnPortsWithDeploymentResponse()
 	}
 
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(
@@ -62,18 +78,12 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Contex
 
 	if err != nil {
 		log.Warnf("In processlisteningonport service query return err: %+v", err)
-		result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
-			ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
-		}
-		return result, nil
+		return EmptyProcessesListeningOnPortsWithDeploymentResponse()
 	}
 
 	if processesListeningOnPorts == nil {
 		log.Debug("In processlisteningonport service query return nil")
-		result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
-			ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
-		}
-		return result, nil
+		return EmptyProcessesListeningOnPortsWithDeploymentResponse()
 	}
 
 	result := make([]*v1.ProcessListeningOnPortWithDeploymentId, 0)
@@ -91,17 +101,21 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Contex
 	}, err
 }
 
+func EmptyProcessesListeningOnPortsResponse() (*v1.GetProcessesListeningOnPortsResponse, error) {
+	result := &v1.GetProcessesListeningOnPortsResponse{
+		ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
+	}
+	return result, nil
+}
+
 func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(
 	ctx context.Context,
 	req *v1.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest,
 ) (*v1.GetProcessesListeningOnPortsResponse, error) {
 
-	if os.Getenv("ROX_POSTGRES_DATASTORE") == "false" || os.Getenv("ROX_PROCESSES_LISTENING_ON_PORT") == "false" {
+	if IsServiceDisabled() {
 		log.Warnf("Process listening on port service is disabled when ROX_POSTGRES_DATASTORE or ROX_PROCESSES_LISTENING_ON_PORT is false")
-		result := &v1.GetProcessesListeningOnPortsResponse{
-			ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
-		}
-		return result, nil
+		return EmptyProcessesListeningOnPortsResponse()
 	}
 
 	namespace := req.GetNamespace()
@@ -115,18 +129,12 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(
 
 	if err != nil {
 		log.Warnf("In processlisteningonport service query return err: %+v", err)
-		result := &v1.GetProcessesListeningOnPortsResponse{
-			ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
-		}
-		return result, nil
+		return EmptyProcessesListeningOnPortsResponse()
 	}
 
 	if processesListeningOnPorts == nil {
 		log.Debug("In processlisteningonport service query return nil")
-		result := &v1.GetProcessesListeningOnPortsResponse{
-			ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
-		}
-		return result, nil
+		return EmptyProcessesListeningOnPortsResponse()
 	}
 
 	result := make([]*storage.ProcessListeningOnPort, 0)
