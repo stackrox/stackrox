@@ -308,7 +308,7 @@ HEAD
     for authUser in {0..2}; do
         echo \
 \<li\>\
-\<a target=\"_blank\" rel=\"noopener noreferrer\" href=\"https://console.cloud.google.com/logs/query\;query=\
+\<a target=\"_blank\" href=\"https://console.cloud.google.com/logs/query\;query=\
 resource.type=%22k8s_container%22%0A\
 resource.labels.cluster_name%3D%22"$CLUSTER_NAME"%22%0A\
 resource.labels.namespace_name%3D%22stackrox%22%0A\
