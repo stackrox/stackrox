@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"os"
 	"fmt"
 	"time"
 
@@ -41,6 +42,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
 	portProcesses ...*storage.ProcessListeningOnPort,
 ) error {
+
+	if os.Getenv("ROX_POSTGRES_DATASTORE") == "false" || os.Getenv("ROX_PROCESSES_LISTENING_ON_PORT") == "false" {
+		return nil
+	}
+
 	defer metrics.SetDatastoreFunctionDuration(
 		time.Now(),
 		"ProcessListeningOnPort",

@@ -114,6 +114,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     def "Verify networking endpoints with processes appear in API at the namespace level"() {
         given:
         "Two deployments that listen on ports are started up"
+         
+        if (! Env.CI_JOBNAME.contains("postgres")) {
+                return true
+        }
+
         rebuildForRetries()
 
         String namespace = targetDeployments[0].getNamespace()
@@ -211,6 +216,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         "Two deployments that listen on ports are started up"
+
+        if (! Env.CI_JOBNAME.contains("postgres")) {
+                return true
+        }
+
         rebuildForRetries()
 
         String namespace = targetDeployments[0].getNamespace()
