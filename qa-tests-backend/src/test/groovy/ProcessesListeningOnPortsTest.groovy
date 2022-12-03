@@ -116,7 +116,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         "Two deployments that listen on ports are started up"
          
         if (! Env.CI_JOBNAME.contains("postgres")) {
-                return true
+                return
         }
 
         rebuildForRetries()
@@ -218,7 +218,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         "Two deployments that listen on ports are started up"
 
         if (! Env.CI_JOBNAME.contains("postgres")) {
-                return true
+                return
         }
 
         rebuildForRetries()
