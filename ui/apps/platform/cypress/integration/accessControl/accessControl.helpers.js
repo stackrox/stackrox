@@ -225,7 +225,7 @@ export function clickRowActionMenuItemInTable(entityName, menuItemText) {
     cy.get(
         `tr:has(td[data-label="Name"] a:contains("${entityName}")) td.pf-c-table__action .pf-c-dropdown__toggle`
     ).click();
-    cy.get(`td.pf-c-table__action button[role="menuitem"]:contains("${menuItemText}")`);
+    cy.get(`td.pf-c-table__action button[role="menuitem"]:contains("${menuItemText}")`).click();
 }
 
 export const authProvidersAliasForDELETE = 'DELETE_authProviders';
