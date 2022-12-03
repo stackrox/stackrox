@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"os"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
-	// "github.com/stackrox/rox/pkg/grpc/authz/allow"
 )
 
 var (
@@ -48,6 +48,15 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Context, req *v1.GetProcessesListeningOnPortsByNamespaceRequest) (*v1.GetProcessesListeningOnPortsWithDeploymentResponse, error) {
 	namespace := req.GetNamespace()
+
+	if os.Getenv("ROX_POSTGRES_DATASTORE") == "false" || os.Getenv("ROX_PROCESSES_LISTENING_ON_PORT") == "false" {
+		log.Warnf("Process listening on port service is disabled when ROX_POSTGRES_DATASTORE or ROX_PROCESSES_LISTENING_ON_PORT is false")
+		result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
+			ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
+		}
+		return result, nil
+	}
+
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(
 		ctx, datastore.GetOptions{Namespace: &namespace})
 
@@ -86,6 +95,14 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(
 	ctx context.Context,
 	req *v1.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest,
 ) (*v1.GetProcessesListeningOnPortsResponse, error) {
+
+	if os.Getenv("ROX_POSTGRES_DATASTORE") == "false" || os.Getenv("ROX_PROCESSES_LISTENING_ON_PORT") == "false" {
+		log.Warnf("Process listening on port service is disabled when ROX_POSTGRES_DATASTORE or ROX_PROCESSES_LISTENING_ON_PORT is false")
+		result := &v1.GetProcessesListeningOnPortsResponse{
+			ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
+		}
+		return result, nil
+	}
 
 	namespace := req.GetNamespace()
 	deployment := req.GetDeploymentId()
