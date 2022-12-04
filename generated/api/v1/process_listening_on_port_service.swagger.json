@@ -162,6 +162,9 @@
         "process": {
           "$ref": "#/definitions/storageProcessIndicatorUniqueKey"
         },
+        "clusterId": {
+          "type": "string"
+        },
         "closeTimestamp": {
           "type": "string",
           "format": "date-time"
