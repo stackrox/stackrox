@@ -1,5 +1,3 @@
-import { selectors } from '../../constants/AccessControlPage';
-
 import withAuth from '../../helpers/basicAuth';
 
 import {
@@ -10,6 +8,7 @@ import {
     visitAccessControlEntitiesWithStaticResponseForPermissions,
     visitAccessControlEntity,
 } from './accessControl.helpers';
+import { selectors } from './accessControl.selectors';
 
 const defaultNames = ['Unrestricted', 'Deny All'];
 

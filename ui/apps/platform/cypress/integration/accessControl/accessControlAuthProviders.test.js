@@ -1,4 +1,3 @@
-import { selectors, accessModalSelectors } from '../../constants/AccessControlPage';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
 import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
@@ -24,6 +23,7 @@ import {
     visitAccessControlEntitiesWithStaticResponseForPermissions,
     visitAccessControlEntity,
 } from './accessControl.helpers';
+import { selectors, accessModalSelectors } from './accessControl.selectors';
 
 describe('Access Control Auth providers', () => {
     withAuth();

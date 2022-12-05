@@ -1,4 +1,4 @@
-import scopeSelectors from '../helpers/scopeSelectors';
+import scopeSelectors from '../../helpers/scopeSelectors';
 
 function getFormGroupControlForLabel(label) {
     return `.pf-c-form__group-label:contains("${label}") + .pf-c-form__group-control`;
