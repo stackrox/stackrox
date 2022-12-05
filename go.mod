@@ -5,7 +5,7 @@ go 1.18
 require (
 	cloud.google.com/go/compute/metadata v0.2.2
 	cloud.google.com/go/containeranalysis v0.6.0
-	cloud.google.com/go/storage v1.28.0
+	cloud.google.com/go/storage v1.28.1
 	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
@@ -106,7 +106,7 @@ require (
 	golang.org/x/tools v0.3.0
 	golang.stackrox.io/grpc-http1 v0.2.5
 	google.golang.org/api v0.103.0
-	google.golang.org/genproto v0.0.0-20221111202108-142d8a6fa32e
+	google.golang.org/genproto v0.0.0-20221201164419-0e50fba7f41c
 	google.golang.org/grpc v1.51.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
