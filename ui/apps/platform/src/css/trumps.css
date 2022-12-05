@@ -8,6 +8,11 @@ body {
     font-family: var(--pf-global--FontFamily--sans-serif) !important;
 }
 
+/* overrides the extra chevron in select inputs in the classic StackRox style on cluster form */
+[data-testid="clusters-side-panel"] select {
+    background-image: none;
+}
+
 /* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
 .pf-c-page__main-section a {
     color: var(--pf-global--link--Color);
