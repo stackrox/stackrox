@@ -539,7 +539,7 @@ check_rhacs_eng_image_exists() {
         tag="${tag//x/0}"
     elif [[ "$name" == "main-rcd" ]]; then
         name="main"
-        tag="${tag}-rcd"
+        tag="${tag}-rcd-gha"
     fi
 
     local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"

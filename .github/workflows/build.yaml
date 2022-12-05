@@ -349,7 +349,7 @@ jobs:
         build-args: |
           ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
         file: image/rhel/Dockerfile.gen
-        tags: quay.io/rhacs-eng/main:${{ steps.tag.outputs.TAG }}-rcd
+        tags: quay.io/rhacs-eng/main:${{ steps.tag.outputs.TAG }}-rcd-gha
 
   build-and-push-operator:
     if: |
