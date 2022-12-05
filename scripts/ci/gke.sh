@@ -279,7 +279,6 @@ teardown_gke_cluster() {
     info "Cluster deleting asynchronously"
 
     create_log_explorer_links
-    create_log_explorer_links2
 }
 
 create_log_explorer_links() {
@@ -291,12 +290,12 @@ create_log_explorer_links() {
     artifact_file="$ARTIFACT_DIR/gke-logs-summary.html"
 
     cat > "$artifact_file" <<- HEAD
-<html>
+<html style="background: #fff">
     <head>
         <title><h4>GKE Logs Explorer</h4></title>
     </head>
     <body>
-    <ul style="background: #424242; padding-bottom: 20px; list-style-type: none; padding-left: 20px;">
+    <ul style="padding-bottom: 28px; padding-left: 30px; font-family: Roboto,Helvetica,Arial,sans-serif;">
 HEAD
 
     local start_ts
@@ -325,37 +324,6 @@ resource.labels.namespace_name%3D%22stackrox%22%0A\
     </ul>
 </html>
 FOOT
-}
-
-create_log_explorer_links2() {
-    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        info "No place for artifacts, skipping explorer links"
-        return
-    fi
-
-    artifact_file="$ARTIFACT_DIR/gke-logs.link.txt"
-
-    local start_ts
-    start_ts="$(cat /tmp/GKE_CLUSTER_CREATED_TIMESTAMP)"
-    local end_ts
-    end_ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    local project
-    project="$(gcloud config get project --quiet)"
-
-    for authUser in {0..2}; do
-        echo \
-\<li\>\
-\<a href=\"https://console.cloud.google.com/logs/query\;query=\
-resource.type=%22k8s_container%22%0A\
-resource.labels.cluster_name%3D%22"$CLUSTER_NAME"%22%0A\
-resource.labels.namespace_name%3D%22stackrox%22%0A\
-\;timeRange="$start_ts"%2F"$end_ts"\
-\;cursorTimestamp="$start_ts"\
-?authuser="$authUser"\
-\&project="$project"\
-\&orgonly=true\&supportedpurview=organizationId\"\>authUser "$authUser"\</a\>\
-\</li\> >> "$artifact_file"
-    done
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
