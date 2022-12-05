@@ -152,6 +152,7 @@ function CollectionForm({
     const {
         values,
         errors: formikErrors,
+        touched,
         handleChange,
         handleBlur,
         setFieldValue,
@@ -244,13 +245,13 @@ function CollectionForm({
                                 fieldId="name"
                                 isRequired={!isReadOnly}
                                 helperTextInvalid={errors.name}
-                                validated={errors.name ? 'error' : 'default'}
+                                validated={errors.name && touched.name ? 'error' : 'default'}
                             >
                                 <TextInput
                                     id="name"
                                     name="name"
                                     value={values.name}
-                                    validated={errors.name ? 'error' : 'default'}
+                                    validated={errors.name && touched.name ? 'error' : 'default'}
                                     onChange={(_, e) => {
                                         if (saveError?.type === 'DuplicateName') {
                                             clearSaveError();
