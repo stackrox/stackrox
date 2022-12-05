@@ -89,8 +89,8 @@ message NodeScan {
 }
 
 message NodeInventory {
-    string                         node_id    = 1  [(gogoproto.moretags) = 'search:"Node Inventory ID"'];
-    string                         node_name  = 2 [(gogoproto.moretags) = 'search:"Node Inventory Name"'];
+    string                         node_id    = 1;
+    string                         node_name  = 2;
     google.protobuf.Timestamp      scan_time  = 3;
 
     // This is a copy of scannerV1.Components.
