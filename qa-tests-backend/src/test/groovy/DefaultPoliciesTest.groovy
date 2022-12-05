@@ -44,6 +44,7 @@ import util.Env
 import util.Helpers
 import util.SlackUtil
 
+// TODO(ROX-13738): Re-enable these tests in compatibility-test step
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
     // Deployment names
