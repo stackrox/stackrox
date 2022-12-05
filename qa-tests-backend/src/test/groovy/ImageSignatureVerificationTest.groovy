@@ -119,7 +119,8 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // associated with it.
     static final private Deployment SAME_DIGEST_WITH_SIGNATURE = new Deployment()
             .setName("same-digest-with-signature")
-            .setImage("quay.io/rhacs-eng/qa-signatures@sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
+            .setImage("quay.io/rhacs-eng/qa-signatures@" +
+                    "sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
             .addLabel("app", "image-same-digest-with-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
