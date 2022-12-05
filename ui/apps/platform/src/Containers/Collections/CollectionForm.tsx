@@ -1,5 +1,4 @@
-import React, { ReactElement } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { ReactElement, useEffect } from 'react';
 import {
     Alert,
     Badge,
@@ -23,7 +22,6 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { collectionsBasePath } from 'routePaths';
 import { CollectionResponse } from 'services/CollectionsService';
 import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
@@ -80,6 +78,7 @@ export type CollectionFormProps = {
     /* collection responses for the embedded collections of `initialData` */
     initialEmbeddedCollections: CollectionResponse[];
     onSubmit: (collection: Collection) => Promise<void>;
+    onCancel: () => void;
     saveError?: CollectionSaveError | undefined;
     clearSaveError?: () => void;
     /* Table cells to render for each collection in the CollectionAttacher component */
@@ -141,10 +140,9 @@ function CollectionForm({
     saveError,
     clearSaveError = () => {},
     onSubmit,
+    onCancel,
     getCollectionTableCells,
 }: CollectionFormProps) {
-    const history = useHistory();
-
     const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
     const { isOpen: isRuleSectionOpen, onToggle: ruleSectionOnToggle } = useSelectToggle(true);
@@ -160,10 +158,7 @@ function CollectionForm({
         submitForm,
         isSubmitting,
     } = useFormik({
-        initialValues:
-            action.type === 'clone'
-                ? { ...initialData, name: `${initialData.name} (COPY)` }
-                : initialData,
+        initialValues: initialData,
         onSubmit: (collection, { setSubmitting }) => {
             onSubmit(collection).catch(() => {
                 setSubmitting(false);
@@ -181,6 +176,21 @@ function CollectionForm({
         }),
     });
 
+    // Synchronize the value of "name" in the form field when the page action changes
+    // e.g. from 'view' -> 'clone'
+    useEffect(() => {
+        const nameValue = {
+            create: '',
+            view: initialData.name,
+            edit: initialData.name,
+            clone: `${initialData.name} (COPY)`,
+        }[action.type];
+
+        setFieldValue('name', nameValue).catch(() => {
+            // Nothing to do on error
+        });
+    }, [action.type, initialData.name, setFieldValue]);
+
     const errors = {
         ...formikErrors,
     };
@@ -193,10 +203,6 @@ function CollectionForm({
     const collectionTableCells = getCollectionTableCells(
         saveError?.type === 'CollectionLoop' ? saveError.loopId : undefined
     );
-
-    function onCancelSave() {
-        history.push({ pathname: `${collectionsBasePath}` });
-    }
 
     const onResourceSelectorChange = (
         entityType: SelectorEntityType,
@@ -236,7 +242,7 @@ function CollectionForm({
                             <FormGroup
                                 label="Name"
                                 fieldId="name"
-                                isRequired
+                                isRequired={!isReadOnly}
                                 helperTextInvalid={errors.name}
                                 validated={errors.name ? 'error' : 'default'}
                             >
@@ -252,7 +258,7 @@ function CollectionForm({
                                         handleChange(e);
                                     }}
                                     onBlur={handleBlur}
-                                    isDisabled={isReadOnly}
+                                    readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />
                             </FormGroup>
                         </FlexItem>
@@ -264,7 +270,7 @@ function CollectionForm({
                                     value={values.description}
                                     onChange={(_, e) => handleChange(e)}
                                     onBlur={handleBlur}
-                                    isDisabled={isReadOnly}
+                                    readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />
                             </FormGroup>
                         </FlexItem>
@@ -423,7 +429,7 @@ function CollectionForm({
                     >
                         Save
                     </Button>
-                    <Button variant="secondary" isDisabled={isSubmitting} onClick={onCancelSave}>
+                    <Button variant="secondary" isDisabled={isSubmitting} onClick={onCancel}>
                         Cancel
                     </Button>
                 </div>

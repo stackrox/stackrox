@@ -198,9 +198,21 @@ export function fetchNetworkPolicyGraph(clusterId, namespaces, query, modificati
  * Fetches nodes and links for the network flow graph.
  * Returns response with nodes and links
  *
+ * @param {!String} clusterId
+ * @param {String[]} namespaces
+ * @param {String} query
+ * @param {Date} date
+ * @param {boolean} includePorts
+ *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkFlowGraph(clusterId, namespaces, query, date, includePorts) {
+export function fetchNetworkFlowGraph(
+    clusterId,
+    namespaces,
+    query = '',
+    date = null,
+    includePorts = false
+) {
     const urlParams = query ? { query } : {};
     const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;

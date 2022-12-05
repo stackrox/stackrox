@@ -286,7 +286,7 @@ export function getCountAndNounFromNodeCVEsLinkResults([, count]) {
 export function verifySecondaryEntities(
     entitiesKey1,
     entitiesKey2,
-    columnIndex,
+    columnIndex, // one-based index includes checkbox, hidden, invisible
     entitiesRegExp2,
     getCountAndNounFromLinkResults = getCountAndNounFromSecondaryEntitiesLinkResults
 ) {
@@ -294,8 +294,7 @@ export function verifySecondaryEntities(
     visitVulnerabilityManagementEntities(entitiesKey1);
 
     // Find the first link for secondary entities.
-    // Plus 1 because of invisible .rt-td.hidden cell.
-    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex + 1})`)
+    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex})`)
         .contains('a', entitiesRegExp2)
         .then(($a) => {
             const { panelHeaderText, relatedEntitiesCount, relatedEntitiesNoun } =
@@ -339,7 +338,7 @@ export function verifySecondaryEntities(
 export function verifyFilteredSecondaryEntitiesLink(
     entitiesKey1,
     _entitiesKey2, // unused because response might have been cached
-    columnIndex,
+    columnIndex, // one-based index includes checkbox, hidden, invisible
     filteredEntitiesRegExp,
     getCountAndNounFromLinkResults
 ) {
@@ -347,7 +346,7 @@ export function verifyFilteredSecondaryEntitiesLink(
     visitVulnerabilityManagementEntities(entitiesKey1);
 
     // Find the first link for secondary entities.
-    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex + 1})`)
+    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex})`)
         .contains('a', filteredEntitiesRegExp)
         .then(($a) => {
             const { panelHeaderText } = getCountAndNounFromLinkResults(
@@ -371,7 +370,7 @@ export function verifyFilteredSecondaryEntitiesLink(
 export function verifyFixableCVEsLinkAndRiskAcceptanceTabs(
     entitiesKey1,
     _entitiesKey2, // unused because response might have been cached
-    columnIndex,
+    columnIndex, // one-based index includes checkbox, hidden, invisible
     fixableCVEsRegExp,
     getCountAndNounFromLinkResults
 ) {
@@ -379,7 +378,7 @@ export function verifyFixableCVEsLinkAndRiskAcceptanceTabs(
     visitVulnerabilityManagementEntities(entitiesKey1);
 
     // Find the first link for secondary entities.
-    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex + 1})`)
+    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex})`)
         .contains('a', fixableCVEsRegExp)
         .then(($a) => {
             const { panelHeaderText } = getCountAndNounFromLinkResults(

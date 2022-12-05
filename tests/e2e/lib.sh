@@ -10,6 +10,8 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
+export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+
 deploy_stackrox() {
     deploy_central
 
@@ -17,11 +19,41 @@ deploy_stackrox() {
     wait_for_api
     setup_client_TLS_certs
 
-    SENSOR_IMAGE_TAG=${SENSOR_IMAGE_TAG:-$MAIN_IMAGE_TAG}
-    if [ "$SENSOR_IMAGE_TAG" != "$MAIN_IMAGE_TAG" ]; then
-        echo "Deploying sensor with custom image: $SENSOR_IMAGE_TAG"
+    deploy_sensor
+    echo "Sensor deployed. Waiting for sensor to be up"
+    sensor_wait
+
+    # Bounce collectors to avoid restarts on initial module pull
+    kubectl -n stackrox delete pod -l app=collector --grace-period=0
+
+    sensor_wait
+
+    touch "${STATE_DEPLOYED}"
+}
+
+deploy_stackrox_with_custom_sensor() {
+    if [[ "$#" -ne 1 ]]; then
+        die "expected sensor chart version as parameter in deploy_stackrox_with_custom_sensor"
     fi
-    MAIN_IMAGE_TAG="$SENSOR_IMAGE_TAG" deploy_sensor
+    target_version="$1"
+
+    deploy_central
+
+    get_central_basic_auth_creds
+    wait_for_api
+    setup_client_TLS_certs
+
+    # generate init bundle
+    password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
+    if [ ! -f "$password_file" ]; then 
+        die "password file $password_file not found after deploying central"
+    fi
+    kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
+        --password "$(cat "$password_file")" \
+      central init-bundles generate stackrox-init-bundle --output - 1> stackrox-init-bundle.yaml
+
+    deploy_sensor_from_helm_charts "$target_version" ./stackrox-init-bundle.yaml
+
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
@@ -75,6 +107,29 @@ deploy_central() {
 
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
     "$ROOT/${DEPLOY_DIR}/central.sh"
+}
+
+deploy_sensor_from_helm_charts() {
+    if [[ "$#" -ne 2 ]]; then
+        die "deploy_sensor_from_helm_charts should receive a helm chart version and an init bundle\nusage: deploy_sensor_from_helm_charts <Chart version> <path to init bundle>"
+    fi
+
+    chart_version="$1"
+    init_bundle="$2"
+
+
+    info "Deploying secured cluster (v$chart_version) from Helm Charts (init bundle $init_bundle)"
+
+    helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
+    helm repo update
+
+    helm search repo stackrox-oss -l
+
+    helm install -n stackrox stackrox-secured-cluster-services \
+        stackrox-oss/stackrox-secured-cluster-services \
+        -f "$init_bundle" \
+        --set clusterName="remote" \
+        --version "$chart_version"
 }
 
 deploy_sensor() {
@@ -287,7 +342,7 @@ remove_existing_stackrox_resources() {
 # identify the source of pull/scheduling latency, request throttling, etc.
 # I tried increasing the timeout from 5m to 20m for OSD but it did not help.
 wait_for_api() {
-    info "Waiting for Central to start"
+    info "Waiting for Central to be ready"
 
     start_time="$(date '+%s')"
     max_seconds=300
@@ -386,6 +441,12 @@ db_backup_and_restore_test() {
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: db_backup_and_restore_test <output dir>"
     fi
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_PASSWORD"
+
+    # Ensure central is ready for requests after any previous tests
+    wait_for_api
 
     local output_dir="$1"
     info "Backing up to ${output_dir}"

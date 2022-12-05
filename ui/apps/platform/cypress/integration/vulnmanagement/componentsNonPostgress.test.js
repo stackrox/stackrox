@@ -85,7 +85,8 @@ describe('Vulnerability Management Components', () => {
         // Do not assert because of potential timing problem: get td elements before table re-renders.
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
@@ -93,7 +94,7 @@ describe('Vulnerability Management Components', () => {
         verifySecondaryEntities(
             entitiesKey,
             'cves',
-            2,
+            3,
             /^\d+ CVEs?$/,
             getCountAndNounFromCVEsLinkResults
         );
@@ -103,18 +104,18 @@ describe('Vulnerability Management Components', () => {
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'cves',
-            2,
+            3,
             /^\d+ Fixable$/,
             getCountAndNounFromCVEsLinkResults
         );
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 5, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 6, /^\d+ images?$/);
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 6, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 7, /^\d+ deployments?$/);
     });
 
     // Skip assertion about nodes because many component do not have a nodes link.

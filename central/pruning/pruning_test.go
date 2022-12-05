@@ -21,7 +21,6 @@ import (
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -29,6 +28,7 @@ import (
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
+	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
@@ -69,7 +69,9 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -83,6 +85,7 @@ import (
 	versionUtils "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -110,6 +113,34 @@ var (
 	}
 )
 
+type PruningTestSuite struct {
+	suite.Suite
+
+	ctx  context.Context
+	pool *pgxpool.Pool
+}
+
+func (s *PruningTestSuite) SetupSuite() {
+	s.ctx = sac.WithAllAccess(context.Background())
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+
+		testingDB := pgtest.ForT(s.T())
+		s.pool = testingDB.Pool
+	}
+}
+
+func (s *PruningTestSuite) TearDownSuite() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.pool.Close()
+	}
+}
+
+func TestPruning(t *testing.T) {
+	suite.Run(t, new(PruningTestSuite))
+}
+
 func newAlertInstance(id string, daysOld int, stage storage.LifecycleStage, state storage.ViolationState) *storage.Alert {
 	return newAlertInstanceWithDeployment(id, daysOld, stage, state, nil)
 }
@@ -120,7 +151,7 @@ func newAlertInstanceWithDeployment(id string, daysOld int, stage storage.Lifecy
 	} else {
 		alertDeployment = &storage.Alert_Deployment_{
 			Deployment: &storage.Alert_Deployment{
-				Id:       "inactive",
+				Id:       fixtureconsts.Deployment6,
 				Inactive: true,
 			},
 		}
@@ -153,7 +184,7 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 		})
 	}
 	return &storage.Deployment{
-		Id:         "id",
+		Id:         fixtureconsts.Deployment1,
 		Containers: containers,
 	}
 }
@@ -187,14 +218,14 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 
 	if live {
 		return &storage.Pod{
-			Id:                  "id",
+			Id:                  fixtureconsts.PodUID1,
 			LiveInstances:       instances,
 			TerminatedInstances: instanceLists,
 		}
 	}
 
 	return &storage.Pod{
-		Id:                  "id",
+		Id:                  fixtureconsts.PodUID2,
 		TerminatedInstances: instanceLists,
 	}
 }
@@ -207,16 +238,16 @@ func setupRocksDBAndBleve(t *testing.T) (*rocksdb.RocksDB, bleve.Index) {
 	return db, bleveIndex
 }
 
-func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore, queue.WaitableQueue) {
-	db, bleveIndex := setupRocksDBAndBleve(t)
+func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore, queue.WaitableQueue) {
+	db, bleveIndex := setupRocksDBAndBleve(s.T())
 
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.NewController(s.T())
 	mockComponentDatastore := componentsMocks.NewMockDataStore(ctrl)
 	mockComponentDatastore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes()
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	dacky, registry, indexingQ := testDackBoxInstance(t, db, bleveIndex)
+	dacky, registry, indexingQ := testDackBoxInstance(s.T(), db, bleveIndex)
 	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 	registry.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
 
@@ -235,45 +266,46 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
-	var pool *pgxpool.Pool
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool = globaldb.GetPostgresTest(t)
-	}
-	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(t, err)
+	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	require.NoError(s.T(), err)
 
 	pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods, indexingQ
 }
 
-func generateNodeDataStructures(t *testing.T) nodeGlobalDatastore.GlobalDataStore {
-	db, bleveIndex := setupRocksDBAndBleve(t)
+func (s *PruningTestSuite) generateNodeDataStructures() nodeGlobalDatastore.GlobalDataStore {
+	db, bleveIndex := setupRocksDBAndBleve(s.T())
 
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.NewController(s.T())
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
-	nodes, err := dackboxNodeGlobalDatastore.New(dackboxNodeDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker()))
-	require.NoError(t, err)
+	nodes := dackboxNodeGlobalDatastore.New(dackboxNodeDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker()))
 
 	return nodes
 }
 
-func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
-	db, bleveIndex := setupRocksDBAndBleve(t)
+func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
+	db, bleveIndex := setupRocksDBAndBleve(s.T())
 
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
 	// Initialize real datastore
-	alerts := alertDatastore.NewWithDb(db, bleveIndex)
+	var alerts alertDatastore.DataStore
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		alerts, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+		require.NoError(s.T(), err)
+	} else {
+		alerts = alertDatastore.NewWithDb(db, bleveIndex)
+	}
 
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.NewController(s.T())
 
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
 
@@ -283,23 +315,19 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	var pool *pgxpool.Pool
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool = globaldb.GetPostgresTest(t)
-	}
-	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(t, err)
+	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	require.NoError(s.T(), err)
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
 
-func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, deploymentDatastore.DataStore, clusterDatastore.DataStore, queue.WaitableQueue) {
-	db, bleveIndex := setupRocksDBAndBleve(t)
+func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.DataStore, deploymentDatastore.DataStore, clusterDatastore.DataStore, queue.WaitableQueue) {
+	db, bleveIndex := setupRocksDBAndBleve(s.T())
 	clusterIndexer := clusterIndex.New(bleveIndex)
 
-	dacky, registry, indexingQ := testDackBoxInstance(t, db, bleveIndex)
+	dacky, registry, indexingQ := testDackBoxInstance(s.T(), db, bleveIndex)
 	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
-	mockCtrl := gomock.NewController(t)
+	mockCtrl := gomock.NewController(s.T())
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(mockCtrl)
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 	alertDataStore := alertDatastoreMocks.NewMockDataStore(mockCtrl)
@@ -322,15 +350,15 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
 	clusterCVEs := clusterCVEDS.NewMockDataStore(mockCtrl)
 
-	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
+	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
 		mockRiskDatastore, expiringcache.NewExpiringCache(1*time.Minute), mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
 	clusterStorage, err := clusterRocksDB.New(db)
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
 	clusterHealthStorage, err := clusterHealthRocksDB.New(db)
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
 	nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	clusterDataStore, err := clusterDatastore.New(
@@ -355,7 +383,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 		ranking.NewRanker(),
 		clusterIndexer,
 		networkBaselineMgr)
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
 	// A bunch of these get called when a cluster is deleted
 	flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl), nil)
@@ -391,7 +419,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	return mockConfigDatastore, deployments, clusterDataStore, indexingQ
 }
 
-func TestImagePruning(t *testing.T) {
+func (s *PruningTestSuite) TestImagePruning() {
 	var cases = []struct {
 		name        string
 		images      []*storage.Image
@@ -486,7 +514,7 @@ func TestImagePruning(t *testing.T) {
 				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
 			deployment: &storage.Deployment{
-				Id: "d1",
+				Id: fixtureconsts.Deployment1,
 				Containers: []*storage.Container{
 					{
 						Image: &storage.ContainerImage{
@@ -509,14 +537,14 @@ func TestImagePruning(t *testing.T) {
 		{
 			name: "one old - 1 pod with old, but terminated",
 			images: []*storage.Image{
-				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
-			pod:         newPod(false, "id1"),
+			pod:         newPod(false, "id2"),
 			expectedIDs: []string{},
 		},
 	}
 
-	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
+	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(s.T(),
 		[]permissions.ResourceWithAccess{
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
 			// TODO: ROX-12750 Replace Config with Administration.
@@ -533,13 +561,13 @@ func TestImagePruning(t *testing.T) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+		s.T().Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			alerts, config, images, deployments, pods, indexQ := generateImageDataStructures(ctx, t)
-			nodes := generateNodeDataStructures(t)
+			alerts, config, images, deployments, pods, indexQ := s.generateImageDataStructures(ctx)
+			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, config, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -579,17 +607,17 @@ func TestImagePruning(t *testing.T) {
 	}
 }
 
-func TestClusterPruning(t *testing.T) {
-	t.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+func (s *PruningTestSuite) TestClusterPruning() {
+	s.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 	if !features.DecommissionedClusterRetention.Enabled() {
 		// if it's still not enabled, we're probably in release tests so skip
-		t.Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
+		s.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
-	t.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	s.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
-	testbuildinfo.SetForTest(t)
-	versionUtils.SetExampleVersion(t)
+	testbuildinfo.SetForTest(s.T())
+	versionUtils.SetExampleVersion(s.T())
 
 	var cases = []struct {
 		name          string
@@ -783,8 +811,8 @@ func TestClusterPruning(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			_, deploymentsDS, clusterDS, _ := generateClusterDataStructures(t)
+		s.T().Run(c.name, func(t *testing.T) {
+			_, deploymentsDS, clusterDS, _ := s.generateClusterDataStructures()
 
 			for _, cluster := range c.clusters {
 				_, err := clusterDS.AddCluster(ctx, cluster)
@@ -797,7 +825,7 @@ func TestClusterPruning(t *testing.T) {
 				lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 			}
 
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -812,17 +840,17 @@ func TestClusterPruning(t *testing.T) {
 	}
 }
 
-func TestClusterPruningCentralCheck(t *testing.T) {
-	t.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
+	s.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 	if !features.DecommissionedClusterRetention.Enabled() {
 		// if it's still not enabled, we're probably in release tests so skip
-		t.Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
+		s.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
-	t.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	s.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
-	testbuildinfo.SetForTest(t)
-	versionUtils.SetExampleVersion(t)
+	testbuildinfo.SetForTest(s.T())
+	versionUtils.SetExampleVersion(s.T())
 
 	var cases = []struct {
 		name                string
@@ -892,8 +920,8 @@ func TestClusterPruningCentralCheck(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			_, deploymentsDS, clusterDS, indexingQ := generateClusterDataStructures(t)
+		s.T().Run(c.name, func(t *testing.T) {
+			_, deploymentsDS, clusterDS, indexingQ := s.generateClusterDataStructures()
 
 			// Add the unhealthy cluster that is under test
 			cluster := &storage.Cluster{
@@ -929,7 +957,7 @@ func TestClusterPruningCentralCheck(t *testing.T) {
 
 			// Run GC
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -979,12 +1007,12 @@ func customDeployment(name string, namespace string, labels map[string]string, a
 	return deploy
 }
 
-func TestAlertPruning(t *testing.T) {
+func (s *PruningTestSuite) TestAlertPruning() {
 	existsDeployment := &storage.Deployment{
-		Id:        "deploymentId1",
+		Id:        fixtureconsts.Deployment1,
 		Name:      "test deployment",
 		Namespace: "ns",
-		ClusterId: "clusterid",
+		ClusterId: fixtureconsts.Cluster1,
 	}
 
 	var cases = []struct {
@@ -996,43 +1024,43 @@ func TestAlertPruning(t *testing.T) {
 		{
 			name: "No pruning",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
-				newAlertInstance("id2", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
-				newAlertInstance("id3", 1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
-				newAlertInstance("id4", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+				newAlertInstance(fixtureconsts.Alert1, 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
+				newAlertInstance(fixtureconsts.Alert2, 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
+				newAlertInstance(fixtureconsts.Alert3, 1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
+				newAlertInstance(fixtureconsts.Alert4, 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
 			},
-			expectedIDsRemaining: []string{"id1", "id2", "id3", "id4"},
+			expectedIDsRemaining: []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3, fixtureconsts.Alert4},
 		},
 		{
 			name: "One old alert, and one new alert",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
-				newAlertInstance("id2", testRetentionAllRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
+				newAlertInstance(fixtureconsts.Alert1, 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
+				newAlertInstance(fixtureconsts.Alert2, testRetentionAllRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
-			expectedIDsRemaining: []string{"id1"},
+			expectedIDsRemaining: []string{fixtureconsts.Alert1},
 		},
 		{
 			name: "One old runtime alert, and one old deploy time unresolved alert",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", testRetentionAllRuntime+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newAlertInstance("id2", testRetentionAllRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
+				newAlertInstance(fixtureconsts.Alert1, testRetentionAllRuntime+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newAlertInstance(fixtureconsts.Alert2, testRetentionAllRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
-			expectedIDsRemaining: []string{"id1"},
+			expectedIDsRemaining: []string{fixtureconsts.Alert1},
 		},
 		{
 			name: "one old deploy time alert resolved",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", testRetentionResolvedDeploy+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
+				newAlertInstance(fixtureconsts.Alert1, testRetentionResolvedDeploy+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
 			},
 			expectedIDsRemaining: []string{},
 		},
 		{
 			name: "two old-ish runtime alerts, one with no deployment",
 			alerts: []*storage.Alert{
-				newAlertInstanceWithDeployment("id1", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED, nil),
-				newAlertInstanceWithDeployment("id2", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED, existsDeployment),
+				newAlertInstanceWithDeployment(fixtureconsts.Alert1, testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED, nil),
+				newAlertInstanceWithDeployment(fixtureconsts.Alert2, testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED, existsDeployment),
 			},
-			expectedIDsRemaining: []string{"id2"},
+			expectedIDsRemaining: []string{fixtureconsts.Alert2},
 			deployments: []*storage.Deployment{
 				existsDeployment,
 			},
@@ -1040,47 +1068,47 @@ func TestAlertPruning(t *testing.T) {
 		{
 			name: "expired runtime alert with no deployment",
 			alerts: []*storage.Alert{
-				newAlertInstanceWithDeployment("id1", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE, nil),
+				newAlertInstanceWithDeployment(fixtureconsts.Alert1, testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE, nil),
 			},
 			expectedIDsRemaining: []string{},
 		},
 		{
 			name: "One old attempted deploy alert, and one new attempted deploy alert",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", 1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
-				newAlertInstance("id2", testRetentionAttemptedDeploy+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
+				newAlertInstance(fixtureconsts.Alert1, 1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
+				newAlertInstance(fixtureconsts.Alert2, testRetentionAttemptedDeploy+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
 			},
-			expectedIDsRemaining: []string{"id1"},
+			expectedIDsRemaining: []string{fixtureconsts.Alert1},
 		},
 		{
 			name: "Attempted runtime retention > deleted runtime retention",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
-				newAlertInstance("id2", testRetentionDeletedRuntime-1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
-				newAlertInstance("id3", testRetentionAttemptedRuntime-1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+				newAlertInstance(fixtureconsts.Alert1, 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+				newAlertInstance(fixtureconsts.Alert2, testRetentionDeletedRuntime-1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+				newAlertInstance(fixtureconsts.Alert3, testRetentionAttemptedRuntime-1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
 			},
-			expectedIDsRemaining: []string{"id1", "id2"},
+			expectedIDsRemaining: []string{fixtureconsts.Alert1, fixtureconsts.Alert2},
 		},
 		{
 			name: "Attempted runtime alert with no deployment",
 			alerts: []*storage.Alert{
-				newAlertInstance("id2", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+				newAlertInstance(fixtureconsts.Alert2, testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
 			},
 			expectedIDsRemaining: []string{},
 		},
 		{
 			name: "Attempted runtime alerts, one with no deployment",
 			alerts: []*storage.Alert{
-				newAlertInstanceWithDeployment("id1", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED, nil),
-				newAlertInstanceWithDeployment("id2", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED, existsDeployment),
+				newAlertInstanceWithDeployment(fixtureconsts.Alert1, testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED, nil),
+				newAlertInstanceWithDeployment(fixtureconsts.Alert2, testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED, existsDeployment),
 			},
-			expectedIDsRemaining: []string{"id2"},
+			expectedIDsRemaining: []string{fixtureconsts.Alert2},
 			deployments: []*storage.Deployment{
 				existsDeployment,
 			},
 		},
 	}
-	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
+	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(s.T(),
 		[]permissions.ResourceWithAccess{
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
 			// TODO: ROX-12750 Replace Config with Administration.
@@ -1095,13 +1123,13 @@ func TestAlertPruning(t *testing.T) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+		s.T().Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			alerts, config, images, deployments := generateAlertDataStructures(ctx, t)
-			nodes := generateNodeDataStructures(t)
+			alerts, config, images, deployments := s.generateAlertDataStructures(ctx)
+			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -1133,6 +1161,10 @@ func TestAlertPruning(t *testing.T) {
 			}
 
 			assert.ElementsMatch(t, c.expectedIDsRemaining, ids)
+
+			// Clear out the remaining alerts for the next run
+			err = alerts.DeleteAlerts(s.ctx, ids...)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -1179,7 +1211,7 @@ func newIndicatorWithDeploymentAndPod(id string, age time.Duration, deploymentID
 	return indicator
 }
 
-func TestRemoveOrphanedProcesses(t *testing.T) {
+func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 	cases := []struct {
 		name              string
 		initialProcesses  []*storage.ProcessIndicator
@@ -1190,20 +1222,20 @@ func TestRemoveOrphanedProcesses(t *testing.T) {
 		{
 			name: "no deployments nor pods - remove all old indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
-				newIndicatorWithDeploymentAndPod("pi2", 1*time.Hour, "dep2", "pod2"),
-				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep3", "pod3"),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment1, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment2, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
 			deployments:       set.NewFrozenStringSet(),
 			pods:              set.NewFrozenStringSet(),
-			expectedDeletions: []string{"pi1", "pi2", "pi3"},
+			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
 		},
 		{
 			name: "no deployments nor pods - remove no new orphaned indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeploymentAndPod("pi1", 20*time.Minute, "dep1", "pod1"),
-				newIndicatorWithDeploymentAndPod("pi2", 20*time.Minute, "dep2", "pod2"),
-				newIndicatorWithDeploymentAndPod("pi3", 20*time.Minute, "dep3", "pod3"),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 20*time.Minute, fixtureconsts.Deployment1, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment2, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 20*time.Minute, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
 			deployments:       set.NewFrozenStringSet(),
 			pods:              set.NewFrozenStringSet(),
@@ -1212,51 +1244,51 @@ func TestRemoveOrphanedProcesses(t *testing.T) {
 		{
 			name: "all pods separate deployments - remove no indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
-				newIndicatorWithDeploymentAndPod("pi2", 1*time.Hour, "dep2", "pod2"),
-				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep3", "pod3"),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment1, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment2, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet("dep1", "dep2", "dep3"),
-			pods:              set.NewFrozenStringSet("pod1", "pod2", "pod3"),
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1, fixtureconsts.Deployment2, fixtureconsts.Deployment3),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
 			expectedDeletions: []string{},
 		},
 		{
 			name: "all pods same deployment - remove no indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
-				newIndicatorWithDeploymentAndPod("pi2", 1*time.Hour, "dep1", "pod2"),
-				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep1", "pod3"),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment1, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment1, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment1, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet("dep1"),
-			pods:              set.NewFrozenStringSet("pod1", "pod2", "pod3"),
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
 			expectedDeletions: []string{},
 		},
 		{
 			name: "some pods separate deployments - remove some indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
-				newIndicatorWithDeploymentAndPod("pi2", 20*time.Minute, "dep2", "pod2"),
-				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep3", "pod3"),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment1, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment2, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet("dep3"),
-			pods:              set.NewFrozenStringSet("pod3"),
-			expectedDeletions: []string{"pi1"},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
 		},
 		{
 			name: "some pods same deployment - remove some indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
-				newIndicatorWithDeploymentAndPod("pi2", 20*time.Minute, "dep1", "pod2"),
-				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep1", "pod3"),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment1, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment1, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment1, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet("dep1"),
-			pods:              set.NewFrozenStringSet("pod3"),
-			expectedDeletions: []string{"pi1"},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
 		},
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			processes := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 			gci := &garbageCollectorImpl{
@@ -1276,7 +1308,7 @@ func TestRemoveOrphanedProcesses(t *testing.T) {
 	}
 }
 
-func TestMarkOrphanedAlerts(t *testing.T) {
+func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 	cases := []struct {
 		name              string
 		initialAlerts     []*storage.ListAlert
@@ -1286,18 +1318,18 @@ func TestMarkOrphanedAlerts(t *testing.T) {
 		{
 			name: "no deployments - remove all old alerts",
 			initialAlerts: []*storage.ListAlert{
-				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert2", 1*time.Hour, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert1, 1*time.Hour, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert2, 1*time.Hour, fixtureconsts.Deployment2, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
 			},
 			deployments:       set.NewFrozenStringSet(),
-			expectedDeletions: []string{"alert1", "alert2"},
+			expectedDeletions: []string{fixtureconsts.Alert1, fixtureconsts.Alert2},
 		},
 		{
 			name: "no deployments - remove no new orphaned alerts",
 			initialAlerts: []*storage.ListAlert{
-				newListAlertWithDeployment("alert1", 20*time.Minute, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert2", 20*time.Minute, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert3", 20*time.Minute, "dep3", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert1, 20*time.Minute, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert2, 20*time.Minute, fixtureconsts.Deployment2, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert3, 20*time.Minute, fixtureconsts.Deployment3, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
 			},
 			deployments:       set.NewFrozenStringSet(),
 			expectedDeletions: []string{},
@@ -1305,47 +1337,47 @@ func TestMarkOrphanedAlerts(t *testing.T) {
 		{
 			name: "all deployments - remove no alerts",
 			initialAlerts: []*storage.ListAlert{
-				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert2", 1*time.Hour, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert3", 1*time.Hour, "dep3", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert1, 1*time.Hour, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert2, 1*time.Hour, fixtureconsts.Deployment2, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert3, 1*time.Hour, fixtureconsts.Deployment3, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
 			},
-			deployments:       set.NewFrozenStringSet("dep1", "dep2", "dep3"),
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1, fixtureconsts.Deployment2, fixtureconsts.Deployment3),
 			expectedDeletions: []string{},
 		},
 		{
 			name: "some deployments - remove some alerts",
 			initialAlerts: []*storage.ListAlert{
-				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert2", 20*time.Minute, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert3", 1*time.Hour, "dep3", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert1, 1*time.Hour, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert2, 20*time.Minute, fixtureconsts.Deployment2, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert3, 1*time.Hour, fixtureconsts.Deployment3, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
 			},
-			deployments:       set.NewFrozenStringSet("dep3"),
-			expectedDeletions: []string{"alert1"},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			expectedDeletions: []string{fixtureconsts.Alert1},
 		},
 		{
 			name: "some deployments - remove some alerts due to stages",
 			initialAlerts: []*storage.ListAlert{
-				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert2", 1*time.Hour, "dep2", storage.LifecycleStage_BUILD, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert3", 1*time.Hour, "dep3", storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert1, 1*time.Hour, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert2, 1*time.Hour, fixtureconsts.Deployment2, storage.LifecycleStage_BUILD, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert3, 1*time.Hour, fixtureconsts.Deployment3, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
 			},
-			deployments:       set.NewFrozenStringSet("dep3"),
-			expectedDeletions: []string{"alert1"},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			expectedDeletions: []string{fixtureconsts.Alert1},
 		},
 		{
 			name: "some deployments - remove some alerts due to state",
 			initialAlerts: []*storage.ListAlert{
-				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newListAlertWithDeployment("alert2", 1*time.Hour, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
-				newListAlertWithDeployment("alert3", 1*time.Hour, "dep3", storage.LifecycleStage_DEPLOY, storage.ViolationState_SNOOZED),
+				newListAlertWithDeployment(fixtureconsts.Alert1, 1*time.Hour, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment(fixtureconsts.Alert2, 1*time.Hour, fixtureconsts.Deployment2, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
+				newListAlertWithDeployment(fixtureconsts.Alert3, 1*time.Hour, fixtureconsts.Deployment3, storage.LifecycleStage_DEPLOY, storage.ViolationState_SNOOZED),
 			},
-			deployments:       set.NewFrozenStringSet("dep3"),
-			expectedDeletions: []string{"alert1"},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			expectedDeletions: []string{fixtureconsts.Alert1},
 		},
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
 			gci := &garbageCollectorImpl{
@@ -1364,7 +1396,7 @@ func TestMarkOrphanedAlerts(t *testing.T) {
 	}
 }
 
-func TestRemoveOrphanedNetworkFlows(t *testing.T) {
+func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 	cases := []struct {
 		name             string
 		flows            []*storage.NetworkFlow
@@ -1379,11 +1411,11 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep1",
+							Id:   fixtureconsts.Deployment1,
 						},
 						DstEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep2",
+							Id:   fixtureconsts.Deployment2,
 						},
 					},
 				},
@@ -1419,11 +1451,11 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep1",
+							Id:   fixtureconsts.Deployment1,
 						},
 						DstEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep2",
+							Id:   fixtureconsts.Deployment2,
 						},
 					},
 				},
@@ -1439,16 +1471,16 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep1",
+							Id:   fixtureconsts.Deployment1,
 						},
 						DstEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep2",
+							Id:   fixtureconsts.Deployment2,
 						},
 					},
 				},
 			},
-			deployments:      set.NewFrozenStringSet("dep1", "dep2"),
+			deployments:      set.NewFrozenStringSet(fixtureconsts.Deployment1, fixtureconsts.Deployment2),
 			expectedDeletion: false,
 		},
 		{
@@ -1459,16 +1491,16 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep1",
+							Id:   fixtureconsts.Deployment1,
 						},
 						DstEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep2",
+							Id:   fixtureconsts.Deployment2,
 						},
 					},
 				},
 			},
-			deployments:      set.NewFrozenStringSet("dep1"),
+			deployments:      set.NewFrozenStringSet(fixtureconsts.Deployment1),
 			expectedDeletion: true,
 		},
 		{
@@ -1479,28 +1511,31 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep1",
+							Id:   fixtureconsts.Deployment1,
 						},
 						DstEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "dep2",
+							Id:   fixtureconsts.Deployment2,
 						},
 					},
 				},
 			},
-			deployments:      set.NewFrozenStringSet("dep2"),
+			deployments:      set.NewFrozenStringSet(fixtureconsts.Deployment2),
 			expectedDeletion: true,
 		},
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(ctrl)
 			flows := networkFlowDatastoreMocks.NewMockFlowDataStore(ctrl)
 
-			clusterFlows.EXPECT().GetFlowStore(pruningCtx, "cluster").Return(flows, nil)
+			clusterFlows.EXPECT().GetFlowStore(pruningCtx, fixtureconsts.Cluster1).Return(flows, nil)
 
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
+				flows.EXPECT().RemoveStaleFlows(pruningCtx).Return(nil)
+			}
 			flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
 				func(ctx context.Context, keyFn func(props *storage.NetworkFlowProperties) bool, valueFn func(flow *storage.NetworkFlow) bool) error {
 					var deleted bool
@@ -1517,12 +1552,12 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 			gci := &garbageCollectorImpl{
 				networkflows: clusterFlows,
 			}
-			gci.removeOrphanedNetworkFlows(c.deployments, set.NewFrozenStringSet("cluster"))
+			gci.removeOrphanedNetworkFlows(c.deployments, set.NewFrozenStringSet(fixtureconsts.Cluster1))
 		})
 	}
 }
 
-func TestRemoveOrphanedImageRisks(t *testing.T) {
+func (s *PruningTestSuite) TestRemoveOrphanedImageRisks() {
 	id1, _ := riskDatastore.GetID("img1", storage.RiskSubjectType_IMAGE)
 	id2, _ := riskDatastore.GetID("img2", storage.RiskSubjectType_IMAGE)
 	id3, _ := riskDatastore.GetID("img3", storage.RiskSubjectType_IMAGE)
@@ -1573,7 +1608,7 @@ func TestRemoveOrphanedImageRisks(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			images := imageDatastoreMocks.NewMockDataStore(ctrl)
 			risks := riskDatastoreMocks.NewMockDataStore(ctrl)
@@ -1593,7 +1628,7 @@ func TestRemoveOrphanedImageRisks(t *testing.T) {
 	}
 }
 
-func TestRemoveOrphanedNodeRisks(t *testing.T) {
+func (s *PruningTestSuite) TestRemoveOrphanedNodeRisks() {
 	nodeID1, _ := riskDatastore.GetID("node1", storage.RiskSubjectType_NODE)
 	nodeID2, _ := riskDatastore.GetID("node2", storage.RiskSubjectType_NODE)
 	nodeID3, _ := riskDatastore.GetID("node3", storage.RiskSubjectType_NODE)
@@ -1644,7 +1679,7 @@ func TestRemoveOrphanedNodeRisks(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			nodes := nodeDatastoreMocks.NewMockGlobalDataStore(ctrl)
 			risks := riskDatastoreMocks.NewMockDataStore(ctrl)
@@ -1664,7 +1699,7 @@ func TestRemoveOrphanedNodeRisks(t *testing.T) {
 	}
 }
 
-func TestRemoveOrphanedRBACObjects(t *testing.T) {
+func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 	clusters := []string{uuid.NewV4().String(), uuid.NewV4().String(), uuid.NewV4().String()}
 	cases := []struct {
 		name                  string
@@ -1680,63 +1715,63 @@ func TestRemoveOrphanedRBACObjects(t *testing.T) {
 			name:          "remove SAs that belong to deleted clusters",
 			validClusters: clusters,
 			serviceAccts: []*storage.ServiceAccount{
-				{Id: "sa-0", ClusterId: clusters[0]},
-				{Id: "sa-1", ClusterId: "invalid-1"},
-				{Id: "sa-2", ClusterId: clusters[1]},
-				{Id: "sa-3", ClusterId: "invalid-2"},
+				{Id: fixtureconsts.ServiceAccount1, ClusterId: clusters[0]},
+				{Id: fixtureconsts.ServiceAccount2, ClusterId: fixtureconsts.ClusterFake1},
+				{Id: fixtureconsts.ServiceAccount3, ClusterId: clusters[1]},
+				{Id: fixtureconsts.ServiceAccount4, ClusterId: fixtureconsts.ClusterFake2},
 			},
-			expectedSADeletions: set.NewFrozenStringSet("sa-1", "sa-3"),
+			expectedSADeletions: set.NewFrozenStringSet(fixtureconsts.ServiceAccount2, fixtureconsts.ServiceAccount4),
 		},
 		{
 			name:          "Removing when there is only one valid cluster",
 			validClusters: clusters[:1],
 			serviceAccts: []*storage.ServiceAccount{
-				{Id: "sa-0", ClusterId: clusters[0]},
-				{Id: "sa-1", ClusterId: "invalid-1"},
-				{Id: "sa-2", ClusterId: clusters[0]},
-				{Id: "sa-3", ClusterId: "invalid-2"},
+				{Id: fixtureconsts.ServiceAccount1, ClusterId: clusters[0]},
+				{Id: fixtureconsts.ServiceAccount2, ClusterId: fixtureconsts.ClusterFake1},
+				{Id: fixtureconsts.ServiceAccount3, ClusterId: clusters[0]},
+				{Id: fixtureconsts.ServiceAccount4, ClusterId: fixtureconsts.ClusterFake2},
 			},
-			expectedSADeletions: set.NewFrozenStringSet("sa-1", "sa-3"),
+			expectedSADeletions: set.NewFrozenStringSet(fixtureconsts.ServiceAccount2, fixtureconsts.ServiceAccount4),
 		},
 		{
 			name:          "Removing when there are no valid clusters",
 			validClusters: []string{},
 			serviceAccts: []*storage.ServiceAccount{
-				{Id: "sa-0", ClusterId: clusters[0]},
-				{Id: "sa-1", ClusterId: "invalid-1"},
-				{Id: "sa-2", ClusterId: clusters[0]},
-				{Id: "sa-3", ClusterId: "invalid-2"},
+				{Id: fixtureconsts.ServiceAccount1, ClusterId: clusters[0]},
+				{Id: fixtureconsts.ServiceAccount2, ClusterId: fixtureconsts.ClusterFake1},
+				{Id: fixtureconsts.ServiceAccount3, ClusterId: clusters[0]},
+				{Id: fixtureconsts.ServiceAccount4, ClusterId: fixtureconsts.ClusterFake2},
 			},
-			expectedSADeletions: set.NewFrozenStringSet("sa-0", "sa-1", "sa-2", "sa-3"),
+			expectedSADeletions: set.NewFrozenStringSet(fixtureconsts.ServiceAccount1, fixtureconsts.ServiceAccount2, fixtureconsts.ServiceAccount3, fixtureconsts.ServiceAccount4),
 		},
 		{
 			name:          "remove K8SRole that belong to deleted clusters",
 			validClusters: clusters,
 			roles: []*storage.K8SRole{
-				{Id: "r-0", ClusterId: clusters[0]},
-				{Id: "r-1", ClusterId: "invalid-1"},
-				{Id: "r-2", ClusterId: clusters[1]},
-				{Id: "r-3", ClusterId: "invalid-2"},
+				{Id: fixtureconsts.Role1, ClusterId: clusters[0]},
+				{Id: fixtureconsts.Role2, ClusterId: fixtureconsts.ClusterFake1},
+				{Id: fixtureconsts.Role3, ClusterId: clusters[1]},
+				{Id: fixtureconsts.Role4, ClusterId: fixtureconsts.ClusterFake2},
 			},
-			expectedRoleDeletions: set.NewFrozenStringSet("r-1", "r-3"),
+			expectedRoleDeletions: set.NewFrozenStringSet(fixtureconsts.Role2, fixtureconsts.Role4),
 		},
 		{
 			name:          "remove K8SRoleBinding that belong to deleted clusters",
 			validClusters: clusters,
 			bindings: []*storage.K8SRoleBinding{
-				{Id: "rb-0", ClusterId: clusters[0]},
-				{Id: "rb-1", ClusterId: "invalid-1"},
-				{Id: "rb-2", ClusterId: clusters[1]},
-				{Id: "rb-3", ClusterId: "invalid-2"},
+				{Id: fixtureconsts.RoleBinding1, ClusterId: clusters[0]},
+				{Id: fixtureconsts.RoleBinding2, ClusterId: fixtureconsts.ClusterFake1},
+				{Id: fixtureconsts.RoleBinding3, ClusterId: clusters[1]},
+				{Id: fixtureconsts.RoleBinding4, ClusterId: fixtureconsts.ClusterFake2},
 			},
-			expectedRBDeletions: set.NewFrozenStringSet("rb-1", "rb-3"),
+			expectedRBDeletions: set.NewFrozenStringSet(fixtureconsts.RoleBinding2, fixtureconsts.RoleBinding4),
 		},
 		{
 			name:                  "Don't remove anything if all belong to valid cluster",
 			validClusters:         clusters,
-			serviceAccts:          []*storage.ServiceAccount{{Id: "sa-0", ClusterId: clusters[0]}},
-			roles:                 []*storage.K8SRole{{Id: "r-0", ClusterId: clusters[0]}},
-			bindings:              []*storage.K8SRoleBinding{{Id: "rb-0", ClusterId: clusters[0]}},
+			serviceAccts:          []*storage.ServiceAccount{{Id: fixtureconsts.ServiceAccount1, ClusterId: clusters[0]}},
+			roles:                 []*storage.K8SRole{{Id: fixtureconsts.Role1, ClusterId: clusters[0]}},
+			bindings:              []*storage.K8SRoleBinding{{Id: fixtureconsts.RoleBinding1, ClusterId: clusters[0]}},
 			expectedSADeletions:   set.NewFrozenStringSet(),
 			expectedRoleDeletions: set.NewFrozenStringSet(),
 			expectedRBDeletions:   set.NewFrozenStringSet(),
@@ -1744,27 +1779,40 @@ func TestRemoveOrphanedRBACObjects(t *testing.T) {
 		{
 			name:                  "Remove all if they belong to a deleted cluster",
 			validClusters:         clusters,
-			serviceAccts:          []*storage.ServiceAccount{{Id: "sa-0", ClusterId: "invalid-1"}},
-			roles:                 []*storage.K8SRole{{Id: "r-0", ClusterId: "invalid-1"}},
-			bindings:              []*storage.K8SRoleBinding{{Id: "rb-0", ClusterId: "invalid-1"}},
-			expectedSADeletions:   set.NewFrozenStringSet("sa-0"),
-			expectedRoleDeletions: set.NewFrozenStringSet("r-0"),
-			expectedRBDeletions:   set.NewFrozenStringSet("rb-0"),
+			serviceAccts:          []*storage.ServiceAccount{{Id: fixtureconsts.ServiceAccount1, ClusterId: fixtureconsts.ClusterFake1}},
+			roles:                 []*storage.K8SRole{{Id: fixtureconsts.Role1, ClusterId: fixtureconsts.ClusterFake1}},
+			bindings:              []*storage.K8SRoleBinding{{Id: fixtureconsts.RoleBinding1, ClusterId: fixtureconsts.ClusterFake1}},
+			expectedSADeletions:   set.NewFrozenStringSet(fixtureconsts.ServiceAccount1),
+			expectedRoleDeletions: set.NewFrozenStringSet(fixtureconsts.Role1),
+			expectedRBDeletions:   set.NewFrozenStringSet(fixtureconsts.RoleBinding1),
 		},
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			db, bleveIndex := setupRocksDBAndBleve(t)
-			serviceAccounts, err := serviceAccountDataStore.NewForTestOnly(t, db, bleveIndex)
-			assert.NoError(t, err)
-			k8sRoles, err := k8sRoleDataStore.NewForTestOnly(t, db, bleveIndex)
-			assert.NoError(t, err)
-			k8sRoleBindings, err := k8sRoleBindingDataStore.NewForTestOnly(t, db, bleveIndex)
-			assert.NoError(t, err)
+		s.T().Run(c.name, func(t *testing.T) {
+			var serviceAccounts serviceAccountDataStore.DataStore
+			var k8sRoles k8sRoleDataStore.DataStore
+			var k8sRoleBindings k8sRoleBindingDataStore.DataStore
+			var err error
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
+				serviceAccounts, err = serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
+				assert.NoError(t, err)
+				k8sRoles, err = k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
+				assert.NoError(t, err)
+				k8sRoleBindings, err = k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
+				assert.NoError(t, err)
+			} else {
+				db, bleveIndex := setupRocksDBAndBleve(t)
+				serviceAccounts, err = serviceAccountDataStore.NewForTestOnly(t, db, bleveIndex)
+				assert.NoError(t, err)
+				k8sRoles, err = k8sRoleDataStore.NewForTestOnly(t, db, bleveIndex)
+				assert.NoError(t, err)
+				k8sRoleBindings, err = k8sRoleBindingDataStore.NewForTestOnly(t, db, bleveIndex)
+				assert.NoError(t, err)
+			}
 
-			for _, s := range c.serviceAccts {
-				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, s))
+			for _, sa := range c.serviceAccts {
+				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, sa))
 			}
 
 			for _, r := range c.roles {
@@ -1786,10 +1834,10 @@ func TestRemoveOrphanedRBACObjects(t *testing.T) {
 			gc.removeOrphanedK8SRoles(q)
 			gc.removeOrphanedK8SRoleBindings(q)
 
-			for _, s := range c.serviceAccts {
-				_, ok, err := serviceAccounts.GetServiceAccount(pruningCtx, s.GetId())
+			for _, sa := range c.serviceAccts {
+				_, ok, err := serviceAccounts.GetServiceAccount(pruningCtx, sa.GetId())
 				assert.NoError(t, err)
-				assert.Equal(t, !c.expectedSADeletions.Contains(s.GetId()), ok) // should _not_ be found if it was expected to be deleted
+				assert.Equal(t, !c.expectedSADeletions.Contains(sa.GetId()), ok) // should _not_ be found if it was expected to be deleted
 			}
 
 			for _, r := range c.roles {
@@ -1802,6 +1850,73 @@ func TestRemoveOrphanedRBACObjects(t *testing.T) {
 				_, ok, err := k8sRoleBindings.GetRoleBinding(pruningCtx, rb.GetId())
 				assert.NoError(t, err)
 				assert.Equal(t, !c.expectedRBDeletions.Contains(rb.GetId()), ok) // should _not_ be found if it was expected to be deleted
+			}
+		})
+	}
+}
+
+func (s *PruningTestSuite) TestRemoveLogImbues() {
+	// Implemented in Postgres only
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+
+	cases := []struct {
+		name                 string
+		logImbues            []*storage.LogImbue
+		recentlyRun          bool
+		expectedLogDeletions set.FrozenStringSet
+	}{
+		{
+			name:        "remove Log Imbues that are old",
+			recentlyRun: false,
+			logImbues: []*storage.LogImbue{
+				{Id: "log-1", Timestamp: timestampNowMinus(0)},
+				{Id: "log-2", Timestamp: timestampNowMinus(24 * time.Hour)},
+				{Id: "log-3", Timestamp: timestampNowMinus(24 * 6 * time.Hour)},
+				{Id: "log-4", Timestamp: timestampNowMinus(24 * 7 * time.Hour)},
+				{Id: "log-5", Timestamp: timestampNowMinus(24 * 8 * time.Hour)},
+			},
+			expectedLogDeletions: set.NewFrozenStringSet("log-4", "log-5"),
+		},
+		{
+			name:        "recently run, nothing pruned",
+			recentlyRun: true,
+			logImbues: []*storage.LogImbue{
+				{Id: "log-1", Timestamp: timestampNowMinus(0)},
+				{Id: "log-2", Timestamp: timestampNowMinus(24 * time.Hour)},
+				{Id: "log-3", Timestamp: timestampNowMinus(24 * 6 * time.Hour)},
+				{Id: "log-4", Timestamp: timestampNowMinus(24 * 7 * time.Hour)},
+				{Id: "log-5", Timestamp: timestampNowMinus(24 * 8 * time.Hour)},
+			},
+			expectedLogDeletions: set.NewFrozenStringSet(),
+		},
+	}
+
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			logImbueStore := logimbueDataStore.GetTestPostgresDataStore(t, s.pool)
+
+			for _, li := range c.logImbues {
+				assert.NoError(t, logImbueStore.Upsert(pruningCtx, li))
+			}
+
+			gc := &garbageCollectorImpl{
+				logimbueStore: logImbueStore,
+			}
+
+			if c.recentlyRun {
+				lastLogImbuePruneTime = time.Now()
+			} else {
+				lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
+			}
+
+			gc.pruneLogImbues()
+
+			logImbues, err := logImbueStore.GetAll(pruningCtx)
+			assert.NoError(t, err)
+			for _, li := range logImbues {
+				assert.False(t, c.expectedLogDeletions.Contains(li.Id))
 			}
 		})
 	}

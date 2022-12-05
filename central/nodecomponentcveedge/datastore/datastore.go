@@ -14,6 +14,7 @@ import (
 )
 
 // DataStore is an intermediary to Component/CVE edge storage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
@@ -26,17 +27,17 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage postgres.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(storage postgres.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
 	}
-	return ds, nil
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool *pgxpool.Pool) DataStore {
 	dbstore := postgres.New(pool)
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)

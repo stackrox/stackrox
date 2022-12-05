@@ -115,7 +115,8 @@ describe('Vulnerability Management Images', () => {
         });
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
@@ -123,7 +124,7 @@ describe('Vulnerability Management Images', () => {
         verifySecondaryEntities(
             entitiesKey,
             'image-cves',
-            2,
+            3,
             /^\d+ CVEs?$/,
             getCountAndNounFromImageCVEsLinkResults
         );
@@ -133,18 +134,18 @@ describe('Vulnerability Management Images', () => {
         verifyFixableCVEsLinkAndRiskAcceptanceTabs(
             entitiesKey,
             'image-cves',
-            2,
+            3,
             /^\d+ Fixable$/,
             getCountAndNounFromImageCVEsLinkResults
         );
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 8, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 9, /^\d+ deployments?$/);
     });
 
     it('should display links for image-components', () => {
-        verifySecondaryEntities(entitiesKey, 'image-components', 8, /^\d+ image components?$/);
+        verifySecondaryEntities(entitiesKey, 'image-components', 9, /^\d+ image components?$/);
     });
 
     it('should show entity icon, not back button, if there is only one item on the side panel stack', () => {

@@ -117,7 +117,8 @@ describe('Vulnerability Management Node Components', () => {
         });
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
@@ -125,7 +126,7 @@ describe('Vulnerability Management Node Components', () => {
         verifySecondaryEntities(
             entitiesKey,
             'node-cves',
-            3,
+            4,
             /^\d+ CVEs?$/,
             getCountAndNounFromNodeCVEsLinkResults
         );
@@ -135,13 +136,13 @@ describe('Vulnerability Management Node Components', () => {
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'node-cves',
-            3,
+            4,
             /^\d+ Fixable$/,
             getCountAndNounFromNodeCVEsLinkResults
         );
     });
 
     it('should display links for nodes', () => {
-        verifySecondaryEntities(entitiesKey, 'nodes', 5, /^\d+ nodes?$/);
+        verifySecondaryEntities(entitiesKey, 'nodes', 6, /^\d+ nodes?$/);
     });
 });

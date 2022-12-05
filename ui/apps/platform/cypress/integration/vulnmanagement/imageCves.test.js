@@ -128,21 +128,21 @@ describe('Vulnerability Management Image CVEs', () => {
         );
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
-    // Count the checkbox as the first column.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 9, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 10, /^\d+ deployments?$/);
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 9, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 10, /^\d+ images?$/);
     });
 
     it('should display links for image-components', () => {
-        verifySecondaryEntities(entitiesKey, 'image-components', 9, /^\d+ image components?$/);
+        verifySecondaryEntities(entitiesKey, 'image-components', 10, /^\d+ image components?$/);
     });
 
     // @TODO: Rework this test. Seems like each of these do the same thing

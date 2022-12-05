@@ -88,7 +88,8 @@ describe('Vulnerability Management Clusters', () => {
         // Do not assert because of potential timing problem: get td elements before table re-renders.
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
@@ -96,7 +97,7 @@ describe('Vulnerability Management Clusters', () => {
         verifySecondaryEntities(
             entitiesKey,
             'image-cves',
-            2,
+            3,
             /^\d+ CVEs?$/,
             getCountAndNounFromImageCVEsLinkResults
         );
@@ -106,7 +107,7 @@ describe('Vulnerability Management Clusters', () => {
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'image-cves',
-            2,
+            3,
             /^\d+ Fixable$/,
             getCountAndNounFromImageCVEsLinkResults
         );
@@ -116,7 +117,7 @@ describe('Vulnerability Management Clusters', () => {
         verifySecondaryEntities(
             entitiesKey,
             'node-cves',
-            3,
+            4,
             /^\d+ CVEs?$/,
             getCountAndNounFromNodeCVEsLinkResults
         );
@@ -126,21 +127,21 @@ describe('Vulnerability Management Clusters', () => {
         verifySecondaryEntities(
             entitiesKey,
             'cluster-cves',
-            4,
+            5,
             /^\d+ CVEs?$/,
             getCountAndNounFromClusterCVEsLinkResults
         );
     });
 
     it('should display links for namespaces', () => {
-        verifySecondaryEntities(entitiesKey, 'namespaces', 6, /^\d+ namespaces?$/);
+        verifySecondaryEntities(entitiesKey, 'namespaces', 7, /^\d+ namespaces?$/);
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 6, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 7, /^\d+ deployments?$/);
     });
 
     it('should display links for nodes', () => {
-        verifySecondaryEntities(entitiesKey, 'nodes', 6, /^\d+ nodes?$/);
+        verifySecondaryEntities(entitiesKey, 'nodes', 7, /^\d+ nodes?$/);
     });
 });

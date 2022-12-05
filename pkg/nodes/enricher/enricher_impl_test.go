@@ -6,6 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/assert"
@@ -91,6 +92,15 @@ func (*fakeCVESuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 				v.Suppressed = true
 			}
 		}
+
+		// Data moved from Vulns to Vulnerabilities in Postgres.  So simply add the data here.
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			for _, v := range c.Vulnerabilities {
+				if v.CveBaseInfo.Cve == "CVE-2020-1234" {
+					v.Snoozed = true
+				}
+			}
+		}
 	}
 }
 
@@ -104,7 +114,7 @@ func TestEnricherFlow(t *testing.T) {
 		{
 			name: "node already has scan",
 			node: &storage.Node{
-				Id:   "id",
+				Id:   fixtureconsts.Node1,
 				Scan: &storage.NodeScan{},
 			},
 			fns: newFakeNodeScannerWithDataSource(opts{
@@ -114,7 +124,7 @@ func TestEnricherFlow(t *testing.T) {
 		{
 			name: "node does not have scan",
 			node: &storage.Node{
-				Id: "id",
+				Id: fixtureconsts.Node1,
 			},
 			fns: newFakeNodeScannerWithDataSource(opts{
 				requestedScan: true,
@@ -162,7 +172,7 @@ func TestEnricherFlowWithPostgres(t *testing.T) {
 		{
 			name: "node already has scan",
 			node: &storage.Node{
-				Id:   "id",
+				Id:   fixtureconsts.Node1,
 				Scan: &storage.NodeScan{},
 			},
 			fns: newFakeNodeScannerWithDataSource(opts{
@@ -211,10 +221,18 @@ func TestCVESuppression(t *testing.T) {
 		metrics: newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
-	node := &storage.Node{Id: "id"}
+	node := &storage.Node{Id: fixtureconsts.Node1}
 	err := enricherImpl.EnrichNode(node)
 	require.NoError(t, err)
-	assert.True(t, node.Scan.Components[0].Vulns[0].Suppressed)
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		for _, c := range node.GetScan().GetComponents() {
+			// `vulnerabilities` is the new field.
+			assert.NotNil(t, c.GetVulnerabilities()[0].Snoozed)
+		}
+	} else {
+		assert.True(t, node.Scan.Components[0].Vulns[0].Suppressed)
+	}
 }
 
 func TestZeroIntegrations(t *testing.T) {
@@ -227,7 +245,7 @@ func TestZeroIntegrations(t *testing.T) {
 		metrics:  newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
-	node := &storage.Node{Id: "id", ClusterName: "cluster", Name: "node"}
+	node := &storage.Node{Id: fixtureconsts.Node1, ClusterName: "cluster", Name: "node"}
 	err := enricherImpl.EnrichNode(node)
 	assert.Error(t, err)
 	expectedErrMsg := "error scanning node cluster:node error: no node scanners are integrated"
@@ -235,6 +253,11 @@ func TestZeroIntegrations(t *testing.T) {
 }
 
 func TestFillScanStats(t *testing.T) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("Skip non postgres store tests")
+		t.SkipNow()
+	}
+
 	cases := []struct {
 		node                 *storage.Node
 		expectedVulns        int32
@@ -242,7 +265,7 @@ func TestFillScanStats(t *testing.T) {
 	}{
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{
@@ -270,7 +293,7 @@ func TestFillScanStats(t *testing.T) {
 		},
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{
@@ -301,7 +324,7 @@ func TestFillScanStats(t *testing.T) {
 		},
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{
@@ -357,7 +380,7 @@ func TestFillScanStatsWithPostgres(t *testing.T) {
 	}{
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{
@@ -380,7 +403,7 @@ func TestFillScanStatsWithPostgres(t *testing.T) {
 		},
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{
@@ -415,7 +438,7 @@ func TestFillScanStatsWithPostgres(t *testing.T) {
 		},
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{

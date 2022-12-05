@@ -2,45 +2,32 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
-	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
-	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
-	componentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
 	"github.com/stackrox/rox/central/cve/converter/v2"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
-	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
-	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
-	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
-	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
-	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
-	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
-	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
-	"github.com/stackrox/rox/central/ranking"
-	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	types2 "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 )
 
 func testDeployments() []*storage.Deployment {
 	return []*storage.Deployment{
 		{
-			Id:          "dep1id",
+			Id:          fixtureconsts.Deployment1,
 			Name:        "dep1name",
 			Namespace:   "namespace1name",
 			NamespaceId: "namespace1id",
@@ -49,16 +36,16 @@ func testDeployments() []*storage.Deployment {
 			Containers: []*storage.Container{
 				{
 					Name:  "container1name",
-					Image: types2.ToContainerImage(testImages()[0]),
+					Image: imageTypes.ToContainerImage(testImages()[0]),
 				},
 				{
 					Name:  "container2name",
-					Image: types2.ToContainerImage(testImages()[1]),
+					Image: imageTypes.ToContainerImage(testImages()[1]),
 				},
 			},
 		},
 		{
-			Id:          "dep2id",
+			Id:          fixtureconsts.Deployment2,
 			Name:        "dep2name",
 			Namespace:   "namespace1name",
 			NamespaceId: "namespace1id",
@@ -67,12 +54,12 @@ func testDeployments() []*storage.Deployment {
 			Containers: []*storage.Container{
 				{
 					Name:  "container1name",
-					Image: types2.ToContainerImage(testImages()[0]),
+					Image: imageTypes.ToContainerImage(testImages()[0]),
 				},
 			},
 		},
 		{
-			Id:          "dep3id",
+			Id:          fixtureconsts.Deployment3,
 			Name:        "dep3name",
 			Namespace:   "namespace2name",
 			NamespaceId: "namespace2id",
@@ -81,7 +68,7 @@ func testDeployments() []*storage.Deployment {
 			Containers: []*storage.Container{
 				{
 					Name:  "container1name",
-					Image: types2.ToContainerImage(testImages()[1]),
+					Image: imageTypes.ToContainerImage(testImages()[1]),
 				},
 			},
 		},
@@ -414,7 +401,7 @@ func testNodes() []*storage.Node {
 	utils.CrashOnError(err)
 	return []*storage.Node{
 		{
-			Id:   "nodeID1",
+			Id:   fixtureconsts.Node1,
 			Name: "node1",
 			SetCves: &storage.Node_Cves{
 				Cves: 3,
@@ -472,7 +459,7 @@ func testNodes() []*storage.Node {
 			},
 		},
 		{
-			Id:   "nodeID2",
+			Id:   fixtureconsts.Node2,
 			Name: "node2",
 			SetCves: &storage.Node_Cves{
 				Cves: 5,
@@ -543,12 +530,12 @@ func testNodes() []*storage.Node {
 func testClustersWithNodes() ([]*storage.Cluster, []*storage.Node) {
 	clusters := []*storage.Cluster{
 		{
-			Id:        "clusterID1",
+			Id:        fixtureconsts.Cluster1,
 			Name:      "cluster1",
 			MainImage: "quay.io/stackrox-io/main",
 		},
 		{
-			Id:        "clusterID2",
+			Id:        fixtureconsts.Cluster2,
 			Name:      "cluster2",
 			MainImage: "quay.io/stackrox-io/main",
 		},
@@ -658,40 +645,19 @@ func getNodeVulnerabilityResolver(ctx context.Context, t *testing.T, resolver *R
 	return vuln
 }
 
-func getImageCVEDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) (imageCVEDataStore.DataStore, error) {
-	imageCVEStore := imageCVEPostgres.CreateTableAndNewStore(ctx, db, gormDB)
-	imageCVEIndexer := imageCVEPostgres.NewIndexer(db)
-	imageCVESearcher := imageCVESearch.New(imageCVEStore, imageCVEIndexer)
-	imageCVEDatastore, err := imageCVEDataStore.New(imageCVEStore, imageCVEIndexer, imageCVESearcher, dackboxConcurrency.NewKeyFence())
-	return imageCVEDatastore, err
+func getTestImages(imageCount int) []*storage.Image {
+	images := make([]*storage.Image, 0, imageCount)
+	for i := 0; i < imageCount; i++ {
+		img := fixtures.GetImageWithUniqueComponents(100)
+		id := fmt.Sprintf("%d", i)
+		img.Id = id
+		images = append(images, img)
+	}
+	return images
 }
 
-func getImageDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, risks riskDataStore.DataStore) imageDatastore.DataStore {
-	imageStore := imagePostgres.CreateTableAndNewStore(ctx, db, gormDB, false)
-	return imageDatastore.NewWithPostgres(imageStore, imagePostgres.NewIndexer(db), risks, ranking.NewRanker(), ranking.NewRanker())
-}
-
-func getImageComponentDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, risks riskDataStore.DataStore) imageComponentDataStore.DataStore {
-	imageCompStore := imageComponentPostgres.CreateTableAndNewStore(ctx, db, gormDB)
-	imageCompIndexer := imageComponentPostgres.NewIndexer(db)
-	imageCompSearcher := imageComponentSearch.NewV2(imageCompStore, imageCompIndexer)
-	return imageComponentDataStore.New(nil, imageCompStore, imageCompIndexer, imageCompSearcher, risks, ranking.NewRanker())
-}
-func getImageCVEEdgeDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) imageCVEEdgeDataStore.DataStore {
-	imageCveEdgeStore := imageCVEEdgePostgres.CreateTableAndNewStore(ctx, db, gormDB)
-	imageCveEdgeIndexer := imageCVEEdgePostgres.NewIndexer(db)
-	imageCveEdgeSearcher := imageCVEEdgeSearch.NewV2(imageCveEdgeStore, imageCveEdgeIndexer)
-	return imageCVEEdgeDataStore.New(nil, imageCveEdgeStore, imageCveEdgeSearcher)
-}
-
-func getImageComponentCVEEdgeDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) componentCVEEdgeDataStore.DataStore {
-	componentCveEdgeStore := componentCVEEdgePostgres.CreateTableAndNewStore(ctx, db, gormDB)
-	componentCveEdgeIndexer := componentCVEEdgePostgres.NewIndexer(db)
-	componentCveEdgeSearcher := componentCVEEdgeSearch.NewV2(componentCveEdgeStore, componentCveEdgeIndexer)
-	return componentCVEEdgeDataStore.New(nil, componentCveEdgeStore, componentCveEdgeIndexer, componentCveEdgeSearcher)
-}
-
-func getDeploymentDatastore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB, imageDatastore imageDatastore.DataStore, risks riskDataStore.DataStore) (deploymentDatastore.DataStore, error) {
-	deploymentStore := deploymentPostgres.NewFullTestStore(t, deploymentPostgres.CreateTableAndNewStore(ctx, db, gormDB))
-	return deploymentDatastore.NewTestDataStore(t, deploymentStore, nil, db, nil, nil, imageDatastore, nil, nil, risks, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
+	id := mockIdentity.NewMockIdentity(ctrl)
+	id.EXPECT().Permissions().Return(map[string]storage.Access{"Image": storage.Access_READ_ACCESS}).AnyTimes()
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
 }

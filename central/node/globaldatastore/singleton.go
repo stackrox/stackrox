@@ -14,7 +14,7 @@ var (
 // Singleton returns the singleton global node datastore instance.
 func Singleton() GlobalDataStore {
 	initGlobalDataStoreInstance.Do(func() {
-		globalDataStoreInstance, _ = globaldatastore.New(datastore.Singleton())
+		globalDataStoreInstance = globaldatastore.New(datastore.Singleton())
 	})
 	return globalDataStoreInstance
 }

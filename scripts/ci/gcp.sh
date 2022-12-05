@@ -10,17 +10,13 @@ set -euo pipefail
 setup_gcp() {
     info "Setting up GCP auth and config"
 
-    ensure_CI
-
     local service_account
-    if is_OPENSHIFT_CI; then
-        require_environment "GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX"
+    if [[ -n "${GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX:-}" ]]; then
         service_account="${GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX}"
-    elif is_CIRCLECI; then
-        require_environment "GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
+    elif [[ -n "${GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX:-}" ]]; then
         service_account="${GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX}"
     else
-        die "Support is missing for this CI environment"
+        die "Support is missing for this environment"
     fi
 
     require_executable "gcloud"
@@ -36,7 +32,7 @@ setup_gcp() {
     gcloud config unset compute/zone
     gcloud config set core/disable_prompts True
 
-    # For API calls e.g. prometheus-metric-parser
+    # Some tools require a credential file for API calls e.g. prometheus-metric-parser
     touch /tmp/gcp.json
     chmod 0600 /tmp/gcp.json
     echo "$service_account" >/tmp/gcp.json

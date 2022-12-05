@@ -6,6 +6,7 @@ import {
     AlertGroup,
     Breadcrumb,
     BreadcrumbItem,
+    Bullseye,
     Button,
     Divider,
     Dropdown,
@@ -15,31 +16,46 @@ import {
     Flex,
     FlexItem,
     PageSection,
+    Spinner,
     Title,
     Tooltip,
     Truncate,
 } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
 
-import { createCollection, deleteCollection, updateCollection } from 'services/CollectionsService';
+import { deleteCollection } from 'services/CollectionsService';
 import { CaretDownIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { collectionsBasePath } from 'routePaths';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
+import PageTitle from 'Components/PageTitle';
 import { CollectionPageAction } from './collections.utils';
 import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
-import { generateRequest } from './converter';
-import { Collection } from './types';
 import useCollection from './hooks/useCollection';
 import CollectionsFormModal from './CollectionFormModal';
-import { CollectionSaveError, parseSaveError } from './errorUtils';
+import CollectionLoadError from './CollectionLoadError';
+import { useCollectionFormSubmission } from './hooks/useCollectionFormSubmission';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
     pageAction: CollectionPageAction;
 };
+
+function getPageTitle(
+    pageAction: CollectionPageAction,
+    pageData: ReturnType<typeof useCollection>['data']
+): string {
+    const pageTitleSuffix = pageData ? ` - ${pageData.collection.name}` : '';
+    const titles = {
+        create: `Create Collection`,
+        clone: `Clone Collection${pageTitleSuffix}`,
+        edit: `Edit Collection${pageTitleSuffix}`,
+        view: `Collection${pageTitleSuffix}`,
+    };
+    return titles[pageAction.type];
+}
 
 function CollectionsFormPage({
     hasWriteAccessForCollections,
@@ -57,7 +73,7 @@ function CollectionsFormPage({
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [modalCollectionId, setModalCollectionId] = useState<string | null>(null);
 
-    const [saveError, setSaveError] = useState<CollectionSaveError | undefined>();
+    const { saveError, setSaveError, onSubmit } = useCollectionFormSubmission(pageAction);
     const saveErrorAlertElem = useRef<HTMLDivElement | null>(null);
 
     const {
@@ -111,42 +127,6 @@ function CollectionsFormPage({
         setDeleteId(null);
     }
 
-    function onSubmit(collection: Collection): Promise<void> {
-        setSaveError(undefined);
-
-        return new Promise((resolve, reject) => {
-            if (pageAction.type === 'view') {
-                // Logically should not happen, but just in case
-                return reject(new Error('A Collection form has been submitted in read-only view'));
-            }
-            const isEmptyCollection =
-                Object.values(collection.resourceSelector).every(({ type }) => type === 'All') &&
-                collection.embeddedCollectionIds.length === 0;
-
-            if (isEmptyCollection) {
-                return reject(new Error('Cannot save an empty collection'));
-            }
-
-            const saveServiceCall =
-                pageAction.type === 'edit'
-                    ? (payload) => updateCollection(pageAction.collectionId, payload)
-                    : (payload) => createCollection(payload);
-
-            const requestPayload = generateRequest(collection);
-            const { request } = saveServiceCall(requestPayload);
-
-            return resolve(request);
-        })
-            .then(() => {
-                history.push({ pathname: `${collectionsBasePath}` });
-            })
-            .catch((err) => {
-                setSaveError(parseSaveError(err));
-                scrollToTop();
-                return Promise.reject(err);
-            });
-    }
-
     function scrollToTop() {
         const scrollTargetElem = saveErrorAlertElem.current;
         if (scrollTargetElem) {
@@ -195,14 +175,21 @@ function CollectionsFormPage({
     if (error) {
         content = (
             <>
-                {error.message}
-                {/* TODO - Handle UI for network errors */}
+                <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
+                    <BreadcrumbItemLink to={collectionsBasePath}>Collections</BreadcrumbItemLink>
+                </Breadcrumb>
+                <Divider component="div" />
+                <CollectionLoadError error={error} />
             </>
         );
     } else if (loading) {
-        content = <>{/* TODO - Handle UI for loading state */}</>;
+        content = (
+            <Bullseye>
+                <Spinner isSVG />
+            </Bullseye>
+        );
     } else if (data) {
-        const pageTitle = pageAction.type === 'create' ? 'Create collection' : data.collection.name;
+        const pageName = pageAction.type === 'create' ? 'Create collection' : data.collection.name;
         content = (
             <CollectionFormDrawer
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
@@ -211,7 +198,19 @@ function CollectionsFormPage({
                 isInlineDrawer={isLargeScreen}
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
-                onSubmit={onSubmit}
+                onSubmit={(collection) =>
+                    onSubmit(collection)
+                        .then(() => {
+                            history.push({ pathname: `${collectionsBasePath}` });
+                        })
+                        .catch((err) => {
+                            scrollToTop();
+                            return Promise.reject(err);
+                        })
+                }
+                onCancel={() => {
+                    history.push({ pathname: `${collectionsBasePath}` });
+                }}
                 saveError={saveError}
                 clearSaveError={() => setSaveError(undefined)}
                 getCollectionTableCells={getCollectionTableCells}
@@ -221,7 +220,7 @@ function CollectionsFormPage({
                             <BreadcrumbItemLink to={collectionsBasePath}>
                                 Collections
                             </BreadcrumbItemLink>
-                            <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
+                            <BreadcrumbItem>{pageName}</BreadcrumbItem>
                         </Breadcrumb>
                         <Divider component="div" />
                         <Flex
@@ -230,7 +229,7 @@ function CollectionsFormPage({
                             alignItems={{ default: 'alignItemsFlexStart', md: 'alignItemsCenter' }}
                         >
                             <Title className="pf-u-flex-grow-1" headingLevel="h1">
-                                {pageTitle}
+                                {pageName}
                             </Title>
                             <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
                                 {pageAction.type === 'view' && hasWriteAccessForCollections && (
@@ -320,6 +319,7 @@ function CollectionsFormPage({
 
     return (
         <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
+            <PageTitle title={getPageTitle(pageAction, data)} />
             {content}
             {modalCollectionId && (
                 <CollectionsFormModal

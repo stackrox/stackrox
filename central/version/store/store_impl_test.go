@@ -36,14 +36,12 @@ type VersionStoreTestSuite struct {
 
 func (suite *VersionStoreTestSuite) SetupTest() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		source := pgtest.GetConnectionString(suite.T())
-		config, err := pgxpool.ParseConfig(source)
-		suite.Require().NoError(err)
 		suite.ctx = sac.WithAllAccess(context.Background())
-		pool, _ := pgxpool.ConnectConfig(suite.ctx, config)
-		suite.pool = pool
 
-		suite.store = NewPostgres(pool)
+		testDB := pgtest.ForT(suite.T())
+		suite.pool = testDB.Pool
+
+		suite.store = NewPostgres(suite.pool)
 	} else {
 		boltDB, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 		suite.Require().NoError(err, "Failed to make BoltDB")
@@ -58,8 +56,8 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 
 func (suite *VersionStoreTestSuite) TearDownTest() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		postgres.Destroy(suite.ctx, suite.pool)
 		if suite.pool != nil {
+			postgres.Destroy(suite.ctx, suite.pool)
 			suite.pool.Close()
 		}
 	} else {

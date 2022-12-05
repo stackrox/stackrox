@@ -8,17 +8,24 @@ import {
     Stack,
     StackItem,
     Switch,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
-import EntityNameSearchInput from '../common/EntityNameSearchInput';
+import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import { Flow } from '../types';
+import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,
 } from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types';
-import { getAllUniquePorts } from '../utils/flowUtils';
+import EntityNameSearchInput from '../common/EntityNameSearchInput';
+import FlowsTable from '../common/FlowsTable';
+import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
+import FlowsBulkActions from '../common/FlowsBulkActions';
 
 const baselines: Flow[] = [
     {
@@ -96,7 +103,14 @@ function DeploymentBaselines() {
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
+    const initialExpandedRows = baselines
+        .filter((row) => row.children && !!row.children.length)
+        .map((row) => row.id); // Default to all expanded
+    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
 
+    // derived data
+    const numBaselines = getNumFlows(baselines);
     const allUniquePorts = getAllUniquePorts(baselines);
 
     return (
@@ -144,10 +158,38 @@ function DeploymentBaselines() {
                     </Flex>
                 </StackItem>
                 <Divider component="hr" />
-                <StackItem isFilled>@TODO: Table</StackItem>
+                <StackItem>
+                    <Toolbar>
+                        <ToolbarContent>
+                            <ToolbarItem>
+                                <FlowsTableHeaderText type="baseline" numFlows={numBaselines} />
+                            </ToolbarItem>
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <FlowsBulkActions
+                                    type="baseline"
+                                    selectedRows={selectedRows}
+                                    onClearSelectedRows={() => setSelectedRows([])}
+                                />
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
+                </StackItem>
+                <Divider component="hr" />
+                <StackItem>
+                    <FlowsTable
+                        label="Deployment baselines"
+                        flows={baselines}
+                        numFlows={numBaselines}
+                        expandedRows={expandedRows}
+                        setExpandedRows={setExpandedRows}
+                        selectedRows={selectedRows}
+                        setSelectedRows={setSelectedRows}
+                    />
+                </StackItem>
                 <Divider component="hr" />
                 <StackItem>
                     <Flex
+                        className="pf-u-pb-md"
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsMd' }}
                         alignItems={{ default: 'alignItemsCenter' }}

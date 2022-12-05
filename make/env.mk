@@ -43,3 +43,8 @@ GOTAGS := $(RELEASE_GOTAGS)
 TAG := $(CIRCLE_TAG)
 endif
 endif
+
+# Support `make tag` override for non CI testing
+ifneq ($(TAG_OVERRIDE),)
+TAG := $(TAG_OVERRIDE)
+endif

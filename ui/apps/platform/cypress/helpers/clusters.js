@@ -1,8 +1,8 @@
 import * as api from '../constants/apiEndpoints';
-import { clustersUrl, selectors } from '../constants/ClustersPage';
+import { selectors } from '../constants/ClustersPage';
 
 import { visitFromLeftNavExpandable } from './nav';
-import { interactAndWaitForResponses } from './request';
+import { interceptRequests, waitForResponses } from './request';
 import { visit } from './visit';
 
 const routeMatcherMap = {
@@ -20,29 +20,41 @@ const routeMatcherMap = {
     },
 };
 
+const basePath = '/main/clusters';
+
+const title = 'Clusters';
+
 // Navigation
 
-/*
- * Reach clusters by interaction from another container.
+/**
+ * Visit clusters by interaction from another container.
  * For example, click View All button from System Health.
+ *
+ * @param {function} interactionCallback
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
-export function reachClusters(interactionCallback, staticResponseMap) {
-    interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
+export function interactAndVisitClusters(interactionCallback, staticResponseMap) {
+    interceptRequests(routeMatcherMap, staticResponseMap);
 
-    cy.get(selectors.clustersListHeading).contains('Clusters');
+    interactionCallback();
+
+    cy.location('pathname').should('eq', basePath);
+    cy.get(`h1:contains("${title}")`);
+
+    waitForResponses(routeMatcherMap);
 }
 
 export function visitClustersFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', 'Clusters', routeMatcherMap);
+    visitFromLeftNavExpandable('Platform Configuration', title, routeMatcherMap);
 
-    cy.location('pathname').should('eq', clustersUrl);
-    cy.get(selectors.clustersListHeading).contains('Clusters');
+    cy.location('pathname').should('eq', basePath);
+    cy.get(`h1:contains("${title}")`);
 }
 
 export function visitClusters(staticResponseMap) {
-    visit(clustersUrl, routeMatcherMap, staticResponseMap);
+    visit(basePath, routeMatcherMap, staticResponseMap);
 
-    cy.get(selectors.clustersListHeading).contains('Clusters');
+    cy.get(`h1:contains("${title}")`);
 }
 
 export function visitClustersWithFixture(fixturePath) {
@@ -62,9 +74,9 @@ export function visitClusterById(clusterId, staticResponseMap) {
             url: `${api.clusters.list}/${clusterId}`,
         },
     };
-    visit(`${clustersUrl}/${clusterId}`, routeMatcherMapClusterById, staticResponseMap);
+    visit(`${basePath}/${clusterId}`, routeMatcherMapClusterById, staticResponseMap);
 
-    cy.get(selectors.clustersListHeading).contains('Clusters');
+    cy.get(`h1:contains("${title}")`);
 }
 
 export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString) {

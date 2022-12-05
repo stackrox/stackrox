@@ -11,14 +11,14 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// FakeNodeScanner can be used to send fake messages that would be emitted by NodeScanV2
+// FakeNodeScanner can be used to send fake messages that would be emitted by NodeInventory
 type FakeNodeScanner struct {
 }
 
-// Scan returns a fake message in the same format a real NodeScanV2 would produce
-func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeScanV2, error) {
+// Scan returns a fake message in the same format a real NodeInventory would produce
+func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	log.Infof("Generating fake scan result message...")
-	msg := &storage.NodeScanV2{
+	msg := &storage.NodeInventory{
 		NodeId:   "",
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),

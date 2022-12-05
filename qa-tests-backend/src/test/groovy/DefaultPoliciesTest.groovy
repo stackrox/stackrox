@@ -5,7 +5,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import common.Constants
 import groups.BAT
-import groups.COMPATIBILITY
 import groups.SMOKE
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
@@ -45,6 +44,7 @@ import util.Env
 import util.Helpers
 import util.SlackUtil
 
+// TODO(ROX-13738): Re-enable these tests in compatibility-test step
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
     // Deployment names
@@ -244,7 +244,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return strutsComponent.getVulnsList().find { it.cve == "CVE-2017-5638" } != null
     }
 
-    @Category([BAT, SMOKE, COMPATIBILITY])
+    @Category([BAT, SMOKE])
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"
@@ -348,7 +348,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
 
         imageFixableVulnMap.each { k, v ->
-            slackPayload += "\n${k}: ${v}"
+            slackPayload += "\n${k}: ${v} ${team(k)}"
         }
         SlackUtil.sendMessage(slackPayload)
 
@@ -360,6 +360,19 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         then:
         assert !hadGetErrors
+    }
+
+    String team(String img) {
+        // To notify slack group we need to provide its ID.
+        // It can be found with https://app.slack.com/client/T030RBGDB/browse-user-groups/user_groups
+        // To validate it's correct you can use: https://app.slack.com/block-kit-builder
+        if (img.contains('scanner')) {
+            return '<!subteam^S0499T54CAC>'
+        }
+        if (img.contains('collector')) {
+            return '<!subteam^S01HCU3RQ0H>'
+        }
+        return img.contains('roxctl') ? '<!subteam^S02KY64PK8U>' : '<!subteam^STZRGPQ78>'
     }
 
     @Unroll
@@ -428,7 +441,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 //                 []
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Category(BAT)
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
@@ -524,7 +537,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return total
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Category(BAT)
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
@@ -558,7 +571,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return m
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Category(BAT)
     def "Verify that alert groups API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()

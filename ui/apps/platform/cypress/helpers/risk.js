@@ -2,7 +2,7 @@ import * as api from '../constants/apiEndpoints';
 import { selectors as riskPageSelectors, url as riskURL } from '../constants/RiskPage';
 import selectors from '../selectors/index';
 
-import { reachNetworkGraphWithDeploymentSelected } from './networkGraph';
+import { interactAndVisitNetworkGraphWithDeploymentSelected } from './networkGraph';
 import { visit } from './visit';
 
 // visit
@@ -51,7 +51,7 @@ export function viewRiskDeploymentByName(deploymentName) {
 }
 
 export function viewRiskDeploymentInNetworkGraph() {
-    reachNetworkGraphWithDeploymentSelected(() => {
+    interactAndVisitNetworkGraphWithDeploymentSelected(() => {
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
     });
 }

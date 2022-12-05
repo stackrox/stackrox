@@ -16,5 +16,6 @@ export default function downloadDiagnostics(queryString: string) {
         method: 'get',
         url: `/api/extensions/diagnostics${queryString || ''}`,
         data: null,
+        timeout: 300000, // setting 5 minutes as a default timeout value for diagnostic bundle
     });
 }

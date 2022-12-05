@@ -3,6 +3,7 @@ package component
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 )
 
 // CompatibilityDetectionMessage should be used by old handlers
@@ -26,6 +27,16 @@ type ResourceEvent struct {
 	// CompatibilityReprocessDeployments is also used for compatibility reasons with Network Policy handlers
 	// in the future this will not be needed as the dependencies are taken care by the resolvers
 	CompatibilityReprocessDeployments []string
+
+	// DeploymentReference returns an implementation of a struct that can return a list of deployment ids
+	// that require processing
+	DeploymentReference resolver.DeploymentReference
+
+	// ParentResourceAction is the resource action that will be sent to central on the deployment event.
+	// If the ResourceEvent originated on a deployment event, this should be set to whatever action triggered
+	// the event. For related resources updates, like RBACs and services, this should always be set to
+	// UPDATE.
+	ParentResourceAction central.ResourceAction
 }
 
 // NewResourceEvent wraps the SensorEvents, CompatibilityDetectionMessages, and the CompatibilityReprocessDeployments into a ResourceEvent message
@@ -34,6 +45,14 @@ func NewResourceEvent(sensorMessages []*central.SensorEvent, detectionDeployment
 		ForwardMessages:                   sensorMessages,
 		CompatibilityDetectionDeployment:  detectionDeployment,
 		CompatibilityReprocessDeployments: reprocessDeploymentsIds,
+	}
+}
+
+// NewDeploymentRefEvent returns a resource event given a deployment reference and a resource action.
+func NewDeploymentRefEvent(ref resolver.DeploymentReference, action central.ResourceAction) *ResourceEvent {
+	return &ResourceEvent{
+		DeploymentReference:  ref,
+		ParentResourceAction: action,
 	}
 }
 

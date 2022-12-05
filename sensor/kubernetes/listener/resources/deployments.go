@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
@@ -166,12 +168,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		return events
 	}
 
-	exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
-	deploymentWrap.updatePortExposureSlice(exposureInfos)
 	if action != central.ResourceAction_REMOVE_RESOURCE {
-		// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
-		// right after deploymentWrap object creation.
-		deploymentWrap.updateServiceAccountPermissionLevel(d.rbac.GetPermissionLevelForDeployment(deploymentWrap.GetDeployment()))
 		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
 		d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
 	} else {
@@ -180,19 +177,52 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		d.processFilter.Delete(deploymentWrap.GetId())
 	}
-	if err := deploymentWrap.updateHash(); err != nil {
-		log.Errorf("UNEXPECTED: could not calculate hash of deployment %s: %v", deploymentWrap.GetId(), err)
-	}
 
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
-	outputMessage := component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, []component.CompatibilityDetectionMessage{
-		{
-			Object: deploymentWrap.GetDeployment(),
-			Action: action,
-		},
-	}, nil)
 
-	events = component.MergeResourceEvents(events, outputMessage)
+	if features.ResyncDisabled.Enabled() {
+		if action == central.ResourceAction_REMOVE_RESOURCE {
+			// At the moment we need to also send this deployment to the compatibility module when it's being deleted.
+			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
+			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
+			// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
+			events = component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
+				{
+					Object: deploymentWrap.GetDeployment(),
+					Action: action,
+				},
+			}, nil))
+			// if resource is being removed, we can create the remove message here without related resources
+			events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
+		} else {
+			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
+			// references up the chain, which will be used to trigger the actual deployment event and detection.
+			events = component.MergeResourceEvents(events,
+				component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action))
+		}
+	} else {
+		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
+		deploymentWrap.updatePortExposureSlice(exposureInfos)
+		if action != central.ResourceAction_REMOVE_RESOURCE {
+			// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
+			// right after deploymentWrap object creation.
+			deploymentWrap.updateServiceAccountPermissionLevel(d.rbac.GetPermissionLevelForDeployment(deploymentWrap.GetDeployment()))
+		}
+
+		if err := deploymentWrap.updateHash(); err != nil {
+			log.Errorf("UNEXPECTED: could not calculate hash of deployment %s: %v", deploymentWrap.GetId(), err)
+		}
+
+		events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
+		// Compatibility: send detection message directly from here
+		events = component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
+			{
+				Object: deploymentWrap.GetDeployment(),
+				Action: action,
+			},
+		}, nil))
+	}
+
 	return events
 }
 

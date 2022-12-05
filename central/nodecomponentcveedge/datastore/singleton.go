@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -18,9 +17,7 @@ func initialize() {
 	storage := postgres.New(globaldb.GetPostgres())
 	indexer := postgres.NewIndexer(globaldb.GetPostgres())
 
-	var err error
-	ds, err = New(storage, indexer, search.New(storage, indexer))
-	utils.CrashOnError(err)
+	ds = New(storage, indexer, search.New(storage, indexer))
 }
 
 // Singleton returns a singleton instance of cve datastore

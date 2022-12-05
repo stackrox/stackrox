@@ -68,7 +68,6 @@ scripts/port-forward-ui.sh
 scripts/redhat-infra-release/generate-proto-sources.sh
 scripts/redhat-infra-release/remove-non-operator-deps.sh
 scripts/reference/build-quay-operator-bundles.sh
-scripts/release-tools/clusters.sh
 scripts/sync-release-branch.sh
 tests/roxctl/authz-trace.sh
 tests/roxctl/helm-chart-generation.sh

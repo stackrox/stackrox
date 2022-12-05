@@ -3,16 +3,16 @@ import axios from './instance';
 
 /**
  * Common download service to download different types of files.
+ * By default, timeout for downloads is removed. To override this behaviour, use timeout parameter.
  */
-export function saveFile({ method, url, data, name = '' }) {
+export function saveFile({ method, url, data, name = '', timeout = 0 }) {
     const options = {
         method,
         url,
         data,
         responseType: 'arraybuffer',
         name,
-        // removing timeout for downloads
-        timeout: 0,
+        timeout,
     };
     return axios(options)
         .then((response) => {

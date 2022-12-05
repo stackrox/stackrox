@@ -22,6 +22,7 @@ scan_images_with_roxctl() {
 
     # check main images
     images+=("main:$release_tag")
+    images+=("central-db:$release_tag")
 
     # check docs image - using the pre-release tag (not the release tag)
     images+=("docs:$docs_prerelease_tag")

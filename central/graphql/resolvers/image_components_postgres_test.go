@@ -4,7 +4,6 @@ package resolvers
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -17,10 +16,9 @@ import (
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
-	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -63,68 +61,32 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	s.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.NoError(err)
-
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
-	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.db = pool
-
-	// destroy datastores if they exist
-	imageCVEPostgres.Destroy(s.ctx, s.db)
-	imagePostgres.Destroy(s.ctx, s.db)
-	imageComponentPostgres.Destroy(s.ctx, s.db)
-	imageCVEEdgePostgres.Destroy(s.ctx, s.db)
-	componentCVEEdgePostgres.Destroy(s.ctx, s.db)
-	deploymentPostgres.Destroy(s.ctx, s.db)
-
-	// create mock resolvers, set relevant ones
-	s.resolver = NewMock()
-
-	riskMock := mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-
-	s.resolver.ImageCVEDataStore, err = getImageCVEDatastore(s.ctx, s.db, s.gormDB)
-	s.NoError(err, "Failed to get ImageCVEDataStore")
-	s.resolver.ImageDataStore = getImageDatastore(s.ctx, s.db, s.gormDB, riskMock)
-	s.resolver.ImageComponentDataStore = getImageComponentDatastore(s.ctx, s.db, s.gormDB, riskMock)
-	s.resolver.ImageCVEEdgeDataStore = getImageCVEEdgeDatastore(s.ctx, s.db, s.gormDB)
-	s.resolver.ComponentCVEEdgeDataStore = getImageComponentCVEEdgeDatastore(s.ctx, s.db, s.gormDB)
-	s.resolver.DeploymentDataStore, err = getDeploymentDatastore(s.ctx, s.T(), s.db, s.gormDB, s.resolver.ImageDataStore, riskMock)
-	s.NoError(err, "Failed to get DeploymentDataStore")
-
-	// Sac permissions
-	s.ctx = sac.WithAllAccess(s.ctx)
-
-	// loaders used by graphql layer
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
-		return loaders.NewImageLoader(s.resolver.ImageDataStore)
-	})
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageComponent{}), func() interface{} {
-		return loaders.NewComponentLoader(s.resolver.ImageComponentDataStore)
-	})
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageCVE{}), func() interface{} {
-		return loaders.NewImageCVELoader(s.resolver.ImageCVEDataStore)
-	})
-	s.ctx = loaders.WithLoaderContext(s.ctx)
+	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
+	mockCtrl := gomock.NewController(s.T())
+	s.db, s.gormDB = setupPostgresConn(s.T())
+	imageDataStore := createImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	resolver, _ := setupResolver(s.T(),
+		imageDataStore,
+		createImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		createImageCVEDatastore(s.T(), s.db, s.gormDB),
+		createImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		createImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		createDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
+	)
+	s.resolver = resolver
 
 	// Add Test Data to DataStores
 	testDeployments := testDeployments()
 	for _, dep := range testDeployments {
-		err = s.resolver.DeploymentDataStore.UpsertDeployment(s.ctx, dep)
+		err := s.resolver.DeploymentDataStore.UpsertDeployment(s.ctx, dep)
 		s.NoError(err)
 	}
 
 	testImages := testImagesWithOperatingSystems()
 	for _, image := range testImages {
-		err = s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
+		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
 		s.NoError(err)
 	}
-
-	s.T().Parallel()
 }
 
 func (s *GraphQLImageComponentTestSuite) TearDownSuite() {
@@ -429,32 +391,32 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentDeployments() {
 		{
 			"comp1os1",
 			scancomponent.ComponentID("comp1", "0.9", "os1"),
-			[]string{"dep1id", "dep2id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp2os1",
 			scancomponent.ComponentID("comp2", "1.1", "os1"),
-			[]string{"dep1id", "dep2id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp3os1",
 			scancomponent.ComponentID("comp3", "1.0", "os1"),
-			[]string{"dep1id", "dep2id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp1os2",
 			scancomponent.ComponentID("comp1", "0.9", "os2"),
-			[]string{"dep1id", "dep3id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 		{
 			"comp3os2",
 			scancomponent.ComponentID("comp3", "1.0", "os2"),
-			[]string{"dep1id", "dep3id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 		{
 			"comp4os2",
 			scancomponent.ComponentID("comp4", "1.0", "os2"),
-			[]string{"dep1id", "dep3id"},
+			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 	}
 

@@ -33,7 +33,7 @@ func NewFullStore(db *pgxpool.Pool) store.Store {
 }
 
 // NewFullTestStore is used for testing.
-func NewFullTestStore(t *testing.T, db *pgxpool.Pool, store Store) store.Store {
+func NewFullTestStore(_ testing.TB, db *pgxpool.Pool, store Store) store.Store {
 	return &fullStoreImpl{
 		db:    db,
 		Store: store,

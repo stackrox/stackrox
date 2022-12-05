@@ -136,6 +136,11 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// linked to the ListAlert type (goal is backward compatibility with the search strategy implemented on bleve.
 	alertSearchOptions := alertMapping.OptionsMap
 
+	subjectSearchOptions := search.CombineOptionsMaps(
+		subjectMapping.OptionsMap,
+		schema.RoleBindingsSchema.OptionsMap,
+	)
+
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
@@ -170,7 +175,7 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_ROLEBINDINGS:            schema.RoleBindingsSchema.OptionsMap,
 		v1.SearchCategory_SECRETS:                 schema.SecretsSchema.OptionsMap,
 		v1.SearchCategory_SERVICE_ACCOUNTS:        schema.ServiceAccountsSchema.OptionsMap,
-		v1.SearchCategory_SUBJECTS:                subjectMapping.OptionsMap,
+		v1.SearchCategory_SUBJECTS:                subjectSearchOptions,
 		v1.SearchCategory_VULN_REQUEST:            schema.VulnerabilityRequestsSchema.OptionsMap,
 	}
 
@@ -216,6 +221,11 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		deployments.OptionsMap,
 	)
 
+	subjectSearchOptions := search.CombineOptionsMaps(
+		subjectMapping.OptionsMap,
+		roleBindingOptions.OptionsMap,
+	)
+
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
@@ -239,7 +249,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_ROLES:                 roleOptions.OptionsMap,
 		v1.SearchCategory_ROLEBINDINGS:          roleBindingOptions.OptionsMap,
 		v1.SearchCategory_SERVICE_ACCOUNTS:      serviceAccountOptions.OptionsMap,
-		v1.SearchCategory_SUBJECTS:              subjectMapping.OptionsMap,
+		v1.SearchCategory_SUBJECTS:              subjectSearchOptions,
 		v1.SearchCategory_VULNERABILITIES:       cveSearchOptions,
 		v1.SearchCategory_COMPONENT_VULN_EDGE:   componentVulnEdgeMapping.OptionsMap,
 		v1.SearchCategory_CLUSTER_VULN_EDGE:     clusterVulnEdgeMapping.OptionsMap,
