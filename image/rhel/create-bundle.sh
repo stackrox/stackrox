@@ -108,6 +108,7 @@ fi
 
 if [[ "${DATA_IMAGE}" != "local" ]]; then
   # Extract data from data container image
+  mkdir -p "${bundle_root}/stackrox/static-data/"
   extract_from_image "${DATA_IMAGE}" "/stackrox-data" "${bundle_root}/stackrox/static-data/"
   extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
 else
