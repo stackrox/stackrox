@@ -21,7 +21,8 @@ import defaultComponentFactory from './components/defaultComponentFactory';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import CidrBlockSideBar from './cidr/CidrBlockSideBar';
-import ExternalEntitiesSideBar from './external/ExternalEntitiesSideBar';
+import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar';
+import ExternalToClusterSideBar from './external/ExternalToClusterSideBar';
 import { EdgeState } from './EdgeStateSelect';
 
 import './Topology.css';
@@ -189,6 +190,13 @@ const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
                     {selectedEntity && selectedEntity?.data?.type === 'DEPLOYMENT' && (
                         <DeploymentSideBar
                             deploymentId={selectedEntity.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
+                    )}
+                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL' && (
+                        <ExternalToClusterSideBar
+                            id={selectedEntity.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
                         />
