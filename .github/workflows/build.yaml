@@ -61,7 +61,7 @@ jobs:
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Build CLI
-        run: make cli
+        run: make cli -j 2
 
       - name: Bundle build to preserve permissions
         run: tar -cvzf cli-build.tgz bin
