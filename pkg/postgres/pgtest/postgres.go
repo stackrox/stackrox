@@ -30,6 +30,7 @@ func CreateADatabaseForT(t testing.TB) string {
 	require.NoError(t, err)
 
 	database := strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_") + suffix)
+	database = strings.ToLower(strings.ReplaceAll(database, "-", "_"))
 
 	CreateDatabase(t, database)
 

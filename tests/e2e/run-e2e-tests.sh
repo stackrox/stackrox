@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1091
 
 # Run e2e tests using the working directory code via the rox-ci-image /
 # stackrox-test container, against the cluster defined in the calling
@@ -19,15 +18,15 @@ usage() {
     script=$(basename "$0")
     cat <<_EOH_
 Usage:
- $script [Options...] [E2e flavor]
+$script [Options...] [E2e flavor]
  
    Configures the cluster and runs all suites.
  
- $script [Options...] [E2e flavor] Suite [Case]
+$script [Options...] [E2e flavor] Suite [Case]
  
-   Expects a previously configured cluster and runs only selected suite/case.
+   Expects a previously configured cluster and runs only selected 
+   suite/case. [qa flavor only].
  
-
 Run e2e tests using the working directory code via the rox-ci-image /
 stackrox-test container, against the cluster defined in the calling
 environment.
@@ -35,9 +34,11 @@ environment.
 Options:
   -c - configure the cluster for test but do not run any tests. [qa flavor only]
   -d - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. [qa flavor only]
-  -m - override 'make tag' for the version to install. [qa flavor only]
-  -o - choose the cluster variety. defaults to k8s.
+  -t - override 'make tag' which sets the main version to install and is used by 
+       some tests.
+  -o - choose the cluster orchestrator. Either k8s or openshift. defaults to k8s.
   -y - run without prompts.
+  -h - show this help.
 
 E2e flavor:
   one of qa|e2e|ui|upgrade, defaults to qa
@@ -56,15 +57,58 @@ $script qa
 
 # Run the full set of 'non groovy' e2e tests. This is similar to what CI runs
 # for *-nongroovy-e2e-tests jobs on a PR.
-$script qa
+$script e2e
 _EOH_
     exit 1
 }
 
+option_set=":cdhyo:t:"
+
+handle_tag_requirements() {
+    while getopts "$option_set" option; do
+        case "$option" in
+            t)
+                export TAG_OVERRIDE="${OPTARG}"
+                ;;
+            h)
+                usage
+                ;;
+            *)
+                ;;
+        esac
+    done
+
+    tag="$(make tag)"
+
+    if [[ "$tag" =~ -dirty ]]; then
+        info "WARN: Dropping -dirty from 'make tag': $tag"
+        tag="${tag/-dirty/}"
+        export TAG_OVERRIDE="$tag"
+    fi
+
+    export ROXCTL_FOR_TEST="$ROOT/bin/linux/roxctl-$tag"
+
+    if [[ ! -f "$ROXCTL_FOR_TEST" ]]; then
+        local roxctl_image="quay.io/stackrox-io/roxctl:$tag"
+        local id
+        id="$(docker create "$roxctl_image")" || {
+            cat <<_EOMISSING_
+ERROR: Cannot create a container to copy the roxctl binary from: $roxctl_image.
+Check that the git commit at $tag was pushed and that that image build/push succeeded.
+_EOMISSING_
+            exit 1
+        }
+        docker cp "$id:/roxctl" "$ROXCTL_FOR_TEST"
+        docker rm "$id"
+    fi
+}
+
 if [[ ! -f "/i-am-rox-ci-image" ]]; then
+    handle_tag_requirements "$@"
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
     mkdir -p "${HOME}/.gradle/caches"
     mkdir -p "$QA_TEST_DEBUG_LOGS"
+    info "Running in a container..."
     docker run \
       -v "$ROOT:$ROOT:z" \
       -w "$ROOT" \
@@ -73,6 +117,8 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
       -v "${GOPATH}/pkg/mod/cache:/go/pkg/mod/cache:z" \
       -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
+      -e "TAG_OVERRIDE=${TAG_OVERRIDE:-}" \
+      -v "${ROXCTL_FOR_TEST}:/usr/local/bin/roxctl:z" \
       -e VAULT_TOKEN \
       --platform linux/amd64 \
       --rm -it \
@@ -86,7 +132,7 @@ main() {
     orchestrator="k8s"
     prompt="true"
 
-    while getopts ":cdyo:m:" option; do
+    while getopts "$option_set" option; do
         case "$option" in
             c)
                 config_only="true"
@@ -97,8 +143,8 @@ main() {
             o)
                 orchestrator="${OPTARG}"
                 ;;
-            m)
-                export MAIN_IMAGE_TAG="${OPTARG}"
+            t)
+                # handled in the calling context
                 ;;
             y)
                 prompt="false"
@@ -132,39 +178,19 @@ main() {
 
     cd "$ROOT"
 
-    tag="$(make tag)"
-
     if [[ "$flavor" == "e2e" ]]; then
-        if [[ -n "${MAIN_IMAGE_TAG:-}" ]]; then
-            die "ERROR: Specifying a MAIN_IMAGE_TAG is not supported with e2e flavor"
-        fi
         if [[ -n "${suite}" || -n "${case}" ]]; then
             die "ERROR: Suite and Case are not supported with e2e flavor"
         fi
-        if [[ "$tag" =~ -dirty ]]; then
-            die "ERROR: -dirty tags are not supported with e2e flavor"
-        fi
     fi
 
-    if [[ -z "${MAIN_IMAGE_TAG:-}" && "$tag" =~ -dirty ]]; then
-        cat <<_EODIRTY_
-ERROR: The tag for the working directory includes a '-dirty' tag. 
-It is unlikely that that has been pushed to registries. Specify a
-valid tag with -m or set MAIN_IMAGE_TAG.
-_EODIRTY_
-        exit 1
-    fi
-
-    export PATH="${ROOT}/bin/linux_amd64:${PATH}"
-    main_version="${MAIN_IMAGE_TAG:-$tag}"
+    # Sanity check that the roxctl in use matches 'make tag'. This should
+    # already be true due to the container copy in handle_tag_requirements() but
+    # changes to PATH might break that assumption.
+    tag="$(make tag)"
     roxctl_version="$(roxctl version)"
-    if [[ "${main_version}" != "${roxctl_version}" ]]; then
-        cat <<_EOVERSION_
-ERROR: main and roxctl versions do not match. main: ${main_version} != roxctl: ${roxctl_version}.
-They are required to match for the ./deploy scripts to run without docker.
-Run 'make cli-linux' to get matching versions.
-_EOVERSION_
-        exit 1
+    if [[ "${tag}" != "${roxctl_version}" ]]; then
+        die "ERROR: 'make tag' and roxctl versions do not match. tag: ${tag} != roxctl: ${roxctl_version}."
     fi
 
     # Do we need to login to vault?
@@ -181,17 +207,17 @@ There are a number of required steps to get access to vault:
 (This is a Red Hat-ism and will require SSO)
 2. Ask a team member to add you to the collections required for this test:
 stackrox-stackrox-initial and stackrox-stackrox-e2e-tests.
-3. Login to the vault at: https://vault.ci.openshift.org/ui/vault/secrets (Use OIDC)
+3. Login to the vault at: https://vault.ci.openshift.org/ui/vault/secrets (Use *OIDC*)
 You should see these secrets under kv/
 4. Copy a 'token' from that UI and rerun this script.
-The 'token' will expire periodically and you will need to renew it through the vault UI.
+The 'token' will expire hourly and you will need to renew it through the vault UI.
 _EOVAULTHELP_
             exit 1
         fi
     fi
 
     context="$(kubectl config current-context)"
-    echo "This script will tear down resources, install ACS and run tests against '$context'."
+    echo "This script will tear down resources, install ACS and dependencies and run tests against '$context'."
 
     if [[ "$prompt" == "true" ]]; then
         read -p "Are you sure? " -r
@@ -208,7 +234,7 @@ _EOVAULTHELP_
     eval "$(vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
     | jq -r '.data.data | to_entries[] | select( .key|test("^[A-Z]") ) | "export \(.key|@sh)=\(.value|@sh)"')"
 
-    if ! check_rhacs_eng_image_exists "main" "$main_version"; then
+    if ! check_rhacs_eng_image_exists "main" "$tag"; then
         die "ERROR: The main image is not present"
     fi
 
@@ -242,10 +268,12 @@ _EOVAULTHELP_
 run_qa_flavor() {
     if [[ -z "$suite" && -z "$case" ]]; then
         source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
-        config_part_1 2>&1 | sed -e 's/^/config output: /'
-        if [[ "${config_only}" == "false" ]]; then
-            test_part_1 2>&1 | sed -e 's/^/test output: /'
-        fi
+        (
+            config_part_1
+            if [[ "${config_only}" == "false" ]]; then
+                test_part_1
+            fi
+        ) 2>&1 | sed -e 's/^/test output: /'
     else
         export_test_environment
         setup_deployment_env false false
@@ -265,7 +293,7 @@ run_qa_flavor() {
 }
 
 run_e2e_flavor() {
-    "$ROOT/tests/e2e/run.sh" | sed -e 's/^/test output: /'
+    "$ROOT/tests/e2e/run.sh" 2>&1 | sed -e 's/^/test output: /'
 }
 
 main "$@"

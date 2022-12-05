@@ -12,11 +12,11 @@ source "$ROOT/qa-tests-backend/scripts/lib.sh"
 
 set -euo pipefail
 
-test_part_1() {
+run_part_1() {
     info "Starting test (qa-tests-backend part I)"
 
     config_part_1
-    run_tests_part_1
+    test_part_1
 }
 
 config_part_1() {
@@ -39,7 +39,7 @@ config_part_1() {
     get_ECR_docker_pull_password
 }
 
-run_tests_part_1() {
+test_part_1() {
     info "QA Automation Platform Part 1"
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
@@ -78,5 +78,5 @@ run_tests_part_1() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    test_part_1 "$*"
+    run_part_1 "$*"
 fi

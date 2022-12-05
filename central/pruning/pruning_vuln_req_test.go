@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/central/vulnerabilityrequest/cache"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +24,14 @@ func TestExpiredVulnReqsPruning(t *testing.T) {
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	datastore, err := vulnReqDataStore.NewForTestOnly(t, db, bleveIndex, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
+	var datastore vulnReqDataStore.DataStore
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testingDB := pgtest.ForT(t)
+		defer testingDB.Teardown(t)
+		datastore, err = vulnReqDataStore.GetTestPostgresDataStore(t, testingDB.Pool, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
+	} else {
+		datastore, err = vulnReqDataStore.NewForTestOnly(t, db, bleveIndex, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
+	}
 	require.NoError(t, err)
 
 	oneMonthDayPastRetention := (30 + configDS.DefaultExpiredVulnReqRetention) * 24 * time.Hour

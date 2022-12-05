@@ -38,6 +38,7 @@ import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
 
+// TODO(ROX-13739): Re-enable these tests in compatibility-test step
 @Stepwise
 class NetworkFlowTest extends BaseSpecification {
 
@@ -455,9 +456,9 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
     }
 
+    // TODO(ROX-7047): Re-enable this test
     @Category([NetworkFlowVisualization])
     def "Verify connections from external sources"() {
-        // https://stack-rox.atlassian.net/browse/ROX-7047
         Assume.assumeFalse(ClusterService.isOpenShift4())
 
         given:
@@ -500,6 +501,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
     }
 
+    // TODO(ROX-7046): Re-enable this test
     @Category([NetworkFlowVisualization])
     @Ignore("ROX-7046 - this test does not pass")
     def "Verify intra-cluster connection via external IP"() {
@@ -637,10 +639,10 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Category([BAT])
     def "Verify generated network policies"() {
-        // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
+        // TODO(RS-178): EKS cannot NetworkPolicy
         Assume.assumeFalse(ClusterService.isEKS())
 
-        // https://issues.redhat.com/browse/ROX-9949 -- fails on OSD
+        // TODO(ROX-7878): Re-enable for OSD clusters
         Assume.assumeFalse(ClusterService.isOpenShift3())
         Assume.assumeFalse(ClusterService.isOpenShift4())
 

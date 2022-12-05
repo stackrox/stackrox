@@ -72,6 +72,38 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.Lis
 	return deployments, nil
 }
 
+func waitForDeploymentCount(t testutils.T, query string, count int) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+
+	service := v1.NewDeploymentServiceClient(conn)
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(waitTimeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			deploymentCount, err := service.CountDeployments(ctx, &v1.RawQuery{Query: query})
+			cancel()
+			if err != nil {
+				log.Errorf("Error listing deployments: %s", err)
+				continue
+			}
+			if deploymentCount.GetCount() == int32(count) {
+				return
+			}
+
+		case <-timer.C:
+			t.Fatalf("Timed out waiting for deployments %q", query)
+		}
+	}
+
+}
+
 func waitForDeployment(t testutils.T, deploymentName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
