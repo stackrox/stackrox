@@ -244,7 +244,7 @@ export function clickConfirmationToDeleteAuthProvider(entityId, staticResponseMa
 
     interactAndWaitForResponses(
         () => {
-            cy.get('.pf-c-modal-box__footer button:contains("Delete")');
+            cy.get('.pf-c-modal-box__footer button:contains("Delete")').click();
         },
         routeMatcherMap,
         staticResponseMap
