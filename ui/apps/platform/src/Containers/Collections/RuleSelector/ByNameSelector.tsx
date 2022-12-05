@@ -9,14 +9,14 @@ import { getCollectionAutoComplete } from 'services/CollectionsService';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 import {
     ByNameResourceSelector,
-    Collection,
+    ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
 } from '../types';
 import { generateRequest } from '../converter';
 
 export type ByNameSelectorProps = {
-    collection: Collection;
+    collection: ClientCollection;
     entityType: SelectorEntityType;
     scopedResourceSelector: ByNameResourceSelector;
     handleChange: (

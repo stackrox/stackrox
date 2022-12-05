@@ -29,7 +29,7 @@ export type CollectionRequest = {
     embeddedCollectionIds: string[];
 };
 
-export type CollectionResponse = {
+export type Collection = {
     id: string;
     name: string;
     description: string;
@@ -46,7 +46,7 @@ export function listCollections(
     sortOption: ApiSortOption,
     page?: number,
     pageSize?: number
-): CancellableRequest<CollectionResponse[]> {
+): CancellableRequest<Collection[]> {
     let offset: number | undefined;
     if (typeof page === 'number' && typeof pageSize === 'number') {
         offset = page > 0 ? page * pageSize : 0;
@@ -59,7 +59,7 @@ export function listCollections(
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{
-                collections: CollectionResponse[];
+                collections: Collection[];
             }>(`${collectionsBaseUrl}?${params}`, { signal })
             .then((response) => response.data.collections)
     );
@@ -77,8 +77,11 @@ export function getCollectionCount(searchFilter: SearchFilter): CancellableReque
     );
 }
 
-export type ResolvedCollectionResponse = {
-    collection: CollectionResponse;
+export type CollectionResponse = {
+    collection: Collection;
+};
+
+export type CollectionResponseWithMatches = CollectionResponse & {
     deployments: ListDeployment[];
 };
 
@@ -94,11 +97,13 @@ export type ResolvedCollectionResponse = {
 export function getCollection(
     id: string,
     options: { withMatches: boolean } = { withMatches: false }
-): CancellableRequest<ResolvedCollectionResponse> {
+): CancellableRequest<CollectionResponseWithMatches> {
     const params = qs.stringify(options);
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<ResolvedCollectionResponse>(`${collectionsBaseUrl}/${id}?${params}`, { signal })
+            .get<CollectionResponseWithMatches>(`${collectionsBaseUrl}/${id}?${params}`, {
+                signal,
+            })
             .then((response) => response.data)
     );
 }
@@ -111,13 +116,11 @@ export function getCollection(
  * @returns
  *      The created collection object, with ID
  */
-export function createCollection(
-    collection: CollectionRequest
-): CancellableRequest<CollectionResponse> {
+export function createCollection(collection: CollectionRequest): CancellableRequest<Collection> {
     return makeCancellableAxiosRequest((signal) =>
         axios
             .post<CollectionResponse>(collectionsBaseUrl, collection, { signal })
-            .then((response) => response.data)
+            .then((response) => response.data.collection)
     );
 }
 
@@ -135,11 +138,13 @@ export function createCollection(
 export function updateCollection(
     id: string,
     collection: CollectionRequest
-): CancellableRequest<CollectionResponse> {
+): CancellableRequest<Collection> {
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .patch<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
-            .then((response) => response.data)
+            .patch<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, {
+                signal,
+            })
+            .then((response) => response.data.collection)
     );
 }
 

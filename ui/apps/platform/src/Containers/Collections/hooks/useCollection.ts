@@ -2,13 +2,13 @@ import { useCallback } from 'react';
 
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import {
-    CollectionResponse,
+    Collection,
     getCollection,
     listCollections,
-    ResolvedCollectionResponse,
+    CollectionResponseWithMatches,
 } from 'services/CollectionsService';
 
-const defaultCollectionData: Omit<CollectionResponse, 'id'> = {
+const defaultCollectionData: Omit<Collection, 'id'> = {
     name: '',
     description: '',
     inUse: false,
@@ -18,15 +18,15 @@ const defaultCollectionData: Omit<CollectionResponse, 'id'> = {
 
 const noopRequest = {
     request: Promise.resolve<{
-        collection: Omit<CollectionResponse, 'id'>;
-        embeddedCollections: CollectionResponse[];
+        collection: Omit<Collection, 'id'>;
+        embeddedCollections: Collection[];
     }>({ collection: defaultCollectionData, embeddedCollections: [] }),
     cancel: () => {},
 };
 
-function getEmbeddedCollections({ collection }: ResolvedCollectionResponse): Promise<{
-    collection: CollectionResponse;
-    embeddedCollections: CollectionResponse[];
+function getEmbeddedCollections({ collection }: CollectionResponseWithMatches): Promise<{
+    collection: Collection;
+    embeddedCollections: Collection[];
 }> {
     if (collection.embeddedCollections.length === 0) {
         return Promise.resolve({ collection, embeddedCollections: [] });
