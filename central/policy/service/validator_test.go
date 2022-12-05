@@ -90,6 +90,13 @@ func (s *PolicyValidatorTestSuite) TestValidatesName() {
 	}
 	err = s.validator.validateName(policy)
 	s.Error(err, "special characters should not be supported")
+
+	policy = &storage.Policy{
+		Name: "  Boo's policy  ",
+	}
+	err = s.validator.validateName(policy)
+	s.NoError(err, "leading and trailing spaces should be trimmed")
+	s.Equal("Boo's policy", policy.Name)
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateVersion() {
