@@ -34,6 +34,7 @@ export type CollectionFormDrawerProps = {
     toggleDrawer: (isOpen: boolean) => void;
     headerContent?: ReactElement;
     onSubmit: CollectionFormProps['onSubmit'];
+    onCancel: CollectionFormProps['onCancel'];
     saveError?: CollectionFormProps['saveError'];
     clearSaveError?: CollectionFormProps['clearSaveError'];
     getCollectionTableCells: CollectionFormProps['getCollectionTableCells'];
@@ -48,6 +49,7 @@ function CollectionFormDrawer({
     isDrawerOpen,
     toggleDrawer,
     onSubmit,
+    onCancel,
     saveError,
     clearSaveError,
     getCollectionTableCells,
@@ -98,6 +100,7 @@ function CollectionFormDrawer({
                                 initialData={initialData}
                                 initialEmbeddedCollections={initialEmbeddedCollections}
                                 onSubmit={onSubmit}
+                                onCancel={onCancel}
                                 saveError={saveError}
                                 clearSaveError={clearSaveError}
                                 getCollectionTableCells={getCollectionTableCells}

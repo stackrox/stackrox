@@ -80,6 +80,7 @@ export type CollectionFormProps = {
     /* collection responses for the embedded collections of `initialData` */
     initialEmbeddedCollections: CollectionResponse[];
     onSubmit: (collection: Collection) => Promise<void>;
+    onCancel: () => void;
     saveError?: CollectionSaveError | undefined;
     clearSaveError?: () => void;
     /* Table cells to render for each collection in the CollectionAttacher component */
@@ -141,6 +142,7 @@ function CollectionForm({
     saveError,
     clearSaveError = () => {},
     onSubmit,
+    onCancel,
     getCollectionTableCells,
 }: CollectionFormProps) {
     const history = useHistory();
@@ -205,10 +207,6 @@ function CollectionForm({
     const collectionTableCells = getCollectionTableCells(
         saveError?.type === 'CollectionLoop' ? saveError.loopId : undefined
     );
-
-    function onCancelSave() {
-        history.push({ pathname: `${collectionsBasePath}` });
-    }
 
     const onResourceSelectorChange = (
         entityType: SelectorEntityType,
@@ -435,7 +433,7 @@ function CollectionForm({
                     >
                         Save
                     </Button>
-                    <Button variant="secondary" isDisabled={isSubmitting} onClick={onCancelSave}>
+                    <Button variant="secondary" isDisabled={isSubmitting} onClick={onCancel}>
                         Cancel
                     </Button>
                 </div>

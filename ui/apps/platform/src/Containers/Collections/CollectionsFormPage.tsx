@@ -208,6 +208,9 @@ function CollectionsFormPage({
                             return Promise.reject(err);
                         })
                 }
+                onCancel={() => {
+                    history.push({ pathname: `${collectionsBasePath}` });
+                }}
                 saveError={saveError}
                 clearSaveError={() => setSaveError(undefined)}
                 getCollectionTableCells={getCollectionTableCells}
