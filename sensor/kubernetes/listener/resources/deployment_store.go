@@ -67,6 +67,28 @@ func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.Strin
 	return deployments
 }
 
+// FindDeploymentIDsByLabels returns a slice of deployments based on matching namespace and labels
+func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selector.Selector) (resIDs []string) {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+	ids := ds.deploymentIDs[namespace]
+	if ids == nil {
+		return
+	}
+
+	for id := range ids {
+		wrap := ds.deployments[id]
+		if wrap == nil {
+			continue
+		}
+
+		if sel.Matches(selector.CreateLabelsWithLen(wrap.PodLabels)) {
+			resIDs = append(resIDs, id)
+		}
+	}
+	return
+}
+
 func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector.Selector) (matching []*deploymentWrap) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
@@ -162,6 +184,12 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 		return nil, errors.Errorf("deployment with ID %s doesn't exist in the internal deployment store", id)
 	}
 	clonedWrap := wrap.Clone()
+
+	// Clone does not copy properly the Port and portConfigs
+	clonedWrap.Ports = nil
+	for _, p := range clonedWrap.portConfigs {
+		clonedWrap.Ports = append(clonedWrap.Ports, p)
+	}
 
 	clonedWrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
 	clonedWrap.updatePortExposureSlice(dependencies.Exposures)

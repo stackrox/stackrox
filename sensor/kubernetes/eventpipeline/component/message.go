@@ -66,6 +66,8 @@ func MergeResourceEvents(dest, src *ResourceEvent) *ResourceEvent {
 		dest.CompatibilityReprocessDeployments = append(dest.CompatibilityReprocessDeployments, src.CompatibilityReprocessDeployments...)
 		dest.ForwardMessages = append(dest.ForwardMessages, src.ForwardMessages...)
 		dest.CompatibilityDetectionDeployment = append(dest.CompatibilityDetectionDeployment, src.CompatibilityDetectionDeployment...)
+		dest.ParentResourceAction = src.ParentResourceAction
+		dest.DeploymentReference = src.DeploymentReference
 	}
 	return dest
 }

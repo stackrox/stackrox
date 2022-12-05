@@ -29,6 +29,7 @@ type resolverSuite struct {
 	mockDeploymentStore *mocksStore.MockDeploymentStore
 	mockServiceStore    *mocksStore.MockServiceStore
 	mockRBACStore       *mocksStore.MockRBACStore
+	mockEndpointManager *mocksStore.MockEndpointManager
 
 	resolver component.Resolver
 }
@@ -51,10 +52,13 @@ func (s *resolverSuite) SetupTest() {
 	s.mockDeploymentStore = mocksStore.NewMockDeploymentStore(s.mockCtrl)
 	s.mockServiceStore = mocksStore.NewMockServiceStore(s.mockCtrl)
 	s.mockRBACStore = mocksStore.NewMockRBACStore(s.mockCtrl)
+	s.mockEndpointManager = mocksStore.NewMockEndpointManager(s.mockCtrl)
 
-	s.resolver = New(s.mockOutput, s.mockDeploymentStore, &fakeProvider{
-		serviceStore: s.mockServiceStore,
-		rbacStore:    s.mockRBACStore,
+	s.resolver = New(s.mockOutput, &fakeProvider{
+		deploymentStore: s.mockDeploymentStore,
+		serviceStore:    s.mockServiceStore,
+		rbacStore:       s.mockRBACStore,
+		endpointManager: s.mockEndpointManager,
 	})
 }
 
@@ -210,6 +214,25 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 			messageReceived.Wait()
 		})
 	}
+
+	s.Run(fmt.Sprintf("ResourceAction: %s", central.ResourceAction_REMOVE_RESOURCE), func() {
+		messageReceived := sync.WaitGroup{}
+		messageReceived.Add(1)
+
+		s.givenDeploymentRemoveAction("1234")
+		s.mockOutput.EXPECT()
+
+		s.mockOutput.EXPECT().Send(&resourceActionMatcher{resourceAction: central.ResourceAction_REMOVE_RESOURCE}).Times(1).Do(func(arg0 interface{}) {
+			defer messageReceived.Done()
+		})
+
+		s.resolver.Send(&component.ResourceEvent{
+			DeploymentReference:  resolver.ResolveDeploymentIds("1234"),
+			ParentResourceAction: central.ResourceAction_REMOVE_RESOURCE,
+		})
+
+		messageReceived.Wait()
+	})
 }
 
 func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
@@ -242,6 +265,7 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 	s.givenNilDeployment()
 
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
+	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Any()).Times(0)
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
 
 	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 0}).Times(1).Do(func(arg0 interface{}) {
@@ -379,6 +403,8 @@ func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
 	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return nil })
 
+	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Eq(deployment)).Times(1)
+
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
 			PermissionLevel: storage.PermissionLevel_NONE,
@@ -410,6 +436,8 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(1).
 		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return permissionLevel })
 
+	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Eq(deployment)).Times(1)
+
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
 			PermissionLevel: permissionLevel,
@@ -419,6 +447,20 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
 			return &storage.Deployment{Id: deployment, ServiceAccountPermissionLevel: permissionLevel}, nil
 		})
+}
+
+func (s *resolverSuite) givenDeploymentRemoveAction(deployment string) {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+		return &storage.Deployment{
+			Labels: map[string]string{},
+		}
+	})
+
+	s.mockEndpointManager.EXPECT().OnDeploymentRemoveByID(gomock.Eq(deployment)).Times(1)
+	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
+	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(0)
+
+	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
 }
 
 func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exposure []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
@@ -441,6 +483,8 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 			flatExposures = append(flatExposures, list...)
 		}
 	}
+
+	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Eq(deployment)).Times(1)
 
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
@@ -471,6 +515,8 @@ func (s *resolverSuite) givenAnyDeploymentProcessedNTimes(times int) {
 
 	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(times).
 		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return nil })
+
+	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Any()).Times(times)
 
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).
 		Times(times).
@@ -612,8 +658,14 @@ func (m *resourceActionMatcher) String() string {
 }
 
 type fakeProvider struct {
-	serviceStore *mocksStore.MockServiceStore
-	rbacStore    *mocksStore.MockRBACStore
+	deploymentStore *mocksStore.MockDeploymentStore
+	serviceStore    *mocksStore.MockServiceStore
+	rbacStore       *mocksStore.MockRBACStore
+	endpointManager *mocksStore.MockEndpointManager
+}
+
+func (p *fakeProvider) Deployments() store.DeploymentStore {
+	return p.deploymentStore
 }
 
 func (p *fakeProvider) Services() store.ServiceStore {
@@ -622,4 +674,8 @@ func (p *fakeProvider) Services() store.ServiceStore {
 
 func (p *fakeProvider) RBAC() store.RBACStore {
 	return p.rbacStore
+}
+
+func (p *fakeProvider) EndpointManager() store.EndpointManager {
+	return p.endpointManager
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	selector2 "github.com/stackrox/rox/sensor/kubernetes/selector"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -143,6 +144,70 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies_NoDeployment
 	})
 
 	s.ErrorContains(err, "some-uuid doesn't exist")
+}
+
+func withLabels(deployment *v1.Deployment, labels map[string]string) *v1.Deployment {
+	deployment.Spec.Template.Labels = labels
+	return deployment
+}
+
+func (s *deploymentStoreSuite) Test_FindDeploymentIDsByLabels() {
+	deployments := []*v1.Deployment{
+		withLabels(makeDeploymentObject("d-1", "test-ns", "uuid-1"), map[string]string{}),
+		withLabels(makeDeploymentObject("d-2", "test-ns", "uuid-2"), map[string]string{
+			"app": "nginx",
+		}),
+		withLabels(makeDeploymentObject("d-3", "test-ns", "uuid-3"), map[string]string{
+			"no": "match",
+		}),
+		withLabels(makeDeploymentObject("d-4", "test-ns-no-match", "uuid-4"), map[string]string{
+			"app": "nginx",
+		}),
+	}
+	for _, d := range deployments {
+		s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(d))
+	}
+	cases := map[string]struct {
+		namespace   string
+		labels      map[string]string
+		expectedIDs []string
+	}{
+		"No labels": {
+			namespace:   "test-ns",
+			labels:      nil,
+			expectedIDs: nil,
+		},
+		"Match": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app": "nginx",
+			},
+			expectedIDs: []string{"uuid-2"},
+		},
+		"Labels do not match": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app": "nginx",
+			},
+			expectedIDs: []string{"uuid-2"},
+		},
+		"Namespace do not match": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app": "nginx",
+			},
+			expectedIDs: []string{"uuid-2"},
+		},
+	}
+	for testName, c := range cases {
+		s.Run(testName, func() {
+			ids := s.deploymentStore.FindDeploymentIDsByLabels(c.namespace, selector2.CreateSelector(c.labels))
+			s.Equal(len(c.expectedIDs), len(ids))
+			sort.Strings(ids)
+			sort.Strings(c.expectedIDs)
+			s.Equal(c.expectedIDs, ids)
+		})
+	}
 }
 
 func makeDeploymentObject(name, namespace string, id types.UID) *v1.Deployment {

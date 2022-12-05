@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/rbac"
 	"github.com/stackrox/rox/sensor/common/service"
+	"github.com/stackrox/rox/sensor/kubernetes/selector"
 )
 
 // DeploymentStore provides functionality to fetch all deployments from underlying store.
@@ -12,6 +13,7 @@ type DeploymentStore interface {
 	GetAll() []*storage.Deployment
 	Get(id string) *storage.Deployment
 	FindDeploymentIDsWithServiceAccount(namespace, sa string) []string
+	FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string
 	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, error)
 }
 
@@ -56,6 +58,15 @@ type RBACStore interface {
 
 // Provider is a wrapper for injecting in memory stores as a dependency.
 type Provider interface {
+	Deployments() DeploymentStore
 	Services() ServiceStore
 	RBAC() RBACStore
+	EndpointManager() EndpointManager
+}
+
+// EndpointManager provides functionality to map and store endpoints information
+//go:generate mockgen-wrapper
+type EndpointManager interface {
+	OnDeploymentCreateOrUpdateByID(id string)
+	OnDeploymentRemoveByID(id string)
 }

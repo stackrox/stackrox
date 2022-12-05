@@ -12,7 +12,9 @@ import (
 )
 
 type endpointManager interface {
+	OnDeploymentCreateOrUpdateByID(id string)
 	OnDeploymentCreateOrUpdate(deployment *deploymentWrap)
+	OnDeploymentRemoveByID(id string)
 	OnDeploymentRemove(deployment *deploymentWrap)
 
 	OnServiceCreate(svc *serviceWrap)
@@ -252,11 +254,27 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	m.entityStore.Apply(updates, false)
 }
 
+func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
+	deployment := m.deploymentStore.getWrap(id)
+	if deployment == nil {
+		return
+	}
+	m.OnDeploymentCreateOrUpdate(deployment)
+}
+
 func (m *endpointManagerImpl) OnDeploymentCreateOrUpdate(deployment *deploymentWrap) {
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): m.endpointDataForDeployment(deployment),
 	}
 	m.entityStore.Apply(updates, false)
+}
+
+func (m *endpointManagerImpl) OnDeploymentRemoveByID(id string) {
+	deployment := m.deploymentStore.getWrap(id)
+	if deployment == nil {
+		return
+	}
+	m.OnDeploymentRemove(deployment)
 }
 
 func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {

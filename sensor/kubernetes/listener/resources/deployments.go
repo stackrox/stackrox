@@ -170,36 +170,19 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
-		d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
 	} else {
 		d.deploymentStore.removeDeployment(deploymentWrap)
 		d.podStore.onDeploymentRemove(deploymentWrap)
-		d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		d.processFilter.Delete(deploymentWrap.GetId())
 	}
 
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 
 	if features.ResyncDisabled.Enabled() {
-		if action == central.ResourceAction_REMOVE_RESOURCE {
-			// At the moment we need to also send this deployment to the compatibility module when it's being deleted.
-			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
-			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
-			// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
-			events = component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
-				{
-					Object: deploymentWrap.GetDeployment(),
-					Action: action,
-				},
-			}, nil))
-			// if resource is being removed, we can create the remove message here without related resources
-			events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
-		} else {
-			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
-			// references up the chain, which will be used to trigger the actual deployment event and detection.
-			events = component.MergeResourceEvents(events,
-				component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action))
-		}
+		// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
+		// references up the chain, which will be used to trigger the actual deployment event and detection.
+		events = component.MergeResourceEvents(events,
+			component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action))
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
 		deploymentWrap.updatePortExposureSlice(exposureInfos)
@@ -207,6 +190,9 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
 			// right after deploymentWrap object creation.
 			deploymentWrap.updateServiceAccountPermissionLevel(d.rbac.GetPermissionLevelForDeployment(deploymentWrap.GetDeployment()))
+			d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
+		} else {
+			d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		}
 
 		if err := deploymentWrap.updateHash(); err != nil {

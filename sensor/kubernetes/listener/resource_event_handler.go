@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -71,7 +70,6 @@ func (k *listenerImpl) handleAllEvents() {
 		clusterID,
 		podInformer.Lister(),
 		profileLister,
-		clusterentities.StoreInstance(),
 		processfilter.Singleton(),
 		k.configHandler,
 		orchestratornamespaces.Singleton(),

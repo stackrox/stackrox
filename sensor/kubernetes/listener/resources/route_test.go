@@ -95,6 +95,12 @@ func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {
 func (m *mockEndpointManager) OnNodeUpdateOrRemove() {
 }
 
+func (m *mockEndpointManager) OnDeploymentCreateOrUpdateByID(string) {
+}
+
+func (m *mockEndpointManager) OnDeploymentRemoveByID(string) {
+}
+
 func getSvcWithRoutes(svc *v1.Service, routes ...*routeV1.Route) serviceWithRoutes {
 	return serviceWithRoutes{
 		serviceWrap: wrapService(svc),
