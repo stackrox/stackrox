@@ -17,7 +17,7 @@ jobs:
       (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.54
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.50
     steps:
       - name: Checkout
         uses: actions/checkout@v3
