@@ -89,11 +89,28 @@ message NodeScan {
 }
 
 message NodeInventory {
-    string                         node_id    = 1;
-    string                         node_name  = 2;
+    string                         node_id    = 1  [(gogoproto.moretags) = 'search:"Node Inventory ID"'];
+    string                         node_name  = 2 [(gogoproto.moretags) = 'search:"Node Inventory Name"'];
     google.protobuf.Timestamp      scan_time  = 3;
-    scannerV1.Components           components = 4;
-    repeated scannerV1.Note        notes      = 5;
+
+    // This is a copy of scannerV1.Components.
+    // We have it copied to avoid conflicts when generating the code in central/graphql/resolvers/generated.go
+    message Components {
+        string                                     namespace     = 1;
+        repeated scannerV1.RHELComponent     rhel_components     = 2;
+        // repeated scannerV1.OSComponent       os_components       = 1;
+        // repeated scannerV1.LanguageComponent language_components = 3;
+    }
+    Components           components = 4 [(gogoproto.moretags) = 'sql:"-"'];
+
+    // This is a copy of scannerV1.Note
+    enum Note {
+        OS_CVES_UNAVAILABLE             = 0;
+        OS_CVES_STALE                   = 1;
+        LANGUAGE_CVES_UNAVAILABLE       = 2;
+        CERTIFIED_RHEL_SCAN_UNAVAILABLE = 3;
+    }
+    repeated Note        notes      = 5;
 }
 
 message EmbeddedNodeScanComponent {

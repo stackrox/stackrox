@@ -465,12 +465,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceStandardMetadata_Scope(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ComplianceState(0)))
-	utils.Must(builder.AddType("Components", []string{
-		"languageComponents: [LanguageComponent]!",
-		"namespace: String!",
-		"osComponents: [OSComponent]!",
-		"rhelComponents: [RHELComponent]!",
-	}))
 	utils.Must(builder.AddType("Container", []string{
 		"config: ContainerConfig",
 		"id: ID!",
@@ -740,13 +734,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Image_Note(0)))
-	utils.Must(builder.AddType("JavaComponent", []string{
-		"bundleName: String!",
-		"implementationVersion: String!",
-		"mavenVersion: String!",
-		"origins: [String!]!",
-		"specificationVersion: String!",
-	}))
 	utils.Must(builder.AddType("Jira", []string{
 		"defaultFieldsJson: String!",
 		"issueType: String!",
@@ -798,20 +785,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"key: String!",
 		"op: LabelSelector_Operator!",
 		"values: [String!]!",
-	}))
-	utils.Must(builder.AddType("LanguageComponent", []string{
-		"addedBy: String!",
-		"java: JavaComponent",
-		"location: String!",
-		"name: String!",
-		"python: PythonComponent",
-		"type: Int!",
-		"version: String!",
-		"language: LanguageComponentLanguage",
-	}))
-	utils.Must(builder.AddUnionType("LanguageComponentLanguage", []string{
-		"JavaComponent",
-		"PythonComponent",
 	}))
 	utils.Must(builder.AddType("License", []string{
 		"name: String!",
@@ -943,12 +916,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	utils.Must(builder.AddType("NodeInventory", []string{
-		"components: Components",
 		"nodeId: String!",
 		"nodeName: String!",
-		"notes: [Int!]!",
+		"notes: [NodeInventory_Note!]!",
 		"scanTime: Time",
 	}))
+	utils.Must(builder.AddType("NodeInventory_Components", []string{
+		"namespace: String!",
+		"rhelComponents: [RHELComponent]!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeInventory_Note(0)))
 	utils.Must(builder.AddType("NodeScan", []string{
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
@@ -984,13 +961,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"SumoLogic",
 		"AWSSecurityHub",
 		"Syslog",
-	}))
-	utils.Must(builder.AddType("OSComponent", []string{
-		"addedBy: String!",
-		"executables: [Executable]!",
-		"name: String!",
-		"namespace: String!",
-		"version: String!",
 	}))
 	utils.Must(builder.AddType("OrchestratorMetadata", []string{
 		"apiVersions: [String!]!",
@@ -1151,13 +1121,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"GoogleProviderMetadata",
 		"AWSProviderMetadata",
 		"AzureProviderMetadata",
-	}))
-	utils.Must(builder.AddType("PythonComponent", []string{
-		"authorEmail: String!",
-		"description: String!",
-		"downloadUrl: String!",
-		"homepage: String!",
-		"summary: String!",
 	}))
 	utils.Must(builder.AddType("RHELComponent", []string{
 		"addedBy: String!",
@@ -5968,68 +5931,6 @@ func toComplianceStates(values *[]string) []storage.ComplianceState {
 	return output
 }
 
-type componentsResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *v1.Components
-}
-
-func (resolver *Resolver) wrapComponents(value *v1.Components, ok bool, err error) (*componentsResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &componentsResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComponentses(values []*v1.Components, err error) ([]*componentsResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*componentsResolver, len(values))
-	for i, v := range values {
-		output[i] = &componentsResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapComponentsWithContext(ctx context.Context, value *v1.Components, ok bool, err error) (*componentsResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &componentsResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComponentsesWithContext(ctx context.Context, values []*v1.Components, err error) ([]*componentsResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*componentsResolver, len(values))
-	for i, v := range values {
-		output[i] = &componentsResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *componentsResolver) LanguageComponents(ctx context.Context) ([]*languageComponentResolver, error) {
-	value := resolver.data.GetLanguageComponents()
-	return resolver.root.wrapLanguageComponents(value, nil)
-}
-
-func (resolver *componentsResolver) Namespace(ctx context.Context) string {
-	value := resolver.data.GetNamespace()
-	return value
-}
-
-func (resolver *componentsResolver) OsComponents(ctx context.Context) ([]*oSComponentResolver, error) {
-	value := resolver.data.GetOsComponents()
-	return resolver.root.wrapOSComponents(value, nil)
-}
-
-func (resolver *componentsResolver) RhelComponents(ctx context.Context) ([]*rHELComponentResolver, error) {
-	value := resolver.data.GetRhelComponents()
-	return resolver.root.wrapRHELComponents(value, nil)
-}
-
 type containerResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -7402,17 +7303,17 @@ func (resolver *exclusion_ImageResolver) Name(ctx context.Context) string {
 type executableResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *v1.Executable
+	data *scannerV1.Executable
 }
 
-func (resolver *Resolver) wrapExecutable(value *v1.Executable, ok bool, err error) (*executableResolver, error) {
+func (resolver *Resolver) wrapExecutable(value *scannerV1.Executable, ok bool, err error) (*executableResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &executableResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapExecutables(values []*v1.Executable, err error) ([]*executableResolver, error) {
+func (resolver *Resolver) wrapExecutables(values []*scannerV1.Executable, err error) ([]*executableResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -7423,14 +7324,14 @@ func (resolver *Resolver) wrapExecutables(values []*v1.Executable, err error) ([
 	return output, nil
 }
 
-func (resolver *Resolver) wrapExecutableWithContext(ctx context.Context, value *v1.Executable, ok bool, err error) (*executableResolver, error) {
+func (resolver *Resolver) wrapExecutableWithContext(ctx context.Context, value *scannerV1.Executable, ok bool, err error) (*executableResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &executableResolver{ctx: ctx, root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapExecutablesWithContext(ctx context.Context, values []*v1.Executable, err error) ([]*executableResolver, error) {
+func (resolver *Resolver) wrapExecutablesWithContext(ctx context.Context, values []*scannerV1.Executable, err error) ([]*executableResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -7496,17 +7397,17 @@ func (resolver *Resolver) wrapFalsePositiveRequestsWithContext(ctx context.Conte
 type featureNameVersionResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *v1.FeatureNameVersion
+	data *scannerV1.FeatureNameVersion
 }
 
-func (resolver *Resolver) wrapFeatureNameVersion(value *v1.FeatureNameVersion, ok bool, err error) (*featureNameVersionResolver, error) {
+func (resolver *Resolver) wrapFeatureNameVersion(value *scannerV1.FeatureNameVersion, ok bool, err error) (*featureNameVersionResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &featureNameVersionResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapFeatureNameVersions(values []*v1.FeatureNameVersion, err error) ([]*featureNameVersionResolver, error) {
+func (resolver *Resolver) wrapFeatureNameVersions(values []*scannerV1.FeatureNameVersion, err error) ([]*featureNameVersionResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -7517,14 +7418,14 @@ func (resolver *Resolver) wrapFeatureNameVersions(values []*v1.FeatureNameVersio
 	return output, nil
 }
 
-func (resolver *Resolver) wrapFeatureNameVersionWithContext(ctx context.Context, value *v1.FeatureNameVersion, ok bool, err error) (*featureNameVersionResolver, error) {
+func (resolver *Resolver) wrapFeatureNameVersionWithContext(ctx context.Context, value *scannerV1.FeatureNameVersion, ok bool, err error) (*featureNameVersionResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &featureNameVersionResolver{ctx: ctx, root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapFeatureNameVersionsWithContext(ctx context.Context, values []*v1.FeatureNameVersion, err error) ([]*featureNameVersionResolver, error) {
+func (resolver *Resolver) wrapFeatureNameVersionsWithContext(ctx context.Context, values []*scannerV1.FeatureNameVersion, err error) ([]*featureNameVersionResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -8833,73 +8734,6 @@ func toImage_Notes(values *[]string) []storage.Image_Note {
 	return output
 }
 
-type javaComponentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *v1.JavaComponent
-}
-
-func (resolver *Resolver) wrapJavaComponent(value *v1.JavaComponent, ok bool, err error) (*javaComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &javaComponentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapJavaComponents(values []*v1.JavaComponent, err error) ([]*javaComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*javaComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &javaComponentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapJavaComponentWithContext(ctx context.Context, value *v1.JavaComponent, ok bool, err error) (*javaComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &javaComponentResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapJavaComponentsWithContext(ctx context.Context, values []*v1.JavaComponent, err error) ([]*javaComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*javaComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &javaComponentResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *javaComponentResolver) BundleName(ctx context.Context) string {
-	value := resolver.data.GetBundleName()
-	return value
-}
-
-func (resolver *javaComponentResolver) ImplementationVersion(ctx context.Context) string {
-	value := resolver.data.GetImplementationVersion()
-	return value
-}
-
-func (resolver *javaComponentResolver) MavenVersion(ctx context.Context) string {
-	value := resolver.data.GetMavenVersion()
-	return value
-}
-
-func (resolver *javaComponentResolver) Origins(ctx context.Context) []string {
-	value := resolver.data.GetOrigins()
-	return value
-}
-
-func (resolver *javaComponentResolver) SpecificationVersion(ctx context.Context) string {
-	value := resolver.data.GetSpecificationVersion()
-	return value
-}
-
 type jiraResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -9408,111 +9242,6 @@ func (resolver *labelSelector_RequirementResolver) Op(ctx context.Context) strin
 func (resolver *labelSelector_RequirementResolver) Values(ctx context.Context) []string {
 	value := resolver.data.GetValues()
 	return value
-}
-
-type languageComponentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *v1.LanguageComponent
-}
-
-func (resolver *Resolver) wrapLanguageComponent(value *v1.LanguageComponent, ok bool, err error) (*languageComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &languageComponentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapLanguageComponents(values []*v1.LanguageComponent, err error) ([]*languageComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*languageComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &languageComponentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapLanguageComponentWithContext(ctx context.Context, value *v1.LanguageComponent, ok bool, err error) (*languageComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &languageComponentResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapLanguageComponentsWithContext(ctx context.Context, values []*v1.LanguageComponent, err error) ([]*languageComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*languageComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &languageComponentResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *languageComponentResolver) AddedBy(ctx context.Context) string {
-	value := resolver.data.GetAddedBy()
-	return value
-}
-
-func (resolver *languageComponentResolver) Java(ctx context.Context) (*javaComponentResolver, error) {
-	value := resolver.data.GetJava()
-	return resolver.root.wrapJavaComponent(value, true, nil)
-}
-
-func (resolver *languageComponentResolver) Location(ctx context.Context) string {
-	value := resolver.data.GetLocation()
-	return value
-}
-
-func (resolver *languageComponentResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *languageComponentResolver) Python(ctx context.Context) (*pythonComponentResolver, error) {
-	value := resolver.data.GetPython()
-	return resolver.root.wrapPythonComponent(value, true, nil)
-}
-
-func (resolver *languageComponentResolver) Type(ctx context.Context) int32 {
-	value := resolver.data.GetType()
-	return value
-}
-
-func (resolver *languageComponentResolver) Version(ctx context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
-}
-
-type languageComponentLanguageResolver struct {
-	resolver interface{}
-}
-
-func (resolver *languageComponentResolver) Language() *languageComponentLanguageResolver {
-	if val := resolver.data.GetJava(); val != nil {
-		return &languageComponentLanguageResolver{
-			resolver: &javaComponentResolver{root: resolver.root, data: val},
-		}
-	}
-	if val := resolver.data.GetPython(); val != nil {
-		return &languageComponentLanguageResolver{
-			resolver: &pythonComponentResolver{root: resolver.root, data: val},
-		}
-	}
-	return nil
-}
-
-func (resolver *languageComponentLanguageResolver) ToJavaComponent() (*javaComponentResolver, bool) {
-	res, ok := resolver.resolver.(*javaComponentResolver)
-	return res, ok
-}
-
-func (resolver *languageComponentLanguageResolver) ToPythonComponent() (*pythonComponentResolver, bool) {
-	res, ok := resolver.resolver.(*pythonComponentResolver)
-	return res, ok
 }
 
 type licenseResolver struct {
@@ -10814,11 +10543,6 @@ func (resolver *Resolver) wrapNodeInventoriesWithContext(ctx context.Context, va
 	return output, nil
 }
 
-func (resolver *nodeInventoryResolver) Components(ctx context.Context) (*componentsResolver, error) {
-	value := resolver.data.GetComponents()
-	return resolver.root.wrapComponents(value, true, nil)
-}
-
 func (resolver *nodeInventoryResolver) NodeId(ctx context.Context) string {
 	value := resolver.data.GetNodeId()
 	return value
@@ -10829,14 +10553,84 @@ func (resolver *nodeInventoryResolver) NodeName(ctx context.Context) string {
 	return value
 }
 
-func (resolver *nodeInventoryResolver) Notes(ctx context.Context) []int32 {
+func (resolver *nodeInventoryResolver) Notes(ctx context.Context) []string {
 	value := resolver.data.GetNotes()
-	return value
+	return stringSlice(value)
 }
 
 func (resolver *nodeInventoryResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
+}
+
+type nodeInventory_ComponentsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeInventory_Components
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components(value *storage.NodeInventory_Components, ok bool, err error) (*nodeInventory_ComponentsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_ComponentsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Componentses(values []*storage.NodeInventory_Components, err error) ([]*nodeInventory_ComponentsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_ComponentsResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_ComponentsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_ComponentsWithContext(ctx context.Context, value *storage.NodeInventory_Components, ok bool, err error) (*nodeInventory_ComponentsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_ComponentsResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_ComponentsesWithContext(ctx context.Context, values []*storage.NodeInventory_Components, err error) ([]*nodeInventory_ComponentsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_ComponentsResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_ComponentsResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeInventory_ComponentsResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *nodeInventory_ComponentsResolver) RhelComponents(ctx context.Context) ([]*rHELComponentResolver, error) {
+	value := resolver.data.GetRhelComponents()
+	return resolver.root.wrapRHELComponents(value, nil)
+}
+
+func toNodeInventory_Note(value *string) storage.NodeInventory_Note {
+	if value != nil {
+		return storage.NodeInventory_Note(storage.NodeInventory_Note_value[*value])
+	}
+	return storage.NodeInventory_Note(0)
+}
+
+func toNodeInventory_Notes(values *[]string) []storage.NodeInventory_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeInventory_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeInventory_Note(&v)
+	}
+	return output
 }
 
 type nodeScanResolver struct {
@@ -11145,73 +10939,6 @@ func (resolver *notifierConfigResolver) ToAWSSecurityHub() (*aWSSecurityHubResol
 func (resolver *notifierConfigResolver) ToSyslog() (*syslogResolver, bool) {
 	res, ok := resolver.resolver.(*syslogResolver)
 	return res, ok
-}
-
-type oSComponentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *v1.OSComponent
-}
-
-func (resolver *Resolver) wrapOSComponent(value *v1.OSComponent, ok bool, err error) (*oSComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &oSComponentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapOSComponents(values []*v1.OSComponent, err error) ([]*oSComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*oSComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &oSComponentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapOSComponentWithContext(ctx context.Context, value *v1.OSComponent, ok bool, err error) (*oSComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &oSComponentResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapOSComponentsWithContext(ctx context.Context, values []*v1.OSComponent, err error) ([]*oSComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*oSComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &oSComponentResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *oSComponentResolver) AddedBy(ctx context.Context) string {
-	value := resolver.data.GetAddedBy()
-	return value
-}
-
-func (resolver *oSComponentResolver) Executables(ctx context.Context) ([]*executableResolver, error) {
-	value := resolver.data.GetExecutables()
-	return resolver.root.wrapExecutables(value, nil)
-}
-
-func (resolver *oSComponentResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *oSComponentResolver) Namespace(ctx context.Context) string {
-	value := resolver.data.GetNamespace()
-	return value
-}
-
-func (resolver *oSComponentResolver) Version(ctx context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
 }
 
 type orchestratorMetadataResolver struct {
@@ -12601,87 +12328,20 @@ func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*az
 	return res, ok
 }
 
-type pythonComponentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *v1.PythonComponent
-}
-
-func (resolver *Resolver) wrapPythonComponent(value *v1.PythonComponent, ok bool, err error) (*pythonComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &pythonComponentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapPythonComponents(values []*v1.PythonComponent, err error) ([]*pythonComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*pythonComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &pythonComponentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapPythonComponentWithContext(ctx context.Context, value *v1.PythonComponent, ok bool, err error) (*pythonComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &pythonComponentResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapPythonComponentsWithContext(ctx context.Context, values []*v1.PythonComponent, err error) ([]*pythonComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*pythonComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &pythonComponentResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *pythonComponentResolver) AuthorEmail(ctx context.Context) string {
-	value := resolver.data.GetAuthorEmail()
-	return value
-}
-
-func (resolver *pythonComponentResolver) Description(ctx context.Context) string {
-	value := resolver.data.GetDescription()
-	return value
-}
-
-func (resolver *pythonComponentResolver) DownloadUrl(ctx context.Context) string {
-	value := resolver.data.GetDownloadUrl()
-	return value
-}
-
-func (resolver *pythonComponentResolver) Homepage(ctx context.Context) string {
-	value := resolver.data.GetHomepage()
-	return value
-}
-
-func (resolver *pythonComponentResolver) Summary(ctx context.Context) string {
-	value := resolver.data.GetSummary()
-	return value
-}
-
 type rHELComponentResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *v1.RHELComponent
+	data *scannerV1.RHELComponent
 }
 
-func (resolver *Resolver) wrapRHELComponent(value *v1.RHELComponent, ok bool, err error) (*rHELComponentResolver, error) {
+func (resolver *Resolver) wrapRHELComponent(value *scannerV1.RHELComponent, ok bool, err error) (*rHELComponentResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &rHELComponentResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapRHELComponents(values []*v1.RHELComponent, err error) ([]*rHELComponentResolver, error) {
+func (resolver *Resolver) wrapRHELComponents(values []*scannerV1.RHELComponent, err error) ([]*rHELComponentResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -12692,14 +12352,14 @@ func (resolver *Resolver) wrapRHELComponents(values []*v1.RHELComponent, err err
 	return output, nil
 }
 
-func (resolver *Resolver) wrapRHELComponentWithContext(ctx context.Context, value *v1.RHELComponent, ok bool, err error) (*rHELComponentResolver, error) {
+func (resolver *Resolver) wrapRHELComponentWithContext(ctx context.Context, value *scannerV1.RHELComponent, ok bool, err error) (*rHELComponentResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &rHELComponentResolver{ctx: ctx, root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapRHELComponentsWithContext(ctx context.Context, values []*v1.RHELComponent, err error) ([]*rHELComponentResolver, error) {
+func (resolver *Resolver) wrapRHELComponentsWithContext(ctx context.Context, values []*scannerV1.RHELComponent, err error) ([]*rHELComponentResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
