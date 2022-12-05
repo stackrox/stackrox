@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -51,6 +52,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		lookups       []*v1.Query
 		indicatorsMap = map[string]*storage.ProcessIndicator{}
 	)
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		// PLOP is a Postgres-only feature, do nothing.
+		log.Warnf("Tried to add PLOP not on Postgres, ignore: %+v", portProcesses)
+		return nil
+	}
 
 	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
 		return err
