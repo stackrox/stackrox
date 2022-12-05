@@ -3,7 +3,7 @@ import { useState } from 'react';
 import {
     updateCollection,
     createCollection,
-    CollectionResponse,
+    ResolvedCollectionResponse,
 } from 'services/CollectionsService';
 import { CollectionPageAction } from '../collections.utils';
 import { generateRequest } from '../converter';
@@ -13,10 +13,10 @@ import { Collection } from '../types';
 export function useCollectionFormSubmission(pageAction: CollectionPageAction) {
     const [saveError, setSaveError] = useState<CollectionSaveError | undefined>();
 
-    function onSubmit(collection: Collection): Promise<CollectionResponse> {
+    function onSubmit(collection: Collection): Promise<ResolvedCollectionResponse> {
         setSaveError(undefined);
 
-        return new Promise<CollectionResponse>((resolve, reject) => {
+        return new Promise<ResolvedCollectionResponse>((resolve, reject) => {
             if (pageAction.type === 'view') {
                 // Logically should not happen, but just in case
                 return reject(new Error('A Collection form has been submitted in read-only view'));

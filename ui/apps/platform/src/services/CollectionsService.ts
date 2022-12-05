@@ -79,6 +79,9 @@ export function getCollectionCount(searchFilter: SearchFilter): CancellableReque
 
 export type ResolvedCollectionResponse = {
     collection: CollectionResponse;
+};
+
+export type ResolvedCollectionResponseWithMatches = ResolvedCollectionResponse & {
     deployments: ListDeployment[];
 };
 
@@ -94,11 +97,13 @@ export type ResolvedCollectionResponse = {
 export function getCollection(
     id: string,
     options: { withMatches: boolean } = { withMatches: false }
-): CancellableRequest<ResolvedCollectionResponse> {
+): CancellableRequest<ResolvedCollectionResponseWithMatches> {
     const params = qs.stringify(options);
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<ResolvedCollectionResponse>(`${collectionsBaseUrl}/${id}?${params}`, { signal })
+            .get<ResolvedCollectionResponseWithMatches>(`${collectionsBaseUrl}/${id}?${params}`, {
+                signal,
+            })
             .then((response) => response.data)
     );
 }
@@ -113,10 +118,10 @@ export function getCollection(
  */
 export function createCollection(
     collection: CollectionRequest
-): CancellableRequest<CollectionResponse> {
+): CancellableRequest<ResolvedCollectionResponse> {
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .post<CollectionResponse>(collectionsBaseUrl, collection, { signal })
+            .post<ResolvedCollectionResponse>(collectionsBaseUrl, collection, { signal })
             .then((response) => response.data)
     );
 }
@@ -135,10 +140,12 @@ export function createCollection(
 export function updateCollection(
     id: string,
     collection: CollectionRequest
-): CancellableRequest<CollectionResponse> {
+): CancellableRequest<ResolvedCollectionResponse> {
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .patch<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
+            .patch<ResolvedCollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, {
+                signal,
+            })
             .then((response) => response.data)
     );
 }

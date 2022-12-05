@@ -5,7 +5,7 @@ import {
     CollectionResponse,
     getCollection,
     listCollections,
-    ResolvedCollectionResponse,
+    ResolvedCollectionResponseWithMatches,
 } from 'services/CollectionsService';
 
 const defaultCollectionData: Omit<CollectionResponse, 'id'> = {
@@ -24,7 +24,7 @@ const noopRequest = {
     cancel: () => {},
 };
 
-function getEmbeddedCollections({ collection }: ResolvedCollectionResponse): Promise<{
+function getEmbeddedCollections({ collection }: ResolvedCollectionResponseWithMatches): Promise<{
     collection: CollectionResponse;
     embeddedCollections: CollectionResponse[];
 }> {
