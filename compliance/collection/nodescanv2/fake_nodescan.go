@@ -22,7 +22,7 @@ func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeInventory, error) 
 		NodeId:   "",
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
-		Components: &scannerV1.Components{
+		Components: &storage.NodeInventory_Components{
 			Namespace: "Testme OS",
 			RhelComponents: []*scannerV1.RHELComponent{
 				{
@@ -43,7 +43,6 @@ func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeInventory, error) 
 					AddedBy:   "FakeLayer",
 				},
 			},
-			LanguageComponents: nil,
 		},
 		Notes: nil,
 	}
