@@ -1,4 +1,5 @@
 import groups.BAT
+import groups.COMPATIBILITY
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawSearchRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.SearchCategory
@@ -14,9 +15,7 @@ class AutocompleteTest extends BaseSpecification {
 
     private static final String GROUP_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
 
-// TODO(ROX-13271): Investigate why AutocompleteTests fail with older Sensor versions and maybe fix it
-// Re-Add COMPATIBILITY tag here
-    @Category([BAT])
+    @Category([BAT, COMPATIBILITY])
     def "Verify Autocomplete: #query #category #contains"() {
         when:
         SearchServiceOuterClass.AutocompleteResponse resp = SearchService.autocomplete(
@@ -41,9 +40,7 @@ class AutocompleteTest extends BaseSpecification {
     }
 
     @Unroll
-// TODO(ROX-13271): Investigate why AutocompleteTests fail with older Sensor versions and maybe fix it
-// Re-Add COMPATIBILITY tag here
-    @Category([BAT])
+    @Category([BAT, COMPATIBILITY])
     def "Verify #category search options contains #options"() {
         when:
         def resp = SearchService.options(category)
