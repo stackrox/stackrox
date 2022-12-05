@@ -41,7 +41,7 @@ Options:
   -h - show this help.
 
 E2e flavor:
-  one of qa|e2e|ui|upgrade, defaults to qa
+  one of qa|e2e, defaults to qa
 
 Examples:
 # Configure a cluster to run qa-tests-backend/ tests.
@@ -58,6 +58,8 @@ $script qa
 # Run the full set of 'non groovy' e2e tests. This is similar to what CI runs
 # for *-nongroovy-e2e-tests jobs on a PR.
 $script e2e
+
+For more details see tests/e2e/run-e2e-tests-README.md.
 _EOH_
     exit 1
 }
