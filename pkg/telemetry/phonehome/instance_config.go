@@ -98,3 +98,10 @@ func InstanceConfig() *Config {
 	})
 	return config
 }
+
+func (cfg *Config) GetGroupID() string {
+	if cfg.TenantID == "" {
+		return cfg.CentralID
+	}
+	return cfg.TenantID
+}

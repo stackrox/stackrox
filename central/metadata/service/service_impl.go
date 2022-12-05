@@ -8,7 +8,6 @@ import (
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/telemetry/phonehome"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -55,7 +54,7 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 	if pkgPH.Enabled() {
 		metadata.StorageKeyV1 = env.TelemetryStorageKey.Setting()
 		metadata.TelemetryEndpoint = env.TelemetryEndpoint.Setting()
-		metadata.UserId = phonehome.HashUserID(id)
+		metadata.UserId = pkgPH.HashUserID(id)
 	}
 	// Only return the version to logged in users, not anonymous users.
 	if id != nil {

@@ -20,7 +20,7 @@ func Gather(ctx context.Context) (phonehome.Properties, error) {
 	}
 
 	providerIDNames := make(map[string]string)
-	providerNames := make([]string, len(providers))
+	providerNames := make([]string, 0, len(providers))
 	for _, provider := range providers {
 		providerIDNames[provider.GetId()] = provider.GetName()
 		providerNames = append(providerNames, provider.GetName())

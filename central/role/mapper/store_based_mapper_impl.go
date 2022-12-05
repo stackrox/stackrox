@@ -40,11 +40,7 @@ func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *perm
 	}
 	if phonehome.Enabled() {
 		// Add the user to the tenant group.
-		groupID := phonehome.InstanceConfig().TenantID
-		if groupID == "" {
-			groupID = phonehome.InstanceConfig().CentralID
-		}
-		phonehome.TelemeterSingleton().Group(groupID, user.GetId(), nil)
+		phonehome.TelemeterSingleton().Group(phonehome.InstanceConfig().GetGroupID(), user.GetId(), nil)
 	}
 }
 

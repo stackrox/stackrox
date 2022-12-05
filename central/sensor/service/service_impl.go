@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -125,7 +126,11 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())
-
+	if phonehome.Enabled() {
+		idhash := phonehome.HashUserID(identity)
+		phonehome.TelemeterSingleton().Track("Cluster Connected", idhash, nil)
+		phonehome.TelemeterSingleton().Group(phonehome.InstanceConfig().GetGroupID(), idhash, nil)
+	}
 	return s.manager.HandleConnection(server.Context(), sensorHello, cluster, eventPipeline, server)
 }
 
