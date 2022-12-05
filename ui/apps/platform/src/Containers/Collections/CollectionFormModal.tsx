@@ -102,6 +102,7 @@ function CollectionsFormModal({
                 toggleDrawer={toggleDrawer}
                 // Since the form cannot be submitted, stub this out with an empty promise
                 onSubmit={() => Promise.resolve()}
+                onCancel={onClose}
                 getCollectionTableCells={getCollectionTableCells}
             />
         );
