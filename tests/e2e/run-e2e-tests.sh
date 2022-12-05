@@ -41,7 +41,7 @@ Options:
   -h - show this help.
 
 E2e flavor:
-  one of qa|e2e|upgrade, defaults to qa
+  one of qa|e2e, defaults to qa
 
 Examples:
 # Configure a cluster to run qa-tests-backend/ tests.
@@ -59,8 +59,7 @@ $script qa
 # for *-nongroovy-e2e-tests jobs on a PR.
 $script e2e
 
-# Run the upgrade test.
-$script upgrade
+See tests/e2e/run-e2e-tests-README.md for more details.
 _EOH_
     exit 1
 }
@@ -161,7 +160,7 @@ main() {
 
     flavor="${1:-qa}"
     case "$flavor" in
-        qa|e2e|upgrade)
+        qa|e2e)
             ;;
         *)
             die "flavor $flavor not supported"
@@ -262,9 +261,6 @@ _EOVAULTHELP_
         e2e)
             run_e2e_flavor
             ;;
-        upgrade)
-            run_upgrade_flavor
-            ;;
         *)
             die "flavor $flavor not supported"
             ;;
@@ -300,10 +296,6 @@ run_qa_flavor() {
 
 run_e2e_flavor() {
     "$ROOT/tests/e2e/run.sh" 2>&1 | sed -e 's/^/test output: /'
-}
-
-run_upgrade_flavor() {
-    "$ROOT/tests/upgrade/run.sh" 2>&1 | sed -e 's/^/test output: /'
 }
 
 main "$@"
