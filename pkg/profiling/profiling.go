@@ -2,6 +2,7 @@ package profiling
 
 import (
 	"context"
+	"io/ioutil"
 	"math"
 	"os"
 	"path"
@@ -16,6 +17,41 @@ import (
 var (
 	log = logging.LoggerForModule()
 )
+
+type FIFODir struct {
+	MaxFileCount int
+	DirPath      string
+}
+
+func (fd FIFODir) Create(fileName string) (*os.File, error) {
+	entries, err := ioutil.ReadDir(fd.DirPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "reading directory: %s", fd.DirPath)
+	}
+
+	if len(entries) >= fd.MaxFileCount {
+		var oldestEntryIndex int
+
+		for i, e := range entries {
+			oldestEntryInfo := entries[oldestEntryIndex]
+
+			if e.ModTime().Before(oldestEntryInfo.ModTime()) {
+				oldestEntryIndex = i
+			}
+		}
+
+		rmPath := path.Join(fd.DirPath, entries[oldestEntryIndex].Name())
+		os.Remove(rmPath)
+	}
+
+	filePath := path.Join(fd.DirPath, fileName)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating file: %s", filePath)
+	}
+
+	return file, nil
+}
 
 // HeapProfiler is used to start a ticker that periodically checks if heap memory consumption
 // exceed the ThresholdFraction, if so the heap gets dumped to a File in Directory.
