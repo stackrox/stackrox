@@ -1,5 +1,4 @@
 import React, { ReactElement, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
 import {
     Alert,
     Badge,
@@ -23,7 +22,6 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { collectionsBasePath } from 'routePaths';
 import { CollectionResponse } from 'services/CollectionsService';
 import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
@@ -145,8 +143,6 @@ function CollectionForm({
     onCancel,
     getCollectionTableCells,
 }: CollectionFormProps) {
-    const history = useHistory();
-
     const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
     const { isOpen: isRuleSectionOpen, onToggle: ruleSectionOnToggle } = useSelectToggle(true);
