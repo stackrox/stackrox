@@ -990,7 +990,6 @@ func addDurationToTimestamp(ts *types.Timestamp, duration *types.Duration) *type
 	nanosInSecond := int32(1000 * 1000 * 1000)
 	if nanos >= nanosInSecond {
 		seconds += int64(nanos / nanosInSecond)
-		nanos %= nanosInSecond
 	}
 	return &types.Timestamp{
 		Seconds: seconds,

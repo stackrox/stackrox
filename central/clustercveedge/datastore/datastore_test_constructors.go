@@ -13,6 +13,7 @@ import (
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 )
 
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
 func GetTestRocksBleveDataStore(t *testing.T, _ *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence dackboxConcurrency.KeyFence) (DataStore, error) {
 	storage, err := dackboxStore.New(dacky, keyFence)
 	if err != nil {
