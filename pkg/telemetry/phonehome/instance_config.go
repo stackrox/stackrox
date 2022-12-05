@@ -99,6 +99,7 @@ func InstanceConfig() *Config {
 	return config
 }
 
+// GetGroupID returns central group ID: either tenant or central deployment ID.
 func (cfg *Config) GetGroupID() string {
 	if cfg.TenantID == "" {
 		return cfg.CentralID
