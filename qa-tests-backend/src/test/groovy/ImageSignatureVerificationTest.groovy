@@ -67,11 +67,11 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
 -----END PUBLIC KEY-----""",
     ]
     static final private Map<String, String> SAME_DIGEST_COSIGN_PUBLIC_KEY = [
-            // Manually created cosing public key via `cosign generate-key-pair`.
+            // Source: https://vault.bitwarden.com/#/vault?itemId=95313e19-de46-4533-b160-af620120452a.
             "Docker": """\
 -----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAELjCxSf0Ap7tePs2DsAMmkJPOk1oG
-z+i4WGmVCis0Z9CXITuLu+UQQPdsbSlvyR+ybm6pJFz+nHgakAgqixW70w==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhsRRb4sl0Y4PeVSk9w/eYaWwigXj
+QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 -----END PUBLIC KEY-----""",
     ]
 
@@ -111,7 +111,7 @@ z+i4WGmVCis0Z9CXITuLu+UQQPdsbSlvyR+ybm6pJFz+nHgakAgqixW70w==
     // signature associated with it.
     static final private Deployment SAME_DIGEST_NO_SIGNATURE = new Deployment()
             .setName("same-digest-without-signature")
-            .setImage("docker.io/daha97/nginx:1.23")
+            .setImage("quay.io/rhacs-eng/qa@sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
             .addLabel("app", "image-same-digest-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -119,7 +119,7 @@ z+i4WGmVCis0Z9CXITuLu+UQQPdsbSlvyR+ybm6pJFz+nHgakAgqixW70w==
     // associated with it.
     static final private Deployment SAME_DIGEST_WITH_SIGNATURE = new Deployment()
             .setName("same-digest-with-signature")
-            .setImage("docker.io/daha97/alt-nginx:1.23")
+            .setImage("quay.io/rhacs-eng/qa-signatures@sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
             .addLabel("app", "image-same-digest-with-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
