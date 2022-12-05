@@ -167,11 +167,11 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 		}
 	}
 
-	// forceImageScan will be set to true in case we have an image where a cached value exists for the
+	// forceEnrichImageWithSignatures will be set to true in case we have an image where a cached value exists for the
 	// digest, but the name has not been added to the "Names" field. In this case, we will force a
 	// re-scan of the image, which should only fetch & verify signatures (since we already have a scan
 	// result associated, this should not matter.
-	var forceImageScan bool
+	var forceEnrichImageWithSignatures bool
 
 	img, ok := e.getImageFromCache(key)
 	if ok {
@@ -185,14 +185,14 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 		// We found an image that is already in cache (i.e. with the same digest), but the image name is different.
 		// Ensuring we have a fully enriched image (especially regarding image signatures), we need to make sure to
 		// scan this image once more. This should result in the signatures + signature verification being re-done.
-		forceImageScan = true
+		forceEnrichImageWithSignatures = true
 	}
 
 	newValue := &cacheValue{
 		signal: concurrency.NewSignal(),
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
-	if forceImageScan || newValue == value {
+	if forceEnrichImageWithSignatures || newValue == value {
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
 	}
 	return imageChanResult{

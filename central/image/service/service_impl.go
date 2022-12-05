@@ -222,14 +222,14 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			return nil, err
 		}
 
-		// If the image exists, and the request's image name exists within the images name, we return the image which
-		// includes the scan information (which includes signature data).
+		// If the image exists and the image name from the request matches at least one stored image name(/reference),
+		// then we returned the stored image.
 		// Otherwise, we run the enrichment pipeline using the existing image with the requests image being added to it.
 		if exists {
 			if protoutils.SliceContains(request.GetImage().GetName(), existingImg.GetNames()) {
 				return internalScanRespFromImage(existingImg), nil
 			}
-			existingImg.Names = append(existingImg.GetNames(), request.GetImage().GetName())
+			existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
 			img = existingImg
 			// We only want to force re-fetching of signatures and verification data, the additional image name has no
 			// impact on image scan data.
