@@ -48,26 +48,26 @@ func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certifica
 }
 
 // ConnectNames returns the endpoint and (SNI) server name given by the
-// --endpoint and --server-name flags respectively. If no server name is given,
-// an appropriate name is derived from the given endpoint.
-func ConnectNames() (string, string, error) {
-	endpoint, _, err := flags.EndpointAndPlaintextSetting()
+// --endpoint and --server-name flags respectively and information about plaintext.
+// If no server name is given, an appropriate name is derived from the given endpoint.
+func ConnectNames() (string, string, bool, error) {
+	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
 	if err != nil {
-		return "", "", errors.Wrap(err, "could not get endpoint")
+		return "", "", false, errors.Wrap(err, "could not get endpoint")
 	}
 	serverName := flags.ServerName()
 	if serverName == "" {
 		var err error
 		serverName, _, _, err = netutil.ParseEndpoint(endpoint)
 		if err != nil {
-			return "", "", errors.Wrap(err, "could not parse endpoint")
+			return "", "", false, errors.Wrap(err, "could not parse endpoint")
 		}
 	}
-	return endpoint, serverName, nil
+	return endpoint, serverName, usePlaintext, nil
 }
 
 func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions, error) {
-	_, serverName, err := ConnectNames()
+	_, serverName, _, err := ConnectNames()
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing central endpoint")
 	}
