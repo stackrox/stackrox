@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"sync"
@@ -12,10 +13,10 @@ import (
 	"time"
 )
 
-func TestFIFODir(t *testing.T) {
+func Test_fifoDir(t *testing.T) {
 	dir := t.TempDir()
 	maxFileCount := 3
-	fs := FIFODir{DirPath: dir, MaxFileCount: maxFileCount}
+	fs := fifoDir{dirPath: dir, maxFileCount: maxFileCount}
 
 	// This should be bigger than maxFileCount to test FIFO deletion is done properly
 	numFilesToCreate := 10
@@ -40,7 +41,7 @@ func TestFIFODir(t *testing.T) {
 	for _, f := range actualFiles {
 		parts := strings.Split(f.Name(), ".")
 		if len(parts) < 1 {
-			t.Fatal("TODO: appropriate error message")
+			t.Fatal("expected filename to have index prefix seperated by '.'")
 		}
 
 		if fmt.Sprintf("%d", expectedIndex) != parts[0] {
@@ -71,7 +72,7 @@ func TestHeapDump(t *testing.T) {
 	cancelCtx()
 	wg.Wait()
 
-	expectedFilePath := dumpFilePath(now, tmpDir)
+	expectedFilePath := path.Join(tmpDir, heapdumpSubfolderName, fmt.Sprintf("%s.dump", now.Format("20060102T15-04-05")))
 	if _, err := os.Stat(expectedFilePath); err != nil {
 		t.Fatalf("expected heap dump file: %s not found", expectedFilePath)
 	}
