@@ -14,6 +14,7 @@ import {
     visitIntegrationsTable,
 } from '../../helpers/integrations';
 import sampleCert from '../../helpers/sampleCert';
+import { hasFeatureFlag } from '../../helpers/features';
 
 // Page address segments are the source of truth for integrationSource and integrationType.
 const integrationSource = 'notifiers';
@@ -588,6 +589,11 @@ describe('Notifier Integrations', () => {
 
             // Step 3, check valid form and save
             getInputByLabel('Receiver port').clear().type('1').blur();
+            if (hasFeatureFlag('ROX_SYSLOG_EXTRA_FIELDS')) {
+                cy.get('button:contains("Add new extra field")').click();
+                getInputByLabel('Key').type('vehicle');
+                getInputByLabel('Value').type('vanagon').blur();
+            }
 
             testIntegrationInFormWithoutStoredCredentials(
                 integrationSource,

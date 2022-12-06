@@ -166,7 +166,8 @@ export type SyslogNotifierIntegration = {
 export type Syslog = SyslogTCP;
 
 export type SyslogBase = {
-    localFacility: SyslogLocalFacility;
+    localFacility?: SyslogLocalFacility;
+    extraFields: KeyValuePair[];
 };
 
 export type SyslogLocalFacility =
