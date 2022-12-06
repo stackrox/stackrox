@@ -26,7 +26,7 @@ import {
 import { CidrBlockIcon, ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import EntityNameSearchInput from '../common/EntityNameSearchInput';
 
-type CidrBlockSideBarProps = {
+type ExternalGroupSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
     edges: EdgeModel[];
@@ -39,12 +39,12 @@ const columnNames = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ExternalToClusterSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactElement {
+function ExternalGroupSideBar({ id, nodes, edges }: ExternalGroupSideBarProps): ReactElement {
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
 
     // derived data
-    const externalToClusterNode = getNodeById(nodes, id) as ExternalNodeModel;
+    const externalGroupNode = getNodeById(nodes, id) as ExternalNodeModel;
     const externalNodes = nodes.filter(
         (node) => node.data.type === 'CIDR_BLOCK' || node.data.type === 'EXTERNAL_ENTITIES'
     ) as (ExternalEntitiesNodeModel | CIDRBlockNodeModel)[];
@@ -55,13 +55,13 @@ function ExternalToClusterSideBar({ id, nodes, edges }: CidrBlockSideBarProps): 
                 <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                                {externalToClusterNode?.label}
+                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
+                                {externalGroupNode?.label}
                             </Text>
                         </TextContent>
                         <TextContent>
                             <Text
-                                component={TextVariants.h2}
+                                component={TextVariants.h3}
                                 className="pf-u-font-size-sm pf-u-color-200"
                             >
                                 Connected entities outside your cluster
@@ -143,4 +143,4 @@ function ExternalToClusterSideBar({ id, nodes, edges }: CidrBlockSideBarProps): 
     );
 }
 
-export default ExternalToClusterSideBar;
+export default ExternalGroupSideBar;

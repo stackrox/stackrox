@@ -22,7 +22,7 @@ import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import CidrBlockSideBar from './cidr/CidrBlockSideBar';
 import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar';
-import ExternalToClusterSideBar from './external/ExternalToClusterSideBar';
+import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import { EdgeState } from './EdgeStateSelect';
 
 import './Topology.css';
@@ -195,7 +195,7 @@ const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
                         />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL' && (
-                        <ExternalToClusterSideBar
+                        <ExternalGroupSideBar
                             id={selectedEntity.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}

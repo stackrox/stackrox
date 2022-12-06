@@ -20,7 +20,3 @@ export function CidrBlockIcon() {
 export function ExternalEntitiesIcon() {
     return <Badge style={{ backgroundColor: 'rgb(0,0,0)' }}>E</Badge>;
 }
-
-export function ExternalEntitiesIcon() {
-    return <Badge style={{ backgroundColor: 'rgb(0,0,0)' }}>E</Badge>;
-}
