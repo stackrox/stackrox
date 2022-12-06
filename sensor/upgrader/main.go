@@ -35,7 +35,7 @@ func mainCmd() error {
 		return err
 	}
 
-	clientconn.SetUserAgent("upgrader")
+	clientconn.SetUserAgent(clientconn.Upgrader)
 
 	upgradeCtx, err := upgradectx.Create(context.Background(), upgraderCfg)
 	if err != nil {
