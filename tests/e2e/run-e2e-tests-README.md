@@ -9,7 +9,7 @@ making changes to test code and verifying them is minimal.
 ## The Tested Image Version
 
 By default this test runner emulates CI and relies on the output of `make tag`
-to determin which images are deployed via `deploy/` scripts. When local changes
+to determine which images are deployed via `deploy/` scripts. When local changes
 are made this tag goes `-dirty` and that suffix is dropped to facilitate local
 changes to tests without the need to build and push `-dirty` images. In order to
 satisfy the tight coupling between the `deploy/` scripts and roxctl version, a
