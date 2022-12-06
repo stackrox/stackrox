@@ -81,7 +81,7 @@ export type CollectionFormProps = {
     onSubmit: (collection: ClientCollection) => Promise<void>;
     onCancel: () => void;
     saveError?: CollectionSaveError | undefined;
-    clearSaveError?: () => void;
+    setSaveError?: (saveError: CollectionSaveError | undefined) => void;
     /* Table cells to render for each collection in the CollectionAttacher component */
     getCollectionTableCells: (
         collectionErrorId: string | undefined
@@ -150,7 +150,7 @@ function CollectionForm({
     initialData,
     initialEmbeddedCollections,
     saveError,
-    clearSaveError = () => {},
+    setSaveError = () => {},
     onFormChange,
     onSubmit,
     onCancel,
@@ -182,19 +182,8 @@ function CollectionForm({
     });
 
     useEffect(() => {
-        if (saveError) {
-            return;
-        }
-        // We need to manually validate the values onChange here since Formik update the values
-        // before validation and the declarative state has `isValid === true` and `isValidation == false`
-        // at the same time that the actual value object is invalid.
-        validationSchema
-            .validate(values)
-            .then(() => onFormChange(values))
-            .catch(() => {
-                /* Validation failed, do not propagate change */
-            });
-    }, [values, saveError, onFormChange]);
+        onFormChange(values);
+    }, [onFormChange, values]);
 
     // Synchronize the value of "name" in the form field when the page action changes
     // e.g. from 'view' -> 'clone'
@@ -211,6 +200,8 @@ function CollectionForm({
         });
     }, [action.type, initialData.name, setFieldValue]);
 
+    const clearSaveError = () => setSaveError(undefined);
+
     const errors = {
         ...formikErrors,
     };
@@ -219,6 +210,17 @@ function CollectionForm({
     if (saveError?.type === 'DuplicateName') {
         errors.name = saveError.message;
     }
+
+    if (saveError?.type === 'EmptyName') {
+        errors.name = saveError.message;
+    }
+
+    // We only want to display the error in the name field if one of the following is true:
+    //   1. The user has focused and blurred the name field, and the value is invalid
+    //   2. A request has been sent to the server that resulted in an error, and the name is invalid
+    // This prevents an error from being shown as soon as the user loads the creation form, before
+    // a name value has been entered.
+    const nameError = (touched.name || saveError) && errors.name;
 
     const collectionTableCells = getCollectionTableCells(
         saveError?.type === 'CollectionLoop' ? saveError.loopId : undefined
@@ -263,16 +265,19 @@ function CollectionForm({
                                 label="Name"
                                 fieldId="name"
                                 isRequired={!isReadOnly}
-                                helperTextInvalid={errors.name}
-                                validated={errors.name && touched.name ? 'error' : 'default'}
+                                helperTextInvalid={nameError}
+                                validated={nameError ? 'error' : 'default'}
                             >
                                 <TextInput
                                     id="name"
                                     name="name"
                                     value={values.name}
-                                    validated={errors.name && touched.name ? 'error' : 'default'}
+                                    validated={nameError ? 'error' : 'default'}
                                     onChange={(_, e) => {
-                                        if (saveError?.type === 'DuplicateName') {
+                                        if (
+                                            saveError?.type === 'DuplicateName' ||
+                                            saveError?.type === 'EmptyName'
+                                        ) {
                                             clearSaveError();
                                         }
                                         handleChange(e);
@@ -444,7 +449,7 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting}
+                        isDisabled={isSubmitting || !!saveError}
                         isLoading={isSubmitting}
                     >
                         Save

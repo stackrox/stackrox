@@ -211,7 +211,7 @@ function CollectionsFormPage({
                     history.push({ pathname: `${collectionsBasePath}` });
                 }}
                 saveError={saveError}
-                clearSaveError={() => setSaveError(undefined)}
+                setSaveError={setSaveError}
                 getCollectionTableCells={getCollectionTableCells}
                 headerContent={
                     <>

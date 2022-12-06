@@ -28,11 +28,12 @@ export default function useDryRunConfiguration(
                 dryRunConfig.resourceSelectors,
                 nextConfig.resourceSelectors
             );
-            if (isEmbeddedCollectionsChanged || isResourceSelectorChanged) {
+            const isNameChange = dryRunConfig.name !== nextConfig.name;
+            if (isEmbeddedCollectionsChanged || isResourceSelectorChanged || isNameChange) {
                 setDryRunConfig(nextConfig);
             }
         },
-        [dryRunConfig.embeddedCollectionIds, dryRunConfig.resourceSelectors, id]
+        [dryRunConfig.embeddedCollectionIds, dryRunConfig.name, dryRunConfig.resourceSelectors, id]
     );
 
     return {
