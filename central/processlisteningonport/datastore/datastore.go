@@ -32,8 +32,8 @@ type DataStore interface {
 }
 
 // New creates a data store object to access the database. Since some
-// operations require join with ProcessIndicator table, both PLOP and
-// ProcessIndicator stores are needed.
+// operations require join with ProcessIndicator table, both PLOP store and
+// ProcessIndicator datastore are needed.
 func New(
 	plopStorage postgres.Store,
 	indicatorDataStore processIndicatorStore.DataStore,
