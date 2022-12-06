@@ -16,18 +16,27 @@ import { ListIcon } from '@patternfly/react-icons';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 
-import { dryRunCollection } from 'services/CollectionsService';
+import { dryRunCollection, CollectionRequest } from 'services/CollectionsService';
 import { ListDeployment } from 'types/deployment.proto';
+import { SelectorEntityType } from './types';
 
-function CollectionResults({ dryRunConfig }) {
+export type CollectionResultsProps = {
+    dryRunConfig: CollectionRequest;
+};
+
+function CollectionResults({ dryRunConfig }: CollectionResultsProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
-    const [selected, setSelected] = useState('Deployment');
-    const [filterText, setFilterText] = useState('');
-    const [isEndOfResults, setIsEndOfResults] = useState(false);
+    const [selected, setSelected] = useState<SelectorEntityType>('Deployment');
+    const [filterText, setFilterText] = useState<string>('');
+    const [isEndOfResults, setIsEndOfResults] = useState<boolean>(false);
     const [deployments, setDeployments] = useState<ListDeployment[]>([]);
-    const [hasRuleSelected, setHasRuleSelected] = useState(false);
 
-    function onRuleOptionSelect(_, value) {
+    const currentPage: number = Math.floor((deployments.length - 1) / 10);
+    const selectorRulesExist =
+        dryRunConfig.resourceSelectors?.[0]?.rules?.length > 0 ||
+        dryRunConfig.embeddedCollectionIds.length > 0;
+
+    function onRuleOptionSelect(_, value): void {
         setSelected(value);
         setFilterText('');
         closeSelect();
@@ -36,13 +45,12 @@ function CollectionResults({ dryRunConfig }) {
     const fetchDryRun = useCallback(
         (page: number) => {
             const pageSize = 10;
-            const query = filterText ? `${selected}:${filterText}` : '';
+            const query = { [selected]: filterText };
             const { request } = dryRunCollection(dryRunConfig, query, page, pageSize);
             request
                 .then((results) => {
                     setIsEndOfResults(results.length < 10);
                     setDeployments((current) => (page === 0 ? results : [...current, ...results]));
-                    setHasRuleSelected(true);
                 })
                 .catch(() => {
                     // TODO: indicate results not loading properly?
@@ -52,12 +60,10 @@ function CollectionResults({ dryRunConfig }) {
     );
 
     useEffect(() => {
-        if (dryRunConfig.resourceSelectors?.[0]?.rules?.length > 0) {
+        if (selectorRulesExist) {
             fetchDryRun(0);
-        } else {
-            setHasRuleSelected(false);
         }
-    }, [dryRunConfig, fetchDryRun]);
+    }, [dryRunConfig, fetchDryRun, selectorRulesExist]);
 
     const onSearchInputChange = useMemo(
         () =>
@@ -67,12 +73,10 @@ function CollectionResults({ dryRunConfig }) {
         []
     );
 
-    const currentPage = Math.floor((deployments.length - 1) / 10);
-
     return (
         <>
             <Divider />
-            {!hasRuleSelected ? (
+            {!selectorRulesExist ? (
                 <EmptyState variant={EmptyStateVariant.xs}>
                     <EmptyStateIcon icon={ListIcon} />
                     <p>
@@ -87,7 +91,7 @@ function CollectionResults({ dryRunConfig }) {
                 >
                     <FlexItem>
                         <Select
-                            toggleAriaLabel="Select by name or label"
+                            toggleAriaLabel="Select an entity type to filter the results by"
                             isOpen={isOpen}
                             onToggle={onToggle}
                             selections={selected}
@@ -112,7 +116,7 @@ function CollectionResults({ dryRunConfig }) {
                         grow={{ default: 'grow' }}
                         className="pf-u-mt-lg"
                     >
-                        {deployments.map((deployment) => {
+                        {deployments.map((deployment: ListDeployment) => {
                             return (
                                 <Flex key={deployment.id}>
                                     <FlexItem>

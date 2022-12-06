@@ -189,22 +189,21 @@ export type CollectionDryRunResponse = {
  */
 export function dryRunCollection(
     collectionRequest: CollectionRequest,
-    searchFilter: string,
+    searchFilter: SearchFilter,
     page: number,
-    pageSize: number
+    pageSize: number,
+    sortOption?: ApiSortOption
 ): CancellableRequest<ListDeployment[]> {
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
     const dryRunRequest: CollectionDryRunRequest = {
         ...collectionRequest,
         options: {
             filterQuery: {
-                query: searchFilter,
+                query,
                 pagination: {
                     offset: page * pageSize,
                     limit: pageSize,
-                    sortOption: {
-                        field: '',
-                        reversed: false,
-                    },
+                    ...(sortOption && { sortOption }),
                 },
             },
             withMatches: true,

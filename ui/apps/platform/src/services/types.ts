@@ -3,7 +3,7 @@ import { ApiSortOption } from 'types/search';
 export type Pagination = {
     offset: number;
     limit: number;
-    sortOption: ApiSortOption;
+    sortOption?: ApiSortOption;
 };
 
 export type FilterQuery = {
