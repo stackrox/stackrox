@@ -44,11 +44,8 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) (res []search.R
 }
 
 // Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (count int, err error) {
-	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
-		count, err = ds.searcher.Count(inner, q)
-	})
-	return count, err
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.searcher.Count(ctx, q)
 }
 
 // SearchRawClusterCVEEdges retrieves cves from the indexer and storage
@@ -56,11 +53,8 @@ func (ds *searcherImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*sto
 	return ds.searchClusterCVEEdges(ctx, q)
 }
 
-func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
-	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
-		res, err = ds.searcher.Search(inner, q)
-	})
-	return res, err
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return ds.searcher.Search(ctx, q)
 }
 
 // ToClusterCVEEdges returns the cves from the db for the given search results.

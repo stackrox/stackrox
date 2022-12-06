@@ -577,6 +577,9 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestGetBatch() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestCount() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("Count panics in non-postgres mode")
+	}
 	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -630,6 +633,9 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestSearch() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestSearchEdges() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("SearchEdges panics in non-postgres mode")
+	}
 	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
