@@ -184,6 +184,7 @@ function DeploymentBaselines() {
                         setExpandedRows={setExpandedRows}
                         selectedRows={selectedRows}
                         setSelectedRows={setSelectedRows}
+                        isEditable
                     />
                 </StackItem>
                 <Divider component="hr" />

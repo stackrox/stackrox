@@ -162,7 +162,11 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
                         />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_ENTITIES' && (
-                        <ExternalEntitiesSideBar />
+                        <ExternalEntitiesSideBar
+                            id={selectedEntity.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
                     )}
                 </TopologySideBar>
             }

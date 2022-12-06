@@ -158,6 +158,7 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
                             setExpandedRows={setExpandedRows}
                             selectedRows={selectedRows}
                             setSelectedRows={setSelectedRows}
+                            isEditable
                         />
                     </StackItem>
                 </Stack>
