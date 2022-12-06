@@ -65,6 +65,13 @@ type CommonConfig struct {
 	ScannerDBImage string
 }
 
+// TelemetryConfig contains config to set up the transimission of telemtry and diagnostic data.
+type TelemetryConfig struct {
+	Enabled         bool
+	StorageEndpoint string
+	StorageKey      string
+}
+
 // PersistenceType describes the type of persistence
 type PersistenceType string
 
@@ -85,6 +92,8 @@ func (m PersistenceType) String() string {
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
+
+	Telemetry TelemetryConfig
 
 	// ImageFlavorName is the name of the flavor selected by the user with CLI parameters
 	ImageFlavorName string
@@ -110,8 +119,6 @@ type K8sConfig struct {
 	Command string
 
 	OfflineMode bool
-
-	EnableTelemetry bool
 
 	// IstioVersion is the version of Istio to render for (if any)
 	IstioVersion string
