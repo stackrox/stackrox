@@ -32,11 +32,14 @@ stackrox-test container, against the cluster defined in the calling
 environment.
 
 Options:
-  -c - configure the cluster for test but do not run any tests. [qa flavor only]
-  -d - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. [qa flavor only]
-  -t - override 'make tag' which sets the main version to install and is used by 
-       some tests.
-  -o - choose the cluster orchestrator. Either k8s or openshift. defaults to k8s.
+  -c, --config-only - configure the cluster for test but do not run
+    any tests. [qa flavor only]
+  -d, --gather-debug - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. 
+    [qa flavor only]
+  -t - override 'make tag' which sets the main version to install and
+    is used by some tests.
+  -o, --orchestrator - choose the cluster orchestrator. Either k8s or
+    openshift. defaults to k8s.
   -y - run without prompts.
   -h - show this help.
 
@@ -45,7 +48,7 @@ E2e flavor:
 
 Examples:
 # Configure a cluster to run qa-tests-backend/ tests.
-$script -c qa
+$script --config-only qa
 
 # Run a single qa-tests-backend/ test case (expects a previously configured
 # cluster).
@@ -64,21 +67,8 @@ _EOH_
     exit 1
 }
 
-option_set=":cdhyo:t:"
-
 handle_tag_requirements() {
-    while getopts "$option_set" option; do
-        case "$option" in
-            t)
-                export TAG_OVERRIDE="${OPTARG}"
-                ;;
-            h)
-                usage
-                ;;
-            *)
-                ;;
-        esac
-    done
+    get_initial_options "$@"
 
     tag="$(make tag)"
 
@@ -105,6 +95,22 @@ _EOMISSING_
     fi
 }
 
+get_initial_options() {
+    # rely on getopts in the calling env to support mac & linux desktops
+    while getopts ":ht:" option; do
+        case "$option" in
+            t)
+                export TAG_OVERRIDE="${OPTARG}"
+                ;;
+            h)
+                usage
+                ;;
+            *)
+                ;;
+        esac
+    done
+}
+
 if [[ ! -f "/i-am-rox-ci-image" ]]; then
     handle_tag_requirements "$@"
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
@@ -129,45 +135,69 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
     exit 0
 fi
 
-main() {
-    config_only="false"
-    orchestrator="k8s"
-    prompt="true"
+get_options() {
+    # in stackrox-test container getopt supports long options
+    normalized_opts=$(\
+      getopt \
+        -o cdo:t:y \
+        --long config-only,gather-debug,orchestrator: \
+        -n 'run-e2e-tests.sh' -- "$@")
 
-    while getopts "$option_set" option; do
-        case "$option" in
-            c)
-                config_only="true"
+    eval set -- "$normalized_opts"
+
+    export CONFIG_ONLY="false"
+    export ORCHESTRATOR="k8s"
+    export PROMPT="true"
+
+    while true; do
+        case "$1" in
+            -c | --config-only)
+                export CONFIG_ONLY="true"
+                shift
                 ;;
-            d)
+            -d | --gather-debug)
                 export GATHER_QA_TEST_DEBUG_LOGS="true"
+                shift
                 ;;
-            o)
-                orchestrator="${OPTARG}"
+            -o | --orchestrator)
+                export ORCHESTRATOR="$2"
+                shift 2
                 ;;
-            t)
+            -t)
                 # handled in the calling context
+                shift 2
                 ;;
-            y)
-                prompt="false"
+            -y)
+                export PROMPT="false"
+                shift
                 ;;
-            *)
-                usage
+            --)
+                shift
+                break
                 ;;
+            # *)
+            #     usage
+            #     ;;
         esac
     done
-    shift $((OPTIND-1))
 
-    flavor="${1:-qa}"
-    case "$flavor" in
+    export FLAVOR="${1:-qa}"
+    case "$FLAVOR" in
         qa|e2e)
             ;;
         *)
-            die "flavor $flavor not supported"
+            die "flavor $FLAVOR not supported"
             ;;
     esac
 
-    case "$orchestrator" in
+    export SUITE="${2:-}"
+    export CASE="${3:-}"
+}
+
+main() {
+    get_options "$@"
+
+    case "$ORCHESTRATOR" in
         k8s|openshift)
             ;;
         *)
@@ -175,12 +205,9 @@ main() {
             ;;
     esac
 
-    suite="${2:-}"
-    case="${3:-}"
-
     cd "$ROOT"
 
-    if [[ "$flavor" == "e2e" ]]; then
+    if [[ "$FLAVOR" == "e2e" ]]; then
         if [[ -n "${suite}" || -n "${case}" ]]; then
             die "ERROR: Suite and Case are not supported with e2e flavor"
         fi
@@ -221,9 +248,9 @@ _EOVAULTHELP_
     context="$(kubectl config current-context)"
     echo "This script will tear down resources, install ACS and dependencies and run tests against '$context'."
 
-    if [[ "$prompt" == "true" ]]; then
+    if [[ "$PROMPT" == "true" ]]; then
         read -p "Are you sure? " -r
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [[ ! $REPLY =~ ^[Yy]e?s?$ ]]; then
             echo "Quit."
             exit 1
         fi
@@ -249,12 +276,12 @@ _EOVAULTHELP_
 
     info "Running the test."
 
-    export ORCHESTRATOR_FLAVOR="$orchestrator"
+    export ORCHESTRATOR_FLAVOR="$ORCHESTRATOR"
 
     # required to get a running central
     export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
 
-    case "$flavor" in
+    case "$FLAVOR" in
         qa)
             run_qa_flavor
             ;;
@@ -262,17 +289,17 @@ _EOVAULTHELP_
             run_e2e_flavor
             ;;
         *)
-            die "flavor $flavor not supported"
+            die "flavor $FLAVOR not supported"
             ;;
     esac
 }
 
 run_qa_flavor() {
-    if [[ -z "$suite" && -z "$case" ]]; then
+    if [[ -z "$SUITE" && -z "$CASE" ]]; then
         source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
         (
             config_part_1
-            if [[ "${config_only}" == "false" ]]; then
+            if [[ "${CONFIG_ONLY}" == "false" ]]; then
                 test_part_1
             fi
         ) 2>&1 | sed -e 's/^/test output: /'
@@ -285,10 +312,10 @@ run_qa_flavor() {
         get_central_basic_auth_creds
 
         pushd qa-tests-backend
-        if [[ -z "$case" ]]; then
-            ./gradlew test --console=plain --tests="$suite"
+        if [[ -z "$CASE" ]]; then
+            ./gradlew test --console=plain --tests="$SUITE"
         else
-            ./gradlew test --console=plain --tests="$suite.$case"
+            ./gradlew test --console=plain --tests="$SUITE.$CASE"
         fi
         popd
     fi
