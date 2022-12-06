@@ -33,6 +33,12 @@ const stylesComponentFactory: ComponentFactory = (kind: ModelKind, type: string)
                 // @ts-ignore
                 withSelection()(StyleGroup)
             );
+        case 'fakeGroup':
+            return withDragNode(nodeDragSourceSpec('node', true, true))(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                withSelection()(StyleNode)
+            );
         case 'edge':
             return StyleEdge;
         default:

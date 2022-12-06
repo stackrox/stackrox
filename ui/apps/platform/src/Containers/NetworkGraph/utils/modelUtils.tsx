@@ -289,13 +289,13 @@ export function getExtraneousNodes(): {
 } {
     const extraneousEgressNode: ExtraneousNodeModel = {
         id: 'extraneous-egress',
-        type: 'node',
+        type: 'fakeGroup',
         width: 75,
         height: 75,
         label: 'Egress flows',
-        group: true,
         // TODO: figure out how to fake group node
-        children: [],
+        // group: true,
+        // children: [],
         data: {
             collapsible: false,
             showContextMenu: false,
@@ -304,13 +304,13 @@ export function getExtraneousNodes(): {
     };
     const extraneousIngressNode: ExtraneousNodeModel = {
         id: 'extraneous-ingress',
-        type: 'node',
+        type: 'fakeGroup',
         width: 75,
         height: 75,
         label: 'Ingress flows',
-        group: true,
         // TODO: figure out how to fake group node
-        children: [],
+        // group: true,
+        // children: [],
         data: {
             collapsible: false,
             showContextMenu: false,

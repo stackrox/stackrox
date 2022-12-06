@@ -92,7 +92,6 @@ function setEdges(controller, detailId) {
 }
 
 function setExtraneousNode(controller, detailId) {
-    console.log('setExtraneousNode');
     if (!detailId) {
         // if there is no selected node, check if extraneous nodes exist and clear them
         const extraneousIngressNode = controller.getNodeById('extraneous-ingress');
@@ -109,7 +108,6 @@ function setExtraneousNode(controller, detailId) {
         // else if there is a selected node, create a node to collect extraneous flows
         const selectedNode = controller.getNodeById(detailId);
         const { networkPolicyState } = selectedNode?.data || {};
-        console.log('setExtraneousNode selectedNode', selectedNode);
         if (networkPolicyState === 'ingress') {
             // if the node has ingress policies from policy graph, create extraneous egress node
             currentModel.nodes.push(extraneousEgressNode);
