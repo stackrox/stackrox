@@ -1,11 +1,12 @@
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
+
 import {
     assertIntegrationsTable,
     clickIntegrationTileOnDashboard,
     visitIntegrationsDashboard,
     visitIntegrationsDashboardFromLeftNav,
-} from '../../helpers/integrations';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
+} from './integrations.helpers';
 
 describe('Integrations Dashboard', () => {
     withAuth();

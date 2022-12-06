@@ -1,10 +1,12 @@
-import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
+import sampleCert from '../../helpers/sampleCert';
+
 import {
     clickCreateNewIntegrationInTable,
     deleteIntegrationInTable,
@@ -12,9 +14,8 @@ import {
     testIntegrationInFormWithoutStoredCredentials,
     testIntegrationInFormWithStoredCredentials,
     visitIntegrationsTable,
-} from '../../helpers/integrations';
-import sampleCert from '../../helpers/sampleCert';
-import { hasFeatureFlag } from '../../helpers/features';
+} from './integrations.helpers';
+import { selectors } from './integrations.selectors';
 
 // Page address segments are the source of truth for integrationSource and integrationType.
 const integrationSource = 'notifiers';
