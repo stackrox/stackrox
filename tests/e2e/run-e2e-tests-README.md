@@ -26,7 +26,7 @@ There are a number of required steps to get access to vault:
 1. Log in to the secrets collection manager at
 https://selfservice.vault.ci.openshift.org/secretcollection?ui=true (This is a
 Red Hat-ism and will require SSO)
-2. Ask a team member to add you to the collections required for this test:
+2. Ask in #epic-ci-improvement to be added to the collections required for this test:
 stackrox-stackrox-initial and stackrox-stackrox-e2e-tests.
 3. Login to the vault at: https://vault.ci.openshift.org/ui/vault/secrets (Use
 *OIDC*) You should see these secret collections under kv/
