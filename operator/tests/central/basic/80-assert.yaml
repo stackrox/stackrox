@@ -1,10 +1,16 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: stackrox-db
+  name: central
 spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
+  template:
+    spec:
+      containers:
+        - name: central
+          env:
+            - name: ROX_TELEMETRY_ENDPOINT
+              value: https://telemetry.endpoint
+            - name: ROX_TELEMETRY_STORAGE_KEY_V1
+              value: my-api-key
+status:
+  availableReplicas: 1

@@ -69,7 +69,7 @@ type Egress struct {
 }
 
 // ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.
-//+kubebuilder:validation:Enum=Online;Offline
+// +kubebuilder:validation:Enum=Online;Offline
 type ConnectivityPolicy string
 
 const (
@@ -119,6 +119,11 @@ type CentralComponentSpec struct {
 	// Settings for Central DB, which is responsible for data persistence.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings (Technology Preview)"
 	DB *CentralDBSpec `json:"db,omitempty"`
+
+	// Configures telemetry settings for Central. If enabled, Central transmits telemetry and diagnostic
+	// data to a remote storage backend.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Central telemetry settings"
+	Telemetry *Telemetry `json:"telemetry,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
@@ -189,7 +194,7 @@ type CentralDBSpec struct {
 }
 
 // CentralDBEnabled is a type for values of spec.central.db.enabled.
-//+kubebuilder:validation:Enum=Default;Enabled
+// +kubebuilder:validation:Enum=Default;Enabled
 type CentralDBEnabled string
 
 const (
@@ -410,6 +415,27 @@ type ExposureRoute struct {
 	Host *string `json:"host,omitempty"`
 }
 
+// Telemetry defines telemetry settings for Central.
+type Telemetry struct {
+	//+kubebuilder:validation:Default=false
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Enabled *bool `json:"enabled,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Storage *TelemetryStorage `json:"storage,omitempty"`
+}
+
+// TelemetryStorage defines the telemetry storage backend for Central.
+type TelemetryStorage struct {
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Endpoint *string `json:"endpoint,omitempty"`
+
+	// Required for telemetry transmission. If not set, telemetry is disabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Key *string `json:"key,omitempty"`
+}
+
 // Note the following struct should mostly match LocalScannerComponentSpec for the SecuredCluster type. Different Scanner
 // types struct are maintained because of UI exposed documentation differences.
 
@@ -455,7 +481,7 @@ func (s *ScannerComponentSpec) IsEnabled() bool {
 }
 
 // ScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
-//+kubebuilder:validation:Enum=Enabled;Disabled
+// +kubebuilder:validation:Enum=Enabled;Disabled
 type ScannerComponentPolicy string
 
 const (

@@ -33,8 +33,11 @@ func TestTranslate(t *testing.T) {
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
 	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
 	monitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
+	telemetryEndpoint := "endpoint"
+	telemetryKey := "key"
 
 	truth := true
+	falsity := false
 	lbPort := int32(12345)
 	lbIP := "1.1.1.1"
 	nodePortPort := int32(23456)
@@ -129,6 +132,13 @@ func TestTranslate(t *testing.T) {
 								},
 								Route: &platform.ExposureRoute{
 									Enabled: &truth,
+								},
+							},
+							Telemetry: &platform.Telemetry{
+								Enabled: &truth,
+								Storage: &platform.TelemetryStorage{
+									Endpoint: &telemetryEndpoint,
+									Key:      &telemetryKey,
 								},
 							},
 						},
@@ -278,6 +288,13 @@ func TestTranslate(t *testing.T) {
 						"requests": map[string]interface{}{
 							"cpu":    "30",
 							"memory": "40",
+						},
+					},
+					"telemetry": map[string]interface{}{
+						"enabled": true,
+						"storage": map[string]interface{}{
+							"endpoint": "endpoint",
+							"key":      "key",
 						},
 					},
 				},
@@ -483,6 +500,27 @@ func TestTranslate(t *testing.T) {
 				},
 				"env": map[string]interface{}{
 					"managedServices": true,
+				},
+			},
+		},
+
+		"disabled telemetry": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Telemetry: &platform.Telemetry{
+								Enabled: &falsity,
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"telemetry": map[string]interface{}{"enabled": false},
 				},
 			},
 		},
