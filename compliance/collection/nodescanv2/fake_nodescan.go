@@ -19,7 +19,6 @@ type FakeNodeScanner struct {
 func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	log.Infof("Generating fake scan result message...")
 	msg := &storage.NodeInventory{
-		NodeId:   "",
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
 		Components: &storage.NodeInventory_Components{

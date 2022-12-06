@@ -917,7 +917,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NodeInventory", []string{
 		"components: NodeInventory_Components",
-		"nodeId: String!",
 		"nodeName: String!",
 		"notes: [Note!]!",
 		"scanTime: Time",
@@ -10547,11 +10546,6 @@ func (resolver *Resolver) wrapNodeInventoriesWithContext(ctx context.Context, va
 func (resolver *nodeInventoryResolver) Components(ctx context.Context) (*nodeInventory_ComponentsResolver, error) {
 	value := resolver.data.GetComponents()
 	return resolver.root.wrapNodeInventory_Components(value, true, nil)
-}
-
-func (resolver *nodeInventoryResolver) NodeId(ctx context.Context) string {
-	value := resolver.data.GetNodeId()
-	return value
 }
 
 func (resolver *nodeInventoryResolver) NodeName(ctx context.Context) string {

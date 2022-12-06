@@ -735,9 +735,6 @@
     "storageNodeInventory": {
       "type": "object",
       "properties": {
-        "nodeId": {
-          "type": "string"
-        },
         "nodeName": {
           "type": "string"
         },

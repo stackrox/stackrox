@@ -89,9 +89,8 @@ message NodeScan {
 }
 
 message NodeInventory {
-    string                         node_id    = 1;
-    string                         node_name  = 2;
-    google.protobuf.Timestamp      scan_time  = 3;
+    string                         node_name  = 1;
+    google.protobuf.Timestamp      scan_time  = 2;
 
     // This represents subset of scannerV1.Components required for RHCOS Node scanning
     // We have it copied and disabled fields to avoid conflicts when generating the code in central/graphql/resolvers/generated.go
@@ -99,8 +98,8 @@ message NodeInventory {
         string                                     namespace     = 1;
         repeated scannerV1.RHELComponent     rhel_components     = 2;
     }
-    Components                     components = 4 [(gogoproto.moretags) = 'sql:"-"'];
-    repeated scannerV1.Note        notes      = 5;
+    Components                     components = 3 [(gogoproto.moretags) = 'sql:"-"'];
+    repeated scannerV1.Note        notes      = 4;
 }
 
 message EmbeddedNodeScanComponent {

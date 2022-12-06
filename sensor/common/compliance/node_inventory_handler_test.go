@@ -43,7 +43,6 @@ func TestNodeInventoryHandler(t *testing.T) {
 
 func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 	msg := &storage.NodeInventory{
-		NodeId:   "",
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
 		Components: &storage.NodeInventory_Components{
