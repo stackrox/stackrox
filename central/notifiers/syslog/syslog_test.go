@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers/syslog/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
@@ -31,6 +32,7 @@ func (s *SyslogNotifierTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.mockSender = mocks.NewMocksyslogSender(s.mockCtrl)
+	s.T().Setenv(features.RoxSyslogExtraFields.EnvVar(), "true")
 }
 
 func (s *SyslogNotifierTestSuite) TearDownTest() {
@@ -58,6 +60,24 @@ func makeNotifier() *storage.Notifier {
 						Hostname: "hostname",
 					},
 				},
+			},
+		},
+	}
+}
+
+func makeNotifierExtrafields(keyVals []*storage.KeyValuePair) *storage.Notifier {
+	return &storage.Notifier{
+		Id:   "testID",
+		Name: "testName",
+		Type: "syslog",
+		Config: &storage.Notifier_Syslog{
+			Syslog: &storage.Syslog{
+				Endpoint: &storage.Syslog_TcpConfig{
+					TcpConfig: &storage.Syslog_TCPConfig{
+						Hostname: "hostname",
+					},
+				},
+				ExtraFields: keyVals,
 			},
 		},
 	}
@@ -102,6 +122,91 @@ func (s *SyslogNotifierTestSuite) TestCEFExtensionFromPairs() {
 	extensionPairs := []string{extensionPair1, extensionPair2}
 	extension := makeExtensionFromPairs(extensionPairs)
 	s.Equal(fmt.Sprintf("%s %s", extensionPair1, extensionPair2), extension)
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateSyslogEmptyExtrafields() {
+	if !features.RoxSyslogExtraFields.Enabled() {
+		s.T().Skip("Skip syslog extra fields tests")
+		s.T().SkipNow()
+	}
+
+	keyVals := []*storage.KeyValuePair{{Key: "", Value: ""}}
+
+	notifier := makeNotifierExtrafields(keyVals)
+	sys := notifier.GetSyslog()
+	e := validateSyslog(sys)
+	s.ErrorContains(e, "all extra fields must have both a key and a value")
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFieldsEmptyList() {
+	if !features.RoxSyslogExtraFields.Enabled() {
+		s.T().Skip("Skip syslog extra fields tests")
+		s.T().SkipNow()
+	}
+
+	keyVals := []*storage.KeyValuePair{}
+	notifier := makeNotifierExtrafields(keyVals)
+
+	sys := notifier.GetSyslog()
+	e := validateSyslog(sys)
+	s.NoError(e)
+
+	testAlert := fixtures.GetAlert()
+	a := alertToCEF(testAlert, notifier)
+	s.NotEmpty(a)
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFields() {
+	if !features.RoxSyslogExtraFields.Enabled() {
+		s.T().Skip("Skip syslog extra fields tests")
+		s.T().SkipNow()
+	}
+
+	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	notifier := makeNotifierExtrafields(keyVals)
+	sys := notifier.GetSyslog()
+	e := validateSyslog(sys)
+	s.NoError(e)
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateAlerttoCef() {
+	if !features.RoxSyslogExtraFields.Enabled() {
+		s.T().Skip("Skip syslog extra fields tests")
+		s.T().SkipNow()
+	}
+
+	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	notifier := makeNotifierExtrafields(keyVals)
+	testAlert := fixtures.GetAlert()
+	a := alertToCEF(testAlert, notifier)
+	s.Contains(a, "foo=bar")
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateExtraFieldsAuditLog() {
+	if !features.RoxSyslogExtraFields.Enabled() {
+		s.T().Skip("Skip syslog extra fields tests")
+		s.T().SkipNow()
+	}
+
+	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	notifier := makeNotifierExtrafields(keyVals)
+	testAuditMessage := &v1.Audit_Message{
+		Time: types.TimestampNow(),
+		User: &storage.UserInfo{
+			Username:     "Joseph",
+			FriendlyName: "Rules",
+			Permissions:  nil,
+			Roles:        nil,
+		},
+		Request: &v1.Audit_Message_Request{
+			Endpoint: "asg",
+			Method:   "jtyr",
+			Payload:  nil,
+		},
+	}
+
+	m := auditLogToCEF(testAuditMessage, notifier)
+	s.Contains(m, "foo=bar")
 }
 
 func (s *SyslogNotifierTestSuite) TestSendAuditLog() {
