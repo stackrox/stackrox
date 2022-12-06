@@ -144,28 +144,35 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	// Since we are using the datastore and not the store we need to create a ranker and use it to populate the
+	// risk score so the results are ordered correctly.
+	deploymentRanker := ranking.NewRanker()
+	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker)
 	s.Require().NoError(err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	deploymentNameOneOff := fixtures.GetDeployment()
+	deploymentRanker.Add(deploymentNameOneOff.GetId(), 50)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentNameOneOff))
 
 	deploymentName1 := fixtures.GetDeployment()
 	deploymentName1.Id = fixtureconsts.Deployment2
 	deploymentName1.Name = "name1"
+	deploymentRanker.Add(fixtureconsts.Deployment2, 25)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1))
 
 	deploymentName1Duplicate := fixtures.GetDeployment()
 	deploymentName1Duplicate.Id = fixtureconsts.Deployment3
 	deploymentName1Duplicate.Name = "name1"
+	deploymentRanker.Add(fixtureconsts.Deployment3, 25)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1Duplicate))
 
 	deploymentName2 := fixtures.GetDeployment()
 	deploymentName2.Id = fixtureconsts.Deployment4
 	deploymentName2.Name = "name12"
 	deploymentName2.Labels = map[string]string{"hello": "hi", "hey": "ho"}
+	deploymentRanker.Add(fixtureconsts.Deployment4, 100)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName2))
 
 	finishedIndexing := concurrency.NewSignal()
@@ -211,7 +218,6 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		{
 			query:           fmt.Sprintf("%s:", search.DeploymentName),
 			expectedResults: []string{"name12", "nginx_server", "name1"},
-			ignoreOrder:     true,
 		},
 		{
 			query:           fmt.Sprintf("%s:name12,", search.DeploymentName),
