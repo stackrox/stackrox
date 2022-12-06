@@ -20,3 +20,9 @@ export function isNonEmptyArray<T>(arr: T[]): arr is [T, ...T[]] {
  * all property value types of a given object.
  */
 export type ValueOf<T extends Record<string | number | symbol, unknown>> = T[keyof T];
+
+/**
+ * Overrides properties with type intersection
+ *
+ */
+export type Override<T1, T2> = Omit<T1, keyof T2> & T2;

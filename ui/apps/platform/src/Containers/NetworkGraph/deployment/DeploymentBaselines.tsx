@@ -16,7 +16,7 @@ import {
 import { HelpIcon } from '@patternfly/react-icons';
 
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types';
+import { Flow } from '../types/flow.type';
 import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 
 import AdvancedFlowsFilter, {
