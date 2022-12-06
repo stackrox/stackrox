@@ -51,19 +51,7 @@ export function transformData(nodes: Node[]): CustomModel {
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
-    const externalNode: ExternalNodeModel = {
-        id: 'External to cluster',
-        type: 'group',
-        children: [],
-        group: true,
-        label: 'External to cluster',
-        style: { padding: 15 },
-        data: {
-            type: 'EXTERNAL',
-            collapsible: true,
-            showContextMenu: false,
-        },
-    };
+    let externalNode: ExternalNodeModel | null = null;
 
     nodes.forEach(({ entity, policyIds, outEdges }) => {
         // creating each node and adding to data model
@@ -104,6 +92,21 @@ export function transformData(nodes: Node[]): CustomModel {
 
         // to group external entities and cidr blocks to external grouping
         if (entity.type === 'EXTERNAL_SOURCE' || entity.type === 'INTERNET') {
+            if (!externalNode) {
+                externalNode = {
+                    id: 'External to cluster',
+                    type: 'group',
+                    children: [],
+                    group: true,
+                    label: 'External to cluster',
+                    style: { padding: 15 },
+                    data: {
+                        type: 'EXTERNAL',
+                        collapsible: true,
+                        showContextMenu: false,
+                    },
+                };
+            }
             if (externalNode && externalNode?.children) {
                 externalNode.children.push(entity.id);
             }
@@ -122,8 +125,13 @@ export function transformData(nodes: Node[]): CustomModel {
         });
     });
 
-    // add group nodes to data model
-    dataModel.nodes.push(...Object.values(namespaceNodes), externalNode);
+    // add namespace nodes to data model
+    dataModel.nodes.push(...Object.values(namespaceNodes));
+
+    // add external group node to data model
+    if (externalNode) {
+        dataModel.nodes.push(externalNode);
+    }
 
     return dataModel;
 }
