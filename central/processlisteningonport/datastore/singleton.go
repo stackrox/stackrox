@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -14,9 +14,9 @@ var (
 )
 
 func initialize() {
-	plopStorage := postgres.New(globaldb.GetPostgres())
-	indicatorStorage := processIndicatorStore.Singleton()
-	store = New(plopStorage, indicatorStorage)
+	plopStore := postgres.New(globaldb.GetPostgres())
+	indicatorDataStore := processIndicatorDataStore.Singleton()
+	store = New(plopStore, indicatorDataStore)
 }
 
 // Singleton provides the interface for non-service external interaction.
