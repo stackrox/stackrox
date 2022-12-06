@@ -97,7 +97,7 @@ func (PermissionLevel) EnumDescriptor() ([]byte, []int) {
 }
 
 // Properties of an individual k8s Role or ClusterRole.
-//////////////////////////////////////////
+// ////////////////////////////////////////
 type K8SRole struct {
 	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Role ID,hidden" sql:"pk,type(uuid)"`
 	Name                 string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Role"`
@@ -250,7 +250,7 @@ func (m *K8SRole) Clone() *K8SRole {
 }
 
 // Properties of an individual rules that grant permissions to resources.
-//////////////////////////////////////////
+// ////////////////////////////////////////
 type PolicyRule struct {
 	Verbs                []string `protobuf:"bytes,1,rep,name=verbs,proto3" json:"verbs,omitempty"`
 	ApiGroups            []string `protobuf:"bytes,2,rep,name=api_groups,json=apiGroups,proto3" json:"api_groups,omitempty"`
@@ -364,7 +364,7 @@ func (m *PolicyRule) Clone() *PolicyRule {
 }
 
 // Properties of an individual k8s RoleBinding or ClusterRoleBinding.
-//////////////////////////////////////////
+// ////////////////////////////////////////
 type K8SRoleBinding struct {
 	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Role Binding ID,hidden" sql:"pk,type(uuid)"`
 	Name                 string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Role Binding"`
@@ -525,7 +525,7 @@ func (m *K8SRoleBinding) Clone() *K8SRoleBinding {
 }
 
 // Properties of an individual subjects who are granted roles via role bindings.
-//////////////////////////////////////////
+// ////////////////////////////////////////
 type Subject struct {
 	Id                   string      `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`
 	Kind                 SubjectKind `protobuf:"varint,1,opt,name=kind,proto3,enum=storage.SubjectKind" json:"kind,omitempty" search:"Subject Kind"`

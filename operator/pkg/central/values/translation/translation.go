@@ -197,6 +197,8 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		cv.AddChild("db", getCentralDBComponentValues(c.DB))
 	}
 
+	cv.AddChild("telemetry", getTelemetryValues(c.Telemetry))
+
 	return &cv
 }
 
@@ -228,6 +230,24 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
 	cv.AddChild("persistence", getCentralDBPersistenceValues(c.GetPersistence()))
+	return &cv
+}
+
+func getTelemetryValues(t *platform.Telemetry) *translation.ValuesBuilder {
+	cv := translation.NewValuesBuilder()
+	if t == nil {
+		return &cv
+	}
+
+	if t.Enabled != nil {
+		cv.SetBoolValue("enabled", *t.Enabled)
+	}
+	storage := translation.NewValuesBuilder()
+	if t.Storage != nil {
+		storage.SetString("endpoint", t.Storage.Endpoint)
+		storage.SetString("key", t.Storage.Key)
+		cv.AddChild("storage", &storage)
+	}
 	return &cv
 }
 

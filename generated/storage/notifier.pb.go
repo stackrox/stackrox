@@ -951,6 +951,7 @@ type Splunk struct {
 	Truncate            int64  `protobuf:"varint,4,opt,name=truncate,proto3" json:"truncate,omitempty"`
 	AuditLoggingEnabled bool   `protobuf:"varint,5,opt,name=audit_logging_enabled,json=auditLoggingEnabled,proto3" json:"audit_logging_enabled,omitempty"`
 	// Types that are valid to be assigned to DerivedSourceTypeDeprecated:
+	//
 	//	*Splunk_DerivedSourceType
 	DerivedSourceTypeDeprecated isSplunk_DerivedSourceTypeDeprecated `protobuf_oneof:"derived_source_type_deprecated"`
 	SourceTypes                 map[string]string                    `protobuf:"bytes,7,rep,name=source_types,json=sourceTypes,proto3" json:"source_types,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
@@ -1363,6 +1364,7 @@ type Syslog struct {
 	// Eventually this will support TCP, UDP, and local endpoints
 	//
 	// Types that are valid to be assigned to Endpoint:
+	//
 	//	*Syslog_TcpConfig
 	Endpoint             isSyslog_Endpoint `protobuf_oneof:"endpoint"`
 	ExtraFields          []*KeyValuePair   `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`

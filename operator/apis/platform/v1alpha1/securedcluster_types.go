@@ -137,7 +137,7 @@ type AdmissionControlComponentSpec struct {
 }
 
 // ImageScanPolicy defines whether images should be scanned at admission control time.
-//+kubebuilder:validation:Enum=ScanIfMissing;DoNotScanInline
+// +kubebuilder:validation:Enum=ScanIfMissing;DoNotScanInline
 type ImageScanPolicy string
 
 const (
@@ -153,7 +153,7 @@ func (p ImageScanPolicy) Pointer() *ImageScanPolicy {
 }
 
 // BypassPolicy defines whether admission controller can be bypassed.
-//+kubebuilder:validation:Enum=BreakGlassAnnotation;Disabled
+// +kubebuilder:validation:Enum=BreakGlassAnnotation;Disabled
 type BypassPolicy string
 
 const (
@@ -191,7 +191,7 @@ type PerNodeSpec struct {
 }
 
 // CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
-//+kubebuilder:validation:Enum=EBPF;KernelModule;NoCollection
+// +kubebuilder:validation:Enum=EBPF;KernelModule;NoCollection
 type CollectionMethod string
 
 const (
@@ -220,7 +220,7 @@ type AuditLogsSpec struct {
 }
 
 // AuditLogsCollectionSetting determines if audit log collection is enabled.
-//+kubebuilder:validation:Enum=Auto;Disabled;Enabled
+// +kubebuilder:validation:Enum=Auto;Disabled;Enabled
 type AuditLogsCollectionSetting string
 
 const (
@@ -239,7 +239,7 @@ func (s AuditLogsCollectionSetting) Pointer() *AuditLogsCollectionSetting {
 }
 
 // TaintTolerationPolicy is a type for values of spec.collector.taintToleration
-//+kubebuilder:validation:Enum=TolerateTaints;AvoidTaints
+// +kubebuilder:validation:Enum=TolerateTaints;AvoidTaints
 type TaintTolerationPolicy string
 
 const (
@@ -286,7 +286,7 @@ type ContainerSpec struct {
 }
 
 // CollectorImageFlavor is a type for values of spec.collector.collector.imageFlavor
-//+kubebuilder:validation:Enum=Regular;Slim
+// +kubebuilder:validation:Enum=Regular;Slim
 type CollectorImageFlavor string
 
 const (
@@ -323,7 +323,7 @@ type LocalScannerComponentSpec struct {
 }
 
 // LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
-//+kubebuilder:validation:Enum=AutoSense;Disabled
+// +kubebuilder:validation:Enum=AutoSense;Disabled
 type LocalScannerComponentPolicy string
 
 const (
