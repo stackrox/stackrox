@@ -54,7 +54,7 @@ A single suite:
 run-e2e-tests.sh -d qa DeploymentTest
 ```
 
-`-d`? Collects debug for failing tests under `/tmp/qa-tests-backend-logs/`
+The `-d` option collects debug for failing tests under `/tmp/qa-tests-backend-logs/`
 similar to how CI tests operate.
 
 Test everything (_actually just BAT_)
