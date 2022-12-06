@@ -55,7 +55,6 @@ func (m *orchestratorIstioCVEManagerImpl) initialize() {
 	log.Infof("successfully copied preloaded CVE Istio files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir))
 
 	m.orchestratorCVEMgr.initialize()
-	m.istioCVEMgr.initialize()
 }
 
 // Fetch (works only in online mode) fetches new CVEs and reconciles them
@@ -96,15 +95,7 @@ func (m *orchestratorIstioCVEManagerImpl) Update(zipPath string, forceUpdate boo
 
 // GetAffectedClusters returns the affected clusters for a CVE
 func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(ctx context.Context, cveID string, ct utils.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
-	if ct == utils.K8s || ct == utils.OpenShift {
-		clusters, err := m.orchestratorCVEMgr.getAffectedClusters(ctx, cveID, ct)
-		if err != nil {
-			return nil, err
-		}
-		return clusters, nil
-	}
-	cve := m.istioCVEMgr.getNVDCVE(cveID)
-	clusters, err := cveMatcher.GetAffectedClusters(ctx, cve)
+	clusters, err := m.orchestratorCVEMgr.getAffectedClusters(ctx, cveID, ct)
 	if err != nil {
 		return nil, err
 	}
@@ -118,16 +109,10 @@ func (m *orchestratorIstioCVEManagerImpl) reconcile() {
 func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOnlineMode(forceUpdate bool) {
 	log.Infof("Start to reconcile all CVEs online")
 	m.reconcile()
-	if err := m.istioCVEMgr.reconcileOnlineModeCVEs(forceUpdate); err != nil {
-		log.Errorf("reconcile failed for istio CVEs with error %v", err)
-	}
 }
 
 func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOfflineMode(zipPath string, forceUpdate bool) {
 	m.reconcile()
-	if err := m.istioCVEMgr.reconcileOfflineModeCVEs(zipPath, forceUpdate); err != nil {
-		log.Errorf("reconcile failed for istio CVEs with error %v", err)
-	}
 }
 
 func extractK8sIstioCVEsInScannerBundleZip(zipPath string) (string, error) {

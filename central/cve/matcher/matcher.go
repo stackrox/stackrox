@@ -127,15 +127,10 @@ func (m *CVEMatcher) IsClusterAffectedByK8sCVE(_ context.Context, cluster *stora
 
 // IsClusterAffectedByIstioCVE returns true if cluster is affected by istio cve
 func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *storage.Cluster, cve *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
-	ok, err := m.isIstioControlPlaneRunning(ctx)
-	if err != nil {
-		return false, err
-	}
-	if !ok {
+	versions, err := m.GetValidIstioVersions(ctx, cluster)
+	if len(versions) == 0 {
 		return false, nil
 	}
-
-	versions, err := m.getAllIstioComponentsVersionsInCluster(ctx, cluster)
 	if err != nil {
 		return false, err
 	}
@@ -152,6 +147,24 @@ func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *s
 		}
 	}
 	return false, nil
+}
+
+// GetValidIstioVersions returns all running Istio versions in the given cluster, if there are any, and nil otherwise
+func (m *CVEMatcher) GetValidIstioVersions(ctx context.Context, cluster *storage.Cluster) (set.StringSet, error) {
+	ok, err := m.isIstioControlPlaneRunning(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+
+	versions, err := m.getAllIstioComponentsVersionsInCluster(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	return versions, nil
 }
 
 func (m *CVEMatcher) isIstioControlPlaneRunning(ctx context.Context) (bool, error) {
