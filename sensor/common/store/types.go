@@ -11,6 +11,7 @@ import (
 type DeploymentStore interface {
 	GetAll() []*storage.Deployment
 	Get(id string) *storage.Deployment
+	FindDeploymentsWithServiceAccount(namespace, sa string) []string
 	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, error)
 }
 

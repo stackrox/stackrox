@@ -127,6 +127,19 @@ func (ds *DeploymentStore) GetAll() []*storage.Deployment {
 	return ret
 }
 
+func (ds *DeploymentStore) FindDeploymentsWithServiceAccount(namespace, sa string) []string {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	var match []string
+	for id, wrap := range ds.deployments {
+		if wrap.GetServiceAccount() == sa && wrap.GetNamespace() == namespace {
+			match = append(match, id)
+		}
+	}
+	return match
+}
+
 func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
