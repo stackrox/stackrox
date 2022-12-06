@@ -39,7 +39,6 @@ var (
 			reflect.TypeOf((*storage.MitreAttackVector)(nil)),
 			reflect.TypeOf((*storage.NetworkFlow)(nil)),
 			reflect.TypeOf((*storage.Node)(nil)),
-			reflect.TypeOf((*storage.NodeInventory)(nil)),
 			reflect.TypeOf((*storage.NodeComponent)(nil)),
 			reflect.TypeOf((*storage.NodeCVE)(nil)),
 			reflect.TypeOf((*storage.Notifier)(nil)),
@@ -86,7 +85,7 @@ var (
 				FieldName:  "Components",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.NodeInventory{}),
+				ParentType: reflect.TypeOf(storage.Node{}),
 				FieldName:  "Components",
 			},
 			{

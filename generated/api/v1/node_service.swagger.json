@@ -195,6 +195,16 @@
         }
       }
     },
+    "scannerV1Note": {
+      "type": "string",
+      "enum": [
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "OS_CVES_UNAVAILABLE"
+    },
     "scannerV1RHELComponent": {
       "type": "object",
       "properties": {
@@ -741,7 +751,7 @@
         "notes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/storageNodeInventoryNote"
+            "$ref": "#/definitions/scannerV1Note"
           }
         }
       }
@@ -759,18 +769,7 @@
           }
         }
       },
-      "title": "This is a copy of scannerV1.Components.\nWe have it copied to avoid conflicts when generating the code in central/graphql/resolvers/generated.go"
-    },
-    "storageNodeInventoryNote": {
-      "type": "string",
-      "enum": [
-        "OS_CVES_UNAVAILABLE",
-        "OS_CVES_STALE",
-        "LANGUAGE_CVES_UNAVAILABLE",
-        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
-      ],
-      "default": "OS_CVES_UNAVAILABLE",
-      "title": "This is a copy of scannerV1.Note"
+      "title": "This represents subset of scannerV1.Components required for RHCOS Node scanning\nWe have it copied and disabled fields to avoid conflicts when generating the code in central/graphql/resolvers/generated.go"
     },
     "storageNodeNote": {
       "type": "string",

@@ -93,24 +93,14 @@ message NodeInventory {
     string                         node_name  = 2;
     google.protobuf.Timestamp      scan_time  = 3;
 
-    // This is a copy of scannerV1.Components.
-    // We have it copied to avoid conflicts when generating the code in central/graphql/resolvers/generated.go
+    // This represents subset of scannerV1.Components required for RHCOS Node scanning
+    // We have it copied and disabled fields to avoid conflicts when generating the code in central/graphql/resolvers/generated.go
     message Components {
         string                                     namespace     = 1;
         repeated scannerV1.RHELComponent     rhel_components     = 2;
-        // repeated scannerV1.OSComponent       os_components       = 1;
-        // repeated scannerV1.LanguageComponent language_components = 3;
     }
-    Components           components = 4 [(gogoproto.moretags) = 'sql:"-"'];
-
-    // This is a copy of scannerV1.Note
-    enum Note {
-        OS_CVES_UNAVAILABLE             = 0;
-        OS_CVES_STALE                   = 1;
-        LANGUAGE_CVES_UNAVAILABLE       = 2;
-        CERTIFIED_RHEL_SCAN_UNAVAILABLE = 3;
-    }
-    repeated Note        notes      = 5;
+    Components                     components = 4 [(gogoproto.moretags) = 'sql:"-"'];
+    repeated scannerV1.Note        notes      = 5;
 }
 
 message EmbeddedNodeScanComponent {

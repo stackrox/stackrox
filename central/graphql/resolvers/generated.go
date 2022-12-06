@@ -916,16 +916,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	utils.Must(builder.AddType("NodeInventory", []string{
+		"components: NodeInventory_Components",
 		"nodeId: String!",
 		"nodeName: String!",
-		"notes: [NodeInventory_Note!]!",
+		"notes: [Note!]!",
 		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("NodeInventory_Components", []string{
 		"namespace: String!",
 		"rhelComponents: [RHELComponent]!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeInventory_Note(0)))
 	utils.Must(builder.AddType("NodeScan", []string{
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
@@ -933,6 +933,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(scannerV1.Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
 		"cscc: CSCC",
@@ -10543,6 +10544,11 @@ func (resolver *Resolver) wrapNodeInventoriesWithContext(ctx context.Context, va
 	return output, nil
 }
 
+func (resolver *nodeInventoryResolver) Components(ctx context.Context) (*nodeInventory_ComponentsResolver, error) {
+	value := resolver.data.GetComponents()
+	return resolver.root.wrapNodeInventory_Components(value, true, nil)
+}
+
 func (resolver *nodeInventoryResolver) NodeId(ctx context.Context) string {
 	value := resolver.data.GetNodeId()
 	return value
@@ -10613,24 +10619,6 @@ func (resolver *nodeInventory_ComponentsResolver) Namespace(ctx context.Context)
 func (resolver *nodeInventory_ComponentsResolver) RhelComponents(ctx context.Context) ([]*rHELComponentResolver, error) {
 	value := resolver.data.GetRhelComponents()
 	return resolver.root.wrapRHELComponents(value, nil)
-}
-
-func toNodeInventory_Note(value *string) storage.NodeInventory_Note {
-	if value != nil {
-		return storage.NodeInventory_Note(storage.NodeInventory_Note_value[*value])
-	}
-	return storage.NodeInventory_Note(0)
-}
-
-func toNodeInventory_Notes(values *[]string) []storage.NodeInventory_Note {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.NodeInventory_Note, len(*values))
-	for i, v := range *values {
-		output[i] = toNodeInventory_Note(&v)
-	}
-	return output
 }
 
 type nodeScanResolver struct {
@@ -10722,6 +10710,24 @@ func toNode_Notes(values *[]string) []storage.Node_Note {
 	output := make([]storage.Node_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toNode_Note(&v)
+	}
+	return output
+}
+
+func toNote(value *string) scannerV1.Note {
+	if value != nil {
+		return scannerV1.Note(scannerV1.Note_value[*value])
+	}
+	return scannerV1.Note(0)
+}
+
+func toNotes(values *[]string) []scannerV1.Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]scannerV1.Note, len(*values))
+	for i, v := range *values {
+		output[i] = toNote(&v)
 	}
 	return output
 }
