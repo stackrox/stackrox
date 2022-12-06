@@ -21,6 +21,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -47,12 +48,13 @@ import (
 )
 
 var (
-	setupLog        = ctrl.Log.WithName("setup")
-	scheme          = runtime.NewScheme()
-	enableWebhooks  = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
-	enableProfiling = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
-	memLimit        = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)
-	heapDumpDir     = env.RegisterSetting("HEAP_DUMP_DIR", env.AllowEmpty())
+	setupLog           = ctrl.Log.WithName("setup")
+	scheme             = runtime.NewScheme()
+	enableWebhooks     = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+	enableProfiling    = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
+	profilingThreshold = env.RegisterSetting("PROFILING_THRESHOLD", env.WithDefault("0.8"))
+	memLimit           = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)
+	heapDumpDir        = env.RegisterSetting("HEAP_DUMP_DIR", env.AllowEmpty())
 	// Default place where controller-runtime looks for TLS artifacts.
 	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
 	defaultCertDir  = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
@@ -112,7 +114,12 @@ func run() error {
 	}
 
 	if enableProfiling.BooleanSetting() {
-		heapProfiler := profiling.NewHeapProfiler(0.80, uint64(memLimit.IntegerSetting()), heapDumpDir.EnvVar())
+		thresholdS := profilingThreshold.EnvVar()
+		thresholdF, err := strconv.ParseFloat(thresholdS, 32)
+		if err != nil {
+			return errors.Wrapf(err, "unable to parse PROFILING_THREASHOLD set to '%s' as a float", thresholdString)
+		}
+		heapProfiler := profiling.NewHeapProfiler(thresholdF, uint64(memLimit.IntegerSetting()), heapDumpDir.EnvVar())
 		ctx, cancelProfiler := context.WithCancel(context.Background())
 		heapProfiler.DumpHeapOnThreshhold(ctx, time.Second)
 		defer cancelProfiler()
