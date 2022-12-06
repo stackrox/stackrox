@@ -193,7 +193,7 @@ func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.Augmen
 
 func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructImage(image)
+		return augmentedobjs.ConstructImage(image, image.GetName().GetFullName())
 	}, nil, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
