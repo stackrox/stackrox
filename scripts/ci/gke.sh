@@ -295,7 +295,7 @@ create_log_explorer_links() {
         <title><h4>GKE Logs Explorer</h4></title>
     </head>
     <body>
-    <p>(these links require a 'left-click -> open in tab')
+    <p>(These links require a 'right-click -> open in new tab'. The authUser is the number for your @stackrox.com account.)</p>
     <ul style="padding-bottom: 28px; padding-left: 30px; font-family: Roboto,Helvetica,Arial,sans-serif;">
 HEAD
 
