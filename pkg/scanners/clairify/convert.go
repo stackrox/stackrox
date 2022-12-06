@@ -103,6 +103,10 @@ func convertK8sVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVul
 	return convertVulnerabilities(vulnerabilities, storage.EmbeddedVulnerability_K8S_VULNERABILITY)
 }
 
+func convertIstioVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVulnerability {
+	return convertVulnerabilities(vulnerabilities, storage.EmbeddedVulnerability_ISTIO_VULNERABILITY)
+}
+
 func convertVulnerabilities(vulnerabilities []*v1.Vulnerability, vulnType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(vulnerabilities))
 	for _, vuln := range vulnerabilities {
