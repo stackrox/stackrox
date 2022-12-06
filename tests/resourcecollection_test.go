@@ -169,6 +169,10 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 	s.NoError(err)
 	deploymentList := deploymentQueryResponse.GetDeployments()
 
+	// create filter query
+	filterQuery, err := search.NewQueryBuilder().AddExactMatches(search.Namespace, collectionNamespaces[0]).RawQuery()
+	s.NoError(err)
+
 	// test cases
 	for _, tc := range []struct {
 		name                    string
@@ -420,6 +424,61 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 			},
 			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
 				return deployment.GetName() == "deployment1" || (deployment.GetNamespace() == collectionNamespaces[0] && deployment.GetName() == "deployment2")
+			}),
+		},
+		{
+			"regex matching",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.DeploymentName.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: ".*2",
+									},
+								},
+							},
+						},
+					},
+				},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment2"
+			}),
+		},
+		{
+			"filter query",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.DeploymentName.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "deployment2",
+									},
+								},
+							},
+						},
+					},
+				},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+					FilterQuery: &v1.RawQuery{Query: filterQuery},
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment2" && deployment.GetNamespace() == collectionNamespaces[0]
 			}),
 		},
 		{
