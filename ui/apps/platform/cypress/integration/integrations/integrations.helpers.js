@@ -1,8 +1,13 @@
-import { selectors } from '../constants/IntegrationsPage';
-import { visitFromLeftNavExpandable } from './nav';
-import { interactAndWaitForResponses, interceptRequests, waitForResponses } from './request';
-import { getTableRowActionButtonByName } from './tableHelpers';
-import { visit } from './visit';
+import { visitFromLeftNavExpandable } from '../../helpers/nav';
+import {
+    interactAndWaitForResponses,
+    interceptRequests,
+    waitForResponses,
+} from '../../helpers/request';
+import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
+import { visit } from '../../helpers/visit';
+
+import { selectors } from './integrations.selectors';
 
 // page path
 

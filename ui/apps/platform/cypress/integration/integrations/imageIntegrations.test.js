@@ -1,4 +1,3 @@
-import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     getHelperElementByLabel,
@@ -6,6 +5,7 @@ import {
     generateNameWithDate,
     getToggleGroupItem,
 } from '../../helpers/formHelpers';
+
 import {
     clickCreateNewIntegrationInTable,
     deleteIntegrationInTable,
@@ -13,7 +13,8 @@ import {
     testIntegrationInFormWithStoredCredentials,
     testIntegrationInFormWithoutStoredCredentials,
     visitIntegrationsTable,
-} from '../../helpers/integrations';
+} from './integrations.helpers';
+import { selectors } from './integrations.selectors';
 
 // Page address segments are the source of truth for integrationSource and integrationType.
 const integrationSource = 'imageIntegrations';
