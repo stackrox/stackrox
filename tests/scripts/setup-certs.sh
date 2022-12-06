@@ -63,9 +63,15 @@ setup_default_TLS_certs() {
     info "Setting up default certs for tests"
 
     local cert_dir
-    cert_dir="$(mktemp -d)"
+    cert_dir="${1-$(mktemp -d)}"
     setup_certs "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
 
+    export_default_TLS_certs "${cert_dir}"
+}
+
+export_default_TLS_certs() {
+    local cert_dir="$1"
+    
     export ROX_DEFAULT_TLS_CERT_FILE="${cert_dir}/tls.crt"
     export ROX_DEFAULT_TLS_KEY_FILE="${cert_dir}/tls.key"
     export DEFAULT_CA_FILE="${cert_dir}/ca.crt"

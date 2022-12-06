@@ -25,18 +25,39 @@ config_part_1() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
+    export DEPLOY_DIR="$ROOT/deploy/${ORCHESTRATOR_FLAVOR}"
+
     export_test_environment
 
     setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
-    setup_default_TLS_certs
+    setup_default_TLS_certs "$DEPLOY_DIR/default_TLS_certs"
 
     deploy_stackrox
 
     deploy_default_psp
-    deploy_webhook_server
+    deploy_webhook_server "$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
+}
+
+reuse_config_part_1() {
+    info "Reusing config from a prior part 1 e2e test"
+
+    export DEPLOY_DIR="$ROOT/deploy/${ORCHESTRATOR_FLAVOR}"
+
+    export_test_environment
+    setup_deployment_env false false
+    export_default_TLS_certs "$DEPLOY_DIR/default_TLS_certs"
+
+    set -x
+    export_webhook_server_certs "$DEPLOY_DIR/webhook_server_certs"
+    get_ECR_docker_pull_password
+
+    wait_for_api
+    get_central_basic_auth_creds
+
+    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 }
 
 test_part_1() {

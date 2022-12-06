@@ -9,7 +9,7 @@ die() {
 
 certs_tmp_dir="$1"
 [[ -n "${certs_tmp_dir}" ]] || die "Usage: $0 <certs_dir>"
-
+[[ -d "${certs_tmp_dir}" ]] || mkdir "${certs_tmp_dir}"
 
 printstatus() {
     echo current resource status ...

@@ -304,12 +304,7 @@ run_qa_flavor() {
             fi
         ) 2>&1 | sed -e 's/^/test output: /'
     else
-        export_test_environment
-        setup_deployment_env false false
-        export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
-        wait_for_api
-        export DEPLOY_DIR="$ROOT/deploy/${ORCHESTRATOR_FLAVOR}"
-        get_central_basic_auth_creds
+        reuse_config_part_1
 
         pushd qa-tests-backend
         if [[ -z "$CASE" ]]; then

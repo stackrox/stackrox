@@ -13,8 +13,15 @@ deploy_webhook_server() {
     info "Deploy Webhook server"
 
     local certs_dir
-    certs_dir="$(mktemp -d)"
+    certs_dir="${1:-$(mktemp -d)}"
     "${ROOT}/scripts/ci/create-webhookserver.sh" "${certs_dir}"
+
+    export_webhook_server_certs "${certs_dir}"
+}
+
+export_webhook_server_certs() {
+    local certs_dir="$1"
+
     ci_export GENERIC_WEBHOOK_SERVER_CA_CONTENTS "$(cat "${certs_dir}/ca.crt")"
 }
 
