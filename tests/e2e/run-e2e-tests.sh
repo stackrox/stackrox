@@ -34,6 +34,8 @@ environment.
 Options:
   -c, --config-only - configure the cluster for test but do not run
     any tests. [qa flavor only]
+  --run-tests-only - reuse prior configuration and run tests. [qa
+    flavor only]
   -d, --gather-debug - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. 
     [qa flavor only]
   -t - override 'make tag' which sets the main version to install and
@@ -96,16 +98,17 @@ _EOMISSING_
 }
 
 get_initial_options() {
-    # rely on getopts in the calling env to support mac & linux desktops
-    while getopts ":ht:" option; do
-        case "$option" in
-            t)
-                export TAG_OVERRIDE="${OPTARG}"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -t)
+                export TAG_OVERRIDE="$2"
+                shift 2
                 ;;
             h)
                 usage
                 ;;
             *)
+                shift
                 ;;
         esac
     done
@@ -140,12 +143,13 @@ get_options() {
     normalized_opts=$(\
       getopt \
         -o cdo:t:y \
-        --long config-only,gather-debug,orchestrator: \
+        --long config-only,test-only,gather-debug,orchestrator: \
         -n 'run-e2e-tests.sh' -- "$@")
 
     eval set -- "$normalized_opts"
 
     export CONFIG_ONLY="false"
+    export TEST_ONLY="false"
     export ORCHESTRATOR="k8s"
     export PROMPT="true"
 
@@ -153,6 +157,10 @@ get_options() {
         case "$1" in
             -c | --config-only)
                 export CONFIG_ONLY="true"
+                shift
+                ;;
+            --test-only)
+                export TEST_ONLY="true"
                 shift
                 ;;
             -d | --gather-debug)
@@ -175,9 +183,6 @@ get_options() {
                 shift
                 break
                 ;;
-            # *)
-            #     usage
-            #     ;;
         esac
     done
 
@@ -192,6 +197,19 @@ get_options() {
 
     export SUITE="${2:-}"
     export CASE="${3:-}"
+
+    if [[ "${CONFIG_ONLY}" == "true" && "${TEST_ONLY}" == "true" ]]; then
+        die "--config-only and --test-only are mutually exclusive"
+    fi
+
+    if [[ "$FLAVOR" == "e2e" ]]; then
+        if [[ -n "${suite}" || -n "${case}" ]]; then
+            die "ERROR: Suite and Case are not supported with e2e flavor"
+        fi
+        if [[ "${CONFIG_ONLY}" == "true" || "${TEST_ONLY}" == "true" ]]; then
+            die "--config-only and --test-only are not supported with e2e flavor"
+        fi
+    fi
 }
 
 main() {
@@ -206,12 +224,6 @@ main() {
     esac
 
     cd "$ROOT"
-
-    if [[ "$FLAVOR" == "e2e" ]]; then
-        if [[ -n "${suite}" || -n "${case}" ]]; then
-            die "ERROR: Suite and Case are not supported with e2e flavor"
-        fi
-    fi
 
     # Sanity check that the roxctl in use matches 'make tag'. This should
     # already be true due to the container copy in handle_tag_requirements() but
@@ -298,13 +310,21 @@ run_qa_flavor() {
     if [[ -z "$SUITE" && -z "$CASE" ]]; then
         source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
         (
-            config_part_1
+            if [[ "${TEST_ONLY}" == "false" ]]; then
+                config_part_1 || die "Config failed."
+                info "Config succeeded."
+            else
+                reuse_config_part_1 || die "Config reuse failed."
+                info "Config reuse succeeded."
+            fi
             if [[ "${CONFIG_ONLY}" == "false" ]]; then
-                test_part_1
+                test_part_1 || die "Test failed."
+                info "Test succeeded."
             fi
         ) 2>&1 | sed -e 's/^/test output: /'
     else
-        reuse_config_part_1
+        reuse_config_part_1 || die "Config reuse failed."
+        info "Config reuse succeeded."
 
         pushd qa-tests-backend
         if [[ -z "$CASE" ]]; then
