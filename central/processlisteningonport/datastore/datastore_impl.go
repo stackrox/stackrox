@@ -67,6 +67,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	// First query all needed process indicators in one go
 	for _, val := range portProcesses {
+		if val.Process == nil {
+			log.Warnf("Got PLOP object without Process information, ignore: %+v", val)
+			continue
+		}
+
 		lookups = append(lookups,
 			search.NewQueryBuilder().
 				AddExactMatches(search.ContainerName, val.Process.ContainerName).
