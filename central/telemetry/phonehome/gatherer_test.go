@@ -21,7 +21,7 @@ type gathererTestSuite struct {
 var _ suite.SetupTestSuite = (*gathererTestSuite)(nil)
 
 func (s *gathererTestSuite) SetupTest() {
-	s.mockCtrl = gomock.NewController(&testing.T{})
+	s.mockCtrl = gomock.NewController(s.T())
 }
 
 func TestConfig(t *testing.T) {

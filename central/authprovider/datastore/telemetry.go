@@ -19,7 +19,7 @@ func Gather(ctx context.Context) (phonehome.Properties, error) {
 		return nil, errors.Wrap(err, "failed to get AuthProviders")
 	}
 
-	providerIDNames := make(map[string]string)
+	providerIDNames := make(map[string]string, len(providers)
 	providerNames := make([]string, 0, len(providers))
 	for _, provider := range providers {
 		providerIDNames[provider.GetId()] = provider.GetName()
