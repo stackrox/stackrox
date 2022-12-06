@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -43,6 +44,67 @@ func (s *deploymentStoreSuite) createDeploymentWrap(deploymentObj interface{}) *
 	wrap := newDeploymentEventFromResource(deploymentObj, &action,
 		"deployment", "", s.mockPodLister, s.namespaceStore, hierarchyFromPodLister(s.mockPodLister), "", orchestratornamespaces.Singleton(), registry.Singleton())
 	return wrap
+}
+
+func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
+	deployments := []*v1.Deployment{
+		withServiceAccount(makeDeploymentObject("d1", "ns1", "uuid1"), "sa1"),
+		withServiceAccount(makeDeploymentObject("d2", "ns1", "uuid2"), "sa1"),
+		withServiceAccount(makeDeploymentObject("d3", "ns1", "uuid3"), "sa2"),
+		withServiceAccount(makeDeploymentObject("d4", "ns2", "uuid4"), "sa1"),
+		withServiceAccount(makeDeploymentObject("d5", "ns2", "uuid5"), "sa3"),
+	}
+
+	testCases := map[string]struct {
+		queryNs, querySa string
+		expectedIDs      []string
+	}{
+		"Two deployments with same SA in ns1": {
+			queryNs:     "ns1",
+			querySa:     "sa1",
+			expectedIDs: []string{"uuid1", "uuid2"},
+		},
+		"One deployment with SA sa2 in ns1": {
+			queryNs:     "ns1",
+			querySa:     "sa2",
+			expectedIDs: []string{"uuid3"},
+		},
+		"One deployment with SA sa1 in ns2": {
+			queryNs:     "ns2",
+			querySa:     "sa1",
+			expectedIDs: []string{"uuid4"},
+		},
+		"One deployment with SA sa3 in ns2": {
+			queryNs:     "ns2",
+			querySa:     "sa3",
+			expectedIDs: []string{"uuid5"},
+		},
+		"No deployments for valid SA and empty namespace": {
+			queryNs:     "",
+			querySa:     "sa1",
+			expectedIDs: nil,
+		},
+		"No deployment for valid namespace and empty ServiceAccount": {
+			queryNs:     "ns1",
+			querySa:     "",
+			expectedIDs: nil,
+		},
+	}
+
+	for _, deployment := range deployments {
+		s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(deployment))
+	}
+
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+
+			ids := s.deploymentStore.FindDeploymentIDsWithServiceAccount(testCase.queryNs, testCase.querySa)
+			s.Require().Len(ids, len(testCase.expectedIDs), "FindDeploymentIDsWithServiceAccount returned incorrect number of elements")
+			sort.Strings(testCase.expectedIDs)
+			sort.Strings(ids)
+			s.Equal(testCase.expectedIDs, ids)
+		})
+	}
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
@@ -91,6 +153,11 @@ func makeDeploymentObject(name, namespace string, id types.UID) *v1.Deployment {
 			UID:       id,
 		},
 	}
+}
+
+func withServiceAccount(d *v1.Deployment, name string) *v1.Deployment {
+	d.Spec.Template.Spec.ServiceAccountName = name
+	return d
 }
 
 func stubService() corev1.ServicePort {

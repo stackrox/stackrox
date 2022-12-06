@@ -127,7 +127,8 @@ func (ds *DeploymentStore) GetAll() []*storage.Deployment {
 	return ret
 }
 
-func (ds *DeploymentStore) FindDeploymentsWithServiceAccount(namespace, sa string) []string {
+// FindDeploymentIDsWithServiceAccount returns all deployment IDs in `namespace` that have ServiceAccountName matching `sa`.
+func (ds *DeploymentStore) FindDeploymentIDsWithServiceAccount(namespace, sa string) []string {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
