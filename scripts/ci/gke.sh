@@ -283,7 +283,7 @@ teardown_gke_cluster() {
 
 create_log_explorer_links() {
     if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        info "No place for artifacts, skipping explorer links"
+        info "No place for artifacts, skipping generation of links to logs explorer"
         return
     fi
 
