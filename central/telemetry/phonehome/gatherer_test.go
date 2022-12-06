@@ -39,11 +39,12 @@ func (s *gathererTestSuite) TestNilGatherer() {
 func (s *gathererTestSuite) TestGatherer() {
 	s.T().Setenv(env.TelemetryStorageKey.EnvVar(), "testkey")
 	t := mocks.NewMockTelemeter(s.mockCtrl)
-	t.EXPECT().Identify(nil)
+	t.EXPECT().Identify(nil).Times(3)
 
 	var i int64
 	stop := concurrency.NewSignal()
 	gptr := newGatherer(t, 10*time.Millisecond)
+	s.Require().NotNil(gptr)
 	gptr.AddGatherer(func(context.Context) (map[string]any, error) {
 		if atomic.AddInt64(&i, 1) > 1 {
 			stop.Signal()
@@ -54,12 +55,9 @@ func (s *gathererTestSuite) TestGatherer() {
 		stop.Wait()
 		gptr.Stop()
 	}()
-	s.NotNil(gptr)
 	gptr.Start()
 
 	<-gptr.ctx.Done()
-	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
-
 	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
 	s.Equal(int64(2), i)
 
@@ -72,5 +70,6 @@ func (s *gathererTestSuite) TestGatherer() {
 	// Should start again.
 	gptr.Start()
 	<-gptr.ctx.Done()
+	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
 	s.Equal(int64(3), i)
 }

@@ -3,6 +3,7 @@ package segment
 import (
 	segment "github.com/segmentio/analytics-go"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"go.uber.org/zap/zapcore"
 )
@@ -43,9 +44,10 @@ func (l *logWrapper) Errorf(format string, args ...any) {
 
 func initSegment(userID string, identity map[string]any, key, server string) *segmentTelemeter {
 	segmentConfig := segment.Config{
-		Endpoint: server,
-		Interval: env.TelemetryFrequency.DurationSetting(),
-		Logger:   &logWrapper{internal: log},
+		Endpoint:  server,
+		Interval:  env.TelemetryFrequency.DurationSetting(),
+		Transport: proxy.RoundTripper(),
+		Logger:    &logWrapper{internal: log},
 		DefaultContext: &segment.Context{
 			Extra: map[string]any{
 				"Central ID": userID,

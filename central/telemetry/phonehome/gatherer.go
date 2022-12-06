@@ -58,11 +58,14 @@ func GathererSingleton() Gatherer {
 }
 
 func (g *gatherer) collect() pkgPH.Properties {
-	result := make(pkgPH.Properties)
+	var result pkgPH.Properties
 	for i, f := range g.gatherFuncs {
 		props, err := f(g.ctx)
 		if err != nil {
 			log.Errorf("gatherer %d failure: %v", i, err)
+		}
+		if props != nil && result == nil {
+			result = make(map[string]any, len(props))
 		}
 		for k, v := range props {
 			result[k] = v
@@ -108,5 +111,7 @@ func (g *gatherer) Stop() {
 }
 
 func (g *gatherer) AddGatherer(f pkgPH.GatherFunc) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	g.gatherFuncs = append(g.gatherFuncs, f)
 }

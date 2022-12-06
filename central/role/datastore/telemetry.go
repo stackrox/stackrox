@@ -3,31 +3,24 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
-func addTotal[T any](ctx context.Context, props phonehome.Properties, key string, f func(context.Context) ([]*T, error)) error {
-	ps, err := f(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get %s", key)
-	}
-	props["Total "+key] = len(ps)
-	return nil
-}
-
 // Gather a few properties for phone home telemetry.
 func Gather(ctx context.Context) (phonehome.Properties, error) {
+	// WithAllAccess is required only to fetch and calculate the number of
+	// permission sets, roles and access scopes. It is not propagated anywhere
+	// else.
 	ctx = sac.WithAllAccess(ctx)
 	totals := make(phonehome.Properties)
 	rs := Singleton()
 
-	el := errorhelpers.NewErrorList("cannot gather from role store")
-	el.AddError(addTotal(ctx, totals, "PermissionSets", rs.GetAllPermissionSets))
-	el.AddError(addTotal(ctx, totals, "Roles", rs.GetAllRoles))
-	el.AddError(addTotal(ctx, totals, "Access Scopes", rs.GetAllAccessScopes))
+	gatherErrs := errorhelpers.NewErrorList("cannot gather from role store")
+	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "PermissionSets", rs.GetAllPermissionSets))
+	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "Roles", rs.GetAllRoles))
+	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "Access Scopes", rs.GetAllAccessScopes))
 
-	return totals, el.ToError()
+	return totals, gatherErrs.ToError()
 }

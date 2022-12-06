@@ -11,6 +11,8 @@ import (
 
 // Gather auth provider names and number of groups per auth provider.
 func Gather(ctx context.Context) (phonehome.Properties, error) {
+	// WithAllAccess is required only to fetch and calculate the number of auth
+	// providers and groups. It is not propagated anywhere else.
 	ctx = sac.WithAllAccess(ctx)
 	props := make(phonehome.Properties)
 

@@ -22,7 +22,6 @@ type interceptorTestSuite struct {
 	suite.Suite
 
 	mockTelemeter *mocks.MockTelemeter
-	mockCtrl      *gomock.Controller
 }
 
 var _ suite.SetupTestSuite = (*interceptorTestSuite)(nil)
@@ -32,8 +31,7 @@ func TestInterceptor(t *testing.T) {
 }
 
 func (s *interceptorTestSuite) SetupTest() {
-	s.mockCtrl = gomock.NewController(&testing.T{})
-	s.mockTelemeter = mocks.NewMockTelemeter(s.mockCtrl)
+	s.mockTelemeter = mocks.NewMockTelemeter(gomock.NewController(s.T()))
 }
 
 func (s *interceptorTestSuite) expect(path string, code int) {

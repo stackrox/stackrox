@@ -40,7 +40,13 @@ func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *perm
 	}
 	if phonehome.Enabled() {
 		// Add the user to the tenant group.
-		phonehome.TelemeterSingleton().Group(phonehome.InstanceConfig().GetGroupID(), user.GetId(), nil)
+		cfg := phonehome.InstanceConfig()
+		if id, err := authn.IdentityFromContext(ctx); err == nil {
+			// Add the user to the tenant group.
+			phonehome.TelemeterSingleton().Group(cfg.GetGroupID(), phonehome.HashUserID(id), nil)
+		} else {
+			log.Errorf("unable to get user identity: %s: %v", proto.MarshalTextString(user), err)
+		}
 	}
 }
 
