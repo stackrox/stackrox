@@ -19,8 +19,8 @@ import (
 )
 
 type datastoreImpl struct {
-	storage        postgres.Store
-	indicatorStore processIndicatorStore.DataStore
+	storage            postgres.Store
+	indicatorDataStore processIndicatorStore.DataStore
 }
 
 var (
@@ -33,8 +33,8 @@ func newDatastoreImpl(
 	indicatorDataStore processIndicatorStore.DataStore,
 ) *datastoreImpl {
 	return &datastoreImpl{
-		storage:        storage,
-		indicatorStore: indicatorDataStore,
+		storage:            storage,
+		indicatorDataStore: indicatorDataStore,
 	}
 }
 
@@ -79,7 +79,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	indicatorsQuery := search.DisjunctionQuery(lookups...)
 	log.Debugf("Sending query: %s", indicatorsQuery.String())
-	indicators, err := ds.indicatorStore.SearchRawProcessIndicators(ctx, indicatorsQuery)
+	indicators, err := ds.indicatorDataStore.SearchRawProcessIndicators(ctx, indicatorsQuery)
 	if err != nil {
 		return err
 	}
