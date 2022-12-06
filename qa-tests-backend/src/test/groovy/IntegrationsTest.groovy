@@ -102,7 +102,7 @@ class IntegrationsTest extends BaseSpecification {
             assert email["subject"] == "StackRox Test Email"
             assert email["from"][0]["address"] == Constants.EMAIL_NOTIFER_SENDER
             assert email["to"][0]["address"] == Constants.EMAIL_NOTIFIER_RECIPIENT
-            assert email["text"] == "This is a test email created to test integration with StackRox.\n\n"
+            assert email["text"] == "This is a test email crted to test integration with StackRox.\n\n"
 
             log.info "Found email with body:\n${email["text"]}"
         }
