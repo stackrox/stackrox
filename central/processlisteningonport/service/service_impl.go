@@ -77,7 +77,8 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Contex
 		return emptyProcessesListeningOnPortsWithDeploymentResponse()
 	}
 
-	result := make([]*v1.ProcessListeningOnPortWithDeploymentId, 0)
+	size := len(processesListeningOnPorts)
+	result := make([]*v1.ProcessListeningOnPortWithDeploymentId, size)
 
 	for k, v := range processesListeningOnPorts {
 		plop := &v1.ProcessListeningOnPortWithDeploymentId{
@@ -130,7 +131,8 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(
 		return emptyProcessesListeningOnPortsResponse()
 	}
 
-	result := make([]*storage.ProcessListeningOnPort, 0)
+	size := len(processesListeningOnPorts)
+	result := make([]*storage.ProcessListeningOnPort, size)
 
 	// Storage returns map DeploymentID -> PLOP. Just in case verify that
 	// deployment id matches.
