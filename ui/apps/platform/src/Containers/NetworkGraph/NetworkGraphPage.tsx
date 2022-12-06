@@ -13,7 +13,6 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { Model } from '@patternfly/react-topology';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import useFetchClusters from 'hooks/useFetchClusters';
@@ -28,6 +27,7 @@ import EdgeStateSelect, { EdgeState } from './EdgeStateSelect';
 import NetworkGraph from './NetworkGraph';
 import { transformData, graphModel } from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
+import { CustomModel } from './types/topology.type';
 
 import './NetworkGraphPage.css';
 
@@ -42,7 +42,7 @@ const includePorts = true;
 
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
-    const [model, setModel] = useState<Model>(emptyModel);
+    const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { searchFilter } = useURLSearch();

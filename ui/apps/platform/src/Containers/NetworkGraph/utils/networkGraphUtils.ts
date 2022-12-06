@@ -1,22 +1,28 @@
-import { EdgeModel, NodeModel } from '@patternfly/react-topology';
+import { EdgeModel } from '@patternfly/react-topology';
 
 import { ListenPort } from 'types/networkFlow.proto';
+import { CustomNodeModel, DeploymentNodeModel } from '../types/topology.type';
 
 /* node helper functions */
 
-export function getDeploymentNodesInNamespace(nodes: NodeModel[], namespaceId: string) {
+export function getDeploymentNodesInNamespace(
+    nodes: CustomNodeModel[],
+    namespaceId: string
+): DeploymentNodeModel[] {
     const namespaceNode = nodes.find((node) => node.id === namespaceId);
     if (!namespaceNode) {
         return [];
     }
-    const deploymentNodes = nodes.filter((node) => namespaceNode.children?.includes(node.id));
+    const deploymentNodes = nodes.filter((node) => {
+        return namespaceNode.children?.includes(node.id);
+    }) as DeploymentNodeModel[];
     return deploymentNodes;
 }
 
-function getExternalNodeIds(nodes: NodeModel[]): string[] {
+function getExternalNodeIds(nodes: CustomNodeModel[]): string[] {
     const externalNodeIds =
         nodes?.reduce((acc, curr) => {
-            if (curr.data.type === 'INTERNET' || curr.data.type === 'EXTERNAL_SOURCE') {
+            if (curr.data.type === 'EXTERNAL_ENTITIES' || curr.data.type === 'CIDR_BLOCK') {
                 return [...acc, curr.id];
             }
             return acc;
@@ -25,16 +31,16 @@ function getExternalNodeIds(nodes: NodeModel[]): string[] {
 }
 
 export function getNodeById(
-    nodes: NodeModel[] | undefined,
+    nodes: CustomNodeModel[] | undefined,
     nodeId: string | undefined
-): NodeModel | undefined {
+): CustomNodeModel | undefined {
     return nodes?.find((node) => node.id === nodeId);
 }
 
 /* edge helper functions */
 
 export function getNumInternalFlows(
-    nodes: NodeModel[],
+    nodes: CustomNodeModel[],
     edges: EdgeModel[],
     deploymentId: string
 ): number {
@@ -53,7 +59,7 @@ export function getNumInternalFlows(
 }
 
 export function getNumExternalFlows(
-    nodes: NodeModel[],
+    nodes: CustomNodeModel[],
     edges: EdgeModel[],
     deploymentId: string
 ): number {
@@ -84,12 +90,12 @@ export function getNumDeploymentFlows(edges: EdgeModel[], deploymentId: string):
 
 /* deployment helper functions */
 
-export function getListenPorts(nodes: NodeModel[], deploymentId: string): ListenPort[] {
+export function getListenPorts(nodes: CustomNodeModel[], deploymentId: string): ListenPort[] {
     const deployment = nodes?.find((node) => {
         return node.id === deploymentId;
     });
-    if (!deployment) {
+    if (!deployment || deployment.data.type !== 'DEPLOYMENT') {
         return [];
     }
-    return deployment.data.deployment.listenPorts as ListenPort[];
+    return deployment.data.deployment.listenPorts;
 }
