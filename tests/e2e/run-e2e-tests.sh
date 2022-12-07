@@ -311,19 +311,19 @@ run_qa_flavor() {
         source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
         (
             if [[ "${TEST_ONLY}" == "false" ]]; then
-                config_part_1 || die "Config failed."
+                config_part_1
                 info "Config succeeded."
             else
-                reuse_config_part_1 || die "Config reuse failed."
+                reuse_config_part_1
                 info "Config reuse succeeded."
             fi
             if [[ "${CONFIG_ONLY}" == "false" ]]; then
-                test_part_1 || die "Test failed."
+                test_part_1
                 info "Test succeeded."
             fi
         ) 2>&1 | sed -e 's/^/test output: /'
     else
-        reuse_config_part_1 || die "Config reuse failed."
+        reuse_config_part_1
         info "Config reuse succeeded."
 
         pushd qa-tests-backend
