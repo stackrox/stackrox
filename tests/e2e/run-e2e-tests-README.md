@@ -82,4 +82,3 @@ run-e2e-tests.sh -d e2e
 
 TBD - split configuration from test. separate the various test facets (roxctl,
 integration, destructive, etc)
-

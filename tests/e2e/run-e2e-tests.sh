@@ -36,7 +36,7 @@ Options:
     any tests. [qa flavor only]
   --run-tests-only - reuse prior configuration and run tests. [qa
     flavor only]
-  -d, --gather-debug - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. 
+  -d, --gather-debug - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'.
     [qa flavor only]
   -s, --spin-cycle=<count> - repeat the test portion until a failure
     occurs or <count> is reached with no failures. [qa flavor only]
@@ -106,7 +106,7 @@ get_initial_options() {
                 export TAG_OVERRIDE="$2"
                 shift 2
                 ;;
-            h)
+            -h)
                 usage
                 ;;
             *)
@@ -146,7 +146,8 @@ get_options() {
       getopt \
         -o cdo:s:t:y \
         --long config-only,test-only,gather-debug,spin-cycle:,orchestrator: \
-        -n 'run-e2e-tests.sh' -- "$@")
+        -n 'run-e2e-tests.sh' -- "$@" \
+    )
 
     eval set -- "$normalized_opts"
 
