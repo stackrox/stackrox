@@ -52,9 +52,6 @@ push_images() {
             push_matching_collector_scanner_images "$brand"
         fi
     fi
-    if [[ -n "${PIPELINE_DOCS_IMAGE:-}" ]]; then
-        push_docs_image
-    fi
     if [[ -n "${MAIN_RCD_IMAGE:-}" ]]; then
         push_race_condition_debug_image
     fi
