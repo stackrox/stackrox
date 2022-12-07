@@ -122,6 +122,8 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+        - mountPath: /tmp/
+          name: tmp-ed
       volumes:
       - hostPath:
           path: /var/run/docker.sock
@@ -160,4 +162,6 @@ spec:
       - name: etc-ssl
         emptyDir: {}
       - name: etc-pki-volume
+        emptyDir: {}
+      - name: tmp-ed
         emptyDir: {}
