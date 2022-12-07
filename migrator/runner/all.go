@@ -14,7 +14,6 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_109_to_m_110_networkpolicy_guidance_2"
 	_ "github.com/stackrox/rox/migrator/migrations/m_110_to_m_111_replace_deprecated_resources"
 	_ "github.com/stackrox/rox/migrator/migrations/m_111_to_m_112_groups_invalid_values"
-	_ "github.com/stackrox/rox/migrator/migrations/m_112_to_m_113_remove_clustercve_permission"
 	_ "github.com/stackrox/rox/migrator/migrations/m_55_to_m_56_node_scanning_empty"
 	_ "github.com/stackrox/rox/migrator/migrations/m_56_to_m_57_compliance_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_57_to_m_58_update_run_secrets_volume_policy_regex"
