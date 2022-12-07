@@ -77,6 +77,7 @@ export type CollectionFormProps = {
     initialData: Collection;
     /* collection responses for the embedded collections of `initialData` */
     initialEmbeddedCollections: CollectionResponse[];
+    onFormChange: (values: Collection) => void;
     onSubmit: (collection: Collection) => Promise<void>;
     onCancel: () => void;
     saveError?: CollectionSaveError | undefined;
@@ -117,6 +118,17 @@ function yupResourceSelectorObject() {
     });
 }
 
+const validationSchema = yup.object({
+    name: yup.string().trim().required(),
+    description: yup.string(),
+    embeddedCollectionIds: yup.array(yup.string().trim().required()),
+    resourceSelector: yup.object().shape({
+        Deployment: yupResourceSelectorObject(),
+        Namespace: yupResourceSelectorObject(),
+        Cluster: yupResourceSelectorObject(),
+    }),
+});
+
 function getRuleCount(resourceSelector: Collection['resourceSelector']) {
     let count = 0;
 
@@ -139,6 +151,7 @@ function CollectionForm({
     initialEmbeddedCollections,
     saveError,
     clearSaveError = () => {},
+    onFormChange,
     onSubmit,
     onCancel,
     getCollectionTableCells,
@@ -165,17 +178,23 @@ function CollectionForm({
                 setSubmitting(false);
             });
         },
-        validationSchema: yup.object({
-            name: yup.string().trim().required(),
-            description: yup.string(),
-            embeddedCollectionIds: yup.array(yup.string().trim().required()),
-            resourceSelector: yup.object().shape({
-                Deployment: yupResourceSelectorObject(),
-                Namespace: yupResourceSelectorObject(),
-                Cluster: yupResourceSelectorObject(),
-            }),
-        }),
+        validationSchema,
     });
+
+    useEffect(() => {
+        if (saveError) {
+            return;
+        }
+        // We need to manually validate the values onChange here since Formik update the values
+        // before validation and the declarative state has `isValid === true` and `isValidation == false`
+        // at the same time that the actual value object is invalid.
+        validationSchema
+            .validate(values)
+            .then(() => onFormChange(values))
+            .catch(() => {
+                /* Validation failed, do not propagate change */
+            });
+    }, [values, saveError, onFormChange]);
 
     // Synchronize the value of "name" in the form field when the page action changes
     // e.g. from 'view' -> 'clone'
