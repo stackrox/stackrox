@@ -507,7 +507,7 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 func ruleValuesToQueryList(fieldLabel pkgSearch.FieldLabel, ruleValues []*storage.RuleValue) []*v1.Query {
 	ret := make([]*v1.Query, 0, len(ruleValues))
 	for _, ruleValue := range ruleValues {
-		ret = append(ret, pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, ruleValue.GetValue()).ProtoQuery())
+		ret = append(ret, pkgSearch.NewQueryBuilder().AddRegexesHighlighted(fieldLabel, ruleValue.GetValue()).ProtoQuery())
 	}
 	return ret
 }
