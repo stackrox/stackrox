@@ -116,9 +116,9 @@ func updateRocksDB(db *gorocksdb.DB, versionBytes []byte) error {
 func updateVersion(databases *types.Databases, newVersion *storage.Version) error {
 	// If the sequence number is higher than the sequence number without postgres then
 	// we are migrating postgres and as such need to update the Postgres version.
-	// NOTE:  The +1 is because CurrentDBVersionSeqNumWithoutPostgres returns with a -1 that
+	// NOTE:  The +1 is because BasePostgresDBVersionSeqNum returns with a -1 that
 	// is needed for the migrations themselves.
-	if int(newVersion.GetSeqNum()) > migrations.CurrentDBVersionSeqNumWithoutPostgres()+1 {
+	if int(newVersion.GetSeqNum()) > migrations.BasePostgresDBVersionSeqNum()+1 {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			version.SetVersionGormDB(ctx, databases.GormDB, newVersion, false)
 			return nil
