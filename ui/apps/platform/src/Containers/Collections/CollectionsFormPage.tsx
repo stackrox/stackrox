@@ -161,7 +161,6 @@ function CollectionsFormPage({
                         ) : null}
                     </Flex>
                 ),
-                width: 25,
             },
             {
                 name: 'Description',
