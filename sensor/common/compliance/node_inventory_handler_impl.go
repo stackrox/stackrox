@@ -92,7 +92,7 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 }
 
 func (c *nodeInventoryHandlerImpl) handleNodeInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
-	// TODO(ROX-12943): Replace fakeNode with the proper solution for finding the node
+	// TODO(ROX-12943): Replace fakeNode with proper solution for finding the node
 	node := c.fakeNode(inventory)
 	c.sendNode(toC, node)
 }
@@ -108,7 +108,7 @@ func (c *nodeInventoryHandlerImpl) sendNode(toC chan *central.MsgFromSensor, nod
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
 				Id:     node.GetId(),
-				Action: central.ResourceAction_CREATE_RESOURCE,
+				Action: central.ResourceAction_CREATE_RESOURCE, // TODO(ROX-12943): find proper value to use here: create vs. update
 				Resource: &central.SensorEvent_Node{
 					Node: node,
 				},
@@ -124,13 +124,13 @@ func (c *nodeInventoryHandlerImpl) fakeNode(inventory *storage.NodeInventory) *s
 	}
 	creation := inventory.ScanTime
 	return &storage.Node{
-		// this is arbitrary selected UUID - we want to see only 1 fake node in the UI
+		// this is arbitrary selected UUID - we want to see only 1 fake node in the UI for each message from Compliance
 		Id:                      "bf5bf7d4-2d77-4194-9ab5-570848c55777",
-		Name:                    inventory.GetNodeName(),
+		Name:                    inventory.GetNodeName() + "-fake",
 		Taints:                  nil,
 		NodeInventory:           inventory,
-		Labels:                  map[string]string{"fakeLK": "fakeLV"},
-		Annotations:             map[string]string{"fakeAK": "fakeAV"},
+		Labels:                  map[string]string{"fakeLabelsK": "fakeLabelsV"},
+		Annotations:             map[string]string{"fakeAnnotationsK": "fakeAnnotationsV"},
 		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
 		InternalIpAddresses:     []string{"192.168.255.254"},
 		ExternalIpAddresses:     []string{"10.10.255.254"},
