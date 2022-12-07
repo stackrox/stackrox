@@ -38,10 +38,12 @@ Options:
     flavor only]
   -d, --gather-debug - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. 
     [qa flavor only]
-  -t - override 'make tag' which sets the main version to install and
-    is used by some tests.
-  -o, --orchestrator - choose the cluster orchestrator. Either k8s or
-    openshift. defaults to k8s.
+  -s, --spin-cycle=<count> - repeat the test portion until a failure
+    occurs or <count> is reached with no failures.
+  -t <tag> - override 'make tag' which sets the main version to install
+    and is used by some tests.
+  -o, --orchestrator=<orchestrator> - choose the cluster orchestrator.
+    Either k8s or openshift. defaults to k8s.
   -y - run without prompts.
   -h - show this help.
 
@@ -142,14 +144,16 @@ get_options() {
     # in stackrox-test container getopt supports long options
     normalized_opts=$(\
       getopt \
-        -o cdo:t:y \
-        --long config-only,test-only,gather-debug,orchestrator: \
+        -o cdo:s:t:y \
+        --long config-only,test-only,gather-debug,spin-cycle,orchestrator: \
         -n 'run-e2e-tests.sh' -- "$@")
 
     eval set -- "$normalized_opts"
 
     export CONFIG_ONLY="false"
     export TEST_ONLY="false"
+    export GATHER_QA_TEST_DEBUG_LOGS="false"
+    export SPIN_CYCLE_COUNT=1
     export ORCHESTRATOR="k8s"
     export PROMPT="true"
 
@@ -166,6 +170,10 @@ get_options() {
             -d | --gather-debug)
                 export GATHER_QA_TEST_DEBUG_LOGS="true"
                 shift
+                ;;
+            -s | --spin-cycle)
+                export SPIN_CYCLE_COUNT="$2"
+                shift 2
                 ;;
             -o | --orchestrator)
                 export ORCHESTRATOR="$2"
@@ -307,8 +315,9 @@ _EOVAULTHELP_
 }
 
 run_qa_flavor() {
+    source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+
     if [[ -z "$SUITE" && -z "$CASE" ]]; then
-        source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
         (
             if [[ "${TEST_ONLY}" == "false" ]]; then
                 config_part_1
@@ -328,9 +337,9 @@ run_qa_flavor() {
 
         pushd qa-tests-backend
         if [[ -z "$CASE" ]]; then
-            ./gradlew test --console=plain --tests="$SUITE"
+            spin ./gradlew test --console=plain --tests="$SUITE"
         else
-            ./gradlew test --console=plain --tests="$SUITE.$CASE"
+            spin ./gradlew test --console=plain --tests="$SUITE.$CASE"
         fi
         popd
     fi
@@ -338,6 +347,10 @@ run_qa_flavor() {
 
 run_e2e_flavor() {
     "$ROOT/tests/e2e/run.sh" 2>&1 | sed -e 's/^/test output: /'
+}
+
+spin() {
+    "$@"
 }
 
 main "$@"
