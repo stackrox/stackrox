@@ -15,7 +15,7 @@ import util.Env
 
 class ImageManagementTest extends BaseSpecification {
 
-    String FEDORA_28 = "fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187"
+    private static final String FEDORA_28 = "fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187"
 
     @Unroll
     @Category([BAT, Integration])
@@ -80,7 +80,7 @@ class ImageManagementTest extends BaseSpecification {
     @Category(BAT)
     def "Verify image scan finds correct base OS - #imageTag"() {
         when:
-        def img = Services.scanImage("quay.io/rhacs-eng/qa" + ":" + imageTag)
+        def img = Services.scanImage("quay.io/rhacs-eng/qa:$imageTag")
         then:
         assert img.scan.operatingSystem == expected
         where:
