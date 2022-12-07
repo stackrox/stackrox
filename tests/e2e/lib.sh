@@ -17,7 +17,7 @@ deploy_stackrox() {
 
     get_central_basic_auth_creds
     wait_for_api
-    setup_client_TLS_certs  "${1:-}"
+    setup_client_TLS_certs "${1:-}"
 
     deploy_sensor
     echo "Sensor deployed. Waiting for sensor to be up"

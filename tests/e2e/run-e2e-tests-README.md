@@ -48,7 +48,7 @@ Configure only:
 run-e2e-tests.sh -c qa
 ```
 
-Run a single suite  (assumes a prior config step was executed):
+Run a single suite (assumes a prior config step was executed):
 ```
 # Run DeploymentTest.groovy suite:
 run-e2e-tests.sh -d qa DeploymentTest
