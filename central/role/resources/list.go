@@ -115,9 +115,7 @@ var (
 		WorkflowAdministration)
 	SignatureIntegration = newDeprecatedResourceMetadata("SignatureIntegration",
 		permissions.GlobalScope, Integration)
-	User                   = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
-	ProcessListeningOnPort = newDeprecatedResourceMetadata("ProcessListeningOnPort",
-		permissions.NamespaceScope, DeploymentExtension)
+	User = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
 
 	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)

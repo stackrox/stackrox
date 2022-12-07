@@ -69,7 +69,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ProcessListeningOnPortsSchema
-	targetResource = resources.ProcessListeningOnPort
+	targetResource = resources.DeploymentExtension
 )
 
 type PLOPByDeployment map[string][]*storage.ProcessListeningOnPort
