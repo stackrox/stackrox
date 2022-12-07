@@ -1775,7 +1775,10 @@ class Kubernetes implements OrchestratorMain {
 
             @Override
             void onExit(int code, Status s) {
-                log.debug("Command exited with $code - $s")
+                // Do not print the full status object here as it triggers prow
+                // error highlighting in CI. There is sufficient debug printed
+                // elsewhere.
+                log.debug("Command exited with $code")
                 switch (code) {
                     case 0:
                         status = ExecStatus.SUCCESS
