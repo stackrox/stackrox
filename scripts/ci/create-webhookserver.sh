@@ -17,22 +17,15 @@ install_webhook_server() {
     [[ -n "${certs_tmp_dir}" ]] || die "Usage: $0 <certs_dir>"
     [[ -d "${certs_tmp_dir}" ]] || mkdir "${certs_tmp_dir}"
 
-    printstatus() {
-        echo current resource status ...
-        echo
-        kubectl -n stackrox get all -l app=webhookserver
-    }
-
-    trap printstatus ERR
-
     gitroot="$(git rev-parse --show-toplevel)"
     [[ -n "${gitroot}" ]] || die "Could not determine git root"
 
     "${gitroot}/tests/scripts/setup-certs.sh" "${certs_tmp_dir}" webhookserver.stackrox "Webhook Server CA"
-    cd "${gitroot}/webhookserver"
+    pushd "${gitroot}/webhookserver"
     mkdir -p chart/certs
     cp "${certs_tmp_dir}/tls.crt" "${certs_tmp_dir}/tls.key" chart/certs
     helm -n stackrox upgrade --install webhookserver chart/
+    popd
 }
 
 create_webhook_server_port_forward() {
