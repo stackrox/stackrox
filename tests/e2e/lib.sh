@@ -17,7 +17,7 @@ deploy_stackrox() {
 
     get_central_basic_auth_creds
     wait_for_api
-    setup_client_TLS_certs
+    setup_client_TLS_certs  "${1:-}"
 
     deploy_sensor
     echo "Sensor deployed. Waiting for sensor to be up"
@@ -41,7 +41,7 @@ deploy_stackrox_with_custom_sensor() {
 
     get_central_basic_auth_creds
     wait_for_api
-    setup_client_TLS_certs
+    setup_client_TLS_certs "${2:-}"
 
     # generate init bundle
     password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"

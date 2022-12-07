@@ -34,7 +34,7 @@ config_part_1() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
-    deploy_stackrox
+    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
 
     deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
@@ -49,7 +49,9 @@ reuse_config_part_1() {
     export_test_environment
     setup_deployment_env false false
     export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
+    export_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
 
+    create_webhook_server_port_forward
     export_webhook_server_certs "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
 

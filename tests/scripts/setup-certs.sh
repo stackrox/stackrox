@@ -88,9 +88,15 @@ setup_client_TLS_certs() {
     info "Setting up client certs for tests"
 
     local cert_dir
-    cert_dir="$(mktemp -d)"
+    cert_dir="${1-$(mktemp -d)}"
     setup_certs "$cert_dir" "Client Certificate User" "Client CA"
 
+    export_client_TLS_certs "${cert_dir}"
+}
+
+export_client_TLS_certs() {
+    local cert_dir="$1"
+    
     export KEYSTORE_PATH="$cert_dir/keystore.p12"
     export CLIENT_CA_PATH="$cert_dir/ca.crt"
     export CLIENT_CERT_PATH="$cert_dir/tls.crt"
