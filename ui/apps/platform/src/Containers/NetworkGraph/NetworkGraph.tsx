@@ -27,7 +27,7 @@ import { EdgeState } from './EdgeStateSelect';
 import './Topology.css';
 import { getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel } from './types/topology.type';
-import { getExtraneousNodes } from './utils/modelUtils';
+import { createExtraneousNodes } from './utils/modelUtils';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -91,7 +91,7 @@ function setEdges(controller, detailId) {
     }
 }
 
-function setExtraneousNode(controller, detailId) {
+function setExtraneousNodes(controller, detailId) {
     if (!detailId) {
         // if there is no selected node, check if extraneous nodes exist and clear them
         const extraneousIngressNode = controller.getNodeById('extraneous-ingress');
@@ -104,7 +104,7 @@ function setExtraneousNode(controller, detailId) {
         }
     } else {
         const currentModel = controller.toModel();
-        const { extraneousEgressNode, extraneousIngressNode } = getExtraneousNodes();
+        const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes();
         // else if there is a selected node, create a node to collect extraneous flows
         const selectedNode = controller.getNodeById(detailId);
         const { networkPolicyState } = selectedNode?.data || {};
@@ -133,7 +133,7 @@ const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
     if (controller.hasGraph()) {
         setEdges(controller, detailId);
         if (edgeState === 'extraneous') {
-            setExtraneousNode(controller, detailId);
+            setExtraneousNodes(controller, detailId);
         }
     }
 

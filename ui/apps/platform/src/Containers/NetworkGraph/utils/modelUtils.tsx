@@ -283,7 +283,7 @@ export function createExtraneousFlowsModel(
     return dataModel;
 }
 
-export function getExtraneousNodes(): {
+export function createExtraneousNodes(): {
     extraneousEgressNode: ExtraneousNodeModel;
     extraneousIngressNode: ExtraneousNodeModel;
 } {
