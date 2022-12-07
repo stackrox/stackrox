@@ -1,8 +1,10 @@
 package migrations
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations/internal"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // CurrentDBVersionSeqNum is the current DB version number.
@@ -12,6 +14,8 @@ func CurrentDBVersionSeqNum() int {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return internal.CurrentDBVersionSeqNum
 	}
+	// XXX: to remove. The following is just to test how many test would fail
+	utils.Should(errors.Errorf("ROX_POSTGRES_DATASTORE should be true. We do not support RocksDB anymore."))
 	return internal.LastRocksDBVersionSeqNum
 }
 
@@ -20,9 +24,4 @@ func CurrentDBVersionSeqNum() int {
 // migrations.
 func BasePostgresDBVersionSeqNum() int {
 	return internal.LastRocksDBVersionSeqNum - 1
-}
-
-// LastRocksDBVersionSeqNum is the sequence number for the last RocksDB version.
-func LastRocksDBVersionSeqNum() int {
-	return internal.LastRocksDBVersionSeqNum
 }
