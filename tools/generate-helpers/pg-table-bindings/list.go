@@ -67,7 +67,7 @@ func init() {
 		&storage.ProcessBaselineResults{}:                       resources.DeploymentExtension,
 		&storage.ProcessBaseline{}:                              resources.DeploymentExtension,
 		&storage.ProcessIndicator{}:                             resources.DeploymentExtension,
-		&storage.ProcessListeningOnPortStorage{}:                resources.ProcessListeningOnPort,
+		&storage.ProcessListeningOnPortStorage{}:                resources.DeploymentExtension,
 		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		&storage.ReportConfiguration{}:                          resources.VulnerabilityReports,
