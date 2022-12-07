@@ -93,7 +93,10 @@ export const LIST_STANDARD_NO_NODES = gql`
 `;
 
 export const COMPLIANCE_STANDARDS = (standardId) => gql`
-    query complianceStandards_${standardId}($groupBy: [ComplianceAggregation_Scope!], $where: String) {
+    query complianceStandards_${standardId.replace(
+        /\W/g,
+        '_'
+    )}($groupBy: [ComplianceAggregation_Scope!], $where: String) {
         complianceStandards {
             id
             name
