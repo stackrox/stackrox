@@ -24,7 +24,7 @@ type datastoreImpl struct {
 }
 
 var (
-	plopSAC = sac.ForResource(resources.ProcessListeningOnPort)
+	plopSAC = sac.ForResource(resources.DeploymentExtension)
 	log     = logging.LoggerForModule()
 )
 

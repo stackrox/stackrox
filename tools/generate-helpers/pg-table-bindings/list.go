@@ -66,7 +66,7 @@ func init() {
 		&storage.ProcessBaselineResults{}:                       resources.DeploymentExtension,
 		&storage.ProcessBaseline{}:                              resources.DeploymentExtension,
 		&storage.ProcessIndicator{}:                             resources.DeploymentExtension,
-		&storage.ProcessListeningOnPortStorage{}:                resources.ProcessListeningOnPort,
+		&storage.ProcessListeningOnPortStorage{}:                resources.DeploymentExtension,
 		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		&storage.ReportConfiguration{}:                          resources.VulnerabilityReports,
 		&storage.Risk{}:                                         resources.DeploymentExtension,

@@ -19,7 +19,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ProcessListeningOnPort)): {
+		user.With(permissions.View(resources.DeploymentExtension)): {
 			"/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespace",
 			"/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespaceAndDeployment",
 		},
