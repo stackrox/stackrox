@@ -108,3 +108,7 @@ sensor-bounce-test: compile
 	@echo "+ $@"
 	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SensorBounce
 	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SensorBounceNext
+
+end-test: compile
+	@echo "+ $@"
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=End

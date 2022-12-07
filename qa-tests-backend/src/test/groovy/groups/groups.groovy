@@ -16,3 +16,4 @@ package groups
 @interface Notifiers { }
 @interface K8sEvents { }
 @interface Begin { } // Tests that needs to be run before all other tests
+@interface End { } // Test runs after other thests

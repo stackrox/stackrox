@@ -19,7 +19,7 @@ run_tests_part_2() {
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
     rm -f FAIL
-    make -C qa-tests-backend sensor-bounce-test || touch FAIL
+    make -C qa-tests-backend end-test sensor-bounce-test || touch FAIL
 
     store_qa_test_results "part-2-tests"
     [[ ! -f FAIL ]] || die "Part 2 tests failed"
