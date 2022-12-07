@@ -57,14 +57,20 @@ run-e2e-tests.sh -d qa DeploymentTest
 The `-d` option collects debug for failing tests under `/tmp/qa-tests-backend-logs/`
 similar to how CI tests operate.
 
-Run basic acceptance tests (BAT).
+Run basic acceptance tests (BAT):
 ```
-run-e2e-tests.sh -d qa
+run-e2e-tests.sh qa
 ```
 
 Only run tests (assumes a prior config step was executed):
 ```
-run-e2e-tests.sh -d --test-only qa
+run-e2e-tests.sh --test-only qa
+```
+
+Run tests repeatedly:
+```
+# Hammer on the IntegrationsSplunkViolationsTest
+run-e2e-tests.sh --spin-cycle=100 qa IntegrationsSplunkViolationsTest
 ```
 
 ### Non groovy tests - 'e2e' flavor

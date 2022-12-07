@@ -39,7 +39,7 @@ Options:
   -d, --gather-debug - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. 
     [qa flavor only]
   -s, --spin-cycle=<count> - repeat the test portion until a failure
-    occurs or <count> is reached with no failures.
+    occurs or <count> is reached with no failures. [qa flavor only]
   -t <tag> - override 'make tag' which sets the main version to install
     and is used by some tests.
   -o, --orchestrator=<orchestrator> - choose the cluster orchestrator.
@@ -145,7 +145,7 @@ get_options() {
     normalized_opts=$(\
       getopt \
         -o cdo:s:t:y \
-        --long config-only,test-only,gather-debug,spin-cycle,orchestrator: \
+        --long config-only,test-only,gather-debug,spin-cycle:,orchestrator: \
         -n 'run-e2e-tests.sh' -- "$@")
 
     eval set -- "$normalized_opts"
@@ -327,7 +327,7 @@ run_qa_flavor() {
                 info "Config reuse succeeded."
             fi
             if [[ "${CONFIG_ONLY}" == "false" ]]; then
-                test_part_1
+                spin test_part_1
                 info "Test succeeded."
             fi
         ) 2>&1 | sed -e 's/^/test output: /'
@@ -350,7 +350,12 @@ run_e2e_flavor() {
 }
 
 spin() {
-    "$@"
+    local count=0
+    while (( SPIN_CYCLE_COUNT > count )); do
+        "$@"
+        (( count++ )) || true
+        info "Completed test cycle: $count"
+    done
 }
 
 main "$@"
