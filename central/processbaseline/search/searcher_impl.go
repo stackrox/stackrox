@@ -67,9 +67,9 @@ func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Quer
 		err     error
 	)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		results, err = deploymentExtensionPostgresSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
+		results, err = deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(s.indexer).Search(ctx, q)
 	} else {
-		results, err = deploymentExtensionSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
+		results, err = deploymentExtensionSACSearchHelper.FilteredSearcher(s.indexer).Search(ctx, q)
 	}
 	if err != nil || len(results) == 0 {
 		return nil, err
