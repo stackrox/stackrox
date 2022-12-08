@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     PageSection,
     Title,
@@ -13,11 +13,12 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { EdgeModel } from '@patternfly/react-topology';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import useFetchClusters from 'hooks/useFetchClusters';
 import useURLSearch from 'hooks/useURLSearch';
-import { fetchNetworkFlowGraph } from 'services/NetworkService';
+import { fetchNetworkFlowGraph, fetchNetworkPolicyGraph } from 'services/NetworkService';
 import { getQueryString } from 'utils/queryStringUtils';
 import timeWindowToDate from 'utils/timeWindows';
 
@@ -25,9 +26,14 @@ import PageTitle from 'Components/PageTitle';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import EdgeStateSelect, { EdgeState } from './EdgeStateSelect';
 import NetworkGraph from './NetworkGraph';
-import { transformData, graphModel } from './utils/modelUtils';
+import {
+    transformPolicyData,
+    transformActiveData,
+    createExtraneousFlowsModel,
+    graphModel,
+} from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
-import { CustomModel } from './types/topology.type';
+import { CustomModel, CustomNodeModel, PolicyNodeModel } from './types/topology.type';
 
 import './NetworkGraphPage.css';
 
@@ -42,6 +48,8 @@ const includePorts = true;
 
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
+    const [activeModel, setActiveModel] = useState<CustomModel>(emptyModel);
+    const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -67,16 +75,68 @@ function NetworkGraphPage() {
                 const queryToUse = getQueryString(remainingQuery).slice(1);
                 const timestampToUse = timeWindowToDate(timeWindow);
 
-                fetchNetworkFlowGraph(
-                    selectedClusterId,
-                    namespacesFromUrl,
-                    queryToUse,
-                    timestampToUse || undefined,
-                    includePorts
-                )
-                    .then(({ response }) => {
-                        const dataModel = transformData(response.nodes);
-                        setModel(dataModel);
+                Promise.all([
+                    fetchNetworkFlowGraph(
+                        selectedClusterId,
+                        namespacesFromUrl,
+                        queryToUse,
+                        timestampToUse || undefined,
+                        includePorts
+                    ),
+                    fetchNetworkPolicyGraph(
+                        selectedClusterId,
+                        namespacesFromUrl,
+                        queryToUse,
+                        undefined,
+                        includePorts
+                    ),
+                ])
+                    .then((values) => {
+                        const activeNodeMap: Record<string, CustomNodeModel> = {};
+                        const activeEdgeMap: Record<string, EdgeModel> = {};
+                        const policyNodeMap: Record<string, PolicyNodeModel> = {};
+
+                        // get policy nodes from api response
+                        const { nodes: policyNodes } = values[1].response;
+                        // transform policy data to DataModel
+                        const policyDataModel = transformPolicyData(policyNodes);
+                        // set policyNodeMap to be able to cross reference nodes by id
+                        // to enhance active node data
+                        policyDataModel.nodes?.forEach((node) => {
+                            // no grouped nodes in policy graph data model
+                            if (!policyNodeMap[node.id]) {
+                                policyNodeMap[node.id] = node as PolicyNodeModel;
+                            }
+                        });
+
+                        // get active nodes from api response
+                        const { nodes: activeNodes } = values[0].response;
+                        // transform active data to DataModel
+                        const activeDataModel = transformActiveData(activeNodes, policyNodeMap);
+                        // set activeNodeMap to be able to cross reference nodes by id
+                        // for the extraneous graph
+                        activeDataModel.nodes?.forEach((node) => {
+                            // only add to node map when it's not a group node
+                            if (!activeNodeMap[node.id] && !node.group) {
+                                activeNodeMap[node.id] = node;
+                            }
+                        });
+                        // set activeEdgeMap to be able to cross reference edges by id
+                        // for the extraneous graph
+                        activeDataModel.edges?.forEach((edge) => {
+                            if (!activeEdgeMap[edge.id]) {
+                                activeEdgeMap[edge.id] = edge;
+                            }
+                        });
+
+                        // create extraneous flows graph
+                        const extraneousFlowsDataModel = createExtraneousFlowsModel(
+                            policyDataModel,
+                            activeNodeMap,
+                            activeEdgeMap
+                        );
+                        setActiveModel(activeDataModel);
+                        setExtraneousFlowsModel(extraneousFlowsDataModel);
                     })
                     .catch(() => {
                         // TODO
@@ -85,6 +145,14 @@ function NetworkGraphPage() {
             }
         }
     }, [clusters, clusterFromUrl, namespacesFromUrl]);
+
+    useEffect(() => {
+        if (edgeState === 'active') {
+            setModel(activeModel);
+        } else if (edgeState === 'extraneous') {
+            setModel(extraneousFlowsModel);
+        }
+    }, [edgeState, setModel, activeModel, extraneousFlowsModel]);
 
     return (
         <>
@@ -129,7 +197,7 @@ function NetworkGraphPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
-                {model.nodes && <NetworkGraph model={model} />}
+                {model.nodes && <NetworkGraph model={model} edgeState={edgeState} />}
                 {isLoading && (
                     <Bullseye>
                         <Spinner isSVG />
