@@ -126,7 +126,7 @@ func (p *HeapProfiler) dumpHeapOnThreshhold(ctx context.Context, runCheck <-chan
 			runtime.ReadMemStats(&mem)
 			if float64(mem.Alloc)/float64(p.LimitBytes) > p.ThresholdFraction {
 				if time.Since(p.lastDump) < p.Backoff {
-					return
+					continue // this will skip all code below and jump to start of the for loop
 				}
 				fileName := fmt.Sprintf("%s.dump", t.Format("20060102T15-04-05"))
 				log.Debugf("heap memory usage exceeded threshold, dumping heap profile to: %v", fileName)
