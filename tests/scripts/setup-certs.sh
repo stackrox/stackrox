@@ -59,6 +59,7 @@ keyUsage = critical, digitalSignature, cRLSign, keyCertSign
     popd
 }
 
+# shellcheck disable=SC2120
 setup_default_TLS_certs() {
     info "Setting up default certs for tests"
 
@@ -84,6 +85,7 @@ export_default_TLS_certs() {
     ls -al "${cert_dir}"
 }
 
+# shellcheck disable=SC2120
 setup_client_TLS_certs() {
     info "Setting up client certs for tests"
 

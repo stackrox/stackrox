@@ -12,6 +12,7 @@ source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
+# shellcheck disable=SC2120
 deploy_stackrox() {
     deploy_central
 
@@ -31,6 +32,7 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
+# shellcheck disable=SC2120
 deploy_stackrox_with_custom_sensor() {
     if [[ "$#" -ne 1 ]]; then
         die "expected sensor chart version as parameter in deploy_stackrox_with_custom_sensor"
