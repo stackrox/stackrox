@@ -1,6 +1,9 @@
 package phonehome
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // TenantIDLabel is the name of the k8s object label that holds the cloud
 // services tenant ID. The value of the label becomes the group ID if not empty.
@@ -18,9 +21,18 @@ type Config struct {
 	StorageKey   string
 	Endpoint     string
 	PushInterval time.Duration
+
+	// The period of identity gathering. Default is 1 hour.
+	GatherPeriod time.Duration
+
+	telemeter Telemeter
+	gatherer  Gatherer
 }
 
 // Enabled tells whether telemetry data collection is enabled.
 func (cfg *Config) Enabled() bool {
 	return cfg != nil && cfg.StorageKey != ""
 }
+
+// GatherFunc returns properties gathered by a data source.
+type GatherFunc func(context.Context) (map[string]any, error)
