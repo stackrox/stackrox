@@ -267,8 +267,11 @@ _EOVAULTHELP_
     fi
 
     context="$(kubectl config current-context)"
-    echo "This script will tear down resources, install ACS and dependencies and run tests against '$context'."
-
+    cat <<_EOWARNING_
+WARNING! This script can be destructive. Depending on how it is invoked,
+it may tear down resources, install ACS and dependencies and run tests.
+Current cluster context is: '$context'.
+_EOWARNING_
     if [[ "$PROMPT" == "true" ]]; then
         read -p "Are you sure? " -r
         if [[ ! $REPLY =~ ^[Yy]e?s?$ ]]; then
