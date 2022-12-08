@@ -78,7 +78,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify image scan finds correct base OS - #imageTag"() {
+    def "Verify image scan finds correct base OS - #qaImageTag"() {
         when:
         def img = Services.scanImage("quay.io/rhacs-eng/qa:$imageTag")
         then:
@@ -86,7 +86,7 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        imageTag               | expected
+        qaImageTag             | expected
         "nginx-1.19-alpine"    | "alpine:v3.13"
         "busybox-1-30"         | "busybox:1.30.1"
         "centos7-base"         | "centos:7"
