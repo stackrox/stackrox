@@ -17,7 +17,7 @@ type NodeScanner interface {
 type NodeScan struct {
 }
 
-// Scan scans the current node and returns the results as storage.NodeScanV2 object
+// Scan scans the current node and returns the results as storage.NodeInventory object
 func (n *NodeScan) Scan(nodeName string) (*storage.NodeInventory, error) {
 	componentsHost, err := nodes.Analyze(nodeName, "/host/", false)
 	log.Info("Finished node inventory /host scan")
