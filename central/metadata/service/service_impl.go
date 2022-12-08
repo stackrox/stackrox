@@ -8,15 +8,18 @@ import (
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 )
@@ -48,9 +51,15 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		ReleaseBuild:  buildinfo.ReleaseBuild,
 		LicenseStatus: v1.Metadata_VALID,
 	}
+	id := authn.IdentityFromContextOrNil(ctx)
 	// Only return the version to logged in users, not anonymous users.
-	if authn.IdentityFromContextOrNil(ctx) != nil {
+	if id != nil {
 		metadata.Version = version.GetMainVersion()
+	}
+	if phonehome.Enabled() {
+		metadata.StorageKeyV1 = env.TelemetryStorageKey.Setting()
+		metadata.TelemetryEndpoint = env.TelemetryEndpoint.Setting()
+		metadata.UserId = centralclient.InstanceConfig().HashUserAuthID(id)
 	}
 	return metadata, nil
 }

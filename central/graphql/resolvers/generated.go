@@ -792,6 +792,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"buildFlavor: String!",
 		"licenseStatus: Metadata_LicenseStatus!",
 		"releaseBuild: Boolean!",
+		"storageKeyV1: String!",
+		"telemetryEndpoint: String!",
+		"userId: String!",
 		"version: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
@@ -1320,6 +1323,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"skipTLSVerify: Boolean!",
 	}))
 	utils.Must(builder.AddType("Syslog", []string{
+		"extraFields: [KeyValuePair]!",
 		"localFacility: Syslog_LocalFacility!",
 		"tcpConfig: Syslog_TCPConfig",
 		"endpoint: SyslogEndpoint",
@@ -9323,6 +9327,21 @@ func (resolver *metadataResolver) ReleaseBuild(ctx context.Context) bool {
 	return value
 }
 
+func (resolver *metadataResolver) StorageKeyV1(ctx context.Context) string {
+	value := resolver.data.GetStorageKeyV1()
+	return value
+}
+
+func (resolver *metadataResolver) TelemetryEndpoint(ctx context.Context) string {
+	value := resolver.data.GetTelemetryEndpoint()
+	return value
+}
+
+func (resolver *metadataResolver) UserId(ctx context.Context) string {
+	value := resolver.data.GetUserId()
+	return value
+}
+
 func (resolver *metadataResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
@@ -14367,6 +14386,11 @@ func (resolver *Resolver) wrapSyslogsWithContext(ctx context.Context, values []*
 		output[i] = &syslogResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *syslogResolver) ExtraFields(ctx context.Context) ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetExtraFields()
+	return resolver.root.wrapKeyValuePairs(value, nil)
 }
 
 func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
