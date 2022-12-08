@@ -95,6 +95,12 @@ func (suite *recreateGroupsBucketMigrationTestSuite) TestMigrate() {
 				value: []byte(""),
 			},
 		},
+		"invalid-group-stored-by-id": {
+			entry: groupEntry{
+				key:   []byte(existingGroup.GetProps().GetId() + "make-it-unique"),
+				value: rawInvalidGroup,
+			},
+		},
 		"invalid-bytes": {
 			entry: groupEntry{
 				key:   []byte("some-random-bytes-no-one-knows"),

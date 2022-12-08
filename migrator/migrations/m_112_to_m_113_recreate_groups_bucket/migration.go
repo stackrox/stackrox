@@ -3,6 +3,7 @@ package m112tom113
 import (
 	"strings"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
@@ -101,7 +102,7 @@ func createGroupsBucket(db *bolt.DB, groupEntries []groupEntry) (err error) {
 			// Here, we will check that the key will be a string and can be parsed as a UUID.
 			// If that's the case, the entry is valid, and we will add it to the re-created bucket.
 			// If not, we will log the invalid entry that will be dropped.
-			if !checkIfIDIsSet(entry.key) {
+			if !verifyKeyValuePair(entry.key, entry.value) {
 				log.WriteToStderrf("Invalid group entry found in groups bucket (key=%s, value=%s). This entry"+
 					" will be dropped.",
 					entry.key, entry.value)
@@ -139,12 +140,18 @@ const (
 	groupMigratedIDPrefix = "io.stackrox.authz.group.migrated."
 )
 
-func checkIfIDIsSet(key []byte) bool {
+func verifyKeyValuePair(key, value []byte) bool {
 	stringKey := string(key)
 
+	// The key should be a string ID, with a constant prefix and a UUID.
 	if !strings.HasPrefix(stringKey, groupIDPrefix) && !strings.HasPrefix(stringKey, groupMigratedIDPrefix) {
 		return false
 	}
 
-	return true
+	// The value should be a storage.Group with ID set.
+	var group storage.Group
+	if err := proto.Unmarshal(value, &group); err != nil {
+		return false
+	}
+	return group.GetProps().GetId() != ""
 }
