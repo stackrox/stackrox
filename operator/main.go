@@ -121,7 +121,7 @@ func run() error {
 		}
 		heapProfiler := profiling.NewHeapProfiler(thresholdF, uint64(memLimit.IntegerSetting()), heapDumpDir.Setting())
 		ctx, cancelProfiler := context.WithCancel(context.Background())
-		heapProfiler.DumpHeapOnThreshhold(ctx, time.Second)
+		go heapProfiler.DumpHeapOnThreshhold(ctx, time.Second)
 		defer cancelProfiler()
 	}
 
