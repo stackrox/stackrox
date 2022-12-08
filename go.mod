@@ -96,7 +96,7 @@ require (
 	go.uber.org/atomic v1.10.0
 	go.uber.org/goleak v1.2.0
 	go.uber.org/zap v1.23.0
-	golang.org/x/crypto v0.3.0
+	golang.org/x/crypto v0.4.0
 	golang.org/x/exp v0.0.0-20220823124025-807a23277127
 	golang.org/x/net v0.3.0
 	golang.org/x/oauth2 v0.2.0
