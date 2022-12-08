@@ -6,17 +6,20 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+// This file is a partial copy of central/role/store/permissionset/postgres/store.go
+// in the state it had when the migration was written.
+// Only the two relevant functions (Walk and UpsertMany) are kept.
+// The kept functions are stripped from the scoped access control checks.
 
 const (
 	baseTable = "permission_sets"
@@ -29,7 +32,6 @@ const (
 	batchSize = 10000
 
 	cursorBatchSize = 50
-	deleteBatchSize = 5000
 )
 
 var (
@@ -39,21 +41,9 @@ var (
 
 // Store is the interface for interactions with the database storage
 type Store interface {
-	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error)
-	Upsert(ctx context.Context, obj *storage.PermissionSet) error
 	UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error
-	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
-	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.PermissionSet, []int, error)
-	DeleteMany(ctx context.Context, ids []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -205,13 +195,6 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PermissionSet) 
 	return nil
 }
 
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.PermissionSet) error {
-
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error {
 
 	return pgutils.Retry(func() error {
@@ -228,174 +211,12 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PermissionSe
 	})
 }
 
-// Count returns the number of objects in the store
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
-
-	var sacQueryFilter *v1.Query
-
-	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
-// Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
-	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
-	// returns more than 1, despite the fact that the identifier is unique in the table.
-	return count > 0, err
-}
-
-// Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error) {
-
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema[storage.PermissionSet](ctx, schema, q, s.db)
-	if err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	return data, true, nil
-}
-
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
-}
-
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
-
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
-// DeleteByQuery removes the objects based on the passed query
-func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
-
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	var sacQueryFilter *v1.Query
-	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]string, 0, len(result))
-	for _, entry := range result {
-		ids = append(ids, entry.ID)
-	}
-
-	return ids, nil
-}
-
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.PermissionSet, []int, error) {
-
-	if len(ids) == 0 {
-		return nil, nil, nil
-	}
-
-	var sacQueryFilter *v1.Query
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-	)
-
-	rows, err := postgres.RunGetManyQueryForSchema[storage.PermissionSet](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.PermissionSet, len(rows))
-	for _, msg := range rows {
-		resultsByID[msg.GetId()] = msg
-	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.PermissionSet, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
-}
-
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-
-	var sacQueryFilter *v1.Query
-
-	// Batch the deletes
-	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(ids)
-	for {
-		if len(ids) == 0 {
-			break
-		}
-
-		if len(ids) < localBatchSize {
-			localBatchSize = len(ids)
-		}
-
-		idBatch := ids[:localBatchSize]
-		q := search.ConjunctionQuery(
-			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
-		)
-
-		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
-			log.Error(err)
-			return err
-		}
-
-		// Move the slice forward to start the next batch
-		ids = ids[localBatchSize:]
-	}
-
-	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -421,28 +242,4 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PermissionSet
 		}
 	}
 	return nil
-}
-
-//// Used for testing
-
-func dropTablePermissionSets(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS permission_sets CASCADE")
-
-}
-
-// Destroy removes the PermissionSet storage from the database
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTablePermissionSets(ctx, db)
-}
-
-//// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
 }
