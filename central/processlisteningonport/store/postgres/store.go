@@ -51,7 +51,7 @@ const (
 	// XXX: Verify the query plan to make sure needed indexes are in use.
 	getByNamespaceAndDeploymentStmt = "SELECT plop.id, plop.serialized, " +
 		"proc.podid, proc.containername, proc.signal_name, " +
-		"proc.signal_args, proc.signal_execfilepath " +
+		"proc.signal_args, proc.signal_execfilepath, proc.clusterid " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
@@ -59,7 +59,7 @@ const (
 
 	getByNamespace = "SELECT plop.id, plop.serialized, proc.deploymentid, " +
 		"proc.podid, proc.containername, proc.signal_name, " +
-		"proc.signal_args, proc.signal_execfilepath " +
+		"proc.signal_args, proc.signal_execfilepath, proc.clusterid " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
@@ -691,13 +691,14 @@ func (s *storeImpl) readRows(
 		var signalName string
 		var signalArgs string
 		var signalExecFilePath string
+		var clusterId string
 
 		// We're getting ProcessIndicator directly from the SQL query, PLOP
 		// parts have to be extra deserialized.
 		if err := rows.Scan(
 			&id, &serialized,
 			&podId, &containerName,
-			&signalName, &signalArgs, &signalExecFilePath); err != nil {
+			&signalName, &signalArgs, &signalExecFilePath, &clusterId); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
@@ -710,6 +711,7 @@ func (s *storeImpl) readRows(
 			Port:           msg.Port,
 			Protocol:       msg.Protocol,
 			CloseTimestamp: msg.CloseTimestamp,
+			ClusterId:	clusterId,
 			Process: &storage.ProcessIndicatorUniqueKey{
 				PodId:               podId,
 				ContainerName:       containerName,
@@ -767,13 +769,14 @@ func (s *storeImpl) readRowsGroupBy(
 		var signalName string
 		var signalArgs string
 		var signalExecFilePath string
+		var clusterId string
 
 		// We're getting ProcessIndicator directly from the SQL query, PLOP
 		// parts have to be extra deserialized.
 		if err := rows.Scan(
 			&id, &serialized, &deploymentId,
 			&podId, &containerName,
-			&signalName, &signalArgs, &signalExecFilePath); err != nil {
+			&signalName, &signalArgs, &signalExecFilePath, &clusterId); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
@@ -786,6 +789,7 @@ func (s *storeImpl) readRowsGroupBy(
 			Port:           msg.Port,
 			Protocol:       msg.Protocol,
 			CloseTimestamp: msg.CloseTimestamp,
+			ClusterId:	clusterId,
 			Process: &storage.ProcessIndicatorUniqueKey{
 				PodId:               podId,
 				ContainerName:       containerName,
