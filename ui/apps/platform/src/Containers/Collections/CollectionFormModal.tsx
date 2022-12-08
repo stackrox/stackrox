@@ -15,7 +15,7 @@ import { useMediaQuery } from 'react-responsive';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { collectionsBasePath } from 'routePaths';
-import { CollectionResponse } from 'services/CollectionsService';
+import { Collection } from 'services/CollectionsService';
 import useCollection from './hooks/useCollection';
 import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import CollectionLoadError from './CollectionLoadError';
@@ -32,7 +32,7 @@ function getCollectionTableCells(): ReturnType<
     return [
         {
             name: 'Name',
-            render: ({ id, name }: CollectionResponse) => (
+            render: ({ id, name }: Collection) => (
                 <Button
                     variant="link"
                     component="a"

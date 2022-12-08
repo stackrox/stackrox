@@ -20,7 +20,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import { collectionsBasePath } from 'routePaths';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import {
-    CollectionResponse,
+    Collection,
     deleteCollection,
     getCollectionCount,
     listCollections,
@@ -70,7 +70,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     const isLoading = !isDataAvailable && (listLoading || countLoading);
     const loadError = listError || countError;
 
-    function onCollectionDelete({ id, name }: CollectionResponse) {
+    function onCollectionDelete({ id, name }: Collection) {
         const { request } = deleteCollection(id);
 
         return request
