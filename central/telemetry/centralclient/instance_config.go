@@ -30,6 +30,10 @@ var (
 )
 
 func getInstanceConfig() (*phonehome.Config, error) {
+	key := env.TelemetryStorageKey.Setting()
+	if key == "" {
+		return nil, nil
+	}
 	rc, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, err
@@ -58,9 +62,12 @@ func getInstanceConfig() (*phonehome.Config, error) {
 	}
 
 	return &phonehome.Config{
-		ClientID:   centralID,
-		ClientName: "Central",
-		GroupID:    tenantID,
+		ClientID:     centralID,
+		ClientName:   "Central",
+		GroupID:      tenantID,
+		StorageKey:   key,
+		Endpoint:     env.TelemetryEndpoint.Setting(),
+		PushInterval: env.TelemetryFrequency.DurationSetting(),
 	}, nil
 }
 
@@ -69,13 +76,13 @@ func getInstanceConfig() (*phonehome.Config, error) {
 // data is used for instance identification.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
-		if !phonehome.Enabled() {
-			log.Info("Phonehome telemetry collection disabled.")
-			return
-		}
 		cfg, err := getInstanceConfig()
 		if err != nil {
 			log.Errorf("Failed to get telemetry configuration: %v. Using hardcoded values.", err)
+			return
+		}
+		if cfg == nil {
+			log.Info("Phonehome telemetry collection disabled.")
 			return
 		}
 		config = cfg

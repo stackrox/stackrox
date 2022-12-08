@@ -1,6 +1,6 @@
 package phonehome
 
-import "github.com/stackrox/rox/pkg/env"
+import "time"
 
 // Config represents a telemetry client instance configuration.
 type Config struct {
@@ -10,9 +10,13 @@ type Config struct {
 	ClientName string
 	// GroupID identifies the main group to which the client belongs.
 	GroupID string
+
+	StorageKey   string
+	Endpoint     string
+	PushInterval time.Duration
 }
 
 // Enabled tells whether telemetry data collection is enabled.
-func Enabled() bool {
-	return env.TelemetryStorageKey.Setting() != ""
+func (cfg *Config) Enabled() bool {
+	return cfg.StorageKey != ""
 }

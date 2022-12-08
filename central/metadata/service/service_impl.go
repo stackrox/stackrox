@@ -14,12 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 )
@@ -56,10 +54,10 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 	if id != nil {
 		metadata.Version = version.GetMainVersion()
 	}
-	if phonehome.Enabled() {
-		metadata.StorageKeyV1 = env.TelemetryStorageKey.Setting()
-		metadata.TelemetryEndpoint = env.TelemetryEndpoint.Setting()
-		metadata.UserId = centralclient.InstanceConfig().HashUserAuthID(id)
+	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		metadata.StorageKeyV1 = cfg.StorageKey
+		metadata.TelemetryEndpoint = cfg.Endpoint
+		metadata.UserId = cfg.HashUserAuthID(id)
 	}
 	return metadata, nil
 }
