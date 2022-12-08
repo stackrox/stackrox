@@ -88,13 +88,13 @@ class ImageManagementTest extends BaseSpecification {
 
         imageTag               | expected
         "nginx-1.19-alpine"    | "alpine:v3.13"
-        "busybox-1-30"         | "busybox:1.30.0"
+        "busybox-1-30"         | "busybox:1.30.1"
         "centos7-base"         | "centos:7"
         // We explicitly do not support Fedora at this time.
         FEDORA_28              | "unknown"
-        "docker-io-nginx-1-10" | "debian:8"
-        "docker-io-nginx-1-12" | "debian:9"
-        "ubi9-slf4j"           | "rhel:9.0"
+        "nginx-1-9"            | "debian:8"
+        "nginx-1-17-1"         | "debian:9"
+        "ubi9-slf4j"           | "rhel:9"
         "apache-server"        | "ubuntu:14.04"
         "ubuntu-22.10-openssl" | "ubuntu:22.10"
     }
