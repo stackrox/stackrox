@@ -276,9 +276,16 @@ func main() {
 		defer close(sensorC)
 		go manageSendingToSensor(ctx, cli, sensorC)
 
-		// TODO(ROX-12971): Replace with real scanner
-		scanner := nodescanv2.FakeNodeScanner{}
-		nodeInventoriesC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), &scanner)
+		var scanner nodescanv2.NodeScanner
+		if features.UseFakeNodeInventory.Enabled() {
+			log.Infof("Using FakeNodeScanner")
+			scanner = &nodescanv2.FakeNodeScanner{}
+		} else {
+			log.Infof("Using NodeScan")
+			scanner = &nodescanv2.NodeScan{}
+		}
+		nodeInventoriesC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), scanner)
+
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
 		go func() {
 			for {
