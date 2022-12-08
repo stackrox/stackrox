@@ -243,3 +243,32 @@ func (s *SyslogNotifierTestSuite) TestAlerts() {
 	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 }
+
+func (s *SyslogNotifierTestSuite) TestValidateRemoteConfig() {
+	tcpConfig := &storage.Syslog_TCPConfig{
+		Hostname:      "google.com",
+		Port:          66666666,
+		SkipTlsVerify: true,
+		UseTls:        true,
+	}
+	_, errPort := validateRemoteConfig(tcpConfig)
+	s.Error(errPort)
+
+	tcpConfigExtraSpace := &storage.Syslog_TCPConfig{
+		Hostname:      "10.46.152.34 ",
+		Port:          514,
+		SkipTlsVerify: true,
+		UseTls:        true,
+	}
+	_, errURL := validateRemoteConfig(tcpConfigExtraSpace)
+	s.Error(errURL)
+
+	tcpConfigValidIP := &storage.Syslog_TCPConfig{
+		Hostname:      "10.46.152.34",
+		Port:          514,
+		SkipTlsVerify: true,
+		UseTls:        true,
+	}
+	_, errURLValidIP := validateRemoteConfig(tcpConfigValidIP)
+	s.NoError(errURLValidIP)
+}
