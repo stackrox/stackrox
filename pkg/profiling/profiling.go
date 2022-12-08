@@ -131,7 +131,7 @@ func (p *HeapProfiler) dumpHeapOnThreshhold(ctx context.Context, runCheck <-chan
 				fileName := fmt.Sprintf("%s.dump", t.Format("20060102T15-04-05"))
 				log.Debugf("heap memory usage exceeded threshold, dumping heap profile to: %v", fileName)
 				if err := p.writeHeapProfile(fileName); err != nil {
-					log.Debugf("error dumping heap: %s", err)
+					log.Errorf("error dumping heap on memory threshold: %s", err)
 				}
 				p.lastDump = time.Now()
 			}
