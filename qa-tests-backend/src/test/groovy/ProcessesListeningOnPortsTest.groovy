@@ -5,6 +5,7 @@ import groups.Integration
 import objects.Deployment
 import objects.K8sServiceAccount
 import objects.Service
+import services.ClusterService
 import util.Env
 import util.Helpers
 
@@ -120,30 +121,15 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
 
         rebuildForRetries()
+        def clusterId = ClusterService.getClusterId()
 
-        String namespace = targetDeployments[0].getNamespace()
-        String deploymentId = targetDeployments[0].getDeploymentUid()
-
-        def processesListeningOnPorts = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(namespace, deploymentId)
-                return temp
-        }
-
-        namespace = targetDeployments[1].getNamespace()
-        deploymentId = targetDeployments[1].getDeploymentUid()
-
-        processesListeningOnPorts = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(namespace, deploymentId)
-                return temp
-        }
+        String namespace = targetDeployments[1].getNamespace()
 
         def gotCorrectNumElements = waitForNamespaceResponseToHaveNumElements(2, namespace, 240)
 
         assert gotCorrectNumElements == true
 
-        processesListeningOnPorts = evaluateWithRetry(10, 10) {
+        def processesListeningOnPorts = evaluateWithRetry(10, 10) {
                 def temp = ProcessesListeningOnPortsService
                         .getProcessesListeningOnPortsWithDeploymentResponse(namespace)
                 return temp
@@ -168,6 +154,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint1a = list1.find { it.port == 80 }
 
         assert endpoint1a
+        assert endpoint1a.clusterId == clusterId
         assert endpoint1a.process.containerName == TCPCONNECTIONTARGET1
         assert endpoint1a.process.processName == "socat"
         assert endpoint1a.process.processExecFilePath == "/usr/bin/socat"
@@ -176,6 +163,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint1b = list1.find { it.port == 8080 }
 
         assert endpoint1b
+        assert endpoint1b.clusterId == clusterId
         assert endpoint1b.process.containerName == TCPCONNECTIONTARGET1
         assert endpoint1b.process.processName == "socat"
         assert endpoint1b.process.processExecFilePath == "/usr/bin/socat"
@@ -188,6 +176,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint2 = list2.get(0)
 
         assert endpoint2.port == 8081
+        assert endpoint2.clusterId == clusterId
         assert endpoint2.process.containerName == TCPCONNECTIONTARGET2
         assert endpoint2.process.processName == "socat"
         assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
@@ -222,6 +211,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
 
         rebuildForRetries()
+        def clusterId = ClusterService.getClusterId()
 
         String namespace = targetDeployments[0].getNamespace()
         String deploymentId = targetDeployments[0].getDeploymentUid()
@@ -244,6 +234,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint1 = list.find { it.port == 80 }
 
         assert endpoint1
+        assert endpoint1.clusterId == clusterId
         assert endpoint1.process.containerName == TCPCONNECTIONTARGET1
         assert endpoint1.process.processName == "socat"
         assert endpoint1.process.processExecFilePath == "/usr/bin/socat"
@@ -252,6 +243,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint2 = list.find { it.port == 8080 }
 
         assert endpoint2
+        assert endpoint2.clusterId == clusterId
         assert endpoint2.process.containerName == TCPCONNECTIONTARGET1
         assert endpoint2.process.processName == "socat"
         assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
