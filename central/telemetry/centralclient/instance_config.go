@@ -76,8 +76,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			StorageKey:   key,
 			Endpoint:     env.TelemetryEndpoint.Setting(),
 			PushInterval: env.TelemetryFrequency.DurationSetting(),
-		},
-		map[string]any{
+		}, map[string]any{
 			"Central version":    version.GetMainVersion(),
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,
