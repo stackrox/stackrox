@@ -10,7 +10,9 @@ export type CustomNodeModel =
     | DeploymentNodeModel
     | ExternalNodeModel
     | ExternalEntitiesNodeModel
-    | CIDRBlockNodeModel;
+    | CIDRBlockNodeModel
+    | PolicyNodeModel
+    | ExtraneousNodeModel;
 
 export type NamespaceNodeModel = Override<NodeModel, { data: NamespaceData }>;
 
@@ -21,6 +23,10 @@ export type ExternalNodeModel = Override<NodeModel, { data: ExternalData }>;
 export type ExternalEntitiesNodeModel = Override<NodeModel, { data: ExternalEntitiesData }>;
 
 export type CIDRBlockNodeModel = Override<NodeModel, { data: CIDRBlockData }>;
+
+export type PolicyNodeModel = Override<NodeModel, { data: PolicyDeploymentData }>;
+
+export type ExtraneousNodeModel = Override<NodeModel, { data: ExtraneousData }>;
 
 export type CustomNodeData =
     | NamespaceData
@@ -35,6 +41,8 @@ export type NamespaceData = {
     showContextMenu: boolean;
 };
 
+export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
+
 export type DeploymentData = {
     type: 'DEPLOYMENT';
     id: string;
@@ -45,6 +53,7 @@ export type DeploymentData = {
         namespace: string;
     };
     policyIds: string[];
+    networkPolicyState: NetworkPolicyState;
 };
 
 export type ExternalData = {
@@ -66,4 +75,24 @@ export type CIDRBlockData = {
         default: boolean;
         name: string;
     };
+};
+
+export type PolicyDeploymentData = {
+    type: 'DEPLOYMENT';
+    id: string;
+    deployment: {
+        cluster: string;
+        listenPorts: ListenPort[];
+        name: string;
+        namespace: string;
+    };
+    policyIds: string[];
+    nonIsolatedIngress: boolean;
+    nonIsolatedEgress: boolean;
+};
+
+export type ExtraneousData = {
+    type: 'EXTRANEOUS';
+    collapsible: boolean;
+    showContextMenu: boolean;
 };
