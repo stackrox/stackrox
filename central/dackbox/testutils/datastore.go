@@ -8,10 +8,16 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"
+	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
+	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
+	cveConverterV1 "github.com/stackrox/rox/central/cve/converter"
+	cveConverterUtils "github.com/stackrox/rox/central/cve/converter/utils"
+	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
 	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
 	cveIndex "github.com/stackrox/rox/central/cve/index"
 	deploymentDackbox "github.com/stackrox/rox/central/deployment/dackbox"
@@ -33,6 +39,8 @@ import (
 	nodeIndex "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeDackbox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
 	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
+	"github.com/stackrox/rox/generated/storage"
+	boltPkg "github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
@@ -45,6 +53,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
+	"go.etcd.io/bbolt"
 )
 
 // DackboxTestDataStore provides the interface to a utility for dackbox testing, with accessors to some internals,
@@ -57,10 +66,14 @@ type DackboxTestDataStore interface {
 	GetDackbox() *dackbox.DackBox
 	GetKeyFence() dackboxConcurrency.KeyFence
 	GetIndexQ() queue.WaitableQueue
+	// Internal accessor for test case generation
+	GetStoredClusterIDs() []string
 	// Data injection
+	PushClusterToVulnerabilitiesGraph(waitForIndexing bool) error
 	PushImageToVulnerabilitiesGraph(waitForIndexing bool) error
 	PushNodeToVulnerabilitiesGraph(waitForIndexing bool) error
 	// Data cleanup
+	CleanClusterToVulnerabilitiesGraph(waitForIndexing bool) error
 	CleanImageToVulnerabilitiesGraph(waitForIndexing bool) error
 	CleanNodeToVulnerabilitiesGraph(waitForIndexing bool) error
 	// Post test cleanup (TearDown)
@@ -71,6 +84,7 @@ type dackboxTestDataStoreImpl struct {
 	// Pool for postgres mode
 	pgtestbase *pgtest.TestPostgres
 	// Elements for rocksdb+bleve mode
+	boltengine  *bbolt.DB
 	rocksEngine *rocksPkg.RocksDB
 	bleveIndex  bleve.Index
 	dacky       *dackbox.DackBox
@@ -78,15 +92,49 @@ type dackboxTestDataStoreImpl struct {
 	indexQ      queue.WaitableQueue
 
 	// DataStores
-	namespaceStore  namespaceDataStore.DataStore
-	deploymentStore deploymentDataStore.DataStore
-	imageStore      imageDataStore.DataStore
-	nodeStore       nodeDataStore.DataStore
+	namespaceStore      namespaceDataStore.DataStore
+	deploymentStore     deploymentDataStore.DataStore
+	imageStore          imageDataStore.DataStore
+	nodeStore           nodeDataStore.DataStore
+	clusterStore        clusterDataStore.DataStore
+	clusterCVEEdgeStore clusterCVEEdgeDataStore.DataStore
+	clusterCVEStore     clusterCVEDataStore.DataStore
 
-	storedNodes       []string
-	storedImages      []string
-	storedDeployments []string
-	storedNamespaces  []string
+	storedNodes           []string
+	storedImages          []string
+	storedDeployments     []string
+	storedNamespaces      []string
+	storedClusters        []string
+	storedClusterCVEEdges []string
+}
+
+func embeddedVulnerabilityToClusterCVE(from *storage.EmbeddedVulnerability) *storage.ClusterCVE {
+	ret := &storage.ClusterCVE{
+		Id: from.GetCve(),
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          from.GetCve(),
+			Summary:      from.GetSummary(),
+			Link:         from.GetLink(),
+			PublishedOn:  from.GetPublishedOn(),
+			CreatedAt:    from.GetFirstSystemOccurrence(),
+			LastModified: from.GetLastModified(),
+			CvssV2:       from.GetCvssV2(),
+			CvssV3:       from.GetCvssV3(),
+		},
+		Cvss:         from.GetCvss(),
+		Severity:     from.GetSeverity(),
+		Snoozed:      from.GetSuppressed(),
+		SnoozeStart:  from.GetSuppressActivation(),
+		SnoozeExpiry: from.GetSuppressExpiry(),
+	}
+	if ret.GetCveBaseInfo().GetCvssV3() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
+		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
+	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
+		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
+	}
+	return ret
 }
 
 func (s *dackboxTestDataStoreImpl) GetPostgresPool() *pgxpool.Pool {
@@ -111,6 +159,105 @@ func (s *dackboxTestDataStoreImpl) GetKeyFence() dackboxConcurrency.KeyFence {
 
 func (s *dackboxTestDataStoreImpl) GetIndexQ() queue.WaitableQueue {
 	return s.indexQ
+}
+
+func (s *dackboxTestDataStoreImpl) GetStoredClusterIDs() []string {
+	return s.storedClusters
+}
+
+// PushClusterToVulnerabilitiesGraph inserts the cluster -> CVE graph defined
+// in the dackbox fixture (see the comment at the top of the cluster section for more details).
+// The actual edges are declared in the function
+func (s *dackboxTestDataStoreImpl) PushClusterToVulnerabilitiesGraph(waitForIndexing bool) (err error) {
+	ctx := sac.WithAllAccess(context.Background())
+	cluster1 := fixtures.GetCluster(testconsts.Cluster1)
+	cluster2 := fixtures.GetCluster(testconsts.Cluster2)
+	cluster1ID, err := s.clusterStore.AddCluster(ctx, cluster1)
+	if err != nil {
+		return err
+	}
+	s.storedClusters = append(s.storedClusters, cluster1ID)
+	cluster1.Id = cluster1ID
+	cluster2ID, err := s.clusterStore.AddCluster(ctx, cluster2)
+	if err != nil {
+		return err
+	}
+	s.storedClusters = append(s.storedClusters, cluster2ID)
+	cluster2.Id = cluster2ID
+	clusters1Only := []*storage.Cluster{cluster1}
+	clusters2Only := []*storage.Cluster{cluster2}
+	embeddedClusterCVE1 := fixtures.GetEmbeddedClusterCVE1234x0001()
+	cve1FixVersion := embeddedClusterCVE1.GetFixedBy()
+	embeddedClusterCVE2 := fixtures.GetEmbeddedClusterCVE4567x0002()
+	cve2FixVersion := embeddedClusterCVE2.GetFixedBy()
+	embeddedClusterCVE3 := fixtures.GetEmbeddedClusterCVE2345x0003()
+	cve3FixVersion := embeddedClusterCVE3.GetFixedBy()
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		clusterCVE1 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE1)
+		clusterCVE2 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE2)
+		clusterCVE3 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE3)
+		clusterCVEParts1x1 := cveConverterV2.NewClusterCVEParts(clusterCVE1, clusters1Only, cve1FixVersion)
+		clusterCVEParts1x2 := cveConverterV2.NewClusterCVEParts(clusterCVE2, clusters1Only, cve2FixVersion)
+		clusterCVEParts2x2 := cveConverterV2.NewClusterCVEParts(clusterCVE2, clusters2Only, cve2FixVersion)
+		clusterCVEParts2x3 := cveConverterV2.NewClusterCVEParts(clusterCVE3, clusters2Only, cve3FixVersion)
+		err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts1x1)
+		if err != nil {
+			return err
+		}
+		err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts1x2)
+		if err != nil {
+			return err
+		}
+		err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts2x2)
+		if err != nil {
+			return err
+		}
+		err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts2x3)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Dackbox mode
+		clusterCVE1 := cveConverterUtils.EmbeddedCVEToProtoCVE("", embeddedClusterCVE1)
+		clusterCVE2 := cveConverterUtils.EmbeddedCVEToProtoCVE("", embeddedClusterCVE2)
+		clusterCVE3 := cveConverterUtils.EmbeddedCVEToProtoCVE("", embeddedClusterCVE3)
+		clusterCVEParts1x1 := cveConverterV1.NewClusterCVEParts(clusterCVE1, clusters1Only, cve1FixVersion)
+		for _, c := range clusterCVEParts1x1.Children {
+			s.storedClusterCVEEdges = append(s.storedClusterCVEEdges, c.Edge.GetId())
+		}
+		clusterCVEParts1x2 := cveConverterV1.NewClusterCVEParts(clusterCVE2, clusters1Only, cve2FixVersion)
+		for _, c := range clusterCVEParts1x2.Children {
+			s.storedClusterCVEEdges = append(s.storedClusterCVEEdges, c.Edge.GetId())
+		}
+		clusterCVEParts2x2 := cveConverterV1.NewClusterCVEParts(clusterCVE2, clusters2Only, cve2FixVersion)
+		for _, c := range clusterCVEParts2x2.Children {
+			s.storedClusterCVEEdges = append(s.storedClusterCVEEdges, c.Edge.GetId())
+		}
+		clusterCVEParts2x3 := cveConverterV1.NewClusterCVEParts(clusterCVE3, clusters2Only, cve3FixVersion)
+		for _, c := range clusterCVEParts2x3.Children {
+			s.storedClusterCVEEdges = append(s.storedClusterCVEEdges, c.Edge.GetId())
+		}
+		err = s.clusterCVEEdgeStore.Upsert(ctx, clusterCVEParts1x1)
+		if err != nil {
+			return err
+		}
+		err = s.clusterCVEEdgeStore.Upsert(ctx, clusterCVEParts1x2)
+		if err != nil {
+			return err
+		}
+		err = s.clusterCVEEdgeStore.Upsert(ctx, clusterCVEParts2x2)
+		if err != nil {
+			return err
+		}
+		err = s.clusterCVEEdgeStore.Upsert(ctx, clusterCVEParts2x3)
+		if err != nil {
+			return err
+		}
+	}
+	if waitForIndexing {
+		s.waitForIndexing()
+	}
+	return nil
 }
 
 // PushImageToVulnerabilitiesGraph inserts the namespace -> deployment -> image -> CVE graph defined
@@ -188,6 +335,38 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph(waitForIndexin
 	return nil
 }
 
+// CleanClusterToVulnerabilitiesGraph removes from database the data injected by PushClusterToVulnerabilitiesGraph.
+func (s *dackboxTestDataStoreImpl) CleanClusterToVulnerabilitiesGraph(waitForIndexing bool) (err error) {
+	ctx := sac.WithAllAccess(context.Background())
+	storedClusters := s.storedClusters
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		for _, clusterID := range storedClusters {
+			err = s.clusterCVEStore.DeleteClusterCVEsInternal(ctx, clusterID)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		err = s.clusterCVEEdgeStore.Delete(ctx, s.storedClusterCVEEdges...)
+		if err != nil {
+			return err
+		}
+	}
+	for _, clusterID := range storedClusters {
+		deletionDoneSignal := concurrency.NewSignal()
+		err = s.clusterStore.RemoveCluster(ctx, clusterID, &deletionDoneSignal)
+		if err != nil {
+			return err
+		}
+		<-deletionDoneSignal.Done()
+	}
+	s.storedClusters = s.storedClusters[:0]
+	if waitForIndexing {
+		s.waitForIndexing()
+	}
+	return nil
+}
+
 // CleanImageToVulnerabilitiesGraph removes from database the data injected by PushImageToVulnerabilitiesGraph.
 func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph(waitForIndexing bool) (err error) {
 	ctx := sac.WithAllAccess(context.Background())
@@ -258,6 +437,10 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 		s.pgtestbase.Teardown(t)
 	} else {
 		s.waitForIndexing()
+		err = s.boltengine.Close()
+		if err != nil {
+			return err
+		}
 		err = s.bleveIndex.Close()
 		if err != nil {
 			return err
@@ -293,7 +476,19 @@ func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 		if err != nil {
 			return nil, err
 		}
+		s.clusterStore, err = clusterDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+		if err != nil {
+			return nil, err
+		}
+		s.clusterCVEStore, err = clusterCVEDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+		if err != nil {
+			return nil, err
+		}
 	} else {
+		s.boltengine, err = boltPkg.NewTemp("dackboxtestbolt")
+		if err != nil {
+			return nil, err
+		}
 		s.rocksEngine, err = rocksPkg.NewTemp("dackboxtest")
 		if err != nil {
 			return nil, err
@@ -337,11 +532,21 @@ func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 		if err != nil {
 			return nil, err
 		}
+		s.clusterStore, err = clusterDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence, s.boltengine)
+		if err != nil {
+			return nil, err
+		}
+		s.clusterCVEEdgeStore, err = clusterCVEEdgeDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
+		if err != nil {
+			return nil, err
+		}
 	}
 	s.storedDeployments = make([]string, 0)
 	s.storedNamespaces = make([]string, 0)
 	s.storedImages = make([]string, 0)
 	s.storedNodes = make([]string, 0)
+	s.storedClusters = make([]string, 0)
+	s.storedClusterCVEEdges = make([]string, 0)
 
 	return s, nil
 }
