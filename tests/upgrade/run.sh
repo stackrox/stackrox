@@ -52,7 +52,7 @@ test_upgrade() {
     "$TEST_ROOT/$DEPLOY_DIR/central.sh"
     get_central_basic_auth_creds
     wait_for_api
-    setup_client_TLS_certs ""
+    setup_client_TLS_certs
 
     info "Deploying sensor"
     "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"

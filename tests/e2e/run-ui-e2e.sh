@@ -20,9 +20,9 @@ test_ui_e2e() {
 
     setup_deployment_env false false
     remove_existing_stackrox_resources
-    setup_default_TLS_certs ""
+    setup_default_TLS_certs
 
-    deploy_stackrox ""
+    deploy_stackrox
 
     run_ui_e2e_tests
 }
