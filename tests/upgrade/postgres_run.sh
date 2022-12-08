@@ -115,7 +115,7 @@ test_upgrade_paths() {
 
     deploy_earlier_central
     wait_for_api
-    setup_client_TLS_certs
+    setup_client_TLS_certs ""
     restore_backup_test
     wait_for_api
 
@@ -264,9 +264,9 @@ helm_upgrade_to_current_with_postgres() {
     fi
 
     # enable postgres
-    password=`echo ${RANDOM}_$(date +%s-%d-%M) |base64|cut -c 1-20`
-    kubectl -n stackrox create secret generic central-db-password --from-literal=password=$password
-    kubectl -n stackrox apply -f $TEST_ROOT/tests/upgrade/pvc.yaml
+    password=$(echo ${RANDOM}_$(date +%s-%d-%M) |base64|cut -c 1-20)
+    kubectl -n stackrox create secret generic central-db-password --from-literal=password="$password"
+    kubectl -n stackrox apply -f "$TEST_ROOT"/tests/upgrade/pvc.yaml
     create_db_tls_secret
 
     helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart --set central.db.enabled=true --set central.exposure.loadBalancer.enabled=true --force
@@ -277,15 +277,15 @@ create_db_tls_secret() {
 
     cert_dir="$(mktemp -d)"
     # get root ca
-    kubectl -n stackrox exec -i deployment/central -- cat /run/secrets/stackrox.io/certs/ca.pem > $cert_dir/ca.pem
-    kubectl -n stackrox exec -i deployment/central -- cat /run/secrets/stackrox.io/certs/ca-key.pem > $cert_dir/ca.key
+    kubectl -n stackrox exec -i deployment/central -- cat /run/secrets/stackrox.io/certs/ca.pem > "$cert_dir"/ca.pem
+    kubectl -n stackrox exec -i deployment/central -- cat /run/secrets/stackrox.io/certs/ca-key.pem > "$cert_dir"/ca.key
     # generate central-db certs
-    openssl genrsa -out $cert_dir/key.pem 4096
-    openssl req -new -key $cert_dir/key.pem -subj "/CN=CENTRAL_DB_SERVICE: Central DB" > $cert_dir/newreq
-    echo subjectAltName = DNS:central-db.stackrox.svc > $cert_dir/extfile.cnf
-    openssl x509 -sha256 -req -CA $cert_dir/ca.pem -CAkey $cert_dir/ca.key -CAcreateserial -out $cert_dir/cert.pem -in $cert_dir/newreq -extfile $cert_dir/extfile.cnf
+    openssl genrsa -out "$cert_dir"/key.pem 4096
+    openssl req -new -key "$cert_dir"/key.pem -subj "/CN=CENTRAL_DB_SERVICE: Central DB" > "$cert_dir"/newreq
+    echo subjectAltName = DNS:central-db.stackrox.svc > "$cert_dir"/extfile.cnf
+    openssl x509 -sha256 -req -CA "$cert_dir"/ca.pem -CAkey "$cert_dir"/ca.key -CAcreateserial -out "$cert_dir"/cert.pem -in "$cert_dir"/newreq -extfile "$cert_dir"/extfile.cnf
     # create secret
-    kubectl -n stackrox create secret generic central-db-tls --save-config --dry-run=client --from-file=$cert_dir/ca.pem --from-file=$cert_dir/cert.pem --from-file=$cert_dir/key.pem -o yaml | kubectl apply -f -
+    kubectl -n stackrox create secret generic central-db-tls --save-config --dry-run=client --from-file="$cert_dir"/ca.pem --from-file="$cert_dir"/cert.pem --from-file="$cert_dir"/key.pem -o yaml | kubectl apply -f -
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

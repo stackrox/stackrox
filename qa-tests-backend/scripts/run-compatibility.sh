@@ -30,7 +30,7 @@ compatibility_test() {
 
         setup_deployment_env false false
         remove_existing_stackrox_resources
-        setup_default_TLS_certs
+        setup_default_TLS_certs ""
 
         deploy_stackrox_with_custom_sensor "${SENSOR_CHART_VERSION}"
         echo "Stackrox deployed"

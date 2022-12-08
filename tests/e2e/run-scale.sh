@@ -25,7 +25,7 @@ scale_test() {
     setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
-    setup_default_TLS_certs
+    setup_default_TLS_certs ""
 
     deploy_stackrox_in_scale_mode
 

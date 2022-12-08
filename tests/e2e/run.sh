@@ -26,10 +26,10 @@ test_e2e() {
     test_preamble
     setup_deployment_env false false
     remove_existing_stackrox_resources
-    setup_default_TLS_certs
+    setup_default_TLS_certs ""
     "$ROOT/tests/complianceoperator/create.sh"
 
-    deploy_stackrox
+    deploy_stackrox ""
 
     rm -f FAIL
 
