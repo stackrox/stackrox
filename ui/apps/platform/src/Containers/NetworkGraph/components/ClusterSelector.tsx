@@ -4,22 +4,25 @@ import { Select, SelectOption } from '@patternfly/react-core';
 import { Cluster } from 'types/cluster.proto';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { ClusterIcon } from '../common/NetworkGraphIcons';
-import getScopeHierarchy from '../utils/getScopeHierarchy';
 
 type ClusterSelectorProps = {
     clusters: Cluster[];
+    selectedClusterName?: string;
     searchFilter: Partial<Record<string, string | string[]>>;
     setSearchFilter: (newFilter: Partial<Record<string, string | string[]>>) => void;
 };
 
-function ClusterSelector({ clusters = [], searchFilter, setSearchFilter }: ClusterSelectorProps) {
+function ClusterSelector({
+    clusters = [],
+    selectedClusterName = '',
+    searchFilter,
+    setSearchFilter,
+}: ClusterSelectorProps) {
     const {
         isOpen: isClusterOpen,
         toggleSelect: toggleIsClusterOpen,
         closeSelect: closeClusterSelect,
     } = useSelectToggle();
-
-    const { cluster: selectedClusterName } = getScopeHierarchy(searchFilter);
 
     const onClusterSelect = (_, value) => {
         closeClusterSelect();

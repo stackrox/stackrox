@@ -1,21 +1,26 @@
 import { useState, useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 
-type Namespace = {
-    metadata: {
-        name: string;
-    };
+import queryService from 'utils/queryService';
+
+type Deployment = {
+    name: string;
 };
-type NamespaceResponse = {
-    id: string;
-    results: {
-        namespaces: Namespace[];
-    };
+type DeploymentResponse = {
+    results: [
+        {
+            metadata: {
+                id: string;
+                name: string;
+            };
+            deployments: Deployment[];
+        }
+    ];
 };
 
 const DEPLOYMENTS_FOR_NAMESPACE_QUERY = gql`
-    query getNamespaceDeploymentsNames($id: ID!) {
-        results: namespace(id: $id) {
+    query getNamespaceDeployments($query: String!) {
+        results: namespaces(query: $query) {
             metadata {
                 name
                 id
@@ -28,15 +33,17 @@ const DEPLOYMENTS_FOR_NAMESPACE_QUERY = gql`
     }
 `;
 
-function useFetchNamespaceDeployments(selectedNamespaceId: string) {
-    const [availableNamespaces, setAvailableNamespaces] = useState<string[]>([]);
+function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
+    const [availableDeployments, setAvailableNamespaces] = useState<Record<string, any>[]>([]);
 
+    const searchClause = { 'Namespace ID': selectedNamespaceIds };
     // If the selectedNamespaceId has not been set yet, do not run the gql query
-    const queryOptions = selectedNamespaceId
-        ? { variables: { id: selectedNamespaceId } }
-        : { skip: true };
+    const queryOptions =
+        selectedNamespaceIds.length > 0
+            ? { variables: { query: queryService.objectToWhereClause(searchClause) } }
+            : { skip: true };
 
-    const { loading, error, data } = useQuery<NamespaceResponse, { id: string }>(
+    const { loading, error, data } = useQuery<DeploymentResponse, { query: string }>(
         DEPLOYMENTS_FOR_NAMESPACE_QUERY,
         queryOptions
     );
@@ -46,15 +53,13 @@ function useFetchNamespaceDeployments(selectedNamespaceId: string) {
             return;
         }
 
-        const namespaces = data.results.namespaces.map(({ metadata }) => metadata.name);
-
-        setAvailableNamespaces(namespaces);
+        setAvailableNamespaces(data.results);
     }, [data]);
 
     return {
         loading,
         error,
-        namespaces: availableNamespaces,
+        deploymentsByNamespace: availableDeployments,
     };
 }
 

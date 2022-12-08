@@ -64,11 +64,12 @@ function NetworkGraphPage() {
     } = getScopeHierarchy(searchFilter);
 
     const { clusters } = useFetchClusters();
+    const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
+    const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
 
     useDeepCompareEffect(() => {
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
         if (clusterFromUrl && namespacesFromUrl.length > 0) {
-            const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
             if (selectedClusterId) {
                 setIsLoading(true);
 
@@ -165,7 +166,11 @@ function NetworkGraphPage() {
                         </Title>
                     </FlexItem>
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <NetworkBreadcrumbs clusters={clusters} />
+                        <NetworkBreadcrumbs
+                            clusters={clusters}
+                            selectedCluster={selectedCluster}
+                            selectedNamespaces={namespacesFromUrl}
+                        />
                     </FlexItem>
                     <Button variant="secondary">Manage CIDR blocks</Button>
                     <Button variant="secondary">Simulate network policy</Button>

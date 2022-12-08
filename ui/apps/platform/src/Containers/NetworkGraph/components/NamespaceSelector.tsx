@@ -1,10 +1,9 @@
 import React, { useCallback, ChangeEvent } from 'react';
 import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
-import useFetchClusterNamespaces from 'hooks/useFetchClusterNamespaces';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { Namespace } from 'hooks/useFetchClusterNamespaces';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
-import getScopeHierarchy from '../utils/getScopeHierarchy';
 
 function filterElementsWithValueProp(
     filterValue: string,
@@ -20,13 +19,26 @@ function filterElementsWithValueProp(
 }
 
 type NamespaceSelectorProps = {
-    selectedClusterId: string;
+    namespaces?: Namespace[];
+    selectedNamespaces?: string[];
     searchFilter: Partial<Record<string, string | string[]>>;
     setSearchFilter: (newFilter: Partial<Record<string, string | string[]>>) => void;
 };
 
+function NamespaceSelectOption({ namespace }) {
+    console.log({ namespace });
+    return (
+        <SelectOption key={namespace.metadata.id} value={namespace.metadata.name}>
+            <span>
+                <NamespaceIcon /> {namespace.metadata.name}
+            </span>
+        </SelectOption>
+    );
+}
+
 function NamespaceSelector({
-    selectedClusterId = '',
+    namespaces = [],
+    selectedNamespaces = [],
     searchFilter,
     setSearchFilter,
 }: NamespaceSelectorProps) {
@@ -36,20 +48,11 @@ function NamespaceSelector({
         closeSelect: closeNamespaceSelect,
     } = useSelectToggle();
 
-    const { namespaces: selectedNamespaces } = getScopeHierarchy(searchFilter);
-    const { loading, error, namespaces } = useFetchClusterNamespaces(selectedClusterId);
-
     const onFilterNamespaces = useCallback(
         (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
             filterElementsWithValueProp(
                 filterValue,
-                namespaces.map((namespace) => (
-                    <SelectOption key={namespace} value={namespace}>
-                        <span>
-                            <NamespaceIcon /> {namespace}
-                        </span>
-                    </SelectOption>
-                ))
+                namespaces.map((namespace) => <NamespaceSelectOption namespace={namespace} />)
             ),
         [namespaces]
     );
@@ -67,11 +70,7 @@ function NamespaceSelector({
     };
 
     const namespaceSelectOptions: JSX.Element[] = namespaces.map((namespace) => (
-        <SelectOption key={namespace} value={namespace}>
-            <span>
-                <NamespaceIcon /> {namespace}
-            </span>
-        </SelectOption>
+        <NamespaceSelectOption namespace={namespace} />
     ));
 
     return (
@@ -82,7 +81,7 @@ function NamespaceSelector({
             onFilter={onFilterNamespaces}
             className="namespace-select"
             placeholderText="Namespaces"
-            isDisabled={!selectedClusterId || loading || Boolean(error)}
+            isDisabled={namespaceSelectOptions.length === 0}
             selections={selectedNamespaces}
             variant={SelectVariant.checkbox}
             maxHeight="275px"

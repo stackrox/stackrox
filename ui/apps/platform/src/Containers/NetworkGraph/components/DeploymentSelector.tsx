@@ -1,10 +1,8 @@
 import React, { useCallback, ChangeEvent } from 'react';
 import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
-import useFetchClusterNamespaces from 'hooks/useFetchClusterNamespaces';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { NamespaceIcon } from '../common/NetworkGraphIcons';
-import getScopeHierarchy from '../utils/getScopeHierarchy';
+import { DeploymentIcon } from '../common/NetworkGraphIcons';
 
 function filterElementsWithValueProp(
     filterValue: string,
@@ -19,78 +17,77 @@ function filterElementsWithValueProp(
     );
 }
 
-type NamespaceSelectorProps = {
-    selectedClusterId: string;
+type DeploymentSelectorProps = {
+    deployments: string[];
+    selectedDeployments: string[];
     searchFilter: Partial<Record<string, string | string[]>>;
     setSearchFilter: (newFilter: Partial<Record<string, string | string[]>>) => void;
 };
 
-function NamespaceSelector({
-    selectedClusterId = '',
+function DeploymentSelector({
+    deployments = [],
+    selectedDeployments = [],
     searchFilter,
     setSearchFilter,
-}: NamespaceSelectorProps) {
+}: DeploymentSelectorProps) {
     const {
-        isOpen: isNamespaceOpen,
-        toggleSelect: toggleIsNamespaceOpen,
-        closeSelect: closeNamespaceSelect,
+        isOpen: isDeploymentOpen,
+        toggleSelect: toggleIsDeploymentOpen,
+        closeSelect: closeDeploymentSelect,
     } = useSelectToggle();
 
-    const { namespaces: selectedNamespaces } = getScopeHierarchy(searchFilter);
-    const { loading, error, namespaces } = useFetchClusterNamespaces(selectedClusterId);
-
-    const onFilterNamespaces = useCallback(
+    const onFilterDeployments = useCallback(
         (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
             filterElementsWithValueProp(
                 filterValue,
-                namespaces.map((namespace) => (
-                    <SelectOption key={namespace} value={namespace}>
+                deployments.map((deployment) => (
+                    <SelectOption key={deployment} value={deployment}>
                         <span>
-                            <NamespaceIcon /> {namespace}
+                            <DeploymentIcon /> {deployment}
                         </span>
                     </SelectOption>
                 ))
             ),
-        [namespaces]
+        [deployments]
     );
 
-    const onNamespaceSelect = (_, selected) => {
-        closeNamespaceSelect();
+    const onDeploymentSelect = (_, selected) => {
+        closeDeploymentSelect();
 
-        const newSelection = selectedNamespaces.find((nsFilter) => nsFilter === selected)
-            ? selectedNamespaces.filter((nsFilter) => nsFilter !== selected)
-            : selectedNamespaces.concat(selected);
+        const newSelection = selectedDeployments.find((nsFilter) => nsFilter === selected)
+            ? selectedDeployments.filter((nsFilter) => nsFilter !== selected)
+            : selectedDeployments.concat(selected);
 
         const modifiedSearchObject = { ...searchFilter };
-        modifiedSearchObject.Namespace = newSelection;
+        modifiedSearchObject.Deployment = newSelection;
         setSearchFilter(modifiedSearchObject);
     };
 
-    const namespaceSelectOptions: JSX.Element[] = namespaces.map((namespace) => (
-        <SelectOption key={namespace} value={namespace}>
+    const deploymentSelectOptions: JSX.Element[] = deployments.map((deployment) => (
+        <SelectOption key={deployment} value={deployment}>
             <span>
-                <NamespaceIcon /> {namespace}
+                <DeploymentIcon /> {deployment}
             </span>
         </SelectOption>
     ));
 
     return (
         <Select
-            isOpen={isNamespaceOpen}
-            onToggle={toggleIsNamespaceOpen}
-            onSelect={onNamespaceSelect}
-            onFilter={onFilterNamespaces}
-            className="namespace-select"
-            placeholderText="Namespaces"
-            isDisabled={!selectedClusterId || loading || Boolean(error)}
-            selections={selectedNamespaces}
+            isOpen={isDeploymentOpen}
+            onToggle={toggleIsDeploymentOpen}
+            onSelect={onDeploymentSelect}
+            onFilter={onFilterDeployments}
+            className="deployment-select"
+            placeholderText="Deployments"
+            isDisabled={deployments.length === 0}
+            selections={selectedDeployments}
             variant={SelectVariant.checkbox}
             maxHeight="275px"
             hasInlineFilter
         >
-            {namespaceSelectOptions}
+            {deploymentSelectOptions}
         </Select>
     );
 }
 
-export default NamespaceSelector;
+export default DeploymentSelector;
