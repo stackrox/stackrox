@@ -92,11 +92,8 @@ jobs:
         uses: joerick/pr-labels-action@v1.0.6
 
       - name: Setup Go build environment
-        run: |
-          if [[ -n "$GITHUB_PR_LABEL_CI_RELEASE_BUILD" ]]; then
-            cci-export GOTAGS release
-          fi
-          echo "GOTAGS: ${GOTAGS:-}"
+        if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
+        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
       - name: Build Go Binaries
         run: make build-prep main-build-nodeps
@@ -261,11 +258,8 @@ jobs:
         uses: joerick/pr-labels-action@v1.0.6
 
       - name: Setup Go build environment
-        run: |
-          if [[ -n "$GITHUB_PR_LABEL_CI_RELEASE_BUILD" ]]; then
-            cci-export GOTAGS release
-          fi
-          echo "GOTAGS: ${GOTAGS:-}"
+        if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
+        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
       - name: Docker login
         run: |
