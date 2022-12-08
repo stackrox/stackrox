@@ -209,12 +209,9 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 			if metadata.GetIsOpenshift() != nil {
 				continue
 			}
-			version := metadata.GetVersion()
-			versions = append(versions, version)
-
+			versions = append(versions, metadata.GetVersion())
 		case utils.OpenShift:
-			version := metadata.GetOpenshiftVersion()
-			versions = append(versions, version)
+			versions = append(versions, metadata.GetOpenshiftVersion())
 		case utils.Istio:
 			versionList, err := m.cveMatcher.GetValidIstioVersions(allAccessCtx, cluster)
 			if err != nil {
@@ -223,9 +220,6 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 			versions = versionList.AsSlice()
 		}
 
-		if len(versions) == 0 {
-			continue
-		}
 		for _, v := range versions {
 			if v != "" {
 				versionToClusters[v] = append(versionToClusters[v], cluster)
@@ -274,15 +268,15 @@ func istioScan(version string, scanners map[string]types.OrchestratorScanner) ([
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Istio:%s", version))
 
 	for _, scanner := range scanners {
-		result, err := scanner.IstioScan(version)
+		results, err := scanner.IstioScan(version)
 		if err != nil {
 			errorList.AddError(err)
 			continue
 		}
 		vulnIDsSet := set.NewStringSet()
 
-		var allVulns []*storage.EmbeddedVulnerability
-		for _, vuln := range result {
+		allVulns := make([]*storage.EmbeddedVulnerability, 0, len(results))
+		for _, vuln := range results {
 			if vulnIDsSet.Add(vuln.GetCve()) {
 				allVulns = append(allVulns, vuln)
 			}
