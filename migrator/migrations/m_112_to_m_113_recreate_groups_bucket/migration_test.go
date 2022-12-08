@@ -91,8 +91,8 @@ func (suite *recreateGroupsBucketMigrationTestSuite) TestMigrate() {
 		},
 		"invalid-group": {
 			entry: groupEntry{
-				key:   rawInvalidGroup,
-				value: []byte(""),
+				key:   []byte("some-random-key"),
+				value: rawInvalidGroup,
 			},
 		},
 		"invalid-group-stored-by-id": {
@@ -141,13 +141,12 @@ func (suite *recreateGroupsBucketMigrationTestSuite) TestMigrate() {
 			// In case the entry should not exist, it shouldn't be possible to retrieve any values from the given key.
 			if !c.existsAfterMigration {
 				suite.Empty(bucket.Get(c.entry.key))
-				continue
+			} else {
+				// In case the entry should exist, it should match the expected value.
+				value := bucket.Get(c.entry.key)
+				suite.NotEmpty(value)
+				suite.Equal(c.entry.value, value)
 			}
-
-			// In case the entry should exist, it should match the expected value.
-			value := bucket.Get(c.entry.key)
-			suite.NotEmpty(value)
-			suite.Equal(c.entry.value, value)
 		}
 		return nil
 	})

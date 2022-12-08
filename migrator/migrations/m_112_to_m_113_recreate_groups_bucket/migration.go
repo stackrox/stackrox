@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/uuid"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -47,7 +48,7 @@ func recreateGroupsBucket(db *bolt.DB) error {
 
 	groupEntries, err := fetchGroupsBucket(db)
 	if err != nil {
-		return errors.Wrap(err, "error fetching groups to remove")
+		return errors.Wrap(err, "error fetching groups to recreate")
 	}
 
 	// Drop the bucket.
@@ -98,7 +99,8 @@ func createGroupsBucket(db *bolt.DB, groupEntries []groupEntry) (err error) {
 
 		var putGroupErrs errorhelpers.ErrorList
 		for _, entry := range groupEntries {
-			// By now, we can assume that the key will be a UUID and the value will be the group proto message.
+			// After migration 105_to_106, we can assume that the key will be a UUID and the value will be the group
+			// proto message.
 			// Here, we will check that the key will be a string and can be parsed as a UUID.
 			// If that's the case, the entry is valid, and we will add it to the re-created bucket.
 			// If not, we will log the invalid entry that will be dropped.
@@ -133,10 +135,10 @@ func checkGroupBucketExists(db *bolt.DB) (exists bool, err error) {
 
 const (
 	// Value has been taken from:
-	//	https://github.com/stackrox/stackrox/blob/master/central/group/datastore/validate.go#L13
+	//	https://github.com/stackrox/stackrox/blob/6a702b26d66dcc2236a742907809071249187070/central/group/datastore/validate.go#L13
 	groupIDPrefix = "io.stackrox.authz.group."
 	// Value has been taken from:
-	//	https://github.com/stackrox/stackrox/blob/master/migrator/migrations/m_105_to_m_106_group_id/migration.go#L134
+	//	https://github.com/stackrox/stackrox/blob/1bd8c26d4918c3b530ad4fd713244d9cf71e786d/migrator/migrations/m_105_to_m_106_group_id/migration.go#L134
 	groupMigratedIDPrefix = "io.stackrox.authz.group.migrated."
 )
 
@@ -145,6 +147,12 @@ func verifyKeyValuePair(key, value []byte) bool {
 
 	// The key should be a string ID, with a constant prefix and a UUID.
 	if !strings.HasPrefix(stringKey, groupIDPrefix) && !strings.HasPrefix(stringKey, groupMigratedIDPrefix) {
+		return false
+	}
+	stringKey = strings.TrimPrefix(stringKey, groupMigratedIDPrefix)
+	stringKey = strings.TrimPrefix(stringKey, groupIDPrefix)
+	_, err := uuid.FromString(stringKey)
+	if err != nil {
 		return false
 	}
 
