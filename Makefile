@@ -339,16 +339,7 @@ build-prep: deps
 	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
 .PHONY: cli-build
-cli-build: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
-ifdef CI
-	RACE=0 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) ./roxctl
-endif
+cli-build: cli-linux cli-darwin cli-windows
 
 .PHONY: cli
 cli: cli-build
@@ -358,13 +349,15 @@ cli: cli-build
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
 
-cli-linux: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
+cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
+cli-darwin: cli_darwin-amd64 cli_darwin-arm64
+cli-windows: cli_windows-amd64
 
-cli-darwin: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+cli_%: build-prep
+	$(eval    w := $(subst -, ,$*))
+	$(eval   os := $(firstword $(w)))
+	$(eval arch := $(lastword  $(w)))
+	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 
