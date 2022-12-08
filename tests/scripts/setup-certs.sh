@@ -63,7 +63,7 @@ setup_default_TLS_certs() {
     info "Setting up default certs for tests"
 
     local cert_dir
-    cert_dir="${1-$(mktemp -d)}"
+    cert_dir="${1:-$(mktemp -d)}"
     setup_certs "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
 
     export_default_TLS_certs "${cert_dir}"
@@ -88,7 +88,7 @@ setup_client_TLS_certs() {
     info "Setting up client certs for tests"
 
     local cert_dir
-    cert_dir="${1-$(mktemp -d)}"
+    cert_dir="${1:-$(mktemp -d)}"
     setup_certs "$cert_dir" "Client Certificate User" "Client CA"
 
     export_client_TLS_certs "${cert_dir}"
