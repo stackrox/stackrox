@@ -19,6 +19,12 @@ var (
 // services tenant ID. The value of the label becomes the group ID if not empty.
 const TenantIDLabel = "rhacs.redhat.com/tenant"
 
+// Interceptor is a function which will be called on every API call if none of
+// the previous interceptors in the chain returned false.
+// An Interceptor function may add custom properties to the props map so that
+// they appear in the event.
+type Interceptor func(rp *RequestParams, props map[string]any) bool
+
 // Config represents a telemetry client instance configuration.
 type Config struct {
 	// ClientID identifies an entity that reports telemetry data.
@@ -37,6 +43,10 @@ type Config struct {
 
 	telemeter Telemeter
 	gatherer  Gatherer
+
+	// Map of event name to the list of interceptors, that gather properties for
+	// the event.
+	interceptors map[string][]Interceptor
 }
 
 // Enabled tells whether telemetry data collection is enabled.

@@ -2,6 +2,7 @@ package centralclient
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/installation/store"
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
@@ -47,6 +49,9 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 		return nil, nil, errors.Wrap(err, "cannot get central deployment")
 	}
 
+	paths := central.GetAnnotations()[apiPathsAnnotation]
+	trackedPaths = set.NewFrozenSet(strings.Split(paths, ",")...)
+
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.OpenshiftAPI.BooleanSetting() {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
@@ -71,7 +76,8 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			StorageKey:   key,
 			Endpoint:     env.TelemetryEndpoint.Setting(),
 			PushInterval: env.TelemetryFrequency.DurationSetting(),
-		}, map[string]any{
+		},
+		map[string]any{
 			"Central version":    version.GetMainVersion(),
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,
@@ -98,6 +104,18 @@ func InstanceConfig() *phonehome.Config {
 		}
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
+		log.Info("API path telemetry enabled for: ", trackedPaths)
+
+		for event, funcs := range interceptors {
+			for _, f := range funcs {
+				config.AddInterceptorFunc(event, f)
+			}
+		}
+		// Central adds itself to the tenant group, adding its properties to the
+		// group properties:
+		config.Telemeter().Group(config.GroupID, config.ClientID, props)
+		// Add the local admin user as well, with no extra group properties:
+		config.Telemeter().Group(config.GroupID, config.HashUserID("admin", ""), nil)
 
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 			return props, nil
