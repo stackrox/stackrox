@@ -19,8 +19,8 @@ type RequestParams struct {
 	UserID    authn.Identity
 	Path      string
 	Code      int
-	GrpcReq   any
-	HttpReq   *http.Request
+	GRPCReq   any
+	HTTPReq   *http.Request
 }
 
 var (
@@ -55,7 +55,7 @@ func getGrpcRequestDetails(ctx context.Context, err error, info *grpc.UnaryServe
 		UserID:    id,
 		Path:      info.FullMethod,
 		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
-		GrpcReq:   req,
+		GRPCReq:   req,
 	}
 }
 
@@ -70,6 +70,6 @@ func getHttpRequestDetails(ctx context.Context, r *http.Request, err error) *Req
 		UserID:    id,
 		Path:      r.URL.Path,
 		Code:      grpcError.ErrToHTTPStatus(err),
-		HttpReq:   r,
+		HTTPReq:   r,
 	}
 }

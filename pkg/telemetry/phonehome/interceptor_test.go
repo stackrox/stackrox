@@ -45,7 +45,7 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		Code:      0,
 		UserAgent: "test",
 		UserID:    nil,
-		GrpcReq: &testRequest{
+		GRPCReq: &testRequest{
 			value: "test value",
 		},
 	}
@@ -56,7 +56,7 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 
 	cfg.AddInterceptorFunc("TestEvent", func(rp *RequestParams, props map[string]any) bool {
 		if rp.Path == testRP.Path {
-			if tr, ok := rp.GrpcReq.(*testRequest); ok {
+			if tr, ok := rp.GRPCReq.(*testRequest); ok {
 				props["Property"] = tr.value
 			}
 		}
@@ -80,7 +80,7 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	}
 	req, err := http.NewRequest(http.MethodPost, "https://test"+testRP.Path+"?test_key=test_value", nil)
 	s.NoError(err)
-	testRP.HttpReq = req
+	testRP.HTTPReq = req
 	cfg := &Config{
 		ClientID:  "test",
 		telemeter: s.mockTelemeter,
@@ -88,7 +88,7 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 
 	cfg.AddInterceptorFunc("TestEvent", func(rp *RequestParams, props map[string]any) bool {
 		if rp.Path == testRP.Path {
-			props["Property"] = rp.HttpReq.FormValue("test_key")
+			props["Property"] = rp.HTTPReq.FormValue("test_key")
 		}
 		return true
 	})
@@ -104,7 +104,6 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 
 func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	testRP := &RequestParams{
-		UserID:    nil,
 		Code:      0,
 		UserAgent: "test",
 		Path:      "/v1.Test",
@@ -125,7 +124,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)
 	s.Nil(rp.UserID)
-	s.Equal("request", rp.GrpcReq)
+	s.Equal("request", rp.GRPCReq)
 }
 
 func (s *interceptorTestSuite) TestHttpRequestInfo() {

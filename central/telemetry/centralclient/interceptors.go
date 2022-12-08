@@ -49,7 +49,7 @@ func postCluster(rp *phonehome.RequestParams, props map[string]any) bool {
 		return false
 	}
 	props["Code"] = rp.Code
-	if req, ok := rp.GrpcReq.(*storage.Cluster); ok {
+	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
 		props["Cluster Type"] = req.GetType().String()
 		props["Cluster ID"] = req.GetId()
 		props["Managed By"] = req.GetManagedBy().String()
@@ -67,7 +67,7 @@ func putCluster(rp *phonehome.RequestParams, props map[string]any) bool {
 	if rp.Path != "/v1.ClustersService/PutCluster" {
 		return false
 	}
-	if req, ok := rp.GrpcReq.(*storage.Cluster); ok {
+	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
 		mux.Lock()
 		defer mux.Unlock()
 		lastStatus, ok := clusterStatus[req.GetId()]
@@ -95,7 +95,7 @@ func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["Path"] = rp.Path
 	props["Code"] = rp.Code
 	props["User-Agent"] = rp.UserAgent
-	if rp.HttpReq != nil {
+	if rp.HTTPReq != nil {
 		props["Protocol"] = "HTTP"
 	} else {
 		props["Protocol"] = "GRPC"
