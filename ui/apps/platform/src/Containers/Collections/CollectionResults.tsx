@@ -16,9 +16,21 @@ import { ListIcon } from '@patternfly/react-icons';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 
-import { dryRunCollection, CollectionRequest } from 'services/CollectionsService';
+import { CollectionRequest, dryRunCollection } from 'services/CollectionsService';
 import { ListDeployment } from 'types/deployment.proto';
 import { SelectorEntityType } from './types';
+
+function fetchMatchingDeployments(
+    dryRunConfig: CollectionRequest,
+    page: number,
+    filterText: string,
+    entity: SelectorEntityType
+) {
+    const pageSize = 10;
+    const query = { [entity]: filterText };
+    const { request } = dryRunCollection(dryRunConfig, query, page, pageSize);
+    return request;
+}
 
 export type CollectionResultsProps = {
     dryRunConfig: CollectionRequest;
@@ -42,36 +54,24 @@ function CollectionResults({ dryRunConfig }: CollectionResultsProps) {
         closeSelect();
     }
 
-    const fetchDryRun = useCallback(
-        (page: number) => {
-            const pageSize = 10;
-            const query = { [selected]: filterText };
-            const { request } = dryRunCollection(dryRunConfig, query, page, pageSize);
-            request
-                .then((results) => {
-                    setIsEndOfResults(results.length < 10);
-                    setDeployments((current) => (page === 0 ? results : [...current, ...results]));
-                })
-                .catch(() => {
-                    // TODO: indicate results not loading properly?
-                });
-        },
-        [dryRunConfig, filterText, selected]
-    );
+    const fetchDryRun = useCallback((currConfig, currPage, currFilter, currEntity) => {
+        fetchMatchingDeployments(currConfig, currPage, currFilter, currEntity)
+            .then((results) => {
+                setIsEndOfResults(results.length < 10);
+                setDeployments((current) => (currPage === 0 ? results : [...current, ...results]));
+            })
+            .catch(() => {
+                // TODO: indicate results not loading properly?
+            });
+    }, []);
+
+    const fetchDryRunDebounced = useMemo(() => debounce(fetchDryRun, 800), [fetchDryRun]);
 
     useEffect(() => {
         if (selectorRulesExist) {
-            fetchDryRun(0);
+            fetchDryRunDebounced(dryRunConfig, 0, filterText, selected);
         }
-    }, [dryRunConfig, fetchDryRun, selectorRulesExist]);
-
-    const onSearchInputChange = useMemo(
-        () =>
-            debounce((value: string) => {
-                setFilterText(value);
-            }, 800),
-        []
-    );
+    }, [dryRunConfig, fetchDryRunDebounced, filterText, selected, selectorRulesExist]);
 
     return (
         <>
@@ -108,7 +108,7 @@ function CollectionResults({ dryRunConfig }: CollectionResultsProps) {
                             aria-label="Filter by name"
                             placeholder="Filter by name"
                             value={filterText}
-                            onChange={onSearchInputChange}
+                            onChange={setFilterText}
                         />
                     </FlexItem>
                     <Flex
@@ -138,7 +138,9 @@ function CollectionResults({ dryRunConfig }: CollectionResultsProps) {
                                 variant="link"
                                 isInline
                                 className="pf-u-text-align-center"
-                                onClick={() => fetchDryRun(currentPage + 1)}
+                                onClick={() =>
+                                    fetchDryRun(dryRunConfig, currentPage + 1, filterText, selected)
+                                }
                             >
                                 View more
                             </Button>
