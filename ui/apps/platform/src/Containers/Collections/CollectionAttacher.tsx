@@ -4,16 +4,16 @@ import { Alert, Button, debounce, Flex, SearchInput } from '@patternfly/react-co
 import BacklogListSelector, {
     BacklogListSelectorProps,
 } from 'Components/PatternFly/BacklogListSelector';
-import { CollectionResponse } from 'services/CollectionsService';
+import { Collection } from 'services/CollectionsService';
 import useEmbeddedCollections from './hooks/useEmbeddedCollections';
 
 export type CollectionAttacherProps = {
     // A collection ID that should not be visible in the collection attacher component. This is
     // used when editing a collection to prevent reference cycles.
     excludedCollectionId: string | null;
-    initialEmbeddedCollections: CollectionResponse[];
-    onSelectionChange: (collections: CollectionResponse[]) => void;
-    collectionTableCells: BacklogListSelectorProps<CollectionResponse>['cells'];
+    initialEmbeddedCollections: Collection[];
+    onSelectionChange: (collections: Collection[]) => void;
+    collectionTableCells: BacklogListSelectorProps<Collection>['cells'];
 };
 
 function compareNameLowercase(search: string): (item: { name: string }) => boolean {

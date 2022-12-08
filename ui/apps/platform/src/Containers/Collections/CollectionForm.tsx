@@ -22,13 +22,13 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { CollectionResponse } from 'services/CollectionsService';
+import { Collection } from 'services/CollectionsService';
 import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
 import {
-    Collection,
+    ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
     selectorEntityTypes,
@@ -44,7 +44,7 @@ function AttachedCollectionTable({
     collections,
     collectionTableCells,
 }: {
-    collections: CollectionResponse[];
+    collections: Collection[];
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }) {
     return collections.length > 0 ? (
@@ -74,11 +74,11 @@ export type CollectionFormProps = {
     /* The user's workflow action for this collection */
     action: CollectionPageAction;
     /* parsed collection data used to populate the form */
-    initialData: Collection;
+    initialData: ClientCollection;
     /* collection responses for the embedded collections of `initialData` */
-    initialEmbeddedCollections: CollectionResponse[];
-    onFormChange: (values: Collection) => void;
-    onSubmit: (collection: Collection) => Promise<void>;
+    initialEmbeddedCollections: Collection[];
+    onFormChange: (values: ClientCollection) => void;
+    onSubmit: (collection: ClientCollection) => Promise<void>;
     onCancel: () => void;
     saveError?: CollectionSaveError | undefined;
     clearSaveError?: () => void;
@@ -129,7 +129,7 @@ const validationSchema = yup.object({
     }),
 });
 
-function getRuleCount(resourceSelector: Collection['resourceSelector']) {
+function getRuleCount(resourceSelector: ClientCollection['resourceSelector']) {
     let count = 0;
 
     selectorEntityTypes.forEach((entityType) => {
@@ -229,7 +229,7 @@ function CollectionForm({
         scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
 
-    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) => {
+    const onEmbeddedCollectionsChange = (newCollections: Collection[]) => {
         if (
             saveError?.type === 'CollectionLoop' &&
             !newCollections.find(({ id }) => id === saveError.loopId)

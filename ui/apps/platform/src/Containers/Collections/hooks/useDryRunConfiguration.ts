@@ -1,12 +1,12 @@
 import isEqual from 'lodash/isEqual';
 import { useState, useCallback } from 'react';
-import { CollectionRequest, CollectionResponse } from 'services/CollectionsService';
+import { Collection, CollectionRequest } from 'services/CollectionsService';
 import { generateRequest } from '../converter';
-import { Collection } from '../types';
+import { ClientCollection } from '../types';
 
 export default function useDryRunConfiguration(
     collectionId: string | undefined,
-    initialData: Omit<CollectionResponse, 'id'>
+    initialData: Omit<Collection, 'id'>
 ) {
     const id = collectionId;
     const [dryRunConfig, setDryRunConfig] = useState<CollectionRequest>(() => {
@@ -18,7 +18,7 @@ export default function useDryRunConfiguration(
     });
 
     const updateDryRunConfig = useCallback(
-        (values: Collection) => {
+        (values: ClientCollection) => {
             const nextConfig = { id, ...generateRequest(values) };
             const isEmbeddedCollectionsChanged = !isEqual(
                 dryRunConfig.embeddedCollectionIds,

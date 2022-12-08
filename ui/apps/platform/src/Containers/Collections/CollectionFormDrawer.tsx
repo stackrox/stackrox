@@ -12,7 +12,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { CollectionResponse } from 'services/CollectionsService';
+import { Collection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionResults from './CollectionResults';
 import { isCollectionParseError, parseCollection } from './converter';
@@ -25,8 +25,8 @@ export type CollectionFormDrawerProps = {
     /* The user's workflow action for this collection */
     action: CollectionPageAction;
     collectionData: {
-        collection: Omit<CollectionResponse, 'id'>;
-        embeddedCollections: CollectionResponse[];
+        collection: Omit<Collection, 'id'>;
+        embeddedCollections: Collection[];
     };
     /* Whether or not to display the collection results in an inline drawer. If false, will
     display collection results in an overlay drawer. */
