@@ -8,9 +8,15 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var (
-	onceGatherer sync.Once
-)
+// GatherFunc returns properties gathered by a data source.
+type GatherFunc func(context.Context) (map[string]any, error)
+
+// Gatherer interface for interacting with telemetry gatherer.
+type Gatherer interface {
+	Start()
+	Stop()
+	AddGatherer(GatherFunc)
+}
 
 type gatherer struct {
 	clientID    string
@@ -20,13 +26,6 @@ type gatherer struct {
 	ctx         context.Context
 	mu          sync.Mutex
 	gatherFuncs []GatherFunc
-}
-
-// Gatherer interface for interacting with telemetry gatherer.
-type Gatherer interface {
-	Start()
-	Stop()
-	AddGatherer(GatherFunc)
 }
 
 func (g *gatherer) reset() {
@@ -40,22 +39,6 @@ func newGatherer(clientID string, t Telemeter, p time.Duration) *gatherer {
 		telemeter: t,
 		period:    p,
 	}
-}
-
-// Gatherer returns the telemetry gatherer instance.
-func (cfg *Config) Gatherer() Gatherer {
-	onceGatherer.Do(func() {
-		if cfg.Enabled() {
-			period := cfg.GatherPeriod
-			if cfg.GatherPeriod.Nanoseconds() == 0 {
-				period = 1 * time.Hour
-			}
-			cfg.gatherer = newGatherer(cfg.ClientID, cfg.Telemeter(), period)
-		} else {
-			cfg.gatherer = (*gatherer)(nil)
-		}
-	})
-	return cfg.gatherer
 }
 
 func (g *gatherer) collect() map[string]any {
@@ -112,6 +95,9 @@ func (g *gatherer) Stop() {
 }
 
 func (g *gatherer) AddGatherer(f GatherFunc) {
+	if g == nil {
+		return
+	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.gatherFuncs = append(g.gatherFuncs, f)

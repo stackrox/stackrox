@@ -1,8 +1,15 @@
 package phonehome
 
 import (
-	"context"
 	"time"
+
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
+)
+
+var (
+	onceGatherer  sync.Once
+	onceTelemeter sync.Once
 )
 
 // TenantIDLabel is the name of the k8s object label that holds the cloud
@@ -34,5 +41,35 @@ func (cfg *Config) Enabled() bool {
 	return cfg != nil && cfg.StorageKey != ""
 }
 
-// GatherFunc returns properties gathered by a data source.
-type GatherFunc func(context.Context) (map[string]any, error)
+// Gatherer returns the telemetry gatherer instance.
+func (cfg *Config) Gatherer() Gatherer {
+	onceGatherer.Do(func() {
+		if cfg.Enabled() {
+			period := cfg.GatherPeriod
+			if cfg.GatherPeriod.Nanoseconds() == 0 {
+				period = 1 * time.Hour
+			}
+			cfg.gatherer = newGatherer(cfg.ClientID, cfg.Telemeter(), period)
+		} else {
+			cfg.gatherer = (*gatherer)(nil)
+		}
+	})
+	return cfg.gatherer
+}
+
+// Telemeter returns the instance of the telemeter.
+func (cfg *Config) Telemeter() Telemeter {
+	onceTelemeter.Do(func() {
+		if cfg.Enabled() {
+			cfg.telemeter = segment.NewTelemeter(
+				cfg.StorageKey,
+				cfg.Endpoint,
+				cfg.ClientID,
+				cfg.ClientName,
+				cfg.PushInterval)
+		} else {
+			cfg.telemeter = &nilTelemeter{}
+		}
+	})
+	return cfg.telemeter
+}
