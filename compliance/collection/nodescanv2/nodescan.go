@@ -66,13 +66,12 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 		v1rhelc = append(v1rhelc, &scannerV1.RHELComponent{
 			Id:          0,
 			Name:        rhelc.Name,
-			Namespace:   rc.Dist, // check
+			Namespace:   rc.Dist,
 			Version:     rhelc.Version,
 			Arch:        rhelc.Arch,
 			Module:      rhelc.Module,
-			Cpes:        rc.CPEs, // do we just append all here?
+			Cpes:        rc.CPEs,
 			Executables: rhelc.Executables,
-			// AddedBy:     "",                // do we know?
 		})
 	}
 	return v1rhelc
