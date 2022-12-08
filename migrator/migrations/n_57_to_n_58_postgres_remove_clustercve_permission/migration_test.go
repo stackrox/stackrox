@@ -7,17 +7,24 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/n_57_to_n_58_postgres_remove_clustercve_permission/postgres"
+	permissionsetpostgresstore "github.com/stackrox/rox/migrator/migrations/n_57_to_n_58_postgres_remove_clustercve_permission/permissionsetpostgresstore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	id0 = "A161527B-D34F-42B8-A783-23E39B4DE15A"
+	id1 = "DC04A5F8-6018-46E5-B590-87325FBF1945"
+	id2 = "9C91FA2B-AE95-4C74-98A7-17AF76CC8209"
+	id3 = "ABBA7029-EAED-4FFD-8FB0-02CA9F2B6A21"
+)
+
 var (
 	unmigratedPSs = []*storage.PermissionSet{
 		{
-			Id:   "id0",
+			Id:   id0,
 			Name: "ps0",
 			ResourceToAccess: map[string]storage.Access{
 				"ClusterCVE": storage.Access_READ_ACCESS,
@@ -25,7 +32,7 @@ var (
 			},
 		},
 		{
-			Id:   "id1",
+			Id:   id1,
 			Name: "ps1",
 			ResourceToAccess: map[string]storage.Access{
 				"Image": storage.Access_READ_WRITE_ACCESS,
@@ -35,14 +42,14 @@ var (
 
 	unmigratedPSsAfterMigration = []*storage.PermissionSet{
 		{
-			Id:   "id0",
+			Id:   id0,
 			Name: "ps0",
 			ResourceToAccess: map[string]storage.Access{
 				"Image": storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 		{
-			Id:   "id1",
+			Id:   id1,
 			Name: "ps1",
 			ResourceToAccess: map[string]storage.Access{
 				"Image": storage.Access_READ_WRITE_ACCESS,
@@ -52,12 +59,12 @@ var (
 
 	alreadyMigratedPSs = []*storage.PermissionSet{
 		{
-			Id:               "id2",
+			Id:               id2,
 			Name:             "ps2",
 			ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_WRITE_ACCESS},
 		},
 		{
-			Id:               "id3",
+			Id:               id3,
 			Name:             "ps3",
 			ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_WRITE_ACCESS},
 		},
@@ -68,7 +75,7 @@ type psMigrationTestSuite struct {
 	suite.Suite
 
 	db    *pghelper.TestPostgres
-	store postgres.Store
+	store permissionsetpostgresstore.Store
 }
 
 func TestMigration(t *testing.T) {
@@ -77,7 +84,7 @@ func TestMigration(t *testing.T) {
 
 func (s *psMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
-	s.store = postgres.New(s.db.Pool)
+	s.store = permissionsetpostgresstore.New(s.db.Pool)
 	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.PermissionSetsTableName)
 }
 
@@ -91,9 +98,7 @@ func (s *psMigrationTestSuite) TestMigration() {
 	psToUpsert = append(psToUpsert, unmigratedPSs...)
 	psToUpsert = append(psToUpsert, alreadyMigratedPSs...)
 
-	for _, initial := range psToUpsert {
-		s.NoError(s.store.Upsert(ctx, initial))
-	}
+	s.NoError(s.store.UpsertMany(ctx, psToUpsert))
 
 	dbs := &types.Databases{
 		PostgresDB: s.db.Pool,
@@ -103,10 +108,11 @@ func (s *psMigrationTestSuite) TestMigration() {
 
 	var allPSsAfterMigration []*storage.PermissionSet
 
-	s.store.Walk(ctx, func(obj *storage.PermissionSet) error {
+	checkErr := s.store.Walk(ctx, func(obj *storage.PermissionSet) error {
 		allPSsAfterMigration = append(allPSsAfterMigration, obj)
 		return nil
 	})
+	s.NoError(checkErr)
 
 	var expectedPSsAfterMigration []*storage.PermissionSet
 	expectedPSsAfterMigration = append(expectedPSsAfterMigration, unmigratedPSsAfterMigration...)

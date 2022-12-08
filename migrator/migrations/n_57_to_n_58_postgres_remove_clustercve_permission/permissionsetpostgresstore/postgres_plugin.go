@@ -6,19 +6,21 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 // This file is a partial copy of central/role/store/permissionset/postgres/store.go
 // in the state it had when the migration was written.
-// Only the two relevant functions (Walk and UpsertMany) are kept.
+// Only the relevant functions (Walk, DeleteMany and UpsertMany) are kept.
 // The kept functions are stripped from the scoped access control checks.
 
 const (
@@ -32,6 +34,7 @@ const (
 	batchSize = 10000
 
 	cursorBatchSize = 50
+	deleteBatchSize = 5000
 )
 
 var (
@@ -41,8 +44,8 @@ var (
 
 // Store is the interface for interactions with the database storage
 type Store interface {
+	DeleteMany(ctx context.Context, ids []string) error
 	UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error
-
 	Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error
 }
 
@@ -67,7 +70,7 @@ func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storag
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
 	}
@@ -108,7 +111,7 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs 
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
@@ -217,6 +220,41 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
+}
+
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+	var sacQueryFilter *v1.Query
+
+	// Batch the deletes
+	localBatchSize := deleteBatchSize
+	numRecordsToDelete := len(ids)
+	for {
+		if len(ids) == 0 {
+			break
+		}
+
+		if len(ids) < localBatchSize {
+			localBatchSize = len(ids)
+		}
+
+		idBatch := ids[:localBatchSize]
+		q := search.ConjunctionQuery(
+			sacQueryFilter,
+			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+		)
+
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
+			log.Error(err)
+			return err
+		}
+
+		// Move the slice forward to start the next batch
+		ids = ids[localBatchSize:]
+	}
+
+	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
