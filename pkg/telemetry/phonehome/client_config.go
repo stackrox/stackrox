@@ -1,11 +1,16 @@
 package phonehome
 
 import (
+	"context"
+	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -91,4 +96,44 @@ func (cfg *Config) Telemeter() Telemeter {
 		}
 	})
 	return cfg.telemeter
+}
+
+// AddInterceptorFunc appends the custom list of telemetry interceptors with the
+// provided function.
+func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
+	mux.Lock()
+	defer mux.Unlock()
+	if cfg.interceptors == nil {
+		cfg.interceptors = make(map[string][]Interceptor, 1)
+	}
+	cfg.interceptors[event] = append(cfg.interceptors[event], f)
+}
+
+// GetGRPCInterceptor returns an API interceptor function for GRPC requests.
+func (cfg *Config) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		resp, err := handler(ctx, req)
+		rp := getGrpcRequestDetails(ctx, err, info, req)
+		go cfg.track(rp)
+		return resp, err
+	}
+}
+
+// GetHTTPInterceptor returns an API interceptor function for HTTP requests.
+func (cfg *Config) GetHTTPInterceptor() httputil.HTTPInterceptor {
+	return func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
+			handler.ServeHTTP(statusTrackingWriter, r)
+			rp := getHttpRequestDetails(r.Context(), r, statusCodeToError(statusTrackingWriter.GetStatusCode()))
+			go cfg.track(rp)
+		})
+	}
+}
+
+func statusCodeToError(code *int) error {
+	if code == nil || *code == http.StatusOK {
+		return nil
+	}
+	return errors.Errorf("%d %s", *code, http.StatusText(*code))
 }

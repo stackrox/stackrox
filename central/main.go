@@ -535,6 +535,11 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
+	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
+		config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
+	}
+
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),

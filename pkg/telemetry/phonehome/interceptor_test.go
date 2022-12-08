@@ -50,7 +50,8 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		},
 	}
 	cfg := &Config{
-		ClientID: "test",
+		ClientID:  "test",
+		telemeter: s.mockTelemeter,
 	}
 
 	cfg.AddInterceptorFunc("TestEvent", func(rp *RequestParams, props map[string]any) bool {
@@ -66,7 +67,7 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		"Property": "test value",
 	}).Times(1)
 
-	cfg.track(testRP, s.mockTelemeter)
+	cfg.track(testRP)
 }
 
 func (s *interceptorTestSuite) TestAddHttpInterceptor() {
@@ -81,7 +82,8 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	s.NoError(err)
 	testRP.HttpReq = req
 	cfg := &Config{
-		ClientID: "test",
+		ClientID:  "test",
+		telemeter: s.mockTelemeter,
 	}
 
 	cfg.AddInterceptorFunc("TestEvent", func(rp *RequestParams, props map[string]any) bool {
@@ -97,7 +99,7 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 		"Property": "test_value",
 	}).Times(1)
 
-	cfg.track(testRP, s.mockTelemeter)
+	cfg.track(testRP)
 }
 
 func (s *interceptorTestSuite) TestGrpcRequestInfo() {
@@ -106,9 +108,6 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 		Code:      0,
 		UserAgent: "test",
 		Path:      "/v1.Test",
-	}
-	cfg := &Config{
-		ClientID: "test",
 	}
 
 	md := metadata.New(nil)
@@ -119,7 +118,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
 
-	rp := cfg.getGrpcRequestDetails(ctx, err, &grpc.UnaryServerInfo{
+	rp := getGrpcRequestDetails(ctx, err, &grpc.UnaryServerInfo{
 		FullMethod: testRP.Path,
 	}, "request")
 	s.Equal(testRP.Path, rp.Path)
@@ -137,16 +136,13 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 		UserAgent: "test",
 		Path:      "/v1/test",
 	}
-	cfg := &Config{
-		ClientID: "test",
-	}
 
 	req, err := http.NewRequest(http.MethodPost, "https://test"+testRP.Path+"?test_key=test_value", nil)
 	s.NoError(err)
 	req.Header.Add("User-Agent", testRP.UserAgent)
 
 	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID, nil)
-	rp := cfg.getHttpRequestDetails(ctx, req, err)
+	rp := getHttpRequestDetails(ctx, req, err)
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)
