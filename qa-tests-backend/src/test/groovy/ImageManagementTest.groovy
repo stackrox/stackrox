@@ -15,6 +15,8 @@ import util.Env
 
 class ImageManagementTest extends BaseSpecification {
 
+    private static final String FEDORA_28 = "fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187"
+
     @Unroll
     @Category([BAT, Integration])
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
@@ -76,24 +78,25 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify image scan finds correct base OS - #imageName"() {
+    def "Verify image scan finds correct base OS - #qaImageTag"() {
         when:
-        def img = Services.scanImage(imageRegistry + "/" + imageRemote + ":" + imageTag)
+        def img = Services.scanImage("quay.io/rhacs-eng/qa:$qaImageTag")
         then:
         assert img.scan.operatingSystem == expected
         where:
         "Data inputs are: "
 
-        imageName               | imageRegistry | imageRemote       | imageTag         | expected
-        "alpine:3.10.0"         | "docker.io"   | "library/alpine"  | "3.10.0"         | "alpine:v3.10"
-        "busybox:1.32.0"        | "docker.io"   | "library/busybox" | "1.32.0"         | "busybox:1.32.0"
-        "centos:centos8.2.2004" | "docker.io"   | "library/centos"  | "centos8.2.2004" | "centos:8"
+        qaImageTag             | expected
+        "nginx-1.19-alpine"    | "alpine:v3.13"
+        "busybox-1-30"         | "busybox:1.30.1"
+        "centos7-base"         | "centos:7"
         // We explicitly do not support Fedora at this time.
-        "fedora:33"             | "docker.io"   | "library/fedora"  | "33"             | "unknown"
-        "nginx:1.10"            | "docker.io"   | "library/nginx"   | "1.10"           | "debian:8"
-        "nginx:1.19"            | "docker.io"   | "library/nginx"   | "1.19"           | "debian:10"
-        // TODO: Add check for RHEL
-        "ubuntu:14.04"          | "docker.io"   | "library/ubuntu"  | "14.04"          | "ubuntu:14.04"
+        FEDORA_28              | "unknown"
+        "nginx-1-9"            | "debian:8"
+        "nginx-1-17-1"         | "debian:9"
+        "ubi9-slf4j"           | "rhel:9"
+        "apache-server"        | "ubuntu:14.04"
+        "ubuntu-22.10-openssl" | "ubuntu:22.10"
     }
 
     @Unroll
