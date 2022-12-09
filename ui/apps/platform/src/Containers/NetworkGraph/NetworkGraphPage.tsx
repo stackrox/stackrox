@@ -52,13 +52,11 @@ function NetworkGraphPage() {
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { searchFilter } = useURLSearch();
 
     const {
         cluster: clusterFromUrl,
         namespaces: namespacesFromUrl,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         deployments: deploymentsFromUrl,
         remainingQuery,
     } = getScopeHierarchy(searchFilter);
@@ -80,6 +78,7 @@ function NetworkGraphPage() {
                     fetchNetworkFlowGraph(
                         selectedClusterId,
                         namespacesFromUrl,
+                        deploymentsFromUrl,
                         queryToUse,
                         timestampToUse || undefined,
                         includePorts
@@ -87,6 +86,7 @@ function NetworkGraphPage() {
                     fetchNetworkPolicyGraph(
                         selectedClusterId,
                         namespacesFromUrl,
+                        deploymentsFromUrl,
                         queryToUse,
                         undefined,
                         includePorts
@@ -145,7 +145,7 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusters, clusterFromUrl, namespacesFromUrl]);
+    }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl]);
 
     useEffect(() => {
         if (edgeState === 'active') {
@@ -170,6 +170,7 @@ function NetworkGraphPage() {
                             clusters={clusters}
                             selectedCluster={selectedCluster}
                             selectedNamespaces={namespacesFromUrl}
+                            selectedDeployments={deploymentsFromUrl}
                         />
                     </FlexItem>
                     <Button variant="secondary">Manage CIDR blocks</Button>

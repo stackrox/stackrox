@@ -1,5 +1,5 @@
 import React, { useCallback, ChangeEvent } from 'react';
-import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
+import { Badge, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Namespace } from 'hooks/useFetchClusterNamespaces';
@@ -42,9 +42,14 @@ function NamespaceSelector({
             filterElementsWithValueProp(
                 filterValue,
                 namespaces.map((namespace) => (
-                    <SelectOption key={namespace.metadata.id} value={namespace.metadata.name}>
+                    <SelectOption
+                        key={namespace.metadata.id}
+                        value={namespace.metadata.name}
+                        isDisabled={namespace.deploymentCount < 1}
+                    >
                         <span>
-                            <NamespaceIcon /> {namespace.metadata.name}
+                            <NamespaceIcon /> {namespace.metadata.name}{' '}
+                            <Badge isRead>{namespace.deploymentCount}</Badge>
                         </span>
                     </SelectOption>
                 ))
@@ -66,9 +71,14 @@ function NamespaceSelector({
 
     const namespaceSelectOptions: JSX.Element[] = namespaces.map((namespace) => {
         return (
-            <SelectOption key={namespace.metadata.id} value={namespace.metadata.name}>
+            <SelectOption
+                key={namespace.metadata.id}
+                value={namespace.metadata.name}
+                isDisabled={namespace.deploymentCount < 1}
+            >
                 <span>
-                    <NamespaceIcon /> {namespace.metadata.name}
+                    <NamespaceIcon /> {namespace.metadata.name}{' '}
+                    <Badge isRead>{namespace.deploymentCount}</Badge>
                 </span>
             </SelectOption>
         );

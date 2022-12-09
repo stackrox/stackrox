@@ -4,6 +4,7 @@ import { gql, useQuery } from '@apollo/client';
 import queryService from 'utils/queryService';
 
 type Deployment = {
+    id: string;
     name: string;
 };
 export type NamespaceWithDeployments = {
@@ -33,7 +34,7 @@ const DEPLOYMENTS_FOR_NAMESPACE_QUERY = gql`
 `;
 
 function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
-    const [availableDeployments, setAvailableNamespaces] = useState<Record<string, any>[]>([]);
+    const [availableDeployments, setAvailableNamespaces] = useState<NamespaceWithDeployments[]>([]);
 
     const searchClause = { 'Namespace ID': selectedNamespaceIds };
     // If the selectedNamespaceId has not been set yet, do not run the gql query

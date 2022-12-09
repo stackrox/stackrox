@@ -6,6 +6,7 @@ export type Namespace = {
         id: string;
         name: string;
     };
+    deploymentCount;
 };
 type NamespaceResponse = {
     id: string;
@@ -23,6 +24,7 @@ const NAMESPACES_FOR_CLUSTER_QUERY = gql`
                     id
                     name
                 }
+                deploymentCount
             }
         }
     }

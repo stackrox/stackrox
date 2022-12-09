@@ -24,7 +24,7 @@ function NetworkBreadcrumbs({
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
-    const { loading, error, namespaces } = useFetchClusterNamespaces(selectedCluster?.id);
+    const { namespaces } = useFetchClusterNamespaces(selectedCluster?.id);
     const selectedNamespaceIds = namespaces.reduce<string[]>((acc: string[], namespace) => {
         return selectedNamespaces.includes(namespace.metadata.name)
             ? [...acc, namespace.metadata.id]

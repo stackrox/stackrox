@@ -1,22 +1,9 @@
-import React, { useCallback, ChangeEvent } from 'react';
-import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
+import React, { useCallback } from 'react';
+import { Select, SelectGroup, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { NamespaceWithDeployments } from 'hooks/useFetchClusterNamespaces';
+import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
-
-function filterElementsWithValueProp(
-    filterValue: string,
-    elements: React.ReactElement[] | undefined
-): React.ReactElement[] | undefined {
-    if (filterValue === '' || elements === undefined) {
-        return elements;
-    }
-
-    return elements.filter((reactElement) =>
-        reactElement.props.value?.toLowerCase().includes(filterValue.toLowerCase())
-    );
-}
 
 type DeploymentSelectorProps = {
     deploymentsByNamespace: NamespaceWithDeployments[];
@@ -25,21 +12,6 @@ type DeploymentSelectorProps = {
     setSearchFilter: (newFilter: Partial<Record<string, string | string[]>>) => void;
 };
 
-/*
-      <SelectGroup label="Status" key="group1">
-        <SelectOption key={0} value="Running" />
-        <SelectOption key={1} value="Stopped" />
-        <SelectOption key={2} value="Down" />
-        <SelectOption key={3} value="Degraded" />
-        <SelectOption key={4} value="Needs maintenance" />
-      </SelectGroup>,
-      <SelectGroup label="Vendor names" key="group2">
-        <SelectOption key={5} value="Dell" />
-        <SelectOption key={6} value="Samsung" isDisabled />
-        <SelectOption key={7} value="Hewlett-Packard" />
-      </SelectGroup>
-
-*/
 function DeploymentSelector({
     deploymentsByNamespace = [],
     selectedDeployments = [],
@@ -53,17 +25,25 @@ function DeploymentSelector({
     } = useSelectToggle();
 
     const onFilterDeployments = useCallback(
-        (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
-            filterElementsWithValueProp(
-                filterValue,
-                deploymentsByNamespace.map((deployment) => (
-                    <SelectOption key={deployment} value={deployment}>
-                        <span>
-                            <DeploymentIcon /> {deployment}
-                        </span>
-                    </SelectOption>
-                ))
-            ),
+        (_, filterValue: string) => {
+            const filteredNamespaceDeployments = deploymentsByNamespace.map((namespace) => (
+                <SelectGroup label={namespace.metadata.name} key={namespace.metadata.id}>
+                    {namespace.deployments
+                        .filter((deployment) =>
+                            deployment.name.toLowerCase().includes(filterValue.toLowerCase())
+                        )
+                        .map((deployment) => (
+                            <SelectOption key={deployment.id} value={deployment.name}>
+                                <span>
+                                    <DeploymentIcon /> {deployment.name}
+                                </span>
+                            </SelectOption>
+                        ))}
+                </SelectGroup>
+            ));
+
+            return filteredNamespaceDeployments;
+        },
         [deploymentsByNamespace]
     );
 
@@ -79,12 +59,16 @@ function DeploymentSelector({
         setSearchFilter(modifiedSearchObject);
     };
 
-    const deploymentSelectOptions: JSX.Element[] = deploymentsByNamespace.map((deployment) => (
-        <SelectOption key={deployment} value={deployment}>
-            <span>
-                <DeploymentIcon /> {deployment}
-            </span>
-        </SelectOption>
+    const deploymentSelectOptions: JSX.Element[] = deploymentsByNamespace.map((namespace) => (
+        <SelectGroup label={namespace.metadata.name} key={namespace.metadata.id}>
+            {namespace.deployments.map((deployment) => (
+                <SelectOption key={deployment.id} value={deployment.name}>
+                    <span>
+                        <DeploymentIcon /> {deployment.name}
+                    </span>
+                </SelectOption>
+            ))}
+        </SelectGroup>
     ));
 
     return (
