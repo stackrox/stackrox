@@ -2,7 +2,7 @@ package profiling
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -31,8 +31,10 @@ func Test_fifoDir(t *testing.T) {
 		time.Sleep(time.Millisecond * 100)
 	}
 
-	actualFiles, err := ioutil.ReadDir(dir)
+	actualFilesEntries, err := os.ReadDir(dir)
 	require.NoErrorf(t, err, "reading directory %s", dir)
+	actualFiles, err := dirEntriesToFileInfo(actualFilesEntries)
+	require.NoErrorf(t, err, "convert get []fs.FileInfo from []os.DirEntry")
 	require.Equalf(t, len(actualFiles), maxFileCount, "file count in given directory should be equal to maxFileCount")
 
 	actualFileNames := make([]string, len(actualFiles))

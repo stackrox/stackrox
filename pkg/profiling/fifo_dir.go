@@ -1,7 +1,7 @@
 package profiling
 
 import (
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path"
 	"sort"
@@ -26,19 +26,24 @@ func (fd fifoDir) Create(fileName string) (*os.File, error) {
 		}
 	}
 
-	entries, err := ioutil.ReadDir(fd.dirPath)
+	entries, err := os.ReadDir(fd.dirPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading directory: %s", fd.dirPath)
 	}
 
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].ModTime().Before(entries[j].ModTime())
+	entryInfos, err := dirEntriesToFileInfo(entries)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(entryInfos, func(i, j int) bool {
+		return entryInfos[i].ModTime().Before(entryInfos[j].ModTime())
 	})
 
-	for len(entries) >= fd.maxFileCount {
-		rmPath := path.Join(fd.dirPath, entries[0].Name())
+	for len(entryInfos) >= fd.maxFileCount {
+		rmPath := path.Join(fd.dirPath, entryInfos[0].Name())
 		os.Remove(rmPath)
-		entries = entries[1:]
+		entryInfos = entryInfos[1:]
 	}
 
 	filePath := path.Join(fd.dirPath, fileName)
@@ -48,4 +53,18 @@ func (fd fifoDir) Create(fileName string) (*os.File, error) {
 	}
 
 	return file, nil
+}
+
+func dirEntriesToFileInfo(entries []os.DirEntry) ([]fs.FileInfo, error) {
+	entryInfos := make([]fs.FileInfo, 0, len(entries))
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting dir entry info: %s", entry.Name())
+		}
+
+		entryInfos = append(entryInfos, info)
+	}
+
+	return entryInfos, nil
 }

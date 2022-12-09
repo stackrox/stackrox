@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"sync"
 	"testing"
 	"time"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 func TestHeapDump(t *testing.T) {
