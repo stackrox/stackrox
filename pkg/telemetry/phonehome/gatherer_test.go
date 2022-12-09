@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/mocks"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,16 +21,14 @@ func TestConfig(t *testing.T) {
 }
 
 func (s *gathererTestSuite) TestNilGatherer() {
-	s.T().Setenv(env.TelemetryStorageKey.EnvVar(), "")
 	cfg := &Config{}
 	nilgatherer := cfg.Gatherer()
-	s.Nil(nilgatherer)
+	s.NotNil(nilgatherer)
 	nilgatherer.Start() // noop
 	nilgatherer.Stop()  // noop
 }
 
 func (s *gathererTestSuite) TestGatherer() {
-	s.T().Setenv(env.TelemetryStorageKey.EnvVar(), "testkey")
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
 	t.EXPECT().Identify("test", nil).Times(3)
 

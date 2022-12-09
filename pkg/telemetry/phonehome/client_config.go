@@ -43,6 +43,9 @@ func (cfg *Config) Enabled() bool {
 
 // Gatherer returns the telemetry gatherer instance.
 func (cfg *Config) Gatherer() Gatherer {
+	if cfg == nil {
+		return &nilGatherer{}
+	}
 	onceGatherer.Do(func() {
 		if cfg.Enabled() {
 			period := cfg.GatherPeriod
@@ -51,7 +54,7 @@ func (cfg *Config) Gatherer() Gatherer {
 			}
 			cfg.gatherer = newGatherer(cfg.ClientID, cfg.Telemeter(), period)
 		} else {
-			cfg.gatherer = (*gatherer)(nil)
+			cfg.gatherer = &nilGatherer{}
 		}
 	})
 	return cfg.gatherer
@@ -59,6 +62,9 @@ func (cfg *Config) Gatherer() Gatherer {
 
 // Telemeter returns the instance of the telemeter.
 func (cfg *Config) Telemeter() Telemeter {
+	if cfg == nil {
+		return &nilTelemeter{}
+	}
 	onceTelemeter.Do(func() {
 		if cfg.Enabled() {
 			cfg.telemeter = segment.NewTelemeter(

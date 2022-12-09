@@ -18,6 +18,12 @@ type Gatherer interface {
 	AddGatherer(GatherFunc)
 }
 
+type nilGatherer struct{}
+
+func (*nilGatherer) Start()                 {}
+func (*nilGatherer) Stop()                  {}
+func (*nilGatherer) AddGatherer(GatherFunc) {}
+
 type gatherer struct {
 	clientID    string
 	telemeter   Telemeter
@@ -28,17 +34,17 @@ type gatherer struct {
 	gatherFuncs []GatherFunc
 }
 
-func (g *gatherer) reset() {
-	g.stopSig.Reset()
-	g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
-}
-
 func newGatherer(clientID string, t Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
 		clientID:  clientID,
 		telemeter: t,
 		period:    p,
 	}
+}
+
+func (g *gatherer) reset() {
+	g.stopSig.Reset()
+	g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 }
 
 func (g *gatherer) collect() map[string]any {
