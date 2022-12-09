@@ -95,7 +95,7 @@ dependencies {
     implementation group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.4'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
 
     implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
