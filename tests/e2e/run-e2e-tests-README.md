@@ -4,7 +4,7 @@
 E2E tests that typically are only supported in CI. It does this by importing
 test credentials from hashicorp vault and using the same test container that CI
 uses. This should facilitate a test development workflow where the overhead to
-making changes to test code and verifying them is minimal. 
+make changes to test code and verify those changes is minimal.
 
 ## The Tested Image Version
 
@@ -48,7 +48,7 @@ Configure only:
 run-e2e-tests.sh -c qa
 ```
 
-A single suite:
+Run a single suite (assumes a prior config step was executed):
 ```
 # Run DeploymentTest.groovy suite:
 run-e2e-tests.sh -d qa DeploymentTest
@@ -57,9 +57,20 @@ run-e2e-tests.sh -d qa DeploymentTest
 The `-d` option collects debug for failing tests under `/tmp/qa-tests-backend-logs/`
 similar to how CI tests operate.
 
-Run basic acceptance tests (BAT).
+Run basic acceptance tests (BAT):
 ```
-run-e2e-tests.sh -d qa
+run-e2e-tests.sh qa
+```
+
+Only run tests (assumes a prior config step was executed):
+```
+run-e2e-tests.sh --test-only qa
+```
+
+Run tests repeatedly:
+```
+# Hammer on the IntegrationsSplunkViolationsTest
+run-e2e-tests.sh --spin-cycle=100 qa IntegrationsSplunkViolationsTest
 ```
 
 ### Non groovy tests - 'e2e' flavor
@@ -71,4 +82,3 @@ run-e2e-tests.sh -d e2e
 
 TBD - split configuration from test. separate the various test facets (roxctl,
 integration, destructive, etc)
-
