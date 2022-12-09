@@ -115,13 +115,13 @@ require (
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/gorm v1.24.1-0.20221019064659-5dd2bb482755
 	helm.sh/helm/v3 v3.9.4
-	k8s.io/api v0.24.6
-	k8s.io/apimachinery v0.24.6
-	k8s.io/apiserver v0.24.6
-	k8s.io/client-go v0.24.6
+	k8s.io/api v0.26.0
+	k8s.io/apimachinery v0.26.0
+	k8s.io/apiserver v0.26.0
+	k8s.io/client-go v0.26.0
 	k8s.io/kubectl v0.24.6
 	k8s.io/kubelet v0.24.6
-	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
+	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d
 	sigs.k8s.io/controller-runtime v0.12.2
 	sigs.k8s.io/controller-tools v0.9.2
 	sigs.k8s.io/e2e-framework v0.0.8
@@ -133,12 +133,6 @@ require (
 	cloud.google.com/go/compute v1.13.0 // indirect
 	cloud.google.com/go/iam v0.8.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
-	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
-	github.com/Azure/go-autorest/autorest/adal v0.9.21 // indirect
-	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
-	github.com/Azure/go-autorest/logger v0.2.1 // indirect
-	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
@@ -178,21 +172,21 @@ require (
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
-	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/go-git/go-git/v5 v5.4.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.0.2 // indirect
-	github.com/go-logr/zapr v1.2.0 // indirect
+	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -258,7 +252,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
@@ -270,7 +264,7 @@ require (
 	github.com/moby/sys/mount v0.3.3 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
-	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
+	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
@@ -348,15 +342,15 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apiextensions-apiserver v0.24.6 // indirect
 	k8s.io/cli-runtime v0.24.6 // indirect
-	k8s.io/component-base v0.24.6 // indirect
+	k8s.io/component-base v0.26.0 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20220627174259-011e075b9cb8 // indirect
+	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 	oras.land/oras-go v1.2.0 // indirect
-	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
+	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.11.4 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
 // To bump the version of a replacement package, use:
