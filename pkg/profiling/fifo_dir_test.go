@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/tj/assert"
 )
 
 func Test_fifoDir(t *testing.T) {
@@ -20,7 +21,8 @@ func Test_fifoDir(t *testing.T) {
 	numFilesToCreate := 10
 	for i := 0; i < numFilesToCreate; i++ {
 		fileName := fmt.Sprintf("%d.test.dump", i)
-		fs.Create(fileName)
+		_, err := fs.Create(fileName)
+		require.NoError(t, err, "creating file: %s", fileName)
 		if i < numFilesToCreate-3 {
 			filesToBeDeleted = append(filesToBeDeleted, fileName)
 		} else {
@@ -30,8 +32,8 @@ func Test_fifoDir(t *testing.T) {
 	}
 
 	actualFiles, err := ioutil.ReadDir(dir)
-	assert.NoError(t, err, "reading directory %s", dir)
-	assert.Equal(t, len(actualFiles), maxFileCount, "file count in given directory should be equal to maxFileCount")
+	require.NoError(t, err, "reading directory %s", dir)
+	require.Equal(t, len(actualFiles), maxFileCount, "file count in given directory should be equal to maxFileCount")
 
 	actualFileNames := make([]string, len(actualFiles))
 	for i := range actualFiles {
