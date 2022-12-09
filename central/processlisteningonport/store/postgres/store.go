@@ -49,21 +49,13 @@ const (
 	// process_indicators. Used to provide information for queries like 'give
 	// me all PLOP by this deployment'.
 	// XXX: Verify the query plan to make sure needed indexes are in use.
-	getByNamespaceAndDeploymentStmt = "SELECT plop.id, plop.serialized, " +
+	getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
 		"proc.podid, proc.containername, proc.signal_name, " +
 		"proc.signal_args, proc.signal_execfilepath, proc.clusterid " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
-		"WHERE proc.namespace = $1 AND proc.deploymentid = $2"
-
-	getByNamespace = "SELECT plop.id, plop.serialized, proc.deploymentid, " +
-		"proc.podid, proc.containername, proc.signal_name, " +
-		"proc.signal_args, proc.signal_execfilepath, proc.clusterid " +
-		"FROM process_listening_on_ports plop " +
-		"JOIN process_indicators proc " +
-		"ON plop.processindicatorid = proc.id " +
-		"WHERE proc.namespace = $1"
+		"WHERE proc.deploymentid = $1"
 )
 
 var (
@@ -71,8 +63,6 @@ var (
 	schema         = pkgSchema.ProcessListeningOnPortsSchema
 	targetResource = resources.DeploymentExtension
 )
-
-type PLOPByDeployment map[string][]*storage.ProcessListeningOnPort
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -86,13 +76,8 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessListeningOnPortStorage, []int, error)
 	GetProcessListeningOnPort(
 		ctx context.Context,
-		namespace string,
 		deploymentID string,
-	) (PLOPByDeployment, error)
-	GetProcessListeningOnPortByNamespace(
-		ctx context.Context,
-		namespace string,
-	) (PLOPByDeployment, error)
+	) ([]*storage.ProcessListeningOnPort, error)
 
 	DeleteMany(ctx context.Context, ids []string) error
 
@@ -603,77 +588,35 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *storeImpl) GetProcessListeningOnPort(
 	ctx context.Context,
-	namespace string,
 	deploymentID string,
-) (PLOPByDeployment, error) {
+) ([]*storage.ProcessListeningOnPort, error) {
 	defer metrics.SetPostgresOperationDurationTime(
 		time.Now(),
-		ops.GetProcessListeningOnPortByNamespaceAndDeployment,
+		ops.GetProcessListeningOnPort,
 		"ProcessListeningOnPortStorage",
 	)
 
-	return pgutils.Retry2(func() (PLOPByDeployment, error) {
-		return s.retryableGetPLOP(ctx, namespace, deploymentID)
-	})
-}
-
-// Manually written function to get PLOP joined with ProcessIndicators
-func (s *storeImpl) GetProcessListeningOnPortByNamespace(
-	ctx context.Context,
-	namespace string,
-) (PLOPByDeployment, error) {
-	defer metrics.SetPostgresOperationDurationTime(
-		time.Now(),
-		ops.GetProcessListeningOnPortByNamespace,
-		"ProcessListeningOnPortStorage",
-	)
-
-	return pgutils.Retry2(func() (PLOPByDeployment, error) {
-		return s.retryableGetPLOPByNamespace(ctx, namespace)
+	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
+		return s.retryableGetPLOP(ctx, deploymentID)
 	})
 }
 
 func (s *storeImpl) retryableGetPLOP(
 	ctx context.Context,
-	namespace string,
 	deploymentID string,
-) (PLOPByDeployment, error) {
+) ([]*storage.ProcessListeningOnPort, error) {
 	var rows pgx.Rows
 	var err error
 
-	rows, err = s.db.Query(ctx, getByNamespaceAndDeploymentStmt, namespace, deploymentID)
+	rows, err = s.db.Query(ctx, getByDeploymentStmt, deploymentID)
 
 	if err != nil {
-		log.Warnf("%s: %s", getByNamespaceAndDeploymentStmt, err)
+		log.Warnf("%s: %s", getByDeploymentStmt, err)
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
-	plops, err := s.readRows(rows)
-
-	return PLOPByDeployment{
-		deploymentID: plops,
-	}, err
-}
-
-func (s *storeImpl) retryableGetPLOPByNamespace(
-	ctx context.Context,
-	namespace string,
-) (PLOPByDeployment, error) {
-	var rows pgx.Rows
-	var err error
-
-	rows, err = s.db.Query(ctx, getByNamespace, namespace)
-
-	if err != nil {
-		log.Warnf("%s: %s", getByNamespace, err)
-		return nil, pgutils.ErrNilIfNoRows(err)
-	}
-	defer rows.Close()
-
-	plops, err := s.readRowsGroupBy(rows)
-
-	return plops, err
+	return s.readRows(rows)
 }
 
 // Manual converting of raw data from SQL query to ProcessListeningOnPort (not
@@ -756,57 +699,3 @@ func (s *storeImpl) readRows(
 // serialized data will be escaped in the string format (i.e. \x1a2b3c will
 // become \\x1a2b3c), so the result has to be preprocessed before
 // unmarshalling.
-
-func (s *storeImpl) readRowsGroupBy(
-	rows pgx.Rows,
-) (map[string][]*storage.ProcessListeningOnPort, error) {
-	plopsMap := make(map[string][]*storage.ProcessListeningOnPort)
-
-	for rows.Next() {
-		var id string
-		var serialized []byte
-		var deploymentId string
-		var podId string
-		var containerName string
-		var signalName string
-		var signalArgs string
-		var signalExecFilePath string
-		var clusterId string
-
-		// We're getting ProcessIndicator directly from the SQL query, PLOP
-		// parts have to be extra deserialized.
-		if err := rows.Scan(
-			&id, &serialized, &deploymentId,
-			&podId, &containerName,
-			&signalName, &signalArgs, &signalExecFilePath, &clusterId); err != nil {
-			return nil, pgutils.ErrNilIfNoRows(err)
-		}
-
-		var msg storage.ProcessListeningOnPortStorage
-		if err := proto.Unmarshal(serialized, &msg); err != nil {
-			return nil, err
-		}
-
-		plop := &storage.ProcessListeningOnPort{
-			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-				Port:           msg.Port,
-				Protocol:       msg.Protocol,
-			},
-			CloseTimestamp: msg.CloseTimestamp,
-			ClusterId:	clusterId,
-			Process: &storage.ProcessIndicatorUniqueKey{
-				PodId:               podId,
-				ContainerName:       containerName,
-				ProcessName:         signalName,
-				ProcessArgs:         signalArgs,
-				ProcessExecFilePath: signalExecFilePath,
-			},
-		}
-
-		plopsMap[deploymentId] = append(plopsMap[deploymentId], plop)
-
-	}
-
-	log.Debugf("Read returned %+v plops", len(plopsMap))
-	return plopsMap, nil
-}

@@ -14,14 +14,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
-	// "github.com/stackrox/rox/pkg/grpc/authz/allow"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
-			"/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespace",
-			"/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespaceAndDeployment",
+			"/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPorts",
 		},
 	})
 )
@@ -42,57 +40,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	//// XXX: An anonymous access only for development
-	//  return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
-}
-
-func emptyProcessesListeningOnPortsWithDeploymentResponse() (*v1.GetProcessesListeningOnPortsWithDeploymentResponse, error) {
-	result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
-		ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
-	}
-	return result, nil
-}
-
-func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Context, req *v1.GetProcessesListeningOnPortsByNamespaceRequest) (*v1.GetProcessesListeningOnPortsWithDeploymentResponse, error) {
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// PLOP is a Postgres-only feature, do nothing.
-		log.Warnf("Tried to request PLOP not on Postgres, ignore: %s",
-			req.GetNamespace())
-		return emptyProcessesListeningOnPortsWithDeploymentResponse()
-	}
-
-	namespace := req.GetNamespace()
-	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(
-		ctx, datastore.GetOptions{Namespace: &namespace})
-
-	if err != nil {
-		log.Warnf("In processlisteningonport service query return err: %+v", err)
-		return emptyProcessesListeningOnPortsWithDeploymentResponse()
-	}
-
-	if processesListeningOnPorts == nil {
-		log.Debug("In processlisteningonport service query return nil")
-		return emptyProcessesListeningOnPortsWithDeploymentResponse()
-	}
-
-	size := len(processesListeningOnPorts)
-	result := make([]*v1.ProcessListeningOnPortWithDeploymentId, size)
-
-	idx := 0
-	for k, v := range processesListeningOnPorts {
-		plop := &v1.ProcessListeningOnPortWithDeploymentId{
-			DeploymentId:              k,
-			ProcessesListeningOnPorts: v,
-		}
-		result[idx] = plop
-		idx++
-	}
-
-	return &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
-		ProcessesListeningOnPortsWithDeployment: result,
-	}, err
 }
 
 func emptyProcessesListeningOnPortsResponse() (*v1.GetProcessesListeningOnPortsResponse, error) {
@@ -102,25 +50,19 @@ func emptyProcessesListeningOnPortsResponse() (*v1.GetProcessesListeningOnPortsR
 	return result, nil
 }
 
-func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(
+func (s *serviceImpl) GetProcessesListeningOnPorts(
 	ctx context.Context,
-	req *v1.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest,
+	req *v1.GetProcessesListeningOnPortsRequest,
 ) (*v1.GetProcessesListeningOnPortsResponse, error) {
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
-		log.Warnf("Tried to request PLOP not on Postgres, ignore: %s, %s",
-			req.GetNamespace(), req.GetDeploymentId())
+		log.Warnf("Tried to request PLOP not on Postgres, ignore: %s", req.GetDeploymentId())
 		return emptyProcessesListeningOnPortsResponse()
 	}
 
-	namespace := req.GetNamespace()
 	deployment := req.GetDeploymentId()
-	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(
-		ctx, datastore.GetOptions{
-			Namespace:    &namespace,
-			DeploymentID: &deployment,
-		})
+	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, deployment)
 
 	if err != nil {
 		log.Warnf("In processlisteningonport service query return err: %+v", err)
@@ -132,19 +74,7 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(
 		return emptyProcessesListeningOnPortsResponse()
 	}
 
-	result := make([]*storage.ProcessListeningOnPort, 0)
-
-	// Storage returns map DeploymentID -> PLOP. Just in case verify that
-	// deployment id matches.
-	for k, v := range processesListeningOnPorts {
-		if k != deployment {
-			log.Warnf("Requested deployment %s, got %s. Skipping", deployment, k)
-		} else {
-			result = append(result, v...)
-		}
-	}
-
 	return &v1.GetProcessesListeningOnPortsResponse{
-		ProcessesListeningOnPorts: result,
+		ProcessesListeningOnPorts: processesListeningOnPorts,
 	}, err
 }
