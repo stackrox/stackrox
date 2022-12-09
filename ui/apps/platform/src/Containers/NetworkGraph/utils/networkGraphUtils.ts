@@ -77,6 +77,12 @@ export function getNumExternalFlows(
     return numExternalFlows;
 }
 
+export function getEdgesByNodeId(edges: EdgeModel[], id: string): EdgeModel[] {
+    return edges.filter((edge) => {
+        return edge.source === id || edge.target === id;
+    });
+}
+
 export function getNumDeploymentFlows(edges: EdgeModel[], deploymentId: string): number {
     const numFlows =
         edges?.reduce((acc, edge) => {
