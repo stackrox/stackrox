@@ -128,7 +128,6 @@ type TestClone struct {
 	EnumSlice   []TestClone_CloneEnum           `protobuf:"varint,6,rep,packed,name=enum_slice,json=enumSlice,proto3,enum=test.TestClone_CloneEnum" json:"enum_slice,omitempty"`
 	Ts          *types.Timestamp                `protobuf:"bytes,7,opt,name=ts,proto3" json:"ts,omitempty"`
 	// Types that are valid to be assigned to Primitive:
-	//
 	//	*TestClone_Int32
 	//	*TestClone_String_
 	//	*TestClone_Msg
