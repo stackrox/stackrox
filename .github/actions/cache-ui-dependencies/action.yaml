@@ -13,7 +13,7 @@ runs:
       with:
         path: |
           ui/deps
-          /github/home/.cache/yarn/v6
+          /github/home/.cache/yarn
           /github/home/.cache/Cypress
           /usr/local/share/.cache
           ui/node_modules
