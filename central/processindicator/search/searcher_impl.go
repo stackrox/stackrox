@@ -37,15 +37,15 @@ func (s *searcherImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Que
 
 func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return deploymentExtensionSACPostgresSearchHelper.Apply(s.indexer.Search)(ctx, q)
+		return deploymentExtensionSACPostgresSearchHelper.FilteredSearcher(s.indexer).Search(ctx, q)
 	}
-	return deploymentExtensionSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
+	return deploymentExtensionSACSearchHelper.FilteredSearcher(s.indexer).Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return deploymentExtensionSACPostgresSearchHelper.ApplyCount(s.indexer.Count)(ctx, q)
+		return deploymentExtensionSACPostgresSearchHelper.FilteredSearcher(s.indexer).Count(ctx, q)
 	}
-	return deploymentExtensionSACSearchHelper.ApplyCount(s.indexer.Count)(ctx, q)
+	return deploymentExtensionSACSearchHelper.FilteredSearcher(s.indexer).Count(ctx, q)
 }
