@@ -1,8 +1,8 @@
-import { SearchFilter } from 'types/search';
+import { QueryValue } from 'hooks/useURLParameter';
 
 type SimulationOn = {
     isOn: true;
-    type: 'baseline' | 'network policy';
+    type: 'baseline' | 'networkPolicy';
 };
 
 type SimulationOff = {
@@ -11,9 +11,11 @@ type SimulationOff = {
 
 export type Simulation = SimulationOn | SimulationOff;
 
-function getSimulation(searchFilter: SearchFilter): Simulation {
-    const simulationType = searchFilter.Simulation;
-    if (!simulationType || (simulationType !== 'baseline' && simulationType !== 'network policy')) {
+function getSimulation(simulationQueryValue: QueryValue): Simulation {
+    if (
+        !simulationQueryValue ||
+        (simulationQueryValue !== 'baseline' && simulationQueryValue !== 'networkPolicy')
+    ) {
         const simulation: Simulation = {
             isOn: false,
         };
@@ -21,7 +23,7 @@ function getSimulation(searchFilter: SearchFilter): Simulation {
     }
     const simulation: Simulation = {
         isOn: true,
-        type: simulationType,
+        type: simulationQueryValue,
     };
     return simulation;
 }

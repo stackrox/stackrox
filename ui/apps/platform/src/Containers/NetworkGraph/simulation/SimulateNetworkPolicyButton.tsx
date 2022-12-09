@@ -2,8 +2,8 @@ import React from 'react';
 import { Button } from '@patternfly/react-core';
 import { useHistory } from 'react-router-dom';
 
-import useURLSearch from 'hooks/useURLSearch';
 import { networkBasePathPF } from 'routePaths';
+import useURLParameter from 'hooks/useURLParameter';
 import { Simulation } from '../utils/getSimulation';
 
 type SimulateNetworkPolicyButtonProps = {
@@ -12,15 +12,15 @@ type SimulateNetworkPolicyButtonProps = {
 
 function SimulateNetworkPolicyButton({ simulation }: SimulateNetworkPolicyButtonProps) {
     const history = useHistory();
-    const { searchFilter, setSearchFilter } = useURLSearch();
+
+    const [, setSimulationQueryValue] = useURLParameter('simulation', undefined);
 
     function enableNetworkPolicySimulation() {
-        const searchObject = {
-            ...searchFilter,
-            Simulation: 'network policy',
-        };
-        history.push(networkBasePathPF);
-        setSearchFilter(searchObject);
+        history.push({
+            path: networkBasePathPF,
+            search: history.location.search,
+        });
+        setSimulationQueryValue('networkPolicy');
     }
 
     return (

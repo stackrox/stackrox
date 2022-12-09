@@ -23,6 +23,7 @@ import { getQueryString } from 'utils/queryStringUtils';
 import timeWindowToDate from 'utils/timeWindows';
 
 import PageTitle from 'Components/PageTitle';
+import useURLParameter from 'hooks/useURLParameter';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
@@ -56,6 +57,7 @@ function NetworkGraphPage() {
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
     const { searchFilter } = useURLSearch();
+    const [simulationQueryValue] = useURLParameter('simulation', undefined);
 
     const {
         cluster: clusterFromUrl,
@@ -63,7 +65,7 @@ function NetworkGraphPage() {
         deployments: deploymentsFromUrl,
         remainingQuery,
     } = getScopeHierarchy(searchFilter);
-    const simulation = getSimulation(searchFilter);
+    const simulation = getSimulation(simulationQueryValue);
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 

@@ -31,7 +31,7 @@ function NetworkPolicySimulatorSidePanel() {
                 <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
                                 Simulate network policy
                             </Text>
                         </TextContent>

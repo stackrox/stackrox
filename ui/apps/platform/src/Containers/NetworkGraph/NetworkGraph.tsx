@@ -195,7 +195,7 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
         <TopologyView
             sideBar={
                 <TopologySideBar resizable onClose={closeSidebar}>
-                    {simulation.isOn && simulation.type === 'network policy' && (
+                    {simulation.isOn && simulation.type === 'networkPolicy' && (
                         <NetworkPolicySimulatorSidePanel />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
