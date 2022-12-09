@@ -2,6 +2,7 @@ import React, { useCallback, ChangeEvent } from 'react';
 import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { NamespaceWithDeployments } from 'hooks/useFetchClusterNamespaces';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 
 function filterElementsWithValueProp(
@@ -18,14 +19,29 @@ function filterElementsWithValueProp(
 }
 
 type DeploymentSelectorProps = {
-    deployments: string[];
+    deploymentsByNamespace: NamespaceWithDeployments[];
     selectedDeployments: string[];
     searchFilter: Partial<Record<string, string | string[]>>;
     setSearchFilter: (newFilter: Partial<Record<string, string | string[]>>) => void;
 };
 
+/*
+      <SelectGroup label="Status" key="group1">
+        <SelectOption key={0} value="Running" />
+        <SelectOption key={1} value="Stopped" />
+        <SelectOption key={2} value="Down" />
+        <SelectOption key={3} value="Degraded" />
+        <SelectOption key={4} value="Needs maintenance" />
+      </SelectGroup>,
+      <SelectGroup label="Vendor names" key="group2">
+        <SelectOption key={5} value="Dell" />
+        <SelectOption key={6} value="Samsung" isDisabled />
+        <SelectOption key={7} value="Hewlett-Packard" />
+      </SelectGroup>
+
+*/
 function DeploymentSelector({
-    deployments = [],
+    deploymentsByNamespace = [],
     selectedDeployments = [],
     searchFilter,
     setSearchFilter,
@@ -40,7 +56,7 @@ function DeploymentSelector({
         (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
             filterElementsWithValueProp(
                 filterValue,
-                deployments.map((deployment) => (
+                deploymentsByNamespace.map((deployment) => (
                     <SelectOption key={deployment} value={deployment}>
                         <span>
                             <DeploymentIcon /> {deployment}
@@ -48,7 +64,7 @@ function DeploymentSelector({
                     </SelectOption>
                 ))
             ),
-        [deployments]
+        [deploymentsByNamespace]
     );
 
     const onDeploymentSelect = (_, selected) => {
@@ -63,7 +79,7 @@ function DeploymentSelector({
         setSearchFilter(modifiedSearchObject);
     };
 
-    const deploymentSelectOptions: JSX.Element[] = deployments.map((deployment) => (
+    const deploymentSelectOptions: JSX.Element[] = deploymentsByNamespace.map((deployment) => (
         <SelectOption key={deployment} value={deployment}>
             <span>
                 <DeploymentIcon /> {deployment}
@@ -79,7 +95,7 @@ function DeploymentSelector({
             onFilter={onFilterDeployments}
             className="deployment-select"
             placeholderText="Deployments"
-            isDisabled={deployments.length === 0}
+            isDisabled={deploymentsByNamespace.length === 0}
             selections={selectedDeployments}
             variant={SelectVariant.checkbox}
             maxHeight="275px"

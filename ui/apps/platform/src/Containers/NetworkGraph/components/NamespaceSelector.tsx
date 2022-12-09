@@ -25,17 +25,6 @@ type NamespaceSelectorProps = {
     setSearchFilter: (newFilter: Partial<Record<string, string | string[]>>) => void;
 };
 
-function NamespaceSelectOption({ namespace }) {
-    console.log({ namespace });
-    return (
-        <SelectOption key={namespace.metadata.id} value={namespace.metadata.name}>
-            <span>
-                <NamespaceIcon /> {namespace.metadata.name}
-            </span>
-        </SelectOption>
-    );
-}
-
 function NamespaceSelector({
     namespaces = [],
     selectedNamespaces = [],
@@ -52,7 +41,13 @@ function NamespaceSelector({
         (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
             filterElementsWithValueProp(
                 filterValue,
-                namespaces.map((namespace) => <NamespaceSelectOption namespace={namespace} />)
+                namespaces.map((namespace) => (
+                    <SelectOption key={namespace.metadata.id} value={namespace.metadata.name}>
+                        <span>
+                            <NamespaceIcon /> {namespace.metadata.name}
+                        </span>
+                    </SelectOption>
+                ))
             ),
         [namespaces]
     );
@@ -69,9 +64,15 @@ function NamespaceSelector({
         setSearchFilter(modifiedSearchObject);
     };
 
-    const namespaceSelectOptions: JSX.Element[] = namespaces.map((namespace) => (
-        <NamespaceSelectOption namespace={namespace} />
-    ));
+    const namespaceSelectOptions: JSX.Element[] = namespaces.map((namespace) => {
+        return (
+            <SelectOption key={namespace.metadata.id} value={namespace.metadata.name}>
+                <span>
+                    <NamespaceIcon /> {namespace.metadata.name}
+                </span>
+            </SelectOption>
+        );
+    });
 
     return (
         <Select

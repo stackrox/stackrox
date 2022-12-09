@@ -15,7 +15,7 @@ type NamespaceResponse = {
 };
 
 const NAMESPACES_FOR_CLUSTER_QUERY = gql`
-    query getClusterNamespaceNames($id: ID!) {
+    query getClusterNamespaces($id: ID!) {
         results: cluster(id: $id) {
             id
             namespaces {

@@ -7,29 +7,30 @@ import useFetchClusterNamespaces from 'hooks/useFetchClusterNamespaces';
 import useFetchNamespaceDeployments from 'hooks/useFetchNamespaceDeployments';
 import ClusterSelector from './ClusterSelector';
 import NamespaceSelector from './NamespaceSelector';
-// import DeploymentSelector from './DeploymentSelector';
+import DeploymentSelector from './DeploymentSelector';
 
 type NetworkBreadcrumbsProps = {
     clusters: Cluster[];
     selectedCluster?: { name?: string; id?: string };
     selectedNamespaces: string[];
+    selectedDeployments: string[];
 };
 
 function NetworkBreadcrumbs({
     clusters = [],
     selectedCluster = {},
     selectedNamespaces = [],
+    selectedDeployments = [],
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const { loading, error, namespaces } = useFetchClusterNamespaces(selectedCluster?.id);
-    const selectedNamespaceIds = namespaces.reduce((acc: string[], namespace) => {
+    const selectedNamespaceIds = namespaces.reduce<string[]>((acc: string[], namespace) => {
         return selectedNamespaces.includes(namespace.metadata.name)
             ? [...acc, namespace.metadata.id]
             : acc;
     }, []);
     const { deploymentsByNamespace } = useFetchNamespaceDeployments(selectedNamespaceIds);
-    console.log({ deploymentsByNamespace });
 
     return (
         <>
@@ -50,14 +51,14 @@ function NetworkBreadcrumbs({
                         setSearchFilter={setSearchFilter}
                     />
                 </BreadcrumbItem>
-                {/* <BreadcrumbItem isDropdown>
-                    <NamespaceSelector
-                        selectedNamespaces={selectedDeployments}
+                <BreadcrumbItem isDropdown>
+                    <DeploymentSelector
+                        deploymentsByNamespace={deploymentsByNamespace}
                         selectedDeployments={selectedDeployments}
                         searchFilter={searchFilter}
                         setSearchFilter={setSearchFilter}
                     />
-                </BreadcrumbItem> */}
+                </BreadcrumbItem>
             </Breadcrumb>
         </>
     );

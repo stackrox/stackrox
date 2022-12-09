@@ -6,16 +6,15 @@ import queryService from 'utils/queryService';
 type Deployment = {
     name: string;
 };
+export type NamespaceWithDeployments = {
+    metadata: {
+        id: string;
+        name: string;
+    };
+    deployments: Deployment[];
+};
 type DeploymentResponse = {
-    results: [
-        {
-            metadata: {
-                id: string;
-                name: string;
-            };
-            deployments: Deployment[];
-        }
-    ];
+    results: NamespaceWithDeployments[];
 };
 
 const DEPLOYMENTS_FOR_NAMESPACE_QUERY = gql`
