@@ -11,7 +11,7 @@ import (
 
 var (
 	trackedPaths set.FrozenSet[string]
-	ignoredPaths = []string{"/v1/ping", "/v1/metadata", "/static/"}
+	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/"}
 
 	clusterStatus = map[string]storage.ClusterHealthStatus_HealthStatusLabel{}
 	mux           = &sync.Mutex{}
