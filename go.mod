@@ -59,7 +59,7 @@ require (
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
 	github.com/lib/pq v1.10.7
 	github.com/machinebox/graphql v0.2.2
-	github.com/magiconair/properties v1.8.6
+	github.com/magiconair/properties v1.8.7
 	github.com/mailru/easyjson v0.7.7
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
