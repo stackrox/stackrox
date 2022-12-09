@@ -48,12 +48,12 @@ import (
 )
 
 var (
-	setupLog           = ctrl.Log.WithName("setup")
-	scheme             = runtime.NewScheme()
-	enableWebhooks     = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
-	enableProfiling    = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
-	profilingThreshold = env.RegisterSetting("PROFILING_THRESHOLD", env.WithDefault("0.8"))
-	memLimit           = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)
+	setupLog                   = ctrl.Log.WithName("setup")
+	scheme                     = runtime.NewScheme()
+	enableWebhooks             = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+	enableProfiling            = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
+	profilingThresholdFraction = env.RegisterSetting("PROFILING_THRESHOLD_FRACTION", env.WithDefault("0.8"))
+	memLimit                   = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)
 	// Default place to put the heap dump is the /tmp directory because the container process has rights
 	// to write to this directory without creating and mounting a PVC
 	heapDumpDir = env.RegisterSetting("HEAP_DUMP_DIR", env.WithDefault("/tmp"))
@@ -116,10 +116,10 @@ func run() error {
 	}
 
 	if enableProfiling.BooleanSetting() {
-		thresholdS := profilingThreshold.Setting()
+		thresholdS := profilingThresholdFraction.Setting()
 		thresholdF, err := strconv.ParseFloat(thresholdS, 32)
 		if err != nil {
-			return errors.Wrapf(err, "unable to parse PROFILING_THREASHOLD set to '%s' as a float", thresholdS)
+			return errors.Wrapf(err, "unable to parse PROFILING_THRESHOLD set to '%s' as a float", thresholdS)
 		}
 		heapProfiler := profiling.NewHeapProfiler(thresholdF, uint64(memLimit.IntegerSetting()), heapDumpDir.Setting())
 		ctx, cancelProfiler := context.WithCancel(context.Background())

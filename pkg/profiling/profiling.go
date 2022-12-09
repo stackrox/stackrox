@@ -3,9 +3,6 @@ package profiling
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"math"
-	"os"
 	"path"
 	"runtime"
 	"runtime/pprof"
@@ -16,73 +13,31 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                   = logging.LoggerForModule()
+	heapdumpSubfolderName = "heapdump"
+	// time to wait between heap dumps when hitting threshold in seconds
+	defaultHeapProfilerBackoff = 30
 )
-
-const (
-	fifoDefaultMaxFileCount = 10
-	heapdumpSubfolderName   = "heapdump"
-)
-
-type fifoDir struct {
-	maxFileCount int
-	dirPath      string
-}
-
-func (fd fifoDir) Create(fileName string) (*os.File, error) {
-	err := os.MkdirAll(fd.dirPath, os.ModePerm)
-	if err != nil {
-		if !os.IsExist(err) {
-			return nil, errors.Wrapf(err, "creating directory: %s", fd.dirPath)
-		}
-	}
-
-	entries, err := ioutil.ReadDir(fd.dirPath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "reading directory: %s", fd.dirPath)
-	}
-
-	if len(entries) >= fd.maxFileCount {
-		var oldestEntryIndex int
-
-		for i, e := range entries {
-			oldestEntryInfo := entries[oldestEntryIndex]
-
-			if e.ModTime().Before(oldestEntryInfo.ModTime()) {
-				oldestEntryIndex = i
-			}
-		}
-
-		rmPath := path.Join(fd.dirPath, entries[oldestEntryIndex].Name())
-		os.Remove(rmPath)
-	}
-
-	filePath := path.Join(fd.dirPath, fileName)
-	file, err := os.Create(filePath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "creating file: %s", filePath)
-	}
-
-	return file, nil
-}
 
 // HeapProfiler is used to start a ticker that periodically checks if heap memory consumption
-// exceed the ThresholdFraction, if so the heap gets dumped to a File in Directory.
+// exceed the thresholdFraction, if so the heap gets dumped to a File in Directory.
 type HeapProfiler struct {
-	ThresholdFraction float64
-	LimitBytes        uint64
+	// Backoff limits the maximum frequency of creating heap dumps
 	Backoff           time.Duration
+	thresholdFraction float64
+	limitBytes        uint64
 	directory         *fifoDir
 	ticker            *time.Ticker
 	lastDump          time.Time
 }
 
 // NewHeapProfiler creates a new instance of HeapProfiler setting the given values.
-// If 0 is provides as limit the limit is set to MaxUint64, thus the heap dump will never run.
-func NewHeapProfiler(threshold float64, limit uint64, directory string) *HeapProfiler {
-	// default to MaxUint64 to prevent division through 0
-	if limit == 0 {
-		limit = math.MaxUint64
+// It appends a subdirectory to the directory to prevent acidental deletion of user files.
+// If 0 is provides as limitBytes the limitBytes is set to 1, thus the heap dump will always run.
+func NewHeapProfiler(thresholdFraction float64, limitBytes uint64, directory string) *HeapProfiler {
+	// default to 1 to prevent division through 0
+	if limitBytes == 0 {
+		limitBytes = 1
 	}
 
 	fd := &fifoDir{
@@ -91,25 +46,15 @@ func NewHeapProfiler(threshold float64, limit uint64, directory string) *HeapPro
 	}
 
 	return &HeapProfiler{
-		ThresholdFraction: threshold,
-		LimitBytes:        limit,
-		Backoff:           time.Second * 30,
+		thresholdFraction: thresholdFraction,
+		limitBytes:        limitBytes,
+		Backoff:           time.Second * time.Duration(defaultHeapProfilerBackoff),
 		directory:         fd,
 	}
 }
 
-// SetDirectory sets the target directory for dumps written by HeapProfiler
-func (p *HeapProfiler) SetDirectory(dir string) {
-	if p.directory == nil {
-		p.directory = &fifoDir{
-			maxFileCount: fifoDefaultMaxFileCount,
-		}
-	}
-
-	p.directory.dirPath = path.Join(dir, heapdumpSubfolderName)
-}
-
-// DumpHeapOnThreshhold starts a time.Ticker to check heap usage with the given interval
+// DumpHeapOnThreshhold runs for as long as ctx is valid, checking heap usage with the given interval.
+// Maximum frequency of creating heap dumps is limited by the configured backoff.
 func (p *HeapProfiler) DumpHeapOnThreshhold(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -124,7 +69,7 @@ func (p *HeapProfiler) dumpHeapOnThreshhold(ctx context.Context, runCheck <-chan
 		case t := <-runCheck:
 			var mem runtime.MemStats
 			runtime.ReadMemStats(&mem)
-			if float64(mem.Alloc)/float64(p.LimitBytes) > p.ThresholdFraction {
+			if float64(mem.Alloc)/float64(p.limitBytes) > p.thresholdFraction {
 				if time.Since(p.lastDump) < p.Backoff {
 					continue // this will skip all code below and jump to start of the for loop
 				}
