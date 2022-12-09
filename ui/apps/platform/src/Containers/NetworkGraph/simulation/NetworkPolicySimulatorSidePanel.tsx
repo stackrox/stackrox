@@ -71,7 +71,7 @@ function NetworkPolicySimulatorSidePanel() {
                                     <StackItem>
                                         <TextContent>
                                             <Text
-                                                component={TextVariants.h1}
+                                                component={TextVariants.h2}
                                                 className="pf-u-font-size-lg"
                                             >
                                                 Generate network policies
@@ -113,7 +113,7 @@ function NetworkPolicySimulatorSidePanel() {
                                     <StackItem>
                                         <TextContent>
                                             <Text
-                                                component={TextVariants.h1}
+                                                component={TextVariants.h2}
                                                 className="pf-u-font-size-lg"
                                             >
                                                 Upload a network policy YAML
