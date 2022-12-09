@@ -42,7 +42,10 @@ func (fd fifoDir) Create(fileName string) (*os.File, error) {
 
 	for len(entryInfos) >= fd.maxFileCount {
 		rmPath := path.Join(fd.dirPath, entryInfos[0].Name())
-		os.Remove(rmPath)
+		err := os.Remove(rmPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "removing file: %s", rmPath)
+		}
 		entryInfos = entryInfos[1:]
 	}
 
