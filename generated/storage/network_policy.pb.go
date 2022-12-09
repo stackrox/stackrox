@@ -572,7 +572,6 @@ func (m *IPBlock) Clone() *IPBlock {
 type NetworkPolicyPort struct {
 	Protocol Protocol `protobuf:"varint,1,opt,name=protocol,proto3,enum=storage.Protocol" json:"protocol,omitempty"`
 	// Types that are valid to be assigned to PortRef:
-	//
 	//	*NetworkPolicyPort_Port
 	//	*NetworkPolicyPort_PortName
 	PortRef              isNetworkPolicyPort_PortRef `protobuf_oneof:"port_ref"`

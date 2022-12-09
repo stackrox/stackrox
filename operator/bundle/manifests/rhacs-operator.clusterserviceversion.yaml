@@ -108,6 +108,10 @@ spec:
           DB, which is responsible for data persistence.'
         displayName: Central DB Settings (Technology Preview)
         path: central.db
+      - description: Configures telemetry settings for Central. If enabled, Central
+          transmits telemetry and diagnostic data to a remote storage backend.
+        displayName: Central telemetry settings
+        path: central.telemetry
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -291,6 +295,16 @@ spec:
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
+      - displayName: Enabled
+        path: central.telemetry.enabled
+      - displayName: Storage
+        path: central.telemetry.storage
+      - displayName: Endpoint
+        path: central.telemetry.storage.endpoint
+      - description: Required for telemetry transmission. If not set, telemetry is
+          disabled.
+        displayName: Key
+        path: central.telemetry.storage.key
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
