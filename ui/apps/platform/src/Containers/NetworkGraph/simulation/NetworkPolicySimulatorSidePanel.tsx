@@ -1,5 +1,8 @@
 import React from 'react';
 import {
+    Button,
+    Checkbox,
+    Divider,
     Flex,
     FlexItem,
     Stack,
@@ -14,6 +17,7 @@ import {
 } from '@patternfly/react-core';
 
 import useTabs from 'hooks/patternfly/useTabs';
+import { FileUploadIcon } from '@patternfly/react-icons';
 
 const tabs = {
     SIMULATE_NETWORK_POLICIES: 'Simulate network policies',
@@ -24,6 +28,8 @@ function NetworkPolicySimulatorSidePanel() {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
     });
+    const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
+        React.useState<boolean>(false);
 
     return (
         <Stack>
@@ -58,7 +64,81 @@ function NetworkPolicySimulatorSidePanel() {
                     id={tabs.SIMULATE_NETWORK_POLICIES}
                     hidden={activeKeyTab !== tabs.SIMULATE_NETWORK_POLICIES}
                 >
-                    <div>Simulate network policies</div>
+                    <div className="pf-u-p-lg">
+                        <Stack hasGutter>
+                            <StackItem>
+                                <Stack hasGutter>
+                                    <StackItem>
+                                        <TextContent>
+                                            <Text
+                                                component={TextVariants.h1}
+                                                className="pf-u-font-size-lg"
+                                            >
+                                                Generate network policies
+                                            </Text>
+                                        </TextContent>
+                                    </StackItem>
+                                    <StackItem>
+                                        <TextContent>
+                                            <Text component={TextVariants.p}>
+                                                Generate a set of recommended network policies based
+                                                on your environment&apos;s configuration. Select a
+                                                time window for the network connections you would
+                                                like to capture and generate policies on, and then
+                                                apply them directly or share them with your team.
+                                            </Text>
+                                        </TextContent>
+                                    </StackItem>
+                                    <StackItem>
+                                        <Checkbox
+                                            label="Exclude ports & protocols"
+                                            isChecked={isExcludingPortsAndProtocols}
+                                            onChange={setIsExcludingPortsAndProtocols}
+                                            id="controlled-check-1"
+                                            name="check1"
+                                        />
+                                    </StackItem>
+                                    <StackItem>
+                                        <Button variant="secondary">
+                                            Generate and simulate network policies
+                                        </Button>
+                                    </StackItem>
+                                </Stack>
+                            </StackItem>
+                            <StackItem>
+                                <Divider component="div" />
+                            </StackItem>
+                            <StackItem>
+                                <Stack hasGutter>
+                                    <StackItem>
+                                        <TextContent>
+                                            <Text
+                                                component={TextVariants.h1}
+                                                className="pf-u-font-size-lg"
+                                            >
+                                                Upload a network policy YAML
+                                            </Text>
+                                        </TextContent>
+                                    </StackItem>
+                                    <StackItem>
+                                        <TextContent>
+                                            <Text component={TextVariants.p}>
+                                                Upload your network policies to quickly preview your
+                                                environment under different policy configurations
+                                                and time windows. When ready, apply the network
+                                                policies directly or share them with your team.
+                                            </Text>
+                                        </TextContent>
+                                    </StackItem>
+                                    <StackItem>
+                                        <Button variant="secondary" icon={<FileUploadIcon />}>
+                                            Upload YAML
+                                        </Button>
+                                    </StackItem>
+                                </Stack>
+                            </StackItem>
+                        </Stack>
+                    </div>
                 </TabContent>
                 <TabContent
                     eventKey={tabs.VIEW_ACTIVE_YAMLS}
