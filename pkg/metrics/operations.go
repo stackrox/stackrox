@@ -25,8 +25,7 @@ const (
 	GetGrouped
 
 	// Special operation used for ProcessListeningOnPort
-	GetProcessListeningOnPortByNamespace
-	GetProcessListeningOnPortByNamespaceAndDeployment
+	GetProcessListeningOnPort
 
 	List
 

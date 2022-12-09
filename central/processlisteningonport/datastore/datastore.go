@@ -27,8 +27,8 @@ type DataStore interface {
 	AddProcessListeningOnPort(context.Context, ...*storage.ProcessListeningOnPort) error
 	GetProcessListeningOnPort(
 		ctx context.Context,
-		opts GetOptions,
-	) (map[string][]*storage.ProcessListeningOnPort, error)
+		deployment string,
+	) ([]*storage.ProcessListeningOnPort, error)
 }
 
 // New creates a data store object to access the database. Since some

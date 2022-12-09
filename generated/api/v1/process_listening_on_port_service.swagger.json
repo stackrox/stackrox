@@ -11,39 +11,9 @@
     "application/json"
   ],
   "paths": {
-    "/v1/processes_listening_on_ports/namespace/{namespace}": {
+    "/v1/processes_listening_on_ports/deployment/{deploymentId}": {
       "get": {
-        "operationId": "ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1GetProcessesListeningOnPortsWithDeploymentResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ProcessesListeningOnPortsService"
-        ]
-      }
-    },
-    "/v1/processes_listening_on_ports/namespace/{namespace}/deployment/{deploymentId}": {
-      "get": {
-        "operationId": "ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment",
+        "operationId": "ProcessesListeningOnPortsService_GetProcessesListeningOnPorts",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -59,12 +29,6 @@
           }
         },
         "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
           {
             "name": "deploymentId",
             "in": "path",
@@ -182,31 +146,6 @@
     "v1GetProcessesListeningOnPortsResponse": {
       "type": "object",
       "properties": {
-        "processesListeningOnPorts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageProcessListeningOnPort"
-          }
-        }
-      }
-    },
-    "v1GetProcessesListeningOnPortsWithDeploymentResponse": {
-      "type": "object",
-      "properties": {
-        "processesListeningOnPortsWithDeployment": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1ProcessListeningOnPortWithDeploymentId"
-          }
-        }
-      }
-    },
-    "v1ProcessListeningOnPortWithDeploymentId": {
-      "type": "object",
-      "properties": {
-        "deploymentId": {
-          "type": "string"
-        },
         "processesListeningOnPorts": {
           "type": "array",
           "items": {
