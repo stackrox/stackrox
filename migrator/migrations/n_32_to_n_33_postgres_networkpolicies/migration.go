@@ -24,6 +24,10 @@ var (
 		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 32,
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 33},
 		Run: func(databases *types.Databases) error {
+			if databases.BoltDB == nil {
+				log.WriteToStderr("Bolt is nil.  Skipping migration n32ton33")
+				return nil
+			}
 			legacyStore := legacy.New(databases.BoltDB)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,

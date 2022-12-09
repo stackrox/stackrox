@@ -65,6 +65,10 @@ var (
 )
 
 func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+	if rocksDatabase == nil {
+		log.WriteToStderr("RocksDB is nil.  Skipping migration n52ton53")
+		return nil
+	}
 	legacyAccessScopeStore, err := legacysimpleaccessscopes.New(rocksDatabase)
 	if err != nil {
 		return err

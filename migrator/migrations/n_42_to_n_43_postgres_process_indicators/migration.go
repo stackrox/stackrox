@@ -24,6 +24,10 @@ var (
 		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 42,
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 43},
 		Run: func(databases *types.Databases) error {
+			if databases.PkgRocksDB == nil {
+				log.WriteToStderr("RocksDB is nil.  Skipping migration n42ton43")
+				return nil
+			}
 			legacyStore, err := legacy.New(databases.PkgRocksDB)
 			if err != nil {
 				return err

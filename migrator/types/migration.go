@@ -37,4 +37,10 @@ type Migration struct {
 	// All other (optional) metadata can be whatever the user desires, and has no bearing on the
 	// functioning of the migrator.
 	VersionAfter *storage.Version
+	// LegacyToPostgres tells us if the migration is a legacy database to postgres migration.
+	// This allows us the ability to ensure that all databases exist before executing the migration.
+	// Particularly helpful in the event a patch release caused a new legacy migration to be added.
+	// This will allow us to skip migrations when the legacy databases are not passed to the runner
+	// because we have already migrated to Postgres.
+	LegacyToPostgres bool
 }

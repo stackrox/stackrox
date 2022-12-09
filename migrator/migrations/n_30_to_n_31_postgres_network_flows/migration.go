@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/legacy"
@@ -27,6 +28,10 @@ var (
 		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 30,
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 31},
 		Run: func(databases *types.Databases) error {
+			if databases.PkgRocksDB == nil {
+				log.WriteToStderr("RocksDB is nil.  Skipping migration n30ton31")
+				return nil
+			}
 			legacyStore := legacy.NewClusterStore(databases.PkgRocksDB)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
