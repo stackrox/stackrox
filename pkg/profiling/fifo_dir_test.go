@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tj/assert"
 )
 
 func Test_fifoDir(t *testing.T) {
@@ -32,8 +32,8 @@ func Test_fifoDir(t *testing.T) {
 	}
 
 	actualFiles, err := ioutil.ReadDir(dir)
-	require.NoError(t, err, "reading directory %s", dir)
-	require.Equal(t, len(actualFiles), maxFileCount, "file count in given directory should be equal to maxFileCount")
+	require.NoErrorf(t, err, "reading directory %s", dir)
+	require.Equalf(t, len(actualFiles), maxFileCount, "file count in given directory should be equal to maxFileCount")
 
 	actualFileNames := make([]string, len(actualFiles))
 	for i := range actualFiles {
