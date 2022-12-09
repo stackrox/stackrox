@@ -12,7 +12,6 @@ import {
     SelectOption,
     debounce,
     Title,
-    EmptyStateBody,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ListIcon } from '@patternfly/react-icons';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
