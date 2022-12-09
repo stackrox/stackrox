@@ -34,6 +34,7 @@ var (
 			}
 			return nil
 		},
+		LegacyToPostgres: true,
 	}
 	schema = frozenSchema.NetworkFlowsSchema
 )

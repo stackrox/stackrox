@@ -33,6 +33,7 @@ var (
 			}
 			return nil
 		},
+		LegacyToPostgres: true,
 	}
 	batchSize      = 3000
 	imageBatchSize = 1000

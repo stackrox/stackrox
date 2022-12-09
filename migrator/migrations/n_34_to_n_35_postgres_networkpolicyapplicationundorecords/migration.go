@@ -31,6 +31,7 @@ var (
 			}
 			return nil
 		},
+		LegacyToPostgres: true,
 	}
 	batchSize = 10000
 	schema    = frozenSchema.NetworkpolicyapplicationundorecordsSchema

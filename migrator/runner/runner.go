@@ -49,12 +49,21 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 			return fmt.Errorf("no migration found starting at %d", seqNum)
 		}
 
-		err := migration.Run(databases)
-		if err != nil {
-			return errors.Wrapf(err, "error running migration starting at %d", seqNum)
+		// The migration is a legacy to Postgres migration but the legacy databases are not
+		// present implying we are already on Postgres.  This case can happen if a patch release
+		// added a new legacy migration.  If we determine that Postgres is the active database,
+		// the legacy databases will be nil when the runner is called.  So if we have already
+		// migrated to Postgres these legacy databases will be nil.
+		if !(migration.LegacyToPostgres && databases.PkgRocksDB == nil && databases.BoltDB == nil) {
+			err := migration.Run(databases)
+			if err != nil {
+				return errors.Wrapf(err, "error running migration starting at %d", seqNum)
+			}
+		} else {
+			log.WriteToStderrf("Skipping migration %d as it is a legacy to Postgres migration without the legacy databases present", seqNum)
 		}
 
-		err = updateVersion(databases, migration.VersionAfter)
+		err := updateVersion(databases, migration.VersionAfter)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update version after migration %d", seqNum)
 		}

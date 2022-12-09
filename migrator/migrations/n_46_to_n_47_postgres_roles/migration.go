@@ -22,6 +22,7 @@ var (
 			// and still be able to convert the references in the roles table.
 			return nil
 		},
+		LegacyToPostgres: true,
 	}
 )
 

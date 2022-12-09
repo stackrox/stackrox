@@ -34,6 +34,7 @@ var (
 			}
 			return nil
 		},
+		LegacyToPostgres: true,
 	}
 	batchSize = 500
 	schema    = frozenSchema.ImagesSchema

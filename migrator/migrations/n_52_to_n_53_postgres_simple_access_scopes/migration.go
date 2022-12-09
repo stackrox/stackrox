@@ -42,6 +42,7 @@ var (
 		Run: func(databases *types.Databases) error {
 			return migrateAll(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB)
 		},
+		LegacyToPostgres: true,
 	}
 	batchSize = 1000
 	log       = loghelper.LogWrapper{}
