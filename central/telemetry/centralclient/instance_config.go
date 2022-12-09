@@ -19,6 +19,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const (
+	apiPathsAnnotation = "rhacs.redhat.com/telemetry-apipaths"
+)
+
 var (
 	config *phonehome.Config
 	once   sync.Once
