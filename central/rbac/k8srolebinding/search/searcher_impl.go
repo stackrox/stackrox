@@ -39,17 +39,17 @@ func (ds *searcherImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 // Search returns the raw search results from the query.
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return k8sRoleBindingsSACPostgresSearchHelper.Apply(ds.index.Search)(ctx, q)
+		return k8sRoleBindingsSACPostgresSearchHelper.FilteredSearcher(ds.index).Search(ctx, q)
 	}
-	return k8sRoleBindingsSACSearchHelper.Apply(ds.index.Search)(ctx, q)
+	return k8sRoleBindingsSACSearchHelper.FilteredSearcher(ds.index).Search(ctx, q)
 }
 
 // Count returns the number of search results from the query.
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return k8sRoleBindingsSACPostgresSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
+		return k8sRoleBindingsSACPostgresSearchHelper.FilteredSearcher(ds.index).Count(ctx, q)
 	}
-	return k8sRoleBindingsSACSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
+	return k8sRoleBindingsSACSearchHelper.FilteredSearcher(ds.index).Count(ctx, q)
 }
 
 // SearchRawRoleBindings returns the rolebindings that match the query.

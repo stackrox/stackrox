@@ -16,8 +16,6 @@ import (
 
 // SearchHelper facilitates applying scoped access control to search operations.
 type SearchHelper interface {
-	Apply(searchFunc func(context.Context, *v1.Query, ...blevesearch.SearchOption) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error)
-	ApplyCount(searchFunc func(context.Context, *v1.Query, ...blevesearch.SearchOption) (int, error)) func(context.Context, *v1.Query) (int, error)
 	FilteredSearcher(searcher blevesearch.UnsafeSearcher) search.Searcher
 }
 
@@ -66,30 +64,6 @@ func NewSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.
 		resultsChecker:      resultsChecker,
 		scopeCheckerFactory: factory,
 	}, nil
-}
-
-// Apply takes in a context-less search function, and returns a search function taking in a context and applying
-// scoped access control checks for result filtering.
-func (h *searchHelper) Apply(rawSearchFunc func(context.Context, *v1.Query, ...blevesearch.SearchOption) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error) {
-	return func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		searcher := blevesearch.UnsafeSearcherImpl{
-			SearchFunc: rawSearchFunc,
-			CountFunc:  nil,
-		}
-		return h.executeSearch(ctx, q, searcher)
-	}
-}
-
-// ApplyCount takes in a context-less count function, and returns a count function taking in a context and applying
-// scoped access control checks for result filtering.
-func (h *searchHelper) ApplyCount(rawCountFunc func(context.Context, *v1.Query, ...blevesearch.SearchOption) (int, error)) func(context.Context, *v1.Query) (int, error) {
-	return func(ctx context.Context, q *v1.Query) (int, error) {
-		searcher := blevesearch.UnsafeSearcherImpl{
-			SearchFunc: nil,
-			CountFunc:  rawCountFunc,
-		}
-		return h.executeCount(ctx, q, searcher)
-	}
 }
 
 // FilteredSearcher takes in an unsafe searcher and makes it safe.
@@ -186,26 +160,6 @@ func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, factory scopeChe
 		resourceMD:          resourceMD,
 		scopeCheckerFactory: factory,
 	}, nil
-}
-
-func (h *pgSearchHelper) Apply(rawSearchFunc func(context.Context, *v1.Query, ...blevesearch.SearchOption) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error) {
-	return func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		searcher := blevesearch.UnsafeSearcherImpl{
-			SearchFunc: rawSearchFunc,
-			CountFunc:  nil,
-		}
-		return h.executeSearch(ctx, q, searcher)
-	}
-}
-
-func (h *pgSearchHelper) ApplyCount(rawCountFunc func(context.Context, *v1.Query, ...blevesearch.SearchOption) (int, error)) func(context.Context, *v1.Query) (int, error) {
-	return func(ctx context.Context, q *v1.Query) (int, error) {
-		searcher := blevesearch.UnsafeSearcherImpl{
-			SearchFunc: nil,
-			CountFunc:  rawCountFunc,
-		}
-		return h.executeCount(ctx, q, searcher)
-	}
 }
 
 func (h *pgSearchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) search.Searcher {

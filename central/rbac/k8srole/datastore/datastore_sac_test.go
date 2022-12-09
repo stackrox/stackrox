@@ -198,6 +198,35 @@ func (s *k8sRoleSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
+func (s *k8sRoleSACSuite) runCountTest(c testutils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
+	count, err := s.datastore.Count(ctx, nil)
+	s.Require().NoError(err)
+	expectedCount := 0
+	for _, clusterData := range c.Results {
+		for _, namespaceItemCount := range clusterData {
+			expectedCount += namespaceItemCount
+		}
+	}
+	s.Equal(expectedCount, count)
+}
+
+func (s *k8sRoleSACSuite) TestScopedCount() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
+}
+
+func (s *k8sRoleSACSuite) TestUnrestrictedCount() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
+}
+
 func (s *k8sRoleSACSuite) TestScopedSearch() {
 	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
