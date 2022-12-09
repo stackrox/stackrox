@@ -54,13 +54,13 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 		// added a new legacy migration.  If we determine that Postgres is the active database,
 		// the legacy databases will be nil when the runner is called.  So if we have already
 		// migrated to Postgres these legacy databases will be nil.
-		if !(migration.LegacyToPostgres && databases.PkgRocksDB == nil && databases.BoltDB == nil) {
+		if migration.LegacyToPostgres && (databases.PkgRocksDB == nil || databases.BoltDB == nil) {
+			log.WriteToStderrf("Skipping migration %d as it is a legacy to Postgres migration without the legacy databases present", seqNum)
+		} else {
 			err := migration.Run(databases)
 			if err != nil {
 				return errors.Wrapf(err, "error running migration starting at %d", seqNum)
 			}
-		} else {
-			log.WriteToStderrf("Skipping migration %d as it is a legacy to Postgres migration without the legacy databases present", seqNum)
 		}
 
 		err := updateVersion(databases, migration.VersionAfter)
