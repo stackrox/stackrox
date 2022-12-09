@@ -27,29 +27,25 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type GetProcessesListeningOnPortsByNamespaceRequest struct {
-	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+type GetProcessesListeningOnPortsRequest struct {
+	DeploymentId         string   `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) Reset() {
-	*m = GetProcessesListeningOnPortsByNamespaceRequest{}
-}
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) String() string {
-	return proto.CompactTextString(m)
-}
-func (*GetProcessesListeningOnPortsByNamespaceRequest) ProtoMessage() {}
-func (*GetProcessesListeningOnPortsByNamespaceRequest) Descriptor() ([]byte, []int) {
+func (m *GetProcessesListeningOnPortsRequest) Reset()         { *m = GetProcessesListeningOnPortsRequest{} }
+func (m *GetProcessesListeningOnPortsRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProcessesListeningOnPortsRequest) ProtoMessage()    {}
+func (*GetProcessesListeningOnPortsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d8bf40985da37317, []int{0}
 }
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) XXX_Unmarshal(b []byte) error {
+func (m *GetProcessesListeningOnPortsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetProcessesListeningOnPortsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_GetProcessesListeningOnPortsByNamespaceRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_GetProcessesListeningOnPortsRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -59,183 +55,35 @@ func (m *GetProcessesListeningOnPortsByNamespaceRequest) XXX_Marshal(b []byte, d
 		return b[:n], nil
 	}
 }
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetProcessesListeningOnPortsByNamespaceRequest.Merge(m, src)
+func (m *GetProcessesListeningOnPortsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProcessesListeningOnPortsRequest.Merge(m, src)
 }
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) XXX_Size() int {
+func (m *GetProcessesListeningOnPortsRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetProcessesListeningOnPortsByNamespaceRequest.DiscardUnknown(m)
+func (m *GetProcessesListeningOnPortsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProcessesListeningOnPortsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetProcessesListeningOnPortsByNamespaceRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetProcessesListeningOnPortsRequest proto.InternalMessageInfo
 
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) GetNamespace() string {
-	if m != nil {
-		return m.Namespace
-	}
-	return ""
-}
-
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) Clone() *GetProcessesListeningOnPortsByNamespaceRequest {
-	if m == nil {
-		return nil
-	}
-	cloned := new(GetProcessesListeningOnPortsByNamespaceRequest)
-	*cloned = *m
-
-	return cloned
-}
-
-type GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest struct {
-	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	DeploymentId         string   `protobuf:"bytes,2,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) Reset() {
-	*m = GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest{}
-}
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) String() string {
-	return proto.CompactTextString(m)
-}
-func (*GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) ProtoMessage() {}
-func (*GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d8bf40985da37317, []int{1}
-}
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest.Merge(m, src)
-}
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest proto.InternalMessageInfo
-
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) GetNamespace() string {
-	if m != nil {
-		return m.Namespace
-	}
-	return ""
-}
-
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) GetDeploymentId() string {
+func (m *GetProcessesListeningOnPortsRequest) GetDeploymentId() string {
 	if m != nil {
 		return m.DeploymentId
 	}
 	return ""
 }
 
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) MessageClone() proto.Message {
+func (m *GetProcessesListeningOnPortsRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) Clone() *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest {
+func (m *GetProcessesListeningOnPortsRequest) Clone() *GetProcessesListeningOnPortsRequest {
 	if m == nil {
 		return nil
 	}
-	cloned := new(GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest)
+	cloned := new(GetProcessesListeningOnPortsRequest)
 	*cloned = *m
 
-	return cloned
-}
-
-type ProcessListeningOnPortWithDeploymentId struct {
-	DeploymentId              string                            `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
-	ProcessesListeningOnPorts []*storage.ProcessListeningOnPort `protobuf:"bytes,2,rep,name=processes_listening_on_ports,json=processesListeningOnPorts,proto3" json:"processes_listening_on_ports,omitempty"`
-	XXX_NoUnkeyedLiteral      struct{}                          `json:"-"`
-	XXX_unrecognized          []byte                            `json:"-"`
-	XXX_sizecache             int32                             `json:"-"`
-}
-
-func (m *ProcessListeningOnPortWithDeploymentId) Reset() {
-	*m = ProcessListeningOnPortWithDeploymentId{}
-}
-func (m *ProcessListeningOnPortWithDeploymentId) String() string { return proto.CompactTextString(m) }
-func (*ProcessListeningOnPortWithDeploymentId) ProtoMessage()    {}
-func (*ProcessListeningOnPortWithDeploymentId) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d8bf40985da37317, []int{2}
-}
-func (m *ProcessListeningOnPortWithDeploymentId) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ProcessListeningOnPortWithDeploymentId) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ProcessListeningOnPortWithDeploymentId.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ProcessListeningOnPortWithDeploymentId) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProcessListeningOnPortWithDeploymentId.Merge(m, src)
-}
-func (m *ProcessListeningOnPortWithDeploymentId) XXX_Size() int {
-	return m.Size()
-}
-func (m *ProcessListeningOnPortWithDeploymentId) XXX_DiscardUnknown() {
-	xxx_messageInfo_ProcessListeningOnPortWithDeploymentId.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ProcessListeningOnPortWithDeploymentId proto.InternalMessageInfo
-
-func (m *ProcessListeningOnPortWithDeploymentId) GetDeploymentId() string {
-	if m != nil {
-		return m.DeploymentId
-	}
-	return ""
-}
-
-func (m *ProcessListeningOnPortWithDeploymentId) GetProcessesListeningOnPorts() []*storage.ProcessListeningOnPort {
-	if m != nil {
-		return m.ProcessesListeningOnPorts
-	}
-	return nil
-}
-
-func (m *ProcessListeningOnPortWithDeploymentId) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *ProcessListeningOnPortWithDeploymentId) Clone() *ProcessListeningOnPortWithDeploymentId {
-	if m == nil {
-		return nil
-	}
-	cloned := new(ProcessListeningOnPortWithDeploymentId)
-	*cloned = *m
-
-	if m.ProcessesListeningOnPorts != nil {
-		cloned.ProcessesListeningOnPorts = make([]*storage.ProcessListeningOnPort, len(m.ProcessesListeningOnPorts))
-		for idx, v := range m.ProcessesListeningOnPorts {
-			cloned.ProcessesListeningOnPorts[idx] = v.Clone()
-		}
-	}
 	return cloned
 }
 
@@ -250,7 +98,7 @@ func (m *GetProcessesListeningOnPortsResponse) Reset()         { *m = GetProcess
 func (m *GetProcessesListeningOnPortsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetProcessesListeningOnPortsResponse) ProtoMessage()    {}
 func (*GetProcessesListeningOnPortsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d8bf40985da37317, []int{3}
+	return fileDescriptor_d8bf40985da37317, []int{1}
 }
 func (m *GetProcessesListeningOnPortsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -305,82 +153,9 @@ func (m *GetProcessesListeningOnPortsResponse) Clone() *GetProcessesListeningOnP
 	return cloned
 }
 
-type GetProcessesListeningOnPortsWithDeploymentResponse struct {
-	ProcessesListeningOnPortsWithDeployment []*ProcessListeningOnPortWithDeploymentId `protobuf:"bytes,1,rep,name=processes_listening_on_ports_with_deployment,json=processesListeningOnPortsWithDeployment,proto3" json:"processes_listening_on_ports_with_deployment,omitempty"`
-	XXX_NoUnkeyedLiteral                    struct{}                                  `json:"-"`
-	XXX_unrecognized                        []byte                                    `json:"-"`
-	XXX_sizecache                           int32                                     `json:"-"`
-}
-
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) Reset() {
-	*m = GetProcessesListeningOnPortsWithDeploymentResponse{}
-}
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) String() string {
-	return proto.CompactTextString(m)
-}
-func (*GetProcessesListeningOnPortsWithDeploymentResponse) ProtoMessage() {}
-func (*GetProcessesListeningOnPortsWithDeploymentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d8bf40985da37317, []int{4}
-}
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetProcessesListeningOnPortsWithDeploymentResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetProcessesListeningOnPortsWithDeploymentResponse.Merge(m, src)
-}
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetProcessesListeningOnPortsWithDeploymentResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetProcessesListeningOnPortsWithDeploymentResponse proto.InternalMessageInfo
-
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) GetProcessesListeningOnPortsWithDeployment() []*ProcessListeningOnPortWithDeploymentId {
-	if m != nil {
-		return m.ProcessesListeningOnPortsWithDeployment
-	}
-	return nil
-}
-
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) Clone() *GetProcessesListeningOnPortsWithDeploymentResponse {
-	if m == nil {
-		return nil
-	}
-	cloned := new(GetProcessesListeningOnPortsWithDeploymentResponse)
-	*cloned = *m
-
-	if m.ProcessesListeningOnPortsWithDeployment != nil {
-		cloned.ProcessesListeningOnPortsWithDeployment = make([]*ProcessListeningOnPortWithDeploymentId, len(m.ProcessesListeningOnPortsWithDeployment))
-		for idx, v := range m.ProcessesListeningOnPortsWithDeployment {
-			cloned.ProcessesListeningOnPortsWithDeployment[idx] = v.Clone()
-		}
-	}
-	return cloned
-}
-
 func init() {
-	proto.RegisterType((*GetProcessesListeningOnPortsByNamespaceRequest)(nil), "v1.GetProcessesListeningOnPortsByNamespaceRequest")
-	proto.RegisterType((*GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest)(nil), "v1.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest")
-	proto.RegisterType((*ProcessListeningOnPortWithDeploymentId)(nil), "v1.ProcessListeningOnPortWithDeploymentId")
+	proto.RegisterType((*GetProcessesListeningOnPortsRequest)(nil), "v1.GetProcessesListeningOnPortsRequest")
 	proto.RegisterType((*GetProcessesListeningOnPortsResponse)(nil), "v1.GetProcessesListeningOnPortsResponse")
-	proto.RegisterType((*GetProcessesListeningOnPortsWithDeploymentResponse)(nil), "v1.GetProcessesListeningOnPortsWithDeploymentResponse")
 }
 
 func init() {
@@ -388,37 +163,28 @@ func init() {
 }
 
 var fileDescriptor_d8bf40985da37317 = []byte{
-	// 475 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0xcf, 0x8b, 0xd3, 0x40,
-	0x14, 0xde, 0xc9, 0x82, 0xb0, 0xa3, 0x5e, 0xe6, 0x14, 0x43, 0x89, 0x25, 0x8a, 0x2d, 0x22, 0x13,
-	0x12, 0x65, 0x11, 0x04, 0xc5, 0x65, 0x41, 0x04, 0x59, 0xd7, 0xec, 0xc1, 0x1f, 0x97, 0x18, 0x93,
-	0x47, 0x76, 0xb0, 0x3b, 0x33, 0x66, 0xc6, 0xe8, 0xb2, 0x2c, 0x88, 0x27, 0x3d, 0x7b, 0xf1, 0xbf,
-	0xf0, 0x5f, 0xf0, 0xe8, 0x51, 0x10, 0xef, 0x52, 0xfd, 0x27, 0x04, 0x0f, 0xd2, 0xa6, 0x4d, 0xb6,
-	0x36, 0x6d, 0xd3, 0x7a, 0x0b, 0x8f, 0xef, 0x7d, 0xef, 0x7b, 0x5f, 0xe6, 0x7b, 0x98, 0x46, 0x92,
-	0xb9, 0xb9, 0xe7, 0xca, 0x4c, 0xc4, 0xa0, 0x54, 0xd8, 0x63, 0x4a, 0x03, 0x67, 0x3c, 0x0d, 0x05,
-	0x0f, 0xa5, 0xc8, 0x74, 0xa8, 0x20, 0xcb, 0x59, 0x0c, 0x54, 0x66, 0x42, 0x0b, 0x62, 0xe4, 0x9e,
-	0xd5, 0x4a, 0x85, 0x48, 0x7b, 0xe0, 0x0e, 0x5a, 0x23, 0xce, 0x85, 0x8e, 0x34, 0x13, 0x5c, 0x15,
-	0x08, 0xab, 0xa3, 0xb4, 0xc8, 0xa2, 0x14, 0x66, 0x53, 0x16, 0x40, 0x67, 0x07, 0xd3, 0x3b, 0xa0,
-	0x77, 0x0b, 0x14, 0xa8, 0x7b, 0x63, 0xd8, 0x7d, 0xbe, 0x2b, 0x32, 0xad, 0xb6, 0x0e, 0x77, 0xa2,
-	0x03, 0x50, 0x32, 0x8a, 0x21, 0x80, 0x17, 0x2f, 0x41, 0x69, 0xd2, 0xc2, 0x1b, 0x7c, 0x5c, 0x33,
-	0x51, 0x1b, 0x75, 0x37, 0x82, 0xaa, 0xe0, 0xbc, 0x41, 0xf8, 0x46, 0x43, 0xc2, 0xdb, 0x3c, 0xd9,
-	0x06, 0xd9, 0x13, 0x87, 0x07, 0xc0, 0x75, 0x23, 0x76, 0x72, 0x01, 0x9f, 0x4d, 0xca, 0x96, 0x90,
-	0x25, 0xa6, 0x31, 0x44, 0x9c, 0xa9, 0x8a, 0x77, 0x13, 0xe7, 0x13, 0xc2, 0x97, 0x46, 0xf3, 0xff,
-	0x99, 0xfe, 0x90, 0xe9, 0xfd, 0xed, 0x13, 0xd0, 0x69, 0x3e, 0x34, 0xcd, 0x47, 0x9e, 0xe2, 0x96,
-	0x1c, 0xaf, 0x33, 0xed, 0xa3, 0x32, 0x8d, 0xf6, 0x7a, 0xf7, 0xb4, 0x7f, 0x9e, 0x8e, 0x2c, 0xa7,
-	0xf5, 0xb3, 0x83, 0x73, 0x72, 0x96, 0x27, 0xce, 0x3b, 0x84, 0x2f, 0xce, 0x33, 0x2d, 0x00, 0x25,
-	0x05, 0x57, 0xb0, 0x50, 0x0a, 0xfa, 0x6f, 0x29, 0x9f, 0x11, 0xf6, 0xe7, 0x49, 0x99, 0xb4, 0xb0,
-	0x14, 0xf6, 0x1e, 0xe1, 0x2b, 0xf3, 0x94, 0x85, 0xaf, 0x98, 0xde, 0x0f, 0x2b, 0x5b, 0x47, 0x4a,
-	0x2f, 0xd3, 0xdc, 0xa3, 0xcd, 0xfe, 0x55, 0xd0, 0x91, 0xcd, 0x34, 0xf9, 0xbf, 0xd7, 0x71, 0x7b,
-	0xa6, 0xfe, 0xbd, 0x22, 0x48, 0xe4, 0x3b, 0xc2, 0x9d, 0x86, 0xef, 0x94, 0xf8, 0x03, 0x95, 0xcb,
-	0xa5, 0xc4, 0xda, 0x5c, 0xd4, 0x53, 0x6f, 0xa4, 0x73, 0xf3, 0xed, 0xb7, 0x5f, 0x1f, 0x8c, 0xeb,
-	0x64, 0xf3, 0xc4, 0x3d, 0xa8, 0x75, 0xd4, 0x2d, 0x53, 0xe1, 0x1e, 0x95, 0x9f, 0xc7, 0xe4, 0x0f,
-	0xc2, 0xd7, 0x56, 0xc9, 0x1f, 0xb9, 0xb5, 0xc4, 0x92, 0x75, 0xc9, 0xb5, 0xba, 0x8b, 0x08, 0xca,
-	0x1d, 0x1f, 0x0f, 0x77, 0xdc, 0x23, 0x0f, 0x56, 0xdb, 0xd1, 0xad, 0x9e, 0x91, 0x7b, 0x34, 0x11,
-	0xdf, 0xe3, 0x2d, 0xfa, 0xa5, 0x6f, 0xa3, 0xaf, 0x7d, 0x1b, 0xfd, 0xe8, 0xdb, 0xe8, 0xe3, 0x4f,
-	0x7b, 0x0d, 0x9b, 0x4c, 0x50, 0xa5, 0xa3, 0xf8, 0x79, 0x26, 0x5e, 0x17, 0x37, 0x6f, 0x70, 0x6d,
-	0x69, 0xee, 0x3d, 0x31, 0x72, 0xef, 0xd1, 0xda, 0xb3, 0x53, 0xc3, 0xda, 0xd5, 0xbf, 0x01, 0x00,
-	0x00, 0xff, 0xff, 0x7e, 0x12, 0x69, 0x7b, 0x84, 0x05, 0x00, 0x00,
+	// 326 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0x4b, 0x2c, 0xc8, 0xd4,
+	0x2f, 0x33, 0xd4, 0x2f, 0x28, 0xca, 0x4f, 0x4e, 0x2d, 0x2e, 0x8e, 0xcf, 0xc9, 0x2c, 0x2e, 0x49,
+	0xcd, 0xcb, 0xcc, 0x4b, 0x8f, 0xcf, 0xcf, 0x8b, 0x2f, 0xc8, 0x2f, 0x2a, 0x89, 0x2f, 0x4e, 0x2d,
+	0x2a, 0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2a, 0x33, 0x94, 0x92,
+	0x49, 0xcf, 0xcf, 0x4f, 0xcf, 0x49, 0xd5, 0x07, 0x69, 0x4d, 0xcc, 0xcb, 0xcb, 0x2f, 0x49, 0x2c,
+	0xc9, 0xcc, 0xcf, 0x2b, 0x86, 0xa8, 0x90, 0x52, 0x2f, 0x2e, 0xc9, 0x2f, 0x4a, 0x4c, 0x4f, 0xc5,
+	0x6d, 0x24, 0x44, 0xa1, 0x92, 0x17, 0x97, 0xb2, 0x7b, 0x6a, 0x49, 0x00, 0x44, 0x55, 0x6a, 0xb1,
+	0x0f, 0x4c, 0x99, 0x7f, 0x5e, 0x40, 0x7e, 0x51, 0x49, 0x71, 0x50, 0x6a, 0x61, 0x69, 0x6a, 0x71,
+	0x89, 0x90, 0x32, 0x17, 0x6f, 0x4a, 0x6a, 0x41, 0x4e, 0x7e, 0x65, 0x6e, 0x6a, 0x5e, 0x49, 0x7c,
+	0x66, 0x8a, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0x67, 0x10, 0x0f, 0x42, 0xd0, 0x33, 0x45, 0xa9, 0x83,
+	0x91, 0x4b, 0x05, 0xbf, 0x61, 0xc5, 0x05, 0xf9, 0x79, 0xc5, 0xa9, 0x42, 0x09, 0x5c, 0x32, 0x05,
+	0x30, 0x45, 0x98, 0x2e, 0x2b, 0x96, 0x60, 0x54, 0x60, 0xd6, 0xe0, 0x36, 0x92, 0xd7, 0x83, 0x7a,
+	0x42, 0x0f, 0x6a, 0x22, 0x9a, 0x79, 0x41, 0x92, 0x05, 0xb8, 0x6c, 0x32, 0xba, 0xcd, 0xc8, 0xa5,
+	0x80, 0xd3, 0x1d, 0xc1, 0x90, 0xc0, 0x14, 0xda, 0xc6, 0xc8, 0x25, 0x83, 0xcf, 0xbd, 0x42, 0xea,
+	0x7a, 0x65, 0x86, 0x7a, 0x44, 0x04, 0x8f, 0x94, 0x06, 0x61, 0x85, 0x10, 0xaf, 0x2b, 0x39, 0x37,
+	0x5d, 0x7e, 0x32, 0x99, 0xc9, 0x56, 0xc8, 0x1a, 0x29, 0xbe, 0xb1, 0x06, 0x82, 0x3e, 0x22, 0x68,
+	0xf5, 0xab, 0x51, 0xc2, 0xbe, 0xd6, 0x49, 0xef, 0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x8f, 0xe4, 0x18,
+	0x1f, 0x3c, 0x92, 0x63, 0x9c, 0xf1, 0x58, 0x8e, 0x81, 0x4b, 0x22, 0x33, 0x5f, 0xaf, 0xb8, 0x24,
+	0x31, 0x39, 0xbb, 0x28, 0xbf, 0x02, 0x12, 0xb3, 0xa0, 0x34, 0xa5, 0x57, 0x66, 0x18, 0xc5, 0x54,
+	0x66, 0x18, 0xc1, 0x90, 0xc4, 0x06, 0x16, 0x33, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xa0, 0xfa,
+	0x3e, 0x64, 0x6a, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -433,8 +199,7 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ProcessesListeningOnPortsServiceClient interface {
-	GetProcessesListeningOnPortsByNamespace(ctx context.Context, in *GetProcessesListeningOnPortsByNamespaceRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsWithDeploymentResponse, error)
-	GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx context.Context, in *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsResponse, error)
+	GetProcessesListeningOnPorts(ctx context.Context, in *GetProcessesListeningOnPortsRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsResponse, error)
 }
 
 type processesListeningOnPortsServiceClient struct {
@@ -445,18 +210,9 @@ func NewProcessesListeningOnPortsServiceClient(cc grpc.ClientConnInterface) Proc
 	return &processesListeningOnPortsServiceClient{cc}
 }
 
-func (c *processesListeningOnPortsServiceClient) GetProcessesListeningOnPortsByNamespace(ctx context.Context, in *GetProcessesListeningOnPortsByNamespaceRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsWithDeploymentResponse, error) {
-	out := new(GetProcessesListeningOnPortsWithDeploymentResponse)
-	err := c.cc.Invoke(ctx, "/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespace", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *processesListeningOnPortsServiceClient) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx context.Context, in *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsResponse, error) {
+func (c *processesListeningOnPortsServiceClient) GetProcessesListeningOnPorts(ctx context.Context, in *GetProcessesListeningOnPortsRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsResponse, error) {
 	out := new(GetProcessesListeningOnPortsResponse)
-	err := c.cc.Invoke(ctx, "/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespaceAndDeployment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPorts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -465,57 +221,35 @@ func (c *processesListeningOnPortsServiceClient) GetProcessesListeningOnPortsByN
 
 // ProcessesListeningOnPortsServiceServer is the server API for ProcessesListeningOnPortsService service.
 type ProcessesListeningOnPortsServiceServer interface {
-	GetProcessesListeningOnPortsByNamespace(context.Context, *GetProcessesListeningOnPortsByNamespaceRequest) (*GetProcessesListeningOnPortsWithDeploymentResponse, error)
-	GetProcessesListeningOnPortsByNamespaceAndDeployment(context.Context, *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) (*GetProcessesListeningOnPortsResponse, error)
+	GetProcessesListeningOnPorts(context.Context, *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error)
 }
 
 // UnimplementedProcessesListeningOnPortsServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedProcessesListeningOnPortsServiceServer struct {
 }
 
-func (*UnimplementedProcessesListeningOnPortsServiceServer) GetProcessesListeningOnPortsByNamespace(ctx context.Context, req *GetProcessesListeningOnPortsByNamespaceRequest) (*GetProcessesListeningOnPortsWithDeploymentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetProcessesListeningOnPortsByNamespace not implemented")
-}
-func (*UnimplementedProcessesListeningOnPortsServiceServer) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx context.Context, req *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) (*GetProcessesListeningOnPortsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetProcessesListeningOnPortsByNamespaceAndDeployment not implemented")
+func (*UnimplementedProcessesListeningOnPortsServiceServer) GetProcessesListeningOnPorts(ctx context.Context, req *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProcessesListeningOnPorts not implemented")
 }
 
 func RegisterProcessesListeningOnPortsServiceServer(s *grpc.Server, srv ProcessesListeningOnPortsServiceServer) {
 	s.RegisterService(&_ProcessesListeningOnPortsService_serviceDesc, srv)
 }
 
-func _ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetProcessesListeningOnPortsByNamespaceRequest)
+func _ProcessesListeningOnPortsService_GetProcessesListeningOnPorts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProcessesListeningOnPortsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProcessesListeningOnPortsServiceServer).GetProcessesListeningOnPortsByNamespace(ctx, in)
+		return srv.(ProcessesListeningOnPortsServiceServer).GetProcessesListeningOnPorts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespace",
+		FullMethod: "/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPorts",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessesListeningOnPortsServiceServer).GetProcessesListeningOnPortsByNamespace(ctx, req.(*GetProcessesListeningOnPortsByNamespaceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProcessesListeningOnPortsServiceServer).GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPortsByNamespaceAndDeployment",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessesListeningOnPortsServiceServer).GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx, req.(*GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest))
+		return srv.(ProcessesListeningOnPortsServiceServer).GetProcessesListeningOnPorts(ctx, req.(*GetProcessesListeningOnPortsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -525,19 +259,15 @@ var _ProcessesListeningOnPortsService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ProcessesListeningOnPortsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetProcessesListeningOnPortsByNamespace",
-			Handler:    _ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_Handler,
-		},
-		{
-			MethodName: "GetProcessesListeningOnPortsByNamespaceAndDeployment",
-			Handler:    _ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_Handler,
+			MethodName: "GetProcessesListeningOnPorts",
+			Handler:    _ProcessesListeningOnPortsService_GetProcessesListeningOnPorts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/process_listening_on_port_service.proto",
 }
 
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetProcessesListeningOnPortsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -547,12 +277,12 @@ func (m *GetProcessesListeningOnPortsByNamespaceRequest) Marshal() (dAtA []byte,
 	return dAtA[:n], nil
 }
 
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetProcessesListeningOnPortsRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *GetProcessesListeningOnPortsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -560,95 +290,6 @@ func (m *GetProcessesListeningOnPortsByNamespaceRequest) MarshalToSizedBuffer(dA
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Namespace) > 0 {
-		i -= len(m.Namespace)
-		copy(dAtA[i:], m.Namespace)
-		i = encodeVarintProcessListeningOnPortService(dAtA, i, uint64(len(m.Namespace)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.DeploymentId) > 0 {
-		i -= len(m.DeploymentId)
-		copy(dAtA[i:], m.DeploymentId)
-		i = encodeVarintProcessListeningOnPortService(dAtA, i, uint64(len(m.DeploymentId)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Namespace) > 0 {
-		i -= len(m.Namespace)
-		copy(dAtA[i:], m.Namespace)
-		i = encodeVarintProcessListeningOnPortService(dAtA, i, uint64(len(m.Namespace)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ProcessListeningOnPortWithDeploymentId) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ProcessListeningOnPortWithDeploymentId) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ProcessListeningOnPortWithDeploymentId) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.ProcessesListeningOnPorts) > 0 {
-		for iNdEx := len(m.ProcessesListeningOnPorts) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.ProcessesListeningOnPorts[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintProcessListeningOnPortService(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x12
-		}
 	}
 	if len(m.DeploymentId) > 0 {
 		i -= len(m.DeploymentId)
@@ -701,47 +342,6 @@ func (m *GetProcessesListeningOnPortsResponse) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.ProcessesListeningOnPortsWithDeployment) > 0 {
-		for iNdEx := len(m.ProcessesListeningOnPortsWithDeployment) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.ProcessesListeningOnPortsWithDeployment[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintProcessListeningOnPortService(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintProcessListeningOnPortService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovProcessListeningOnPortService(v)
 	base := offset
@@ -753,43 +353,7 @@ func encodeVarintProcessListeningOnPortService(dAtA []byte, offset int, v uint64
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Namespace)
-	if l > 0 {
-		n += 1 + l + sovProcessListeningOnPortService(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Namespace)
-	if l > 0 {
-		n += 1 + l + sovProcessListeningOnPortService(uint64(l))
-	}
-	l = len(m.DeploymentId)
-	if l > 0 {
-		n += 1 + l + sovProcessListeningOnPortService(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ProcessListeningOnPortWithDeploymentId) Size() (n int) {
+func (m *GetProcessesListeningOnPortsRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -798,12 +362,6 @@ func (m *ProcessListeningOnPortWithDeploymentId) Size() (n int) {
 	l = len(m.DeploymentId)
 	if l > 0 {
 		n += 1 + l + sovProcessListeningOnPortService(uint64(l))
-	}
-	if len(m.ProcessesListeningOnPorts) > 0 {
-		for _, e := range m.ProcessesListeningOnPorts {
-			l = e.Size()
-			n += 1 + l + sovProcessListeningOnPortService(uint64(l))
-		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -829,31 +387,13 @@ func (m *GetProcessesListeningOnPortsResponse) Size() (n int) {
 	return n
 }
 
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.ProcessesListeningOnPortsWithDeployment) > 0 {
-		for _, e := range m.ProcessesListeningOnPortsWithDeployment {
-			l = e.Size()
-			n += 1 + l + sovProcessListeningOnPortService(uint64(l))
-		}
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func sovProcessListeningOnPortService(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozProcessListeningOnPortService(x uint64) (n int) {
 	return sovProcessListeningOnPortService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetProcessesListeningOnPortsByNamespaceRequest) Unmarshal(dAtA []byte) error {
+func (m *GetProcessesListeningOnPortsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -876,208 +416,10 @@ func (m *GetProcessesListeningOnPortsByNamespaceRequest) Unmarshal(dAtA []byte) 
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetProcessesListeningOnPortsByNamespaceRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetProcessesListeningOnPortsRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetProcessesListeningOnPortsByNamespaceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProcessListeningOnPortService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Namespace = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipProcessListeningOnPortService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowProcessListeningOnPortService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProcessListeningOnPortService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Namespace = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProcessListeningOnPortService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.DeploymentId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipProcessListeningOnPortService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ProcessListeningOnPortWithDeploymentId) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowProcessListeningOnPortService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ProcessListeningOnPortWithDeploymentId: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProcessListeningOnPortWithDeploymentId: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetProcessesListeningOnPortsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1111,40 +453,6 @@ func (m *ProcessListeningOnPortWithDeploymentId) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DeploymentId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProcessesListeningOnPorts", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProcessListeningOnPortService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ProcessesListeningOnPorts = append(m.ProcessesListeningOnPorts, &storage.ProcessListeningOnPort{})
-			if err := m.ProcessesListeningOnPorts[len(m.ProcessesListeningOnPorts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1228,91 +536,6 @@ func (m *GetProcessesListeningOnPortsResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.ProcessesListeningOnPorts = append(m.ProcessesListeningOnPorts, &storage.ProcessListeningOnPort{})
 			if err := m.ProcessesListeningOnPorts[len(m.ProcessesListeningOnPorts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipProcessListeningOnPortService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetProcessesListeningOnPortsWithDeploymentResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowProcessListeningOnPortService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetProcessesListeningOnPortsWithDeploymentResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetProcessesListeningOnPortsWithDeploymentResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProcessesListeningOnPortsWithDeployment", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProcessListeningOnPortService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthProcessListeningOnPortService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ProcessesListeningOnPortsWithDeployment = append(m.ProcessesListeningOnPortsWithDeployment, &ProcessListeningOnPortWithDeploymentId{})
-			if err := m.ProcessesListeningOnPortsWithDeployment[len(m.ProcessesListeningOnPortsWithDeployment)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
