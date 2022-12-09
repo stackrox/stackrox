@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	apiPathsAnnotation = "rhacs.redhat.com/telemetry-apipaths"
-	tenantIDLabel      = "rhacs.redhat.com/tenant"
+	tenantIDLabel = "rhacs.redhat.com/tenant"
 )
 
 var (
