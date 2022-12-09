@@ -37,7 +37,7 @@ export type CollectionFormDrawerProps = {
     onSubmit: CollectionFormProps['onSubmit'];
     onCancel: CollectionFormProps['onCancel'];
     saveError?: CollectionFormProps['saveError'];
-    clearSaveError?: CollectionFormProps['clearSaveError'];
+    setSaveError?: CollectionFormProps['setSaveError'];
     getCollectionTableCells: CollectionFormProps['getCollectionTableCells'];
 };
 
@@ -52,7 +52,7 @@ function CollectionFormDrawer({
     onSubmit,
     onCancel,
     saveError,
-    clearSaveError,
+    setSaveError,
     getCollectionTableCells,
 }: CollectionFormDrawerProps) {
     const initialData = parseCollection(collectionData.collection);
@@ -87,7 +87,11 @@ function CollectionFormDrawer({
                                 )}
                             </DrawerHead>
                             <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
-                                <CollectionResults dryRunConfig={dryRunConfig} />
+                                <CollectionResults
+                                    dryRunConfig={dryRunConfig}
+                                    saveError={saveError}
+                                    setSaveError={setSaveError}
+                                />
                             </DrawerPanelBody>
                         </DrawerPanelContent>
                     }
@@ -109,7 +113,7 @@ function CollectionFormDrawer({
                                 onSubmit={onSubmit}
                                 onCancel={onCancel}
                                 saveError={saveError}
-                                clearSaveError={clearSaveError}
+                                setSaveError={setSaveError}
                                 getCollectionTableCells={getCollectionTableCells}
                             />
                         )}

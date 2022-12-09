@@ -3,6 +3,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 type CollectionSaveErrorType =
     | 'CollectionLoop'
     | 'DuplicateName'
+    | 'EmptyName'
     | 'InvalidRule'
     | 'EmptyCollection'
     | 'UnknownError';
@@ -38,7 +39,7 @@ export function parseSaveError(err: Error): CollectionSaveError {
         return {
             type: 'CollectionLoop',
             message: 'An attached collection has created a loop, which is not supported',
-            details: 'Detach the invalid collection and try saving again',
+            details: 'Detach the invalid collection',
             loopId,
         };
     }
@@ -50,6 +51,10 @@ export function parseSaveError(err: Error): CollectionSaveError {
         /name already in use/.test(rawMessage)
     ) {
         return { type: 'DuplicateName', message: 'Name must be unique' };
+    }
+
+    if (/name should not be empty/.test(rawMessage)) {
+        return { type: 'EmptyName', message: 'A name value is required for a collection' };
     }
 
     if (/failed to compile rule value regex/.test(rawMessage)) {
@@ -70,7 +75,7 @@ export function parseSaveError(err: Error): CollectionSaveError {
 
     return {
         type: 'UnknownError',
-        message: 'An unexpected error has occurred saving the collection',
+        message: 'An unexpected error has occurred when processing the collection',
         details: rawMessage,
     };
 }
