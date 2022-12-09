@@ -16,7 +16,7 @@ limitations under the License.
 
 // Package v1alpha1 contains API Schema definitions for the platform v1alpha1 API group
 //+kubebuilder:object:generate=true
-// +groupName=platform.stackrox.io
+//+groupName=platform.stackrox.io
 package v1alpha1
 
 import (

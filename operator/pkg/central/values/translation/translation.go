@@ -234,21 +234,19 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 }
 
 func getTelemetryValues(t *platform.Telemetry) *translation.ValuesBuilder {
-	cv := translation.NewValuesBuilder()
+	tv := translation.NewValuesBuilder()
 	if t == nil {
-		return &cv
+		return &tv
 	}
 
-	if t.Enabled != nil {
-		cv.SetBoolValue("enabled", *t.Enabled)
-	}
+	tv.SetBool("enabled", t.Enabled)
 	storage := translation.NewValuesBuilder()
 	if t.Storage != nil {
 		storage.SetString("endpoint", t.Storage.Endpoint)
 		storage.SetString("key", t.Storage.Key)
-		cv.AddChild("storage", &storage)
+		tv.AddChild("storage", &storage)
 	}
-	return &cv
+	return &tv
 }
 
 func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *translation.ValuesBuilder {
