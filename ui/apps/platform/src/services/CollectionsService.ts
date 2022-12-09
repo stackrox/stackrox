@@ -183,9 +183,11 @@ export type CollectionDryRunResponse = {
  * @param dryRunRequest.embeddedCollectionIds
  *      An array of collection ids whose matching deployments should
  *      be added to the result set.
- * @param dryRunRequest.options.pagination
+ * @param dryRunRequest.options.filterQuery.query
+ *      A search query used to filter matching deployments
+ * @param dryRunRequest.options.filterQuery.pagination
  *      Pagination options for the dry run deployment results
- * @param dryRunRequest.options.skipDeploymentMatching
+ * @param dryRunRequest.options.withMatches
  *      This flag will skip the resolution of matching deployments on the back end
  *      in order to do more efficient error checking. Used in order to determine if
  *      a config is valid, without returning a full data payload.

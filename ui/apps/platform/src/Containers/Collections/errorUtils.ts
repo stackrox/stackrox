@@ -75,7 +75,7 @@ export function parseSaveError(err: Error): CollectionSaveError {
 
     return {
         type: 'UnknownError',
-        message: 'An unexpected error has occurred saving the collection',
+        message: 'An unexpected error has occurred when processing the collection',
         details: rawMessage,
     };
 }

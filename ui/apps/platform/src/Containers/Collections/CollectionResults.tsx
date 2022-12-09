@@ -111,12 +111,15 @@ function CollectionResults({
                         style={{ color: 'var(--pf-global--danger-color--200)' }}
                         icon={ExclamationCircleIcon}
                     />
-                    <Title headingLevel="h2" size="lg">
-                        There was an error processing the collection results
-                    </Title>
-                    <EmptyStateBody>
-                        <p>{saveError.message}</p>
-                    </EmptyStateBody>
+                    <Flex
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                        direction={{ default: 'column' }}
+                    >
+                        <Title headingLevel="h2" size="md">
+                            {saveError.message}
+                        </Title>
+                        <p className="pf-u-text-align-left">{saveError.details}</p>
+                    </Flex>
                 </EmptyState>
             </Flex>
         );
