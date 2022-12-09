@@ -149,9 +149,9 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
-	opts GetOptions,
+	deployment string,
 ) (
-	portProcessMap map[string][]*storage.ProcessListeningOnPort, err error,
+	processesListeningOnPorts []*storage.ProcessListeningOnPort, err error,
 ) {
 	if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -159,20 +159,11 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	if opts.Namespace != nil && opts.DeploymentID != nil {
-		portProcessMap, err = ds.storage.GetProcessListeningOnPort(ctx,
-			*opts.Namespace, *opts.DeploymentID)
-	} else if opts.Namespace != nil {
-		portProcessMap, err = ds.storage.GetProcessListeningOnPortByNamespace(
-			ctx, *opts.Namespace)
-	} else {
-		log.Warnf("Options for read query are incorrect: %+v", opts)
-		return nil, nil
-	}
+	processesListeningOnPorts, err = ds.storage.GetProcessListeningOnPort(ctx, deployment)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return portProcessMap, nil
+	return processesListeningOnPorts, nil
 }
