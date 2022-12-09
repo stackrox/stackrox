@@ -3,9 +3,7 @@ package services
 import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceGrpc
 import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsResponse
-import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsWithDeploymentResponse
-import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsByNamespaceRequest
-import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest
+import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsRequest
 
 @Slf4j
 class ProcessesListeningOnPortsService extends BaseService {
@@ -13,31 +11,16 @@ class ProcessesListeningOnPortsService extends BaseService {
         return ProcessesListeningOnPortsServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static GetProcessesListeningOnPortsWithDeploymentResponse getProcessesListeningOnPortsWithDeploymentResponse(
-        String namespace) {
-
-        GetProcessesListeningOnPortsByNamespaceRequest request =
-                GetProcessesListeningOnPortsByNamespaceRequest.newBuilder()
-                        .setNamespace(namespace)
-                        .build()
-
-        def processesListeningOnPorts = getProcessesListeningOnPortsService()
-                        .getProcessesListeningOnPortsByNamespace(request)
-
-        return processesListeningOnPorts
-    }
-
     static GetProcessesListeningOnPortsResponse getProcessesListeningOnPortsResponse(
-        String namespace, String deploymentId) {
+        String deploymentId) {
 
-        GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest request =
-                GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest.newBuilder()
-                        .setNamespace(namespace)
+        GetProcessesListeningOnPortsRequest request =
+                GetProcessesListeningOnPortsRequest.newBuilder()
                         .setDeploymentId(deploymentId)
                         .build()
 
         def processesListeningOnPorts = getProcessesListeningOnPortsService()
-                        .getProcessesListeningOnPortsByNamespaceAndDeployment(request)
+                        .getProcessesListeningOnPorts(request)
 
         return processesListeningOnPorts
     }

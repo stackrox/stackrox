@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -56,16 +55,16 @@ func (mr *MockDataStoreMockRecorder) AddProcessListeningOnPort(arg0 interface{},
 }
 
 // GetProcessListeningOnPort mocks base method.
-func (m *MockDataStore) GetProcessListeningOnPort(ctx context.Context, opts datastore.GetOptions) (map[string][]*storage.ProcessListeningOnPort, error) {
+func (m *MockDataStore) GetProcessListeningOnPort(ctx context.Context, deployment string) ([]*storage.ProcessListeningOnPort, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProcessListeningOnPort", ctx, opts)
-	ret0, _ := ret[0].(map[string][]*storage.ProcessListeningOnPort)
+	ret := m.ctrl.Call(m, "GetProcessListeningOnPort", ctx, deployment)
+	ret0, _ := ret[0].([]*storage.ProcessListeningOnPort)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetProcessListeningOnPort indicates an expected call of GetProcessListeningOnPort.
-func (mr *MockDataStoreMockRecorder) GetProcessListeningOnPort(ctx, opts interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetProcessListeningOnPort(ctx, deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).GetProcessListeningOnPort), ctx, opts)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).GetProcessListeningOnPort), ctx, deployment)
 }
