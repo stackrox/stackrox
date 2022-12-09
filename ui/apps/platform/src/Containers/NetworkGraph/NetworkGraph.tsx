@@ -55,12 +55,14 @@ export type NetworkGraphProps = {
     model: CustomModel;
     edgeState: EdgeState;
     simulation: Simulation;
+    selectedClusterId: string;
 };
 
 export type TopologyComponentProps = {
     model: CustomModel;
     edgeState: EdgeState;
     simulation: Simulation;
+    selectedClusterId: string;
 };
 
 function getNodeEdges(selectedNode) {
@@ -141,7 +143,12 @@ function clearSimulationQuery(search: string): string {
     return queryString;
 }
 
-const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentProps) => {
+const TopologyComponent = ({
+    model,
+    edgeState,
+    simulation,
+    selectedClusterId,
+}: TopologyComponentProps) => {
     const history = useHistory();
     const { detailId } = useParams();
     const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
@@ -196,7 +203,7 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
             sideBar={
                 <TopologySideBar resizable onClose={closeSidebar}>
                     {simulation.isOn && simulation.type === 'networkPolicy' && (
-                        <NetworkPolicySimulatorSidePanel />
+                        <NetworkPolicySimulatorSidePanel selectedClusterId={selectedClusterId} />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
                         <NamespaceSideBar
@@ -266,20 +273,27 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
     );
 };
 
-const NetworkGraph = React.memo<NetworkGraphProps>(({ model, edgeState, simulation }) => {
-    const controller = new Visualization();
-    controller.registerLayoutFactory(defaultLayoutFactory);
-    controller.registerComponentFactory(defaultComponentFactory);
-    controller.registerComponentFactory(stylesComponentFactory);
+const NetworkGraph = React.memo<NetworkGraphProps>(
+    ({ model, edgeState, simulation, selectedClusterId }) => {
+        const controller = new Visualization();
+        controller.registerLayoutFactory(defaultLayoutFactory);
+        controller.registerComponentFactory(defaultComponentFactory);
+        controller.registerComponentFactory(stylesComponentFactory);
 
-    return (
-        <div className="pf-ri__topology-demo">
-            <VisualizationProvider controller={controller}>
-                <TopologyComponent model={model} edgeState={edgeState} simulation={simulation} />
-            </VisualizationProvider>
-        </div>
-    );
-});
+        return (
+            <div className="pf-ri__topology-demo">
+                <VisualizationProvider controller={controller}>
+                    <TopologyComponent
+                        model={model}
+                        edgeState={edgeState}
+                        simulation={simulation}
+                        selectedClusterId={selectedClusterId}
+                    />
+                </VisualizationProvider>
+            </div>
+        );
+    }
+);
 
 NetworkGraph.displayName = 'NetworkGraph';
 
