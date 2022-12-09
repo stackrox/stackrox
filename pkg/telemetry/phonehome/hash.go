@@ -17,13 +17,17 @@ func hash(id string) string {
 // HashUserID anonymizes user ID so that it can be sent to the external
 // telemetry storage for product data analysis.
 func (cfg *Config) HashUserID(userID, authProviderID string) string {
+	clientID := "unknown"
+	if cfg != nil {
+		clientID = cfg.ClientID
+	}
 	if userID == "" {
 		userID = "unauthenticated"
 	}
 	if authProviderID == "" {
 		authProviderID = "unknown"
 	}
-	return hash(fmt.Sprintf("%s:%s:%s", cfg.ClientID, authProviderID, userID))
+	return hash(fmt.Sprintf("%s:%s:%s", clientID, authProviderID, userID))
 }
 
 // HashUserAuthID extracts the user and auth provider from the provided identity

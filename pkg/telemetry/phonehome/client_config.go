@@ -18,5 +18,5 @@ type Config struct {
 
 // Enabled tells whether telemetry data collection is enabled.
 func (cfg *Config) Enabled() bool {
-	return cfg.StorageKey != ""
+	return cfg != nil && cfg.StorageKey != ""
 }

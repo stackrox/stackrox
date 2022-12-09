@@ -22,11 +22,9 @@ const (
 )
 
 var (
-	config = &phonehome.Config{
-		ClientID: "11102e5e-ca16-4f2b-8d2e-e9e04e8dc531",
-	}
-	once sync.Once
-	log  = logging.LoggerForModule()
+	config *phonehome.Config
+	once   sync.Once
+	log    = logging.LoggerForModule()
 )
 
 func getInstanceConfig() (*phonehome.Config, error) {
@@ -76,16 +74,16 @@ func getInstanceConfig() (*phonehome.Config, error) {
 // data is used for instance identification.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
-		cfg, err := getInstanceConfig()
+		var err error
+		config, err = getInstanceConfig()
 		if err != nil {
 			log.Errorf("Failed to get telemetry configuration: %v. Using hardcoded values.", err)
 			return
 		}
-		if cfg == nil {
+		if config == nil {
 			log.Info("Phonehome telemetry collection disabled.")
 			return
 		}
-		config = cfg
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
 	})
