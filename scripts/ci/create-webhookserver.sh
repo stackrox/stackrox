@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC2120
 deploy_webhook_server() {
     info "Deploy Webhook server"
 
