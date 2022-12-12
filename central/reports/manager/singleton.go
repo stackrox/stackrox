@@ -2,6 +2,7 @@ package manager
 
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
@@ -28,6 +29,7 @@ func initialize() {
 			notifierDataStore.Singleton(),
 			clusterDataStore.Singleton(),
 			namespaceDataStore.Singleton(),
+			deploymentDataStore.Singleton(),
 			collectionDS,
 			roleDataStore.Singleton(),
 			collectionQueryRes,

@@ -166,7 +166,7 @@ type reportEmailFormat struct {
 // New instantiates a new cron scheduler and supports adding and removing report configurations
 func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
 	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore,
-	collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
+	deploymentDS deploymentDataStore.DataStore, collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
 	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor processor.Processor) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
@@ -182,6 +182,7 @@ func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.D
 		notifierDatastore:       notifierDS,
 		clusterDatastore:        clusterDS,
 		namespaceDatastore:      namespaceDS,
+		deploymentDatastore:     deploymentDS,
 		collectionDatastore:     collectionDS,
 		roleDatastore:           roleDS,
 		collectionQueryResolver: collectionQueryRes,
