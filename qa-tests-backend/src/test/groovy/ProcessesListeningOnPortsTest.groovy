@@ -144,19 +144,27 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert endpoint1
         assert endpoint1.clusterId == clusterId
-        assert endpoint1.process.containerName == TCPCONNECTIONTARGET1
-        assert endpoint1.process.processName == "socat"
-        assert endpoint1.process.processExecFilePath == "/usr/bin/socat"
-        // assert endpoint1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+        assert endpoint1.containerName == TCPCONNECTIONTARGET1
+        assert endpoint1.signal.id
+        assert endpoint1.signal.containerId
+        assert endpoint1.signal.time
+        assert endpoint1.signal.name == "socat"
+        assert endpoint1.signal.execFilePath == "/usr/bin/socat"
+        // assert endpoint1.signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+        assert endpoint1.signal.pid
 
         def endpoint2 = list.find { it.endpoint.port == 8080 }
 
         assert endpoint2
         assert endpoint2.clusterId == clusterId
-        assert endpoint2.process.containerName == TCPCONNECTIONTARGET1
-        assert endpoint2.process.processName == "socat"
-        assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
-        assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+        assert endpoint2.containerName == TCPCONNECTIONTARGET1
+        assert endpoint2.signal.id
+        assert endpoint2.signal.containerId
+        assert endpoint2.signal.time
+        assert endpoint2.signal.name == "socat"
+        assert endpoint2.signal.execFilePath == "/usr/bin/socat"
+        assert endpoint2.signal.args == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+        assert endpoint2.signal.pid
 
         gotCorrectNumElements = waitForResponseToHaveNumElements(1, deploymentId2, 240)
 
@@ -177,10 +185,14 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert endpoint
         assert endpoint.clusterId == clusterId
-        assert endpoint.process.containerName == TCPCONNECTIONTARGET2
-        assert endpoint.process.processName == "socat"
-        assert endpoint.process.processExecFilePath == "/usr/bin/socat"
-        assert endpoint.process.processArgs == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+        assert endpoint.containerName == TCPCONNECTIONTARGET2
+        assert endpoint.signal.id
+        assert endpoint.signal.containerId
+        assert endpoint.signal.time
+        assert endpoint.signal.name == "socat"
+        assert endpoint.signal.execFilePath == "/usr/bin/socat"
+        assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+        assert endpoint.signal.pid
 
         destroyDeployments()
 
