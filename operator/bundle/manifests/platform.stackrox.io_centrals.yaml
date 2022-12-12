@@ -371,16 +371,17 @@ spec:
                     properties:
                       enabled:
                         default: false
+                        description: Specifies if Telemetry is enabled.
                         type: boolean
                       storage:
-                        description: TelemetryStorage defines the telemetry storage
-                          backend for Central.
+                        description: Defines the telemetry storage backend for Central.
                         properties:
                           endpoint:
+                            description: Storage API endpoint.
                             type: string
                           key:
-                            description: Required for telemetry transmission. If not
-                              set, telemetry is disabled.
+                            description: Storage API key. If not set, telemetry is
+                              disabled.
                             type: string
                         type: object
                     type: object

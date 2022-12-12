@@ -519,8 +519,8 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
-					"persistence": map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
-					"telemetry": map[string]interface{}{"enabled": false},
+					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"telemetry":        map[string]interface{}{"enabled": false},
 				},
 			},
 		},
