@@ -1,10 +1,12 @@
 package common
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,8 +68,10 @@ var vulnFilters = &storage.VulnerabilityReportFilters{
 }
 
 func TestBuildQuery(t *testing.T) {
-	qb := NewVulnReportQueryBuilder(clusters, namespaces, accessScope, vulnFilters, time.Now())
-	rq, err := qb.BuildQuery()
+	// TODO : Skip is collections is enabled
+	qb := NewVulnReportQueryBuilder(clusters, namespaces, accessScope, nil, vulnFilters, nil, time.Now())
+	ctx := sac.WithAllAccess(context.Background())
+	rq, err := qb.BuildQuery(ctx)
 	assert.NoError(t, err)
 
 	assert.ElementsMatch(t, []string{`Cluster:"remote"+Namespace:"ns1"`, `Cluster:"secured"+Namespace:"ns2"`}, rq.ScopeQueries)

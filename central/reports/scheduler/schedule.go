@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"text/template"
 	"time"
 
@@ -11,24 +12,29 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifiers"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/common"
+	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -127,12 +133,15 @@ type scheduler struct {
 	cron                   *cron.Cron
 	reportConfigToEntryIDs map[string]cron.EntryID
 
-	reportConfigDatastore reportConfigDS.DataStore
-	notifierDatastore     notifierDataStore.DataStore
-	clusterDatastore      clusterDataStore.DataStore
-	namespaceDatastore    namespaceDatastore.DataStore
-	roleDatastore         roleDataStore.DataStore
-	notificationProcessor processor.Processor
+	reportConfigDatastore   reportConfigDS.DataStore
+	notifierDatastore       notifierDataStore.DataStore
+	clusterDatastore        clusterDataStore.DataStore
+	namespaceDatastore      namespaceDataStore.DataStore
+	deploymentDatastore     deploymentDataStore.DataStore
+	roleDatastore           roleDataStore.DataStore
+	collectionDatastore     collectionDataStore.DataStore
+	collectionQueryResolver collectionDataStore.QueryResolver
+	notificationProcessor   processor.Processor
 
 	reportsToRun chan *ReportRequest
 
@@ -156,8 +165,9 @@ type reportEmailFormat struct {
 
 // New instantiates a new cron scheduler and supports adding and removing report configurations
 func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
-	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDatastore.DataStore, roleDS roleDataStore.DataStore,
-	notificationProcessor processor.Processor) Scheduler {
+	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore,
+	collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
+	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor processor.Processor) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 
@@ -166,16 +176,18 @@ func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.D
 		panic(err)
 	}
 	s := &scheduler{
-		reportConfigToEntryIDs: make(map[string]cron.EntryID),
-		cron:                   cronScheduler,
-		reportConfigDatastore:  reportConfigDS,
-		notifierDatastore:      notifierDS,
-		clusterDatastore:       clusterDS,
-		namespaceDatastore:     namespaceDS,
-		roleDatastore:          roleDS,
-		notificationProcessor:  notificationProcessor,
-		reportsToRun:           make(chan *ReportRequest, 100),
-		Schema:                 ourSchema,
+		reportConfigToEntryIDs:  make(map[string]cron.EntryID),
+		cron:                    cronScheduler,
+		reportConfigDatastore:   reportConfigDS,
+		notifierDatastore:       notifierDS,
+		clusterDatastore:        clusterDS,
+		namespaceDatastore:      namespaceDS,
+		collectionDatastore:     collectionDS,
+		roleDatastore:           roleDS,
+		collectionQueryResolver: collectionQueryRes,
+		notificationProcessor:   notificationProcessor,
+		reportsToRun:            make(chan *ReportRequest, 100),
+		Schema:                  ourSchema,
 
 		stopper: concurrency.NewStopper(),
 	}
@@ -283,7 +295,15 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return errors.Wrap(err, "error building report query: unable to get namespaces")
 	}
 
-	scope, found, err := s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
+	var found bool
+	var scope *storage.SimpleAccessScope
+	var collection *storage.ResourceCollection
+	if !features.ObjectCollections.Enabled() {
+		scope, found, err = s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
+	} else {
+		collection, found, err = s.collectionDatastore.Get(req.Ctx, rc.GetScopeId())
+	}
+
 	if err != nil {
 		return errors.Wrap(err, "error building report query: unable to get the resource scope")
 	}
@@ -291,9 +311,9 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
 	}
 
-	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, rc.GetVulnReportFilters(),
-		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
-	reportQuery, err := qb.BuildQuery()
+	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, collection, rc.GetVulnReportFilters(),
+		s.collectionQueryResolver, timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
+	reportQuery, err := qb.BuildQuery(req.Ctx)
 	if err != nil {
 		return errors.Wrap(err, "error building report query")
 	}
@@ -362,24 +382,40 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 }
 
 func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
-	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
-	for _, sq := range rQuery.ScopeQueries {
-		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery)
-		if err != nil {
-			return nil, err
+	if !features.ObjectCollections.Enabled() {
+		r := make([]common.Result, 0, len(rQuery.ScopeQueries))
+		for _, sq := range rQuery.ScopeQueries {
+			resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery, rQuery.DeploymentsQuery)
+			if err != nil {
+				return nil, err
+			}
+			r = append(r, resultData)
 		}
-		r = append(r, resultData)
+		return r, nil
 	}
-	return r, nil
+	result, err := s.runPaginatedQuery(ctx, "", rQuery.CveFieldsQuery, rQuery.DeploymentsQuery)
+	if err != nil {
+		return nil, err
+	}
+	return []common.Result{result}, nil
 }
 
-func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string) (common.Result, error) {
+func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string, deploymentsQuery *v1.Query) (common.Result, error) {
 	offset := 0
 	var resultData common.Result
 	for {
 		var gqlQuery string
+		gqlPaginationOffset := offset
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			gqlQuery = reportQueryPostgres
+			if features.ObjectCollections.Enabled() {
+				deploymentIds, err := s.getDeploymentIDs(ctx, deploymentsQuery, int32(offset))
+				if err != nil || len(deploymentIds) == 0 {
+					return common.Result{}, err
+				}
+				scopeQuery = fmt.Sprintf("%s:%q", search.DeploymentID.String(), strings.Join(deploymentIds, ","))
+				gqlPaginationOffset = 0
+			}
 		} else {
 			gqlQuery = reportDataQuery
 		}
@@ -388,7 +424,7 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 				"scopequery": scopeQuery,
 				"cvequery":   cveQuery,
 				"pagination": map[string]interface{}{
-					"offset": offset,
+					"offset": gqlPaginationOffset,
 					"limit":  numDeploymentsLimit,
 				},
 			})
@@ -407,6 +443,22 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 		offset += len(r.Deployments)
 	}
 	return resultData, nil
+}
+
+func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query, offset int32) ([]string, error) {
+	deploymentsQuery.Pagination = &v1.QueryPagination{
+		Limit:  numDeploymentsLimit,
+		Offset: offset,
+	}
+	results, err := s.deploymentDatastore.SearchDeployments(ctx, deploymentsQuery)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(results))
+	for _, res := range results {
+		ids = append(ids, res.GetId())
+	}
+	return ids, nil
 }
 
 func (s *scheduler) Start() {

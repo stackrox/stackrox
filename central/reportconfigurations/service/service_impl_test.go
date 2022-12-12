@@ -36,8 +36,7 @@ func (s *TestReportConfigurationServiceTestSuite) SetupTest() {
 	s.accessScopeStore = accessScopeMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	collectionDataStore := collectionMocks.NewMockDataStore(s.mockCtrl)
-	collectionQueryResolver := collectionMocks.NewMockQueryResolver(s.mockCtrl)
-	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.accessScopeStore, collectionDataStore, collectionQueryResolver, s.manager)
+	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.accessScopeStore, collectionDataStore, s.manager)
 }
 
 func (s *TestReportConfigurationServiceTestSuite) TearDownTest() {

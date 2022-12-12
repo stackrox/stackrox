@@ -6,7 +6,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
-	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -24,15 +24,13 @@ type Service interface {
 func New(reportConfigStore datastore.DataStore,
 	notifierStore notifierDataStore.DataStore,
 	accessScopeStore accessScopeStore.DataStore,
-	collectionDataStore collectionDS.DataStore,
-	collectionQueryResolver collectionDS.QueryResolver,
+	collectionDS collectionDataStore.DataStore,
 	manager manager.Manager) Service {
 	return &serviceImpl{
-		manager:                 manager,
-		reportConfigStore:       reportConfigStore,
-		notifierStore:           notifierStore,
-		accessScopeStore:        accessScopeStore,
-		collectionDataStore:     collectionDataStore,
-		collectionQueryResolver: collectionQueryResolver,
+		manager:             manager,
+		reportConfigStore:   reportConfigStore,
+		notifierStore:       notifierStore,
+		accessScopeStore:    accessScopeStore,
+		collectionDatastore: collectionDS,
 	}
 }

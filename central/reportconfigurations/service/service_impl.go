@@ -9,7 +9,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
-	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -50,12 +50,11 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedReportConfigurationServiceServer
 
-	manager                 manager.Manager
-	reportConfigStore       datastore.DataStore
-	notifierStore           notifierDataStore.DataStore
-	accessScopeStore        accessScopeStore.DataStore
-	collectionDataStore     collectionDS.DataStore
-	collectionQueryResolver collectionDS.QueryResolver
+	manager             manager.Manager
+	reportConfigStore   datastore.DataStore
+	notifierStore       notifierDataStore.DataStore
+	accessScopeStore    accessScopeStore.DataStore
+	collectionDatastore collectionDataStore.DataStore
 }
 
 func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.RawQuery) (*v1.GetReportConfigurationsResponse, error) {
@@ -208,7 +207,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	}
 
 	if features.ObjectCollections.Enabled() {
-		_, found, err := s.collectionDataStore.Get(ctx, config.GetId())
+		_, found, err := s.collectionDatastore.Get(ctx, config.GetId())
 		if !found || err != nil {
 			return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", config.GetScopeId(), err)
 		}

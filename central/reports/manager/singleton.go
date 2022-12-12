@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/scheduler"
+	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -20,13 +21,16 @@ var (
 )
 
 func initialize() {
+	collectionDS, collectionQueryRes := collectionDataStore.Singleton()
 	instance = &managerImpl{
 		scheduler: scheduler.New(
 			reportConfigDS.Singleton(),
 			notifierDataStore.Singleton(),
 			clusterDataStore.Singleton(),
 			namespaceDataStore.Singleton(),
+			collectionDS,
 			roleDataStore.Singleton(),
+			collectionQueryRes,
 			processor.Singleton(),
 		),
 	}
