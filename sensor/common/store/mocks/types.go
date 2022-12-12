@@ -52,6 +52,20 @@ func (mr *MockDeploymentStoreMockRecorder) BuildDeploymentWithDependencies(id, d
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDeploymentWithDependencies", reflect.TypeOf((*MockDeploymentStore)(nil).BuildDeploymentWithDependencies), id, dependencies)
 }
 
+// FindDeploymentIDsWithServiceAccount mocks base method.
+func (m *MockDeploymentStore) FindDeploymentIDsWithServiceAccount(namespace, sa string) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindDeploymentIDsWithServiceAccount", namespace, sa)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// FindDeploymentIDsWithServiceAccount indicates an expected call of FindDeploymentIDsWithServiceAccount.
+func (mr *MockDeploymentStoreMockRecorder) FindDeploymentIDsWithServiceAccount(namespace, sa interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeploymentIDsWithServiceAccount", reflect.TypeOf((*MockDeploymentStore)(nil).FindDeploymentIDsWithServiceAccount), namespace, sa)
+}
+
 // Get mocks base method.
 func (m *MockDeploymentStore) Get(id string) *storage.Deployment {
 	m.ctrl.T.Helper()

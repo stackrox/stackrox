@@ -14,5 +14,9 @@ export function ClusterIcon() {
 }
 
 export function CidrBlockIcon() {
-    return <Badge style={{ backgroundColor: 'rgb(0,0,0)' }}>IP</Badge>;
+    return <Badge style={{ backgroundColor: 'rgb(9,143,177)' }}>CB</Badge>;
+}
+
+export function ExternalEntitiesIcon() {
+    return <Badge style={{ backgroundColor: 'rgb(0,0,0)' }}>E</Badge>;
 }

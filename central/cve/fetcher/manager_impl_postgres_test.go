@@ -46,6 +46,134 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestReconcileIstioCVEsInPostgres(t *testing.T) {
+	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("Skip postgres store tests")
+		t.SkipNow()
+	}
+
+	cluster := &storage.Cluster{
+		Id:   "test_cluster_id1",
+		Name: "cluster1",
+		Status: &storage.ClusterStatus{
+			OrchestratorMetadata: &storage.OrchestratorMetadata{
+				Version: "v1.10.6",
+			},
+		},
+	}
+
+	istioNvdCVEs := []*schema.NVDCVEFeedJSON10DefCVEItem{
+		{
+			CVE: &schema.CVEJSON40{
+				CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
+					ID: "CVE-4",
+				},
+			},
+			Configurations: &schema.NVDCVEFeedJSON10DefConfigurations{
+				Nodes: []*schema.NVDCVEFeedJSON10DefNode{
+					{
+						Operator: "OR",
+						CPEMatch: []*schema.NVDCVEFeedJSON10DefCPEMatch{
+							{
+								Vulnerable:            true,
+								Cpe23Uri:              "cpe:2.3:a:istio:istio:*:*:*:*:*:*:*:*",
+								VersionStartIncluding: "1.13.12",
+								VersionEndIncluding:   "1.13.17",
+							},
+						},
+					},
+				},
+			},
+			Impact: &schema.NVDCVEFeedJSON10DefImpact{
+				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+					CVSSV3: &schema.CVSSV30{
+						BaseScore:    6.1,
+						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Version:      "3.0",
+					},
+					ExploitabilityScore: 1.8,
+					ImpactScore:         4.2,
+				},
+			},
+		},
+	}
+
+	istioEmbeddedCVEs, err := utils.NVDCVEsToEmbeddedCVEs(istioNvdCVEs, utils.Istio)
+	require.NoError(t, err)
+
+	istioEmbeddedCVEToClusters := map[string][]*storage.Cluster{
+		"CVE-4": {
+			cluster,
+		},
+	}
+
+	istioCvesToUpsert := []converter.ClusterCVEParts{
+		{
+			CVE: &storage.ClusterCVE{
+				Id: cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String()),
+				CveBaseInfo: &storage.CVEInfo{
+					Cve:          "CVE-4",
+					Link:         "https://nvd.nist.gov/vuln/detail/CVE-4",
+					ScoreVersion: storage.CVEInfo_V3,
+					CvssV3: &storage.CVSSV3{
+						Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+						AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
+						AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+						PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+						UserInteraction:     storage.CVSSV3_UI_NONE,
+						Scope:               storage.CVSSV3_UNCHANGED,
+						Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+						Integrity:           storage.CVSSV3_IMPACT_LOW,
+						Availability:        storage.CVSSV3_IMPACT_HIGH,
+						Score:               6.1,
+					},
+				},
+				Cvss:        6.1,
+				ImpactScore: 4.2,
+				Type:        storage.CVE_ISTIO_CVE,
+			},
+			Children: []converter.EdgeParts{
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:        postgres.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String())}),
+						IsFixable: false,
+						ClusterId: "test_cluster_id1",
+						CveId:     cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String()),
+					},
+					ClusterID: "test_cluster_id1",
+				},
+			},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClusters := mockClusterDataStore.NewMockDataStore(ctrl)
+	mockNamespaces := mockNSDataStore.NewMockDataStore(ctrl)
+	mockImages := mockImageDataStore.NewMockDataStore(ctrl)
+	mockCVEs := mockCVEDataStore.NewMockDataStore(ctrl)
+
+	cveMatcher, err := matcher.NewCVEMatcher(mockClusters, mockNamespaces, mockImages)
+	require.NoError(t, err)
+
+	cveManager := &orchestratorIstioCVEManagerImpl{
+		orchestratorCVEMgr: &orchestratorCVEManager{
+			clusterDataStore:    mockClusters,
+			clusterCVEDataStore: mockCVEs,
+			cveMatcher:          cveMatcher,
+		},
+	}
+
+	mockCVEs.EXPECT().UpsertClusterCVEsInternal(gomock.Any(), storage.CVE_ISTIO_CVE, istioCvesToUpsert).Return(nil)
+	err = cveManager.orchestratorCVEMgr.updateCVEs(istioEmbeddedCVEs, istioEmbeddedCVEToClusters, utils.Istio)
+	assert.NoError(t, err)
+}
+
 func TestReconcileCVEsInPostgres(t *testing.T) {
 	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
@@ -440,6 +568,16 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	})
 	s.NoError(err)
 
+	// Upsert cluster.
+	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
+	c3ID, err := s.clusterDataStore.AddCluster(s.ctx, &storage.Cluster{
+		Name:               "c3",
+		Labels:             map[string]string{"env": "test", "team": "team"},
+		MainImage:          "docker.io/stackrox/rox:latest",
+		CentralApiEndpoint: "central.stackrox:443",
+	})
+	s.NoError(err)
+
 	// Upsert K8s CVEs.
 
 	vulns, clusterMap := getTestClusterCVEParts(10, c1ID, c2ID)
@@ -455,6 +593,11 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 
 	// Search by non-matching type.
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 0)
+
+	// Search by non-matching type.
+	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_ISTIO_CVE.String()).ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 0)
 
@@ -487,7 +630,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.True(found)
 	s.True(storedCVE.GetSnoozed())
 
-	// Upsert istio CVEs.
+	// Upsert OpenShift CVEs.
 	vulns, clusterMap = getTestClusterCVEParts(10, c2ID)
 	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.OpenShift))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
@@ -502,12 +645,24 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(err)
 	s.Len(results, 10)
 
+	// Upsert Istio CVEs.
+	vulns, clusterMap = getTestClusterCVEParts(10, c3ID)
+	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.Istio))
+	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(30, count)
+
+	// Search by cluster.
+	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.Cluster, "c3").ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 10)
+
 	// Upsert more cves and ensure that they are reconciled.
 	vulns, clusterMap = getTestClusterCVEParts(20, c1ID)
 	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.K8s))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(30, count)
+	s.Equal(40, count)
 
 	// Search by cluster.
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.Cluster, "c2").ProtoQuery())
@@ -524,6 +679,9 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 10)
+	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_ISTIO_CVE.String()).ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 10)
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_K8S_CVE.String()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.Cluster, "c2").ProtoQuery(),
@@ -536,7 +694,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.OpenShift))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(25, count)
+	s.Equal(35, count)
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.Cluster, "c2").ProtoQuery(),
@@ -553,9 +711,14 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(s.clusterCVEDatastore.DeleteClusterCVEsInternal(s.ctx, c2ID))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(20, count)
+	s.Equal(30, count)
 
 	s.NoError(s.clusterCVEDatastore.DeleteClusterCVEsInternal(s.ctx, c1ID))
+	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(10, count)
+
+	s.NoError(s.clusterCVEDatastore.DeleteClusterCVEsInternal(s.ctx, c3ID))
 	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, count)

@@ -172,13 +172,12 @@ func setUpIntegrationParams(ctx context.Context, imageIntegration *storage.Image
 		dockerCfg := config.Docker
 		validTLS, tlsErr := tlscheck.CheckTLS(ctx, dockerCfg.GetEndpoint())
 		if tlsErr != nil {
-			log.Debugf("reaching out for TLS check to %s: %v", dockerCfg.GetEndpoint(), err)
+			log.Debugf("reaching out for TLS check to %s: %v", dockerCfg.GetEndpoint(), tlsErr)
 			// Not enough evidence that we can skip TLS, so conservatively require it.
 			dockerCfg.Insecure = false
 		} else {
 			dockerCfg.Insecure = !validTLS
 		}
-		dockerCfg.Insecure = !validTLS
 		dockerCfg.Endpoint = parseEndpointForURL(dockerCfg.GetEndpoint())
 		description = dockerCfg.GetEndpoint()
 		matches = matchesDockerAuth

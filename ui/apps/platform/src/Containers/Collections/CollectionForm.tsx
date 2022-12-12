@@ -22,13 +22,13 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { CollectionResponse } from 'services/CollectionsService';
+import { Collection } from 'services/CollectionsService';
 import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
 import {
-    Collection,
+    ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
     selectorEntityTypes,
@@ -44,7 +44,7 @@ function AttachedCollectionTable({
     collections,
     collectionTableCells,
 }: {
-    collections: CollectionResponse[];
+    collections: Collection[];
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }) {
     return collections.length > 0 ? (
@@ -74,13 +74,14 @@ export type CollectionFormProps = {
     /* The user's workflow action for this collection */
     action: CollectionPageAction;
     /* parsed collection data used to populate the form */
-    initialData: Collection;
+    initialData: ClientCollection;
     /* collection responses for the embedded collections of `initialData` */
-    initialEmbeddedCollections: CollectionResponse[];
-    onSubmit: (collection: Collection) => Promise<void>;
+    initialEmbeddedCollections: Collection[];
+    onFormChange: (values: ClientCollection) => void;
+    onSubmit: (collection: ClientCollection) => Promise<void>;
     onCancel: () => void;
     saveError?: CollectionSaveError | undefined;
-    clearSaveError?: () => void;
+    setSaveError?: (saveError: CollectionSaveError | undefined) => void;
     /* Table cells to render for each collection in the CollectionAttacher component */
     getCollectionTableCells: (
         collectionErrorId: string | undefined
@@ -117,7 +118,18 @@ function yupResourceSelectorObject() {
     });
 }
 
-function getRuleCount(resourceSelector: Collection['resourceSelector']) {
+const validationSchema = yup.object({
+    name: yup.string().trim().required(),
+    description: yup.string(),
+    embeddedCollectionIds: yup.array(yup.string().trim().required()),
+    resourceSelector: yup.object().shape({
+        Deployment: yupResourceSelectorObject(),
+        Namespace: yupResourceSelectorObject(),
+        Cluster: yupResourceSelectorObject(),
+    }),
+});
+
+function getRuleCount(resourceSelector: ClientCollection['resourceSelector']) {
     let count = 0;
 
     selectorEntityTypes.forEach((entityType) => {
@@ -138,7 +150,8 @@ function CollectionForm({
     initialData,
     initialEmbeddedCollections,
     saveError,
-    clearSaveError = () => {},
+    setSaveError = () => {},
+    onFormChange,
     onSubmit,
     onCancel,
     getCollectionTableCells,
@@ -152,6 +165,7 @@ function CollectionForm({
     const {
         values,
         errors: formikErrors,
+        touched,
         handleChange,
         handleBlur,
         setFieldValue,
@@ -164,17 +178,12 @@ function CollectionForm({
                 setSubmitting(false);
             });
         },
-        validationSchema: yup.object({
-            name: yup.string().trim().required(),
-            description: yup.string(),
-            embeddedCollectionIds: yup.array(yup.string().trim().required()),
-            resourceSelector: yup.object().shape({
-                Deployment: yupResourceSelectorObject(),
-                Namespace: yupResourceSelectorObject(),
-                Cluster: yupResourceSelectorObject(),
-            }),
-        }),
+        validationSchema,
     });
+
+    useEffect(() => {
+        onFormChange(values);
+    }, [onFormChange, values]);
 
     // Synchronize the value of "name" in the form field when the page action changes
     // e.g. from 'view' -> 'clone'
@@ -191,6 +200,8 @@ function CollectionForm({
         });
     }, [action.type, initialData.name, setFieldValue]);
 
+    const clearSaveError = () => setSaveError(undefined);
+
     const errors = {
         ...formikErrors,
     };
@@ -199,6 +210,17 @@ function CollectionForm({
     if (saveError?.type === 'DuplicateName') {
         errors.name = saveError.message;
     }
+
+    if (saveError?.type === 'EmptyName') {
+        errors.name = saveError.message;
+    }
+
+    // We only want to display the error in the name field if one of the following is true:
+    //   1. The user has focused and blurred the name field, and the value is invalid
+    //   2. A request has been sent to the server that resulted in an error, and the name is invalid
+    // This prevents an error from being shown as soon as the user loads the creation form, before
+    // a name value has been entered.
+    const nameError = (touched.name || saveError) && errors.name;
 
     const collectionTableCells = getCollectionTableCells(
         saveError?.type === 'CollectionLoop' ? saveError.loopId : undefined
@@ -209,7 +231,7 @@ function CollectionForm({
         scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
 
-    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) => {
+    const onEmbeddedCollectionsChange = (newCollections: Collection[]) => {
         if (
             saveError?.type === 'CollectionLoop' &&
             !newCollections.find(({ id }) => id === saveError.loopId)
@@ -243,16 +265,19 @@ function CollectionForm({
                                 label="Name"
                                 fieldId="name"
                                 isRequired={!isReadOnly}
-                                helperTextInvalid={errors.name}
-                                validated={errors.name ? 'error' : 'default'}
+                                helperTextInvalid={nameError}
+                                validated={nameError ? 'error' : 'default'}
                             >
                                 <TextInput
                                     id="name"
                                     name="name"
                                     value={values.name}
-                                    validated={errors.name ? 'error' : 'default'}
+                                    validated={nameError ? 'error' : 'default'}
                                     onChange={(_, e) => {
-                                        if (saveError?.type === 'DuplicateName') {
+                                        if (
+                                            saveError?.type === 'DuplicateName' ||
+                                            saveError?.type === 'EmptyName'
+                                        ) {
                                             clearSaveError();
                                         }
                                         handleChange(e);
@@ -424,7 +449,7 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting}
+                        isDisabled={isSubmitting || !!saveError}
                         isLoading={isSubmitting}
                     >
                         Save

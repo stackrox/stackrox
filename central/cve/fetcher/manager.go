@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
@@ -31,7 +30,6 @@ type OrchestratorIstioCVEManager interface {
 // orchestratorIstioCVEManagerImpl manages the state of orchestrator and istio CVEs
 type orchestratorIstioCVEManagerImpl struct {
 	orchestratorCVEMgr *orchestratorCVEManager
-	istioCVEMgr        *istioCVEManager
 
 	updateSignal    concurrency.Signal
 	mgrMode         mode
@@ -55,14 +53,6 @@ func NewOrchestratorIstioCVEManagerImpl(
 			cveMatcher:              cveMatcher,
 			creators:                make(map[string]pkgScanners.OrchestratorScannerCreator),
 			scanners:                make(map[string]types.OrchestratorScanner),
-		},
-		istioCVEMgr: &istioCVEManager{
-			nvdCVEs:                 make(map[string]*schema.NVDCVEFeedJSON10DefCVEItem),
-			clusterDataStore:        clusterDataStore,
-			legacyCVEDataStore:      legacyCVEDataStore,
-			clusterCVEDataStore:     clusterCVEDataStore,
-			clusterCVEEdgeDataStore: clusterCVEEdgeDataStore,
-			cveMatcher:              cveMatcher,
 		},
 		updateSignal: concurrency.NewSignal(),
 	}

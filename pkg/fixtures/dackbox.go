@@ -1157,3 +1157,179 @@ func GetScopedNode2(nodeID string, clusterID string) *storage.Node {
 	}
 	return node
 }
+
+////////////////////////
+// Clusters with CVEs //
+
+// Data relationships
+//
+//       Cluster
+//          ^ *
+//          |
+//    ClusterCVEEdge
+//          |
+//          v *
+//         CVE
+//
+// For testing purposes, a graph of objects like the one below could be used.
+//
+// Cluster1 --+--> ClusterCVE1
+//            |
+//            |
+//            +----------+
+//                       |
+//                       v
+//                   ClusterCVE2
+//                       ^
+//                       |
+//            +----------+
+//            |
+// Cluster2 --+--> ClusterCVE3
+//
+
+// GetEmbeddedClusterCVE1234x0001 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedClusterCVE1234x0001() *storage.EmbeddedVulnerability {
+	return &storage.EmbeddedVulnerability{
+		Cve:          "CVE-1234-0001",
+		Cvss:         5.8,
+		Summary:      "Find some inspiring quote on an evil topic to insert here.",
+		Link:         "book://author/title",
+		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
+		ScoreVersion: storage.EmbeddedVulnerability_V2,
+		CvssV2: &storage.CVSSV2{
+			Vector:              "AV:N/AC:M/Au:N/C:P/I:P/A:N",
+			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+			AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+			Authentication:      storage.CVSSV2_AUTH_NONE,
+			Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
+			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
+			Availability:        storage.CVSSV2_IMPACT_NONE,
+			ExploitabilityScore: 8.6,
+			ImpactScore:         4.9,
+			Score:               5.8,
+			Severity:            storage.CVSSV2_MEDIUM,
+		},
+		CvssV3:            nil,
+		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
+		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		VulnerabilityType: storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
+		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+			storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
+		},
+		Suppressed:            false,
+		SuppressActivation:    nil,
+		SuppressExpiry:        nil,
+		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
+		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		State:                 storage.VulnerabilityState_OBSERVED,
+	}
+}
+
+// GetEmbeddedClusterCVE4567x0002 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedClusterCVE4567x0002() *storage.EmbeddedVulnerability {
+	return &storage.EmbeddedVulnerability{
+		Cve:          "CVE-4567-0002",
+		Cvss:         7.5,
+		Summary:      "Find some inspiring quote on an evil topic to insert here.",
+		Link:         "book://author/title",
+		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.1.1"},
+		ScoreVersion: storage.EmbeddedVulnerability_V3,
+		CvssV2: &storage.CVSSV2{
+			Vector:              "AV:N/AC:L/Au:N/C:N/I:P/A:N",
+			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+			AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
+			Authentication:      storage.CVSSV2_AUTH_NONE,
+			Confidentiality:     storage.CVSSV2_IMPACT_NONE,
+			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
+			Availability:        storage.CVSSV2_IMPACT_NONE,
+			ExploitabilityScore: 10.0,
+			ImpactScore:         2.9,
+			Score:               5.0,
+			Severity:            storage.CVSSV2_MEDIUM,
+		},
+		CvssV3: &storage.CVSSV3{
+			Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+			ExploitabilityScore: 3.9,
+			ImpactScore:         3.6,
+			AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+			UserInteraction:     storage.CVSSV3_UI_NONE,
+			Scope:               storage.CVSSV3_UNCHANGED,
+			Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+			Integrity:           storage.CVSSV3_IMPACT_HIGH,
+			Availability:        storage.CVSSV3_IMPACT_NONE,
+			Score:               7.5,
+			Severity:            storage.CVSSV3_HIGH,
+		},
+		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
+		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		VulnerabilityType: storage.EmbeddedVulnerability_ISTIO_VULNERABILITY,
+		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+			storage.EmbeddedVulnerability_K8S_VULNERABILITY,
+			storage.EmbeddedVulnerability_ISTIO_VULNERABILITY,
+			storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
+		},
+		Suppressed:            false,
+		SuppressActivation:    nil,
+		SuppressExpiry:        nil,
+		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
+		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+		State:                 storage.VulnerabilityState_OBSERVED,
+	}
+}
+
+// GetEmbeddedClusterCVE2345x0003 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedClusterCVE2345x0003() *storage.EmbeddedVulnerability {
+	return &storage.EmbeddedVulnerability{
+		Cve:          "CVE-2345-0003",
+		Cvss:         7.8,
+		Summary:      "Find some inspiring quote on an evil topic to insert here.",
+		Link:         "book://author/title",
+		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
+		ScoreVersion: storage.EmbeddedVulnerability_V3,
+		CvssV2: &storage.CVSSV2{
+			Vector:              "AV:N/AC:M/Au:N/C:P/I:P/A:P",
+			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+			AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+			Authentication:      storage.CVSSV2_AUTH_NONE,
+			Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
+			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
+			Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+			ExploitabilityScore: 8.6,
+			ImpactScore:         6.4,
+			Score:               6.8,
+			Severity:            storage.CVSSV2_MEDIUM,
+		},
+		CvssV3: &storage.CVSSV3{
+			Vector:              "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+			ExploitabilityScore: 1.8,
+			ImpactScore:         5.9,
+			AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
+			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+			UserInteraction:     storage.CVSSV3_UI_REQUIRED,
+			Scope:               storage.CVSSV3_UNCHANGED,
+			Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
+			Integrity:           storage.CVSSV3_IMPACT_HIGH,
+			Availability:        storage.CVSSV3_IMPACT_HIGH,
+			Score:               7.8,
+			Severity:            storage.CVSSV3_HIGH,
+		},
+		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
+		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		VulnerabilityType: storage.EmbeddedVulnerability_K8S_VULNERABILITY,
+		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+			storage.EmbeddedVulnerability_K8S_VULNERABILITY,
+		},
+		Suppressed:            false,
+		SuppressActivation:    nil,
+		SuppressExpiry:        nil,
+		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
+		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+		State:                 storage.VulnerabilityState_OBSERVED,
+	}
+}

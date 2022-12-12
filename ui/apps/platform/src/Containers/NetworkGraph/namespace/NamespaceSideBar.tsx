@@ -10,10 +10,11 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
-import { EdgeModel, NodeModel } from '@patternfly/react-topology';
+import { EdgeModel } from '@patternfly/react-topology';
 
 import useTabs from 'hooks/patternfly/useTabs';
 import { getDeploymentNodesInNamespace, getNumDeploymentFlows } from '../utils/networkGraphUtils';
+import { CustomNodeModel } from '../types/topology.type';
 
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import NamespaceDeployments from './NamespaceDeployments';
@@ -21,7 +22,7 @@ import NetworkPolicies from '../common/NetworkPolicies';
 
 type NamespaceSideBarProps = {
     namespaceId: string;
-    nodes: NodeModel[];
+    nodes: CustomNodeModel[];
     edges: EdgeModel[];
 };
 

@@ -11,4 +11,5 @@ export type FeatureFlagEnvVar =
     | 'ROX_SYSTEM_HEALTH_PF'
     | 'ROX_POSTGRES_DATASTORE'
     | 'ROX_NETWORK_GRAPH_PATTERNFLY'
+    | 'ROX_SYSLOG_EXTRA_FIELDS'
     ;

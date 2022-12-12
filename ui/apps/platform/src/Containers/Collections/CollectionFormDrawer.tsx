@@ -12,20 +12,21 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { CollectionResponse } from 'services/CollectionsService';
+import { Collection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionResults from './CollectionResults';
 import { isCollectionParseError, parseCollection } from './converter';
 import CollectionForm, { CollectionFormProps } from './CollectionForm';
 import UnsupportedCollectionState from './UnsupportedCollectionState';
+import useDryRunConfiguration from './hooks/useDryRunConfiguration';
 
 export type CollectionFormDrawerProps = {
     hasWriteAccessForCollections: boolean;
     /* The user's workflow action for this collection */
     action: CollectionPageAction;
     collectionData: {
-        collection: Omit<CollectionResponse, 'id'>;
-        embeddedCollections: CollectionResponse[];
+        collection: Omit<Collection, 'id'>;
+        embeddedCollections: Collection[];
     };
     /* Whether or not to display the collection results in an inline drawer. If false, will
     display collection results in an overlay drawer. */
@@ -36,7 +37,7 @@ export type CollectionFormDrawerProps = {
     onSubmit: CollectionFormProps['onSubmit'];
     onCancel: CollectionFormProps['onCancel'];
     saveError?: CollectionFormProps['saveError'];
-    clearSaveError?: CollectionFormProps['clearSaveError'];
+    setSaveError?: CollectionFormProps['setSaveError'];
     getCollectionTableCells: CollectionFormProps['getCollectionTableCells'];
 };
 
@@ -51,11 +52,16 @@ function CollectionFormDrawer({
     onSubmit,
     onCancel,
     saveError,
-    clearSaveError,
+    setSaveError,
     getCollectionTableCells,
 }: CollectionFormDrawerProps) {
     const initialData = parseCollection(collectionData.collection);
     const initialEmbeddedCollections = collectionData.embeddedCollections;
+    const collectionId = action.type !== 'create' ? action.collectionId : undefined;
+    const { dryRunConfig, updateDryRunConfig } = useDryRunConfiguration(
+        collectionId,
+        collectionData.collection
+    );
 
     useEffect(() => {
         toggleDrawer(isInlineDrawer);
@@ -81,7 +87,11 @@ function CollectionFormDrawer({
                                 )}
                             </DrawerHead>
                             <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
-                                <CollectionResults />
+                                <CollectionResults
+                                    dryRunConfig={dryRunConfig}
+                                    saveError={saveError}
+                                    setSaveError={setSaveError}
+                                />
                             </DrawerPanelBody>
                         </DrawerPanelContent>
                     }
@@ -99,10 +109,11 @@ function CollectionFormDrawer({
                                 action={action}
                                 initialData={initialData}
                                 initialEmbeddedCollections={initialEmbeddedCollections}
+                                onFormChange={updateDryRunConfig}
                                 onSubmit={onSubmit}
                                 onCancel={onCancel}
                                 saveError={saveError}
-                                clearSaveError={clearSaveError}
+                                setSaveError={setSaveError}
                                 getCollectionTableCells={getCollectionTableCells}
                             />
                         )}

@@ -2160,8 +2160,9 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		}}),
 		imageWithSignatureVerificationResults("image_nil_results", nil),
 		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: verifier0,
-			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifierId:              verifier0,
+			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifiedImageReferences: []string{"verified_by_0"},
 		}}),
 		imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: unverifier,
@@ -2171,15 +2172,18 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			VerifierId: verifier2,
 			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 		}, {
-			VerifierId: verifier3,
-			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifierId:              verifier3,
+			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifiedImageReferences: []string{"verified_by_3"},
 		}}),
 		imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: verifier2,
-			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifierId:              verifier2,
+			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifiedImageReferences: []string{"verified_by_2_and_3"},
 		}, {
-			VerifierId: verifier3,
-			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifierId:              verifier3,
+			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifiedImageReferences: []string{"verified_by_2_and_3"},
 		}}),
 	}
 
@@ -2268,6 +2272,85 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 				}
 			}
 			suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty(), matchedImages)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestImageVerified_WithDeployment() {
+	const (
+		verifier1 = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"
+		verifier2 = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000003"
+		verifier3 = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000004"
+	)
+
+	imgVerifiedAndMatchingReference := imageWithSignatureVerificationResults("image_verified_by_1",
+		[]*storage.ImageSignatureVerificationResult{
+			{
+				VerifierId:              verifier1,
+				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+				VerifiedImageReferences: []string{"image_verified_by_1"},
+			},
+		})
+
+	imgVerifiedAndMatchingMultipleReferences := imageWithSignatureVerificationResults("image_verified_by_2",
+		[]*storage.ImageSignatureVerificationResult{
+			{
+				VerifierId:              verifier3,
+				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+				VerifiedImageReferences: []string{"image_with_alternative_verified_reference", "image_verified_by_2"},
+			},
+		})
+
+	imgVerifiedButNotMatchingReference := imageWithSignatureVerificationResults("image_with_alternative_verified_reference",
+		[]*storage.ImageSignatureVerificationResult{
+			{
+				VerifierId:              verifier2,
+				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+				VerifiedImageReferences: []string{"image_verified_by_2"},
+			},
+		})
+
+	cases := map[string]struct {
+		deployment       *storage.Deployment
+		image            *storage.Image
+		matchingVerifier string
+		expectViolation  bool
+	}{
+		"deployment with matching verified image reference shouldn't lead in alert message": {
+			deployment:       deploymentWithImage("deployment_with_image_verified_by_1", imgVerifiedAndMatchingReference),
+			image:            imgVerifiedAndMatchingReference,
+			matchingVerifier: verifier1,
+		},
+		"deployment with verified result but no matching verified image reference should lead to alert message": {
+			deployment:       deploymentWithImage("deployment_with_image_alternative_verified_reference", imgVerifiedButNotMatchingReference),
+			image:            imgVerifiedButNotMatchingReference,
+			matchingVerifier: verifier2,
+			expectViolation:  true,
+		},
+		"deployment with verified result and multiple matching verified image references shouldn't lead to alert message": {
+			deployment:       deploymentWithImage("deployment_with_image_verified_by_2", imgVerifiedAndMatchingMultipleReferences),
+			image:            imgVerifiedAndMatchingMultipleReferences,
+			matchingVerifier: verifier3,
+		},
+	}
+
+	for name, c := range cases {
+		suite.Run(name, func() {
+			deploymentMatcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy,
+				[]string{c.matchingVerifier}, false, storage.BooleanOperator_OR))
+			suite.Require().NoError(err)
+
+			violations, err := deploymentMatcher.MatchDeployment(nil, EnhancedDeployment{
+				Deployment: c.deployment,
+				Images:     []*storage.Image{c.image},
+			})
+			suite.Require().NoError(err)
+
+			if c.expectViolation {
+				suite.NotEmpty(violations.AlertViolations)
+			} else {
+				suite.Empty(violations.AlertViolations)
+			}
 		})
 	}
 }

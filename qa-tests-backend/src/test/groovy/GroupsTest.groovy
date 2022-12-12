@@ -41,7 +41,7 @@ class GroupsTest extends BaseSpecification {
                     .build(),
     ]
 
-    private static final GROUPIDS = ["": ""]
+    private static final Map<String, Group> GROUPS_WITH_IDS = [:]
 
     def setupSpec() {
         for (def group : GROUPS) {
@@ -52,12 +52,12 @@ class GroupsTest extends BaseSpecification {
                     .setValue(props.getValue())
                     .setKey(props.getKey()).build()
             ).getGroups(0)
-            GROUPIDS[groupWithId.roleName] = groupWithId.getProps().getId()
+            GROUPS_WITH_IDS[groupWithId.roleName] = groupWithId
         }
     }
 
     def cleanupSpec() {
-        for (def group : GROUPS) {
+        GROUPS_WITH_IDS.values().flatten().each { group ->
             try {
                 GroupService.deleteGroup(group.props)
             } catch (Exception ex) {
@@ -111,11 +111,17 @@ class GroupsTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        authProviderId | key   | id                              | value | expectGroup | expectGroups
-        0              | null  | GROUPIDS["QAGroupTest-Group1"] | null  | "Group1"    | ["Group1", "Group2"]
-        null           | "foo" | "some-id"                       | "bar" | null        | ["Group2", "Group3"]
-        0              | "foo" | GROUPIDS["QAGroupTest-Group2"] | "bar" | "Group2"    | ["Group2"]
-        1              | null  | "some-id"                       | null  | null        | ["Group3"]
-        1              | "foo" | GROUPIDS["QAGroupTest-Group3"] | "bar" | "Group3"    | ["Group3"]
+        authProviderId | key   | id                                                  | value |
+          expectGroup    | expectGroups
+        0              | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  |
+          "Group1"       | ["Group1", "Group2"]
+        null           | "foo" | "some-id"                                           | "bar" |
+          null           | ["Group2", "Group3"]
+        0              | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group2"].props.getId() | "bar" |
+          "Group2"       | ["Group2"]
+        1              | null  | "some-id"                                           | null  |
+          null           | ["Group3"]
+        1              | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group3"].props.getId() | "bar" |
+          "Group3"       | ["Group3"]
     }
 }

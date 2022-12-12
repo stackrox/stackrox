@@ -1,4 +1,3 @@
-import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     getHelperElementByLabel,
@@ -7,6 +6,7 @@ import {
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';
+
 import {
     assertIntegrationsTable,
     clickCreateNewIntegrationInTable,
@@ -14,7 +14,8 @@ import {
     generateCreatedAuthProvidersIntegrationInForm,
     revokeAuthProvidersIntegrationInTable,
     visitIntegrationsTable,
-} from '../../helpers/integrations';
+} from './integrations.helpers';
+import { selectors } from './integrations.selectors';
 
 // Page address segments are the source of truth for integrationSource and integrationType.
 const integrationSource = 'authProviders';

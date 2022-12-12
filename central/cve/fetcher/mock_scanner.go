@@ -21,6 +21,29 @@ type mockScanner struct {
 	nvdCVEs    []*nvdCVEWithComponents
 }
 
+func (o *mockScanner) IstioScan(version string) ([]*storage.EmbeddedVulnerability, error) {
+	var vulnsMap []*storage.EmbeddedVulnerability
+	for _, cve := range o.nvdCVEs {
+		if len(cve.components) != 1 || cve.components[0] != "istio" {
+			continue
+		}
+		for _, node := range cve.nvdCVE.Configurations.Nodes {
+			embeddedCve, err := utils.NVDCVEToEmbeddedCVE(cve.nvdCVE, utils.Istio)
+			if err != nil {
+				return nil, err
+			}
+			matched, err := o.cveMatcher.MatchVersions(node, version, utils.Istio)
+			if err != nil {
+				return nil, err
+			}
+			if matched {
+				vulnsMap = append(vulnsMap, embeddedCve)
+			}
+		}
+	}
+	return vulnsMap, nil
+}
+
 func (o *mockScanner) Name() string {
 	return "mockOrchestratorScanner1"
 }
@@ -33,6 +56,9 @@ func (o *mockScanner) KubernetesScan(version string) (map[string][]*storage.Embe
 	vulnsMap := make(map[string][]*storage.EmbeddedVulnerability)
 	for _, cve := range o.nvdCVEs {
 		if len(cve.components) == 1 && cve.components[0] == "openshift" {
+			continue
+		}
+		if len(cve.components) == 1 && cve.components[0] == "istio" {
 			continue
 		}
 		for _, node := range cve.nvdCVE.Configurations.Nodes {

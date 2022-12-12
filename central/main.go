@@ -241,7 +241,7 @@ func main() {
 		return
 	}
 
-	clientconn.SetUserAgent("central")
+	clientconn.SetUserAgent(clientconn.Central)
 
 	ctx := context.Background()
 	proxy.WatchProxyConfig(ctx, proxyConfigPath, proxyConfigFile, true)

@@ -1,10 +1,10 @@
-import { CollectionRequest, CollectionResponse } from 'services/CollectionsService';
+import { CollectionRequest, Collection } from 'services/CollectionsService';
 import { generateRequest, isCollectionParseError, parseCollection } from './converter';
-import { ByLabelResourceSelector, Collection, LabelSelectorRule } from './types';
+import { ByLabelResourceSelector, ClientCollection, LabelSelectorRule } from './types';
 
 describe('Collection parser', () => {
     it('should convert between BE CollectionResponse and FE Collection', () => {
-        const collectionResponse: CollectionResponse = {
+        const collectionResponse: Collection = {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
@@ -35,7 +35,7 @@ describe('Collection parser', () => {
             ],
             embeddedCollections: [{ id: '12' }, { id: '13' }, { id: '14' }],
         };
-        const expectedCollection: Collection = {
+        const expectedCollection: ClientCollection = {
             name: 'Sample',
             description: 'Sample description',
             inUse: false,
@@ -65,7 +65,7 @@ describe('Collection parser', () => {
             },
             embeddedCollectionIds: ['12', '13', '14'],
         };
-        const parsedResponse = parseCollection(collectionResponse) as Collection;
+        const parsedResponse = parseCollection(collectionResponse) as ClientCollection;
         expect(isCollectionParseError(parsedResponse)).toBeFalsy();
         expect(parsedResponse.id).toEqual(expectedCollection.id);
         expect(parsedResponse.name).toEqual(expectedCollection.name);
@@ -79,7 +79,7 @@ describe('Collection parser', () => {
     });
 
     it('should error on multiple resource selectors', () => {
-        const collectionResponse: CollectionResponse = {
+        const collectionResponse: Collection = {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
@@ -91,7 +91,7 @@ describe('Collection parser', () => {
     });
 
     it('should error on rules for multiple fields for a single entity', () => {
-        const collectionResponse: CollectionResponse = {
+        const collectionResponse: Collection = {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
@@ -119,7 +119,7 @@ describe('Collection parser', () => {
     });
 
     it('should error on conjunction rules', () => {
-        const collectionResponse: CollectionResponse = {
+        const collectionResponse: Collection = {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
@@ -142,7 +142,7 @@ describe('Collection parser', () => {
     });
 
     it('should error on rules against annotation field names', () => {
-        const collectionResponse: CollectionResponse = {
+        const collectionResponse: Collection = {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
@@ -165,7 +165,7 @@ describe('Collection parser', () => {
     });
 
     it('should correctly handle label key/value splitting on `=` delimiter', () => {
-        const collectionResponse: CollectionResponse = {
+        const collectionResponse: Collection = {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
@@ -181,9 +181,9 @@ describe('Collection parser', () => {
         };
 
         // Get the resource selector we are interested in without so many type assertions
-        function getLabelRule(collection: CollectionResponse): LabelSelectorRule {
+        function getLabelRule(collection: Collection): LabelSelectorRule {
             return (
-                (parseCollection(collection) as Collection).resourceSelector
+                (parseCollection(collection) as ClientCollection).resourceSelector
                     .Cluster as ByLabelResourceSelector
             ).rules[0];
         }
@@ -220,7 +220,7 @@ describe('Collection parser', () => {
 
 describe('Collection response generator', () => {
     it('should convert between FE Collection and BE CollectionRequest', () => {
-        const collection: Collection = {
+        const collection: ClientCollection = {
             name: 'Sample',
             description: 'Sample description',
             inUse: false,

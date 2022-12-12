@@ -35,7 +35,7 @@ func fakeResult(id, cluster, namespace string) search.Result {
 	}
 }
 
-func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
+func TestSearchHelper_TestFilteredSearch_WithFilter(t *testing.T) {
 	options := search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, map[search.FieldLabel]*search.Field{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
@@ -59,6 +59,10 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 			fakeResult("6", "cluster3", "nsB"),
 		}, nil
 	}
+	mockSearcher := blevesearch.UnsafeSearcherImpl{
+		SearchFunc: mockSearchFunc,
+		CountFunc:  nil,
+	}
 
 	h, err := sac.NewSearchHelper(testNSResource, options, sac.ForResource(testNSResource).ScopeChecker)
 	require.NoError(t, err)
@@ -77,14 +81,14 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
-	searchResults, err := h.Apply(mockSearchFunc)(ctx, search.EmptyQuery())
+	searchResults, err := h.FilteredSearcher(mockSearcher).Search(ctx, search.EmptyQuery())
 	require.NoError(t, err)
 
 	resultIDs := search.ResultsToIDs(searchResults)
 	assert.ElementsMatch(t, resultIDs, []string{"1", "2", "3"})
 }
 
-func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
+func TestSearchHelper_TestFilteredSearch_WithAllAccess(t *testing.T) {
 	options := search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, map[search.FieldLabel]*search.Field{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
@@ -108,6 +112,10 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 			fakeResult("6", "cluster3", "nsB"),
 		}, nil
 	}
+	mockSearcher := blevesearch.UnsafeSearcherImpl{
+		SearchFunc: mockSearchFunc,
+		CountFunc:  nil,
+	}
 
 	h, err := sac.NewSearchHelper(testNSResource, options, sac.ForResource(testNSResource).ScopeChecker)
 	require.NoError(t, err)
@@ -116,7 +124,7 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
-	searchResults, err := h.Apply(mockSearchFunc)(ctx, search.EmptyQuery())
+	searchResults, err := h.FilteredSearcher(mockSearcher).Search(ctx, search.EmptyQuery())
 	require.NoError(t, err)
 	resultIDs := search.ResultsToIDs(searchResults)
 	assert.ElementsMatch(t, resultIDs, []string{"1", "2", "3", "4", "5", "6"})

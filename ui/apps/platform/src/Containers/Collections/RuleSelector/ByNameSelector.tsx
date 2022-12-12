@@ -9,14 +9,14 @@ import { getCollectionAutoComplete } from 'services/CollectionsService';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 import {
     ByNameResourceSelector,
-    Collection,
+    ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
 } from '../types';
 import { generateRequest } from '../converter';
 
 export type ByNameSelectorProps = {
-    collection: Collection;
+    collection: ClientCollection;
     entityType: SelectorEntityType;
     scopedResourceSelector: ByNameResourceSelector;
     handleChange: (
@@ -78,7 +78,11 @@ function ByNameSelector({
     }
 
     return (
-        <FormGroup fieldId={`${entityType}-name-value`} label={`${entityType} name`} isRequired>
+        <FormGroup
+            fieldId={`${entityType}-name-value`}
+            label={`${entityType} name`}
+            isRequired={!isDisabled}
+        >
             <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
                 {scopedResourceSelector.rule.values.map((value, index) => (
                     <Flex key={keyFor(index)}>

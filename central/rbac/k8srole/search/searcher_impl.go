@@ -69,18 +69,18 @@ func (ds *searcherImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storag
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return k8sRolesSACPgSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+		return k8sRolesSACPgSearchHelper.FilteredSearcher(ds.indexer).Search(ctx, q)
 	}
 
-	return k8sRolesSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+	return k8sRolesSACSearchHelper.FilteredSearcher(ds.indexer).Search(ctx, q)
 }
 
 func (ds *searcherImpl) getCountResults(ctx context.Context, q *v1.Query) (int, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return k8sRolesSACPgSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)
+		return k8sRolesSACPgSearchHelper.FilteredSearcher(ds.indexer).Count(ctx, q)
 	}
 
-	return k8sRolesSACSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)
+	return k8sRolesSACSearchHelper.FilteredSearcher(ds.indexer).Count(ctx, q)
 }
 
 func convertMany(roles []*storage.K8SRole, results []search.Result) []*v1.SearchResult {

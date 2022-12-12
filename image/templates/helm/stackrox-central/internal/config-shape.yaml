@@ -19,7 +19,11 @@ ca:
   generate: null # bool
 additionalCAs: null # string | [string] | dict
 central:
-  disableTelemetry: null # bool
+  telemetry:
+    enabled: null # bool
+    storage:
+      endpoint: null # string
+      key: null # string
   config: null # string | dict
   dbConfig: null # string | dict
   endpointsConfig: null # string | dict

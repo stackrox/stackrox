@@ -74,10 +74,10 @@ export type ScopedResourceSelector =
     | ByLabelResourceSelector;
 
 /**
- * `Collection` is the front end representation of a valid collection, which is more
+ * `ClientCollection` is the front end representation of a valid collection, which is more
  * restricted than Collection objects that can be created via the API.
  */
-export type Collection = {
+export type ClientCollection = {
     id?: string;
     name: string;
     description: string;

@@ -1,48 +1,29 @@
-import {
-    authProvidersUrl,
-    selectors,
-    accessModalSelectors,
-} from '../../constants/AccessControlPage';
-import * as api from '../../constants/apiEndpoints';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
-import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
 import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
 
 import withAuth from '../../helpers/basicAuth';
 
-const h1 = 'Access Control';
-const h2 = 'Auth providers';
-
-const routeMatcherMap = {
-    authProviders: {
-        method: 'GET',
-        url: api.auth.authProviders,
-    },
-    roles: {
-        method: 'GET',
-        url: api.roles.list,
-    },
-    groups: {
-        method: 'GET',
-        url: api.groups.list,
-    },
-};
-
-function visitAuthProviders(staticResponseMap) {
-    visit(authProvidersUrl, routeMatcherMap, staticResponseMap);
-
-    cy.get(selectors.breadcrumbNav).should('not.exist');
-    cy.get(`${selectors.h1}:contains("${h1}")`);
-    cy.get(`${selectors.navLinkCurrent}:contains("${h2}")`);
-    cy.get(selectors.list.createButton).should('have.text', 'Create auth provider');
-    cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
-}
-
-function visitAuthProviderById(id, staticResponseMap) {
-    visit(`${authProvidersUrl}/${id}`, routeMatcherMap, staticResponseMap);
-}
+import {
+    assertAccessControlEntitiesPage,
+    assertAccessControlEntityDoesNotExist,
+    assertAccessControlEntityPage,
+    authProvidersAlias,
+    authProvidersAliasForDELETE,
+    authProvidersAliasForPOST,
+    authProvidersAliasForPUT,
+    authProvidersKey as entitiesKey,
+    clickConfirmationToDeleteAuthProvider,
+    clickRowActionMenuItemInTable,
+    groupsAlias,
+    groupsBatchAliasForPOST,
+    saveCreatedAuthProvider,
+    saveUpdatedAuthProvider,
+    visitAccessControlEntities,
+    visitAccessControlEntitiesWithStaticResponseForPermissions,
+    visitAccessControlEntity,
+} from './accessControl.helpers';
+import { selectors, accessModalSelectors } from './accessControl.selectors';
 
 describe('Access Control Auth providers', () => {
     withAuth();
@@ -51,9 +32,10 @@ describe('Access Control Auth providers', () => {
         const staticResponseForPermissions = {
             fixture: 'auth/mypermissionsMinimalAccess.json',
         };
-        visitWithStaticResponseForPermissions(authProvidersUrl, staticResponseForPermissions);
-
-        cy.get(`${selectors.h1}:contains("${h1}")`);
+        visitAccessControlEntitiesWithStaticResponseForPermissions(
+            entitiesKey,
+            staticResponseForPermissions
+        );
 
         cy.get(selectors.alertTitle).should(
             'contain', // instead of have.text because of "Info alert:" for screen reader
@@ -63,39 +45,31 @@ describe('Access Control Auth providers', () => {
 
     it('list has table head cells', () => {
         const staticResponseMap = {
-            authProviders: {
+            [authProvidersAlias]: {
                 fixture: 'auth/authProviders-id1-id2-id3.json',
             },
         };
-        visitAuthProviders(staticResponseMap);
+        visitAccessControlEntities(entitiesKey, staticResponseMap);
 
-        // Table has plural noun in title.
-        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - ${h2}`));
-
-        cy.get(`${selectors.list.th}:contains("Name")`);
-        cy.get(`${selectors.list.th}:contains("Type")`);
-        cy.get(`${selectors.list.th}:contains("Minimum access role")`);
-        cy.get(`${selectors.list.th}:contains("Assigned rules")`);
+        cy.get('th:contains("Name")');
+        cy.get('th:contains("Type")');
+        cy.get('th:contains("Minimum access role")');
+        cy.get('th:contains("Assigned rules")');
+        cy.get('th[aria-label="Row actions"]');
     });
 
     it('add Auth0', () => {
-        visitAuthProviders();
+        visitAccessControlEntities(entitiesKey);
 
         const type = 'Auth0';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        // Form has singular noun in title.
-        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - Auth provider`));
+        assertAccessControlEntityPage(entitiesKey);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
-
-        cy.get(selectors.h1).should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
-
-        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
+        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -110,24 +84,23 @@ describe('Access Control Auth providers', () => {
             .should('have.attr', 'required');
 
         cy.get(selectors.form.saveButton).should('be.disabled');
-        cy.get(selectors.form.cancelButton).should('be.enabled');
+        cy.get(selectors.form.cancelButton).click();
+
+        assertAccessControlEntitiesPage(entitiesKey);
     });
 
     it('add OpenID Connect', () => {
-        visitAuthProviders();
+        visitAccessControlEntities(entitiesKey);
 
         const type = 'OpenID Connect';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
+        assertAccessControlEntityPage(entitiesKey);
 
-        cy.get(selectors.h1).should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
-
-        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
+        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -163,27 +136,24 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectCallbackModeItem}:contains("HTTP POST")`).click();
         cy.get(checkboxDoNotUseClientSecret).check();
         cy.get(inputClientSecret).should('be.disabled').should('not.have.attr', 'required');
+
+        cy.get(selectors.form.saveButton).should('be.disabled');
+        cy.get(selectors.form.cancelButton).click();
+
+        assertAccessControlEntitiesPage(entitiesKey);
     });
 
     it('edits OpenID Connect with a client secret without losing the value', () => {
-        const staticResponseMap = {
-            authProviders: {
+        const entityId = 'auth-provider-1'; // corresponds to fixtures
+        const staticResponseMapForAuthProvider = {
+            [authProvidersAlias]: {
                 fixture: 'auth/authProvidersWithClientSecret.json',
             },
-            groups: {
+            [groupsAlias]: {
                 fixture: 'auth/groupsWithClientSecret.json', // to compute default access role
             },
         };
-
-        cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
-            body: {},
-        }).as('PutAuthProvider');
-        cy.intercept('POST', api.groups.batch, {
-            body: {},
-        }).as('PostGroupsBatch');
-
-        const id = 'auth-provider-1';
-        visitAuthProviderById(id, staticResponseMap);
+        visitAccessControlEntity(entitiesKey, entityId, staticResponseMapForAuthProvider);
 
         const { inputIssuer, inputClientSecret, checkboxDoNotUseClientSecret } =
             selectors.form.authProvider.oidc;
@@ -204,8 +174,16 @@ describe('Access Control Auth providers', () => {
 
         cy.get(inputIssuer).clear().type('irrelevant-updated');
 
-        cy.get(selectors.form.saveButton).click();
-        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']);
+        // Mock responses to save updated auth provider.
+        const staticResponseMapForUpdatedAuthProvider = {
+            [authProvidersAliasForPUT]: {
+                body: {},
+            },
+            [groupsBatchAliasForPOST]: {
+                body: {},
+            },
+        };
+        saveUpdatedAuthProvider(entityId, staticResponseMapForUpdatedAuthProvider);
 
         cy.get(inputClientSecret)
             .should('be.disabled')
@@ -215,24 +193,16 @@ describe('Access Control Auth providers', () => {
     });
 
     it('edit OpenID Connect minimum access role', () => {
-        const staticResponseMap = {
-            authProviders: {
+        const entityId = 'auth-provider-1'; // corresponds to fixtures
+        const staticResponseMapForAuthProvider = {
+            [authProvidersAlias]: {
                 fixture: 'auth/authProvidersWithClientSecret.json',
             },
-            groups: {
+            [groupsAlias]: {
                 fixture: 'auth/groupsWithClientSecret.json', // to compute default access role
             },
         };
-
-        cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
-            body: {},
-        }).as('PutAuthProvider');
-        cy.intercept('POST', api.groups.batch, {
-            body: {},
-        }).as('PostGroupsBatch');
-
-        const id = 'auth-provider-1';
-        visitAuthProviderById(id, staticResponseMap);
+        visitAccessControlEntity(entitiesKey, entityId, staticResponseMapForAuthProvider);
 
         const { selectMinimumAccessRole, selectMinimumAccessRoleItem } =
             selectors.form.minimumAccessRole;
@@ -243,34 +213,41 @@ describe('Access Control Auth providers', () => {
         cy.get(selectMinimumAccessRole).click();
         cy.get(`${selectMinimumAccessRoleItem}:contains("Analyst")`).click();
 
-        cy.get(selectors.form.saveButton).click();
-        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']).then(([, { request }]) => {
-            expect(request.body).to.deep.equal(
-                updateMinimumAccessRoleRequest,
-                `request: ${JSON.stringify(request.body)} expected: ${JSON.stringify(
-                    updateMinimumAccessRoleRequest
-                )}`
-            );
-        });
+        // Mock responses to save updated auth provider.
+        const staticResponseMapForUpdatedAuthProvider = {
+            [authProvidersAliasForPUT]: {
+                body: {},
+            },
+            [groupsBatchAliasForPOST]: {
+                body: {},
+            },
+        };
+        saveUpdatedAuthProvider(entityId, staticResponseMapForUpdatedAuthProvider).then(
+            ([, { request }]) => {
+                expect(request.body).to.deep.equal(
+                    updateMinimumAccessRoleRequest,
+                    `request: ${JSON.stringify(request.body)} expected: ${JSON.stringify(
+                        updateMinimumAccessRoleRequest
+                    )}`
+                );
+            }
+        );
 
         cy.get(selectMinimumAccessRole).should('contain', 'Analyst');
     });
 
     it('add SAML 2.0', () => {
-        visitAuthProviders();
+        visitAccessControlEntities(entitiesKey);
 
         const type = 'SAML 2.0';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
+        assertAccessControlEntityPage(entitiesKey);
 
-        cy.get(selectors.h1).should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
-
-        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
+        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -288,7 +265,9 @@ describe('Access Control Auth providers', () => {
             .should('have.attr', 'required');
 
         cy.get(selectors.form.saveButton).should('be.disabled');
-        cy.get(selectors.form.cancelButton).should('be.enabled');
+        cy.get(selectors.form.cancelButton).click();
+
+        assertAccessControlEntitiesPage(entitiesKey);
     });
 
     it('add User Certificates', () => {
@@ -309,20 +288,17 @@ describe('Access Control Auth providers', () => {
             active: false,
         };
 
-        visitAuthProviders();
+        visitAccessControlEntities(entitiesKey);
 
         const type = 'User Certificates';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
+        assertAccessControlEntityPage(entitiesKey);
 
-        cy.get(selectors.h1).should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
-
-        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
+        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         getInputByLabel('Name').should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -341,33 +317,29 @@ describe('Access Control Auth providers', () => {
             delay: 1,
         });
 
-        cy.intercept('POST', api.auth.authProviders, { body: mockUserCertResponse }).as(
-            'CreateAuthProvider'
-        ); // mock POST means that the list is empty after save
+        const staticResponseMapForCreatedAuthProvider = {
+            [authProvidersAliasForPOST]: {
+                body: mockUserCertResponse,
+            },
+        };
+        saveCreatedAuthProvider(staticResponseMapForCreatedAuthProvider);
 
-        cy.get(selectors.form.saveButton).should('be.enabled').click();
-
-        cy.wait('@CreateAuthProvider'); // wait for POST to finish
-        cy.wait('@authProviders'); // wait for GET to finish, which means redirect back to list page
-        cy.location('pathname').should('eq', '/main/access-control/auth-providers');
+        assertAccessControlEntitiesPage(entitiesKey);
         cy.location('search').should('eq', '');
     });
 
     it('add Google IAP', () => {
-        visitAuthProviders();
+        visitAccessControlEntities(entitiesKey);
 
         const type = 'Google IAP';
 
-        cy.get(selectors.list.createButton).click();
+        cy.get('button:contains("Create auth provider")').click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
+        assertAccessControlEntityPage(entitiesKey);
 
-        cy.get(selectors.h1).should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
-
-        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
+        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -379,69 +351,61 @@ describe('Access Control Auth providers', () => {
             .should('have.attr', 'required');
 
         cy.get(selectors.form.saveButton).should('be.disabled');
-        cy.get(selectors.form.cancelButton).should('be.enabled');
+        cy.get(selectors.form.cancelButton).click();
+
+        assertAccessControlEntitiesPage(entitiesKey);
     });
 
     describe('empty state', () => {
         it('should show a confirmation before deleting a provider', () => {
+            const entityName = 'auth-provider-1'; // corresponds to fixture
             const staticResponseMap = {
-                authProviders: {
+                [authProvidersAlias]: {
                     fixture: 'auth/authProviders-id1.json',
                 },
             };
-            visitAuthProviders(staticResponseMap);
+            visitAccessControlEntities(entitiesKey, staticResponseMap);
 
-            cy.get(selectors.list.authProviders.tdActions).click();
-
-            cy.get(selectors.list.authProviders.deleteActionItem).click();
+            clickRowActionMenuItemInTable(entityName, 'Delete auth provider');
 
             cy.get(accessModalSelectors.title);
             cy.get(accessModalSelectors.body);
             cy.get(accessModalSelectors.delete);
             cy.get(accessModalSelectors.cancel).click();
 
-            cy.get(selectors.list.authProviders.dataRows);
+            assertAccessControlEntitiesPage(entitiesKey);
         });
 
         it('should show empty state after deleting the last provider', () => {
+            const entityId = 'authProvider-id1'; // corresponds to fixture
+            const entityName = 'auth-provider-1'; // corresponds to fixture
             const staticResponseMap = {
-                authProviders: {
+                [authProvidersAlias]: {
                     fixture: 'auth/authProviders-id1.json',
                 },
             };
-            visitAuthProviders(staticResponseMap);
+            visitAccessControlEntities(entitiesKey, staticResponseMap);
 
-            const id = 'authProvider-id1';
-            cy.intercept('DELETE', `${api.auth.authProviders}/${id}`, {}).as('DeleteAuthProvider');
-            cy.log(selectors.list);
-            cy.get(selectors.list.authProviders.tdActions).click();
+            clickRowActionMenuItemInTable(entityName, 'Delete auth provider');
 
-            cy.get(selectors.list.authProviders.deleteActionItem).click();
+            const staticResponseMapToDeleteAuthProvider = {
+                [authProvidersAliasForDELETE]: {
+                    body: {},
+                },
+                [authProvidersAlias]: {
+                    body: { authProviders: [] }, // empty array like nothing is left
+                },
+            };
+            clickConfirmationToDeleteAuthProvider(entityId, staticResponseMapToDeleteAuthProvider);
 
-            // Mock now with empty list of providers like nothing is left.
-            // Same alias as in staticResponseMap above.
-            cy.intercept('GET', api.auth.authProviders, { authProviders: [] }).as('authProviders');
-            cy.get(accessModalSelectors.delete).click();
-            cy.wait(['@DeleteAuthProvider', '@authProviders']);
-
-            cy.get(selectors.list.authProviders.emptyState);
+            cy.get('.pf-c-empty-state__content:contains("No auth providers")');
         });
     });
 
     it('displays message instead of form if entity id does not exist', () => {
-        const id = 'bogus';
-        visitAuthProviderById(id);
+        const entityId = 'bogus';
+        visitAccessControlEntity(entitiesKey, entityId);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
-
-        cy.get(selectors.h1).should('not.exist');
-        cy.get(selectors.navLinkCurrent).should('not.exist');
-        cy.get(selectors.h2).should('not.exist');
-
-        cy.get(selectors.notFound.title).should('have.text', 'Auth provider does not exist');
-        cy.get(selectors.notFound.a)
-            .should('have.text', h2)
-            .should('have.attr', 'href', authProvidersUrl);
+        assertAccessControlEntityDoesNotExist(entitiesKey);
     });
 });
