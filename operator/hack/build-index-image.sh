@@ -103,7 +103,7 @@ function fetch_opm() {
   local -r arch=$(go env GOARCH) || true
 
   OPM="${BASE_DIR}/bin/opm-${OPM_VERSION}"
-  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from ""${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/${OPM_ORG}/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm""
+  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/${OPM_ORG}/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
 }
 
 YQ="yq"
