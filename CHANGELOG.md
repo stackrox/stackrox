@@ -13,6 +13,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`. 
 
 ### Deprecated Features
+- ROX-12620: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
+  - The permission `WorkflowAdministration` will deprecate the permissions `Policy, VulnerabilityReports`.
 
 ### Technical Changes
 - ROX-12967: Re-introduce `rpm` to the main image in order to be able parse installed packages on RHCOS nodes (from Compliance container)

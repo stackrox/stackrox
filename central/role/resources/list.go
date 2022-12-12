@@ -56,14 +56,14 @@ var (
 	// APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration.
 	Integration = newResourceMetadata("Integration", permissions.GlobalScope)
 
-	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
-	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
-	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
-	Namespace                        = newResourceMetadata("Namespace", permissions.NamespaceScope)
-	NetworkGraph                     = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
-	NetworkPolicy                    = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
-	Node                             = newResourceMetadata("Node", permissions.ClusterScope)
-	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
+	K8sRole        = newResourceMetadata("K8sRole", permissions.NamespaceScope)
+	K8sRoleBinding = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
+	K8sSubject     = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
+	Namespace      = newResourceMetadata("Namespace", permissions.NamespaceScope)
+	NetworkGraph   = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
+	NetworkPolicy  = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
+	Node           = newResourceMetadata("Node", permissions.ClusterScope)
+
 	Role                             = newResourceMetadata("Role", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
@@ -71,8 +71,11 @@ var (
 		permissions.GlobalScope)
 	VulnerabilityManagementRequests = newResourceMetadata("VulnerabilityManagementRequests",
 		permissions.GlobalScope)
-	VulnerabilityReports   = newResourceMetadata("VulnerabilityReports", permissions.GlobalScope)
-	WatchedImage           = newResourceMetadata("WatchedImage", permissions.GlobalScope)
+
+	WatchedImage = newResourceMetadata("WatchedImage", permissions.GlobalScope)
+	// WorkflowAdministration groups all workflow-related resources. It aims to cover core workflows
+	// such as managing policies and vulnerability reports. For instance, it has replaced:
+	// Policy, VulnerabilityReports.
 	WorkflowAdministration = newResourceMetadata("WorkflowAdministration", permissions.GlobalScope)
 
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
@@ -90,6 +93,8 @@ var (
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	NetworkGraphConfig = newDeprecatedResourceMetadata("NetworkGraphConfig",
 		permissions.GlobalScope, Administration)
+	// To-be-deprecated in 3.76 with ROX-13888 (deprecation notice in 3.74).
+	Policy = newDeprecatedResourceMetadata("Policy", permissions.GlobalScope, WorkflowAdministration)
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ProbeUpload = newDeprecatedResourceMetadata("ProbeUpload", permissions.GlobalScope,
 		Administration)
@@ -105,6 +110,9 @@ var (
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ServiceIdentity = newDeprecatedResourceMetadata("ServiceIdentity",
 		permissions.GlobalScope, Administration)
+	// To-be-deprecated in 3.76 with ROX-13888 (deprecation notice in 3.74).
+	VulnerabilityReports = newDeprecatedResourceMetadata("VulnerabilityReports", permissions.GlobalScope,
+		WorkflowAdministration)
 
 	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)

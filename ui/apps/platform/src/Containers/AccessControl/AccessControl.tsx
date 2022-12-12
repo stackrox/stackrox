@@ -61,6 +61,13 @@ function AccessControl(): ReactElement {
                             <ListItem>
                                 <b>Compliance</b> will replace <b>ComplianceRuns</b>
                             </ListItem>
+                            <ListItem>
+                                <b>Cluster</b> will cover <b>ClusterCVE</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>WorkflowAdministration</b> will replace{' '}
+                                <b>Policy, VulnerabilityReports</b>
+                            </ListItem>
                         </List>
                     </>
                 }
