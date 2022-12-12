@@ -25,5 +25,6 @@ pkg/sac/**/*    @stackrox/merlin
 pkg/images/defaults/**/* @stackrox/maple
 
 # Data Shepherds team's responsibilities include migrator
-migrator/**/*   @stackrox/data-shepherds
-tests/upgrade/* @stackrox/data-shepherds
+migrator/**/*       @stackrox/data-shepherds
+pkg/postgres/**/*   @stackrox/data-shepherds
+tests/upgrade/*     @stackrox/data-shepherds
