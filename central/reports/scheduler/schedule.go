@@ -415,7 +415,7 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 				if err != nil || len(deploymentIds) == 0 {
 					return common.Result{}, err
 				}
-				scopeQuery = fmt.Sprintf("%s:%q", search.DeploymentID.String(), strings.Join(deploymentIds, ","))
+				scopeQuery = fmt.Sprintf("%s:%s", search.DeploymentID.String(), strings.Join(deploymentIds, ","))
 				log.Infof("ROX-12629 : deployments scopeQuery : %s", scopeQuery)
 				gqlPaginationOffset = 0
 			}
