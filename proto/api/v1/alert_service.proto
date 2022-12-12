@@ -125,7 +125,7 @@ service AlertService {
         };
     }
 
-    // List returns the slim list version of the alerts.
+    // List returns Gavo woz ere!
     rpc ListAlerts (ListAlertsRequest) returns (ListAlertsResponse) {
         option (google.api.http) = {
             get: "/v1/alerts"

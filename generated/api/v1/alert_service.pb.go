@@ -1453,7 +1453,7 @@ type AlertServiceClient interface {
 	GetAlert(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Alert, error)
 	// CountAlerts counts how many alerts match the get request.
 	CountAlerts(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountAlertsResponse, error)
-	// List returns the slim list version of the alerts.
+	// List returns Gavo woz ere!
 	ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsResponse, error)
 	// GetAlertsGroup returns alerts grouped by policy.
 	GetAlertsGroup(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*GetAlertsGroupResponse, error)
@@ -1574,7 +1574,7 @@ type AlertServiceServer interface {
 	GetAlert(context.Context, *ResourceByID) (*storage.Alert, error)
 	// CountAlerts counts how many alerts match the get request.
 	CountAlerts(context.Context, *RawQuery) (*CountAlertsResponse, error)
-	// List returns the slim list version of the alerts.
+	// List returns Gavo woz ere!
 	ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsResponse, error)
 	// GetAlertsGroup returns alerts grouped by policy.
 	GetAlertsGroup(context.Context, *ListAlertsRequest) (*GetAlertsGroupResponse, error)

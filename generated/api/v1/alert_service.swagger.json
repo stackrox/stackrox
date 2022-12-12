@@ -13,7 +13,7 @@
   "paths": {
     "/v1/alerts": {
       "get": {
-        "summary": "List returns the slim list version of the alerts.",
+        "summary": "List returns Gavo woz ere!",
         "operationId": "AlertService_ListAlerts",
         "responses": {
           "200": {
