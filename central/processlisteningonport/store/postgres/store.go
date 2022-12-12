@@ -50,12 +50,15 @@ const (
 	// me all PLOP by this deployment'.
 	// XXX: Verify the query plan to make sure needed indexes are in use.
 	getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
-		"proc.podid, proc.containername, proc.signal_name, " +
-		"proc.signal_args, proc.signal_execfilepath, proc.clusterid " +
+		"proc.podid, proc.containername, " +
+		"proc.signal_containerid, " +
+		"proc.signal_name, proc.signal_args, proc.signal_execfilepath, " +
+		"proc.clusterid, proc.serialized as proc_serialized " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
 		"WHERE proc.deploymentid = $1"
+
 )
 
 var (
@@ -631,22 +634,31 @@ func (s *storeImpl) readRows(
 		var serialized []byte
 		var podId string
 		var containerName string
+		var signalContainerId string
 		var signalName string
 		var signalArgs string
 		var signalExecFilePath string
 		var clusterId string
+		var proc_serialized []byte
 
 		// We're getting ProcessIndicator directly from the SQL query, PLOP
 		// parts have to be extra deserialized.
 		if err := rows.Scan(
 			&id, &serialized,
 			&podId, &containerName,
-			&signalName, &signalArgs, &signalExecFilePath, &clusterId); err != nil {
+			&signalContainerId,
+			&signalName, &signalArgs, &signalExecFilePath,
+			&clusterId, &proc_serialized); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
 		if err := proto.Unmarshal(serialized, &msg); err != nil {
+			return nil, err
+		}
+
+		var proc_msg storage.ProcessIndicator
+		if err := proto.Unmarshal(proc_serialized, &proc_msg); err != nil {
 			return nil, err
 		}
 
@@ -656,14 +668,23 @@ func (s *storeImpl) readRows(
 				Protocol:       msg.Protocol,
 			},
 			CloseTimestamp: msg.CloseTimestamp,
-			ClusterId:	clusterId,
-			Process: &storage.ProcessIndicatorUniqueKey{
-				PodId:               podId,
-				ContainerName:       containerName,
-				ProcessName:         signalName,
-				ProcessArgs:         signalArgs,
-				ProcessExecFilePath: signalExecFilePath,
+			PodId:		podId,
+			ContainerName:	containerName,
+			Signal: &storage.ProcessSignal{
+				Id:		proc_msg.Signal.Id,
+				ContainerId:	signalContainerId,
+				Time:		proc_msg.Signal.Time,
+				Name:		signalName,
+				Args:		signalArgs,
+				ExecFilePath:	signalExecFilePath,
+				Pid:		proc_msg.Signal.Pid,
+				Uid:		proc_msg.Signal.Uid,
+				Gid:		proc_msg.Signal.Gid,
+				Lineage:	proc_msg.Signal.Lineage,
+				Scraped:	proc_msg.Signal.Scraped,
+				LineageInfo:	proc_msg.Signal.LineageInfo,
 			},
+			ClusterId:	clusterId,
 		}
 
 		plops = append(plops, plop)
@@ -672,30 +693,3 @@ func (s *storeImpl) readRows(
 	log.Debugf("Read returned %+v plops", len(plops))
 	return plops, nil
 }
-
-// Manual converting of raw data from GRPOUP BY SQL query to a map
-// {DeploymentId: [ProcessListeningOnPort]} enriched with ProcessIndicator.
-//
-// XXX: We're doing GROUP BY on the application side, which is unfortunate
-// because most likely it will be less efficient than on the database side for
-// bigger chunks of data (due to constant random memory access to build the map
-// and more data transfer).
-// If that would be a concern, grouping could be moved to the database using following query:
-//
-// 		SELECT proc.deploymentid, jsonb_agg(jsonb_build_object(
-// 			'id', plop.id, 'serialized', plop.serialized,
-// 			'podid', proc.podid, 'containername', proc.containername,
-// 			'signal_name', proc.signal_name, 'signal_args', proc.signal_args,
-// 			'signal_execfilepath', proc.signal_execfilepath))
-// 		FROM process_listening_on_ports plop
-// 		JOIN process_indicators proc
-// 		ON plop.processindicatorid = proc.id
-// 		WHERE proc.namespace = $1
-// 		GROUP BY proc.deploymentid
-//
-// The query will return PLOP grouped by deployment id in json format, which
-// pgx could scan into a map[string]string. Later on this map has to be
-// reassembled into a proper structure. One challenge here though is that the
-// serialized data will be escaped in the string format (i.e. \x1a2b3c will
-// become \\x1a2b3c), so the result has to be preprocessed before
-// unmarshalling.

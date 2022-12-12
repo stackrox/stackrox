@@ -26,9 +26,11 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type ProcessListeningOnPort struct {
 	Endpoint             *ProcessListeningOnPort_Endpoint `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Process              *ProcessIndicatorUniqueKey       `protobuf:"bytes,2,opt,name=process,proto3" json:"process,omitempty"`
-	CloseTimestamp       *types.Timestamp                 `protobuf:"bytes,3,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
-	ClusterId            string                           `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ContainerName        string                           `protobuf:"bytes,2,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
+	PodId                string                           `protobuf:"bytes,3,opt,name=pod_id,json=podId,proto3" json:"pod_id,omitempty"`
+	Signal               *ProcessSignal                   `protobuf:"bytes,4,opt,name=signal,proto3" json:"signal,omitempty"`
+	CloseTimestamp       *types.Timestamp                 `protobuf:"bytes,5,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
+	ClusterId            string                           `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
 	XXX_unrecognized     []byte                           `json:"-"`
 	XXX_sizecache        int32                            `json:"-"`
@@ -74,9 +76,23 @@ func (m *ProcessListeningOnPort) GetEndpoint() *ProcessListeningOnPort_Endpoint 
 	return nil
 }
 
-func (m *ProcessListeningOnPort) GetProcess() *ProcessIndicatorUniqueKey {
+func (m *ProcessListeningOnPort) GetContainerName() string {
 	if m != nil {
-		return m.Process
+		return m.ContainerName
+	}
+	return ""
+}
+
+func (m *ProcessListeningOnPort) GetPodId() string {
+	if m != nil {
+		return m.PodId
+	}
+	return ""
+}
+
+func (m *ProcessListeningOnPort) GetSignal() *ProcessSignal {
+	if m != nil {
+		return m.Signal
 	}
 	return nil
 }
@@ -106,7 +122,7 @@ func (m *ProcessListeningOnPort) Clone() *ProcessListeningOnPort {
 	*cloned = *m
 
 	cloned.Endpoint = m.Endpoint.Clone()
-	cloned.Process = m.Process.Clone()
+	cloned.Signal = m.Signal.Clone()
 	cloned.CloseTimestamp = m.CloseTimestamp.Clone()
 	return cloned
 }
@@ -179,6 +195,100 @@ func (m *ProcessListeningOnPort_Endpoint) Clone() *ProcessListeningOnPort_Endpoi
 	return cloned
 }
 
+type ProcessListeningOnPortFromSensor struct {
+	Port                 uint32                     `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
+	Protocol             L4Protocol                 `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
+	Process              *ProcessIndicatorUniqueKey `protobuf:"bytes,3,opt,name=process,proto3" json:"process,omitempty"`
+	CloseTimestamp       *types.Timestamp           `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
+	ClusterId            string                     `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+
+func (m *ProcessListeningOnPortFromSensor) Reset()         { *m = ProcessListeningOnPortFromSensor{} }
+func (m *ProcessListeningOnPortFromSensor) String() string { return proto.CompactTextString(m) }
+func (*ProcessListeningOnPortFromSensor) ProtoMessage()    {}
+func (*ProcessListeningOnPortFromSensor) Descriptor() ([]byte, []int) {
+	return fileDescriptor_44bd1925a567394f, []int{1}
+}
+func (m *ProcessListeningOnPortFromSensor) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProcessListeningOnPortFromSensor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProcessListeningOnPortFromSensor.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ProcessListeningOnPortFromSensor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProcessListeningOnPortFromSensor.Merge(m, src)
+}
+func (m *ProcessListeningOnPortFromSensor) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProcessListeningOnPortFromSensor) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProcessListeningOnPortFromSensor.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProcessListeningOnPortFromSensor proto.InternalMessageInfo
+
+func (m *ProcessListeningOnPortFromSensor) GetPort() uint32 {
+	if m != nil {
+		return m.Port
+	}
+	return 0
+}
+
+func (m *ProcessListeningOnPortFromSensor) GetProtocol() L4Protocol {
+	if m != nil {
+		return m.Protocol
+	}
+	return L4Protocol_L4_PROTOCOL_UNKNOWN
+}
+
+func (m *ProcessListeningOnPortFromSensor) GetProcess() *ProcessIndicatorUniqueKey {
+	if m != nil {
+		return m.Process
+	}
+	return nil
+}
+
+func (m *ProcessListeningOnPortFromSensor) GetCloseTimestamp() *types.Timestamp {
+	if m != nil {
+		return m.CloseTimestamp
+	}
+	return nil
+}
+
+func (m *ProcessListeningOnPortFromSensor) GetClusterId() string {
+	if m != nil {
+		return m.ClusterId
+	}
+	return ""
+}
+
+func (m *ProcessListeningOnPortFromSensor) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ProcessListeningOnPortFromSensor) Clone() *ProcessListeningOnPortFromSensor {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ProcessListeningOnPortFromSensor)
+	*cloned = *m
+
+	cloned.Process = m.Process.Clone()
+	cloned.CloseTimestamp = m.CloseTimestamp.Clone()
+	return cloned
+}
+
 type ProcessListeningOnPortStorage struct {
 	// Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
 	// bigint with a sequence. Unfortunately at the moment some bits of store
@@ -197,7 +307,7 @@ func (m *ProcessListeningOnPortStorage) Reset()         { *m = ProcessListeningO
 func (m *ProcessListeningOnPortStorage) String() string { return proto.CompactTextString(m) }
 func (*ProcessListeningOnPortStorage) ProtoMessage()    {}
 func (*ProcessListeningOnPortStorage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_44bd1925a567394f, []int{1}
+	return fileDescriptor_44bd1925a567394f, []int{2}
 }
 func (m *ProcessListeningOnPortStorage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -278,6 +388,7 @@ func (m *ProcessListeningOnPortStorage) Clone() *ProcessListeningOnPortStorage {
 func init() {
 	proto.RegisterType((*ProcessListeningOnPort)(nil), "storage.ProcessListeningOnPort")
 	proto.RegisterType((*ProcessListeningOnPort_Endpoint)(nil), "storage.ProcessListeningOnPort.Endpoint")
+	proto.RegisterType((*ProcessListeningOnPortFromSensor)(nil), "storage.ProcessListeningOnPortFromSensor")
 	proto.RegisterType((*ProcessListeningOnPortStorage)(nil), "storage.ProcessListeningOnPortStorage")
 }
 
@@ -286,37 +397,43 @@ func init() {
 }
 
 var fileDescriptor_44bd1925a567394f = []byte{
-	// 478 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x53, 0x41, 0x6f, 0xd3, 0x30,
-	0x14, 0xc6, 0xd9, 0x60, 0xad, 0x11, 0x43, 0xf2, 0x26, 0xa8, 0x22, 0xd6, 0x56, 0xb9, 0x2c, 0x93,
-	0xba, 0x54, 0x1a, 0x9c, 0x2a, 0xb8, 0x94, 0x71, 0xa8, 0x98, 0xb4, 0x2a, 0xc0, 0x85, 0x4b, 0x94,
-	0xc6, 0x6e, 0xb0, 0x9a, 0xf9, 0x65, 0xb6, 0xa3, 0xb1, 0x1f, 0x82, 0xc4, 0x4f, 0xe2, 0x08, 0x7f,
-	0x60, 0x42, 0xe5, 0xc6, 0xb1, 0x27, 0x8e, 0xa8, 0x8e, 0x13, 0x89, 0x50, 0x24, 0x76, 0x7b, 0xf1,
-	0xfb, 0xbe, 0xf7, 0xbe, 0xef, 0x73, 0x8c, 0x0f, 0x95, 0x06, 0x19, 0xa7, 0x6c, 0x98, 0x4b, 0x48,
-	0x98, 0x52, 0x51, 0xc6, 0x95, 0x66, 0x82, 0x8b, 0x34, 0x02, 0x11, 0xe5, 0x20, 0x75, 0x90, 0x4b,
-	0xd0, 0x40, 0x76, 0x2c, 0xd0, 0xed, 0xa5, 0x00, 0x69, 0x66, 0x08, 0x1a, 0x66, 0xc5, 0x7c, 0xa8,
-	0xf9, 0x05, 0x53, 0x3a, 0xbe, 0xc8, 0x4b, 0xa4, 0xbb, 0x9f, 0x42, 0x0a, 0xa6, 0x1c, 0xae, 0x2b,
-	0x7b, 0xea, 0x56, 0x8b, 0x04, 0xd3, 0x57, 0x20, 0x17, 0xd1, 0x3c, 0x83, 0x2b, 0xdb, 0xeb, 0x35,
-	0x45, 0x70, 0x41, 0x79, 0x12, 0x6b, 0x90, 0x25, 0xc0, 0xfb, 0xe6, 0xe0, 0x47, 0xd3, 0xb2, 0x77,
-	0x56, 0xe9, 0x3b, 0x17, 0x53, 0x90, 0x9a, 0x9c, 0xe2, 0x16, 0x13, 0x34, 0x07, 0x2e, 0x74, 0x07,
-	0xf5, 0x91, 0x7f, 0xff, 0xc4, 0x0f, 0xec, 0xb8, 0x60, 0x33, 0x25, 0x78, 0x65, 0xf1, 0x61, 0xcd,
-	0x24, 0xcf, 0xf1, 0x8e, 0xdd, 0xdd, 0x71, 0xcc, 0x10, 0xaf, 0x39, 0x64, 0x52, 0x49, 0x7a, 0x27,
-	0xf8, 0x65, 0xc1, 0x5e, 0xb3, 0xeb, 0xb0, 0xa2, 0x90, 0x97, 0xf8, 0x61, 0x92, 0x81, 0x62, 0x51,
-	0x1d, 0x45, 0x67, 0xcb, 0x4c, 0x71, 0x83, 0x32, 0xac, 0xa0, 0x0a, 0x2b, 0x78, 0x5b, 0x21, 0xc2,
-	0x5d, 0x43, 0xa9, 0xbf, 0xc9, 0x01, 0xc6, 0x49, 0x56, 0x28, 0xcd, 0x64, 0xc4, 0x69, 0xe7, 0x6e,
-	0x1f, 0xf9, 0xed, 0xb0, 0x6d, 0x4f, 0x26, 0xd4, 0x3d, 0xc7, 0xad, 0x4a, 0x37, 0x21, 0x78, 0x7b,
-	0x7d, 0x33, 0xc6, 0xef, 0x83, 0xd0, 0xd4, 0x64, 0x88, 0x5b, 0x66, 0x49, 0x02, 0x99, 0xb1, 0xb0,
-	0x7b, 0xb2, 0x57, 0x5b, 0x38, 0x7b, 0x36, 0xb5, 0xad, 0xb0, 0x06, 0x79, 0x3f, 0x1d, 0x7c, 0xb0,
-	0x39, 0xa0, 0x37, 0x25, 0x8d, 0x1c, 0x62, 0x87, 0x53, 0xb3, 0xa4, 0x3d, 0x7e, 0xbc, 0xba, 0xe9,
-	0xed, 0xa9, 0xcb, 0x6c, 0xe4, 0xe5, 0x8b, 0x81, 0xbe, 0xce, 0x99, 0x5f, 0x14, 0x9c, 0x1e, 0x79,
-	0xa1, 0xc3, 0x69, 0xad, 0xc7, 0xf9, 0x87, 0x9e, 0xad, 0xff, 0xd0, 0xb3, 0x29, 0xc4, 0xed, 0x5b,
-	0x87, 0xf8, 0x09, 0xe1, 0xfd, 0xbf, 0x7e, 0xa2, 0x3a, 0xcf, 0x71, 0xb2, 0xba, 0xe9, 0x45, 0x8a,
-	0xc5, 0x32, 0xf9, 0x30, 0xf2, 0xac, 0xf9, 0xfe, 0xe4, 0x74, 0xb0, 0x16, 0xc6, 0xbc, 0xbe, 0xf1,
-	0x37, 0x5f, 0xf8, 0xcd, 0x2b, 0x1f, 0x71, 0x7a, 0x34, 0x10, 0x70, 0x3c, 0x5f, 0x1c, 0x27, 0x20,
-	0x94, 0x96, 0x31, 0x17, 0x7a, 0xc0, 0x05, 0x65, 0x1f, 0x5f, 0xcc, 0xb4, 0x64, 0xec, 0x8f, 0x44,
-	0x48, 0xde, 0xa0, 0x4f, 0xe8, 0xf8, 0xc9, 0x97, 0x65, 0x17, 0x7d, 0x5d, 0x76, 0xd1, 0xf7, 0x65,
-	0x17, 0x7d, 0xfe, 0xd1, 0xbd, 0xf3, 0xbe, 0x7a, 0x4f, 0xbf, 0x10, 0x9a, 0xdd, 0x33, 0xce, 0x9e,
-	0xfe, 0x0e, 0x00, 0x00, 0xff, 0xff, 0x21, 0x5c, 0xa4, 0x1d, 0x8d, 0x03, 0x00, 0x00,
+	// 563 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0x4f, 0x6b, 0x13, 0x41,
+	0x18, 0xc6, 0xdd, 0x6d, 0xfe, 0x4e, 0x69, 0x84, 0x69, 0xad, 0x21, 0xd8, 0x24, 0x2c, 0x48, 0x53,
+	0x48, 0x37, 0x10, 0x3d, 0x05, 0xbd, 0xd4, 0x2a, 0x04, 0x8b, 0x0d, 0x1b, 0xbd, 0x78, 0x59, 0x36,
+	0x3b, 0x93, 0x75, 0xc8, 0x66, 0xde, 0xed, 0xcc, 0x84, 0xda, 0xa3, 0x47, 0x3f, 0x80, 0xe0, 0x47,
+	0xf2, 0xe8, 0x27, 0x28, 0x12, 0x6f, 0x1e, 0x7b, 0xf2, 0x28, 0x99, 0xcc, 0x2e, 0xb8, 0x46, 0x10,
+	0xec, 0x6d, 0x32, 0xef, 0xf3, 0x64, 0x9e, 0xe7, 0x37, 0x93, 0xa0, 0x43, 0xa9, 0x40, 0x04, 0x11,
+	0xed, 0x25, 0x02, 0x42, 0x2a, 0xa5, 0x1f, 0x33, 0xa9, 0x28, 0x67, 0x3c, 0xf2, 0x81, 0xfb, 0x09,
+	0x08, 0xe5, 0x26, 0x02, 0x14, 0xe0, 0xb2, 0x11, 0x36, 0x5a, 0x11, 0x40, 0x14, 0x6b, 0x83, 0x82,
+	0xc9, 0x62, 0xda, 0x53, 0x6c, 0x4e, 0xa5, 0x0a, 0xe6, 0xc9, 0x5a, 0xd9, 0xd8, 0x8b, 0x20, 0x02,
+	0xbd, 0xec, 0xad, 0x56, 0x66, 0xb7, 0x91, 0x1e, 0xc4, 0xa9, 0xba, 0x04, 0x31, 0xf3, 0xa7, 0x31,
+	0x5c, 0x9a, 0x59, 0x2b, 0x1f, 0x82, 0x71, 0xc2, 0xc2, 0x40, 0x81, 0x58, 0x0b, 0x9c, 0x0f, 0x5b,
+	0x68, 0x7f, 0xb4, 0x9e, 0x9d, 0xa5, 0xf9, 0xce, 0xf9, 0x08, 0x84, 0xc2, 0xa7, 0xa8, 0x42, 0x39,
+	0x49, 0x80, 0x71, 0x55, 0xb7, 0xda, 0x56, 0x67, 0xbb, 0xdf, 0x71, 0xcd, 0xd7, 0xb9, 0x9b, 0x2d,
+	0xee, 0x73, 0xa3, 0xf7, 0x32, 0x27, 0x7e, 0x88, 0x6a, 0x21, 0x70, 0x15, 0x30, 0x4e, 0x85, 0xcf,
+	0x83, 0x39, 0xad, 0xdb, 0x6d, 0xab, 0x53, 0xf5, 0x76, 0xb2, 0xdd, 0x57, 0xc1, 0x9c, 0xe2, 0x7b,
+	0xa8, 0x94, 0x00, 0xf1, 0x19, 0xa9, 0x6f, 0xe9, 0x71, 0x31, 0x01, 0x32, 0x24, 0xd8, 0x45, 0x25,
+	0xc9, 0x22, 0x1e, 0xc4, 0xf5, 0x82, 0x4e, 0xb0, 0x9f, 0x4f, 0x30, 0xd6, 0x53, 0xcf, 0xa8, 0xf0,
+	0x33, 0x74, 0x37, 0x8c, 0x41, 0x52, 0x3f, 0x43, 0x57, 0x2f, 0x6a, 0x63, 0xc3, 0x5d, 0xc3, 0x75,
+	0x53, 0xb8, 0xee, 0xeb, 0x54, 0xe1, 0xd5, 0xb4, 0x25, 0xfb, 0x8c, 0x0f, 0x10, 0x0a, 0xe3, 0x85,
+	0x54, 0x54, 0xac, 0xf2, 0x94, 0x75, 0x9e, 0xaa, 0xd9, 0x19, 0x92, 0xc6, 0x39, 0xaa, 0xa4, 0x3d,
+	0x31, 0x46, 0x85, 0xd5, 0x4d, 0x6a, 0x3e, 0x3b, 0x9e, 0x5e, 0xe3, 0x1e, 0xaa, 0xe8, 0x43, 0x42,
+	0x88, 0x75, 0xd7, 0x5a, 0x7f, 0x37, 0x4b, 0x7d, 0xf6, 0x78, 0x64, 0x46, 0x5e, 0x26, 0x72, 0x3e,
+	0xda, 0xa8, 0xbd, 0x19, 0xe8, 0x0b, 0x01, 0xf3, 0x31, 0xe5, 0x12, 0xc4, 0xad, 0x9c, 0x84, 0x9f,
+	0xa0, 0xb2, 0x79, 0x08, 0x1a, 0xf3, 0x76, 0xdf, 0xc9, 0xf3, 0x1c, 0xa6, 0xef, 0xe3, 0x0d, 0x67,
+	0x17, 0x0b, 0xfa, 0x92, 0x5e, 0x79, 0xa9, 0x65, 0x13, 0xdc, 0xc2, 0x7f, 0xc2, 0x2d, 0xe5, 0xe0,
+	0x3a, 0x3f, 0x6c, 0x74, 0xb0, 0x99, 0xc5, 0x78, 0x1d, 0x14, 0x1f, 0x22, 0x9b, 0x11, 0x8d, 0xa1,
+	0x7a, 0x72, 0xff, 0xe6, 0xba, 0xb5, 0x2b, 0x2f, 0xe2, 0x81, 0x93, 0xcc, 0xba, 0xea, 0x2a, 0xa1,
+	0x9d, 0xc5, 0x82, 0x91, 0x23, 0xc7, 0xb3, 0x19, 0xc9, 0x88, 0xd9, 0x7f, 0x21, 0xb6, 0xf5, 0x2f,
+	0xc4, 0x6e, 0xa5, 0xf3, 0x27, 0x0b, 0xed, 0xfd, 0xf1, 0x03, 0x5c, 0xd5, 0x2f, 0xea, 0x16, 0xe1,
+	0xcd, 0x75, 0xcb, 0x97, 0x34, 0x10, 0xe1, 0xbb, 0x81, 0x63, 0xca, 0xb7, 0x87, 0xa7, 0xdd, 0x55,
+	0x30, 0xea, 0xb4, 0x75, 0xbf, 0xe9, 0xac, 0x93, 0xbf, 0xa1, 0x01, 0x23, 0x47, 0x5d, 0x0e, 0xc7,
+	0xd3, 0xd9, 0x71, 0x08, 0x5c, 0x2a, 0x11, 0x30, 0xae, 0xba, 0x8c, 0x13, 0xfa, 0xfe, 0xe9, 0x44,
+	0x09, 0x4a, 0x7f, 0x23, 0x82, 0x93, 0x9c, 0x7d, 0x48, 0x4e, 0x1e, 0x7c, 0x59, 0x36, 0xad, 0xaf,
+	0xcb, 0xa6, 0xf5, 0x6d, 0xd9, 0xb4, 0x3e, 0x7f, 0x6f, 0xde, 0x79, 0x9b, 0xfe, 0x17, 0xfd, 0xb4,
+	0xac, 0x49, 0x49, 0x37, 0x7b, 0xf4, 0x2b, 0x00, 0x00, 0xff, 0xff, 0x31, 0xfd, 0x94, 0x0f, 0xc9,
+	0x04, 0x00, 0x00,
 }
 
 func (m *ProcessListeningOnPort) Marshal() (dAtA []byte, err error) {
@@ -348,7 +465,7 @@ func (m *ProcessListeningOnPort) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		copy(dAtA[i:], m.ClusterId)
 		i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(len(m.ClusterId)))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x3a
 	}
 	if m.CloseTimestamp != nil {
 		{
@@ -360,17 +477,31 @@ func (m *ProcessListeningOnPort) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 			i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x2a
 	}
-	if m.Process != nil {
+	if m.Signal != nil {
 		{
-			size, err := m.Process.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Signal.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.PodId) > 0 {
+		i -= len(m.PodId)
+		copy(dAtA[i:], m.PodId)
+		i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(len(m.PodId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.ContainerName) > 0 {
+		i -= len(m.ContainerName)
+		copy(dAtA[i:], m.ContainerName)
+		i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(len(m.ContainerName)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -412,6 +543,74 @@ func (m *ProcessListeningOnPort_Endpoint) MarshalToSizedBuffer(dAtA []byte) (int
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Protocol != 0 {
+		i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(m.Protocol))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Port != 0 {
+		i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(m.Port))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ProcessListeningOnPortFromSensor) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProcessListeningOnPortFromSensor) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ProcessListeningOnPortFromSensor) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ClusterId) > 0 {
+		i -= len(m.ClusterId)
+		copy(dAtA[i:], m.ClusterId)
+		i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(len(m.ClusterId)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.CloseTimestamp != nil {
+		{
+			size, err := m.CloseTimestamp.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.Process != nil {
+		{
+			size, err := m.Process.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
 	}
 	if m.Protocol != 0 {
 		i = encodeVarintProcessListeningOnPort(dAtA, i, uint64(m.Protocol))
@@ -510,8 +709,16 @@ func (m *ProcessListeningOnPort) Size() (n int) {
 		l = m.Endpoint.Size()
 		n += 1 + l + sovProcessListeningOnPort(uint64(l))
 	}
-	if m.Process != nil {
-		l = m.Process.Size()
+	l = len(m.ContainerName)
+	if l > 0 {
+		n += 1 + l + sovProcessListeningOnPort(uint64(l))
+	}
+	l = len(m.PodId)
+	if l > 0 {
+		n += 1 + l + sovProcessListeningOnPort(uint64(l))
+	}
+	if m.Signal != nil {
+		l = m.Signal.Size()
 		n += 1 + l + sovProcessListeningOnPort(uint64(l))
 	}
 	if m.CloseTimestamp != nil {
@@ -539,6 +746,36 @@ func (m *ProcessListeningOnPort_Endpoint) Size() (n int) {
 	}
 	if m.Protocol != 0 {
 		n += 1 + sovProcessListeningOnPort(uint64(m.Protocol))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ProcessListeningOnPortFromSensor) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Port != 0 {
+		n += 1 + sovProcessListeningOnPort(uint64(m.Port))
+	}
+	if m.Protocol != 0 {
+		n += 1 + sovProcessListeningOnPort(uint64(m.Protocol))
+	}
+	if m.Process != nil {
+		l = m.Process.Size()
+		n += 1 + l + sovProcessListeningOnPort(uint64(l))
+	}
+	if m.CloseTimestamp != nil {
+		l = m.CloseTimestamp.Size()
+		n += 1 + l + sovProcessListeningOnPort(uint64(l))
+	}
+	l = len(m.ClusterId)
+	if l > 0 {
+		n += 1 + l + sovProcessListeningOnPort(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -649,7 +886,71 @@ func (m *ProcessListeningOnPort) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Process", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ContainerName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProcessListeningOnPort
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ContainerName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PodId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProcessListeningOnPort
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PodId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signal", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -676,14 +977,14 @@ func (m *ProcessListeningOnPort) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Process == nil {
-				m.Process = &ProcessIndicatorUniqueKey{}
+			if m.Signal == nil {
+				m.Signal = &ProcessSignal{}
 			}
-			if err := m.Process.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Signal.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
-		case 3:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CloseTimestamp", wireType)
 			}
@@ -719,7 +1020,7 @@ func (m *ProcessListeningOnPort) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
 			}
@@ -840,6 +1141,199 @@ func (m *ProcessListeningOnPort_Endpoint) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipProcessListeningOnPort(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProcessListeningOnPortFromSensor) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowProcessListeningOnPort
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProcessListeningOnPortFromSensor: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProcessListeningOnPortFromSensor: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Port", wireType)
+			}
+			m.Port = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProcessListeningOnPort
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Port |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Protocol", wireType)
+			}
+			m.Protocol = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProcessListeningOnPort
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Protocol |= L4Protocol(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Process", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProcessListeningOnPort
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Process == nil {
+				m.Process = &ProcessIndicatorUniqueKey{}
+			}
+			if err := m.Process.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CloseTimestamp", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProcessListeningOnPort
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CloseTimestamp == nil {
+				m.CloseTimestamp = &types.Timestamp{}
+			}
+			if err := m.CloseTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProcessListeningOnPort
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthProcessListeningOnPort
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipProcessListeningOnPort(dAtA[iNdEx:])
