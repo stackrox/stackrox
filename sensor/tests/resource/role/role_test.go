@@ -20,12 +20,13 @@ var (
 )
 
 type RoleDependencySuite struct {
-	testContext *resource.TestContext
+	resyncEnabled bool
+	testContext   *resource.TestContext
 	suite.Suite
 }
 
 func Test_RoleDependency(t *testing.T) {
-	suite.Run(t, new(RoleDependencySuite))
+	suite.Run(t, &RoleDependencySuite{resyncEnabled: false})
 }
 
 var _ suite.SetupAllSuite = &RoleDependencySuite{}
@@ -37,7 +38,12 @@ func (s *RoleDependencySuite) TearDownTest() {
 }
 
 func (s *RoleDependencySuite) SetupSuite() {
-	if testContext, err := resource.NewContext(s.T()); err != nil {
+	config := resource.DefaultTestSetupConfig()
+	if !s.resyncEnabled {
+		s.T().Setenv("ROX_RESYNC_DISABLED", "true")
+		config.SensorResyncTime = 0
+	}
+	if testContext, err := resource.NewContextWithConfig(s.T(), config); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
 		s.testContext = testContext

@@ -4,21 +4,34 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 type namespacedSubject string
 
-func nsSubjectFromSubject(s *storage.Subject) namespacedSubject {
+func (ns namespacedSubject) decode() (string, string, error) {
+	parts := strings.Split(string(ns), "#")
+	if len(parts) != 2 {
+		return "", "", errors.Errorf("unpacking namespaced subject: expected value to be split by # symbol: %s", string(ns))
+	}
+	return parts[0], parts[1], nil
+}
+
+func encodeNamespacedName(name, namespace string) namespacedSubject {
 	b := strings.Builder{}
-	name := s.GetName()
-	namespace := s.GetNamespace()
 	b.Grow(len(namespace) + len(name) + 1)
 	b.WriteString(namespace)
 	b.WriteString("#")
 	b.WriteString(name)
 	return namespacedSubject(b.String())
+}
+
+func nsSubjectFromSubject(s *storage.Subject) namespacedSubject {
+	name := s.GetName()
+	namespace := s.GetNamespace()
+	return encodeNamespacedName(name, namespace)
 }
 
 type evaluator struct {

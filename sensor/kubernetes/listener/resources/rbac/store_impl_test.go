@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -10,9 +11,301 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+)
+
+var (
+	// Roles:
+	//  1. role-admin (all verbs on all resources)
+	//  2. role-default (get)
+	//  3. role-elevated (get, list) in 2 rules
+	//  4. role-elevated-2 (get, list) in a single rule
+	// Bindings:
+	//  1. admin-subject      -> role-admin
+	//  2. default-subject    -> role-default
+	//  3. elevated-subject   -> role-elevated
+	//  4. elevated-subject-2 -> role-elevated-2
+	// Cluster Roles:
+	//  1. cluster-admin (all verbs on all resources)
+	//  2. cluster-elevated (get on all resources)
+	//  3. cluster-elevated-2 (deletecollection)
+	//  4. cluster-elevated-3 (deletecollection on pod duplicated)
+	//  5. cluster-none (invalid verb on all resources in all API groups)
+	//  6. cluster-elevated-admin (all verbs on all resources with additional rule)
+	// Cluster Bindings:
+	//  3. cluster-admin-subject    -> cluster-admin
+	//  4. cluster-elevated-subject -> cluster-elevated
+	//  5. cluster-elevated-admin   -> cluster-admin-2]
+	//  6. cluster-elevated-2       -> cluster-elevated-subject-3
+	//  7. cluster-elevated-3       -> cluster-elevated-subject-4
+	//  8. cluster-none             -> cluster-none-subject
+	roles = []*v1.Role{
+		{
+			ObjectMeta: meta("role-admin"),
+		},
+		{
+			ObjectMeta: meta("role-default"),
+		},
+		{
+			ObjectMeta: meta("role-admin"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			}},
+		},
+		{
+			ObjectMeta: meta("role-default"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"get"},
+			}},
+		},
+		{
+			ObjectMeta: meta("role-elevated"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"get"},
+			}, {
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"list"},
+			}},
+		},
+		{
+			ObjectMeta: meta("role-elevated-2"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"get", "list"},
+			}},
+		},
+	}
+	bindings = []*v1.RoleBinding{
+		{
+			ObjectMeta: meta("b1"),
+			RoleRef:    role("role-admin"),
+		},
+		{
+			ObjectMeta: meta("b2"),
+			RoleRef:    role("role-default"),
+		},
+		{
+			ObjectMeta: meta("b1"),
+			RoleRef:    role("role-admin"),
+			Subjects: []v1.Subject{
+				{
+					Name:      "admin-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+				{
+					Name:      "cluster-namespace-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+			},
+		},
+		{
+			ObjectMeta: meta("b2"),
+			RoleRef:    role("role-default"),
+			Subjects: []v1.Subject{{
+				Name:      "default-subject",
+				Kind:      v1.ServiceAccountKind,
+				Namespace: "n1",
+			}},
+		},
+		{
+			ObjectMeta: meta("b3"),
+			RoleRef:    role("role-elevated"),
+			Subjects: []v1.Subject{{
+				Name:      "elevated-subject",
+				Kind:      v1.ServiceAccountKind,
+				Namespace: "n1",
+			}},
+		},
+		{
+			ObjectMeta: meta("b4"),
+			RoleRef:    role("role-elevated-2"),
+			Subjects: []v1.Subject{{
+				Name:      "elevated-subject-2",
+				Kind:      v1.ServiceAccountKind,
+				Namespace: "n1",
+			}},
+		},
+	}
+	clusterRoles = []*v1.ClusterRole{
+		{
+			ObjectMeta: meta("cluster-admin"),
+		},
+		{
+			ObjectMeta: meta("cluster-elevated"),
+		},
+		{
+			ObjectMeta: meta("cluster-admin"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-elevated-2"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"deletecollection"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-elevated-3"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"pod"},
+				Verbs:     []string{"deletecollection"},
+			}, {
+				APIGroups: []string{""},
+				Resources: []string{"pod"},
+				Verbs:     []string{"deletecollection"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-none"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"invalidverb"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-elevated-admin"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"get"},
+			}, {
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-elevated"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"get"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-elevated"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"get"},
+			}},
+		},
+	}
+	clusterBindings = []*v1.ClusterRoleBinding{
+		{
+			ObjectMeta: meta("b3"),
+			RoleRef:    clusterRole("cluster-admin"),
+		},
+		{
+			ObjectMeta: meta("b4"),
+			RoleRef:    clusterRole("cluster-elevated"),
+		},
+		{
+			ObjectMeta: meta("b3"),
+			RoleRef:    clusterRole("cluster-admin"),
+			Subjects: []v1.Subject{{
+				Name: "cluster-admin-subject",
+				Kind: v1.ServiceAccountKind,
+			}},
+		},
+		{
+			ObjectMeta: meta("b4"),
+			RoleRef:    clusterRole("cluster-elevated"),
+			Subjects: []v1.Subject{
+				{
+					Name:      "cluster-elevated-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+				{
+					Name:      "cluster-elevated-subject-2",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+				{
+					Name:      "cluster-namespace-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+			},
+		},
+		{
+			ObjectMeta: meta("b5"),
+			RoleRef:    clusterRole("cluster-elevated-admin"),
+			Subjects: []v1.Subject{
+				{
+					Name:      "cluster-admin-2",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+			},
+		},
+		{
+			ObjectMeta: meta("b6"),
+			RoleRef:    clusterRole("cluster-elevated-2"),
+			Subjects: []v1.Subject{{
+				Name: "cluster-elevated-subject-3",
+				Kind: v1.ServiceAccountKind,
+			}},
+		},
+		{
+			ObjectMeta: meta("b7"),
+			RoleRef:    clusterRole("cluster-elevated-3"),
+			Subjects: []v1.Subject{{
+				Name: "cluster-elevated-subject-4",
+				Kind: v1.ServiceAccountKind,
+			}},
+		},
+		{
+			ObjectMeta: meta("b8"),
+			RoleRef:    clusterRole("cluster-none"),
+			Subjects: []v1.Subject{{
+				Name: "cluster-none-subject",
+				Kind: v1.ServiceAccountKind,
+			}},
+		},
+		{
+			ObjectMeta: meta("b4"),
+			RoleRef:    clusterRole("cluster-elevated"),
+			Subjects: []v1.Subject{
+				{
+					Name:      "cluster-elevated-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+				{
+					Name:      "cluster-elevated-subject-2",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+				{
+					Name:      "cluster-namespace-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+			},
+		},
+	}
 )
 
 func TestStore(t *testing.T) {
@@ -467,296 +760,6 @@ func BenchmarkRBACUpsertExistingBinding(b *testing.B) {
 }
 
 func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
-	// This test creates roles and bindings and then updates them to match following state:
-	// Roles:
-	//  1. role-admin (all verbs on all resources)
-	//  2. role-default (get)
-	//  3. role-elevated (get, list) in 2 rules
-	//  4. role-elevated-2 (get, list) in a single rule
-	// Bindings:
-	//  1. admin-subject      -> role-admin
-	//  2. default-subject    -> role-default
-	//  3. elevated-subject   -> role-elevated
-	//  4. elevated-subject-2 -> role-elevated-2
-	// Cluster Roles:
-	//  1. cluster-admin (all verbs on all resources)
-	//  2. cluster-elevated (get on all resources)
-	//  3. cluster-elevated-2 (deletecollection)
-	//  4. cluster-elevated-3 (deletecollection on pod duplicated)
-	//  5. cluster-none (invalid verb on all resources in all API groups)
-	//  6. cluster-elevated-admin (all verbs on all resources with additional rule)
-	// Cluster Bindings:
-	//  3. cluster-admin-subject    -> cluster-admin
-	//  4. cluster-elevated-subject -> cluster-elevated
-	//  5. cluster-elevated-admin   -> cluster-admin-2]
-	//  6. cluster-elevated-2       -> cluster-elevated-subject-3
-	//  7. cluster-elevated-3       -> cluster-elevated-subject-4
-	//  8. cluster-none             -> cluster-none-subject
-	roles := []*v1.Role{
-		{
-			ObjectMeta: meta("role-admin"),
-		},
-		{
-			ObjectMeta: meta("role-default"),
-		},
-		{
-			ObjectMeta: meta("role-admin"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{"*"},
-				Verbs:     []string{"*"},
-			}},
-		},
-		{
-			ObjectMeta: meta("role-default"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{""},
-				Verbs:     []string{"get"},
-			}},
-		},
-		{
-			ObjectMeta: meta("role-elevated"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{""},
-				Verbs:     []string{"get"},
-			}, {
-				APIGroups: []string{""},
-				Resources: []string{""},
-				Verbs:     []string{"list"},
-			}},
-		},
-		{
-			ObjectMeta: meta("role-elevated-2"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{""},
-				Verbs:     []string{"get", "list"},
-			}},
-		},
-	}
-	bindings := []*v1.RoleBinding{
-		{
-			ObjectMeta: meta("b1"),
-			RoleRef:    role("role-admin"),
-		},
-		{
-			ObjectMeta: meta("b2"),
-			RoleRef:    role("role-default"),
-		},
-		{
-			ObjectMeta: meta("b1"),
-			RoleRef:    role("role-admin"),
-			Subjects: []v1.Subject{
-				{
-					Name:      "admin-subject",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-				{
-					Name:      "cluster-namespace-subject",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-			},
-		},
-		{
-			ObjectMeta: meta("b2"),
-			RoleRef:    role("role-default"),
-			Subjects: []v1.Subject{{
-				Name:      "default-subject",
-				Kind:      v1.ServiceAccountKind,
-				Namespace: "n1",
-			}},
-		},
-		{
-			ObjectMeta: meta("b3"),
-			RoleRef:    role("role-elevated"),
-			Subjects: []v1.Subject{{
-				Name:      "elevated-subject",
-				Kind:      v1.ServiceAccountKind,
-				Namespace: "n1",
-			}},
-		},
-		{
-			ObjectMeta: meta("b4"),
-			RoleRef:    role("role-elevated-2"),
-			Subjects: []v1.Subject{{
-				Name:      "elevated-subject-2",
-				Kind:      v1.ServiceAccountKind,
-				Namespace: "n1",
-			}},
-		},
-	}
-	clusterRoles := []*v1.ClusterRole{
-		{
-			ObjectMeta: meta("cluster-admin"),
-		},
-		{
-			ObjectMeta: meta("cluster-elevated"),
-		},
-		{
-			ObjectMeta: meta("cluster-admin"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{"*"},
-				Verbs:     []string{"*"},
-			}},
-		},
-		{
-			ObjectMeta: meta("cluster-elevated-2"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{"*"},
-				Verbs:     []string{"deletecollection"},
-			}},
-		},
-		{
-			ObjectMeta: meta("cluster-elevated-3"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{"pod"},
-				Verbs:     []string{"deletecollection"},
-			}, {
-				APIGroups: []string{""},
-				Resources: []string{"pod"},
-				Verbs:     []string{"deletecollection"},
-			}},
-		},
-		{
-			ObjectMeta: meta("cluster-none"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{"*"},
-				Resources: []string{"*"},
-				Verbs:     []string{"invalidverb"},
-			}},
-		},
-		{
-			ObjectMeta: meta("cluster-elevated-admin"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{"*"},
-				Verbs:     []string{"get"},
-			}, {
-				APIGroups: []string{""},
-				Resources: []string{"*"},
-				Verbs:     []string{"*"},
-			}},
-		},
-		{
-			ObjectMeta: meta("cluster-elevated"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{"*"},
-				Verbs:     []string{"get"},
-			}},
-		},
-		{
-			ObjectMeta: meta("cluster-elevated"),
-			Rules: []v1.PolicyRule{{
-				APIGroups: []string{""},
-				Resources: []string{"*"},
-				Verbs:     []string{"get"},
-			}},
-		},
-	}
-	clusterBindings := []*v1.ClusterRoleBinding{
-		{
-			ObjectMeta: meta("b3"),
-			RoleRef:    clusterRole("cluster-admin"),
-		},
-		{
-			ObjectMeta: meta("b4"),
-			RoleRef:    clusterRole("cluster-elevated"),
-		},
-		{
-			ObjectMeta: meta("b3"),
-			RoleRef:    clusterRole("cluster-admin"),
-			Subjects: []v1.Subject{{
-				Name: "cluster-admin-subject",
-				Kind: v1.ServiceAccountKind,
-			}},
-		},
-		{
-			ObjectMeta: meta("b4"),
-			RoleRef:    clusterRole("cluster-elevated"),
-			Subjects: []v1.Subject{
-				{
-					Name:      "cluster-elevated-subject",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-				{
-					Name:      "cluster-elevated-subject-2",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-				{
-					Name:      "cluster-namespace-subject",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-			},
-		},
-		{
-			ObjectMeta: meta("b5"),
-			RoleRef:    clusterRole("cluster-elevated-admin"),
-			Subjects: []v1.Subject{
-				{
-					Name:      "cluster-admin-2",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-			},
-		},
-		{
-			ObjectMeta: meta("b6"),
-			RoleRef:    clusterRole("cluster-elevated-2"),
-			Subjects: []v1.Subject{{
-				Name: "cluster-elevated-subject-3",
-				Kind: v1.ServiceAccountKind,
-			}},
-		},
-		{
-			ObjectMeta: meta("b7"),
-			RoleRef:    clusterRole("cluster-elevated-3"),
-			Subjects: []v1.Subject{{
-				Name: "cluster-elevated-subject-4",
-				Kind: v1.ServiceAccountKind,
-			}},
-		},
-		{
-			ObjectMeta: meta("b8"),
-			RoleRef:    clusterRole("cluster-none"),
-			Subjects: []v1.Subject{{
-				Name: "cluster-none-subject",
-				Kind: v1.ServiceAccountKind,
-			}},
-		},
-		{
-			ObjectMeta: meta("b4"),
-			RoleRef:    clusterRole("cluster-elevated"),
-			Subjects: []v1.Subject{
-				{
-					Name:      "cluster-elevated-subject",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-				{
-					Name:      "cluster-elevated-subject-2",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-				{
-					Name:      "cluster-namespace-subject",
-					Kind:      v1.ServiceAccountKind,
-					Namespace: "n1",
-				},
-			},
-		},
-	}
-
 	testCases := []struct {
 		deployment *storage.Deployment
 		expected   storage.PermissionLevel
@@ -818,6 +821,84 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 			t.Parallel()
 			assert.Equal(t, storage.PermissionLevel_NONE.String(), storeWithNoBindings.GetPermissionLevelForDeployment(tc.deployment).String())
 		})
+	}
+}
+
+func Test_FindSubjectsFromNamespacedRole(t *testing.T) {
+	testCase := map[string]struct {
+		queryNamespace, queryRoleName string
+		expectedServiceAccounts       []string
+	}{
+		"role-admin-id with two Service Account subjects": {
+			queryNamespace:          "n1",
+			queryRoleName:           "role-admin",
+			expectedServiceAccounts: []string{"admin-subject", "cluster-namespace-subject"},
+		},
+		"role-default-id with one Service Account subject": {
+			queryNamespace:          "n1",
+			queryRoleName:           "role-default",
+			expectedServiceAccounts: []string{"default-subject"},
+		},
+	}
+
+	for name, tc := range testCase {
+		t.Run(name, func(t *testing.T) {
+			store := setupStore(roles, clusterRoles, bindings, clusterBindings)
+			subjects := store.FindSubjectForRole(tc.queryNamespace, tc.queryRoleName)
+			require.Len(t, subjects, len(tc.expectedServiceAccounts))
+
+			var flatSubjects []string
+			for _, subj := range subjects {
+				_, sa, err := subj.decode()
+				require.NoError(t, err, "should be able to decode namespace#name value")
+				flatSubjects = append(flatSubjects, sa)
+			}
+
+			sort.Strings(flatSubjects)
+			sort.Strings(tc.expectedServiceAccounts)
+
+			assert.Equal(t, tc.expectedServiceAccounts, flatSubjects)
+		})
+
+	}
+}
+
+func Test_FindSubjectForBinding(t *testing.T) {
+	testCase := map[string]struct {
+		queryNamespace, queryBinding string
+		expectedServiceAccounts      []string
+	}{
+		"b1-id with two Service Account subjects": {
+			queryNamespace:          "n1",
+			queryBinding:            "b1-id",
+			expectedServiceAccounts: []string{"admin-subject", "cluster-namespace-subject"},
+		},
+		"b2-id with one Service Account subject": {
+			queryNamespace:          "n1",
+			queryBinding:            "b2-id",
+			expectedServiceAccounts: []string{"default-subject"},
+		},
+	}
+
+	for name, tc := range testCase {
+		t.Run(name, func(t *testing.T) {
+			store := setupStore(roles, clusterRoles, bindings, clusterBindings)
+			subjects := store.FindSubjectForBindingID(tc.queryNamespace, tc.queryBinding)
+			assert.Len(t, subjects, len(tc.expectedServiceAccounts))
+
+			var flatSubjects []string
+			for _, subj := range subjects {
+				_, sa, err := subj.decode()
+				require.NoError(t, err, "should be able to decode namespace#name value")
+				flatSubjects = append(flatSubjects, sa)
+			}
+
+			sort.Strings(flatSubjects)
+			sort.Strings(tc.expectedServiceAccounts)
+
+			assert.Equal(t, tc.expectedServiceAccounts, flatSubjects)
+		})
+
 	}
 }
 

@@ -135,7 +135,7 @@ func (s *DeploymentExposureSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	config := resource.CentralConfig{
+	config := resource.TestSetupConfig{
 		InitialSystemPolicies: policies,
 	}
 	if testContext, err := resource.NewContextWithConfig(s.T(), config); err != nil {

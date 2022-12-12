@@ -107,7 +107,8 @@ type TestContext struct {
 	stopFn          func()
 }
 
-func defaultCentralConfig() CentralConfig {
+// DefaultTestSetupConfig returns the default test harness config
+func DefaultTestSetupConfig() TestSetupConfig {
 	// Uses replayed policies.json file as default policies for tests.
 	// These are all policies in ACS, which means many alerts might be generated.
 	policies, err := testutils.GetPoliciesFromFile("../../replay/data/policies.json")
@@ -115,18 +116,19 @@ func defaultCentralConfig() CentralConfig {
 		log.Fatalln(err)
 	}
 
-	return CentralConfig{
+	return TestSetupConfig{
 		InitialSystemPolicies: policies,
+		SensorResyncTime:      1 * time.Second,
 	}
 }
 
 // NewContext creates a new test context with default configuration.
 func NewContext(t *testing.T) (*TestContext, error) {
-	return NewContextWithConfig(t, defaultCentralConfig())
+	return NewContextWithConfig(t, DefaultTestSetupConfig())
 }
 
 // NewContextWithConfig creates a new test context with custom central configuration.
-func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, error) {
+func NewContextWithConfig(t *testing.T, config TestSetupConfig) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
 	r, err := resources.New(envConfig.Client().RESTConfig())
 	if err != nil {
@@ -338,12 +340,13 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 	return selected
 }
 
-// CentralConfig allows tests to inject ACS policies in the tests
-type CentralConfig struct {
+// TestSetupConfig allows tests to inject ACS policies in the tests
+type TestSetupConfig struct {
 	InitialSystemPolicies []*storage.Policy
+	SensorResyncTime      time.Duration
 }
 
-func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*centralDebug.FakeService, func(), func()) {
+func startSensorAndFakeCentral(env *envconf.Config, config TestSetupConfig) (*centralDebug.FakeService, func(), func()) {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../../tools/local-sensor/certs/key.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../../tools/local-sensor/certs/caCert.pem"))
@@ -361,7 +364,7 @@ func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*cent
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).
-		WithResyncPeriod(1 * time.Second).
+		WithResyncPeriod(config.SensorResyncTime).
 		WithCentralConnectionFactory(fakeConnectionFactory))
 
 	if err != nil {
