@@ -12,6 +12,8 @@ import {
     SelectOption,
     debounce,
     Title,
+    Skeleton,
+    Spinner,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ListIcon } from '@patternfly/react-icons';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -34,6 +36,39 @@ function fetchMatchingDeployments(
     return request;
 }
 
+function RefreshingDeployment() {
+    return (
+        <Flex className="pf-u-mb-0">
+            <FlexItem style={{ flex: '0 1 24px' }}>
+                <Skeleton />
+            </FlexItem>
+            <FlexItem className="pf-u-flex-grow-1">
+                <Skeleton className="pf-u-mb-sm" fontSize="sm" />
+                <Skeleton fontSize="sm" />
+            </FlexItem>
+            <Divider component="div" className="pf-u-mt-xs" />
+        </Flex>
+    );
+}
+
+function DeploymentResult({ deployment }: { deployment: ListDeployment }) {
+    return (
+        <Flex>
+            <FlexItem>
+                <ResourceIcon kind="Deployment" />
+            </FlexItem>
+            <FlexItem>
+                <div>{deployment.name}</div>
+                <span className="pf-u-color-400 pf-u-font-size-xs">
+                    In &quot;{deployment.cluster} / {deployment.namespace}
+                    &quot;
+                </span>
+            </FlexItem>
+            <Divider className="pf-u-mt-md" />
+        </Flex>
+    );
+}
+
 export type CollectionResultsProps = {
     dryRunConfig: CollectionRequest;
     configError?: CollectionConfigError;
@@ -46,6 +81,7 @@ function CollectionResults({
     setConfigError = () => {},
 }: CollectionResultsProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
+    const [isRefreshingResults, setIsRefreshingResults] = useState(false);
     const [selected, setSelected] = useState<SelectorEntityType>('Deployment');
     const [filterText, setFilterText] = useState<string>('');
     const [isEndOfResults, setIsEndOfResults] = useState<boolean>(false);
@@ -73,6 +109,9 @@ function CollectionResults({
                 })
                 .catch((err) => {
                     setConfigError(parseConfigError(err));
+                })
+                .finally(() => {
+                    setIsRefreshingResults(false);
                 });
         },
         [setConfigError]
@@ -89,6 +128,7 @@ function CollectionResults({
     useEffect(() => {
         setConfigError(undefined);
         if (selectorRulesExist) {
+            setIsRefreshingResults(true);
             fetchDryRunDebounced(dryRunConfig, 0, filterText, selected);
         }
     }, [
@@ -133,68 +173,73 @@ function CollectionResults({
         content = (
             <Flex
                 spaceItems={{ default: 'spaceItemsNone' }}
-                alignItems={{ default: 'alignItemsCenter' }}
+                alignItems={{ default: 'alignItemsStretch' }}
+                direction={{ default: 'column' }}
                 className="pf-u-mt-lg"
             >
-                <FlexItem>
-                    <Select
-                        toggleAriaLabel="Select an entity type to filter the results by"
-                        isOpen={isOpen}
-                        onToggle={onToggle}
-                        selections={selected}
-                        onSelect={onRuleOptionSelect}
-                        isDisabled={false}
-                    >
-                        <SelectOption value="Deployment">Deployment</SelectOption>
-                        <SelectOption value="Namespace">Namespace</SelectOption>
-                        <SelectOption value="Cluster">Cluster</SelectOption>
-                    </Select>
-                </FlexItem>
-                <FlexItem grow={{ default: 'grow' }}>
-                    <SearchInput
-                        aria-label="Filter by name"
-                        placeholder="Filter by name"
-                        value={filterText}
-                        onChange={setFilterText}
-                    />
-                </FlexItem>
+                <Flex spaceItems={{ default: 'spaceItemsNone' }}>
+                    <FlexItem>
+                        <Select
+                            toggleAriaLabel="Select an entity type to filter the results by"
+                            isOpen={isOpen}
+                            onToggle={onToggle}
+                            selections={selected}
+                            onSelect={onRuleOptionSelect}
+                            isDisabled={false}
+                        >
+                            <SelectOption value="Deployment">Deployment</SelectOption>
+                            <SelectOption value="Namespace">Namespace</SelectOption>
+                            <SelectOption value="Cluster">Cluster</SelectOption>
+                        </Select>
+                    </FlexItem>
+                    <FlexItem grow={{ default: 'grow' }}>
+                        <SearchInput
+                            aria-label="Filter by name"
+                            placeholder="Filter by name"
+                            value={filterText}
+                            onChange={setFilterText}
+                        />
+                    </FlexItem>
+                </Flex>
                 <Flex
                     direction={{ default: 'column' }}
                     grow={{ default: 'grow' }}
                     className="pf-u-mt-lg"
                 >
-                    {deployments.map((deployment: ListDeployment) => {
-                        return (
-                            <Flex key={deployment.id}>
-                                <FlexItem>
-                                    <ResourceIcon kind="Deployment" />
-                                </FlexItem>
-                                <FlexItem>
-                                    <div>{deployment.name}</div>
-                                    <span className="pf-u-color-400 pf-u-font-size-xs">
-                                        In &quot;{deployment.cluster} / {deployment.namespace}
-                                        &quot;
-                                    </span>
-                                </FlexItem>
-                                <Divider className="pf-u-mt-md" />
-                            </Flex>
-                        );
-                    })}
-                    {!isEndOfResults ? (
-                        <Button
-                            variant="link"
-                            isInline
-                            className="pf-u-text-align-center"
-                            onClick={() =>
-                                fetchDryRun(dryRunConfig, currentPage + 1, filterText, selected)
-                            }
-                        >
-                            View more
-                        </Button>
+                    {isRefreshingResults ? (
+                        <>
+                            {deployments.map((deployment: ListDeployment) => (
+                                <RefreshingDeployment key={`refreshing-${deployment.id}`} />
+                            ))}
+                            <Spinner className="pf-u-align-self-center" size="lg" />
+                        </>
                     ) : (
-                        <span className="pf-u-color-400 pf-u-text-align-center pf-u-font-size-sm">
-                            end of results
-                        </span>
+                        <>
+                            {deployments.map((deployment: ListDeployment) => (
+                                <DeploymentResult key={deployment.id} deployment={deployment} />
+                            ))}
+                            {!isEndOfResults ? (
+                                <Button
+                                    variant="link"
+                                    isInline
+                                    className="pf-u-text-align-center"
+                                    onClick={() => {
+                                        fetchDryRun(
+                                            dryRunConfig,
+                                            currentPage + 1,
+                                            filterText,
+                                            selected
+                                        );
+                                    }}
+                                >
+                                    View more
+                                </Button>
+                            ) : (
+                                <span className="pf-u-color-400 pf-u-text-align-center pf-u-font-size-sm">
+                                    end of results
+                                </span>
+                            )}
+                        </>
                     )}
                 </Flex>
             </Flex>
