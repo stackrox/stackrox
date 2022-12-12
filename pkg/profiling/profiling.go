@@ -20,7 +20,7 @@ var (
 )
 
 // HeapProfiler is used to start a ticker that periodically checks if heap memory consumption
-// exceed the thresholdFraction, if so the heap gets dumped to a File in Directory.
+// exceed the thresholdFraction, if so the heap gets dumped to a file in Directory subject to Backoff.
 type HeapProfiler struct {
 	// Backoff limits the maximum frequency of creating heap dumps
 	Backoff           time.Duration

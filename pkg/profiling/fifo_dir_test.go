@@ -1,7 +1,6 @@
 package profiling
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -15,20 +14,15 @@ func Test_fifoDir(t *testing.T) {
 	maxFileCount := 3
 	fs := fifoDir{dirPath: dir, maxFileCount: maxFileCount}
 
-	var filesToBeDeleted []string
-	var filesToBeKept []string
-	// This should be bigger than maxFileCount to test FIFO deletion is done properly
-	numFilesToCreate := 10
-	for i := 0; i < numFilesToCreate; i++ {
-		fileName := fmt.Sprintf("%d.test.dump", i)
+	// This should be more files than maxFileCount to test FIFO deletion is done properly
+	filesToCreate := []string{"1.test.dump", "2.test.dump", "3.test.dump", "4.test.dump", "5.test.dump"}
+	filesToBeDeleted := filesToCreate[:2]
+	filesToBeKept := filesToCreate[2:]
+
+	for _, fileName := range filesToCreate {
 		_, err := fs.Create(fileName)
-		require.NoError(t, err, "creating file: %s", fileName)
-		if i < numFilesToCreate-3 {
-			filesToBeDeleted = append(filesToBeDeleted, fileName)
-		} else {
-			filesToBeKept = append(filesToBeKept, fileName)
-		}
 		time.Sleep(time.Millisecond * 100)
+		require.NoError(t, err, "creating file: %s", fileName)
 	}
 
 	actualFilesEntries, err := os.ReadDir(dir)
