@@ -33,7 +33,7 @@ import {
     SelectorEntityType,
     selectorEntityTypes,
 } from './types';
-import { CollectionSaveError } from './errorUtils';
+import { CollectionConfigError } from './errorUtils';
 
 import './CollectionForm.css';
 
@@ -80,8 +80,8 @@ export type CollectionFormProps = {
     onFormChange: (values: ClientCollection) => void;
     onSubmit: (collection: ClientCollection) => Promise<void>;
     onCancel: () => void;
-    saveError?: CollectionSaveError | undefined;
-    setSaveError?: (saveError: CollectionSaveError | undefined) => void;
+    configError?: CollectionConfigError | undefined;
+    setConfigError?: (configError: CollectionConfigError | undefined) => void;
     /* Table cells to render for each collection in the CollectionAttacher component */
     getCollectionTableCells: (
         collectionErrorId: string | undefined
@@ -149,8 +149,8 @@ function CollectionForm({
     action,
     initialData,
     initialEmbeddedCollections,
-    saveError,
-    setSaveError = () => {},
+    configError,
+    setConfigError = () => {},
     onFormChange,
     onSubmit,
     onCancel,
@@ -200,19 +200,19 @@ function CollectionForm({
         });
     }, [action.type, initialData.name, setFieldValue]);
 
-    const clearSaveError = () => setSaveError(undefined);
+    const clearConfigError = () => setConfigError(undefined);
 
     const errors = {
         ...formikErrors,
     };
 
     // We can associate this type of server error to a specific field, so update the formik errors
-    if (saveError?.type === 'DuplicateName') {
-        errors.name = saveError.message;
+    if (configError?.type === 'DuplicateName') {
+        errors.name = configError.message;
     }
 
-    if (saveError?.type === 'EmptyName') {
-        errors.name = saveError.message;
+    if (configError?.type === 'EmptyName') {
+        errors.name = configError.message;
     }
 
     // We only want to display the error in the name field if one of the following is true:
@@ -220,10 +220,10 @@ function CollectionForm({
     //   2. A request has been sent to the server that resulted in an error, and the name is invalid
     // This prevents an error from being shown as soon as the user loads the creation form, before
     // a name value has been entered.
-    const nameError = (touched.name || saveError) && errors.name;
+    const nameError = (touched.name || configError) && errors.name;
 
     const collectionTableCells = getCollectionTableCells(
-        saveError?.type === 'CollectionLoop' ? saveError.loopId : undefined
+        configError?.type === 'CollectionLoop' ? configError.loopId : undefined
     );
 
     const onResourceSelectorChange = (
@@ -233,10 +233,10 @@ function CollectionForm({
 
     const onEmbeddedCollectionsChange = (newCollections: Collection[]) => {
         if (
-            saveError?.type === 'CollectionLoop' &&
-            !newCollections.find(({ id }) => id === saveError.loopId)
+            configError?.type === 'CollectionLoop' &&
+            !newCollections.find(({ id }) => id === configError.loopId)
         ) {
-            clearSaveError();
+            clearConfigError();
         }
         return setFieldValue(
             'embeddedCollectionIds',
@@ -275,10 +275,10 @@ function CollectionForm({
                                     validated={nameError ? 'error' : 'default'}
                                     onChange={(_, e) => {
                                         if (
-                                            saveError?.type === 'DuplicateName' ||
-                                            saveError?.type === 'EmptyName'
+                                            configError?.type === 'DuplicateName' ||
+                                            configError?.type === 'EmptyName'
                                         ) {
-                                            clearSaveError();
+                                            clearConfigError();
                                         }
                                         handleChange(e);
                                     }}
@@ -337,16 +337,16 @@ function CollectionForm({
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
-                            {saveError?.type === 'EmptyCollection' && (
+                            {configError?.type === 'EmptyCollection' && (
                                 <Alert
                                     title="At least one rule must be configured or one collection must be attached from the section below"
                                     variant="danger"
                                     isInline
                                 />
                             )}
-                            {saveError?.type === 'InvalidRule' && (
-                                <Alert title={saveError.message} variant="danger" isInline>
-                                    {saveError.details}
+                            {configError?.type === 'InvalidRule' && (
+                                <Alert title={configError.message} variant="danger" isInline>
+                                    {configError.details}
                                 </Alert>
                             )}
                             <RuleSelector
@@ -411,16 +411,16 @@ function CollectionForm({
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
-                            {saveError?.type === 'EmptyCollection' && (
+                            {configError?.type === 'EmptyCollection' && (
                                 <Alert
                                     title="At least one collection must be attached or one rule must be configured from the section above"
                                     variant="danger"
                                     isInline
                                 />
                             )}
-                            {saveError?.type === 'CollectionLoop' && (
-                                <Alert title={saveError.message} variant="danger" isInline>
-                                    {saveError.details}
+                            {configError?.type === 'CollectionLoop' && (
+                                <Alert title={configError.message} variant="danger" isInline>
+                                    {configError.details}
                                 </Alert>
                             )}
                             {isReadOnly ? (
@@ -449,7 +449,7 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting || !!saveError}
+                        isDisabled={isSubmitting || !!configError}
                         isLoading={isSubmitting}
                     >
                         Save

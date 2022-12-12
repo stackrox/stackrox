@@ -3,14 +3,14 @@ import { useState } from 'react';
 import { updateCollection, createCollection, Collection } from 'services/CollectionsService';
 import { CollectionPageAction } from '../collections.utils';
 import { generateRequest } from '../converter';
-import { CollectionSaveError, parseSaveError } from '../errorUtils';
+import { CollectionConfigError, parseConfigError } from '../errorUtils';
 import { ClientCollection } from '../types';
 
 export function useCollectionFormSubmission(pageAction: CollectionPageAction) {
-    const [saveError, setSaveError] = useState<CollectionSaveError | undefined>();
+    const [configError, setConfigError] = useState<CollectionConfigError | undefined>();
 
     function onSubmit(collection: ClientCollection): Promise<Collection> {
-        setSaveError(undefined);
+        setConfigError(undefined);
 
         return new Promise<Collection>((resolve, reject) => {
             if (pageAction.type === 'view') {
@@ -35,14 +35,14 @@ export function useCollectionFormSubmission(pageAction: CollectionPageAction) {
 
             return resolve(request);
         }).catch((err) => {
-            setSaveError(parseSaveError(err));
+            setConfigError(parseConfigError(err));
             return Promise.reject(err);
         });
     }
 
     return {
-        saveError,
-        setSaveError,
+        configError,
+        setConfigError,
         onSubmit,
     };
 }
