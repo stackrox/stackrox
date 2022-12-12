@@ -266,8 +266,16 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 				"false") == "true",
 		},
 		"central": map[string]interface{}{
-			"disableTelemetry": k8s.evaluateToString(ctx, "deployment", "central",
-				`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_INIT_TELEMETRY_ENABLED")].value}`, "true") == "false",
+			"telemetry": map[string]interface{}{
+				"enabled": k8s.evaluateToString(ctx, "deployment", "central",
+					`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_TELEMETRY_STORAGE_KEY_V1")].value}`, "") != "",
+				"storage": map[string]interface{}{
+					"endpoint": k8s.evaluateToString(ctx, "deployment", "central",
+						`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_TELEMETRY_ENDPOINT")].value}`, ""),
+					"key": k8s.evaluateToString(ctx, "deployment", "central",
+						`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_TELEMETRY_STORAGE_KEY_V1")].value}`, ""),
+				},
+			},
 			"config":          k8s.evaluateToStringP(ctx, "configmap", "central-config", `{.data['central-config\.yaml']}`),
 			"dbConfig":        k8s.evaluateToStringP(ctx, "configmap", "central-db-connection", `{.data['central-db-connection\.yaml']}`),
 			"endpointsConfig": k8s.evaluateToStringP(ctx, "configmap", "central-endpoints", `{.data['endpoints\.yaml']}`),
