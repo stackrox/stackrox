@@ -19,6 +19,8 @@ runs:
           /github/home/.cache/go-build
           /github/home/.cache/golangci-lint
           /github/home/.cache/staticcheck
-        key: go-v2-${{ hashFiles('**/go.sum') }}
+        key: go-v2-${{ hashFiles('**/go.sum') }}-${{ github.job }}
         restore-keys: |
+          go-v2-${{ hashFiles('**/go.sum') }}-${{ github.job }}
+          go-v2-${{ hashFiles('**/go.sum') }}-
           go-v2-

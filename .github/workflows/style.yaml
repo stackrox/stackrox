@@ -1,0 +1,41 @@
+name: Style
+on:
+  pull_request:
+    types:
+    - labeled
+    - opened
+    - reopened
+    - synchronize
+
+env:
+  ROX_PRODUCT_BRANDING: RHACS_BRANDING
+
+jobs:
+
+  style-check:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.50
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
+      - name: Cache UI dependencies
+        uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Cache QA Test dependencies
+        uses: ./.github/actions/cache-gradle-dependencies
+
+      - name: Fetch UI deps
+        run: make -C ui deps
+
+      - name: make style
+        run: make style
