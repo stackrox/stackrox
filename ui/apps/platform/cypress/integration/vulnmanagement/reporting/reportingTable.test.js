@@ -33,7 +33,7 @@ describe('Vulnerability Management Reporting table', () => {
 
         // severities
         cy.get('tbody tr:nth-child(1) td:nth-child(5):contains("CriticalImportantMediumLow")');
-        cy.get('tbody tr:nth-child(2) td:nth-child(5):conntains("Critical")');
+        cy.get('tbody tr:nth-child(2) td:nth-child(5):contains("Critical")');
 
         // last run
         cy.get('tbody tr:nth-child(1) td:nth-child(6):contains("Error")');
