@@ -10,14 +10,10 @@ import navigationSelectors from '../../../selectors/navigation';
 
 // visit
 
-export const searchOptionsOpname = 'searchOptions';
 export const reportConfigurationsAlias = 'report/configurations';
 export const reportConfigurationsCountAlias = 'report-configurations-count';
 
-const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([searchOptionsOpname]);
-
-const routeMatcherMap = {
-    ...routeMatcherMapForSearchFilter,
+const routeMatcherMapWithoutSearchOptions = {
     [reportConfigurationsAlias]: {
         method: 'GET',
         url: '/v1/report/configurations*',
@@ -28,29 +24,41 @@ const routeMatcherMap = {
     },
 };
 
+export const searchOptionsOpname = 'searchOptions';
+const routeMatcherMapForSearchOptions = getRouteMatcherMapForGraphQL([searchOptionsOpname]);
+
+const routeMatcherMapWithSearchOptions = {
+    ...routeMatcherMapForSearchOptions,
+    ...routeMatcherMapWithoutSearchOptions,
+};
+
 const basePath = '/main/vulnerability-management/reports';
 
 const title = 'Vulnerability reporting';
 
 /**
- * Visit by interaction, including from another container.
+ * Visit by interaction, expecially from within the container.
  *
  * @param {function} interactionCallback
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function interactAndVisitVulnerabilityReporting(interactionCallback, staticResponseMap) {
-    interceptRequests(routeMatcherMap, staticResponseMap);
+    interceptRequests(routeMatcherMapWithoutSearchOptions, staticResponseMap);
 
     interactionCallback();
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
 
-    waitForResponses(routeMatcherMap);
+    waitForResponses(routeMatcherMapWithoutSearchOptions);
 }
 
 export function visitVulnerabilityReportingFromLeftNav() {
-    visitFromLeftNavExpandable('Vulnerability Management', 'Reporting', routeMatcherMap);
+    visitFromLeftNavExpandable(
+        'Vulnerability Management',
+        'Reporting',
+        routeMatcherMapWithSearchOptions
+    );
 
     cy.location('pathname').should('eq', basePath);
     cy.location('search').should('eq', '');
@@ -61,7 +69,7 @@ export function visitVulnerabilityReportingFromLeftNav() {
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitVulnerabilityReporting(staticResponseMap) {
-    visit(basePath, routeMatcherMap, staticResponseMap);
+    visit(basePath, routeMatcherMapWithSearchOptions, staticResponseMap);
 
     cy.get(`${navigationSelectors.navExpandable}:contains("Vulnerability Management")`);
     cy.get(`${navigationSelectors.nestedNavLinks}:contains("Reporting")`).should(
