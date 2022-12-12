@@ -207,7 +207,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	}
 
 	if features.ObjectCollections.Enabled() {
-		_, found, err := s.collectionDatastore.Get(ctx, config.GetId())
+		_, found, err := s.collectionDatastore.Get(ctx, config.GetScopeId())
 		if !found || err != nil {
 			return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", config.GetScopeId(), err)
 		}
