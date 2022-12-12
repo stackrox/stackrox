@@ -34,6 +34,7 @@ func GetTestRocksBleveDataStore(_ *testing.T, bleveIndex bleve.Index, dacky *dac
 			imageIndex.New(bleveIndex),
 			deploymentIndex.New(bleveIndex, bleveIndex),
 			clusterIndex.New(bleveIndex),
+			dacky,
 		))
 }
 

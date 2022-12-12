@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/imagecveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -35,7 +36,8 @@ func New(storage store.Store,
 	imageComponentEdgeIndexer imageComponentEdgeIndexer.Indexer,
 	imageIndexer imageIndexer.Indexer,
 	deploymentIndexer deploymentIndexer.Indexer,
-	clusterIndexer clusterIndexer.Indexer) Searcher {
+	clusterIndexer clusterIndexer.Indexer,
+	graphProvider graph.Provider) Searcher {
 	return &searcherImpl{
 		storage: storage,
 		indexer: imageCVEEdgeIndexer,
@@ -47,5 +49,6 @@ func New(storage store.Store,
 			imageIndexer,
 			deploymentIndexer,
 			clusterIndexer),
+		provider: graphProvider,
 	}
 }

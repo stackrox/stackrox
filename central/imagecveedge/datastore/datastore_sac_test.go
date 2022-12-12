@@ -231,9 +231,9 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestGet() {
 }
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
-	}
+	// if !env.PostgresDatastoreEnabled.BooleanSetting() {
+	// s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
+	// }
 	// Inject the fixture graph, and test data filtering on count operations
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
@@ -258,9 +258,9 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
-	}
+	// if !env.PostgresDatastoreEnabled.BooleanSetting() {
+	// s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
+	// }
 	// Inject the fixture graph, and test data filtering on count operations
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
@@ -285,9 +285,9 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
-	}
+	// if !env.PostgresDatastoreEnabled.BooleanSetting() {
+	// s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
+	// }
 	// Inject the fixture graph, and test data filtering on count operations
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
