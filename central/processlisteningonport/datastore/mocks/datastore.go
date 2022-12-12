@@ -36,7 +36,7 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddProcessListeningOnPort mocks base method.
-func (m *MockDataStore) AddProcessListeningOnPort(arg0 context.Context, arg1 ...*storage.ProcessListeningOnPort) error {
+func (m *MockDataStore) AddProcessListeningOnPort(arg0 context.Context, arg1 ...*storage.ProcessListeningOnPortFromSensor) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {

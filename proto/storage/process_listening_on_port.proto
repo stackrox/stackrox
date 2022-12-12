@@ -17,9 +17,19 @@ message ProcessListeningOnPort {
         L4Protocol protocol = 2;
     }
     Endpoint endpoint = 1;
-    ProcessIndicatorUniqueKey process = 2;
-    google.protobuf.Timestamp close_timestamp = 3;
-    string cluster_id = 5;
+    string container_name = 2;
+    string pod_id = 3;
+    ProcessSignal signal = 4;
+    google.protobuf.Timestamp close_timestamp = 5;
+    string cluster_id = 7;
+}
+
+message ProcessListeningOnPortFromSensor {
+    uint32 port = 1;
+    L4Protocol protocol = 2;
+    ProcessIndicatorUniqueKey process = 3;
+    google.protobuf.Timestamp close_timestamp = 4;
+    string cluster_id = 6;
 }
 
 message ProcessListeningOnPortStorage {

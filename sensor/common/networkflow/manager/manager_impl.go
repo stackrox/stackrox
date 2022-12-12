@@ -120,12 +120,10 @@ type processListeningIndicator struct {
 	protocol storage.L4Protocol
 }
 
-func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPort {
-	proto := &storage.ProcessListeningOnPort{
-		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-			Port:     uint32(i.port),
-			Protocol: i.protocol,
-		},
+func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
+	proto := &storage.ProcessListeningOnPortFromSensor{
+		Port:     uint32(i.port),
+		Protocol: i.protocol,
 		Process: &storage.ProcessIndicatorUniqueKey{
 			PodId:               i.key.podID,
 			ContainerName:       i.key.containerName,
@@ -606,8 +604,8 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 	return updates
 }
 
-func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS) []*storage.ProcessListeningOnPort {
-	var updates []*storage.ProcessListeningOnPort
+func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
+	var updates []*storage.ProcessListeningOnPortFromSensor
 
 	for pl, currTS := range current {
 		prevTS, ok := previous[pl]

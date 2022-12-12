@@ -40,7 +40,7 @@ func newDatastoreImpl(
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
-	portProcesses ...*storage.ProcessListeningOnPort,
+	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
 ) error {
 	defer metrics.SetDatastoreFunctionDuration(
 		time.Now(),
@@ -131,8 +131,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
 			// IDENTITY, which would require changes in store generator
 			Id:                 uuid.NewV4().String(),
-			Port:               val.Endpoint.Port,
-			Protocol:           val.Endpoint.Protocol,
+			Port:               val.Port,
+			Protocol:           val.Protocol,
 			ProcessIndicatorId: indicatorID,
 			CloseTimestamp:     val.CloseTimestamp,
 		}
