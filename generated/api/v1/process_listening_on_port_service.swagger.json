@@ -55,6 +55,18 @@
         }
       }
     },
+    "ProcessSignalLineageInfo": {
+      "type": "object",
+      "properties": {
+        "parentUid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "parentExecFilePath": {
+          "type": "string"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -104,35 +116,20 @@
       ],
       "default": "L4_PROTOCOL_UNKNOWN"
     },
-    "storageProcessIndicatorUniqueKey": {
-      "type": "object",
-      "properties": {
-        "podId": {
-          "type": "string"
-        },
-        "containerName": {
-          "type": "string"
-        },
-        "processName": {
-          "type": "string"
-        },
-        "processExecFilePath": {
-          "type": "string"
-        },
-        "processArgs": {
-          "type": "string"
-        }
-      },
-      "description": "This is the unique key we store process indicators under in Bolt.\nThis is stored in the DB, so please follow proto compatibility rules for it,\nOR discard existing values and repopulate it on startup."
-    },
     "storageProcessListeningOnPort": {
       "type": "object",
       "properties": {
         "endpoint": {
           "$ref": "#/definitions/ProcessListeningOnPortEndpoint"
         },
-        "process": {
-          "$ref": "#/definitions/storageProcessIndicatorUniqueKey"
+        "containerName": {
+          "type": "string"
+        },
+        "podId": {
+          "type": "string"
+        },
+        "signal": {
+          "$ref": "#/definitions/storageProcessSignal"
         },
         "closeTimestamp": {
           "type": "string",
@@ -140,6 +137,69 @@
         },
         "clusterId": {
           "type": "string"
+        }
+      }
+    },
+    "storageProcessSignal": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "A unique UUID for identifying the message\nWe have this here instead of at the top level\nbecause we want to have each message to be\nself contained."
+        },
+        "containerId": {
+          "type": "string",
+          "title": "ID of container associated with this process"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Process creation time"
+        },
+        "name": {
+          "type": "string",
+          "title": "Process name"
+        },
+        "args": {
+          "type": "string",
+          "title": "Process arguments"
+        },
+        "execFilePath": {
+          "type": "string",
+          "title": "Process executable file path"
+        },
+        "pid": {
+          "type": "integer",
+          "format": "int64",
+          "title": "Host process ID"
+        },
+        "uid": {
+          "type": "integer",
+          "format": "int64",
+          "title": "Real user ID"
+        },
+        "gid": {
+          "type": "integer",
+          "format": "int64",
+          "title": "Real group ID"
+        },
+        "lineage": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Process Lineage"
+        },
+        "scraped": {
+          "type": "boolean",
+          "title": "Signal origin"
+        },
+        "lineageInfo": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProcessSignalLineageInfo"
+          },
+          "title": "Process LineageInfo"
         }
       }
     },
