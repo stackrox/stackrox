@@ -117,7 +117,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
-		&storage.ProcessListeningOnPortFromSensor{
+		{
 			Port:           1234,
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 			CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
