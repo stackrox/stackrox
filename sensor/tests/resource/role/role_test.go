@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	NginxDeployment  = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
-	NginxRole        = resource.YamlTestFile{Kind: "Role", File: "nginx-role.yaml"}
-	NginxRoleBinding = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding.yaml"}
+	NginxDeployment       = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
+	NginxRole             = resource.YamlTestFile{Kind: "Role", File: "nginx-role.yaml"}
+	NginxRoleBinding      = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding.yaml"}
+	NginxRoleGroupBinding = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding-group.yaml"}
 )
 
 type RoleDependencySuite struct {
@@ -70,6 +71,27 @@ func (s *RoleDependencySuite) Test_PermutationTest() {
 			testC.LastDeploymentState("nginx-deployment",
 				assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
 				"Permission level has to be elevated in namespace")
+			testC.GetFakeCentral().ClearReceivedBuffer()
+		},
+	)
+}
+
+func (s *RoleDependencySuite) Test_GroupSubjects() {
+	s.testContext.RunWithResources(
+		[]resource.YamlTestFile{
+			NginxDeployment,
+			NginxRole,
+			NginxRoleGroupBinding,
+		},
+		func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+			// This test expects that a reference to a non-ServiceAccount subject (i.e. Group or User) does not
+			// reference any deployments and thus a deployment object should not be updated. However, Groups can be
+			// used to reference a set of ServiceAccounts, see: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-binding-examples
+			// Using `system:serviceaccounts:sensor-integration` as a group to set PermissionLevel to all deployments
+			// with any ServiceAccount is not supported by ACS.
+			testC.LastDeploymentState("nginx-deployment",
+				assertPermissionLevel(storage.PermissionLevel_NONE),
+				"Group / User permission levels should be ignored")
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		},
 	)
