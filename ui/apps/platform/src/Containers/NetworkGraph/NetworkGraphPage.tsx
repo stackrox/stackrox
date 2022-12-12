@@ -110,7 +110,7 @@ function NetworkGraphPage() {
                         // get policy nodes from api response
                         const { nodes: policyNodes } = values[1].response;
                         // transform policy data to DataModel
-                        const policyDataModel = transformPolicyData(policyNodes);
+                        const policyDataModel = transformPolicyData(policyNodes, deploymentCount);
                         // set policyNodeMap to be able to cross reference nodes by id
                         // to enhance active node data
                         policyDataModel.nodes?.forEach((node) => {

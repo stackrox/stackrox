@@ -187,7 +187,7 @@ function getNetworkPolicyState(
     return networkPolicyState;
 }
 
-export function transformPolicyData(nodes: Node[]): CustomModel {
+export function transformPolicyData(nodes: Node[], flows?: number): CustomModel {
     const dataModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
@@ -211,6 +211,9 @@ export function transformPolicyData(nodes: Node[]): CustomModel {
             dataModel.edges.push(edge);
         });
     });
+    const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes(flows);
+    dataModel.nodes.push(extraneousEgressNode);
+    dataModel.nodes.push(extraneousIngressNode);
     return dataModel;
 }
 
@@ -290,7 +293,7 @@ export function createExtraneousFlowsModel(
     return dataModel;
 }
 
-export function createExtraneousNodes(flows: number): {
+export function createExtraneousNodes(flows?: number): {
     extraneousEgressNode: ExtraneousNodeModel;
     extraneousIngressNode: ExtraneousNodeModel;
 } {
@@ -300,11 +303,12 @@ export function createExtraneousNodes(flows: number): {
         width: 75,
         height: 75,
         label: 'Egress flows',
+        visible: false,
         data: {
             collapsible: false,
             showContextMenu: false,
             type: 'EXTRANEOUS',
-            flows,
+            flows: flows || 0,
         },
     };
     const extraneousIngressNode: ExtraneousNodeModel = {
@@ -313,11 +317,12 @@ export function createExtraneousNodes(flows: number): {
         width: 75,
         height: 75,
         label: 'Ingress flows',
+        visible: false,
         data: {
             collapsible: false,
             showContextMenu: false,
             type: 'EXTRANEOUS',
-            flows,
+            flows: flows || 0,
         },
     };
     return { extraneousEgressNode, extraneousIngressNode };

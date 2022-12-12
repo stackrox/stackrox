@@ -106,40 +106,39 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
         setEdges();
     }
 
-    function setExtraneousNodes() {
-        const currentModel = controller.toModel();
-        const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes(325);
+    function showExtraneousNodes() {
         // else if there is a selected node, create a node to collect extraneous flows
         const selectedNode = controller.getNodeById(detailId);
         console.log('selectedNode', selectedNode, detailId);
         // TODO: figure out if/how to support namespaces
         if (selectedNode?.data?.type === 'DEPLOYMENT') {
             const { networkPolicyState } = selectedNode?.data || {};
+            const extraneousIngressNode = controller.getElementById('extraneous-ingress');
+            const extraneousEgressNode = controller.getElementById('extraneous-egress');
             if (networkPolicyState === 'ingress') {
-                // if the node has ingress policies from policy graph, create extraneous egress node
-                currentModel.nodes?.push(extraneousEgressNode);
+                // if the node has ingress policies from policy graph, show extraneous egress node
+                extraneousEgressNode?.setVisible(true);
             } else if (networkPolicyState === 'egress') {
-                // if the node has egress policies from policy graph, create extraneous ingress node
-                currentModel.nodes?.push(extraneousIngressNode);
+                // if the node has egress policies from policy graph, show extraneous ingress node
+                extraneousIngressNode?.setVisible(true);
             } else if (networkPolicyState === 'none') {
-                // if the node has no policies, create both extraneous ingress and egress nodes
-                currentModel.nodes?.push(extraneousEgressNode);
-                currentModel.nodes?.push(extraneousIngressNode);
+                // if the node has no policies, show both extraneous ingress and egress nodes
+                extraneousEgressNode?.setVisible(true);
+                extraneousIngressNode?.setVisible(true);
             }
-            controller.fromModel(currentModel);
         }
     }
 
-    function removeExtraneousNodes() {
-        console.log('removeExtraneousNodes');
+    function hideExtraneousNodes() {
+        console.log('hideExtraneousNodes');
         // if there is no selected node, check if extraneous nodes exist and remove them
         const extraneousIngressNode = controller.getElementById('extraneous-ingress');
         if (extraneousIngressNode) {
-            controller.removeElement(extraneousIngressNode);
+            extraneousIngressNode.setVisible(false);
         }
         const extraneousEgressNode = controller.getElementById('extraneous-egress');
         if (extraneousEgressNode) {
-            controller.removeElement(extraneousEgressNode);
+            extraneousEgressNode.setVisible(false);
         }
     }
 
@@ -205,9 +204,9 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
 
     function setNodes() {
         console.log('setNodes');
-        removeExtraneousNodes();
+        hideExtraneousNodes();
         if (edgeState === 'extraneous' && detailId) {
-            setExtraneousNodes();
+            showExtraneousNodes();
         }
     }
 
