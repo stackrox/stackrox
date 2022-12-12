@@ -36,7 +36,8 @@ var (
 	}
 )
 
-type imageVulnerability struct {
+// ImageVulnerability data used for generating vuln reports
+type ImageVulnerability struct {
 	Cve               string        `json:"cve,omitempty"`
 	Severity          string        `json:"severity,omitempty"`
 	FixedByVersion    string        `json:"fixedByVersion,omitempty"`
@@ -45,28 +46,31 @@ type imageVulnerability struct {
 	Link              string        `json:"link,omitempty"`
 }
 
-type imageComponent struct {
+// ImageComponent data used for generating vuln reports
+type ImageComponent struct {
 	Name                 string                `json:"name,omitempty"`
-	ImageVulnerabilities []*imageVulnerability `json:"imageVulnerabilities,omitempty"`
-	Vulns                []*imageVulnerability `json:"vulns,omitempty"`
+	ImageVulnerabilities []*ImageVulnerability `json:"imageVulnerabilities,omitempty"`
+	Vulns                []*ImageVulnerability `json:"vulns,omitempty"`
 }
 
-type image struct {
+// Image data used for generating vuln reports
+type Image struct {
 	Name            *storage.ImageName `json:"name,omitempty"`
-	ImageComponents []*imageComponent  `json:"imageComponents,omitempty"`
-	Components      []*imageComponent  `json:"components,omitempty"`
+	ImageComponents []*ImageComponent  `json:"imageComponents,omitempty"`
+	Components      []*ImageComponent  `json:"components,omitempty"`
 }
 
-type deployment struct {
+// Deployment data used for generating vuln reports
+type Deployment struct {
 	Cluster        *storage.Cluster `json:"cluster,omitempty"`
 	Namespace      string           `json:"namespace,omitempty"`
 	DeploymentName string           `json:"name,omitempty"`
-	Images         []*image         `json:"images,omitempty"`
+	Images         []*Image         `json:"images,omitempty"`
 }
 
 // Result is the query results of running a single cvefields query and scope query combination
 type Result struct {
-	Deployments []*deployment `json:"deployments,omitempty"`
+	Deployments []*Deployment `json:"deployments,omitempty"`
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
@@ -129,14 +133,14 @@ func Format(results []Result) (*bytes.Buffer, error) {
 	return &zipBuf, nil
 }
 
-func (img *image) getComponents() []*imageComponent {
+func (img *Image) getComponents() []*ImageComponent {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return img.ImageComponents
 	}
 	return img.Components
 }
 
-func (component *imageComponent) getVulnerabilities() []*imageVulnerability {
+func (component *ImageComponent) getVulnerabilities() []*ImageVulnerability {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return component.ImageVulnerabilities
 	}

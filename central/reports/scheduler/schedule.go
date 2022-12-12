@@ -398,6 +398,7 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 	if err != nil {
 		return nil, err
 	}
+	result = groupByClusterAndNamespace(result)
 	return []common.Result{result}, nil
 }
 
@@ -415,6 +416,7 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 					return common.Result{}, err
 				}
 				scopeQuery = fmt.Sprintf("%s:%q", search.DeploymentID.String(), strings.Join(deploymentIds, ","))
+				log.Infof("ROX-12629 : scopeQuery  ")
 				gqlPaginationOffset = 0
 			}
 		} else {
@@ -460,6 +462,27 @@ func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Q
 		ids = append(ids, res.GetId())
 	}
 	return ids, nil
+}
+
+func groupByClusterAndNamespace(result common.Result) common.Result {
+	groupedDeployments := make([]*common.Deployment, 0, len(result.Deployments))
+	deploymentsByCluster := make(map[string][]*common.Deployment)
+	for _, deployment := range result.Deployments {
+		clusterName := deployment.Cluster.GetName()
+		deploymentsByCluster[clusterName] = append(deploymentsByCluster[clusterName], deployment)
+	}
+
+	for _, deployments := range deploymentsByCluster {
+		deploymentsByNamespace := make(map[string][]*common.Deployment)
+		for _, deployment := range deployments {
+			deploymentsByNamespace[deployment.Namespace] = append(deploymentsByNamespace[deployment.Namespace], deployment)
+		}
+		for _, deps := range deploymentsByNamespace {
+			groupedDeployments = append(groupedDeployments, deps...)
+		}
+	}
+
+	return common.Result{Deployments: groupedDeployments}
 }
 
 func (s *scheduler) Start() {
