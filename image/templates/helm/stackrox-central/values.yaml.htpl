@@ -105,9 +105,12 @@
 #
 #central:
 #
-#  # Indicates whether telemetry data collection should be disabled. This defaults to true
-#  # in offline mode, and false otherwise. Only has an effect upon the first installation.
-#  disableTelemetry: null
+#  # Settings for telemetry data collection. Telemetry is disabled by default.
+#  telemetry:
+#    enabled: false
+#    storage:
+#      endpoint: null
+#      key: null
 #
 #
 #  config: "@config/central/config.yaml|config/central/config.yaml.default"
