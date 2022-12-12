@@ -29,13 +29,14 @@ import timeWindowToDate from 'utils/timeWindows';
 import queryService from 'utils/queryService';
 import { filterModes } from 'constants/networkFilterModes';
 
-function* getFlowGraph(clusterId, namespaces, query, timeWindow, includePorts) {
+function* getFlowGraph(clusterId, namespaces, deployments, query, timeWindow, includePorts) {
     let flowGraph;
     try {
         const req = yield call(
             service.fetchNetworkFlowGraph,
             clusterId,
             namespaces,
+            deployments,
             query,
             timeWindowToDate(timeWindow),
             includePorts
@@ -48,13 +49,14 @@ function* getFlowGraph(clusterId, namespaces, query, timeWindow, includePorts) {
     return flowGraph;
 }
 
-function* getPolicyGraph(clusterId, namespaces, query, modification, includePorts) {
+function* getPolicyGraph(clusterId, namespaces, deployments, query, modification, includePorts) {
     let policyGraph;
     try {
         const req = yield call(
             service.fetchNetworkPolicyGraph,
             clusterId,
             namespaces,
+            deployments,
             query,
             modification,
             includePorts
@@ -77,14 +79,30 @@ function* getNetworkGraphs(clusterId, namespaces, query) {
         return;
     }
 
+    // TODO: consider changing the call signature in NetworkService module to take an object
+    // because the number of positional params for the functions whick get flows and policies has
+    // become unwieldy
+    // Example: when we added a specific deployment option for the new PF Network Graph
+    // it broke the old graph's network sagas.
+    const EMPTY_DEPLOYMENT_FILTER = [];
+
     const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
     const modification = yield select(selectors.getNetworkPolicyModification);
 
-    const flowGraph = yield call(getFlowGraph, clusterId, namespaces, query, timeWindow, true);
+    const flowGraph = yield call(
+        getFlowGraph,
+        clusterId,
+        namespaces,
+        EMPTY_DEPLOYMENT_FILTER,
+        query,
+        timeWindow,
+        true
+    );
     const policyGraph = yield call(
         getPolicyGraph,
         clusterId,
         namespaces,
+        EMPTY_DEPLOYMENT_FILTER,
         query,
         modification,
         true

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 
-type Namespace = {
+export type Namespace = {
     metadata: {
+        id: string;
         name: string;
     };
+    deploymentCount;
 };
 type NamespaceResponse = {
     id: string;
@@ -14,20 +16,22 @@ type NamespaceResponse = {
 };
 
 const NAMESPACES_FOR_CLUSTER_QUERY = gql`
-    query getClusterNamespaceNames($id: ID!) {
+    query getClusterNamespaces($id: ID!) {
         results: cluster(id: $id) {
             id
             namespaces {
                 metadata {
+                    id
                     name
                 }
+                deploymentCount
             }
         }
     }
 `;
 
-function useFetchClusterNamespaces(selectedClusterId: string) {
-    const [availableNamespaces, setAvailableNamespaces] = useState<string[]>([]);
+function useFetchClusterNamespaces(selectedClusterId?: string) {
+    const [availableNamespaces, setAvailableNamespaces] = useState<Namespace[]>([]);
 
     // If the selectedClusterId has not been set yet, do not run the gql query
     const queryOptions = selectedClusterId
@@ -44,9 +48,7 @@ function useFetchClusterNamespaces(selectedClusterId: string) {
             return;
         }
 
-        const namespaces = data.results.namespaces.map(({ metadata }) => metadata.name);
-
-        setAvailableNamespaces(namespaces);
+        setAvailableNamespaces(data.results.namespaces);
     }, [data]);
 
     return {

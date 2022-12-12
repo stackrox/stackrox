@@ -52,23 +52,22 @@ function NetworkGraphPage() {
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { searchFilter } = useURLSearch();
 
     const {
         cluster: clusterFromUrl,
         namespaces: namespacesFromUrl,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         deployments: deploymentsFromUrl,
         remainingQuery,
     } = getScopeHierarchy(searchFilter);
 
     const { clusters } = useFetchClusters();
+    const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
+    const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
 
     useDeepCompareEffect(() => {
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
         if (clusterFromUrl && namespacesFromUrl.length > 0) {
-            const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
             if (selectedClusterId) {
                 setIsLoading(true);
 
@@ -79,6 +78,7 @@ function NetworkGraphPage() {
                     fetchNetworkFlowGraph(
                         selectedClusterId,
                         namespacesFromUrl,
+                        deploymentsFromUrl,
                         queryToUse,
                         timestampToUse || undefined,
                         includePorts
@@ -86,6 +86,7 @@ function NetworkGraphPage() {
                     fetchNetworkPolicyGraph(
                         selectedClusterId,
                         namespacesFromUrl,
+                        deploymentsFromUrl,
                         queryToUse,
                         undefined,
                         includePorts
@@ -144,7 +145,7 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusters, clusterFromUrl, namespacesFromUrl]);
+    }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl]);
 
     useEffect(() => {
         if (edgeState === 'active') {
@@ -165,7 +166,12 @@ function NetworkGraphPage() {
                         </Title>
                     </FlexItem>
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <NetworkBreadcrumbs clusters={clusters} />
+                        <NetworkBreadcrumbs
+                            clusters={clusters}
+                            selectedCluster={selectedCluster}
+                            selectedNamespaces={namespacesFromUrl}
+                            selectedDeployments={deploymentsFromUrl}
+                        />
                     </FlexItem>
                     <Button variant="secondary">Manage CIDR blocks</Button>
                     <Button variant="secondary">Simulate network policy</Button>
