@@ -56,7 +56,7 @@ var (
 	memLimit                   = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)
 	// Default place to put the heap dump is the /tmp directory because the container process has rights
 	// to write to this directory without creating and mounting a PVC
-	heapDumpDir = env.RegisterSetting("HEAP_DUMP_DIR", env.WithDefault("/tmp"))
+	heapDumpDir = env.RegisterSetting("HEAP_DUMP_PARENT_DIR", env.WithDefault("/tmp"))
 	// Default place where controller-runtime looks for TLS artifacts.
 	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
 	defaultCertDir  = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
