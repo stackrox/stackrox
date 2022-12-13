@@ -335,7 +335,6 @@ export function createExtraneousEdges(selectedId: string): {
     const extraneousEgressEdge = {
         id: 'extraneous-egress-edge',
         type: 'edge',
-        // we will need to set this dynamically using edge.setSource(node)
         source: selectedId,
         target: 'extraneous-egress',
         visible: true,
@@ -345,7 +344,6 @@ export function createExtraneousEdges(selectedId: string): {
         id: 'extraneous-ingress-edge',
         type: 'edge',
         source: 'extraneous-ingress',
-        // we will need to set this dynamically using edge.setTarget(node)
         target: selectedId,
         visible: true,
         edgeStyle: EdgeStyle.dashed,
