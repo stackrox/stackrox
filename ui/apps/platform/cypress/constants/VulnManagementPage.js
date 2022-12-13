@@ -140,26 +140,6 @@ const policySidePanelSelectors = {
     policyEditPageHeader: '[data-testid="side-panel-header"]',
 };
 
-const reportSection = {
-    pageTitle: 'h1',
-    createReportLink: 'a:contains("Create report")',
-    breadcrumbItems: '.pf-c-breadcrumb__item',
-    buttons: {
-        create: 'button:contains("Create")',
-        cancel: 'button:contains("Cancel")',
-    },
-    table: {
-        column: {
-            name: 'th:contains("Report")',
-            description: 'th:contains("Description")',
-            cveFixabilityType: 'th:contains("CVE fixability type")',
-            cveSeverities: 'th:contains("CVE severities")',
-            lastRun: 'th:contains("Last run")',
-        },
-        rows: 'tbody tr',
-    },
-};
-
 export const selectors = {
     ...dashboardSelectors,
     ...listSelectors,
@@ -173,5 +153,4 @@ export const selectors = {
     // TODO-ivan: unscrew everything above, it overrides each other etc., move to scoped definitions
     mainTable: scopeSelectors('[data-testid="panel"]', tableSelectors),
     sidePanel1: scopeSelectors(panelSelectors.sidePanel, sidePanelSelectors),
-    reportSection,
 };
