@@ -77,7 +77,7 @@ central:
     nodeSelector: null # string | dict
     tolerations: null # [dict]
     source:
-      string: null # string
+      connectionString: null # string
       minConns: null # int
       maxConns: null # int
       statementTimeoutMs: null #int
