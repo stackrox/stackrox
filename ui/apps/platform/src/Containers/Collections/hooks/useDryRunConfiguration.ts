@@ -36,14 +36,8 @@ export default function useDryRunConfiguration(
         [dryRunConfig.embeddedCollectionIds, dryRunConfig.name, dryRunConfig.resourceSelectors, id]
     );
 
-    // This function forces an update of the configuration in order to trigger a refetch
-    // of the collection results.
-    // TODO - As a follow up, investigate pulling the state and fetching code from `CollectionResults` instead.
-    const refreshConfig = useCallback(() => setDryRunConfig((config) => ({ ...config })), []);
-
     return {
         dryRunConfig,
         updateDryRunConfig,
-        refreshConfig,
     };
 }

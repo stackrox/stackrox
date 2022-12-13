@@ -1,21 +1,14 @@
 import React, { ReactElement, useEffect } from 'react';
 import {
-    Button,
     Drawer,
     DrawerActions,
     DrawerCloseButton,
     DrawerContent,
     DrawerContentBody,
-    DrawerHead,
-    DrawerPanelBody,
     DrawerPanelContent,
-    Flex,
-    Text,
-    Title,
 } from '@patternfly/react-core';
 
 import { Collection } from 'services/CollectionsService';
-import { SyncAltIcon } from '@patternfly/react-icons';
 import { CollectionPageAction } from './collections.utils';
 import CollectionResults from './CollectionResults';
 import { isCollectionParseError, parseCollection } from './converter';
@@ -61,7 +54,7 @@ function CollectionFormDrawer({
     const initialData = parseCollection(collectionData.collection);
     const initialEmbeddedCollections = collectionData.embeddedCollections;
     const collectionId = action.type !== 'create' ? action.collectionId : undefined;
-    const { dryRunConfig, updateDryRunConfig, refreshConfig } = useDryRunConfiguration(
+    const { dryRunConfig, updateDryRunConfig } = useDryRunConfiguration(
         collectionId,
         collectionData.collection
     );
@@ -80,38 +73,20 @@ function CollectionFormDrawer({
                                 borderLeft: 'var(--pf-global--BorderColor--100) 1px solid',
                             }}
                         >
-                            <DrawerHead>
-                                <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                    <Flex
-                                        grow={{ default: 'grow' }}
-                                        direction={{ default: 'column' }}
-                                        spaceItems={{ default: 'spaceItemsNone' }}
-                                    >
-                                        <Title headingLevel="h2">Collection results</Title>
-                                        <Text>See a preview of current matches.</Text>
-                                    </Flex>
-                                    <Button
-                                        className="pf-u-mr-md"
-                                        variant="plain"
-                                        onClick={refreshConfig}
-                                        title="Refresh results"
-                                    >
-                                        <SyncAltIcon />
-                                    </Button>
-                                </Flex>
-                                {!isInlineDrawer && (
-                                    <DrawerActions>
-                                        <DrawerCloseButton onClick={() => toggleDrawer(false)} />
-                                    </DrawerActions>
-                                )}
-                            </DrawerHead>
-                            <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
-                                <CollectionResults
-                                    dryRunConfig={dryRunConfig}
-                                    configError={configError}
-                                    setConfigError={setConfigError}
-                                />
-                            </DrawerPanelBody>
+                            <CollectionResults
+                                headerContent={
+                                    !isInlineDrawer && (
+                                        <DrawerActions>
+                                            <DrawerCloseButton
+                                                onClick={() => toggleDrawer(false)}
+                                            />
+                                        </DrawerActions>
+                                    )
+                                }
+                                dryRunConfig={dryRunConfig}
+                                configError={configError}
+                                setConfigError={setConfigError}
+                            />
                         </DrawerPanelContent>
                     }
                 >

@@ -3,6 +3,8 @@ import {
     debounce,
     Button,
     Divider,
+    DrawerHead,
+    DrawerPanelBody,
     EmptyState,
     EmptyStateIcon,
     EmptyStateVariant,
@@ -13,9 +15,10 @@ import {
     SelectOption,
     Skeleton,
     Spinner,
+    Text,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon, ListIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 
@@ -70,12 +73,14 @@ function DeploymentResult({ deployment }: { deployment: ListDeployment }) {
 }
 
 export type CollectionResultsProps = {
+    headerContent?: ReactNode;
     dryRunConfig: CollectionRequest;
     configError?: CollectionConfigError;
     setConfigError?: (newError: CollectionConfigError | undefined) => void;
 };
 
 function CollectionResults({
+    headerContent,
     dryRunConfig,
     configError,
     setConfigError = () => {},
@@ -125,7 +130,7 @@ function CollectionResults({
         }
     }, [configError]);
 
-    useEffect(() => {
+    const refreshResults = useCallback(() => {
         setConfigError(undefined);
         if (selectorRulesExist) {
             setIsRefreshingResults(true);
@@ -139,6 +144,10 @@ function CollectionResults({
         selectorRulesExist,
         setConfigError,
     ]);
+
+    useEffect(() => {
+        refreshResults();
+    }, [refreshResults]);
 
     let content: ReactNode = '';
 
@@ -175,7 +184,6 @@ function CollectionResults({
                 spaceItems={{ default: 'spaceItemsNone' }}
                 alignItems={{ default: 'alignItemsStretch' }}
                 direction={{ default: 'column' }}
-                className="pf-u-mt-lg"
             >
                 <Flex spaceItems={{ default: 'spaceItemsNone' }}>
                     <FlexItem>
@@ -248,8 +256,26 @@ function CollectionResults({
 
     return (
         <>
+            <DrawerHead>
+                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <Flex
+                        grow={{ default: 'grow' }}
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsNone' }}
+                    >
+                        <Title headingLevel="h2">Collection results</Title>
+                        <Text>See a preview of current matches.</Text>
+                    </Flex>
+                    <Button variant="plain" onClick={refreshResults} title="Refresh results">
+                        <SyncAltIcon />
+                    </Button>
+                </Flex>
+                {headerContent}
+            </DrawerHead>
             <Divider />
-            {content}
+            <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
+                {content}
+            </DrawerPanelBody>
         </>
     );
 }
