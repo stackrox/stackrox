@@ -1,6 +1,7 @@
-import { selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
-import { visitVulnerabilityManagementEntityInSidePanel } from '../../../helpers/vulnmanagement/entities';
+
+import { visitVulnerabilityManagementEntityInSidePanel } from '../vulnerabilityManagement.helpers';
+import { selectors } from '../vulnerabilityManagement.selectors';
 
 const entitiesKey = 'nodes';
 

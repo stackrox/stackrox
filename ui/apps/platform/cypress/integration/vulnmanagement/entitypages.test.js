@@ -1,12 +1,13 @@
-import * as api from '../../constants/apiEndpoints';
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../../helpers/request';
+
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     interactAndWaitForVulnerabilityManagementSecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
-import { hasFeatureFlag } from '../../helpers/features';
+} from './vulnerabilityManagement.helpers';
+import { selectors } from './vulnerabilityManagement.selectors';
 
 describe('Entities single views', () => {
     withAuth();
@@ -304,15 +305,6 @@ describe('Entities single views', () => {
 
     it('should show the active state in the fixable CVES widget for a single deployment', () => {
         const entitiesKey = 'deployments';
-        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
-
-        const fixableCvesFixture = usingVMUpdates
-            ? 'vulnerabilities/fixableCvesForEntity.json'
-            : 'vulnerabilities/fixableCvesForEntityLegacy.json';
-        const getFixableCvesForEntity = api.graphql('getFixableCvesForEntity');
-        cy.intercept('POST', getFixableCvesForEntity, {
-            fixture: fixableCvesFixture,
-        }).as('getFixableCvesForEntity');
 
         visitVulnerabilityManagementEntities(entitiesKey);
 
@@ -322,8 +314,25 @@ describe('Entities single views', () => {
             cy.get(`${selectors.tableRows}`).eq(1).click();
         }, entitiesKey);
 
-        cy.get('button:contains("Fixable CVEs")').click();
-        cy.wait('@getFixableCvesForEntity');
+        const opname = 'getFixableCvesForEntity';
+        const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
+        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
+        const fixableCvesFixture = usingVMUpdates
+            ? 'vulnerabilities/fixableCvesForEntity.json'
+            : 'vulnerabilities/fixableCvesForEntityLegacy.json';
+        const staticResponseMap = {
+            [opname]: {
+                fixture: fixableCvesFixture,
+            },
+        };
+        interactAndWaitForResponses(
+            () => {
+                cy.get('button:contains("Fixable CVEs")').click();
+            },
+            routeMatcherMap,
+            staticResponseMap
+        );
+
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`).contains(
             'Active'
         );

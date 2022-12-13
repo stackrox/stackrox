@@ -5,6 +5,7 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
+
 import {
     getCountAndNounFromNodeCVEsLinkResults,
     hasTableColumnHeadings,
@@ -12,7 +13,7 @@ import {
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './vulnerabilityManagement.helpers';
 
 const entitiesKey = 'node-components';
 

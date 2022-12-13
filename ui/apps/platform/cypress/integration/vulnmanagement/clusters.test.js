@@ -5,6 +5,7 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
+
 import {
     getCountAndNounFromImageCVEsLinkResults,
     getCountAndNounFromNodeCVEsLinkResults,
@@ -13,7 +14,7 @@ import {
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './vulnerabilityManagement.helpers';
 
 function getCountAndNounFromClusterCVEsLinkResults([, count]) {
     return {

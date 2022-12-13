@@ -1,4 +1,3 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import { selectors as policySelectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import {
@@ -6,12 +5,14 @@ import {
     callbackForPairOfAscendingPolicySeverityValuesFromElements,
     callbackForPairOfDescendingPolicySeverityValuesFromElements,
 } from '../../helpers/sort';
+
 import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFilteredSecondaryEntitiesLink,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './vulnerabilityManagement.helpers';
+import { selectors } from './vulnerabilityManagement.selectors';
 
 export function getPanelHeaderTextFromLinkResults([, count]) {
     return {

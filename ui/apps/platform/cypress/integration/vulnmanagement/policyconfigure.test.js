@@ -1,6 +1,7 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+
+import { visitVulnerabilityManagementEntities } from './vulnerabilityManagement.helpers';
+import { selectors } from './vulnerabilityManagement.selectors';
 
 describe('Policy Detail View Page', () => {
     withAuth();

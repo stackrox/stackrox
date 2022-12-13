@@ -1,12 +1,13 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
+
 import {
     interactAndWaitForVulnerabilityManagementEntities,
     visitVulnerabilityManagementDashboard,
     visitVulnerabilityManagementDashboardFromLeftNav,
-} from '../../helpers/vulnmanagement/entities';
-import { hasFeatureFlag } from '../../helpers/features';
+} from './vulnerabilityManagement.helpers';
+import { selectors } from './vulnerabilityManagement.selectors';
 
 function verifyVulnerabilityManagementDashboardCVEs(entitiesKey, menuListItemRegExp) {
     visitVulnerabilityManagementDashboard();

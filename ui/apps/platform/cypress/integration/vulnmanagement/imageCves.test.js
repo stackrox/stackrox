@@ -1,4 +1,3 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import {
@@ -8,12 +7,14 @@ import {
     callbackForPairOfDescendingNumberValuesFromElements,
     callbackForPairOfDescendingVulnerabilitySeverityValuesFromElements,
 } from '../../helpers/sort';
+
 import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './vulnerabilityManagement.helpers';
+import { selectors } from './vulnerabilityManagement.selectors';
 
 const entitiesKey = 'image-cves';
 

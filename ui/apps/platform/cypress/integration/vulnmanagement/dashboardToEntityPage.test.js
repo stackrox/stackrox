@@ -1,10 +1,11 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
+
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     visitVulnerabilityManagementDashboard,
-} from '../../helpers/vulnmanagement/entities';
+} from './vulnerabilityManagement.helpers';
+import { selectors } from './vulnerabilityManagement.selectors';
 
 function verifyItemLinkToEntityPage(entitiesKey, itemTextSelector, getHeaderTextFromItemText) {
     cy.get(itemTextSelector)

@@ -5,13 +5,14 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
+
 import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './vulnerabilityManagement.helpers';
 
 const entitiesKey = 'namespaces';
 

@@ -5,11 +5,12 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
+
 import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './vulnerabilityManagement.helpers';
 
 const entitiesKey = 'nodes';
 
