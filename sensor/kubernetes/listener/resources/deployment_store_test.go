@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
-	selector2 "github.com/stackrox/rox/sensor/kubernetes/selector"
+	"github.com/stackrox/rox/sensor/kubernetes/selector"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -163,6 +163,10 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByLabels() {
 		withLabels(makeDeploymentObject("d-4", "test-ns-no-match", "uuid-4"), map[string]string{
 			"app": "nginx",
 		}),
+		withLabels(makeDeploymentObject("d-5", "test-ns", "uuid-5"), map[string]string{
+			"app":  "nginx-2",
+			"role": "backend",
+		}),
 	}
 	for _, d := range deployments {
 		s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(d))
@@ -198,10 +202,26 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByLabels() {
 			},
 			expectedIDs: []string{"uuid-2"},
 		},
+		"Deployment with two labels vs a subset Selector": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app": "nginx-2",
+			},
+			expectedIDs: []string{"uuid-5"},
+		},
+		"Deployment with two labels vs a superset Selector": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app":  "nginx-2",
+				"role": "backend",
+				"l3":   "val3",
+			},
+			expectedIDs: nil,
+		},
 	}
 	for testName, c := range cases {
 		s.Run(testName, func() {
-			ids := s.deploymentStore.FindDeploymentIDsByLabels(c.namespace, selector2.CreateSelector(c.labels))
+			ids := s.deploymentStore.FindDeploymentIDsByLabels(c.namespace, selector.CreateSelector(c.labels))
 			s.Equal(len(c.expectedIDs), len(ids))
 			sort.Strings(ids)
 			sort.Strings(c.expectedIDs)

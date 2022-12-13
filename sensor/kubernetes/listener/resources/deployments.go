@@ -179,10 +179,27 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 
 	if features.ResyncDisabled.Enabled() {
-		// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
-		// references up the chain, which will be used to trigger the actual deployment event and detection.
-		events = component.MergeResourceEvents(events,
-			component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action))
+		if action == central.ResourceAction_REMOVE_RESOURCE {
+			// We need to do this here since the resolver relies on the deploymentStore to have the wrap
+			d.endpointManager.OnDeploymentRemove(deploymentWrap)
+			// At the moment we need to also send this deployment to the compatibility module when it's being deleted.
+			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
+			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
+			// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
+			events := component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
+				{
+					Object: deploymentWrap.GetDeployment(),
+					Action: action,
+				},
+			}, nil))
+			// if resource is being removed, we can create the remove message here without related resources
+			events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
+		} else {
+			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
+			// references up the chain, which will be used to trigger the actual deployment event and detection.
+			events = component.MergeResourceEvents(events,
+				component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false))
+		}
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
 		deploymentWrap.updatePortExposureSlice(exposureInfos)

@@ -51,6 +51,10 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	if msg.DeploymentReference != nil {
 		referenceIds := msg.DeploymentReference(r.storeProvider.Deployments())
 
+		if msg.ForceDetection && len(referenceIds) > 0 {
+			// We append the referenceIds to the msg to be reprocessed
+			msg = component.MergeResourceEvents(msg, component.NewResourceEvent(nil, nil, referenceIds))
+		}
 		for _, id := range referenceIds {
 			preBuiltDeployment := r.storeProvider.Deployments().Get(id)
 			if preBuiltDeployment == nil {
@@ -58,20 +62,9 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				continue
 			}
 
-			if msg.ParentResourceAction == central.ResourceAction_REMOVE_RESOURCE {
-				r.storeProvider.EndpointManager().OnDeploymentRemoveByID(id)
-				// At the moment we need to also send this deployment to the compatibility module when it's being deleted.
-				// Moving forward, there might be a different way to solve this, for example by changing the compatibility
-				// module to accept only deployment IDs rather than the entire deployment object. For more info on this
-				// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
-				event := component.NewResourceEvent([]*central.SensorEvent{toEvent(msg.ParentResourceAction, preBuiltDeployment)},
-					[]component.CompatibilityDetectionMessage{{Object: preBuiltDeployment, Action: msg.ParentResourceAction}}, nil)
-				// if resource is being removed, we can create the remove message here without related resources
-				msg = component.MergeResourceEvents(msg, event)
-				continue
-			} else {
-				r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(id)
-			}
+			// Remove actions are done at the handler level. This is not ideal but for now it allows us to be able to fetch deployments from the store
+			// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdate here.
+			r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(id)
 
 			permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
 			exposureInfo := r.storeProvider.Services().

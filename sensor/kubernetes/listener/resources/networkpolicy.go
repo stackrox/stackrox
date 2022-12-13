@@ -46,7 +46,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 		}
 
 		if features.ResyncDisabled.Enabled() {
-			events = component.NewDeploymentRefEvent(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel), central.ResourceAction_UPDATE_RESOURCE)
+			events = component.NewDeploymentRefEvent(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel), central.ResourceAction_UPDATE_RESOURCE, true)
 			events = component.MergeResourceEvents(events, component.NewResourceEvent(
 				[]*central.SensorEvent{
 					{
