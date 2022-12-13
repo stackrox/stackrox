@@ -108,6 +108,8 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
         // else if there is a selected node, create a node to collect extraneous flows
         const selectedNode = controller.getNodeById(detailId);
         // TODO: figure out if/how to support namespaces
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore TS2339: Property 'data' does not exist on type 'Node<NodeModel, any> | {}'.
         const { data } = selectedNode || {};
         if (data?.type === 'DEPLOYMENT') {
             const { networkPolicyState } = data || {};
@@ -145,6 +147,8 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
         const extraneousEgressNode = controller.getElementById('extraneous-egress');
         const { extraneousEgressEdge, extraneousIngressEdge } = createExtraneousEdges(detailId);
         const selectedNode = controller.getNodeById(detailId);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore TS2339: Property 'data' does not exist on type 'Node<NodeModel, any> | {}'.
         const { data } = selectedNode || {};
         // else if there is a selected node, create a node to collect extraneous flows
         // TODO: figure out if/how to support namespaces

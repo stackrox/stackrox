@@ -68,10 +68,10 @@ const DefaultFakeGroup = ({
     return React.createElement(
         'g',
         { ref: labelHoverRef, onClick: onSelect, className: groupClassName },
-        React.createElement(
-            Layer,
-            { id: 'groups' },
-            React.createElement(
+        // eslint-disable-next-line react/no-children-prop
+        React.createElement(Layer, {
+            id: 'groups',
+            children: React.createElement(
                 'g',
                 { ref: refs, onClick: onSelect },
                 ShapeComponent &&
@@ -108,11 +108,13 @@ const DefaultFakeGroup = ({
                             filter,
                         })
                     )
-            )
-        ),
+            ),
+        }),
         shapeSize &&
             React.createElement(LabelBadge, {
                 className: styles.topologyGroupCollapsedBadge,
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore TS2769: No overload matches this call.
                 ref: badgeRef,
                 x: shapeSize.width - 8,
                 y:
