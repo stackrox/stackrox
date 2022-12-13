@@ -129,3 +129,255 @@ force_rollback() {
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
 }
+
+validate_sensor_bundle_via_upgrader() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: validate_sensor_bundle_via_upgrader <deploy_dir>"
+    fi
+
+    local deploy_dir="$1"
+
+    info "Validating the sensor bundle via upgrader"
+
+    kubectl proxy --port 28001 &
+    local proxy_pid=$!
+    sleep 5
+
+    KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
+        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" \
+        -kube-config kubectl \
+        -local-bundle "$deploy_dir/sensor-deploy" \
+        -workflow validate-bundle || {
+            kill "$proxy_pid" || true
+            save_junit_failure "Validate_Sensor_Bundle_Via_Upgrader" \
+                "Failed" \
+                "Check build_log"
+            return 1
+        }
+
+    kill "$proxy_pid"
+}
+
+test_sensor_bundle() {
+    info "Testing the sensor bundle"
+
+    rm -rf sensor-remote
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    [[ -d sensor-remote ]]
+
+    ./sensor-remote/sensor.sh
+
+    kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+
+    sensor_wait
+
+    ./sensor-remote/delete-sensor.sh
+    rm -rf sensor-remote
+}
+
+test_upgrader() {
+    info "Starting bin/upgrader tests"
+
+    deactivate_metrics_server
+
+    info "Creating a 'sensor-remote-new' cluster"
+
+    rm -rf sensor-remote-new
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate k8s \
+        --main-image-repository "${MAIN_IMAGE_REPO:-$REGISTRY/main}" \
+        --collector-image-repository "${COLLECTOR_IMAGE_REPO:-$REGISTRY/collector}" \
+        --name remote-new \
+        --create-admission-controller
+
+    deploy_sensor_via_upgrader "for the first time, to test rollback" 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
+    rollback_sensor_via_upgrader 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
+
+    deploy_sensor_via_upgrader "from scratch" 9b8f2cbb-72c6-4e00-b375-5b50ce7f988b
+
+    deploy_sensor_via_upgrader "again, but with the same upgrade process ID" 9b8f2cbb-72c6-4e00-b375-5b50ce7f988b
+
+    deploy_sensor_via_upgrader "yet again, but with a new upgrade process ID" 789c9262-5dd3-4d58-a824-c2a099892bd6
+
+    webhook_timeout_before_patch="$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')"
+    echo "Webhook timeout before patch: ${webhook_timeout_before_patch}"
+    webhook_timeout_after_patch="$((webhook_timeout_before_patch + 1))"
+    echo "Desired webhook timeout after patch: ${webhook_timeout_after_patch}"
+
+    info "Patch admission webhook"
+    kubectl -n stackrox patch validatingwebhookconfiguration stackrox --type 'json' -p "[{'op':'replace','path':'/webhooks/0/timeoutSeconds','value':${webhook_timeout_after_patch}}]"
+    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne "${webhook_timeout_after_patch}" ]]; then
+        echo "Webhook not patched"
+        kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
+        exit 1
+    fi
+
+    info "Patch resources"
+    kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=1.1,memory=1.1Gi'
+
+    deploy_sensor_via_upgrader "after manually patching webhook" 060a9fa6-0ed6-49ac-b70c-9ca692614707
+
+    info "Verify the webhook was patched back by the upgrader"
+    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne "${webhook_timeout_before_patch}" ]]; then
+        echo "Webhook not patched"
+        kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
+        exit 1
+    fi
+
+    deploy_sensor_via_upgrader "with yet another new ID" 789c9262-5dd3-4d58-a824-c2a099892bd7
+
+    info "Verify resources were patched back by the upgrader"
+    resources="$(kubectl -n stackrox get deploy/sensor -o 'jsonpath=cpu={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.cpu},memory={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.memory}')"
+    if [[ "$resources" != 'cpu=1,memory=1Gi' ]]; then
+        echo "Resources ($resources) not patched back!"
+        kubectl -n stackrox get deploy/sensor -o yaml
+        exit 1
+    fi
+
+    info "Patch resources and add preserve resources annotation. Also, check toleration preservation"
+    kubectl -n stackrox annotate deploy/sensor "auto-upgrade.stackrox.io/preserve-resources=true"
+    kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=1.1,memory=1.1Gi'
+    kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"tolerations":[{"effect":"NoSchedule","key":"thekey","operator":"Equal","value":"thevalue"}]}}}}'
+
+    deploy_sensor_via_upgrader "after patching resources with preserve annotation" 789c9262-5dd3-4d58-a824-c2a099892bd8
+
+    info "Verify resources were not patched back by the upgrader"
+    resources="$(kubectl -n stackrox get deploy/sensor -o 'jsonpath=cpu={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.cpu},memory={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.memory}')"
+    if [[ "$resources" != 'cpu=1100m,memory=1181116006400m' ]]; then
+        echo "Resources ($resources) appear patched back!"
+        kubectl -n stackrox get deploy/sensor -o yaml
+        exit 1
+    fi
+    toleration="$(kubectl -n stackrox get deploy/sensor -o json | jq -rc '.spec.template.spec.tolerations[0] | (.effect + "," + .key + "," + .operator + "," + .value)')"
+    echo "Found toleration: $toleration"
+    if [[ "$toleration" != 'NoSchedule,thekey,Equal,thevalue' ]]; then
+        echo "Tolerations were not passed through to new Sensor"
+        kubectl -n stackrox get deploy/sensor -o yaml
+        exit 1
+    fi
+
+    # It's important to re-activate the metrics server because it might place a finalizer on namespaces. If it isn't
+    # active, namespaces might get stuck in the Terminating state.
+    activate_metrics_server
+}
+
+deactivate_metrics_server() {
+    info "Deactivate the metrics server by scaling it to 0 in order to reproduce ROX-4429"
+
+    # This should already be in the API resources
+    echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
+    local success=0
+    for i in $(seq 1 10); do
+        if kubectl api-resources 2>&1 | sed -e 's/^/out: /' | grep metrics.k8s.io; then
+            success=1
+            break
+        fi
+        sleep 5
+    done
+    [[ "$success" -eq 1 ]]
+
+    kubectl -n kube-system scale deploy -l k8s-app=metrics-server --replicas=0
+
+    echo "Waiting for metrics.k8s.io to NOT be in kubectl API resources..."
+    local success=0
+    # shellcheck disable=SC2034
+    for i in $(seq 1 10); do
+        kubectl api-resources >stdout.out 2>stderr.out || true
+        if grep -q 'metrics.k8s.io.*the server is currently unable to handle the request' stderr.out; then
+            success=1
+            break
+        fi
+        echo "metrics.k8s.io still in API resources. Will try again..."
+        cat stdout.out
+        sed -e 's/^/out: /' < stderr.out # (prefix output to avoid triggering prow log focus)
+        sleep 5
+    done
+    [[ "$success" -eq 1 ]]
+    rm -f stdout.out stderr.out
+
+    info "deactivated"
+}
+
+activate_metrics_server() {
+    info "Activating the previously deactivated metrics server"
+
+    # Ideally we would restore the previous replica count, but 1 works just fine
+    kubectl -n kube-system scale deploy -l k8s-app=metrics-server --replicas=1
+
+    echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
+    local success=0
+    # shellcheck disable=SC2034
+    for i in $(seq 1 30); do
+        if kubectl api-resources 2>&1 | sed -e 's/^/out: /' | grep metrics.k8s.io; then
+            success=1
+            break
+        fi
+        sleep 5
+    done
+    [[ "$success" -eq 1 ]]
+
+    info "activated"
+}
+
+deploy_sensor_via_upgrader() {
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: deploy_sensor_via_upgrader <stage> <upgrade_process_id>"
+    fi
+
+    local stage="$1"
+    local upgrade_process_id="$2"
+
+    info "Deploying sensor via upgrader: $stage"
+
+    kubectl proxy --port 28001 &
+    local proxy_pid=$!
+    sleep 5
+
+    ROX_UPGRADE_PROCESS_ID="$upgrade_process_id" \
+        ROX_CENTRAL_ENDPOINT="$API_ENDPOINT" \
+        ROX_MTLS_CA_FILE="$TEST_ROOT/sensor-remote-new/ca.pem" \
+        ROX_MTLS_CERT_FILE="$TEST_ROOT/sensor-remote-new/sensor-cert.pem" \
+        ROX_MTLS_KEY_FILE="$TEST_ROOT/sensor-remote-new/sensor-key.pem" \
+        KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
+        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl || {
+            kill "$proxy_pid" || true
+            save_junit_failure "Deploy_Sensor_Via_Upgrader" \
+                "Failed: $stage" \
+                "Check build_log"
+            return 1
+        }
+
+    kill "$proxy_pid"
+
+    sensor_wait
+}
+
+rollback_sensor_via_upgrader() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: rollback_sensor_via_upgrader <upgrade_process_id>"
+    fi
+
+    local upgrade_process_id="$1"
+
+    info "Rolling back sensor via upgrader"
+
+    kubectl proxy --port 28001 &
+    local proxy_pid=$!
+    sleep 5
+
+    ROX_UPGRADE_PROCESS_ID="$upgrade_process_id" \
+        ROX_CENTRAL_ENDPOINT="$API_ENDPOINT" \
+        ROX_MTLS_CA_FILE="$TEST_ROOT/sensor-remote-new/ca.pem" \
+        ROX_MTLS_CERT_FILE="$TEST_ROOT/sensor-remote-new/sensor-cert.pem" \
+        ROX_MTLS_KEY_FILE="$TEST_ROOT/sensor-remote-new/sensor-key.pem" \
+        KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
+        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" -workflow roll-back -kube-config kubectl || {
+            kill "$proxy_pid" || true
+            save_junit_failure "Rollback_Sensor_Via_Upgrader" \
+                "Failed" \
+                "Check build_log"
+            return 1
+        }
+
+    kill "$proxy_pid"
+}
+
