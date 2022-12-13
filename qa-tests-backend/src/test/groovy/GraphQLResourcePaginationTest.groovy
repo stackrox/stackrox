@@ -6,9 +6,11 @@ import services.GraphQLService
 import org.junit.Assume
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.Ignore
 
 class GraphQLResourcePaginationTest extends BaseSpecification {
 
+    @Ignore("Just for testing")
     @Unroll
     @Tag("BAT")
     def "Verify graphql/sublist pagination #topResource #topLevelQuery #topLevelSortOption #subResource"() {
