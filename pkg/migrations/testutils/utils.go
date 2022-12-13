@@ -11,6 +11,8 @@ import (
 func SetCurrentDBSequenceNumber(t *testing.T, seqNum int) {
 	testutils.MustBeInTest(t)
 	internal.CurrentDBVersionSeqNum = seqNum
+	// This is to make sure unit tests can emulate earlier versions correctly.
+	internal.LastRocksDBVersionSeqNum = seqNum
 }
 
 // SetDBMountPath is used for unit test only
