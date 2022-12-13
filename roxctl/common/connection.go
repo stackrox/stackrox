@@ -54,8 +54,9 @@ type grpcConfig struct {
 }
 
 func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
+	const initialBackoffDuration = 100 * time.Millisecond
 	retryOpts := []grpc_retry.CallOption{
-		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(100 * time.Millisecond)),
+		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(initialBackoffDuration)),
 		grpc_retry.WithMax(3),
 	}
 
