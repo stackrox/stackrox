@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/groups"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -33,7 +34,7 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 		return nil, nil
 	}
 
-	if err := ValidateProps(props, true); err != nil {
+	if err := groups.ValidateProps(props, true); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
@@ -173,7 +174,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 
 	var idsToRemove []string
 	for _, group := range remove {
-		if err := ValidateGroup(group, true); err != nil {
+		if err := groups.ValidateGroup(group, true); err != nil {
 			return errox.InvalidArgs.CausedBy(err)
 		}
 		groupID, err := ds.validateAndPrepGroupForDeleteNoLock(ctx, group.GetProps(), force)
@@ -256,7 +257,7 @@ func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error
 // Validate if the group is allowed to be added and prep the group before it is added to the db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, group *storage.Group) error {
-	if err := ValidateGroup(group, false); err != nil {
+	if err := groups.ValidateGroup(group, false); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
@@ -281,7 +282,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group,
 	force bool) error {
-	if err := ValidateGroup(group, true); err != nil {
+	if err := groups.ValidateGroup(group, true); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
@@ -307,7 +308,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForDeleteNoLock(ctx context.Context, props *storage.GroupProperties,
 	force bool) (string, error) {
-	if err := ValidateProps(props, true); err != nil {
+	if err := groups.ValidateProps(props, true); err != nil {
 		return "", errox.InvalidArgs.CausedBy(err)
 	}
 
@@ -325,10 +326,10 @@ func setGroupIDIfEmpty(group *storage.Group) error {
 		return errox.InvalidArgs.Newf("id should be empty but %q was provided", group.GetProps().GetId())
 	}
 	if group.GetProps() != nil {
-		group.GetProps().Id = GenerateGroupID()
+		group.GetProps().Id = groups.GenerateGroupID()
 	} else {
 		// Theoretically should never happen, as the auth provider ID is required to be set.
-		group.Props = &storage.GroupProperties{Id: GenerateGroupID()}
+		group.Props = &storage.GroupProperties{Id: groups.GenerateGroupID()}
 	}
 	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/groups"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -107,12 +108,12 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 
 func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateRequest) (*v1.Empty, error) {
 	for _, group := range req.GetPreviousGroups() {
-		if err := datastore.ValidateGroup(group, true); err != nil {
+		if err := groups.ValidateGroup(group, true); err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 	}
 	for _, group := range req.GetRequiredGroups() {
-		if err := datastore.ValidateGroup(group, false); err != nil {
+		if err := groups.ValidateGroup(group, false); err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 	}
