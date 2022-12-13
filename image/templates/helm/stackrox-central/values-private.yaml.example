@@ -134,7 +134,7 @@
 #   password:
 #     # The plaintext value of the administrator password.
 #     value: <pre-configured administrator password>
-#   # Internal "scanner.stackrox.svc" service TLS certificate for the Central DB deployment.
+#   # Internal "central-db.stackrox.svc" service TLS certificate for the Central DB deployment.
 #   # Omit to auto-generate (initial deployment) or use existing (upgrade).
 #   serviceTLS:
 #     cert: |

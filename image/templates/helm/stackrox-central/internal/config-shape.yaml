@@ -73,7 +73,7 @@ central:
       host: null # string
   extraMounts: null # [dict]
   db:
-    enabled: true # bool
+    enabled: false # bool
     nodeSelector: null # string | dict
     tolerations: null # [dict]
     source:
