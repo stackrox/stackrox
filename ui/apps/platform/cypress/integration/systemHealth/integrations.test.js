@@ -1,6 +1,6 @@
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
-import { interactAndVisitIntegrationsDashboardForSource } from '../../helpers/integrations';
+import { interactAndVisitIntegrationsDashboardForSource } from '../integrations/integrations.helpers';
 import { visitSystemHealth } from '../../helpers/systemHealth';
 
 describe('System Health Integrations local deployment', () => {

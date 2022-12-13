@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
@@ -207,37 +208,71 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 	defer s.internalScanSemaphore.Release(1)
 
-	imgID := request.GetImage().GetId()
+	var (
+		img       *storage.Image
+		fetchOpt  enricher.FetchOption
+		imgExists bool
+	)
 
+	imgID := request.GetImage().GetId()
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
 	if imgID != "" {
 		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			return nil, err
 		}
-		// If the scan exists, return the scan.
-		// Otherwise, run the enrichment pipeline.
+
+		// If the image exists and the image name from the request matches at least one stored image name(/reference),
+		// then we returned the stored image.
+		// Otherwise, we run the enrichment pipeline using the existing image with the requests image being added to it.
 		if exists {
-			return internalScanRespFromImage(existingImg), nil
+			if protoutils.SliceContains(request.GetImage().GetName(), existingImg.GetNames()) {
+				return internalScanRespFromImage(existingImg), nil
+			}
+			existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
+			img = existingImg
+			// We only want to force re-fetching of signatures and verification data, the additional image name has no
+			// impact on image scan data.
+			fetchOpt = enricher.ForceRefetchSignaturesOnly
+			imgExists = true
 		}
 	}
 
-	// If no ID, then don't use caches as they could return stale data
-	fetchOpt := enricher.UseCachesIfPossible
-	if request.GetCachedOnly() {
-		fetchOpt = enricher.NoExternalMetadata
-	} else if imgID == "" {
-		fetchOpt = enricher.ForceRefetch
+	if img == nil {
+		fetchOpt = enricher.UseCachesIfPossible
+		if request.GetCachedOnly() {
+			fetchOpt = enricher.NoExternalMetadata
+		} else if imgID == "" { // If no ID, then don't use caches as they could return stale data.
+			fetchOpt = enricher.ForceRefetch
+		}
+		img = types.ToImage(request.GetImage())
 	}
 
-	img := types.ToImage(request.GetImage())
+	if err := s.enrichImage(ctx, img, fetchOpt, request.GetSource()); err != nil && imgExists {
+		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
+		// central, since it could lead to us overriding an enriched image with a non-enriched image.
+		return internalScanRespFromImage(img), nil
+	}
+	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
+	// contained a digest.
+	if imgID != "" {
+		_ = s.saveImage(img)
+	}
 
+	return internalScanRespFromImage(img), nil
+}
+
+// enrichImage will enrich the given image, additionally applying the request source and fetch option to the request.
+// Any occurred error will be logged, and the given image will be modified, after execution it will contain the enriched
+// image data (i.e. scan results, signature data etc.).
+func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetchOpt enricher.FetchOption,
+	requestSource *v1.ScanImageInternalRequest_Source) error {
 	var source *enricher.RequestSource
-	if request.GetSource() != nil {
+	if requestSource != nil {
 		source = &enricher.RequestSource{
-			ClusterID:        request.GetSource().GetClusterId(),
-			Namespace:        request.GetSource().GetNamespace(),
-			ImagePullSecrets: set.NewStringSet(request.GetSource().GetImagePullSecrets()...),
+			ClusterID:        requestSource.GetClusterId(),
+			Namespace:        requestSource.GetNamespace(),
+			ImagePullSecrets: set.NewStringSet(requestSource.GetImagePullSecrets()...),
 		}
 	}
 
@@ -248,18 +283,12 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
-		log.Errorf("error enriching image %q: %v", request.GetImage().GetName().GetFullName(), err)
-		// purposefully, don't return here because we still need to save it into the DB so there is a reference
-		// even if we weren't able to enrich it
+		log.Errorf("error enriching image %q: %v", img.GetName().GetFullName(), err)
+		// Purposefully, don't return here because we still need to save it into the DB so there is a reference
+		// even if we weren't able to enrich it.
+		return err
 	}
-
-	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
-	// contained a digest
-	if imgID != "" {
-		_ = s.saveImage(img)
-	}
-
-	return internalScanRespFromImage(img), nil
+	return nil
 }
 
 // ScanImage scans an image and returns the result

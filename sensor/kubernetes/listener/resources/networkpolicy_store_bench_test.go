@@ -129,7 +129,6 @@ func BenchmarkUpsert_Add(b *testing.B) {
 			s := newNetworkPoliciesStore()
 			populateStore(s, int64(math.Pow(10, float64(scale))), scale, allLabels16, allValues16)
 			b.Run(fmt.Sprintf("L=%d-N=10^%d", numLabels, scale), func(b *testing.B) {
-				b.ResetTimer()
 				for i := 0; i < b.N; i++ {
 					np := newNPDummy(uuid.NewV4().String(), getRandom(namespaces), selectors[labelIdx])
 					s.Upsert(np)

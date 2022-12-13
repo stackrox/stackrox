@@ -119,6 +119,7 @@ func (s *policyValidator) validateVersion(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateName(policy *storage.Policy) error {
+	policy.Name = strings.TrimSpace(policy.Name)
 	return nameValidator.Validate(policy.GetName())
 }
 

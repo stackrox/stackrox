@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types';
+import { Flow } from '../types/flow.type';
 import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 
 import AdvancedFlowsFilter, {
@@ -154,6 +154,7 @@ function DeploymentFlow() {
                         setExpandedRows={setExpandedRows}
                         selectedRows={selectedRows}
                         setSelectedRows={setSelectedRows}
+                        isEditable
                     />
                 </StackItem>
             </Stack>

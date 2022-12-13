@@ -362,7 +362,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *stora
 
 func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image, option FetchOption) (*storage.Image, bool) {
 	if option.forceRefetchCachedValues() {
-		// When refetched values should be used, reset the existing values for signature and signature verification data.
+		// When re-fetched values should be used, reset the existing values for signature and signature verification data.
 		img.Signature = nil
 		img.SignatureVerificationData = nil
 		return img, false

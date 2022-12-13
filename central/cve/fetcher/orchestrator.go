@@ -69,6 +69,10 @@ func (m *orchestratorCVEManager) Reconcile() {
 	if err != nil {
 		log.Errorf("failed to reconcile orchestrator OpenShift CVEs: %v", err)
 	}
+	err = m.reconcileCVEs(clusters, utils.Istio)
+	if err != nil {
+		log.Errorf("failed to reconcile Istio CVEs: %v", err)
+	}
 }
 
 func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]*storage.EmbeddedVulnerability, error) {
@@ -88,6 +92,8 @@ func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]
 		return k8sScan(version, scanners)
 	case utils.OpenShift:
 		return openShiftScan(version, scanners)
+	case utils.Istio:
+		return istioScan(version, scanners)
 	}
 	return nil, errors.Errorf("unexpected kind %s", cveType)
 }
@@ -107,7 +113,6 @@ func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVuln
 		cve := utils.EmbeddedCVEToProtoCVE("", embeddedCVE)
 		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))
 	}
-
 	return m.updateCVEsInDB(newCVEs, cveType)
 }
 
@@ -196,7 +201,7 @@ func openShiftScan(version string, scanners map[string]types.OrchestratorScanner
 func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveType utils.CVEType) error {
 	versionToClusters := make(map[string][]*storage.Cluster)
 	for _, cluster := range clusters {
-		var version string
+		var versions []string
 		metadata := cluster.GetStatus().GetOrchestratorMetadata()
 		switch cveType {
 		case utils.K8s:
@@ -204,15 +209,23 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 			if metadata.GetIsOpenshift() != nil {
 				continue
 			}
-			version = metadata.GetVersion()
+			versions = append(versions, metadata.GetVersion())
 		case utils.OpenShift:
-			version = metadata.GetOpenshiftVersion()
+			versions = append(versions, metadata.GetOpenshiftVersion())
+		case utils.Istio:
+			versionList, err := m.cveMatcher.GetValidIstioVersions(allAccessCtx, cluster)
+			if err != nil {
+				continue
+			}
+			versions = versionList.AsSlice()
 		}
 
-		if version == "" {
-			continue
+		for _, v := range versions {
+			if v != "" {
+				versionToClusters[v] = append(versionToClusters[v], cluster)
+			}
 		}
-		versionToClusters[version] = append(versionToClusters[version], cluster)
+
 	}
 
 	embeddedCVEIDToClusters := make(map[string][]*storage.Cluster)
@@ -249,4 +262,27 @@ func (m *orchestratorCVEManager) getAffectedClusters(ctx context.Context, cveID 
 		return sac.ScopeSuffix{sac.ClusterScopeKey(c.GetId())}
 	})
 	return filteredClusters, nil
+}
+
+func istioScan(version string, scanners map[string]types.OrchestratorScanner) ([]*storage.EmbeddedVulnerability, error) {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Istio:%s", version))
+
+	for _, scanner := range scanners {
+		results, err := scanner.IstioScan(version)
+		if err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		vulnIDsSet := set.NewStringSet()
+
+		allVulns := make([]*storage.EmbeddedVulnerability, 0, len(results))
+		for _, vuln := range results {
+			if vulnIDsSet.Add(vuln.GetCve()) {
+				allVulns = append(allVulns, vuln)
+			}
+		}
+		return allVulns, nil
+	}
+
+	return nil, errorList.ToError()
 }

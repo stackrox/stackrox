@@ -11,3 +11,19 @@ func ResolveDeploymentIds(ids ...string) DeploymentReference {
 		return ids
 	}
 }
+
+// NamespaceServiceAccount is a helper struct that represents an object that has both a Namespace and a Service Account.
+type NamespaceServiceAccount struct {
+	Namespace, ServiceAccount string
+}
+
+// ResolveDeploymentsByMultipleServiceAccounts returns a list of deployment IDs given a list of ServiceAccounts
+func ResolveDeploymentsByMultipleServiceAccounts(serviceAccounts []NamespaceServiceAccount) DeploymentReference {
+	return func(store store.DeploymentStore) []string {
+		var allIds []string
+		for _, sa := range serviceAccounts {
+			allIds = append(allIds, store.FindDeploymentIDsWithServiceAccount(sa.Namespace, sa.ServiceAccount)...)
+		}
+		return allIds
+	}
+}

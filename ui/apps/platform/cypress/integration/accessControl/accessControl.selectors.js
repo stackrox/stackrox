@@ -1,45 +1,19 @@
-import scopeSelectors from '../helpers/scopeSelectors';
-
-export const accessControlUrl = '/main/access-control';
-export const authProvidersUrl = '/main/access-control/auth-providers';
-export const rolesUrl = '/main/access-control/roles';
-export const permissionSetsUrl = '/main/access-control/permission-sets';
-export const accessScopesUrl = '/main/access-control/access-scopes';
+import scopeSelectors from '../../helpers/scopeSelectors';
 
 function getFormGroupControlForLabel(label) {
     return `.pf-c-form__group-label:contains("${label}") + .pf-c-form__group-control`;
 }
 
 export const selectors = scopeSelectors('main', {
-    breadcrumbNav: '.pf-c-breadcrumb',
-    breadcrumbItem: '.pf-c-breadcrumb__item',
-    breadcrumbLink: 'a.pf-c-breadcrumb__link',
-    h1: 'h1',
-    h2: 'h2',
-    navLink: 'nav a',
-    navLinkCurrent: 'nav a.pf-m-current',
     alertTitle: '.pf-c-alert__title',
-    notFound: scopeSelectors('.pf-c-empty-state', {
-        title: 'h4',
-        a: 'a',
-    }),
 
     list: {
-        createButton: 'button:contains("Create")',
-        th: 'th',
-        tdName: 'td[data-label="Name"]',
-        tdNameLink: 'td[data-label="Name"] a',
-        tdDescription: 'td[data-label="Description"]',
-
         authProviders: {
             dataRows: 'tbody tr',
             createDropdownItem: 'button:contains("Create auth provider") + ul button',
             tdType: 'td[data-label="Type"]',
             tdMinimumAccessRole: 'td[data-label="Minimum access role',
             tdRules: 'td[data-label="Rules"]',
-            tdActions: 'td.pf-c-table__action .pf-c-dropdown__toggle',
-            deleteActionItem: 'td.pf-c-table__action button:contains("Delete auth provider")',
-            emptyState: '.pf-c-empty-state__content:contains("No auth providers")',
         },
 
         roles: {

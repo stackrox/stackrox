@@ -229,6 +229,35 @@ func (s *serviceAccountSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
+func (s *serviceAccountSACSuite) runCountTest(c testutils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
+	count, err := s.datastore.Count(ctx, nil)
+	s.Require().NoError(err)
+	expectedCount := 0
+	for _, clusterData := range c.Results {
+		for _, namespaceResultCount := range clusterData {
+			expectedCount += namespaceResultCount
+		}
+	}
+	s.Equal(expectedCount, count)
+}
+
+func (s *serviceAccountSACSuite) TestScopedCount() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
+}
+
+func (s *serviceAccountSACSuite) TestUnrestrictedCount() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
+}
+
 func (s *serviceAccountSACSuite) TestScopedSearch() {
 	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {

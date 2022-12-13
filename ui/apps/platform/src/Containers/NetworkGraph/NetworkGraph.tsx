@@ -2,7 +2,6 @@
 import React from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
-    Model,
     SELECTION_EVENT,
     TopologySideBar,
     TopologyView,
@@ -13,7 +12,6 @@ import {
     Visualization,
     VisualizationSurface,
     VisualizationProvider,
-    NodeModel,
 } from '@patternfly/react-topology';
 
 import { networkBasePathPF } from 'routePaths';
@@ -23,10 +21,14 @@ import defaultComponentFactory from './components/defaultComponentFactory';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import CidrBlockSideBar from './cidr/CidrBlockSideBar';
-import ExternalEntitiesSideBar from './external/ExternalEntitiesSideBar';
+import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar';
+import ExternalGroupSideBar from './external/ExternalGroupSideBar';
+import { EdgeState } from './EdgeStateSelect';
 
 import './Topology.css';
 import { getNodeById } from './utils/networkGraphUtils';
+import { CustomModel, CustomNodeModel } from './types/topology.type';
+import { createExtraneousNodes } from './utils/modelUtils';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -39,7 +41,7 @@ export const UrlDetailType = {
 export type UrlDetailTypeKey = keyof typeof UrlDetailType;
 export type UrlDetailTypeValue = typeof UrlDetailType[UrlDetailTypeKey];
 
-function getUrlParamsForEntity(selectedEntity: NodeModel): [UrlDetailTypeValue, string] {
+function getUrlParamsForEntity(selectedEntity: CustomNodeModel): [UrlDetailTypeValue, string] {
     const detailType = UrlDetailType[selectedEntity.data.type];
     const detailId = selectedEntity.id;
 
@@ -47,11 +49,13 @@ function getUrlParamsForEntity(selectedEntity: NodeModel): [UrlDetailTypeValue, 
 }
 
 export type NetworkGraphProps = {
-    model: Model;
+    model: CustomModel;
+    edgeState: EdgeState;
 };
 
 export type TopologyComponentProps = {
-    model: Model;
+    model: CustomModel;
+    edgeState: EdgeState;
 };
 
 function getNodeEdges(selectedNode) {
@@ -88,7 +92,39 @@ function setEdges(controller, detailId) {
     }
 }
 
-const TopologyComponent = ({ model }: TopologyComponentProps) => {
+function setExtraneousNodes(controller, detailId) {
+    if (!detailId) {
+        // if there is no selected node, check if extraneous nodes exist and clear them
+        const extraneousIngressNode = controller.getNodeById('extraneous-ingress');
+        if (extraneousIngressNode) {
+            controller.removeElement(extraneousIngressNode);
+        }
+        const extraneousEgressNode = controller.getNodeById('extraneous-egress');
+        if (extraneousEgressNode) {
+            controller.removeElement(extraneousEgressNode);
+        }
+    } else {
+        const currentModel = controller.toModel();
+        const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes();
+        // else if there is a selected node, create a node to collect extraneous flows
+        const selectedNode = controller.getNodeById(detailId);
+        const { networkPolicyState } = selectedNode?.data || {};
+        if (networkPolicyState === 'ingress') {
+            // if the node has ingress policies from policy graph, create extraneous egress node
+            currentModel.nodes.push(extraneousEgressNode);
+        } else if (networkPolicyState === 'egress') {
+            // if the node has egress policies from policy graph, create extraneous ingress node
+            currentModel.nodes.push(extraneousIngressNode);
+        } else if (networkPolicyState === 'none') {
+            // if the node has no policies, create both extraneous ingress and egress nodes
+            currentModel.nodes.push(extraneousEgressNode);
+            currentModel.nodes.push(extraneousIngressNode);
+        }
+        controller.fromModel(currentModel);
+    }
+}
+
+const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
     const history = useHistory();
     const { detailId } = useParams();
     const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
@@ -97,6 +133,9 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
     // to prevent error where graph hasn't initialized yet
     if (controller.hasGraph()) {
         setEdges(controller, detailId);
+        if (edgeState === 'extraneous') {
+            setExtraneousNodes(controller, detailId);
+        }
     }
 
     function closeSidebar() {
@@ -155,7 +194,14 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
                             edges={model?.edges || []}
                         />
                     )}
-                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_SOURCE' && (
+                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL' && (
+                        <ExternalGroupSideBar
+                            id={selectedEntity.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
+                    )}
+                    {selectedEntity && selectedEntity?.data?.type === 'CIDR_BLOCK' && (
                         <CidrBlockSideBar
                             id={selectedEntity.id}
                             nodes={model?.nodes || []}
@@ -163,7 +209,11 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
                         />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_ENTITIES' && (
-                        <ExternalEntitiesSideBar />
+                        <ExternalEntitiesSideBar
+                            id={selectedEntity.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
                     )}
                 </TopologySideBar>
             }
@@ -198,7 +248,7 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
     );
 };
 
-const NetworkGraph = React.memo<NetworkGraphProps>(({ model }) => {
+const NetworkGraph = React.memo<NetworkGraphProps>(({ model, edgeState }) => {
     const controller = new Visualization();
     controller.registerLayoutFactory(defaultLayoutFactory);
     controller.registerComponentFactory(defaultComponentFactory);
@@ -207,7 +257,7 @@ const NetworkGraph = React.memo<NetworkGraphProps>(({ model }) => {
     return (
         <div className="pf-ri__topology-demo">
             <VisualizationProvider controller={controller}>
-                <TopologyComponent model={model} />
+                <TopologyComponent model={model} edgeState={edgeState} />
             </VisualizationProvider>
         </div>
     );

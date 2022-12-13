@@ -73,8 +73,8 @@ func (d *dbCloneManagerImpl) Scan() error {
 	if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
 		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
 		prevClone, prevExists := d.cloneMap[PreviousClone]
-		if !prevExists {
-			if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
+		if !prevExists && currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
+			if version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
 				return errors.New(metadata.ErrNoPrevious)
 			}
 			return errors.New(metadata.ErrNoPreviousInDevEnv)
@@ -86,7 +86,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		}
 
 		// If previous clone does not match
-		if prevClone.GetVersion() != version.GetMainVersion() {
+		if prevExists && prevClone.GetVersion() != version.GetMainVersion() {
 			return errors.Errorf(metadata.ErrPreviousMismatchWithVersions, prevClone.GetVersion(), version.GetMainVersion())
 		}
 	}
@@ -183,7 +183,8 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	}
 
 	prevClone, prevExists := d.cloneMap[PreviousClone]
-	if d.rollbackEnabled() && currClone.GetVersion() != version.GetMainVersion() {
+	// Only need to make a copy if the migrations need to be performed
+	if d.rollbackEnabled() && currClone.GetSeqNum() != migrations.CurrentDBVersionSeqNum() {
 		// If previous clone has the same version as current version, the previous upgrade was not completed.
 		// Central could be in a loop of booting up the service. So we should continue to run with current.
 		if prevExists && currClone.GetVersion() == prevClone.GetVersion() {

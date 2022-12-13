@@ -16,7 +16,7 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
-import { EdgeModel, NodeModel } from '@patternfly/react-topology';
+import { EdgeModel } from '@patternfly/react-topology';
 
 import useTabs from 'hooks/patternfly/useTabs';
 import useFetchDeployment from 'hooks/useFetchDeployment';
@@ -26,6 +26,7 @@ import {
     getNumExternalFlows,
     getNumInternalFlows,
 } from '../utils/networkGraphUtils';
+import { CustomNodeModel } from '../types/topology.type';
 
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 import DeploymentDetails from './DeploymentDetails';
@@ -35,7 +36,7 @@ import NetworkPolicies from '../common/NetworkPolicies';
 
 type DeploymentSideBarProps = {
     deploymentId: string;
-    nodes: NodeModel[];
+    nodes: CustomNodeModel[];
     edges: EdgeModel[];
 };
 
@@ -51,7 +52,8 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
     const numExternalFlows = getNumExternalFlows(nodes, edges, deploymentId);
     const numInternalFlows = getNumInternalFlows(nodes, edges, deploymentId);
     const listenPorts = getListenPorts(nodes, deploymentId);
-    const deploymentPolicyIds = deploymentNode?.data?.policyIds || [];
+    const deploymentPolicyIds =
+        deploymentNode?.data.type === 'DEPLOYMENT' ? deploymentNode?.data?.policyIds : [];
 
     if (isLoading) {
         return (

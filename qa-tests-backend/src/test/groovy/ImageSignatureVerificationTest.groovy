@@ -29,6 +29,7 @@ class ImageSignatureVerificationTest extends BaseSpecification {
     static final private String UNVERIFIABLE = "Unverifiable"
     static final private String DISTROLESS_AND_TEKTON = "Distroless+Tekton"
     static final private String POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE = "Distroless+Tekton+Unverifiable"
+    static final private String SAME_DIGEST = "Same+Digest"
 
     // List of integration names used within tests.
     // NOTE: If you add a new name, make sure to add it here.
@@ -37,6 +38,7 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             TEKTON,
             UNVERIFIABLE,
             DISTROLESS_AND_TEKTON,
+            SAME_DIGEST,
     ]
 
     // Public keys used within signature integrations.
@@ -62,6 +64,14 @@ kPnJq+zt386SCoG0ewIH5MB8+GjIDGArUULSDfjfM31Eae/71kavAUI0OA==
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUpphKrUYSHvrR+r82Jn7Evg/d3L9
 w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
+-----END PUBLIC KEY-----""",
+    ]
+    static final private Map<String, String> SAME_DIGEST_COSIGN_PUBLIC_KEY = [
+            // Source: https://vault.bitwarden.com/#/vault?itemId=95313e19-de46-4533-b160-af620120452a.
+            "Docker": """\
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhsRRb4sl0Y4PeVSk9w/eYaWwigXj
+QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 -----END PUBLIC KEY-----""",
     ]
 
@@ -97,6 +107,23 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
             .addLabel("app", "image-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
+    // Deployment holding an image with the same digest as docker.io/daha97/alt-nginx that does not have a cosign
+    // signature associated with it.
+    static final private Deployment SAME_DIGEST_NO_SIGNATURE = new Deployment()
+            .setName("same-digest-without-signature")
+            .setImage("quay.io/rhacs-eng/qa@sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
+            .addLabel("app", "image-same-digest-without-signature")
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+
+    // Deployment holding an image with the same digest as docker.io/daha97/nginx that does have a cosign signature
+    // associated with it.
+    static final private Deployment SAME_DIGEST_WITH_SIGNATURE = new Deployment()
+            .setName("same-digest-with-signature")
+            .setImage("quay.io/rhacs-eng/qa-signatures@" +
+                    "sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
+            .addLabel("app", "image-same-digest-with-signature")
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+
     // List of deployments used within the tests. This will be used during setup of the spec / teardown to create /
     // delete all deployments.
     // NOTE: If you add another deployment, make sure to add it here as well.
@@ -105,6 +132,8 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
             TEKTON_DEPLOYMENT,
             UNVERIFIABLE_DEPLOYMENT,
             WITHOUT_SIGNATURE_DEPLOYMENT,
+            SAME_DIGEST_NO_SIGNATURE,
+            SAME_DIGEST_WITH_SIGNATURE,
     ]
 
     // Base policy which will be used for creating subsequent policies that have signature integration IDs as values.
@@ -124,6 +153,7 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
 
     def setupSpec() {
         orchestrator.createNamespace(SIGNATURE_TESTING_NAMESPACE)
+        addStackroxImagePullSecret(SIGNATURE_TESTING_NAMESPACE)
 
         // Signature integration "Distroless" which holds only the distroless cosign public key.
         String distrolessSignatureIntegrationID = createSignatureIntegration(
@@ -145,6 +175,13 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         )
         assert unverifiableSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(UNVERIFIABLE, unverifiableSignatureIntegrationID)
+
+        // Signature integration "Same+Digest" which holds only the same digest cosign public key.
+        String sameDigestSignatureIntegrationID = createSignatureIntegration(
+                SAME_DIGEST, SAME_DIGEST_COSIGN_PUBLIC_KEY
+        )
+        assert sameDigestSignatureIntegrationID
+        CREATED_SIGNATURE_INTEGRATIONS.put(SAME_DIGEST, sameDigestSignatureIntegrationID)
 
         // Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
         Map<String,String> mergedKeys = DISTROLESS_PUBLIC_KEY.clone() as Map<String, String>
@@ -217,27 +254,44 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         DISTROLESS                                 | UNVERIFIABLE_DEPLOYMENT      | true
         DISTROLESS                                 | WITHOUT_SIGNATURE_DEPLOYMENT | true
         DISTROLESS                                 | DISTROLESS_DEPLOYMENT        | false
+        DISTROLESS                                 | SAME_DIGEST_NO_SIGNATURE     | true
+        DISTROLESS                                 | SAME_DIGEST_WITH_SIGNATURE   | true
         // Tekton should create alerts for all deployments except those using tekton images.
         TEKTON                                     | DISTROLESS_DEPLOYMENT        | true
         TEKTON                                     | UNVERIFIABLE_DEPLOYMENT      | true
         TEKTON                                     | WITHOUT_SIGNATURE_DEPLOYMENT | true
         TEKTON                                     | TEKTON_DEPLOYMENT            | false
+        TEKTON                                     | SAME_DIGEST_NO_SIGNATURE     | true
+        TEKTON                                     | SAME_DIGEST_WITH_SIGNATURE   | true
         // Unverifiable should create alerts for all deployments.
         UNVERIFIABLE                               | DISTROLESS_DEPLOYMENT        | true
         UNVERIFIABLE                               | TEKTON_DEPLOYMENT            | true
         UNVERIFIABLE                               | WITHOUT_SIGNATURE_DEPLOYMENT | true
         UNVERIFIABLE                               | UNVERIFIABLE_DEPLOYMENT      | true
+        UNVERIFIABLE                               | SAME_DIGEST_NO_SIGNATURE     | true
+        UNVERIFIABLE                               | SAME_DIGEST_WITH_SIGNATURE   | true
         // Distroless and tekton should create alerts for all deployments except those using distroless / tekton images.
         DISTROLESS_AND_TEKTON                      | UNVERIFIABLE_DEPLOYMENT      | true
         DISTROLESS_AND_TEKTON                      | WITHOUT_SIGNATURE_DEPLOYMENT | true
         DISTROLESS_AND_TEKTON                      | TEKTON_DEPLOYMENT            | false
         DISTROLESS_AND_TEKTON                      | DISTROLESS_DEPLOYMENT        | false
+        DISTROLESS_AND_TEKTON                      | SAME_DIGEST_NO_SIGNATURE     | true
+        DISTROLESS_AND_TEKTON                      | SAME_DIGEST_WITH_SIGNATURE   | true
         // Policy with all three integrations should create alerts for all deployments except those using distroless /
         // tekton images.
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | UNVERIFIABLE_DEPLOYMENT      | true
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | WITHOUT_SIGNATURE_DEPLOYMENT | true
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | TEKTON_DEPLOYMENT            | false
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | DISTROLESS_DEPLOYMENT        | false
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | SAME_DIGEST_NO_SIGNATURE     | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | SAME_DIGEST_WITH_SIGNATURE   | true
+        // Same digest should create alerts for all deployments except those using alt-nginx image.
+        SAME_DIGEST                                | UNVERIFIABLE_DEPLOYMENT      | true
+        SAME_DIGEST                                | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        SAME_DIGEST                                | TEKTON_DEPLOYMENT            | true
+        SAME_DIGEST                                | DISTROLESS_DEPLOYMENT        | true
+        SAME_DIGEST                                | SAME_DIGEST_NO_SIGNATURE     | true
+        SAME_DIGEST                                | SAME_DIGEST_WITH_SIGNATURE   | false
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.

@@ -1,10 +1,32 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: stackrox-db
+  name: central
 spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
+  template:
+    spec:
+      containers:
+        - name: central
+          env:
+            - name: ROX_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: ROX_TELEMETRY_ENDPOINT
+              value: https://telemetry.endpoint
+            - name: ROX_TELEMETRY_STORAGE_KEY_V1
+              value: my-api-key
+            - name: ROX_OFFLINE_MODE
+              value: "false"
+            - name: ROX_ENABLE_OPENSHIFT_AUTH
+              value: "true"
+            - name: ROX_POSTGRES_DATASTORE
+              value: "true"
+            - name: NO_PROXY
+              valueFrom:
+                secretKeyRef:
+                  key: NO_PROXY
+                  name: central-stackrox-central-services-proxy-env
+status:
+  availableReplicas: 1

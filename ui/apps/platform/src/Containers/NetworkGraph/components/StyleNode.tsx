@@ -27,7 +27,6 @@ import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
 import FolderOpenIcon from '@patternfly/react-icons/dist/esm/icons/folder-open-icon';
 import BlueprintIcon from '@patternfly/react-icons/dist/esm/icons/blueprint-icon';
 import PauseCircle from '@patternfly/react-icons/dist/esm/icons/pause-circle-icon';
-import Thumbtack from '@patternfly/react-icons/dist/esm/icons/thumbtack-icon';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
@@ -130,12 +129,6 @@ const renderDecorators = (
                 element,
                 TopologyQuadrant.lowerLeft,
                 <PauseCircle />,
-                getShapeDecoratorCenter
-            )}
-            {renderDecorator(
-                element,
-                TopologyQuadrant.lowerRight,
-                <Thumbtack />,
                 getShapeDecoratorCenter
             )}
         </>

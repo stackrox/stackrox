@@ -365,6 +365,26 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  telemetry:
+                    description: Configures telemetry settings for Central. If enabled,
+                      Central transmits telemetry and diagnostic data to a remote
+                      storage backend.
+                    properties:
+                      enabled:
+                        description: Specifies if Telemetry is enabled.
+                        type: boolean
+                      storage:
+                        description: Defines the telemetry storage backend for Central.
+                        properties:
+                          endpoint:
+                            description: Storage API endpoint.
+                            type: string
+                          key:
+                            description: Storage API key. If not set, telemetry is
+                              disabled.
+                            type: string
+                        type: object
+                    type: object
                   tolerations:
                     description: If you want this component to only run on specific
                       nodes, you can configure tolerations of tainted nodes.

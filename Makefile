@@ -339,16 +339,7 @@ build-prep: deps
 	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
 .PHONY: cli-build
-cli-build: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
-ifdef CI
-	RACE=0 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) ./roxctl
-endif
+cli-build: cli-linux cli-darwin cli-windows
 
 .PHONY: cli
 cli: cli-build
@@ -358,13 +349,15 @@ cli: cli-build
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
 
-cli-linux: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
+cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
+cli-darwin: cli_darwin-amd64 cli_darwin-arm64
+cli-windows: cli_windows-amd64
 
-cli-darwin: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+cli_%: build-prep
+	$(eval    w := $(subst -, ,$*))
+	$(eval   os := $(firstword $(w)))
+	$(eval arch := $(lastword  $(w)))
+	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 
@@ -490,7 +483,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/validate_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests

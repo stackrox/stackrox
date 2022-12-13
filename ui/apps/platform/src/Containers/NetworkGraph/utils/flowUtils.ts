@@ -1,5 +1,5 @@
 import { uniq } from 'lodash';
-import { Flow } from '../types';
+import { Flow } from '../types/flow.type';
 
 export function getAllUniquePorts(flows: Flow[]): string[] {
     const allPorts = flows.reduce((acc, curr) => {

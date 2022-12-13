@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -102,6 +103,7 @@ func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
 		verifiedImageReferences, err := verifyImageSignatures(ctx, sigs, hash, image, opts)
 		if err == nil {
 			if len(verifiedImageReferences) == 0 {
+				log.Infof("no verified image references found, defaulting to default image name %q", image.GetName().GetFullName())
 				// Fallback to the default name of the image if the reference is empty.
 				verifiedImageReferences = []string{image.GetName().GetFullName()}
 			}
@@ -218,10 +220,24 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 		"signature %q", image.GetNames(), signatureImageReference)
 	var verifiedImageReferences []string
 	for _, name := range image.GetNames() {
-		if signatureImageReference == fmt.Sprintf("%s/%s",
-			name.GetRegistry(), name.GetRemote()) {
+		reference, err := dockerReferenceFromImageName(name)
+		if err != nil {
+			// Theoretically, all references should be parsable.
+			// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.
+			log.Errorf("Failed to retrieve the reference for image name %s: %v", name.GetFullName(), err)
+			continue
+		}
+		if signatureImageReference == reference {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
 		}
 	}
 	return verifiedImageReferences, nil
+}
+
+func dockerReferenceFromImageName(imageName *storage.ImageName) (string, error) {
+	ref, err := name.ParseReference(imageName.GetFullName())
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/%s", ref.Context().Registry.RegistryStr(), ref.Context().RepositoryStr()), nil
 }

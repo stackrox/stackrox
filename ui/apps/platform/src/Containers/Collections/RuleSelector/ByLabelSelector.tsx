@@ -7,6 +7,7 @@ import {
     Button,
     Divider,
     ValidatedOptions,
+    TextInput,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { FormikErrors } from 'formik';
@@ -14,7 +15,6 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import useIndexKey from 'hooks/useIndexKey';
 import { SelectorEntityType, ScopedResourceSelector, ByLabelResourceSelector } from '../types';
-import { AutoCompleteSelect } from './AutoCompleteSelect';
 
 export type ByLabelSelectorProps = {
     entityType: SelectorEntityType;
@@ -126,14 +126,14 @@ function ByLabelSelector({
                                     fieldId={`${entityType}-label-key-${ruleIndex}`}
                                     className="pf-u-flex-grow-1"
                                     label={ruleIndex === 0 ? 'Label key' : ''}
-                                    isRequired
+                                    isRequired={!isDisabled}
                                 >
-                                    <AutoCompleteSelect
+                                    <TextInput
                                         id={`${entityType}-label-key-${ruleIndex}`}
-                                        typeAheadAriaLabel={`Select label key for ${lowerCaseEntity} rule ${
+                                        aria-label={`Select label key for ${lowerCaseEntity} rule ${
                                             ruleIndex + 1
                                         } of ${scopedResourceSelector.rules.length}`}
-                                        selectedOption={rule.key}
+                                        value={rule.key}
                                         onChange={(fieldValue: string) =>
                                             onChangeLabelKey(
                                                 scopedResourceSelector,
@@ -142,7 +142,7 @@ function ByLabelSelector({
                                             )
                                         }
                                         validated={keyValidation}
-                                        isDisabled={isDisabled}
+                                        readOnlyVariant={isDisabled ? 'plain' : undefined}
                                     />
                                 </FormGroup>
                                 <FlexItem
@@ -156,7 +156,7 @@ function ByLabelSelector({
                                 fieldId={`${entityType}-label-value-${ruleIndex}`}
                                 className="pf-u-flex-grow-1"
                                 label={ruleIndex === 0 ? 'Label value(s)' : ''}
-                                isRequired
+                                isRequired={!isDisabled}
                             >
                                 <Flex
                                     spaceItems={{ default: 'spaceItemsSm' }}
@@ -172,9 +172,9 @@ function ByLabelSelector({
                                                 : ValidatedOptions.default;
                                         return (
                                             <Flex key={keyFor(valueIndex)}>
-                                                <AutoCompleteSelect
+                                                <TextInput
                                                     id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
-                                                    typeAheadAriaLabel={`Select label value ${
+                                                    aria-label={`Select label value ${
                                                         valueIndex + 1
                                                     } of ${
                                                         rule.values.length
@@ -182,7 +182,7 @@ function ByLabelSelector({
                                                         ruleIndex + 1
                                                     } of ${scopedResourceSelector.rules.length}`}
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
-                                                    selectedOption={value}
+                                                    value={value}
                                                     onChange={(fieldValue: string) =>
                                                         onChangeLabelValue(
                                                             scopedResourceSelector,
@@ -192,7 +192,9 @@ function ByLabelSelector({
                                                         )
                                                     }
                                                     validated={valueValidation}
-                                                    isDisabled={isDisabled}
+                                                    readOnlyVariant={
+                                                        isDisabled ? 'plain' : undefined
+                                                    }
                                                 />
                                                 {!isDisabled && (
                                                     <Button

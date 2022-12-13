@@ -21,18 +21,18 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { GetSortParams } from 'hooks/useURLSort';
-import { CollectionResponse } from 'services/CollectionsService';
+import { Collection } from 'services/CollectionsService';
 import { SearchFilter } from 'types/search';
 import { collectionsBasePath } from 'routePaths';
 
 export type CollectionsTableProps = {
-    collections: CollectionResponse[];
+    collections: Collection[];
     collectionsCount: number;
     pagination: UseURLPaginationResult;
     searchFilter: SearchFilter;
     setSearchFilter: (searchFilter: SearchFilter) => void;
     getSortParams: GetSortParams;
-    onCollectionDelete: (collection: CollectionResponse) => Promise<void>;
+    onCollectionDelete: (collection: Collection) => Promise<void>;
     hasWriteAccess: boolean;
 };
 
@@ -51,7 +51,7 @@ function CollectionsTable({
     const history = useHistory();
     const { page, perPage, setPage, setPerPage } = pagination;
     const [isDeleting, setIsDeleting] = useState(false);
-    const [collectionToDelete, setCollectionToDelete] = useState<CollectionResponse | null>(null);
+    const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null);
     const hasCollections = collections.length > 0;
 
     function getEnabledSortParams(field: string) {
@@ -81,7 +81,7 @@ function CollectionsTable({
         [setSearchFilter]
     );
 
-    function onConfirmDeleteCollection(collection: CollectionResponse) {
+    function onConfirmDeleteCollection(collection: Collection) {
         setIsDeleting(true);
         onCollectionDelete(collection).finally(() => {
             setCollectionToDelete(null);
