@@ -23,8 +23,10 @@ import { getQueryString } from 'utils/queryStringUtils';
 import timeWindowToDate from 'utils/timeWindows';
 
 import PageTitle from 'Components/PageTitle';
+import useURLParameter from 'hooks/useURLParameter';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
+import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect, { EdgeState } from './EdgeStateSelect';
 import NetworkGraph from './NetworkGraph';
 import {
@@ -34,6 +36,7 @@ import {
     graphModel,
 } from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
+import getSimulation from './utils/getSimulation';
 import { CustomModel, CustomNodeModel, PolicyNodeModel } from './types/topology.type';
 
 import './NetworkGraphPage.css';
@@ -54,6 +57,7 @@ function NetworkGraphPage() {
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
     const { searchFilter } = useURLSearch();
+    const [simulationQueryValue] = useURLParameter('simulation', undefined);
 
     const {
         cluster: clusterFromUrl,
@@ -61,6 +65,7 @@ function NetworkGraphPage() {
         deployments: deploymentsFromUrl,
         remainingQuery,
     } = getScopeHierarchy(searchFilter);
+    const simulation = getSimulation(simulationQueryValue);
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
@@ -177,7 +182,7 @@ function NetworkGraphPage() {
                         />
                     </FlexItem>
                     <Button variant="secondary">Manage CIDR blocks</Button>
-                    <Button variant="secondary">Simulate network policy</Button>
+                    <SimulateNetworkPolicyButton simulation={simulation} />
                 </Flex>
             </PageSection>
             <Divider component="div" />
@@ -211,7 +216,9 @@ function NetworkGraphPage() {
                 padding={{ default: 'noPadding' }}
             >
                 {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
-                {model.nodes && <NetworkGraph model={model} edgeState={edgeState} />}
+                {model.nodes && (
+                    <NetworkGraph model={model} edgeState={edgeState} simulation={simulation} />
+                )}
                 {isLoading && (
                     <Bullseye>
                         <Spinner isSVG />

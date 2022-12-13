@@ -15,6 +15,7 @@ import {
 } from '@patternfly/react-topology';
 
 import { networkBasePathPF } from 'routePaths';
+import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 import stylesComponentFactory from './components/stylesComponentFactory';
 import defaultLayoutFactory from './layouts/defaultLayoutFactory';
 import defaultComponentFactory from './components/defaultComponentFactory';
@@ -23,12 +24,14 @@ import NamespaceSideBar from './namespace/NamespaceSideBar';
 import CidrBlockSideBar from './cidr/CidrBlockSideBar';
 import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
+import NetworkPolicySimulatorSidePanel from './simulation/NetworkPolicySimulatorSidePanel';
 import { EdgeState } from './EdgeStateSelect';
 
 import './Topology.css';
 import { getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel } from './types/topology.type';
 import { createExtraneousNodes } from './utils/modelUtils';
+import { Simulation } from './utils/getSimulation';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -51,11 +54,13 @@ function getUrlParamsForEntity(selectedEntity: CustomNodeModel): [UrlDetailTypeV
 export type NetworkGraphProps = {
     model: CustomModel;
     edgeState: EdgeState;
+    simulation: Simulation;
 };
 
 export type TopologyComponentProps = {
     model: CustomModel;
     edgeState: EdgeState;
+    simulation: Simulation;
 };
 
 function getNodeEdges(selectedNode) {
@@ -124,7 +129,19 @@ function setExtraneousNodes(controller, detailId) {
     }
 }
 
-const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
+// @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
+function clearSimulationQuery(search: string): string {
+    const modifiedSearchFilter = getQueryObject(search);
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    if (modifiedSearchFilter.s && modifiedSearchFilter['s']['Simulation']) {
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        delete modifiedSearchFilter['s']['Simulation'];
+    }
+    const queryString = getQueryString(modifiedSearchFilter);
+    return queryString;
+}
+
+const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentProps) => {
     const history = useHistory();
     const { detailId } = useParams();
     const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
@@ -139,7 +156,8 @@ const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
     }
 
     function closeSidebar() {
-        history.push(`${networkBasePathPF}${history.location.search as string}`);
+        const queryString = clearSimulationQuery(history.location.search);
+        history.push(`${networkBasePathPF}${queryString}`);
     }
 
     function onSelect(ids: string[]) {
@@ -149,16 +167,13 @@ const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
         // @ts-ignore
         if (newSelectedEntity) {
             const [newDetailType, newDetailId] = getUrlParamsForEntity(newSelectedEntity);
+            const queryString = clearSimulationQuery(history.location.search);
             // if found, and it's not the logical grouping of all external sources, then trigger URL update
             if (newDetailId !== 'EXTERNAL') {
-                history.push(
-                    `${networkBasePathPF}/${newDetailType}/${newDetailId}${
-                        history.location.search as string
-                    }`
-                );
+                history.push(`${networkBasePathPF}/${newDetailType}/${newDetailId}${queryString}`);
             } else {
                 // otherwise, return to the graph-only state
-                history.push(`${networkBasePathPF}${history.location.search as string}`);
+                history.push(`${networkBasePathPF}${queryString}`);
             }
         }
     }
@@ -180,6 +195,9 @@ const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
         <TopologyView
             sideBar={
                 <TopologySideBar resizable onClose={closeSidebar}>
+                    {simulation.isOn && simulation.type === 'networkPolicy' && (
+                        <NetworkPolicySimulatorSidePanel />
+                    )}
                     {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
                         <NamespaceSideBar
                             namespaceId={selectedEntity.id}
@@ -217,7 +235,7 @@ const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
                     )}
                 </TopologySideBar>
             }
-            sideBarOpen={!!selectedEntity}
+            sideBarOpen={!!selectedEntity || simulation.isOn}
             sideBarResizable
             controlBar={
                 <TopologyControlBar
@@ -248,7 +266,7 @@ const TopologyComponent = ({ model, edgeState }: TopologyComponentProps) => {
     );
 };
 
-const NetworkGraph = React.memo<NetworkGraphProps>(({ model, edgeState }) => {
+const NetworkGraph = React.memo<NetworkGraphProps>(({ model, edgeState, simulation }) => {
     const controller = new Visualization();
     controller.registerLayoutFactory(defaultLayoutFactory);
     controller.registerComponentFactory(defaultComponentFactory);
@@ -257,7 +275,7 @@ const NetworkGraph = React.memo<NetworkGraphProps>(({ model, edgeState }) => {
     return (
         <div className="pf-ri__topology-demo">
             <VisualizationProvider controller={controller}>
-                <TopologyComponent model={model} edgeState={edgeState} />
+                <TopologyComponent model={model} edgeState={edgeState} simulation={simulation} />
             </VisualizationProvider>
         </div>
     );
