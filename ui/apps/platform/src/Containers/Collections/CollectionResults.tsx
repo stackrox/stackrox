@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useMemo, ReactNode } from 'react';
 import {
+    debounce,
     Button,
     Divider,
     EmptyState,
@@ -10,10 +11,9 @@ import {
     Select,
     SearchInput,
     SelectOption,
-    debounce,
-    Title,
     Skeleton,
     Spinner,
+    Title,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ListIcon } from '@patternfly/react-icons';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -36,7 +36,7 @@ function fetchMatchingDeployments(
     return request;
 }
 
-function RefreshingDeployment() {
+function DeploymentSkeleton() {
     return (
         <Flex className="pf-u-mb-0">
             <FlexItem style={{ flex: '0 1 24px' }}>
@@ -209,7 +209,7 @@ function CollectionResults({
                     {isRefreshingResults ? (
                         <>
                             {deployments.map((deployment: ListDeployment) => (
-                                <RefreshingDeployment key={`refreshing-${deployment.id}`} />
+                                <DeploymentSkeleton key={`refreshing-${deployment.id}`} />
                             ))}
                             <Spinner className="pf-u-align-self-center" size="lg" />
                         </>
