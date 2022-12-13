@@ -25,6 +25,7 @@ central:
       endpoint: null # string
       key: null # string
   config: null # string | dict
+  dbConfig: null # string | dict
   endpointsConfig: null # string | dict
   nodeSelector: null # string | dict
   tolerations: null # [dict]
