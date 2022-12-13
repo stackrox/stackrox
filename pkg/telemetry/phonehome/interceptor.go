@@ -13,16 +13,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// RequestParams holds intercepted call parameters.
-type RequestParams struct {
-	UserAgent string
-	UserID    authn.Identity
-	Path      string
-	Code      int
-	GRPCReq   any
-	HTTPReq   *http.Request
-}
-
 var (
 	mux = &sync.Mutex{}
 )
