@@ -257,7 +257,7 @@ class SACTest extends BaseSpecification {
         def result = SummaryService.getCounts()
         then:
         "Verify GetSumamryCounts returns no results"
-        assert result.getNumDeployments() == 1 // TODO: REVERT, its just for test
+        assert result.getNumDeployments() == 0
         assert result.getNumSecrets() == 0
         assert result.getNumNodes() == 0
         assert result.getNumClusters() == 0

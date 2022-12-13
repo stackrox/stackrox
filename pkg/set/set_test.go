@@ -44,7 +44,7 @@ func TestAddMatching(t *testing.T) {
 	a.False(set.AddMatching(func(s string) bool {
 		return s == "matching"
 	}, "1", "2"))
-	a.NotNil(set)
+	a.Nil(set)
 
 	a.True(set.AddMatching(func(s string) bool {
 		return s != ""

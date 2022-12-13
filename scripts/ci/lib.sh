@@ -1185,13 +1185,12 @@ store_test_results() {
     local from="$1"
     local to="$2"
 
-    info "Creating JIRA task for failures found in $from"
-    set -x
-    #TODO(janisz): Run only on master and tags
-    wget -q https://github.com/janisz/junit2jira/releases/download/v0.0.1/junit2jira && \
-    chmod +x junit2jira && \
-    ./junit2jira -junit-reports-dir "$from" -dry-run
-    set +x
+    if ! is_in_PR_context; then
+        info "Creating JIRA task for failures found in $from"
+        wget -q https://github.com/janisz/junit2jira/releases/download/v0.0.1/junit2jira && \
+        chmod +x junit2jira && \
+        ./junit2jira -junit-reports-dir "$from"
+    fi
 
     info "Copying test results from $from to $to"
 
