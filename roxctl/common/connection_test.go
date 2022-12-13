@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 	"crypto/x509"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -20,7 +19,9 @@ func TestGRPCShouldRetry(t *testing.T) {
 		called++
 		w.Header().Set("content-type", "application/grpc+proto")
 		if called == 1 {
-			fmt.Fprint(w, "too large message, please retry")
+			w.WriteHeader(http.StatusInternalServerError) // retry
+		} else {
+			w.WriteHeader(http.StatusOK) // do not retry
 		}
 	})
 	srv, host, serverName, opts := runServer(handlerFunc)
