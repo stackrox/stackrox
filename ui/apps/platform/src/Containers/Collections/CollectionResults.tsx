@@ -254,24 +254,16 @@ function CollectionResults({
 
     return (
         <>
-            <Flex
-                className="pf-u-p-lg"
-                alignItems={{ default: 'alignItemsCenter' }}
-                spaceItems={{ default: 'spaceItemsNone' }}
-            >
-                <Flex
-                    direction={{ default: 'column' }}
-                    grow={{ default: 'grow' }}
-                    spaceItems={{ default: 'spaceItemsNone' }}
-                >
+            <div className="pf-u-p-lg pf-u-display-flex pf-u-align-items-center">
+                <div className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
                     <Title headingLevel="h2">Collection results</Title>
                     <Text>See a preview of current matches.</Text>
-                </Flex>
+                </div>
                 <Button variant="plain" onClick={refreshResults} title="Refresh results">
                     <SyncAltIcon />
                 </Button>
                 {headerContent}
-            </Flex>
+            </div>
             <Divider />
             <div className="pf-u-h-100 pf-u-p-lg" style={{ overflow: 'auto' }}>
                 {content}
