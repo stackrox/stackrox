@@ -115,12 +115,12 @@ require (
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/gorm v1.24.1-0.20221019064659-5dd2bb482755
 	helm.sh/helm/v3 v3.9.4
-	k8s.io/api v0.24.6
+	k8s.io/api v0.24.9
 	k8s.io/apimachinery v0.24.9
-	k8s.io/apiserver v0.24.6
-	k8s.io/client-go v0.24.6
-	k8s.io/kubectl v0.24.6
-	k8s.io/kubelet v0.24.6
+	k8s.io/apiserver v0.24.9
+	k8s.io/client-go v0.24.9
+	k8s.io/kubectl v0.24.9
+	k8s.io/kubelet v0.24.9
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.12.2
 	sigs.k8s.io/controller-tools v0.9.2
@@ -346,9 +346,9 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apiextensions-apiserver v0.24.6 // indirect
-	k8s.io/cli-runtime v0.24.6 // indirect
-	k8s.io/component-base v0.24.6 // indirect
+	k8s.io/apiextensions-apiserver v0.24.9 // indirect
+	k8s.io/cli-runtime v0.24.9 // indirect
+	k8s.io/component-base v0.24.9 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220627174259-011e075b9cb8 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
