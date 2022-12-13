@@ -187,7 +187,7 @@ function getNetworkPolicyState(
     return networkPolicyState;
 }
 
-export function transformPolicyData(nodes: Node[], flows?: number): CustomModel {
+export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
     const dataModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
@@ -293,7 +293,7 @@ export function createExtraneousFlowsModel(
     return dataModel;
 }
 
-export function createExtraneousNodes(flows?: number): {
+export function createExtraneousNodes(flows: number): {
     extraneousEgressNode: ExtraneousNodeModel;
     extraneousIngressNode: ExtraneousNodeModel;
 } {
@@ -308,7 +308,7 @@ export function createExtraneousNodes(flows?: number): {
             collapsible: false,
             showContextMenu: false,
             type: 'EXTRANEOUS',
-            flows: flows || 0,
+            flows,
         },
     };
     const extraneousIngressNode: ExtraneousNodeModel = {
@@ -322,7 +322,7 @@ export function createExtraneousNodes(flows?: number): {
             collapsible: false,
             showContextMenu: false,
             type: 'EXTRANEOUS',
-            flows: flows || 0,
+            flows,
         },
     };
     return { extraneousEgressNode, extraneousIngressNode };

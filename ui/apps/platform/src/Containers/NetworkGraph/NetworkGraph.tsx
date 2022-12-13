@@ -27,12 +27,12 @@ import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar'
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel from './simulation/NetworkPolicySimulatorSidePanel';
 import { EdgeState } from './EdgeStateSelect';
-
-import './Topology.css';
 import { getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel } from './types/topology.type';
 import { createExtraneousEdges } from './utils/modelUtils';
 import { Simulation } from './utils/getSimulation';
+
+import './Topology.css';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -93,7 +93,6 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
     const { detailId } = useParams();
     const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
     const controller = useVisualizationController();
-    console.log('TopologyComponent controller', controller);
 
     // to prevent error where graph hasn't initialized yet
     if (controller.hasGraph()) {
@@ -101,7 +100,6 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
     }
 
     function rerenderGraph() {
-        console.log('rerenderGraph');
         setNodes();
         setEdges();
     }
@@ -109,10 +107,10 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
     function showExtraneousNodes() {
         // else if there is a selected node, create a node to collect extraneous flows
         const selectedNode = controller.getNodeById(detailId);
-        console.log('selectedNode', selectedNode, detailId);
         // TODO: figure out if/how to support namespaces
-        if (selectedNode?.data?.type === 'DEPLOYMENT') {
-            const { networkPolicyState } = selectedNode?.data || {};
+        const { data } = selectedNode || {};
+        if (data?.type === 'DEPLOYMENT') {
+            const { networkPolicyState } = data || {};
             const extraneousIngressNode = controller.getElementById('extraneous-ingress');
             const extraneousEgressNode = controller.getElementById('extraneous-egress');
             if (networkPolicyState === 'ingress') {
@@ -130,7 +128,6 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
     }
 
     function hideExtraneousNodes() {
-        console.log('hideExtraneousNodes');
         // if there is no selected node, check if extraneous nodes exist and remove them
         const extraneousIngressNode = controller.getElementById('extraneous-ingress');
         if (extraneousIngressNode) {
@@ -144,20 +141,25 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
 
     function setExtraneousEdges() {
         const currentModel = controller.toModel();
+        const extraneousIngressNode = controller.getElementById('extraneous-ingress');
+        const extraneousEgressNode = controller.getElementById('extraneous-egress');
         const { extraneousEgressEdge, extraneousIngressEdge } = createExtraneousEdges(detailId);
         const selectedNode = controller.getNodeById(detailId);
+        const { data } = selectedNode || {};
         // else if there is a selected node, create a node to collect extraneous flows
-        console.log('selectedNode', selectedNode, detailId);
         // TODO: figure out if/how to support namespaces
-        if (selectedNode?.data?.type === 'DEPLOYMENT') {
-            const { networkPolicyState } = selectedNode?.data || {};
+        if (data?.type === 'DEPLOYMENT') {
+            const { networkPolicyState } = data || {};
             const edges: EdgeModel[] = currentModel.edges || [];
-            console.log('setting extraneous edges', edges);
-            if (networkPolicyState === 'ingress') {
+            if (networkPolicyState === 'ingress' && extraneousEgressNode) {
                 edges.push(extraneousEgressEdge);
-            } else if (networkPolicyState === 'egress') {
+            } else if (networkPolicyState === 'egress' && extraneousIngressNode) {
                 edges.push(extraneousIngressEdge);
-            } else if (networkPolicyState === 'none') {
+            } else if (
+                networkPolicyState === 'none' &&
+                extraneousEgressNode &&
+                extraneousIngressNode
+            ) {
                 edges.push(extraneousEgressEdge);
                 edges.push(extraneousIngressEdge);
             }
@@ -167,7 +169,6 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
     }
 
     function removeExtraneousEdges() {
-        console.log('removeExtraneousEdges');
         // if there is no selected node, check if extraneous edges exist and remove them
         const extraneousIngressEdge = controller.getElementById('extraneous-ingress-edge');
         if (extraneousIngressEdge) {
@@ -203,7 +204,6 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
     }
 
     function setNodes() {
-        console.log('setNodes');
         hideExtraneousNodes();
         if (edgeState === 'extraneous' && detailId) {
             showExtraneousNodes();
@@ -212,7 +212,6 @@ const TopologyComponent = ({ model, edgeState, simulation }: TopologyComponentPr
 
     // TODO: figure out how to add/show edges more performantly/smoothly
     function setEdges() {
-        console.log('setEdges');
         removeExtraneousEdges();
         controller
             .getGraph()

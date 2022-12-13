@@ -77,7 +77,7 @@ function NetworkGraphPage() {
 
     useDeepCompareEffect(() => {
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
-        if (clusterFromUrl && namespacesFromUrl.length > 0) {
+        if (clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount) {
             if (selectedClusterId) {
                 setIsLoading(true);
 
@@ -110,7 +110,10 @@ function NetworkGraphPage() {
                         // get policy nodes from api response
                         const { nodes: policyNodes } = values[1].response;
                         // transform policy data to DataModel
-                        const policyDataModel = transformPolicyData(policyNodes, deploymentCount);
+                        const policyDataModel = transformPolicyData(
+                            policyNodes,
+                            deploymentCount || 0
+                        );
                         // set policyNodeMap to be able to cross reference nodes by id
                         // to enhance active node data
                         policyDataModel.nodes?.forEach((node) => {
@@ -155,7 +158,7 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl]);
+    }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount]);
 
     useEffect(() => {
         if (edgeState === 'active') {
