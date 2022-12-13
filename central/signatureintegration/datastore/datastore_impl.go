@@ -181,7 +181,8 @@ func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id 
 func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id string) error {
 	policyCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+			// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
+			sac.ResourceScopeKeys(resources.Policy)))
 
 	policies, err := d.policyStore.GetAllPolicies(policyCtx)
 	if err != nil {
