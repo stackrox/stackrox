@@ -3,8 +3,6 @@ import {
     debounce,
     Button,
     Divider,
-    DrawerHead,
-    DrawerPanelBody,
     EmptyState,
     EmptyStateIcon,
     EmptyStateVariant,
@@ -256,26 +254,28 @@ function CollectionResults({
 
     return (
         <>
-            <DrawerHead>
-                <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                    <Flex
-                        grow={{ default: 'grow' }}
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsNone' }}
-                    >
-                        <Title headingLevel="h2">Collection results</Title>
-                        <Text>See a preview of current matches.</Text>
-                    </Flex>
-                    <Button variant="plain" onClick={refreshResults} title="Refresh results">
-                        <SyncAltIcon />
-                    </Button>
+            <Flex
+                className="pf-u-p-lg"
+                alignItems={{ default: 'alignItemsCenter' }}
+                spaceItems={{ default: 'spaceItemsNone' }}
+            >
+                <Flex
+                    direction={{ default: 'column' }}
+                    grow={{ default: 'grow' }}
+                    spaceItems={{ default: 'spaceItemsNone' }}
+                >
+                    <Title headingLevel="h2">Collection results</Title>
+                    <Text>See a preview of current matches.</Text>
                 </Flex>
+                <Button variant="plain" onClick={refreshResults} title="Refresh results">
+                    <SyncAltIcon />
+                </Button>
                 {headerContent}
-            </DrawerHead>
+            </Flex>
             <Divider />
-            <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
+            <div className="pf-u-h-100 pf-u-p-lg" style={{ overflow: 'auto' }}>
                 {content}
-            </DrawerPanelBody>
+            </div>
         </>
     );
 }
