@@ -22,10 +22,6 @@ import (
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
 func GetGRPCConnection(logger logger.Logger) (*grpc.ClientConn, error) {
-	insecure := flags.UseInsecure()
-	useDirectGRPC := flags.UseDirectGRPC()
-	forceHTTP1 := flags.ForceHTTP1()
-
 	endpoint, serverName, usePlaintext, err := ConnectNames()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
@@ -38,11 +34,11 @@ func GetGRPCConnection(logger logger.Logger) (*grpc.ClientConn, error) {
 
 	return createGRPCConn(grpcConfig{
 		usePlaintext:  usePlaintext,
-		insecure:      insecure,
+		insecure:      flags.UseInsecure(),
 		opts:          opts,
 		serverName:    serverName,
-		useDirectGRPC: useDirectGRPC,
-		forceHTTP1:    forceHTTP1,
+		useDirectGRPC: flags.UseDirectGRPC(),
+		forceHTTP1:    flags.ForceHTTP1(),
 		endpoint:      endpoint,
 	})
 }
