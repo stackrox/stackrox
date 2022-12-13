@@ -24,7 +24,7 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 30, // 141
+		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 30,                                  // 141
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.BasePostgresDBVersionSeqNum()) + 31}, // 142
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.NewClusterStore(databases.PkgRocksDB)

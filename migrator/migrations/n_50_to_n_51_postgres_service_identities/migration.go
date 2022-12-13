@@ -21,7 +21,7 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 50, // 161
+		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 50,                                  // 161
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.BasePostgresDBVersionSeqNum()) + 51}, // 162
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(databases.BoltDB)
