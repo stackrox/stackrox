@@ -227,8 +227,17 @@ func (h *pgSearchHelper) executeCount(ctx context.Context, q *v1.Query, searcher
 		return searcher.Count(ctx, q)
 	}
 
-	results, err := h.executeSearch(ctx, q, searcher)
-	return len(results), err
+	resourceWithAccess := permissions.View(h.resourceMD)
+	effectiveAccessScope, err := scopeChecker.EffectiveAccessScope(resourceWithAccess)
+	if err != nil {
+		return 0, err
+	}
+	scopedQuery, err := h.enrichQueryWithSACFilter(effectiveAccessScope, q)
+	if err != nil {
+		return 0, err
+	}
+
+	return searcher.Count(ctx, scopedQuery)
 }
 
 // searchHelper implementations
