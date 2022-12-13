@@ -708,8 +708,10 @@ func (s *storeImpl) readRows(
 		}
 
 		plop := &storage.ProcessListeningOnPort{
-			Port:           msg.Port,
-			Protocol:       msg.Protocol,
+			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+				Port:           msg.Port,
+				Protocol:       msg.Protocol,
+			},
 			CloseTimestamp: msg.CloseTimestamp,
 			ClusterId:	clusterId,
 			Process: &storage.ProcessIndicatorUniqueKey{
@@ -786,8 +788,10 @@ func (s *storeImpl) readRowsGroupBy(
 		}
 
 		plop := &storage.ProcessListeningOnPort{
-			Port:           msg.Port,
-			Protocol:       msg.Protocol,
+			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+				Port:           msg.Port,
+				Protocol:       msg.Protocol,
+			},
 			CloseTimestamp: msg.CloseTimestamp,
 			ClusterId:	clusterId,
 			Process: &storage.ProcessIndicatorUniqueKey{

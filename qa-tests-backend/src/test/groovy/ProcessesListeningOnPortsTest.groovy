@@ -151,7 +151,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert list1.size() == 2
 
-        def endpoint1a = list1.find { it.port == 80 }
+        def endpoint1a = list1.find { it.endpoint.port == 80 }
 
         assert endpoint1a
         assert endpoint1a.clusterId == clusterId
@@ -160,7 +160,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint1a.process.processExecFilePath == "/usr/bin/socat"
         // assert endpoint1a.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
 
-        def endpoint1b = list1.find { it.port == 8080 }
+        def endpoint1b = list1.find { it.endpoint.port == 8080 }
 
         assert endpoint1b
         assert endpoint1b.clusterId == clusterId
@@ -175,7 +175,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def endpoint2 = list2.get(0)
 
-        assert endpoint2.port == 8081
+        assert endpoint2.endpoint.port == 8081
         assert endpoint2.clusterId == clusterId
         assert endpoint2.process.containerName == TCPCONNECTIONTARGET2
         assert endpoint2.process.processName == "socat"
@@ -231,7 +231,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def list = processesListeningOnPorts.processesListeningOnPortsList
         assert list.size() == 2
 
-        def endpoint1 = list.find { it.port == 80 }
+        def endpoint1 = list.find { it.endpoint.port == 80 }
 
         assert endpoint1
         assert endpoint1.clusterId == clusterId
@@ -240,7 +240,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint1.process.processExecFilePath == "/usr/bin/socat"
         // assert endpoint1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
 
-        def endpoint2 = list.find { it.port == 8080 }
+        def endpoint2 = list.find { it.endpoint.port == 8080 }
 
         assert endpoint2
         assert endpoint2.clusterId == clusterId
