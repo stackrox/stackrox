@@ -114,11 +114,6 @@ func InstanceConfig() *phonehome.Config {
 				config.AddInterceptorFunc(event, f)
 			}
 		}
-		// Central adds itself to the tenant group, adding its properties to the
-		// group properties:
-		config.Telemeter().Group(config.GroupID, config.ClientID, props)
-		// Add the local admin user as well, with no extra group properties:
-		config.Telemeter().Group(config.GroupID, config.HashUserID("admin", ""), nil)
 
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 			return props, nil
