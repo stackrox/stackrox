@@ -84,6 +84,14 @@ spec:
           not set.
         displayName: Claim Name
         path: central.persistence.persistentVolumeClaim.claimName
+      - description: Specifies if Telemetry is enabled.
+        displayName: Enabled
+        path: central.telemetry.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Storage API endpoint.
+        displayName: Endpoint
+        path: central.telemetry.storage.endpoint
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -158,6 +166,14 @@ spec:
         path: central.persistence.persistentVolumeClaim.size
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Defines the telemetry storage backend for Central.
+        displayName: Storage
+        path: central.telemetry.storage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true
+      - description: Storage API key. If not set, telemetry is disabled.
+        displayName: Key
+        path: central.telemetry.storage.key
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
@@ -268,6 +284,12 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Configures telemetry settings for Central. If enabled, Central
+          transmits telemetry and diagnostic data to a remote storage backend.
+        displayName: Telemetry
+        path: central.telemetry
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Miscellaneous settings.
         displayName: Miscellaneous
         path: misc

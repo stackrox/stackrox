@@ -13,10 +13,6 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
-            - name: ROX_TELEMETRY_ENDPOINT
-              value: https://telemetry.endpoint
-            - name: ROX_TELEMETRY_STORAGE_KEY_V1
-              value: my-api-key
             - name: ROX_OFFLINE_MODE
               value: "false"
             - name: ROX_ENABLE_OPENSHIFT_AUTH
