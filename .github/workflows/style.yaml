@@ -1,11 +1,9 @@
 name: Style
 on:
+  push:
+    branches:
+      - master
   pull_request:
-    types:
-    - labeled
-    - opened
-    - reopened
-    - synchronize
 
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
