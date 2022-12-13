@@ -1,4 +1,4 @@
-package nodescanv2
+package nodeinventorizer
 
 import (
 	timestamp "github.com/gogo/protobuf/types"
@@ -8,17 +8,15 @@ import (
 	"github.com/stackrox/scanner/pkg/analyzer/nodes"
 )
 
-// NodeScanner defines an interface for V2 NodeScanning
-type NodeScanner interface {
+type NodeInventorizer interface {
 	Scan(nodeName string) (*storage.NodeInventory, error)
 }
 
-// NodeScan is the V2 NodeScanning implementation
-type NodeScan struct {
+type NodeInventoryCollector struct {
 }
 
 // Scan scans the current node and returns the results as storage.NodeInventory object
-func (n *NodeScan) Scan(nodeName string) (*storage.NodeInventory, error) {
+func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, error) {
 	componentsHost, err := nodes.Analyze(nodeName, "/host/", false)
 	log.Info("Finished node inventory /host scan")
 	if err != nil {

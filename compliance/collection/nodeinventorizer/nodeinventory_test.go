@@ -1,4 +1,4 @@
-package nodescanv2
+package nodeinventorizer
 
 import (
 	"testing"
@@ -16,8 +16,10 @@ type NodeScanSuite struct {
 }
 
 func (n *NodeScanSuite) TestMessageFormat() {
-	fns, err := (&FakeNodeScanner{}).Scan("someNode")
+	inventory, err := (&NodeInventoryCollector{}).Scan("someNode")
 	n.Nil(err)
-	n.NotNil(fns)
-	n.IsType(&storage.NodeInventory{}, fns)
+	n.NotNil(inventory)
+	n.IsType(&storage.NodeInventory{}, inventory)
 }
+
+// TODO: Test conversion functions and real Scan!

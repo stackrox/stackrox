@@ -10,7 +10,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
-	"github.com/stackrox/rox/compliance/collection/nodescanv2"
+	"github.com/stackrox/rox/compliance/collection/nodeinventorizer"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -148,7 +148,7 @@ func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient
 	}
 }
 
-func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scanner nodescanv2.NodeScanner) <-chan *sensor.MsgFromCompliance {
+func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scanner nodeinventorizer.NodeInventorizer) <-chan *sensor.MsgFromCompliance {
 	sensorC := make(chan *sensor.MsgFromCompliance)
 	nodeName := getNode()
 	go func() {
@@ -180,7 +180,7 @@ func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scann
 	return sensorC
 }
 
-func scanNode(nodeName string, scanner nodescanv2.NodeScanner) (*sensor.MsgFromCompliance, error) {
+func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
 	result, err := scanner.Scan(nodeName)
 	if err != nil {
 		return nil, err
@@ -276,13 +276,13 @@ func main() {
 		defer close(sensorC)
 		go manageSendingToSensor(ctx, cli, sensorC)
 
-		var scanner nodescanv2.NodeScanner
+		var scanner nodeinventorizer.NodeInventorizer
 		if features.UseFakeNodeInventory.Enabled() {
-			log.Infof("Using FakeNodeScanner")
-			scanner = &nodescanv2.FakeNodeScanner{}
+			log.Infof("Using FakeNodeInventorizer")
+			scanner = &nodeinventorizer.FakeNodeInventorizer{}
 		} else {
-			log.Infof("Using NodeScan")
-			scanner = &nodescanv2.NodeScan{}
+			log.Infof("Using NodeInventoryCollector")
+			scanner = &nodeinventorizer.NodeInventoryCollector{}
 		}
 		nodeInventoriesC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), scanner)
 
