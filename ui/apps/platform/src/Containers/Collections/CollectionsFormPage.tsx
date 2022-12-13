@@ -73,8 +73,8 @@ function CollectionsFormPage({
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [modalCollectionId, setModalCollectionId] = useState<string | null>(null);
 
-    const { saveError, setSaveError, onSubmit } = useCollectionFormSubmission(pageAction);
-    const saveErrorAlertElem = useRef<HTMLDivElement | null>(null);
+    const { configError, setConfigError, onSubmit } = useCollectionFormSubmission(pageAction);
+    const configErrorAlertElem = useRef<HTMLDivElement | null>(null);
 
     const {
         isOpen: menuIsOpen,
@@ -128,7 +128,7 @@ function CollectionsFormPage({
     }
 
     function scrollToTop() {
-        const scrollTargetElem = saveErrorAlertElem.current;
+        const scrollTargetElem = configErrorAlertElem.current;
         if (scrollTargetElem) {
             scrollTargetElem.scrollIntoView({ behavior: 'smooth' });
         }
@@ -210,8 +210,8 @@ function CollectionsFormPage({
                 onCancel={() => {
                     history.push({ pathname: `${collectionsBasePath}` });
                 }}
-                saveError={saveError}
-                setSaveError={setSaveError}
+                configError={configError}
+                setConfigError={setConfigError}
                 getCollectionTableCells={getCollectionTableCells}
                 headerContent={
                     <>
@@ -297,15 +297,17 @@ function CollectionsFormPage({
                             </FlexItem>
                         </Flex>
                         {/* This <div> gives us a reliable `ref` to use as a scroll target when an error occurs */}
-                        <div ref={saveErrorAlertElem}>
-                            {saveError && (
+                        <div ref={configErrorAlertElem}>
+                            {configError && (
                                 <Alert
                                     className="pf-u-m-md"
-                                    title={saveError.message}
+                                    title={configError.message}
                                     variant="danger"
                                     isInline
                                 >
-                                    {saveError?.type === 'UnknownError' ? saveError.details : ''}
+                                    {configError?.type === 'UnknownError'
+                                        ? configError.details
+                                        : ''}
                                 </Alert>
                             )}
                         </div>

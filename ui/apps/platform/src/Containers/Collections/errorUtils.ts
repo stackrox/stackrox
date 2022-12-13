@@ -1,6 +1,6 @@
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-type CollectionSaveErrorType =
+type CollectionConfigErrorType =
     | 'CollectionLoop'
     | 'DuplicateName'
     | 'EmptyName'
@@ -8,7 +8,7 @@ type CollectionSaveErrorType =
     | 'EmptyCollection'
     | 'UnknownError';
 
-export type CollectionSaveError =
+export type CollectionConfigError =
     | {
           type: 'CollectionLoop';
           message: string;
@@ -16,7 +16,7 @@ export type CollectionSaveError =
           loopId: string | undefined;
       }
     | {
-          type: Exclude<CollectionSaveErrorType, 'CollectionLoop'>;
+          type: Exclude<CollectionConfigErrorType, 'CollectionLoop'>;
           message: string;
           details?: string;
       };
@@ -29,7 +29,7 @@ export type CollectionSaveError =
  * @param err An instance of an Error
  * @return A categorized error specific to collections
  */
-export function parseSaveError(err: Error): CollectionSaveError {
+export function parseConfigError(err: Error): CollectionConfigError {
     const rawMessage = getAxiosErrorMessage(err);
 
     if (/create a loop/.test(rawMessage)) {
