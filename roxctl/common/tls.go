@@ -55,15 +55,22 @@ func ConnectNames() (string, string, bool, error) {
 	if err != nil {
 		return "", "", false, errors.Wrap(err, "could not get endpoint")
 	}
-	serverName := flags.ServerName()
-	if serverName == "" {
-		var err error
-		serverName, _, _, err = netutil.ParseEndpoint(endpoint)
-		if err != nil {
-			return "", "", false, errors.Wrap(err, "could not parse endpoint")
-		}
+	serverName, err := getServerName(endpoint)
+	if err != nil {
+		return "", "", false, errors.Wrap(err, "could not get server name")
 	}
 	return endpoint, serverName, usePlaintext, nil
+}
+
+func getServerName(endpoint string) (string, error) {
+	if serverName := flags.ServerName(); serverName != "" {
+		return serverName, nil
+	}
+	serverName, _, _, err := netutil.ParseEndpoint(endpoint)
+	if err != nil {
+		return "", errors.Wrap(err, "could not parse endpoint")
+	}
+	return serverName, nil
 }
 
 func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions, error) {
