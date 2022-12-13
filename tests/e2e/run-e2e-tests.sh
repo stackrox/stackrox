@@ -44,6 +44,7 @@ Options:
     and is used by some tests.
   -o, --orchestrator=<orchestrator> - choose the cluster orchestrator.
     Either k8s or openshift. defaults to k8s.
+  --db=<postgres|rocksdb> - defaults to postgres.
   -y - run without prompts.
   -h - show this help.
 
@@ -145,7 +146,7 @@ get_options() {
     normalized_opts=$(\
       getopt \
         -o cdo:s:t:y \
-        --long config-only,test-only,gather-debug,spin-cycle:,orchestrator: \
+        --long config-only,test-only,gather-debug,spin-cycle:,orchestrator:,db: \
         -n 'run-e2e-tests.sh' -- "$@" \
     )
 
@@ -156,6 +157,7 @@ get_options() {
     export GATHER_QA_TEST_DEBUG_LOGS="false"
     export SPIN_CYCLE_COUNT=1
     export ORCHESTRATOR="k8s"
+    export DATABASE="postgres"
     export PROMPT="true"
 
     while true; do
@@ -178,6 +180,10 @@ get_options() {
                 ;;
             -o | --orchestrator)
                 export ORCHESTRATOR="$2"
+                shift 2
+                ;;
+            --db)
+                export DATABASE="$2"
                 shift 2
                 ;;
             -t)
@@ -204,8 +210,22 @@ get_options() {
             ;;
     esac
 
+    case "$DATABASE" in
+        postgres)
+            export ROX_POSTGRES_DATASTORE="true"
+            ;;
+        rocksdb)
+            export ROX_POSTGRES_DATASTORE="false"
+            ;;
+        *)
+            die "database $DATABASE not supported"
+            ;;
+    esac
+
     export SUITE="${2:-}"
     export CASE="${3:-}"
+
+    export_job_name
 
     if [[ "${CONFIG_ONLY}" == "true" && "${TEST_ONLY}" == "true" ]]; then
         die "--config-only and --test-only are mutually exclusive"
@@ -360,6 +380,37 @@ spin() {
         (( count++ )) || true
         info "Completed test cycle: $count"
     done
+}
+
+export_job_name() {
+    # Emulate CI_JOB_NAME (which sets Env.CI_JOBNAME for .groovy tests) as it is
+    # used to determine some test behavior.
+    local job_name=""
+
+    case "$FLAVOR" in
+        qa)
+            job_name="qa-e2e-tests"
+            ;;
+        e2e)
+            job_name="nongroovy-e2e-tests-"
+            ;;
+        *)
+            die "flavor $FLAVOR not supported"
+            ;;
+    esac
+
+    case "$DATABASE" in
+        postgres)
+            job_name="postgres-$job_name"
+            ;;
+        rocksdb)
+            ;;
+        *)
+            die "database $DATABASE not supported"
+            ;;
+    esac
+
+    export CI_JOB_NAME="$job_name"
 }
 
 main "$@"
