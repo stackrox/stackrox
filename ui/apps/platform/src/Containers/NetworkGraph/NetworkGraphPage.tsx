@@ -23,6 +23,7 @@ import { getQueryString } from 'utils/queryStringUtils';
 import timeWindowToDate from 'utils/timeWindows';
 
 import PageTitle from 'Components/PageTitle';
+import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import EdgeStateSelect, { EdgeState } from './EdgeStateSelect';
 import NetworkGraph from './NetworkGraph';
@@ -60,6 +61,8 @@ function NetworkGraphPage() {
         deployments: deploymentsFromUrl,
         remainingQuery,
     } = getScopeHierarchy(searchFilter);
+
+    const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
     const { clusters } = useFetchClusters();
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
@@ -202,7 +205,12 @@ function NetworkGraphPage() {
                 </Toolbar>
             </PageSection>
             <Divider component="div" />
-            <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
+            <PageSection
+                className="network-graph"
+                variant={hasClusterNamespaceSelected ? 'default' : 'light'}
+                padding={{ default: 'noPadding' }}
+            >
+                {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
                 {model.nodes && <NetworkGraph model={model} edgeState={edgeState} />}
                 {isLoading && (
                     <Bullseye>
