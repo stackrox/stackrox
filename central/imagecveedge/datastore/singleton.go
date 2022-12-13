@@ -48,8 +48,7 @@ func initialize() {
 		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		imageIndexer.New(globalindex.GetGlobalIndex()),
 		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
-		clusterIndexer.New(globalindex.GetGlobalIndex()),
-		globalDackbox.GetGlobalDackBox())
+		clusterIndexer.New(globalindex.GetGlobalIndex()))
 
 	ad = New(globalDackbox.GetGlobalDackBox(), storage, searcher)
 }

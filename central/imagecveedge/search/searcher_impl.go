@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/central/imagecveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/compound"
@@ -39,7 +38,6 @@ type searcherImpl struct {
 	storage  store.Store
 	indexer  imageCVEEdgeIndexer.Indexer
 	searcher search.Searcher
-	provider graph.Provider
 }
 
 // SearchEdges returns the search results from indexed image-cve edges for the query.
@@ -66,12 +64,8 @@ func (ds *searcherImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*sto
 	return ds.searchImageCVEEdges(ctx, q)
 }
 
-func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
-	graph.Context(ctx, ds.provider, func(inner context.Context) {
-		res, err = ds.searcher.Search(inner, q)
-	})
-	return res, err
-	// return ds.searcher.Search(ctx, q)
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return ds.searcher.Search(ctx, q)
 }
 
 // resultsToImageCVEEdges returns the ImageCVEEdges from the db for the given search results.
