@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bullseye, Title } from '@patternfly/react-core';
+import { Bullseye } from '@patternfly/react-core';
 import { ModuleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
