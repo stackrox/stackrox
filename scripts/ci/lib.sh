@@ -1186,10 +1186,12 @@ store_test_results() {
     local to="$2"
 
     info "Creating JIRA task for failures found in $from"
+    set -x
     #TODO(janisz): Run only on master and tags
     curl -Sslf https://github.com/janisz/junit2jira/releases/download/v0.0.1/junit2jira -o junit2jira
     chmod +x junit2jira
     ./junit2jira -junit-reports-dir "$from" -dry-run
+    set +x
 
     info "Copying test results from $from to $to"
 
