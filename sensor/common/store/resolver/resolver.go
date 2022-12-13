@@ -31,7 +31,7 @@ func ResolveDeploymentsByMultipleServiceAccounts(serviceAccounts []NamespaceServ
 	}
 }
 
-// ResolveDeploymentLabels is a function that returns a list of deployment ids based on namespace and labels
+// ResolveDeploymentLabels returns a function that returns a list of deployment ids based on namespace and labels
 func ResolveDeploymentLabels(namespace string, sel selector.Selector) DeploymentReference {
 	return func(store store.DeploymentStore) []string {
 		return store.FindDeploymentIDsByLabels(namespace, sel)

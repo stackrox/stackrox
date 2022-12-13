@@ -214,25 +214,6 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 			messageReceived.Wait()
 		})
 	}
-
-	s.Run(fmt.Sprintf("ResourceAction: %s", central.ResourceAction_REMOVE_RESOURCE), func() {
-		messageReceived := sync.WaitGroup{}
-		messageReceived.Add(1)
-
-		s.givenDeploymentRemoveAction("1234")
-		s.mockOutput.EXPECT()
-
-		s.mockOutput.EXPECT().Send(&resourceActionMatcher{resourceAction: central.ResourceAction_REMOVE_RESOURCE}).Times(1).Do(func(arg0 interface{}) {
-			defer messageReceived.Done()
-		})
-
-		s.resolver.Send(&component.ResourceEvent{
-			DeploymentReference:  resolver.ResolveDeploymentIds("1234"),
-			ParentResourceAction: central.ResourceAction_REMOVE_RESOURCE,
-		})
-
-		messageReceived.Wait()
-	})
 }
 
 func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
@@ -447,20 +428,6 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
 			return &storage.Deployment{Id: deployment, ServiceAccountPermissionLevel: permissionLevel}, nil
 		})
-}
-
-func (s *resolverSuite) givenDeploymentRemoveAction(deployment string) {
-	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
-		return &storage.Deployment{
-			Labels: map[string]string{},
-		}
-	})
-
-	s.mockEndpointManager.EXPECT().OnDeploymentRemoveByID(gomock.Eq(deployment)).Times(1)
-	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
-	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(0)
-
-	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
 }
 
 func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exposure []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
