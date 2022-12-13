@@ -183,7 +183,7 @@ setup_client_CA_auth_provider() {
     require_environment "ROX_PASSWORD"
     require_environment "CLIENT_CA_PATH"
 
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" --insecure-skip-tls-verify \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
 }
 
@@ -199,7 +199,7 @@ setup_generated_certs_for_test() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" --insecure-skip-tls-verify \
         sensor generate-certs remote --output-dir "$dir"
     [[ -f "$dir"/cluster-remote-tls.yaml ]]
     # Use the certs in future steps that will use client auth.
@@ -434,7 +434,7 @@ restore_56_1_backup() {
     require_environment "ROX_PASSWORD"
 
     gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" --insecure-skip-tls-verify \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
 
@@ -454,15 +454,15 @@ db_backup_and_restore_test() {
     local output_dir="$1"
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     if [[ ! -e DB_TEST_FAIL ]]; then
         if [ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]; then
             info "Restoring from ${output_dir}/postgres_db_*"
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
         else
             info "Restoring from ${output_dir}/stackrox_db_*"
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
         fi
     fi
 
