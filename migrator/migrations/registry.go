@@ -14,7 +14,7 @@ var (
 
 // MustRegisterMigration registers a Migration, panic-ing if there's an error.
 func MustRegisterMigration(m types.Migration) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() && m.StartingSeqNum > migrations.CurrentDBVersionSeqNumWithoutPostgres() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() && m.StartingSeqNum > migrations.BasePostgresDBVersionSeqNum() {
 		return
 	}
 	if _, ok := migrationRegistry[m.StartingSeqNum]; ok {
