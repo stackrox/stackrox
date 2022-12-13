@@ -1,8 +1,11 @@
 name: Style
 on:
   push:
+    tags:
+       - '*'
     branches:
       - master
+      - release-*
   pull_request:
 
 env:
