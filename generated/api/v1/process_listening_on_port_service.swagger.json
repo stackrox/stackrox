@@ -79,6 +79,18 @@
     }
   },
   "definitions": {
+    "ProcessListeningOnPortEndpoint": {
+      "type": "object",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "protocol": {
+          "$ref": "#/definitions/storageL4Protocol"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -152,12 +164,8 @@
     "storageProcessListeningOnPort": {
       "type": "object",
       "properties": {
-        "port": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "protocol": {
-          "$ref": "#/definitions/storageL4Protocol"
+        "endpoint": {
+          "$ref": "#/definitions/ProcessListeningOnPortEndpoint"
         },
         "process": {
           "$ref": "#/definitions/storageProcessIndicatorUniqueKey"
