@@ -343,7 +343,7 @@ class VulnMgmtSACTest extends BaseSpecification {
                     log.error("Vulnerability ${item.cve} is found in image {${img}}")
                 }
             }
-            (tewakesortedVulnsdArray-baseSortedVulns).each {
+            (sortedVulns-baseSortedVulns).each {
                 item ->
                 log.error("Item found in vulnCallResults but not in baseVulnCallResult: " + item.cve)
                 for ( img in getImagesWithCVE(item.cve) ) {
