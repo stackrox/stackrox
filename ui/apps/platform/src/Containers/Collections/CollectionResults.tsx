@@ -19,7 +19,7 @@ import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 
 import { CollectionRequest, dryRunCollection } from 'services/CollectionsService';
 import { ListDeployment } from 'types/deployment.proto';
-import { CollectionSaveError, parseSaveError } from './errorUtils';
+import { CollectionConfigError, parseConfigError } from './errorUtils';
 import { SelectorEntityType } from './types';
 
 function fetchMatchingDeployments(
@@ -36,14 +36,14 @@ function fetchMatchingDeployments(
 
 export type CollectionResultsProps = {
     dryRunConfig: CollectionRequest;
-    saveError?: CollectionSaveError;
-    setSaveError?: (newError: CollectionSaveError | undefined) => void;
+    configError?: CollectionConfigError;
+    setConfigError?: (newError: CollectionConfigError | undefined) => void;
 };
 
 function CollectionResults({
     dryRunConfig,
-    saveError,
-    setSaveError = () => {},
+    configError,
+    setConfigError = () => {},
 }: CollectionResultsProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [selected, setSelected] = useState<SelectorEntityType>('Deployment');
@@ -72,22 +72,22 @@ function CollectionResults({
                     );
                 })
                 .catch((err) => {
-                    setSaveError(parseSaveError(err));
+                    setConfigError(parseConfigError(err));
                 });
         },
-        [setSaveError]
+        [setConfigError]
     );
 
     const fetchDryRunDebounced = useMemo(() => debounce(fetchDryRun, 800), [fetchDryRun]);
 
     useEffect(() => {
-        if (saveError) {
+        if (configError) {
             setDeployments([]);
         }
-    }, [saveError]);
+    }, [configError]);
 
     useEffect(() => {
-        setSaveError(undefined);
+        setConfigError(undefined);
         if (selectorRulesExist) {
             fetchDryRunDebounced(dryRunConfig, 0, filterText, selected);
         }
@@ -97,12 +97,12 @@ function CollectionResults({
         filterText,
         selected,
         selectorRulesExist,
-        setSaveError,
+        setConfigError,
     ]);
 
     let content: ReactNode = '';
 
-    if (saveError) {
+    if (configError) {
         content = (
             <Flex className="pf-u-h-100" alignContent={{ default: 'alignContentCenter' }}>
                 <EmptyState variant={EmptyStateVariant.xs}>
@@ -115,9 +115,9 @@ function CollectionResults({
                         direction={{ default: 'column' }}
                     >
                         <Title headingLevel="h2" size="md">
-                            {saveError.message}
+                            {configError.message}
                         </Title>
-                        <p className="pf-u-text-align-left">{saveError.details}</p>
+                        <p className="pf-u-text-align-left">{configError.details}</p>
                     </Flex>
                 </EmptyState>
             </Flex>

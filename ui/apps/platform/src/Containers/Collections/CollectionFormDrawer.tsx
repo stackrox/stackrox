@@ -36,8 +36,8 @@ export type CollectionFormDrawerProps = {
     headerContent?: ReactElement;
     onSubmit: CollectionFormProps['onSubmit'];
     onCancel: CollectionFormProps['onCancel'];
-    saveError?: CollectionFormProps['saveError'];
-    setSaveError?: CollectionFormProps['setSaveError'];
+    configError?: CollectionFormProps['configError'];
+    setConfigError?: CollectionFormProps['setConfigError'];
     getCollectionTableCells: CollectionFormProps['getCollectionTableCells'];
 };
 
@@ -51,8 +51,8 @@ function CollectionFormDrawer({
     toggleDrawer,
     onSubmit,
     onCancel,
-    saveError,
-    setSaveError,
+    configError,
+    setConfigError,
     getCollectionTableCells,
 }: CollectionFormDrawerProps) {
     const initialData = parseCollection(collectionData.collection);
@@ -89,8 +89,8 @@ function CollectionFormDrawer({
                             <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
                                 <CollectionResults
                                     dryRunConfig={dryRunConfig}
-                                    saveError={saveError}
-                                    setSaveError={setSaveError}
+                                    configError={configError}
+                                    setConfigError={setConfigError}
                                 />
                             </DrawerPanelBody>
                         </DrawerPanelContent>
@@ -112,8 +112,8 @@ function CollectionFormDrawer({
                                 onFormChange={updateDryRunConfig}
                                 onSubmit={onSubmit}
                                 onCancel={onCancel}
-                                saveError={saveError}
-                                setSaveError={setSaveError}
+                                configError={configError}
+                                setConfigError={setConfigError}
                                 getCollectionTableCells={getCollectionTableCells}
                             />
                         )}
