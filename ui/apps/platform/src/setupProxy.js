@@ -22,7 +22,7 @@ function parseCustomProxies() {
         return [];
     }
     const rawValues = proxyString.split(',');
-    if (rawValues.length % 2 !== 0) {
+    if ( rawValues.length % 2 !== 0 )    {
         // eslint-disable-next-line no-console
         console.warn(
             'YARN_CUSTOM_PROXIES must be set with an even number of comma delimited values',

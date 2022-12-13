@@ -8,6 +8,7 @@ import static services.ClusterService.DEFAULT_CLUSTER_NAME
 import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
+import io.stackrox.proto.api.v1.*
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
 import io.stackrox.proto.storage.DeploymentOuterClass

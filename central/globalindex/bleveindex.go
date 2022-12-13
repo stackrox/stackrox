@@ -111,7 +111,6 @@ func initializeIndices(scorchPath string, indexPersisted IndexPersisted, typeStr
 		return globalIndex, nil
 	}
 
-	//nolint:staticcheck // SA4023 globalIndex being always non-nil is not documented behavior.
 	globalIndex, err := bleve.OpenUsing(scorchPath, kvconfig)
 	if err != nil {
 		log.Errorf("Error opening Bleve index: %q %v. Removing index and retrying from scratch...", scorchPath, err)
