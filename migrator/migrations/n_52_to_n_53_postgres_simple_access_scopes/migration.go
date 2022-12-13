@@ -37,7 +37,7 @@ const (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 52, // 163
+		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 52,                                  // 163
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.BasePostgresDBVersionSeqNum()) + 53}, // 164
 		Run: func(databases *types.Databases) error {
 			return migrateAll(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB)

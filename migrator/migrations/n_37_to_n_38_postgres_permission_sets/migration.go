@@ -12,7 +12,7 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 37, // 148
+		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 37,                                  // 148
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.BasePostgresDBVersionSeqNum()) + 38}, // 149
 		Run: func(databases *types.Databases) error {
 			// The data migration code was moved to the simpleaccessscope migrator.
