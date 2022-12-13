@@ -165,7 +165,7 @@ test_upgrade_paths() {
     createPostgresScopes
     checkForPostgresAccessScopes
 
-    force_rollback
+    force_rollback_to_legacy
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -323,6 +323,28 @@ create_db_tls_secret() {
     openssl x509 -sha256 -req -CA $cert_dir/ca.pem -CAkey $cert_dir/ca.key -CAcreateserial -out $cert_dir/cert.pem -in $cert_dir/newreq -extfile $cert_dir/extfile.cnf
     # create secret
     kubectl -n stackrox create secret generic central-db-tls --save-config --dry-run=client --from-file=$cert_dir/ca.pem --from-file=$cert_dir/cert.pem --from-file=$cert_dir/key.pem -o yaml | kubectl apply -f -
+}
+
+force_rollback_to_legacy() {
+    info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
+
+    local upgradeStatus
+    upgradeStatus=$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
+    echo "upgrade status: ${upgradeStatus}"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "${INITIAL_POSTGRES_TAG}"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
+    test_gt_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)"
+
+    kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
+    local central_config
+    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -)
+    local config_patch
+    config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
+    echo "config patch: $config_patch"
+
+    kubectl -n stackrox patch configmap/central-config -p "$config_patch"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
