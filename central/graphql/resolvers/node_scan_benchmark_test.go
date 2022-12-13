@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -72,11 +73,13 @@ func BenchmarkNodeResolver(b *testing.B) {
 	defer pgtest.CloseGormDB(b, gormDB)
 	defer db.Close()
 
-	nodeDataStore := createNodeDatastore(b, mockCtrl, db, gormDB)
-	nodeComponentDataStore := createNodeComponentDatastore(b, mockCtrl, db, gormDB)
-	cveDataStore := createNodeCVEDatastore(b, db, gormDB)
-	nodeComponentCVEEdgeDataStore := createNodeComponentCVEEdgeDatastore(b, db, gormDB)
-	schema := setupResolverNodeScanTest(b, nodeDataStore, nodeComponentDataStore, cveDataStore, nodeComponentCVEEdgeDataStore)
+	nodeDS, nodeGlobalDS := createNodeDatastore(b, db, gormDB, mockCtrl)
+	resolver, schema := setupResolver(b,
+		nodeDS,
+		createNodeComponentDatastore(b, db, gormDB, mockCtrl),
+		createNodeCVEDatastore(b, db, gormDB),
+		createNodeComponentCveEdgeDatastore(b, db, gormDB))
+	
 	ctx := contextWithNodePerm(b, mockCtrl)
 
 	nodes := getTestNodes(100)

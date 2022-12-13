@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"

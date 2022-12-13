@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	cveConverter "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
