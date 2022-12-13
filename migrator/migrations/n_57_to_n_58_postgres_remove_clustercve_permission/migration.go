@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	permissionsetpostgresstore "github.com/stackrox/rox/migrator/migrations/n_57_to_n_58_postgres_remove_clustercve_permission/permissionsetpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
-	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 )
 
 const (
@@ -18,8 +17,8 @@ const (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 57,
-		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 58},
+		StartingSeqNum: 168,
+		VersionAfter:   &storage.Version{SeqNum: 169},
 		Run: func(databases *types.Databases) error {
 			err := cleanupPermissionSets(databases.PostgresDB)
 			if err != nil {
