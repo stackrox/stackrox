@@ -10,9 +10,9 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
+	selector "github.com/stackrox/rox/sensor/common/selector"
 	service "github.com/stackrox/rox/sensor/common/service"
 	store "github.com/stackrox/rox/sensor/common/store"
-	selector "github.com/stackrox/rox/sensor/kubernetes/selector"
 )
 
 // MockDeploymentStore is a mock of DeploymentStore interface.

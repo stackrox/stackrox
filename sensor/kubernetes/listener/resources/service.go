@@ -5,10 +5,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
-	selector2 "github.com/stackrox/rox/sensor/kubernetes/selector"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -20,13 +20,13 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selector selector2.Selector
+	selector selector.Selector
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
 		Service:  svc,
-		selector: selector2.CreateSelector(svc.Spec.Selector, selector2.EmptyMatchesNothing()),
+		selector: selector.CreateSelector(svc.Spec.Selector, selector.EmptyMatchesNothing()),
 	}
 }
 
@@ -145,7 +145,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sel selector2.Selector
+	var sel selector.Selector
 	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
 		sel = oldWrap.selector
@@ -154,7 +154,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
 		if sel != nil {
-			sel = selector2.Or(sel, newWrap.selector)
+			sel = selector.Or(sel, newWrap.selector)
 		} else {
 			sel = newWrap.selector
 		}
@@ -169,7 +169,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector2.Selector) *component.ResourceEvent {
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector.Selector) *component.ResourceEvent {
 	var message *component.ResourceEvent
 	if features.ResyncDisabled.Enabled() {
 		message = component.NewDeploymentRefEvent(resolver.ResolveDeploymentLabels(namespace, sel), central.ResourceAction_UPDATE_RESOURCE, false)

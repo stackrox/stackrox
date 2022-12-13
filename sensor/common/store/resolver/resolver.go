@@ -1,8 +1,8 @@
 package resolver
 
 import (
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
 )
 
 // DeploymentReference generates a list of deployment IDs that need to be updated given the deployment store.

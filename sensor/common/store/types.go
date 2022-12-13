@@ -3,8 +3,8 @@ package store
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/rbac"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
 )
 
 // DeploymentStore provides functionality to fetch all deployments from underlying store.
