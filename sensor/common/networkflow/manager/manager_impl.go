@@ -122,8 +122,10 @@ type processListeningIndicator struct {
 
 func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPort {
 	proto := &storage.ProcessListeningOnPort{
-		Port:     uint32(i.port),
-		Protocol: i.protocol,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     uint32(i.port),
+			Protocol: i.protocol,
+		},
 		Process: &storage.ProcessIndicatorUniqueKey{
 			PodId:               i.key.podID,
 			ContainerName:       i.key.containerName,
