@@ -15,7 +15,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: startingSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum+1)}, // 149
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 149
 		Run: func(databases *types.Databases) error {
 			// The data migration code was moved to the simpleaccessscope migrator.
 			// The goal is to be able to convert the IDs that do not parse as UUIDs to proper UUID values,
