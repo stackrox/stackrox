@@ -12,11 +12,13 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
@@ -659,5 +661,25 @@ func getTestImages(imageCount int) []*storage.Image {
 func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
 	id := mockIdentity.NewMockIdentity(ctrl)
 	id.EXPECT().Permissions().Return(map[string]storage.Access{"Image": storage.Access_READ_ACCESS}).AnyTimes()
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+}
+
+func getTestNodes(nodeCount int) []*storage.Node {
+	nodes := make([]*storage.Node, 0, nodeCount)
+	for i := 0; i < nodeCount; i++ {
+		node := fixtures.GetNodeWithUniqueComponents(100)
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			nodeConverter.MoveNodeVulnsToNewField(node)
+		}
+		id := fmt.Sprintf("%d", i)
+		node.Id = id
+		nodes = append(nodes, node)
+	}
+	return nodes
+}
+
+func contextWithNodePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
+	id := mockIdentity.NewMockIdentity(ctrl)
+	id.EXPECT().Permissions().Return(map[string]storage.Access{"Node": storage.Access_READ_ACCESS}).AnyTimes()
 	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
 }

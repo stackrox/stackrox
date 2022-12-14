@@ -4,10 +4,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,9 +56,7 @@ const (
 )
 
 func BenchmarkNodeResolver(b *testing.B) {
-	envIsolator := envisolator.NewEnvIsolator(b)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	b.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.Skip("Skip postgres store tests")
@@ -74,17 +70,18 @@ func BenchmarkNodeResolver(b *testing.B) {
 	defer db.Close()
 
 	nodeDS, nodeGlobalDS := createNodeDatastore(b, db, gormDB, mockCtrl)
-	resolver, schema := setupResolver(b,
+	_, schema := setupResolver(b,
 		nodeDS,
+		nodeGlobalDS,
 		createNodeComponentDatastore(b, db, gormDB, mockCtrl),
 		createNodeCVEDatastore(b, db, gormDB),
 		createNodeComponentCveEdgeDatastore(b, db, gormDB))
-	
+
 	ctx := contextWithNodePerm(b, mockCtrl)
 
 	nodes := getTestNodes(100)
 	for _, node := range nodes {
-		require.NoError(b, nodeDataStore.UpsertNode(ctx, node))
+		require.NoError(b, nodeDS.UpsertNode(ctx, node))
 	}
 
 	b.Run("GetNodeComponentsInNodeScanResolver", func(b *testing.B) {

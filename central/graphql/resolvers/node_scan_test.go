@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -53,20 +52,19 @@ func TestNodeScanResolver(t *testing.T) {
 type NodeScanResolverTestSuite struct {
 	suite.Suite
 
-	ctx         context.Context
-	envIsolator *envisolator.EnvIsolator
-	mockCtrl    *gomock.Controller
+	ctx      context.Context
+	mockCtrl *gomock.Controller
 
 	nodeDataStore          *nodeDSMocks.MockDataStore
 	nodeComponentDataStore *nodeComponentsDSMocks.MockDataStore
 	nodeCVEDataStore       *nodeCVEsDSMocks.MockDataStore
 
-	schema *graphql.Schema
+	resolver *Resolver
+	schema   *graphql.Schema
 }
 
 func (s *NodeScanResolverTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -82,15 +80,11 @@ func (s *NodeScanResolverTestSuite) SetupTest() {
 	s.nodeComponentDataStore = nodeComponentsDSMocks.NewMockDataStore(s.mockCtrl)
 	s.nodeCVEDataStore = nodeCVEsDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.schema = setupResolverNodeScanTest(s.T(), s.nodeDataStore, s.nodeComponentDataStore, s.nodeCVEDataStore, nil)
+	s.resolver, s.schema = setupResolver(s.T(), s.nodeDataStore, s.nodeComponentDataStore, s.nodeCVEDataStore, nil)
 }
 
 func (s *NodeScanResolverTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-}
-
-func (s *NodeScanResolverTestSuite) TearDownSuite() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NodeScanResolverTestSuite) TestGetNodesWithScan() {

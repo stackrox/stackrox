@@ -20,14 +20,11 @@ import (
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkGetManyNodes(b *testing.B) {
-	envIsolator := envisolator.NewEnvIsolator(b)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	b.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.Skip("Skip postgres store tests")
@@ -50,7 +47,7 @@ func BenchmarkGetManyNodes(b *testing.B) {
 
 	postgres.Destroy(ctx, db)
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	store := postgres.CreateTableAndNewStore(ctx, db, gormDB, false)
+	store := postgres.CreateTableAndNewStore(ctx, b, db, gormDB, false)
 	indexer := postgres.NewIndexer(db)
 	searcher := search.NewV2(store, indexer)
 	datastore := NewWithPostgres(store, indexer, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())

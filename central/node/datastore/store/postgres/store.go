@@ -2,12 +2,15 @@ package postgres
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/node/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -926,6 +929,12 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 func (s *storeImpl) GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Node")
 
+	return pgutils.Retry3(func() ([]*storage.Node, []int, error) {
+		return s.retryableGetManyNodeMetadata(ctx, ids)
+	})
+}
+
+func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
 	if len(ids) == 0 {
 		return nil, nil, nil
 	}
@@ -947,7 +956,7 @@ func (s *storeImpl) GetManyNodeMetadata(ctx context.Context, ids []string) ([]*s
 		search.NewQueryBuilder().AddExactMatches(search.NodeID, ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.Node](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -958,12 +967,8 @@ func (s *storeImpl) GetManyNodeMetadata(ctx context.Context, ids []string) ([]*s
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.Node)
-	for _, data := range rows {
-		msg := &storage.Node{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.Node, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -983,7 +988,7 @@ func (s *storeImpl) GetManyNodeMetadata(ctx context.Context, ids []string) ([]*s
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
+func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
