@@ -217,7 +217,12 @@ function NetworkGraphPage() {
             >
                 {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
                 {model.nodes && (
-                    <NetworkGraph model={model} edgeState={edgeState} simulation={simulation} />
+                    <NetworkGraph
+                        model={model}
+                        edgeState={edgeState}
+                        simulation={simulation}
+                        selectedClusterId={selectedClusterId || ''}
+                    />
                 )}
                 {isLoading && (
                     <Bullseye>
