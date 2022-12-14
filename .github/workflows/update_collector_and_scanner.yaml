@@ -36,6 +36,7 @@ jobs:
         commit-message: Update dependecies
         committer: RoxBot <roxbot@stackrox.com>
         author: RoxBot <roxbot@stackrox.com>
+        branch: '${{ matrix.cmd }}'
         signoff: false
         delete-branch: true
         title: Update dependecies
