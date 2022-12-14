@@ -59,9 +59,9 @@ message PullTelemetryDataResponse {
 
 message TelemetryConfig {
     // API user ID hash:
-    string user_id            = 1;
+    string user_id        = 1;
     // An empty endpoint means using default endpoint:
-    string endpoint = 2;
+    string endpoint       = 2;
     // Telemetry storage service key:
-    string storage_key_v1     = 3;
+    string storage_key_v1 = 3;
 }
