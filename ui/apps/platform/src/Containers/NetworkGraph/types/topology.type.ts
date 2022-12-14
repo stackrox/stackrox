@@ -11,7 +11,6 @@ export type CustomNodeModel =
     | ExternalNodeModel
     | ExternalEntitiesNodeModel
     | CIDRBlockNodeModel
-    | PolicyNodeModel
     | ExtraneousNodeModel;
 
 export type NamespaceNodeModel = Override<NodeModel, { data: NamespaceData }>;
@@ -23,8 +22,6 @@ export type ExternalNodeModel = Override<NodeModel, { data: ExternalData }>;
 export type ExternalEntitiesNodeModel = Override<NodeModel, { data: ExternalEntitiesData }>;
 
 export type CIDRBlockNodeModel = Override<NodeModel, { data: CIDRBlockData }>;
-
-export type PolicyNodeModel = Override<NodeModel, { data: PolicyDeploymentData }>;
 
 export type ExtraneousNodeModel = Override<NodeModel, { data: ExtraneousData }>;
 
@@ -77,22 +74,9 @@ export type CIDRBlockData = {
     };
 };
 
-export type PolicyDeploymentData = {
-    type: 'DEPLOYMENT';
-    id: string;
-    deployment: {
-        cluster: string;
-        listenPorts: ListenPort[];
-        name: string;
-        namespace: string;
-    };
-    policyIds: string[];
-    nonIsolatedIngress: boolean;
-    nonIsolatedEgress: boolean;
-};
-
 export type ExtraneousData = {
     type: 'EXTRANEOUS';
     collapsible: boolean;
     showContextMenu: boolean;
+    numFlows: number;
 };
