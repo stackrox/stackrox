@@ -10,14 +10,19 @@ import (
 // It is a shared constant between central and the migrator binary.
 func CurrentDBVersionSeqNum() int {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return internal.CurrentDBVersionSeqNum + internal.PostgresDBVersionPlus
+		return internal.CurrentDBVersionSeqNum
 	}
-	return internal.CurrentDBVersionSeqNum
+	return internal.LastRocksDBVersionSeqNum
 }
 
-// CurrentDBVersionSeqNumWithoutPostgres is the base of current DB version number
-// without Postgres migrations. This function should only be used in Postgres
+// BasePostgresDBVersionSeqNum is the base of DB version number
+// for Postgres migrations. This function should only be used in Postgres
 // migrations.
-func CurrentDBVersionSeqNumWithoutPostgres() int {
-	return internal.CurrentDBVersionSeqNum - 1
+func BasePostgresDBVersionSeqNum() int {
+	return internal.LastRocksDBVersionSeqNum - 1
+}
+
+// LastRocksDBVersionSeqNum is the sequence number for the last RocksDB version.
+func LastRocksDBVersionSeqNum() int {
+	return internal.LastRocksDBVersionSeqNum
 }

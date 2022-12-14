@@ -42,14 +42,16 @@ func setVersion(t *testing.T, ver *versionPair) {
 }
 
 func TestCloneMigration(t *testing.T) {
-	currVer = releaseVer
-	doTestCloneMigration(t, false)
-	currVer = devVer
-	doTestCloneMigration(t, false)
-	currVer = rcVer
-	doTestCloneMigration(t, false)
-	currVer = nightlyVer
-	doTestCloneMigration(t, false)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		currVer = releaseVer
+		doTestCloneMigration(t, false)
+		currVer = devVer
+		doTestCloneMigration(t, false)
+		currVer = rcVer
+		doTestCloneMigration(t, false)
+		currVer = nightlyVer
+		doTestCloneMigration(t, false)
+	}
 }
 
 func TestCloneMigrationRocksToPostgres(t *testing.T) {

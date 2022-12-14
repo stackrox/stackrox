@@ -23,7 +23,10 @@ import { getQueryString } from 'utils/queryStringUtils';
 import timeWindowToDate from 'utils/timeWindows';
 
 import PageTitle from 'Components/PageTitle';
+import useURLParameter from 'hooks/useURLParameter';
+import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
+import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect, { EdgeState } from './EdgeStateSelect';
 import NetworkGraph from './NetworkGraph';
 import {
@@ -33,6 +36,7 @@ import {
     graphModel,
 } from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
+import getSimulation from './utils/getSimulation';
 import { CustomModel, CustomNodeModel, PolicyNodeModel } from './types/topology.type';
 
 import './NetworkGraphPage.css';
@@ -53,6 +57,7 @@ function NetworkGraphPage() {
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
     const { searchFilter } = useURLSearch();
+    const [simulationQueryValue] = useURLParameter('simulation', undefined);
 
     const {
         cluster: clusterFromUrl,
@@ -60,6 +65,9 @@ function NetworkGraphPage() {
         deployments: deploymentsFromUrl,
         remainingQuery,
     } = getScopeHierarchy(searchFilter);
+    const simulation = getSimulation(simulationQueryValue);
+
+    const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
     const { clusters } = useFetchClusters();
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
@@ -174,7 +182,7 @@ function NetworkGraphPage() {
                         />
                     </FlexItem>
                     <Button variant="secondary">Manage CIDR blocks</Button>
-                    <Button variant="secondary">Simulate network policy</Button>
+                    <SimulateNetworkPolicyButton simulation={simulation} />
                 </Flex>
             </PageSection>
             <Divider component="div" />
@@ -202,8 +210,15 @@ function NetworkGraphPage() {
                 </Toolbar>
             </PageSection>
             <Divider component="div" />
-            <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
-                {model.nodes && <NetworkGraph model={model} edgeState={edgeState} />}
+            <PageSection
+                className="network-graph"
+                variant={hasClusterNamespaceSelected ? 'default' : 'light'}
+                padding={{ default: 'noPadding' }}
+            >
+                {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
+                {model.nodes && (
+                    <NetworkGraph model={model} edgeState={edgeState} simulation={simulation} />
+                )}
                 {isLoading && (
                     <Bullseye>
                         <Spinner isSVG />
