@@ -13,8 +13,8 @@ var (
 	trackedPaths set.FrozenSet[string]
 	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/"}
 
-	clusterStatus = map[string]storage.ClusterHealthStatus_HealthStatusLabel{}
-	mux           = &sync.Mutex{}
+	uninitializedClusters = set.NewSet[string]()
+	mux                   = &sync.Mutex{}
 
 	interceptors = map[string][]phonehome.Interceptor{
 		"API Call":            {apiCall},
@@ -57,7 +57,9 @@ func postCluster(rp *phonehome.RequestParams, props map[string]any) bool {
 		props["Managed By"] = req.GetManagedBy().String()
 		mux.Lock()
 		defer mux.Unlock()
-		clusterStatus[req.GetId()] = req.GetHealthStatus().GetSensorHealthStatus()
+		if req.GetHealthStatus().GetSensorHealthStatus() == storage.ClusterHealthStatus_UNINITIALIZED {
+			uninitializedClusters.Add(req.GetId())
+		}
 	}
 	return true
 }
@@ -72,13 +74,17 @@ func putCluster(rp *phonehome.RequestParams, props map[string]any) bool {
 	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
 		mux.Lock()
 		defer mux.Unlock()
-		lastStatus, ok := clusterStatus[req.GetId()]
+
 		newStatus := req.GetHealthStatus().GetSensorHealthStatus()
-		if !ok && newStatus == storage.ClusterHealthStatus_UNINITIALIZED {
-			clusterStatus[req.GetId()] = newStatus
-		} else if lastStatus == storage.ClusterHealthStatus_UNINITIALIZED &&
-			newStatus != lastStatus {
-			delete(clusterStatus, req.GetId())
+		if newStatus == storage.ClusterHealthStatus_UNINITIALIZED {
+			uninitializedClusters.Add(req.GetId())
+		} else
+		// Fire an event if the sensor moves from UNINITIALIZED state.
+		// The event will be missed if the central restarts between
+		// postCluster and first putCluster.
+		if uninitializedClusters.Contains(req.GetId()) &&
+			newStatus != storage.ClusterHealthStatus_UNINITIALIZED {
+			uninitializedClusters.Remove(req.GetId())
 			props["Code"] = rp.Code
 			props["Cluster Type"] = req.GetType().String()
 			props["Cluster ID"] = req.GetId()
