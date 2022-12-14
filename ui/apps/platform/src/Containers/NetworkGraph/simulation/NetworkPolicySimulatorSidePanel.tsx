@@ -15,16 +15,23 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
+import { FileUploadIcon } from '@patternfly/react-icons';
 
 import useTabs from 'hooks/patternfly/useTabs';
-import { FileUploadIcon } from '@patternfly/react-icons';
+import ViewActiveYAMLs from './ViewActiveYAMLs';
+
+type NetworkPolicySimulatorSidePanelProps = {
+    selectedClusterId: string;
+};
 
 const tabs = {
     SIMULATE_NETWORK_POLICIES: 'Simulate network policies',
     VIEW_ACTIVE_YAMLS: 'View active YAMLS',
 };
 
-function NetworkPolicySimulatorSidePanel() {
+function NetworkPolicySimulatorSidePanel({
+    selectedClusterId,
+}: NetworkPolicySimulatorSidePanelProps) {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
     });
@@ -145,7 +152,7 @@ function NetworkPolicySimulatorSidePanel() {
                     id={tabs.VIEW_ACTIVE_YAMLS}
                     hidden={activeKeyTab !== tabs.VIEW_ACTIVE_YAMLS}
                 >
-                    <div>View active YAMLs</div>
+                    <ViewActiveYAMLs selectedClusterId={selectedClusterId} />
                 </TabContent>
             </StackItem>
         </Stack>

@@ -323,6 +323,17 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
     });
 }
 
+export function fetchNetworkPoliciesByClusterId(clusterId) {
+    const params = queryString.stringify({ clusterId });
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}?${params}`,
+    };
+    return axios(options).then((response) => {
+        return response?.data?.networkPolicies;
+    });
+}
+
 /**
  * Retrieves the modification that will undo the last action done through the stackrox UI.
  *
