@@ -10,6 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
+        ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
     - name: Checkout collector repo
       uses: actions/checkout@v3
