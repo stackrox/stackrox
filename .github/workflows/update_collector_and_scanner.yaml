@@ -1,0 +1,59 @@
+    name: Update collector and scanner version
+    
+    on: 
+      - workflow_dispatch
+      schedule:
+      - cron:  '0 0 0 0 0'
+    
+    jobs:
+      strategy:
+        matrix:
+          cmd:
+          - stackrox make -sC scanner tag > SCANNER_VERSION
+          - stackrox make -sC collector tag > COLLECTOR_VERSION
+      update-versions:
+      - uses: actions/checkout@v3
+      - name: Checkout scanner repo
+        uses: actions/checkout@v3
+        with:
+          repository: stackrox/scanner
+          path: deps/scanner
+      - name: Checkout collector repo
+        uses: actions/checkout@v3
+        with:
+          repository: stackrox/collector
+          path: deps/collector
+      
+      - name: Update version
+        run: ${{ matrix.cmd }}
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          commit-message: 'Update dependecies'
+          committer: RoxBot <roxbot@stackrox.com>
+          author: RoxBot <roxbot@stackrox.com>
+          signoff: false
+          branch: example-patches
+          delete-branch: true
+          title: 'Update dependecies'
+          body: |
+            Run `${{ matrix.cmd }}`
+          labels: |
+            ci-all-qa-tests
+            dependencies
+          assignees: janisz
+          reviewers: RTann
+          team-reviewers: |
+            stackrox/collector-team
+          draft: false
+
+      - name: Enable Pull Request Automerge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        uses: peter-evans/enable-pull-request-automerge@v2
+        with:
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
