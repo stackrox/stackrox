@@ -40,8 +40,8 @@ jobs:
         assignees: janisz
         reviewers: RTann
         team-reviewers: |
-          stackrox/collector-team
-          stackrox/backend-dep-updaters
+          collector-team
+          backend-dep-updaters
         draft: false
     - name: Enable Pull Request Automerge
       if: steps.cpr.outputs.pull-request-operation == 'created'
@@ -85,7 +85,7 @@ jobs:
         assignees: janisz
         reviewers: RTann
         team-reviewers: |
-          stackrox/backend-dep-updaters
+          backend-dep-updaters
         draft: false
     - name: Enable Pull Request Automerge
       if: steps.cpr.outputs.pull-request-operation == 'created'
