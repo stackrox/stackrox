@@ -47,6 +47,7 @@ var (
 	RHCOSNodeScanning = registerFeature("Enable RHCOS node scanning of OS and installed packages", "ROX_RHCOS_NODE_SCANNING", false)
 
 	// UseFakeNodeInventory tells compliance to use FakeNodeScanner with hardcoded data instead of calling scanner.Analyze()
+	// TODO(ROX-13935): Remove this FF and the accompanying code
 	UseFakeNodeInventory = registerFeature("Enables compliance to use FakeNodeScanner with hardcoded data instead of calling scanner.Analyze()", "ROX_RHCOS_FAKE_NODE_INVENTORY", false)
 
 	// ProcessesListeningOnPort enables the NetworkFlow code to also update the processes that are listening on ports

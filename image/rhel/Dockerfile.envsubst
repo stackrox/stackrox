@@ -55,6 +55,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     microdnf clean all && \
     rm /tmp/snappy.rpm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
+    # TODO(ROX-13934): Potentially add *RPM* to this list again
     rpm -e --nodeps $(rpm -qa curl '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
