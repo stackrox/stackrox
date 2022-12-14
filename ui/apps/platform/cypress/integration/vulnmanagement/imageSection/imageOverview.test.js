@@ -1,7 +1,7 @@
 import withAuth from '../../../helpers/basicAuth';
 
-import { visitVulnerabilityManagementEntityInSidePanel } from '../vulnerabilityManagement.helpers';
-import { selectors } from '../vulnerabilityManagement.selectors';
+import { visitVulnerabilityManagementEntityInSidePanel } from '../VulnerabilityManagement.helpers';
+import { selectors } from '../VulnerabilityManagement.selectors';
 
 const entitiesKey = 'images';
 

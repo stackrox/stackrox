@@ -11,8 +11,8 @@ import {
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFilteredSecondaryEntitiesLink,
     visitVulnerabilityManagementEntities,
-} from './vulnerabilityManagement.helpers';
-import { selectors } from './vulnerabilityManagement.selectors';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 export function getPanelHeaderTextFromLinkResults([, count]) {
     return {

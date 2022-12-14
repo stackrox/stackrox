@@ -11,8 +11,8 @@ import {
     interactAndWaitForVulnerabilityManagementEntities,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from './vulnerabilityManagement.helpers';
-import { selectors } from './vulnerabilityManagement.selectors';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 const entitiesKey = 'cluster-cves';
 

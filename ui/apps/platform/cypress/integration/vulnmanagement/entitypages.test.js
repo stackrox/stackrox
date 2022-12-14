@@ -6,8 +6,8 @@ import {
     interactAndWaitForVulnerabilityManagementEntity,
     interactAndWaitForVulnerabilityManagementSecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from './vulnerabilityManagement.helpers';
-import { selectors } from './vulnerabilityManagement.selectors';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 describe('Entities single views', () => {
     withAuth();

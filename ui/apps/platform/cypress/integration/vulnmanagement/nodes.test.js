@@ -10,7 +10,7 @@ import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     visitVulnerabilityManagementEntities,
-} from './vulnerabilityManagement.helpers';
+} from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'nodes';
 

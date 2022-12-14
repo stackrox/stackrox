@@ -14,7 +14,7 @@ import {
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from './vulnerabilityManagement.helpers';
+} from './VulnerabilityManagement.helpers';
 
 function getCountAndNounFromClusterCVEsLinkResults([, count]) {
     return {

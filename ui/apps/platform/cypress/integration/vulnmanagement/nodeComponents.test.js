@@ -13,7 +13,7 @@ import {
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from './vulnerabilityManagement.helpers';
+} from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'node-components';
 

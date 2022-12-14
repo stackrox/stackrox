@@ -4,8 +4,8 @@ import { hasFeatureFlag } from '../../helpers/features';
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     visitVulnerabilityManagementDashboard,
-} from './vulnerabilityManagement.helpers';
-import { selectors } from './vulnerabilityManagement.selectors';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 function verifyItemLinkToEntityPage(entitiesKey, itemTextSelector, getHeaderTextFromItemText) {
     cy.get(itemTextSelector)

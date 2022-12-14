@@ -6,8 +6,8 @@ import {
     interactAndWaitForVulnerabilityManagementEntities,
     visitVulnerabilityManagementDashboard,
     visitVulnerabilityManagementDashboardFromLeftNav,
-} from './vulnerabilityManagement.helpers';
-import { selectors } from './vulnerabilityManagement.selectors';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 function verifyVulnerabilityManagementDashboardCVEs(entitiesKey, menuListItemRegExp) {
     visitVulnerabilityManagementDashboard();
