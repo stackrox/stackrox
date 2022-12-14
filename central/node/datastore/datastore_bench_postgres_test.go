@@ -5,7 +5,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,7 +58,7 @@ func BenchmarkGetManyNodes(b *testing.B) {
 	for i := 0; i < 100; i++ {
 		node := fixtures.GetNodeWithUniqueComponents(5)
 		converter.MoveNodeVulnsToNewField(node)
-		id := fmt.Sprintf("%d", i)
+		id := uuid.NewV4().String()
 		ids = append(ids, id)
 		node.Id = id
 		nodes = append(nodes, node)

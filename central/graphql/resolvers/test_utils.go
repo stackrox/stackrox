@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -671,7 +672,7 @@ func getTestNodes(nodeCount int) []*storage.Node {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			nodeConverter.MoveNodeVulnsToNewField(node)
 		}
-		id := fmt.Sprintf("%d", i)
+		id := uuid.NewV4().String()
 		node.Id = id
 		nodes = append(nodes, node)
 	}

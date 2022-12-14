@@ -624,11 +624,11 @@ func (suite *NodePostgresDataStoreTestSuite) TestGetManyNodeMetadata() {
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode1))
 
 	testNode2 := testNode1.Clone()
-	testNode2.Id = "id2"
+	testNode2.Id = fixtureconsts.Node2
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 
 	testNode3 := testNode1.Clone()
-	testNode3.Id = "id3"
+	testNode3.Id = fixtureconsts.Node3
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode3))
 
 	storedNodes, err := suite.datastore.GetManyNodeMetadata(ctx, []string{testNode1.Id, testNode2.Id, testNode3.Id})
