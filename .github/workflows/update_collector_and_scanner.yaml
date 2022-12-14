@@ -1,7 +1,6 @@
 name: Update collector and scanner version
 on:
   workflow_dispatch:
-  push:
   schedule:
     - cron: 0 5 * * 1
 jobs:
