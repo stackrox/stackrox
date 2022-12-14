@@ -1,3 +1,5 @@
+import withAuth from '../../helpers/basicAuth';
+
 import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
@@ -6,8 +8,7 @@ import {
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
-} from '../../helpers/configWorkflowUtils';
-import withAuth from '../../helpers/basicAuth';
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'roles';
 

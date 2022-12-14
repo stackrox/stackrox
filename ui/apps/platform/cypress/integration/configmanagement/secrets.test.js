@@ -1,3 +1,5 @@
+import withAuth from '../../helpers/basicAuth';
+
 import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
@@ -9,9 +11,7 @@ import {
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
     visitConfigurationManagementEntities,
-} from '../../helpers/configWorkflowUtils';
-import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
-import withAuth from '../../helpers/basicAuth';
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'secrets';
 
@@ -25,8 +25,8 @@ describe('Configuration Management Secrets', () => {
     it('should render the deployments link and open the side panel when a row is clicked', () => {
         visitConfigurationManagementEntities(entitiesKey);
 
-        cy.get(configManagementSelectors.tableRows)
-            .find(`${configManagementSelectors.tableCells} a[data-testid='deployment']`)
+        cy.get('.rt-tbody .rt-tr')
+            .find(`.rt-td a[data-testid='deployment']`)
             .eq(0)
             .click()
             .invoke('text')

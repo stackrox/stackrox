@@ -1,3 +1,5 @@
+import withAuth from '../../helpers/basicAuth';
+
 import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
@@ -9,9 +11,8 @@ import {
     interactAndWaitForConfigurationManagementScan,
     visitConfigurationManagementDashboard,
     visitConfigurationManagementEntities,
-} from '../../helpers/configWorkflowUtils';
-import { selectors } from '../../constants/ConfigManagementPage';
-import withAuth from '../../helpers/basicAuth';
+} from './ConfigurationManagement.helpers';
+import { selectors } from './ConfigurationManagement.selectors';
 
 const entitiesKey = 'clusters';
 
@@ -62,10 +63,10 @@ describe('Configuration Management Clusters', () => {
     it('should have items in the Findings section', () => {
         visitConfigurationManagementEntities(entitiesKey);
 
-        cy.get(`${selectors.tableCells}:contains(fail)`).eq(0).click();
+        cy.get(`.rt-td:contains(fail)`).eq(0).click();
 
         cy.get(
-            `${selectors.sidePanel} ${selectors.deploymentsWithFailedPolicies}:contains(Severity)`
+            `${selectors.sidePanel} [data-testid="deployments-with-failed-policies"]:contains("Severity")`
         ).should('exist');
     });
 

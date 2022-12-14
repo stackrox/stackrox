@@ -1,6 +1,7 @@
-import { selectors as configManagementSelectors } from '../constants/ConfigManagementPage';
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
-import { visit } from './visit';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../../helpers/request';
+import { visit } from '../../helpers/visit';
+
+import { selectors } from './ConfigurationManagement.selectors';
 
 const basePath = '/main/configmanagement';
 
@@ -229,11 +230,9 @@ export function renderListAndSidePanel(entitiesKey, entityName = null) {
     visitConfigurationManagementEntities(entitiesKey);
 
     interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
-        cy.get(
-            `${configManagementSelectors.tableRows}${entityName ? `:contains(${entityName})` : ''}`
-        )
-            .not(configManagementSelectors.disabledTableRows)
-            .find(configManagementSelectors.tableCells)
+        cy.get(`.rt-tbody .rt-tr${entityName ? `:contains(${entityName})` : ''}`)
+            .not('.rt-td.data-test-disabled')
+            .find('.rt-td')
             .eq(1)
             .click();
     }, entitiesKey);
@@ -241,21 +240,19 @@ export function renderListAndSidePanel(entitiesKey, entityName = null) {
 
 export function navigateToSingleEntityPage(entitiesKey) {
     interactAndWaitForConfigurationManagementEntityPage(() => {
-        cy.get(configManagementSelectors.externalLink).click();
+        cy.get('[data-testid="side-panel"] [data-testid="external-link"]').click();
     }, entitiesKey);
 }
 
 export const hasCountWidgetsFor = (entities) => {
     entities.forEach((entity) => {
-        cy.get(`${configManagementSelectors.countWidgetTitle}:contains('${entity}')`);
+        cy.get(`${selectors.countWidgetTitle}:contains('${entity}')`);
     });
 };
 
 export function clickOnCountWidget(entitiesKey, type) {
-    cy.get(
-        `${configManagementSelectors.countWidgets}:contains('${widgetTitleForEntities[entitiesKey]}')`
-    )
-        .find(configManagementSelectors.countWidgetValue)
+    cy.get(`${selectors.countWidgets}:contains('${widgetTitleForEntities[entitiesKey]}')`)
+        .find(selectors.countWidgetValue)
         .click();
 
     if (type === 'side-panel') {
@@ -265,7 +262,7 @@ export function clickOnCountWidget(entitiesKey, type) {
     }
 
     if (type === 'entityList') {
-        cy.get(`${configManagementSelectors.groupedTabs}:contains('${entitiesKey}')`);
+        cy.get(`${selectors.groupedTabs}:contains('${entitiesKey}')`);
         cy.get(`li.bg-base-100:contains("${entitiesKey}")`);
     }
 }
@@ -275,7 +272,7 @@ export function clickOnSingularEntityWidgetInSidePanel(entitiesKey1, entitiesKey
     interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
         () => {
             cy.get(
-                `${configManagementSelectors.relatedEntityWidgets}:contains('${widgetTitleForEntity[entitiesKey2]}')`
+                `${selectors.relatedEntityWidgets}:contains('${widgetTitleForEntity[entitiesKey2]}')`
             ).click();
         },
         entitiesKey1,
@@ -289,14 +286,12 @@ export const clickOnSingleEntityInTable = (entitiesKey1, entitiesKey2) => {
 
     const segment2 = segmentForEntity[entitiesKey2];
 
-    cy.get(`${configManagementSelectors.tableCells} a[href*='/${segment2}']:eq(0)`)
+    cy.get(`.rt-td a[href*='/${segment2}']:eq(0)`)
         .invoke('text')
         .then((value) => {
             interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
                 () => {
-                    cy.get(
-                        `${configManagementSelectors.tableCells} a[href*='/${segment2}']:eq(0)`
-                    ).click();
+                    cy.get(`.rt-td a[href*='/${segment2}']:eq(0)`).click();
                 },
                 entitiesKey1,
                 entitiesKey2
@@ -310,19 +305,19 @@ export const clickOnSingleEntityInTable = (entitiesKey1, entitiesKey2) => {
 
 export const hasTabsFor = (entities) => {
     entities.forEach((entity) => {
-        cy.get(`${configManagementSelectors.groupedTabs} div:contains("${entity}")`);
+        cy.get(`${selectors.groupedTabs} div:contains("${entity}")`);
     });
 };
 
 export const hasRelatedEntityFor = (entity) => {
-    cy.get(`${configManagementSelectors.relatedEntityWidgetTitle}:contains('${entity}')`);
+    cy.get(`${selectors.relatedEntityWidgetTitle}:contains('${entity}')`);
 };
 
 // Assume at either entity page or entity in side panel.
 function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector) {
     const listEntity = widgetTitleForEntities[entitiesKey2];
-    cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
-        .find(configManagementSelectors.countWidgetValue)
+    cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
+        .find(selectors.countWidgetValue)
         .invoke('text')
         .then((count) => {
             if (count === '0') {
@@ -330,7 +325,7 @@ function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector
             }
 
             function clickCountWidget() {
-                cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
+                cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
                     .find('button')
                     .invoke('attr', 'disabled', false)
                     .click();
@@ -367,7 +362,7 @@ export function entityListCountMatchesTableLinkCount(entitiesKey1, entitiesKey2,
     // 1. Visit list page for primary entities.
     visitConfigurationManagementEntities(entitiesKey1);
 
-    cy.get(configManagementSelectors.tableCells)
+    cy.get('.rt-td')
         .contains('a', entitiesRegExp2)
         .then(($a) => {
             const [, count] = /^(\d+) /.exec($a.text());

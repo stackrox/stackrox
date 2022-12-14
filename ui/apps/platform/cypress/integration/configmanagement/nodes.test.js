@@ -1,3 +1,6 @@
+import withAuth from '../../helpers/basicAuth';
+import { triggerScan } from '../../helpers/compliance';
+
 import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
@@ -9,9 +12,7 @@ import {
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
-} from '../../helpers/configWorkflowUtils';
-import withAuth from '../../helpers/basicAuth';
-import { triggerScan } from '../../helpers/compliance';
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'nodes';
 

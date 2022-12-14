@@ -1,3 +1,5 @@
+import withAuth from '../../helpers/basicAuth';
+
 import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
@@ -7,9 +9,7 @@ import {
     hasTabsFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
-} from '../../helpers/configWorkflowUtils';
-import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
-import withAuth from '../../helpers/basicAuth';
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'images';
 
@@ -67,7 +67,7 @@ describe('Configuration Management Images', () => {
     it('should allow user to drill down from cluster to image to image-deployments', () => {
         renderListAndSidePanel('clusters');
         clickOnCountWidget(entitiesKey, 'side-panel');
-        cy.get(`[data-testid="side-panel"] ${configManagementSelectors.tableRows}:last`).click({
+        cy.get(`[data-testid="side-panel"] .rt-tbody .rt-tr:last`).click({
             force: true,
         });
         clickOnCountWidget('deployments', 'entityList');

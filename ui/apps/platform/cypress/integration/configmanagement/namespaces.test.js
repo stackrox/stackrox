@@ -1,3 +1,5 @@
+import withAuth from '../../helpers/basicAuth';
+
 import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
@@ -10,8 +12,7 @@ import {
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
     entityListCountMatchesTableLinkCount,
-} from '../../helpers/configWorkflowUtils';
-import withAuth from '../../helpers/basicAuth';
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'namespaces';
 

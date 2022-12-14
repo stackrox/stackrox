@@ -1,3 +1,6 @@
+import withAuth from '../../helpers/basicAuth';
+import { triggerScan } from '../../helpers/compliance';
+
 import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
@@ -9,10 +12,7 @@ import {
     interactAndWaitForConfigurationManagementScan,
     visitConfigurationManagementDashboard,
     visitConfigurationManagementEntitiesWithSearch,
-} from '../../helpers/configWorkflowUtils';
-import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
-import withAuth from '../../helpers/basicAuth';
-import { triggerScan } from '../../helpers/compliance';
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'controls';
 
@@ -77,7 +77,8 @@ describe('Configuration Management Controls', () => {
 
         // Click first row which has pass in Control Status column to open control in side panel.
         cy.get(`.rt-td:nth-child(4):contains("pass"):nth(0)`).click();
-        cy.get(configManagementSelectors.failingNodes).should('have.length', 0);
+        // Control Findings
+        cy.get('[data-testid="widget"] .rt-tbody .rt-tr').should('have.length', 0);
     });
 
     it('should show failing nodes in the control findings section of a failing control', () => {
@@ -85,6 +86,7 @@ describe('Configuration Management Controls', () => {
 
         // Click first row which has fail in Control Status column to open control in side panel.
         cy.get(`.rt-td:nth-child(4):contains("fail"):nth(0)`).click();
-        cy.get(configManagementSelectors.failingNodes).should('not.have.length', 0);
+        // Control Findings
+        cy.get('[data-testid="widget"] .rt-tbody .rt-tr').should('not.have.length', 0);
     });
 });
