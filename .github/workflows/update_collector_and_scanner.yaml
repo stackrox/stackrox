@@ -9,8 +9,8 @@ jobs:
     strategy:
       matrix:
        cmd:
-        - make -sC deps/scanner tag > SCANNER_VERSION
-        - make -sC deps/collector tag > COLLECTOR_VERSION
+        - make -sC deps/scanner tag | tee SCANNER_VERSION
+        - make -sC deps/collector tag | COLLECTOR_VERSION
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
