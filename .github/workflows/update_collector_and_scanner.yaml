@@ -4,13 +4,14 @@ name: Update collector and scanner version
   schedule:
     - cron: 0 5 * * 1
 jobs:
-  runs-on: ubuntu-latest
-  strategy:
-    matrix:
-      cmd:
+  update-versions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+       cmd:
         - stackrox make -sC scanner tag > SCANNER_VERSION
         - stackrox make -sC collector tag > COLLECTOR_VERSION
-  update-versions:
+    steps:
     - uses: actions/checkout@v3
     - name: Checkout scanner repo
       uses: actions/checkout@v3
