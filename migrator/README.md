@@ -12,36 +12,45 @@ including `Bolt`, `RocksDB`, `Postgres` and `GormDB` (datamodel for postgres).
 A migration can read from any of the databases, make changes to the data or to the datamodel
 (database schema when working with postgres), then persist these changes to the database.
 
+## History of the datastores
+
+1. Before release 3.73, the migrator was targeting internal key-value stores `BoltDB` and `RocksDB`.
+
+   All migrations were of the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}` .
+
+2. Release 3.73 brought the database `Postgres` as Technical preview. This had the consequence that 
+`Postgres` was a new potential datastore targeted by the migrator.
+
+   In 3.73, two sets of data migrations were possible: key-value store migrations, and data move migrations
+   (from `BoltDB` and `RocksDB` to `Postgres`). The migration sequence is the following: first all key-value
+   data migrations are applied, then all data move migrations are applied.
+
+    - Key-value store data migrations have the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}` .
+    - Data move migrations have the form `n_{postgresSchemaVersion}_to_n_{postgresSchemaVersion+1}_{moved_data_type}` .
+    
+3. After 3.73, the key-value stores are deprecated and `Postgres` becomes the only data store.  
+
+   The migration returns to the old scheme, restarting from the database version after all data moves to `Postgres`.
+
+   All migrations again have the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}` .
+
 ## How to write new migration script
 
 Script should correspond to single change. Script should be part of the same release as this change.
 Here are the steps to write migration script:
 
-1. Determine which database group will be targeted. The options should be `BoltDB or RocksDB`,
-`Postgres and Gorm` or a migration from the former to the latter.
-
-    Note: the rule of thumb to determine the target group is based on the first release where the migration should be
-    applied.
-    1. Before 3.73, the only target group should be `BoltDB or RocksDB`.
-    2. For 3.73, there should be two sets of migrations. One for the data changes, targeting the `BoltDB or RocksDB`
-        group, and a set of migrations loading the data from that group and pushing it to `Postgres`.
-    3. After 3.73, the only target group should be `Postgres`.
-
-2. Lookup current database version in `pkg/migrations/internal/seq_num.go` file. 
-
-    Use `PostgresDBVersionPlus` if the target database is `Postgres`, `CurrentDBVersionSeqNum` otherwise.
+1. Lookup the current database version (`CurrentDBVersionSeqNum`) in `pkg/migrations/internal/seq_num.go` file. 
 
     The selected variable will be referred to as `currentDBVersion` in the next steps.
  
 3. Under `migrations` folder create new folder with name
-`{prefix}_{currentDBVersion}_to_{prefix}_{currentDBVersion+1}_{summary_of_migration}`
+`m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}`
 
-    2. Use the prefix `n` if `Postgres` is in the target database group, `m` otherwise.
-    3. Ensure that the `summary_of_migration` follows the naming convention of previous migrations,
+    1. Ensure that the `summary_of_migration` follows the naming convention of previous migrations,
         i.e., postfix `_policy` if it modifies policies
 
 4. Create at least two files: `migration.go` and `migration_test.go`. These files should belong to package
-`{prefix}{currentDBVersion}to{prefix}{currentDBVersion+1}`
+`m{currentDBVersion}tom{currentDBVersion+1}`
 
 5. The `migration.go` file should contain at least the following elements:
     ```go
@@ -53,15 +62,7 @@ Here are the steps to write migration script:
    )
    
    var (
-       startSeqNum = // see below
-       /*
-        * If the migration writes to Postgres, startSeqNum should be:
-        *     pkgMigrations.CurrentDBVersionSeqNumWithougPostgres() + PostgresDBVersionPlus
-        * Otherwise:
-        *     CurrentDBVersionSeqNum
-        * The values for CurrentDBVersionSeqNum and PostgresDBVersionPlus are extracted from
-        * pkg/migrations/internal/seq_num.go earlier.
-        */ 
+       startSeqNum = {curentDBVersion}
        migration = types.Migration{
            StartingSeqNum: startSeqNum,
            VersionAfter: startSeqNum+1,
@@ -83,7 +84,7 @@ Here are the steps to write migration script:
     _ "github.com/stackrox/rox/migrator/migrations/m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}"
     ```
 
-7. Increment the `currentDBVersion` sequence number variable used from `pkg/migrations/internal/seq_num.go` by one.
+7. Increment the `CurrentDBVersionSeqNum` sequence number variable used from `pkg/migrations/internal/seq_num.go` by one.
 
 8. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
 in `migrations` directory, or at the examples listed below.
