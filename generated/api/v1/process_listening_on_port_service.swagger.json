@@ -119,8 +119,14 @@
     "storageProcessListeningOnPort": {
       "type": "object",
       "properties": {
-        "endpoint": {
-          "$ref": "#/definitions/ProcessListeningOnPortEndpoint"
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProcessListeningOnPortEndpoint"
+          }
+        },
+        "deploymentId": {
+          "type": "string"
         },
         "containerName": {
           "type": "string"
@@ -128,14 +134,23 @@
         "podId": {
           "type": "string"
         },
+        "podUid": {
+          "type": "string"
+        },
         "signal": {
           "$ref": "#/definitions/storageProcessSignal"
         },
-        "closeTimestamp": {
+        "clusterId": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "containerStartTime": {
           "type": "string",
           "format": "date-time"
         },
-        "clusterId": {
+        "imageId": {
           "type": "string"
         }
       }

@@ -16,12 +16,18 @@ message ProcessListeningOnPort {
         uint32 port = 1;
         L4Protocol protocol = 2;
     }
-    Endpoint endpoint = 1;
-    string container_name = 2;
-    string pod_id = 3;
-    ProcessSignal signal = 4;
-    google.protobuf.Timestamp close_timestamp = 5;
+    repeated Endpoint endpoints = 1;
+    string deployment_id = 2;
+    string container_name = 3;
+    string pod_id = 4;
+    string pod_uid = 5;
+    ProcessSignal signal = 6;
     string cluster_id = 7;
+    string namespace = 8;
+
+    google.protobuf.Timestamp container_start_time = 9;
+
+    string image_id                                = 10;
 }
 
 message ProcessListeningOnPortFromSensor {

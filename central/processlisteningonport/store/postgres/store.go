@@ -53,7 +53,7 @@ const (
 		"proc.podid, proc.containername, " +
 		"proc.signal_containerid, " +
 		"proc.signal_name, proc.signal_args, proc.signal_execfilepath, " +
-		"proc.clusterid, proc.serialized as proc_serialized " +
+		"proc.clusterid, proc.serialized as proc_serialized, plop.processindicatorid " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
@@ -627,7 +627,8 @@ func (s *storeImpl) retryableGetPLOP(
 func (s *storeImpl) readRows(
 	rows pgx.Rows,
 ) ([]*storage.ProcessListeningOnPort, error) {
-	var plops []*storage.ProcessListeningOnPort
+
+	plopMap := make(map[string]*storage.ProcessListeningOnPort)
 
 	for rows.Next() {
 		var id string
@@ -640,6 +641,7 @@ func (s *storeImpl) readRows(
 		var signalExecFilePath string
 		var clusterId string
 		var proc_serialized []byte
+		var processIndicatorId string
 
 		// We're getting ProcessIndicator directly from the SQL query, PLOP
 		// parts have to be extra deserialized.
@@ -648,7 +650,7 @@ func (s *storeImpl) readRows(
 			&podId, &containerName,
 			&signalContainerId,
 			&signalName, &signalArgs, &signalExecFilePath,
-			&clusterId, &proc_serialized); err != nil {
+			&clusterId, &proc_serialized, &processIndicatorId); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
@@ -657,37 +659,54 @@ func (s *storeImpl) readRows(
 			return nil, err
 		}
 
-		var proc_msg storage.ProcessIndicator
-		if err := proto.Unmarshal(proc_serialized, &proc_msg); err != nil {
-			return nil, err
+		endpoint := &storage.ProcessListeningOnPort_Endpoint{
+			Port:		msg.Port,
+			Protocol:	msg.Protocol,
 		}
 
-		plop := &storage.ProcessListeningOnPort{
-			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-				Port:           msg.Port,
-				Protocol:       msg.Protocol,
-			},
-			CloseTimestamp: msg.CloseTimestamp,
-			PodId:		podId,
-			ContainerName:	containerName,
-			Signal: &storage.ProcessSignal{
-				Id:		proc_msg.Signal.Id,
-				ContainerId:	signalContainerId,
-				Time:		proc_msg.Signal.Time,
-				Name:		signalName,
-				Args:		signalArgs,
-				ExecFilePath:	signalExecFilePath,
-				Pid:		proc_msg.Signal.Pid,
-				Uid:		proc_msg.Signal.Uid,
-				Gid:		proc_msg.Signal.Gid,
-				Lineage:	proc_msg.Signal.Lineage,
-				Scraped:	proc_msg.Signal.Scraped,
-				LineageInfo:	proc_msg.Signal.LineageInfo,
-			},
-			ClusterId:	clusterId,
-		}
+		if _, ok := plopMap[processIndicatorId]; !ok {
 
-		plops = append(plops, plop)
+			var proc_msg storage.ProcessIndicator
+			if err := proto.Unmarshal(proc_serialized, &proc_msg); err != nil {
+				return nil, err
+			}
+
+			plopMap[processIndicatorId] = &storage.ProcessListeningOnPort{
+				Endpoints:	[]*storage.ProcessListeningOnPort_Endpoint{endpoint},
+				DeploymentId:	proc_msg.DeploymentId,
+				PodId:		podId,
+				PodUid:		proc_msg.PodUid,
+				ContainerName:	containerName,
+				Signal: &storage.ProcessSignal{
+					Id:		proc_msg.Signal.Id,
+					ContainerId:	signalContainerId,
+					Time:		proc_msg.Signal.Time,
+					Name:		signalName,
+					Args:		signalArgs,
+					ExecFilePath:	signalExecFilePath,
+					Pid:		proc_msg.Signal.Pid,
+					Uid:		proc_msg.Signal.Uid,
+					Gid:		proc_msg.Signal.Gid,
+					Lineage:	proc_msg.Signal.Lineage,
+					Scraped:	proc_msg.Signal.Scraped,
+					LineageInfo:	proc_msg.Signal.LineageInfo,
+				},
+				ClusterId:		clusterId,
+				Namespace:		proc_msg.Namespace,
+				ContainerStartTime:	proc_msg.ContainerStartTime,
+				ImageId:		proc_msg.ImageId,
+			}
+		} else {
+			plopMap[processIndicatorId].Endpoints = append(plopMap[processIndicatorId].Endpoints, endpoint)
+		}
+	}
+
+	plops := make([]*storage.ProcessListeningOnPort, len(plopMap))
+
+	idx := 0
+	for _, plop := range plopMap {
+		plops[idx] = plop
+		idx++
 	}
 
 	log.Debugf("Read returned %+v plops", len(plops))
