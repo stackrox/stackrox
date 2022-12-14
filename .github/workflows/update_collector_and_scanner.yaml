@@ -9,8 +9,8 @@ jobs:
     strategy:
       matrix:
        cmd:
-        - stackrox make -sC scanner tag > SCANNER_VERSION
-        - stackrox make -sC collector tag > COLLECTOR_VERSION
+        - make -sC scanner tag > SCANNER_VERSION
+        - make -sC collector tag > COLLECTOR_VERSION
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
