@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
-import { gql, useQuery } from '@apollo/client';
+import { gql, useQuery, ApolloError } from '@apollo/client';
 
 type DeploymentCountResponse = {
     count: number;
+};
+
+type UseFetchDeploymentCount = {
+    loading: boolean;
+    error: ApolloError | undefined;
+    deploymentCount: number | undefined;
 };
 
 const DEPLOYMENT_COUNT_FOR_CLUSTER = gql`
@@ -11,7 +17,7 @@ const DEPLOYMENT_COUNT_FOR_CLUSTER = gql`
     }
 `;
 
-function useFetchDeploymentCount(selectedClusterId: string) {
+function useFetchDeploymentCount(selectedClusterId: string): UseFetchDeploymentCount {
     const [deploymentCount, setDeploymentCount] = useState<number>();
 
     // If the selectedClusterId has not been set yet, do not run the gql query

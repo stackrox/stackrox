@@ -293,7 +293,7 @@ export function createExtraneousFlowsModel(
     return dataModel;
 }
 
-export function createExtraneousNodes(flows: number): {
+export function createExtraneousNodes(numFlows: number): {
     extraneousEgressNode: ExtraneousNodeModel;
     extraneousIngressNode: ExtraneousNodeModel;
 } {
@@ -308,7 +308,7 @@ export function createExtraneousNodes(flows: number): {
             collapsible: false,
             showContextMenu: false,
             type: 'EXTRANEOUS',
-            flows,
+            numFlows,
         },
     };
     const extraneousIngressNode: ExtraneousNodeModel = {
@@ -322,20 +322,20 @@ export function createExtraneousNodes(flows: number): {
             collapsible: false,
             showContextMenu: false,
             type: 'EXTRANEOUS',
-            flows,
+            numFlows,
         },
     };
     return { extraneousEgressNode, extraneousIngressNode };
 }
 
-export function createExtraneousEdges(selectedId: string): {
+export function createExtraneousEdges(selectedNodeId: string): {
     extraneousEgressEdge: EdgeModel;
     extraneousIngressEdge: EdgeModel;
 } {
     const extraneousEgressEdge = {
         id: 'extraneous-egress-edge',
         type: 'edge',
-        source: selectedId,
+        source: selectedNodeId,
         target: 'extraneous-egress',
         visible: true,
         edgeStyle: EdgeStyle.dashed,
@@ -344,7 +344,7 @@ export function createExtraneousEdges(selectedId: string): {
         id: 'extraneous-ingress-edge',
         type: 'edge',
         source: 'extraneous-ingress',
-        target: selectedId,
+        target: selectedNodeId,
         visible: true,
         edgeStyle: EdgeStyle.dashed,
     };

@@ -78,5 +78,5 @@ export type ExtraneousData = {
     type: 'EXTRANEOUS';
     collapsible: boolean;
     showContextMenu: boolean;
-    flows: number;
+    numFlows: number;
 };

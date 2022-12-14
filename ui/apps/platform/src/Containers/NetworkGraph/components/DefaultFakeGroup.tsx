@@ -55,7 +55,7 @@ const DefaultFakeGroup = ({
     const [shapeSize, shapeRef] = useSize([collapsedWidth, collapsedHeight]);
     const refs = useCombineRefs(hoverRef, dragNodeRef, shapeRef);
     const isHover = hover !== undefined ? hover : hovered;
-    const childCount: number = element.data.flows;
+    const childCount: number = element.data.numFlows;
     const [badgeSize, badgeRef] = useSize([childCount]);
     const groupClassName = css(
         styles.topologyGroup,
