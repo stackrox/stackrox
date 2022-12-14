@@ -8,6 +8,8 @@ function setup() {
     unset REPO_OWNER
     unset REPO_NAME
     unset CLONEREFS_OPTIONS
+    unset GITHUB_ACTION
+    unset GITHUB_ACTION_REPOSITORY
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 
@@ -15,6 +17,21 @@ function setup() {
     run get_repo_full_name
     assert_failure 1
     assert_output --partial 'unsupported'
+}
+
+@test "GITHUB_ACTION but nothing else" {
+    export GITHUB_ACTION=true
+    run get_repo_full_name
+    assert_failure 1
+    assert_output --partial 'expect: GITHUB_ACTION_REPOSITORY'
+}
+
+@test "GITHUB_ACTION and " {
+    export GITHUB_ACTION=true
+    export GITHUB_ACTION_REPOSITORY='acme/products'
+    run get_repo_full_name
+    assert_success
+    assert_output 'acme/products'
 }
 
 @test "OPENSHIFT_CI but nothing else" {

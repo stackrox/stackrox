@@ -793,6 +793,9 @@ get_repo_full_name() {
         else
             die "Expect REPO_OWNER/NAME or CLONEREFS_OPTIONS"
         fi
+    elif is_GITHUB_ACTIONS; then
+        [[ -n "${GITHUB_ACTION_REPOSITORY:-}" ]] || die "expect: GITHUB_ACTION_REPOSITORY"
+        echo "${GITHUB_ACTION_REPOSITORY}"
     else
         die "unsupported"
     fi
