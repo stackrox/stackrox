@@ -92,6 +92,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
 			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
 
@@ -105,6 +106,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 			Id:            fixtureconsts.ProcessIndicatorID2,
 			DeploymentId:  fixtureconsts.Deployment2,
 			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container2",
 			Namespace:     testNamespace,
 
@@ -141,13 +143,28 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, GetOptions{Namespace: &testNamespace})
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	newPlop, exists := newPlops[fixtureconsts.Deployment1]
-	suite.True(exists)
-	suite.Equal(newPlop[0], plopObjects[0])
+	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     testNamespace,
+		Endpoints: []*storage.ProcessListeningOnPort_Endpoint{
+			&storage.ProcessListeningOnPort_Endpoint{
+				Port:     1234,
+				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
 }
 
 // TestPLOPAddNoIndicator: A PLOP object with a wrong process indicator
@@ -158,9 +175,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		return
 	}
 
-	testNamespace := "test_namespace"
-
-	plopObjects := []*storage.ProcessListeningOnPort{
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{
 			Port:           1234,
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -175,17 +190,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		},
 	}
 
-	// Add PLOP referencing those indicators
+	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, GetOptions{Namespace: &testNamespace})
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	// Since there is no indicators attached and thus a namespace, we will find
-	// nothing.
 	suite.Len(newPlops, 0)
 }
 
@@ -205,6 +218,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
 			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
 
@@ -216,8 +230,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		},
 		{
 			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
 
@@ -229,7 +244,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		},
 	}
 
-	plopObjects := []*storage.ProcessListeningOnPort{
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{
 			Port:           1234,
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -254,11 +269,26 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, GetOptions{Namespace: &testNamespace})
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	newPlop, exists := newPlops[fixtureconsts.Deployment1]
-	suite.True(exists)
-	suite.Equal(newPlop[0], plopObjects[0])
+	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     testNamespace,
+		Endpoints: []*storage.ProcessListeningOnPort_Endpoint{
+			&storage.ProcessListeningOnPort_Endpoint{
+				Port:     1234,
+				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
 }
