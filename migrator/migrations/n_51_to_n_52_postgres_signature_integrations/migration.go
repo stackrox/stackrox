@@ -19,10 +19,14 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	startingSeqNum = pkgMigrations.BasePostgresDBVersionSeqNum() + 51, // 162
+)
+
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 51,                                  // 162
-		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.BasePostgresDBVersionSeqNum()) + 52}, // 163
+		StartingSeqNum: startingSeqNum,
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum+1)}, // 163
 		Run: func(databases *types.Databases) error {
 			legacyStore, err := legacy.New(databases.PkgRocksDB)
 			if err != nil {

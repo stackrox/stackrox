@@ -31,14 +31,16 @@ import (
 )
 
 const (
+	startingSeqNum = pkgMigrations.BasePostgresDBVersionSeqNum() + 52, // 163
+
 	accessScopeIDPrefix   = "io.stackrox.authz.accessscope."
 	permissionSetIDPrefix = "io.stackrox.authz.permissionset."
 )
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 52,                                  // 163
-		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.BasePostgresDBVersionSeqNum()) + 53}, // 164
+		StartingSeqNum: startingSeqNum,
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum+1)}, // 164
 		Run: func(databases *types.Databases) error {
 			return migrateAll(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB)
 		},
