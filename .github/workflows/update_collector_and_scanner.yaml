@@ -37,7 +37,6 @@ jobs:
         committer: RoxBot <roxbot@stackrox.com>
         author: RoxBot <roxbot@stackrox.com>
         signoff: false
-        branch: example-patches
         delete-branch: true
         title: Update dependecies
         body: |
@@ -49,6 +48,7 @@ jobs:
         reviewers: RTann
         team-reviewers: |
           stackrox/collector-team
+          stackrox/backend-dep-updaters
         draft: false
     - name: Enable Pull Request Automerge
       if: steps.cpr.outputs.pull-request-operation == 'created'
