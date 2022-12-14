@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_postCluster(t *testing.T) {
+func Test_clusterRegistered(t *testing.T) {
 	// clean the global set of uninitialized clusters:
 	uninitializedClusters = set.NewSet[string]()
 
@@ -18,13 +18,13 @@ func Test_postCluster(t *testing.T) {
 	rp := &phonehome.RequestParams{
 		Path: "random",
 	}
-	assert.False(t, postCluster(rp, props))
+	assert.False(t, clusterRegistered(rp, props))
 	assert.Empty(t, props)
 
 	rp = &phonehome.RequestParams{
 		Path: "/v1.ClustersService/PostCluster",
 	}
-	assert.True(t, postCluster(rp, props))
+	assert.True(t, clusterRegistered(rp, props))
 	assert.Equal(t, map[string]any{"Code": 0}, props)
 
 	rp.GRPCReq = &storage.Cluster{
@@ -37,7 +37,7 @@ func Test_postCluster(t *testing.T) {
 	}
 	assert.False(t, uninitializedClusters.Contains("cluster-id"))
 	// remembers the uninitialized cluster in memory:
-	assert.True(t, postCluster(rp, props))
+	assert.True(t, clusterRegistered(rp, props))
 	assert.Equal(t, map[string]any{
 		"Code":         0,
 		"Cluster ID":   "cluster-id",
@@ -47,7 +47,7 @@ func Test_postCluster(t *testing.T) {
 	assert.True(t, uninitializedClusters.Contains("cluster-id"))
 }
 
-func Test_putCluster(t *testing.T) {
+func Test_clusterInitialized(t *testing.T) {
 	// clean the global set of uninitialized clusters:
 	uninitializedClusters = set.NewSet[string]()
 
@@ -56,7 +56,7 @@ func Test_putCluster(t *testing.T) {
 	rp := &phonehome.RequestParams{
 		Path: "random",
 	}
-	assert.False(t, putCluster(rp, props))
+	assert.False(t, clusterInitialized(rp, props))
 	assert.Empty(t, props)
 	assert.False(t, uninitializedClusters.Contains("cluster-id"))
 
@@ -72,14 +72,14 @@ func Test_putCluster(t *testing.T) {
 
 	rp.Path = "/v1.ClustersService/PostCluster"
 	// remembers the uninitialized cluster in memory:
-	assert.True(t, postCluster(rp, props))
+	assert.True(t, clusterRegistered(rp, props))
 	assert.True(t, uninitializedClusters.Contains("cluster-id"))
 
 	rp.GRPCReq.(*storage.Cluster).HealthStatus.SensorHealthStatus = storage.ClusterHealthStatus_HEALTHY
 
 	rp.Path = "/v1.ClustersService/PutCluster"
 	// removes the now initialized cluster from memory:
-	assert.True(t, putCluster(rp, props), "Should fire because the sensor is healthy")
+	assert.True(t, clusterInitialized(rp, props), "Should fire because the sensor is healthy")
 	assert.Equal(t, map[string]any{
 		"Code":         0,
 		"Cluster ID":   "cluster-id",
@@ -89,14 +89,14 @@ func Test_putCluster(t *testing.T) {
 	assert.False(t, uninitializedClusters.Contains("cluster-id"))
 
 	props = map[string]any{}
-	assert.False(t, putCluster(rp, props), "Should not fire, as the cluster is forgotten already")
+	assert.False(t, clusterInitialized(rp, props), "Should not fire, as the cluster is forgotten already")
 	assert.Empty(t, props)
 
 	rp.GRPCReq.(*storage.Cluster).HealthStatus.SensorHealthStatus = storage.ClusterHealthStatus_UNINITIALIZED
 	// adds cluster back to memory:
-	assert.False(t, putCluster(rp, props), "Should not fire because the known sensor is UNINITIALIZED again")
+	assert.False(t, clusterInitialized(rp, props), "Should not fire because the known sensor is UNINITIALIZED again")
 	assert.True(t, uninitializedClusters.Contains("cluster-id"))
 
 	rp.GRPCReq.(*storage.Cluster).HealthStatus.SensorHealthStatus = storage.ClusterHealthStatus_DEGRADED
-	assert.True(t, putCluster(rp, props), "Should fire again because the sensor is somehow initialized")
+	assert.True(t, clusterInitialized(rp, props), "Should fire again because the sensor is somehow initialized")
 }

@@ -18,8 +18,8 @@ var (
 
 	interceptors = map[string][]phonehome.Interceptor{
 		"API Call":            {apiCall},
-		"Cluster Registered":  {postCluster},
-		"Cluster Initialized": {putCluster},
+		"Cluster Registered":  {clusterRegistered},
+		"Cluster Initialized": {clusterInitialized},
 		"roxctl":              {roxctl},
 	}
 )
@@ -45,8 +45,8 @@ func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
 	return false
 }
 
-// Adds Post Cluster call specific properties to the Post Cluster event.
-func postCluster(rp *phonehome.RequestParams, props map[string]any) bool {
+// Adds specific properties to the Cluster Registered event.
+func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 	if rp.Path != "/v1.ClustersService/PostCluster" {
 		return false
 	}
@@ -64,10 +64,10 @@ func postCluster(rp *phonehome.RequestParams, props map[string]any) bool {
 	return true
 }
 
-// Adds Put Cluster call specific properties to the Put Cluster event.
+// Adds specific properties to the Cluster Initialized event.
 // The event is triggered when a previously posted cluster changes state from
 // UNINITIALIZED to something else.
-func putCluster(rp *phonehome.RequestParams, props map[string]any) bool {
+func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool {
 	if rp.Path != "/v1.ClustersService/PutCluster" {
 		return false
 	}
