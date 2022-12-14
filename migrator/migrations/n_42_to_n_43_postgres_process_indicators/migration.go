@@ -24,7 +24,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: startingSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum+1)}, // 154
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 154
 		Run: func(databases *types.Databases) error {
 			legacyStore, err := legacy.New(databases.PkgRocksDB)
 			if err != nil {

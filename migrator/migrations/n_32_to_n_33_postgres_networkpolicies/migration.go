@@ -24,7 +24,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: startingSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum+1)}, // 144
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 144
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(databases.BoltDB)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {

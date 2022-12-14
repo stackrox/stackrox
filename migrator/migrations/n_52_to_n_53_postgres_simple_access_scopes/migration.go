@@ -40,7 +40,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: startingSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum+1)}, // 164
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 164
 		Run: func(databases *types.Databases) error {
 			return migrateAll(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB)
 		},
