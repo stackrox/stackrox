@@ -9,12 +9,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAllPackagesAreImported(t *testing.T) {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
 	migrationDirEntries, err := os.ReadDir("../migrations")
 	require.NoError(t, err, "failed to read migrations directory")
 
@@ -24,7 +28,8 @@ func TestAllPackagesAreImported(t *testing.T) {
 			continue
 		}
 		baseName := filepath.Base(entry.Name())
-		if !strings.HasPrefix(baseName, "m_") {
+
+		if !isMigrationName(baseName) {
 			continue
 		}
 		existingMigrations.Add(baseName)
@@ -37,7 +42,7 @@ func TestAllPackagesAreImported(t *testing.T) {
 	for _, imp := range f.Imports {
 		pkgName := strings.TrimSuffix(strings.TrimPrefix(imp.Path.Value, `"`), `"`)
 		pkgBaseName := path.Base(pkgName)
-		if !strings.HasPrefix(pkgBaseName, "m_") {
+		if !isMigrationName(pkgBaseName) {
 			continue
 		}
 		importedMigrations.Add(pkgBaseName)
@@ -48,4 +53,8 @@ func TestAllPackagesAreImported(t *testing.T) {
 
 	assert.Empty(t, existingButNotImported, "some existing migrations aren't imported")
 	assert.Empty(t, importedButNotExisting, "some imported migrations don't exist")
+}
+
+func isMigrationName(name string) bool {
+	return strings.HasPrefix(name, "m_") || strings.HasPrefix(name, "n_")
 }
