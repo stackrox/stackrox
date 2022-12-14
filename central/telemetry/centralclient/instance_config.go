@@ -15,10 +15,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const (
-	tenantIDLabel = "rhacs.redhat.com/tenant"
-)
-
 var (
 	config *phonehome.Config
 	once   sync.Once
@@ -51,7 +47,7 @@ func getInstanceConfig() (*phonehome.Config, error) {
 	}
 	centralID := ii.Id
 
-	tenantID := central.GetLabels()[tenantIDLabel]
+	tenantID := central.GetLabels()[phonehome.TenantIDLabel]
 	// Consider on-prem central a tenant of itself:
 	if tenantID == "" {
 		tenantID = centralID
@@ -68,14 +64,15 @@ func getInstanceConfig() (*phonehome.Config, error) {
 }
 
 // InstanceConfig collects the central instance telemetry configuration from
-// central Deployment annotations and orchestrator properties. The collected
-// data is used for instance identification.
+// central Deployment labels and annotations, installation store and
+// orchestrator properties. The collected data is used for configuring the
+// telemetry client.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
 		var err error
 		config, err = getInstanceConfig()
 		if err != nil {
-			log.Errorf("Failed to get telemetry configuration: %v. Using hardcoded values.", err)
+			log.Errorf("Failed to get telemetry configuration: %v.", err)
 			return
 		}
 		if config == nil {

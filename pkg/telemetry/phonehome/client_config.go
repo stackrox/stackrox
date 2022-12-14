@@ -2,6 +2,10 @@ package phonehome
 
 import "time"
 
+// TenantIDLabel is the name of the k8s object label that holds the cloud
+// services tenant ID. The value of the label becomes the group ID if not empty.
+const TenantIDLabel = "rhacs.redhat.com/tenant"
+
 // Config represents a telemetry client instance configuration.
 type Config struct {
 	// ClientID identifies an entity that reports telemetry data.
