@@ -19,11 +19,9 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	startingSeqNum = pkgMigrations.BasePostgresDBVersionSeqNum() + 31, // 142
-)
-
 var (
+	startingSeqNum = pkgMigrations.BasePostgresDBVersionSeqNum() + 31 // 142
+
 	migration = types.Migration{
 		StartingSeqNum: startingSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum+1)}, // 143
