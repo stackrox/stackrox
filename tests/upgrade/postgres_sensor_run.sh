@@ -3,7 +3,8 @@
 
 set -euo pipefail
 
-# Tests sensor upgrades with Postgres enabled
+# Tests sensor upgrades with Postgres enabled.  Pulls the sensor upgrader
+# tests from tests/upgrade/run.sh and executes them with a Postgres backed central
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 

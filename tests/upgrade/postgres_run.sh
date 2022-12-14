@@ -36,7 +36,10 @@ test_upgrade() {
 
     export_test_environment
 
+    # repo for old version with legacy database
     REPO_FOR_TIME_TRAVEL="/tmp/rox-postgres-upgrade-test"
+    # repo for old version with postgres database so we can perform a subsequent
+    # postgres->postgres upgrade
     REPO_FOR_POSTGRES_TIME_TRAVEL="/tmp/rox-postgres-postgres-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
     QUAY_REPO="rhacs-eng"
@@ -54,7 +57,6 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
-
     remove_existing_stackrox_resources
 
     test_upgrade_paths "$log_output_dir"
@@ -83,7 +85,7 @@ preamble() {
 
     require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl"
 
-    info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
+    info "Will clone or update a clean copy of the rox repo for legacy DB test at $REPO_FOR_TIME_TRAVEL"
     if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
         if is_CI; then
           die "Repo for time travel already exists! This is unexpected in CI."
@@ -93,7 +95,7 @@ preamble() {
         (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
     fi
 
-    info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
+    info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
         if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
             if is_CI; then
               die "Repo for time travel already exists! This is unexpected in CI."
