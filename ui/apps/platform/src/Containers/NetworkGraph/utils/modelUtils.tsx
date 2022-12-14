@@ -10,7 +10,7 @@ import {
     ExternalData,
     NamespaceData,
     NamespaceNodeModel,
-    PolicyNodeModel,
+    DeploymentNodeModel,
     ExtraneousNodeModel,
     NetworkPolicyState,
 } from '../types/topology.type';
@@ -23,38 +23,6 @@ function getNameByEntity(entity: NetworkEntityInfo): string {
             return 'External Entities';
         case 'EXTERNAL_SOURCE':
             return entity.externalSource.name;
-        default:
-            return ensureExhaustive(entity);
-    }
-}
-
-function getNetworkPolicyState(policyNode?: PolicyNodeModel): NetworkPolicyState {
-    let networkPolicyState: NetworkPolicyState = 'none';
-    if (policyNode) {
-        const { nonIsolatedEgress, nonIsolatedIngress } = policyNode.data;
-        if (!nonIsolatedIngress && !nonIsolatedEgress) {
-            networkPolicyState = 'both';
-        } else if (nonIsolatedEgress) {
-            networkPolicyState = 'ingress';
-        } else if (nonIsolatedIngress) {
-            networkPolicyState = 'egress';
-        }
-    }
-    return networkPolicyState;
-}
-
-function getDataByEntityType(
-    entity: NetworkEntityInfo,
-    policyIds: string[],
-    policyNode?: PolicyNodeModel
-): CustomNodeData {
-    switch (entity.type) {
-        case 'DEPLOYMENT':
-            return { ...entity, policyIds, networkPolicyState: getNetworkPolicyState(policyNode) };
-        case 'INTERNET':
-            return { ...entity, type: 'EXTERNAL_ENTITIES' };
-        case 'EXTERNAL_SOURCE':
-            return { ...entity, type: 'CIDR_BLOCK' };
         default:
             return ensureExhaustive(entity);
     }
@@ -100,10 +68,31 @@ function getExternalGroupNode(): ExternalNodeModel {
     };
 }
 
+function getDataByEntityType(
+    entity: NetworkEntityInfo,
+    policyIds: string[],
+    networkPolicyState: NetworkPolicyState
+): CustomNodeData {
+    switch (entity.type) {
+        case 'DEPLOYMENT':
+            return {
+                ...entity,
+                policyIds,
+                networkPolicyState,
+            };
+        case 'INTERNET':
+            return { ...entity, type: 'EXTERNAL_ENTITIES' };
+        case 'EXTERNAL_SOURCE':
+            return { ...entity, type: 'CIDR_BLOCK' };
+        default:
+            return ensureExhaustive(entity);
+    }
+}
+
 function getNodeModel(
     entity: NetworkEntityInfo,
     policyIds: string[],
-    policyNode?: PolicyNodeModel
+    networkPolicyState: NetworkPolicyState
 ): CustomNodeModel {
     const node = {
         id: entity.id,
@@ -112,13 +101,13 @@ function getNodeModel(
         height: 75,
         label: getNameByEntity(entity),
     } as CustomNodeModel;
-    node.data = getDataByEntityType(entity, policyIds, policyNode);
+    node.data = getDataByEntityType(entity, policyIds, networkPolicyState);
     return node;
 }
 
 export function transformActiveData(
     nodes: Node[],
-    policyNodeMap: Record<string, PolicyNodeModel>
+    policyNodeMap: Record<string, DeploymentNodeModel>
 ): CustomModel {
     const dataModel = {
         graph: graphModel,
@@ -131,8 +120,9 @@ export function transformActiveData(
 
     nodes.forEach(({ entity, policyIds, outEdges }) => {
         const { type, id } = entity;
+        const { networkPolicyState } = policyNodeMap[id]?.data || {};
         // creating each node and adding to data model
-        const node = getNodeModel(entity, policyIds, policyNodeMap[id]);
+        const node = getNodeModel(entity, policyIds, networkPolicyState);
 
         dataModel.nodes.push(node);
 
@@ -181,14 +171,31 @@ export function transformActiveData(
     return dataModel;
 }
 
-export function transformPolicyData(nodes: Node[]): CustomModel {
+function getNetworkPolicyState(
+    nonIsolatedEgress: boolean,
+    nonIsolatedIngress: boolean
+): NetworkPolicyState {
+    let networkPolicyState: NetworkPolicyState = 'none';
+
+    if (!nonIsolatedIngress && !nonIsolatedEgress) {
+        networkPolicyState = 'both';
+    } else if (nonIsolatedEgress) {
+        networkPolicyState = 'ingress';
+    } else if (nonIsolatedIngress) {
+        networkPolicyState = 'egress';
+    }
+    return networkPolicyState;
+}
+
+export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
     const dataModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as EdgeModel[],
     };
-    nodes.forEach(({ entity, policyIds, outEdges }) => {
-        const node = getNodeModel(entity, policyIds);
+    nodes.forEach(({ entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress }) => {
+        const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
+        const node = getNodeModel(entity, policyIds, networkPolicyState);
         dataModel.nodes.push(node);
 
         // creating edges based off of outEdges per node and adding to data model
@@ -204,6 +211,9 @@ export function transformPolicyData(nodes: Node[]): CustomModel {
             dataModel.edges.push(edge);
         });
     });
+    const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes(flows);
+    dataModel.nodes.push(extraneousEgressNode);
+    dataModel.nodes.push(extraneousIngressNode);
     return dataModel;
 }
 
@@ -283,7 +293,7 @@ export function createExtraneousFlowsModel(
     return dataModel;
 }
 
-export function createExtraneousNodes(): {
+export function createExtraneousNodes(numFlows: number): {
     extraneousEgressNode: ExtraneousNodeModel;
     extraneousIngressNode: ExtraneousNodeModel;
 } {
@@ -293,13 +303,12 @@ export function createExtraneousNodes(): {
         width: 75,
         height: 75,
         label: 'Egress flows',
-        // TODO: figure out how to fake group node
-        // group: true,
-        // children: [],
+        visible: false,
         data: {
             collapsible: false,
             showContextMenu: false,
             type: 'EXTRANEOUS',
+            numFlows,
         },
     };
     const extraneousIngressNode: ExtraneousNodeModel = {
@@ -308,14 +317,36 @@ export function createExtraneousNodes(): {
         width: 75,
         height: 75,
         label: 'Ingress flows',
-        // TODO: figure out how to fake group node
-        // group: true,
-        // children: [],
+        visible: false,
         data: {
             collapsible: false,
             showContextMenu: false,
             type: 'EXTRANEOUS',
+            numFlows,
         },
     };
     return { extraneousEgressNode, extraneousIngressNode };
+}
+
+export function createExtraneousEdges(selectedNodeId: string): {
+    extraneousEgressEdge: EdgeModel;
+    extraneousIngressEdge: EdgeModel;
+} {
+    const extraneousEgressEdge = {
+        id: 'extraneous-egress-edge',
+        type: 'edge',
+        source: selectedNodeId,
+        target: 'extraneous-egress',
+        visible: true,
+        edgeStyle: EdgeStyle.dashed,
+    };
+    const extraneousIngressEdge = {
+        id: 'extraneous-ingress-edge',
+        type: 'edge',
+        source: 'extraneous-ingress',
+        target: selectedNodeId,
+        visible: true,
+        edgeStyle: EdgeStyle.dashed,
+    };
+    return { extraneousEgressEdge, extraneousIngressEdge };
 }
