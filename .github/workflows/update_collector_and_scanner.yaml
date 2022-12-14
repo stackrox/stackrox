@@ -5,12 +5,12 @@ on:
     - cron: 0 5 * * 1
 jobs:
   update-versions:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
        cmd:
         - stackrox make -sC scanner tag > SCANNER_VERSION
         - stackrox make -sC collector tag > COLLECTOR_VERSION
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Checkout scanner repo
