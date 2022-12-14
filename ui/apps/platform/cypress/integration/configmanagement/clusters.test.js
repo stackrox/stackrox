@@ -1,7 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    renderListAndSidePanel,
+    visitConfigurationManagementEntityInSidePanel,
     navigateToSingleEntityPage,
     hasCountWidgetsFor,
     hasTabsFor,
@@ -20,16 +20,16 @@ describe('Configuration Management Clusters', () => {
     withAuth();
 
     it('should render the clusters list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
     });
 
     it('should take you to a cluster single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor([
             'Nodes',
@@ -45,7 +45,7 @@ describe('Configuration Management Clusters', () => {
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasTabsFor([
             'nodes',
@@ -74,13 +74,13 @@ describe('Configuration Management Clusters', () => {
         const entitiesKey2 = 'nodes';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
@@ -89,13 +89,13 @@ describe('Configuration Management Clusters', () => {
         const entitiesKey2 = 'namespaces';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
@@ -104,13 +104,13 @@ describe('Configuration Management Clusters', () => {
         const entitiesKey2 = 'deployments';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
@@ -119,13 +119,13 @@ describe('Configuration Management Clusters', () => {
         const entitiesKey2 = 'images';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
@@ -134,13 +134,13 @@ describe('Configuration Management Clusters', () => {
         const entitiesKey2 = 'subjects';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
@@ -149,13 +149,13 @@ describe('Configuration Management Clusters', () => {
         const entitiesKey2 = 'serviceaccounts';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
@@ -164,13 +164,13 @@ describe('Configuration Management Clusters', () => {
         const entitiesKey2 = 'roles';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
@@ -179,13 +179,13 @@ describe('Configuration Management Clusters', () => {
         const entitiesKey2 = 'controls';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });

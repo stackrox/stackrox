@@ -163,6 +163,20 @@ export function visitConfigurationManagementEntitiesWithSearch(entitiesKey, sear
     cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
 }
 
+// specifying an "entityName" will try to select that row in the table
+// .data-test-disabled for example, policy which has Policy Status neither Fail nor Pass.
+export function visitConfigurationManagementEntityInSidePanel(entitiesKey, entityName = null) {
+    visitConfigurationManagementEntities(entitiesKey);
+
+    interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
+        cy.get(`.rt-tbody .rt-tr${entityName ? `:contains(${entityName})` : ''}`)
+            .not('.rt-tr.data-test-disabled')
+            .find('.rt-td')
+            .eq(1)
+            .click();
+    }, entitiesKey);
+}
+
 export function interactAndWaitForConfigurationManagementEntities(
     interactionCallback,
     entitiesKey
@@ -223,19 +237,6 @@ export function interactAndWaitForConfigurationManagementScan(interactionCallbac
         interactionCallback,
         routeMatcherMapForConfigurationManagementDashboard
     );
-}
-
-// specifying an "entityName" will try to select that row in the table
-export function renderListAndSidePanel(entitiesKey, entityName = null) {
-    visitConfigurationManagementEntities(entitiesKey);
-
-    interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
-        cy.get(`.rt-tbody .rt-tr${entityName ? `:contains(${entityName})` : ''}`)
-            .not('.rt-td.data-test-disabled')
-            .find('.rt-td')
-            .eq(1)
-            .click();
-    }, entitiesKey);
 }
 
 export function navigateToSingleEntityPage(entitiesKey) {
