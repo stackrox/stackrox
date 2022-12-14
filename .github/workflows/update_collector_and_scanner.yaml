@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # we need to fetch all branches
     - name: Checkout collector repo
       uses: actions/checkout@v3
       with:
@@ -51,6 +53,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # we need to fetch all branches
     - name: Checkout scanner repo
       uses: actions/checkout@v3
       with:
