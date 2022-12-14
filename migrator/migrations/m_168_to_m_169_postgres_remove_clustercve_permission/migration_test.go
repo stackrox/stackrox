@@ -1,13 +1,13 @@
 //go:build sql_integration
 
-package n57ton58
+package m168tom169
 
 import (
 	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	permissionsetpostgresstore "github.com/stackrox/rox/migrator/migrations/n_57_to_n_58_postgres_remove_clustercve_permission/permissionsetpostgresstore"
+	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/n_57_to_n_58_postgres_remove_clustercve_permission/permissionSetPostgresStore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -35,7 +35,9 @@ var (
 			Id:   id1,
 			Name: "ps1",
 			ResourceToAccess: map[string]storage.Access{
-				"Image": storage.Access_READ_WRITE_ACCESS,
+				"Cluster":    storage.Access_READ_WRITE_ACCESS,
+				"ClusterCVE": storage.Access_READ_ACCESS,
+				"Image":      storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 	}
@@ -45,14 +47,16 @@ var (
 			Id:   id0,
 			Name: "ps0",
 			ResourceToAccess: map[string]storage.Access{
-				"Image": storage.Access_READ_WRITE_ACCESS,
+				"Cluster": storage.Access_READ_ACCESS,
+				"Image":   storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 		{
 			Id:   id1,
 			Name: "ps1",
 			ResourceToAccess: map[string]storage.Access{
-				"Image": storage.Access_READ_WRITE_ACCESS,
+				"Cluster": storage.Access_READ_ACCESS,
+				"Image":   storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 	}
@@ -75,7 +79,7 @@ type psMigrationTestSuite struct {
 	suite.Suite
 
 	db    *pghelper.TestPostgres
-	store permissionsetpostgresstore.Store
+	store permissionSetPostgresStore.Store
 }
 
 func TestMigration(t *testing.T) {
@@ -84,7 +88,7 @@ func TestMigration(t *testing.T) {
 
 func (s *psMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
-	s.store = permissionsetpostgresstore.New(s.db.Pool)
+	s.store = permissionSetPostgresStore.New(s.db.Pool)
 	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.PermissionSetsTableName)
 }
 

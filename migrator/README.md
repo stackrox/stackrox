@@ -43,16 +43,16 @@ Here are the steps to write migration script:
 
     The selected variable will be referred to as `currentDBVersion` in the next steps.
  
-3. Under `migrations` folder create new folder with name
+2. Under `migrations` folder create new folder with name
 `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}`
 
     1. Ensure that the `summary_of_migration` follows the naming convention of previous migrations,
         i.e., postfix `_policy` if it modifies policies
 
-4. Create at least two files: `migration.go` and `migration_test.go`. These files should belong to package
+3. Create at least two files: `migration.go` and `migration_test.go`. These files should belong to package
 `m{currentDBVersion}tom{currentDBVersion+1}`
 
-5. The `migration.go` file should contain at least the following elements:
+4. The `migration.go` file should contain at least the following elements:
     ```go
    import (
        "github.com/stackrox/rox/migrator/migrations"
@@ -78,15 +78,15 @@ Here are the steps to write migration script:
    
    // Additional code to support the migration code
     ```
-6. Add to `migrator/runner/all.go` line
+5. Add to `migrator/runner/all.go` line
 
     ```go
     _ "github.com/stackrox/rox/migrator/migrations/m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}"
     ```
 
-7. Increment the `CurrentDBVersionSeqNum` sequence number variable used from `pkg/migrations/internal/seq_num.go` by one.
+6. Increment the `CurrentDBVersionSeqNum` sequence number variable used from `pkg/migrations/internal/seq_num.go` by one.
 
-8. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
+7. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
 in `migrations` directory, or at the examples listed below.
 
     - [#1](https://github.com/stackrox/rox/pull/8609)
