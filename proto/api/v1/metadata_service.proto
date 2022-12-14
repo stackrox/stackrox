@@ -23,14 +23,6 @@ message Metadata {
 
     // Do not use this field. It will always contain "VALID"
     LicenseStatus license_status = 4 [deprecated = true];
-
-    // Phone-home telemetry configuration.
-    // API user ID hash:
-    string user_id            = 5;
-    // An empty endpoint means using default endpoint:
-    string telemetry_endpoint = 6;
-    // Telemetry storage service key:
-    string storage_key_v1     = 7;
 }
 
 message TrustInfo {

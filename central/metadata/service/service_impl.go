@@ -8,7 +8,6 @@ import (
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -49,15 +48,9 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		ReleaseBuild:  buildinfo.ReleaseBuild,
 		LicenseStatus: v1.Metadata_VALID,
 	}
-	id := authn.IdentityFromContextOrNil(ctx)
 	// Only return the version to logged in users, not anonymous users.
-	if id != nil {
+	if authn.IdentityFromContextOrNil(ctx) != nil {
 		metadata.Version = version.GetMainVersion()
-	}
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		metadata.StorageKeyV1 = cfg.StorageKey
-		metadata.TelemetryEndpoint = cfg.Endpoint
-		metadata.UserId = cfg.HashUserAuthID(id)
 	}
 	return metadata, nil
 }

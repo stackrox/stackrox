@@ -792,9 +792,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"buildFlavor: String!",
 		"licenseStatus: Metadata_LicenseStatus!",
 		"releaseBuild: Boolean!",
-		"storageKeyV1: String!",
-		"telemetryEndpoint: String!",
-		"userId: String!",
 		"version: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
@@ -9324,21 +9321,6 @@ func (resolver *metadataResolver) LicenseStatus(ctx context.Context) string {
 
 func (resolver *metadataResolver) ReleaseBuild(ctx context.Context) bool {
 	value := resolver.data.GetReleaseBuild()
-	return value
-}
-
-func (resolver *metadataResolver) StorageKeyV1(ctx context.Context) string {
-	value := resolver.data.GetStorageKeyV1()
-	return value
-}
-
-func (resolver *metadataResolver) TelemetryEndpoint(ctx context.Context) string {
-	value := resolver.data.GetTelemetryEndpoint()
-	return value
-}
-
-func (resolver *metadataResolver) UserId(ctx context.Context) string {
-	value := resolver.data.GetUserId()
 	return value
 }
 
