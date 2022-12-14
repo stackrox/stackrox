@@ -19,10 +19,12 @@ jobs:
       with:
         repository: stackrox/scanner
         path: deps/scanner
+        fetch-depth: 0 # we need to fetch tags
     - name: Checkout collector repo
       uses: actions/checkout@v3
       with:
         repository: stackrox/collector
         path: deps/collector
+        fetch-depth: 0 # we need to fetch tags
     - name: Update version
       run: '${{ matrix.cmd }}'
