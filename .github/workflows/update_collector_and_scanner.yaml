@@ -2,7 +2,7 @@ name: Update collector and scanner version
 on:
   workflow_dispatch:
   schedule:
-    - cron: 0 5 * * 1
+    - cron: 0 5 * * 1-5
 jobs:
   update-collector:
     runs-on: ubuntu-latest
@@ -36,8 +36,6 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
-        assignees: janisz
-        reviewers: RTann
         team-reviewers: |
           collector-team
           backend-dep-updaters
@@ -81,9 +79,8 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
-        assignees: janisz
-        reviewers: RTann
         team-reviewers: |
+          data-shepherds
           backend-dep-updaters
         draft: false
     - name: Enable Pull Request Automerge
