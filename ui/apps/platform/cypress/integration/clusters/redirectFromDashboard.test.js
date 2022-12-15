@@ -32,5 +32,13 @@ describe('Clusters', () => {
             };
             visitMainDashboard(staticResponseMapForDashboard);
         }, staticResponseMapForClusters);
+
+        cy.get(
+            'p:contains("You have successfully deployed a Red Hat Advanced Cluster Security platform.")'
+        );
+
+        cy.get('h2:contains("Configure the clusters you want to secure.")');
+
+        cy.get('a:contains("View instructions")');
     });
 });
