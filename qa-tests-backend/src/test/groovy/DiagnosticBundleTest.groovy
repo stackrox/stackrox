@@ -1,6 +1,6 @@
-import static com.jayway.restassured.RestAssured.given
-import com.jayway.restassured.config.RestAssuredConfig
-import com.jayway.restassured.config.SSLConfig
+import static io.restassured.RestAssured.given
+import io.restassured.config.RestAssuredConfig
+import io.restassured.config.SSLConfig
 import groups.BAT
 import groups.COMPATIBILITY
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse

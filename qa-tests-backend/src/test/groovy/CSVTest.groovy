@@ -1,5 +1,5 @@
-import static com.jayway.restassured.RestAssured.given
-import com.jayway.restassured.response.Response
+import static io.restassured.RestAssured.given
+import io.restassured.response.Response
 import com.opencsv.CSVReader
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString

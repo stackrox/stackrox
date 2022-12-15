@@ -5,8 +5,8 @@ import static util.SplunkUtil.tearDownSplunk
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
-import com.jayway.restassured.path.json.JsonPath
-import com.jayway.restassured.response.Response
+import io.restassured.path.json.JsonPath
+import io.restassured.response.Response
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 

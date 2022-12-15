@@ -1,6 +1,6 @@
-import static com.jayway.restassured.RestAssured.given
+import static io.restassured.RestAssured.given
 
-import com.jayway.restassured.response.Response
+import io.restassured.response.Response
 import io.grpc.StatusRuntimeException
 import orchestratormanager.OrchestratorTypes
 import org.yaml.snakeyaml.Yaml

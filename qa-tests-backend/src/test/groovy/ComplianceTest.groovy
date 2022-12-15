@@ -59,7 +59,6 @@ import util.Timer
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import spock.lang.IgnoreIf
-import spock.lang.Requires
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -995,9 +994,10 @@ class ComplianceTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    @Requires({ ClusterService.isOpenShift4() })
     @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Compliance Operator aggregation results on OpenShift for machine configs #standard"() {
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
         given:
         "get compliance aggregation results"
         log.info "Getting compliance results for ${standard}"
@@ -1032,9 +1032,10 @@ class ComplianceTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @Requires({ ClusterService.isOpenShift4() })
     @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Tailored Profile does not have evidence for disabled rule"() {
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
         given:
         "get compliance aggregation results"
         log.info "Getting compliance results for rhcos4-moderate-modified"
@@ -1059,9 +1060,10 @@ class ComplianceTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @Requires({ ClusterService.isOpenShift4() })
     @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Compliance Operator aggregation results on OpenShift for cluster results"() {
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
         given:
         "get compliance aggregation results"
         log.info "Getting compliance results for ocp4-cis"

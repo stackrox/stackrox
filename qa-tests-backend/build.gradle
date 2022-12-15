@@ -13,6 +13,7 @@ codenarc.reportFormat = 'text'
 // In this section you declare where to find the dependencies of your project
 repositories {
     mavenCentral()
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
 }
 
 def grpcVersion = '1.21.0'
@@ -69,18 +70,18 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    // Use the latest Groovy version for building this library
-    implementation 'org.codehaus.groovy:groovy-all:2.4.18'
-    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    implementation platform('org.apache.groovy:groovy-bom:4.0.5')
+    implementation 'org.apache.groovy:groovy'
+    implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
+    implementation "org.spockframework:spock-core"
+    implementation "org.spockframework:spock-junit4"
+    implementation 'io.rest-assured:rest-assured:5.3.0'
+    implementation group: 'junit', name: 'junit', version: '4.12'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '1.33'
-    implementation group: 'com.jayway.restassured', name: 'rest-assured', version: '2.9.0'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.5'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    testImplementation( 'com.athaydes:spock-reports:1.4.0' ) {
-        transitive = false
-    }
     implementation group: 'com.google.protobuf', name: 'protobuf-java', version: "${protobufVersion}"
     implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: "${protobufVersion}"
 
@@ -91,8 +92,6 @@ dependencies {
     implementation 'io.kubernetes:client-java:16.0.2'
 
     implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.2.13'
-
-    implementation group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.4'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
@@ -126,6 +125,9 @@ dependencies {
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.15'
+
+    //CertRotationTest
+    implementation group: 'org.bouncycastle', name: 'bcutil-jdk18on', version: '1.72'
 }
 
 tasks.withType(Test) {
@@ -143,6 +145,7 @@ tasks.withType(Test) {
 }
 
 test {
+    useJUnitPlatform()
     timeout = Duration.ofHours(3)
     testLogging.showStandardStreams = true
 

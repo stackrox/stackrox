@@ -1,6 +1,6 @@
 package util
 
-import static com.jayway.restassured.RestAssured.given
+import static io.restassured.RestAssured.given
 
 import groovy.transform.TupleConstructor
 import groovy.util.logging.Slf4j
@@ -17,7 +17,7 @@ import org.junit.AssumptionViolatedException
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.jayway.restassured.response.Response
+import io.restassured.response.Response
 
 @Slf4j
 class SplunkUtil {

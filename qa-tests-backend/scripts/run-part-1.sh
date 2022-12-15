@@ -78,7 +78,7 @@ test_part_1() {
         make -C qa-tests-backend bat-test || touch FAIL
     elif is_in_PR_context && pr_has_label ci-all-qa-tests; then
         info "ci-all-qa-tests label was specified, so running all QA tests..."
-        make -C qa-tests-backend test || touch FAIL
+        make -C qa-tests-backend test FAIL_FAST=TRUE || touch FAIL
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL
@@ -93,7 +93,7 @@ test_part_1() {
         make -C qa-tests-backend "${QA_TEST_TARGET:-}" || touch FAIL
     else
         info "An unexpected context. Defaulting to BAT tests only..."
-        make -C qa-tests-backend bat-test || touch FAIL
+        make -C qa-tests-backend bat-test FAIL_FAST=TRUE || touch FAIL
     fi
 
     store_qa_test_results "part-1-tests"

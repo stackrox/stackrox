@@ -1,4 +1,4 @@
-import com.jayway.restassured.RestAssured
+import io.restassured.RestAssured
 import common.Constants
 
 import io.stackrox.proto.api.v1.ApiTokenService
