@@ -8,6 +8,10 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
+const (
+	defaultHostPathPath = "/var/lib/stackrox-central-db"
+)
+
 func volumeCommand(name string) *cobra.Command {
 	return &cobra.Command{
 		Use:   name,
@@ -58,7 +62,7 @@ func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 		}
 		return outputZip(cliEnvironment.Logger(), cfg)
 	}
-	c.Flags().StringVarP(&hostpath.DB.HostPath, "hostpath", "", "/var/lib/stackrox-central", "path on the host")
+	c.Flags().StringVarP(&hostpath.DB.HostPath, "hostpath", "", defaultHostPathPath, "path on the host")
 	c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "node-selector-key", "", "", "node selector key (e.g. kubernetes.io/hostname)")
 	c.Flags().StringVarP(&hostpath.DB.NodeSelectorValue, "node-selector-value", "", "", "node selector value")
 
