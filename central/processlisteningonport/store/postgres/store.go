@@ -667,8 +667,9 @@ func (s *storeImpl) readRows(
 				Port:           msg.Port,
 				Protocol:       msg.Protocol,
 			},
-			CloseTimestamp: msg.CloseTimestamp,
+			DeploymentId:	proc_msg.DeploymentId,
 			PodId:		podId,
+			PodUid:		proc_msg.PodUid,
 			ContainerName:	containerName,
 			Signal: &storage.ProcessSignal{
 				Id:		proc_msg.Signal.Id,
@@ -684,7 +685,10 @@ func (s *storeImpl) readRows(
 				Scraped:	proc_msg.Signal.Scraped,
 				LineageInfo:	proc_msg.Signal.LineageInfo,
 			},
-			ClusterId:	clusterId,
+			ClusterId:		clusterId,
+			Namespace:		proc_msg.Namespace,
+			ContainerStartTime:	proc_msg.ContainerStartTime,
+			ImageId:		proc_msg.ImageId,
 		}
 
 		plops = append(plops, plop)
