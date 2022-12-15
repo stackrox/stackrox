@@ -143,7 +143,9 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint1 = list.find { it.endpoint.port == 80 }
 
         assert endpoint1
-        assert endpoint1.clusterId == clusterId
+        assert endpoint1.deploymentId
+        assert endpoint1.podId
+        assert endpoint1.podUid
         assert endpoint1.containerName == TCPCONNECTIONTARGET1
         assert endpoint1.signal.id
         assert endpoint1.signal.containerId
@@ -152,6 +154,10 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint1.signal.execFilePath == "/usr/bin/socat"
         // assert endpoint1.signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
         assert endpoint1.signal.pid
+        assert endpoint1.clusterId == clusterId
+        assert endpoint1.namespace
+        assert endpoint1.containerStartTime
+        assert endpoint1.imageId
 
         def endpoint2 = list.find { it.endpoint.port == 8080 }
 
