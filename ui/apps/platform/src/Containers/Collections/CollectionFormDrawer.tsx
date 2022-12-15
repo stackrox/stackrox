@@ -5,11 +5,7 @@ import {
     DrawerCloseButton,
     DrawerContent,
     DrawerContentBody,
-    DrawerHead,
-    DrawerPanelBody,
     DrawerPanelContent,
-    Text,
-    Title,
 } from '@patternfly/react-core';
 
 import { Collection } from 'services/CollectionsService';
@@ -77,22 +73,20 @@ function CollectionFormDrawer({
                                 borderLeft: 'var(--pf-global--BorderColor--100) 1px solid',
                             }}
                         >
-                            <DrawerHead>
-                                <Title headingLevel="h2">Collection results</Title>
-                                <Text>See a preview of current matches.</Text>
-                                {!isInlineDrawer && (
-                                    <DrawerActions>
-                                        <DrawerCloseButton onClick={() => toggleDrawer(false)} />
-                                    </DrawerActions>
-                                )}
-                            </DrawerHead>
-                            <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
-                                <CollectionResults
-                                    dryRunConfig={dryRunConfig}
-                                    configError={configError}
-                                    setConfigError={setConfigError}
-                                />
-                            </DrawerPanelBody>
+                            <CollectionResults
+                                headerContent={
+                                    !isInlineDrawer && (
+                                        <DrawerActions>
+                                            <DrawerCloseButton
+                                                onClick={() => toggleDrawer(false)}
+                                            />
+                                        </DrawerActions>
+                                    )
+                                }
+                                dryRunConfig={dryRunConfig}
+                                configError={configError}
+                                setConfigError={setConfigError}
+                            />
                         </DrawerPanelContent>
                     }
                 >
