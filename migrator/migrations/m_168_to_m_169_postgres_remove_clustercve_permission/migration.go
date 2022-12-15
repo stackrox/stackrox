@@ -13,12 +13,14 @@ import (
 
 const (
 	batchSize = 500
+
+	startingSeqNum = 168
 )
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: 168,
-		VersionAfter:   &storage.Version{SeqNum: 169},
+		StartingSeqNum: startingSeqNum,
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 169
 		Run: func(databases *types.Databases) error {
 			err := cleanupPermissionSets(databases.PostgresDB)
 			if err != nil {
