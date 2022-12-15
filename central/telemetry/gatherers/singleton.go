@@ -11,6 +11,7 @@ import (
 	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	sensorUpgradeConfigDatastore "github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
 )
@@ -23,32 +24,57 @@ var (
 // Singleton initializes and returns a RoxGatherer singleton
 func Singleton() *RoxGatherer {
 	gathererInit.Do(func() {
-		gatherer = newRoxGatherer(
-			newCentralGatherer(
-				installation.Singleton(),
-				newDatabaseGatherer(
-					newRocksDBGatherer(globaldb.GetRocksDB()),
-					newBoltGatherer(globaldb.GetGlobalDB()),
-					newBleveGatherer(
-						globalindex.GetGlobalIndex(),
-						globalindex.GetGlobalTmpIndex(),
-						globalindex.GetAlertIndex(),
-						globalindex.GetPodIndex(),
-						globalindex.GetProcessIndex(),
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			gatherer = newRoxGatherer(
+				newCentralGatherer(
+					installation.Singleton(),
+					newDatabaseGatherer(
+						nil,
+						nil,
+						nil,
+						newPostgresGatherer(globaldb.GetPostgres()),
 					),
+					newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()),
+					gatherers.NewComponentInfoGatherer(),
+					sensorUpgradeConfigDatastore.Singleton(),
 				),
-				newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()),
-				gatherers.NewComponentInfoGatherer(),
-				sensorUpgradeConfigDatastore.Singleton(),
-			),
-			newClusterGatherer(
-				clusterDatastore.Singleton(),
-				nodeDatastore.Singleton(),
-				namespaceDatastore.Singleton(),
-				connection.ManagerSingleton(),
-				depDatastore.Singleton(),
-			),
-		)
+				newClusterGatherer(
+					clusterDatastore.Singleton(),
+					nodeDatastore.Singleton(),
+					namespaceDatastore.Singleton(),
+					connection.ManagerSingleton(),
+					depDatastore.Singleton(),
+				),
+			)
+		} else {
+			gatherer = newRoxGatherer(
+				newCentralGatherer(
+					installation.Singleton(),
+					newDatabaseGatherer(
+						newRocksDBGatherer(globaldb.GetRocksDB()),
+						newBoltGatherer(globaldb.GetGlobalDB()),
+						newBleveGatherer(
+							globalindex.GetGlobalIndex(),
+							globalindex.GetGlobalTmpIndex(),
+							globalindex.GetAlertIndex(),
+							globalindex.GetPodIndex(),
+							globalindex.GetProcessIndex(),
+						),
+						nil,
+					),
+					newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()),
+					gatherers.NewComponentInfoGatherer(),
+					sensorUpgradeConfigDatastore.Singleton(),
+				),
+				newClusterGatherer(
+					clusterDatastore.Singleton(),
+					nodeDatastore.Singleton(),
+					namespaceDatastore.Singleton(),
+					connection.ManagerSingleton(),
+					depDatastore.Singleton(),
+				),
+			)
+		}
 	})
 	return gatherer
 }
