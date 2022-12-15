@@ -169,6 +169,10 @@ create_cluster() {
 
             if [[ "${success}" == 1 ]]; then
                 info "Successfully launched cluster ${CLUSTER_NAME}"
+                local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
+                ls -l "${kubeconfig}" || true
+                gcloud container clusters get-credentials "$CLUSTER_NAME"
+                ls -l "${kubeconfig}" || true
                 break
             fi
             info "Timed out"
