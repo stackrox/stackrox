@@ -55,6 +55,7 @@ test: compile
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=Begin
 	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=BAT
 
 .PHONY: smoke-test
