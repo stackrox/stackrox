@@ -23,7 +23,7 @@ describe('Clusters', () => {
         cy.title().should('match', getRegExpForTitleWithBranding('Clusters'));
 
         cy.get('.rt-th:contains("Name")');
-        cy.get('.rt-th:contains("Cloud Provider"');
+        cy.get('.rt-th:contains("Cloud Provider")');
         cy.get('.rt-th:contains("Cluster Status")');
         cy.get('.rt-th:contains("Sensor Upgrade")');
         cy.get('.rt-th:contains("Credential Expiration")');
