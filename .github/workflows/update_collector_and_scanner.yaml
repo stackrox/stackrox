@@ -79,6 +79,11 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
+        reviewers: |
+          RTann
+          jvdm
+          daynewlee
+          dcaravel
         team-reviewers: |
           data-shepherds
           backend-dep-updaters
