@@ -1,8 +1,6 @@
 package resources
 
-import (
-	"github.com/stackrox/rox/pkg/sync"
-)
+import "github.com/stackrox/rox/pkg/sync"
 
 var (
 	dsInit   sync.Once
