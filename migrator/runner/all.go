@@ -2,6 +2,7 @@ package runner
 
 import (
 	// Import these packages to trigger the registration.
+	// Add Postgres -> Postgres migrations at the bottom of the import list.
 	_ "github.com/stackrox/rox/migrator/migrations/m_100_to_m_101_cluster_id_netpol_undo_store"
 	_ "github.com/stackrox/rox/migrator/migrations/m_101_to_m_102_drop_license_buckets"
 	_ "github.com/stackrox/rox/migrator/migrations/m_102_to_m_103_migrate_serial"
@@ -14,7 +15,6 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_109_to_m_110_networkpolicy_guidance_2"
 	_ "github.com/stackrox/rox/migrator/migrations/m_110_to_m_111_replace_deprecated_resources"
 	_ "github.com/stackrox/rox/migrator/migrations/m_111_to_m_112_groups_invalid_values"
-	_ "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission"
 	_ "github.com/stackrox/rox/migrator/migrations/m_55_to_m_56_node_scanning_empty"
 	_ "github.com/stackrox/rox/migrator/migrations/m_56_to_m_57_compliance_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_57_to_m_58_update_run_secrets_volume_policy_regex"
@@ -122,4 +122,7 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/n_54_to_n_55_postgres_watched_images"
 	_ "github.com/stackrox/rox/migrator/migrations/n_55_to_n_56_postgres_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/n_56_to_n_57_postgres_groups"
+
+	// Postgres -> Postgres migrations
+	_ "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission"
 )
