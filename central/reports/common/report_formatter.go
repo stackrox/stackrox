@@ -36,8 +36,7 @@ var (
 	}
 )
 
-// ImageVulnerability data used for generating vuln reports
-type ImageVulnerability struct {
+type imageVulnerability struct {
 	Cve               string        `json:"cve,omitempty"`
 	Severity          string        `json:"severity,omitempty"`
 	FixedByVersion    string        `json:"fixedByVersion,omitempty"`
@@ -46,18 +45,16 @@ type ImageVulnerability struct {
 	Link              string        `json:"link,omitempty"`
 }
 
-// ImageComponent data used for generating vuln reports
-type ImageComponent struct {
+type imageComponent struct {
 	Name                 string                `json:"name,omitempty"`
-	ImageVulnerabilities []*ImageVulnerability `json:"imageVulnerabilities,omitempty"`
-	Vulns                []*ImageVulnerability `json:"vulns,omitempty"`
+	ImageVulnerabilities []*imageVulnerability `json:"imageVulnerabilities,omitempty"`
+	Vulns                []*imageVulnerability `json:"vulns,omitempty"`
 }
 
-// Image data used for generating vuln reports
-type Image struct {
+type image struct {
 	Name            *storage.ImageName `json:"name,omitempty"`
-	ImageComponents []*ImageComponent  `json:"imageComponents,omitempty"`
-	Components      []*ImageComponent  `json:"components,omitempty"`
+	ImageComponents []*imageComponent  `json:"imageComponents,omitempty"`
+	Components      []*imageComponent  `json:"components,omitempty"`
 }
 
 // Deployment data used for generating vuln reports
@@ -65,7 +62,7 @@ type Deployment struct {
 	Cluster        *storage.Cluster `json:"cluster,omitempty"`
 	Namespace      string           `json:"namespace,omitempty"`
 	DeploymentName string           `json:"name,omitempty"`
-	Images         []*Image         `json:"images,omitempty"`
+	Images         []*image         `json:"images,omitempty"`
 }
 
 // Result is the query results of running a single cvefields query and scope query combination
@@ -133,14 +130,14 @@ func Format(results []Result) (*bytes.Buffer, error) {
 	return &zipBuf, nil
 }
 
-func (img *Image) getComponents() []*ImageComponent {
+func (img *image) getComponents() []*imageComponent {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return img.ImageComponents
 	}
 	return img.Components
 }
 
-func (component *ImageComponent) getVulnerabilities() []*ImageVulnerability {
+func (component *imageComponent) getVulnerabilities() []*imageVulnerability {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return component.ImageVulnerabilities
 	}

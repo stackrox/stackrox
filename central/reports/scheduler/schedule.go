@@ -111,6 +111,8 @@ const (
 
 	noVulnsFoundEmailTemplate = `
 	{{.BrandedProductName}} has found zero vulnerabilities associated with the running container images owned by your organization.`
+
+	paginatedQueryStartOffset = 0
 )
 
 var (
@@ -299,10 +301,10 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	var found bool
 	var scope *storage.SimpleAccessScope
 	var collection *storage.ResourceCollection
-	if !features.ObjectCollections.Enabled() {
-		scope, found, err = s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
-	} else {
+	if features.ObjectCollections.Enabled() {
 		collection, found, err = s.collectionDatastore.Get(req.Ctx, rc.GetScopeId())
+	} else {
+		scope, found, err = s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
 	}
 
 	if err != nil {
@@ -383,27 +385,27 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 }
 
 func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
-	if !features.ObjectCollections.Enabled() {
-		r := make([]common.Result, 0, len(rQuery.ScopeQueries))
-		for _, sq := range rQuery.ScopeQueries {
-			resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery, rQuery.DeploymentsQuery)
-			if err != nil {
-				return nil, err
-			}
-			r = append(r, resultData)
+	if features.ObjectCollections.Enabled() {
+		result, err := s.runPaginatedQuery(ctx, "", rQuery.CveFieldsQuery, rQuery.DeploymentsQuery)
+		if err != nil {
+			return nil, err
 		}
-		return r, nil
+		result = groupByClusterAndNamespace(result)
+		return []common.Result{result}, nil
 	}
-	result, err := s.runPaginatedQuery(ctx, "", rQuery.CveFieldsQuery, rQuery.DeploymentsQuery)
-	if err != nil {
-		return nil, err
+	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
+	for _, sq := range rQuery.ScopeQueries {
+		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery, rQuery.DeploymentsQuery)
+		if err != nil {
+			return nil, err
+		}
+		r = append(r, resultData)
 	}
-	result = groupByClusterAndNamespace(result)
-	return []common.Result{result}, nil
+	return r, nil
 }
 
 func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string, deploymentsQuery *v1.Query) (common.Result, error) {
-	offset := 0
+	offset := paginatedQueryStartOffset
 	var resultData common.Result
 	for {
 		var gqlQuery string
@@ -416,8 +418,7 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 					return common.Result{}, err
 				}
 				scopeQuery = fmt.Sprintf("%s:%s", search.DeploymentID.String(), strings.Join(deploymentIds, ","))
-				log.Infof("ROX-12629 : deployments scopeQuery : %s", scopeQuery)
-				gqlPaginationOffset = 0
+				gqlPaginationOffset = paginatedQueryStartOffset
 			}
 		} else {
 			gqlQuery = reportDataQuery
@@ -453,15 +454,11 @@ func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Q
 		Limit:  numDeploymentsLimit,
 		Offset: offset,
 	}
-	results, err := s.deploymentDatastore.SearchDeployments(ctx, deploymentsQuery)
+	results, err := s.deploymentDatastore.Search(ctx, deploymentsQuery)
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]string, 0, len(results))
-	for _, res := range results {
-		ids = append(ids, res.GetId())
-	}
-	return ids, nil
+	return search.ResultsToIDs(results), nil
 }
 
 func groupByClusterAndNamespace(result common.Result) common.Result {

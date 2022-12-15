@@ -68,7 +68,7 @@ var vulnFilters = &storage.VulnerabilityReportFilters{
 }
 
 func TestBuildQuery(t *testing.T) {
-	// TODO : Skip is collections is enabled
+	// TODO(ROX-13958) : Skip if collections is enabled
 	qb := NewVulnReportQueryBuilder(clusters, namespaces, accessScope, nil, vulnFilters, nil, time.Now())
 	ctx := sac.WithAllAccess(context.Background())
 	rq, err := qb.BuildQuery(ctx)

@@ -17,8 +17,10 @@ import (
 // ReportQuery encapsulates the cve specific fields query, and the resource scope
 // queries to be used in a report generation run
 type ReportQuery struct {
-	CveFieldsQuery   string
-	ScopeQueries     []string
+	CveFieldsQuery string
+	// ScopeQueries are used when scoping vuln report using an access-scope
+	ScopeQueries []string
+	// DeploymentsQuery is used when scoping vuln report using a resource-collection
 	DeploymentsQuery *v1.Query
 }
 
@@ -53,10 +55,10 @@ func (q *queryBuilder) BuildQuery(ctx context.Context) (*ReportQuery, error) {
 	var err error
 	var deploymentsQuery *v1.Query
 	var scopeQueries []string
-	if !features.ObjectCollections.Enabled() {
-		scopeQueries, err = q.buildScopeQueries()
-	} else {
+	if features.ObjectCollections.Enabled() {
 		deploymentsQuery, err = q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
+	} else {
+		scopeQueries, err = q.buildScopeQueries()
 	}
 
 	if err != nil {
