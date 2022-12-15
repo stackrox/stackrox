@@ -54,6 +54,8 @@ func initializeIntegrations(storage store.Store) {
 		if attempted > 0 {
 			log.Infof("Successfully deleted %d/%d image integration", deleted, attempted)
 		}
+
+		log.Info("Completed deletion of 'sourced' image integrations")
 	}
 }
 
