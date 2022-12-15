@@ -259,7 +259,12 @@ function CollectionResults({
                     <Title headingLevel="h2">Collection results</Title>
                     <Text>See a preview of current matches.</Text>
                 </div>
-                <Button variant="plain" onClick={refreshResults} title="Refresh results">
+                <Button
+                    variant="plain"
+                    onClick={refreshResults}
+                    title="Refresh results"
+                    isDisabled={isRefreshingResults}
+                >
                     <SyncAltIcon />
                 </Button>
                 {headerContent}
