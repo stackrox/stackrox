@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
+	groupsUtils "github.com/stackrox/rox/roxctl/central/db/bolt/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -20,18 +21,12 @@ const (
 	groupsBucket = "groups2"
 )
 
-var (
-	bucketNameToProto = map[string]proto.Message{
-		"groups2": &storage.Group{},
-	}
-)
-
 type listCommand struct {
-	path   string
-	bucket string
+	path     string
+	bucket   string
+	detailed bool
 
-	db *bolt.DB
-
+	db  *bolt.DB
 	env environment.Environment
 }
 
@@ -53,8 +48,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return nil
 		}),
 	}
-	cmd.Flags().StringP("bucket", "b", groupsBucket, "Bucket name to list")
 	cmd.Flags().StringP("file", "f", "", "Path to the Bolt DB file")
+	cmd.Flags().BoolVar(&listCmd.detailed, "details", false, "Include detailed output for each entry.")
 
 	utils.Must(cmd.MarkFlagRequired("file"))
 	return cmd
@@ -69,12 +64,6 @@ func (l *listCommand) Construct(cmd *cobra.Command) error {
 	}
 	l.path = path
 
-	bucket, err := cmd.Flags().GetString("bucket")
-	if err != nil {
-		return errors.Wrap(err, "retrieving value of bucket flag")
-	}
-	l.bucket = bucket
-
 	db, err := bolthelper.New(l.path)
 	if err != nil {
 		return errors.Wrap(err, "connecting to DB")
@@ -86,17 +75,28 @@ func (l *listCommand) Construct(cmd *cobra.Command) error {
 // List will list all key value pairs from a specific bucket in different formats (simple string value,
 // proto messages, hex values).
 func (l *listCommand) List() error {
+	var (
+		numValidEntries   int
+		numInvalidEntries int
+	)
+
 	err := l.db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(l.bucket))
+		bucket := tx.Bucket([]byte(groupsBucket))
 		if bucket == nil {
-			return errox.NotFound.Newf("bucket %q does not exist", l.bucket)
+			return errox.NotFound.Newf("bucket %q does not exist", groupsBucket)
 		}
 		err := bucket.ForEach(func(k, v []byte) error {
-			l.env.Logger().PrintfLn("Key %s", k)
+			valid, errCode := groupsUtils.ValidGroupKeyValuePair(k, v)
 
-			printStringValue(v, l.env.Logger())
-			printProtoMessage(k, v, l.bucket, l.env.Logger())
-			printHexValue(v, l.env.Logger())
+			if valid {
+				numValidEntries++
+			} else {
+				numInvalidEntries++
+			}
+
+			if l.detailed {
+				printKeyValue(l.env.Logger(), k, v, errCode)
+			}
 			return nil
 		})
 		if err != nil {
@@ -105,28 +105,27 @@ func (l *listCommand) List() error {
 		return nil
 	})
 	if err != nil {
-		return errors.Wrapf(err, "listing entries within bucket %q", l.bucket)
+		return errors.Wrapf(err, "listing entries within bucket %q", groupsBucket)
 	}
+
+	l.env.Logger().PrintfLn("Found %d entries.\nNumber of valid entries: %d\nNumber of invalid entries:%d",
+		numValidEntries+numInvalidEntries, numValidEntries, numInvalidEntries)
 	return nil
 }
 
-func printStringValue(value []byte, log logger.Logger) {
-	log.PrintfLn(">>>\tstring value:\n%s", value)
-}
-
-func printProtoMessage(key, value []byte, bucketName string, log logger.Logger) {
-	obj, exist := bucketNameToProto[bucketName]
-	if !exist {
-		return
+func printKeyValue(log logger.Logger, k, v []byte, errCode groupsUtils.ValidationErrorCode) {
+	log.PrintfLn("Key %s", k)
+	if errCode != groupsUtils.UnsetErrorCode {
+		log.ErrfLn("Invalid entry due to %s", errCode)
 	}
-	if err := proto.Unmarshal(value, obj); err != nil {
+
+	log.PrintfLn(">>>\tstring value:\n%s", v)
+	var group storage.Group
+	if err := proto.Unmarshal(v, &group); err != nil {
 		log.ErrfLn("Could not unmarshal the value for key %s to a proto message: %v",
-			key, err)
-		return
+			k, err)
 	}
-	log.PrintfLn(">>>\tproto message:\n%v", proto.MarshalTextString(obj))
-}
+	log.PrintfLn(">>>\tproto message:\n%v", proto.MarshalTextString(&group))
 
-func printHexValue(value []byte, log logger.Logger) {
-	log.PrintfLn(">>>\thex value:\n%s", hex.EncodeToString(value))
+	log.PrintfLn(">>>\thex value:\n%s", hex.EncodeToString(v))
 }

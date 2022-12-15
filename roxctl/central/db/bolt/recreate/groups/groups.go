@@ -2,17 +2,14 @@ package groups
 
 import (
 	"encoding/hex"
-	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/groups"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
+	groupsUtils "github.com/stackrox/rox/roxctl/central/db/bolt/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/util"
 	bolt "go.etcd.io/bbolt"
@@ -39,22 +36,6 @@ type recreateGroupsCommand struct {
 	env    environment.Environment
 	db     *bolt.DB
 }
-
-type validationErrorCode int
-
-func (v validationErrorCode) String() string {
-	return [...]string{
-		"unset", "wrong-key-format", "invalid-uuid-in-key", "marshal-proto-message-error", "invalid-group-proto-message",
-	}[v]
-}
-
-const (
-	unset validationErrorCode = iota
-	wrongKeyFormat
-	invalidUUID
-	errorMarshalProtoMessage
-	invalidGroupProto
-)
 
 // Command provides the cobra command for the re-creation of the groups bucket.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
@@ -183,7 +164,7 @@ func (r *recreateGroupsCommand) recreateBucket(entries []bucketEntry) error {
 		}
 		var upsertGroupErrs *multierror.Error
 		for _, entry := range entries {
-			valid, errCode := validBucketEntry(entry)
+			valid, errCode := groupsUtils.ValidGroupKeyValuePair(entry.key, entry.value)
 			if !valid {
 				// Since we are unsure _what_ this entry actually is, we are simply going to print the hex value of
 				// both key and value, just to be sure.
@@ -204,7 +185,6 @@ func (r *recreateGroupsCommand) recreateBucket(entries []bucketEntry) error {
 					upsertGroupErrs = multierror.Append(upsertGroupErrs, err)
 				}
 			}
-
 		}
 		return upsertGroupErrs.ErrorOrNil()
 	})
@@ -212,35 +192,4 @@ func (r *recreateGroupsCommand) recreateBucket(entries []bucketEntry) error {
 		return err
 	}
 	return nil
-}
-
-func validBucketEntry(entry bucketEntry) (bool, validationErrorCode) {
-	key := string(entry.key)
-
-	// Ensure the key has the correct prefix for a group.
-	if !strings.HasPrefix(key, groupIDPrefix) && !strings.HasPrefix(key, groupMigratedIDPrefix) {
-		return false, wrongKeyFormat
-	}
-
-	// Ensure the key contains a valid UUID after trimming the prefix.
-	// Note that the order is important, as trimming group ID prefix with a migrated ID would leave a .migrated.
-	key = strings.TrimPrefix(key, groupMigratedIDPrefix)
-	key = strings.TrimPrefix(key, groupIDPrefix)
-	_, err := uuid.FromString(key)
-	if err != nil {
-		return false, invalidUUID
-	}
-
-	// Ensure that the value can be unmarshalled to a group proto message.
-	var group storage.Group
-	if err := group.Unmarshal(entry.value); err != nil {
-		return false, errorMarshalProtoMessage
-	}
-
-	// Ensure that the group is a valid group.
-	if err := groups.ValidateGroup(&group, true); err != nil {
-		return false, invalidGroupProto
-	}
-
-	return true, unset
 }
