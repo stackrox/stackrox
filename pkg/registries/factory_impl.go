@@ -41,6 +41,6 @@ func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration) (types.Im
 			Id:   source.GetId(),
 			Name: source.GetName(),
 		},
-		source:   source,
+		source: source,
 	}, nil
 }
