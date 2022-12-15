@@ -12,6 +12,7 @@ import {
     Visualization,
     VisualizationSurface,
     VisualizationProvider,
+    EdgeModel,
 } from '@patternfly/react-topology';
 
 import { networkBasePathPF } from 'routePaths';
@@ -26,12 +27,12 @@ import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar'
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel from './simulation/NetworkPolicySimulatorSidePanel';
 import { EdgeState } from './EdgeStateSelect';
-
-import './Topology.css';
 import { getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel } from './types/topology.type';
-import { createExtraneousNodes } from './utils/modelUtils';
+import { createExtraneousEdges } from './utils/modelUtils';
 import { Simulation } from './utils/getSimulation';
+
+import './Topology.css';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -77,60 +78,6 @@ function setVisibleEdges(edges) {
     });
 }
 
-function setEdges(controller, detailId) {
-    controller
-        .getGraph()
-        .getEdges()
-        .forEach((edge) => {
-            edge.setVisible(false);
-        });
-
-    if (detailId) {
-        const selectedNode = controller.getNodeById(detailId);
-        if (selectedNode?.isGroup()) {
-            selectedNode.getAllNodeChildren().forEach((child) => {
-                // set visible edges
-                setVisibleEdges(getNodeEdges(child));
-            });
-        } else if (selectedNode) {
-            // set visible edges
-            setVisibleEdges(getNodeEdges(selectedNode));
-        }
-    }
-}
-
-function setExtraneousNodes(controller, detailId) {
-    if (!detailId) {
-        // if there is no selected node, check if extraneous nodes exist and clear them
-        const extraneousIngressNode = controller.getNodeById('extraneous-ingress');
-        if (extraneousIngressNode) {
-            controller.removeElement(extraneousIngressNode);
-        }
-        const extraneousEgressNode = controller.getNodeById('extraneous-egress');
-        if (extraneousEgressNode) {
-            controller.removeElement(extraneousEgressNode);
-        }
-    } else {
-        const currentModel = controller.toModel();
-        const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes();
-        // else if there is a selected node, create a node to collect extraneous flows
-        const selectedNode = controller.getNodeById(detailId);
-        const { networkPolicyState } = selectedNode?.data || {};
-        if (networkPolicyState === 'ingress') {
-            // if the node has ingress policies from policy graph, create extraneous egress node
-            currentModel.nodes.push(extraneousEgressNode);
-        } else if (networkPolicyState === 'egress') {
-            // if the node has egress policies from policy graph, create extraneous ingress node
-            currentModel.nodes.push(extraneousIngressNode);
-        } else if (networkPolicyState === 'none') {
-            // if the node has no policies, create both extraneous ingress and egress nodes
-            currentModel.nodes.push(extraneousEgressNode);
-            currentModel.nodes.push(extraneousIngressNode);
-        }
-        controller.fromModel(currentModel);
-    }
-}
-
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
 function clearSimulationQuery(search: string): string {
     const modifiedSearchFilter = getQueryObject(search);
@@ -156,9 +103,91 @@ const TopologyComponent = ({
 
     // to prevent error where graph hasn't initialized yet
     if (controller.hasGraph()) {
-        setEdges(controller, detailId);
-        if (edgeState === 'extraneous') {
-            setExtraneousNodes(controller, detailId);
+        rerenderGraph();
+    }
+
+    function rerenderGraph() {
+        setNodes();
+        setEdges();
+    }
+
+    function showExtraneousNodes() {
+        // else if there is a selected node, create a node to collect extraneous flows
+        const selectedNode = controller.getNodeById(detailId);
+        // TODO: figure out if/how to support namespaces
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore TS2339: Property 'data' does not exist on type 'Node<NodeModel, any> | {}'.
+        const { data } = selectedNode || {};
+        if (data?.type === 'DEPLOYMENT') {
+            const { networkPolicyState } = data || {};
+            const extraneousIngressNode = controller.getElementById('extraneous-ingress');
+            const extraneousEgressNode = controller.getElementById('extraneous-egress');
+            if (networkPolicyState === 'ingress') {
+                // if the node has ingress policies from policy graph, show extraneous egress node
+                extraneousEgressNode?.setVisible(true);
+            } else if (networkPolicyState === 'egress') {
+                // if the node has egress policies from policy graph, show extraneous ingress node
+                extraneousIngressNode?.setVisible(true);
+            } else if (networkPolicyState === 'none') {
+                // if the node has no policies, show both extraneous ingress and egress nodes
+                extraneousEgressNode?.setVisible(true);
+                extraneousIngressNode?.setVisible(true);
+            }
+        }
+    }
+
+    function hideExtraneousNodes() {
+        // if there is no selected node, check if extraneous nodes exist and remove them
+        const extraneousIngressNode = controller.getElementById('extraneous-ingress');
+        if (extraneousIngressNode) {
+            extraneousIngressNode.setVisible(false);
+        }
+        const extraneousEgressNode = controller.getElementById('extraneous-egress');
+        if (extraneousEgressNode) {
+            extraneousEgressNode.setVisible(false);
+        }
+    }
+
+    function setExtraneousEdges() {
+        const currentModel = controller.toModel();
+        const extraneousIngressNode = controller.getElementById('extraneous-ingress');
+        const extraneousEgressNode = controller.getElementById('extraneous-egress');
+        const { extraneousEgressEdge, extraneousIngressEdge } = createExtraneousEdges(detailId);
+        const selectedNode = controller.getNodeById(detailId);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore TS2339: Property 'data' does not exist on type 'Node<NodeModel, any> | {}'.
+        const { data } = selectedNode || {};
+        // else if there is a selected node, create a node to collect extraneous flows
+        // TODO: figure out if/how to support namespaces
+        if (data?.type === 'DEPLOYMENT') {
+            const { networkPolicyState } = data || {};
+            const edges: EdgeModel[] = currentModel.edges || [];
+            if (networkPolicyState === 'ingress' && extraneousEgressNode) {
+                edges.push(extraneousEgressEdge);
+            } else if (networkPolicyState === 'egress' && extraneousIngressNode) {
+                edges.push(extraneousIngressEdge);
+            } else if (
+                networkPolicyState === 'none' &&
+                extraneousEgressNode &&
+                extraneousIngressNode
+            ) {
+                edges.push(extraneousEgressEdge);
+                edges.push(extraneousIngressEdge);
+            }
+            currentModel.edges = edges;
+            controller.fromModel(currentModel);
+        }
+    }
+
+    function removeExtraneousEdges() {
+        // if there is no selected node, check if extraneous edges exist and remove them
+        const extraneousIngressEdge = controller.getElementById('extraneous-ingress-edge');
+        if (extraneousIngressEdge) {
+            controller.removeElement(extraneousIngressEdge);
+        }
+        const extraneousEgressEdge = controller.getElementById('extraneous-egress-edge');
+        if (extraneousEgressEdge) {
+            controller.removeElement(extraneousEgressEdge);
         }
     }
 
@@ -185,11 +214,47 @@ const TopologyComponent = ({
         }
     }
 
+    function setNodes() {
+        hideExtraneousNodes();
+        if (edgeState === 'extraneous' && detailId) {
+            showExtraneousNodes();
+        }
+    }
+
+    // TODO: figure out how to add/show edges more performantly/smoothly
+    function setEdges() {
+        removeExtraneousEdges();
+        controller
+            .getGraph()
+            .getEdges()
+            .forEach((edge) => {
+                edge.setVisible(false);
+            });
+
+        if (detailId) {
+            const selectedNode = controller.getNodeById(detailId);
+            if (selectedNode?.isGroup()) {
+                selectedNode.getAllNodeChildren().forEach((child) => {
+                    // set visible edges
+                    setVisibleEdges(getNodeEdges(child));
+                });
+            } else if (selectedNode) {
+                // set visible edges
+                setVisibleEdges(getNodeEdges(selectedNode));
+            }
+
+            // setting extraneous edges
+            if (edgeState === 'extraneous') {
+                setExtraneousEdges();
+            }
+        }
+    }
+
     React.useEffect(() => {
         controller.fromModel(model, false);
         controller.addEventListener(SELECTION_EVENT, onSelect);
 
-        setEdges(controller, detailId);
+        rerenderGraph();
 
         return () => {
             controller.removeEventListener(SELECTION_EVENT, onSelect);

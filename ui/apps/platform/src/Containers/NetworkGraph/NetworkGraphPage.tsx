@@ -17,6 +17,7 @@ import { EdgeModel } from '@patternfly/react-topology';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import useFetchClusters from 'hooks/useFetchClusters';
+import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNetworkPolicyGraph } from 'services/NetworkService';
 import { getQueryString } from 'utils/queryStringUtils';
@@ -37,7 +38,7 @@ import {
 } from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
 import getSimulation from './utils/getSimulation';
-import { CustomModel, CustomNodeModel, PolicyNodeModel } from './types/topology.type';
+import { CustomModel, CustomNodeModel, DeploymentNodeModel } from './types/topology.type';
 
 import './NetworkGraphPage.css';
 
@@ -72,10 +73,11 @@ function NetworkGraphPage() {
     const { clusters } = useFetchClusters();
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
     const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
+    const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
 
     useDeepCompareEffect(() => {
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
-        if (clusterFromUrl && namespacesFromUrl.length > 0) {
+        if (clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount) {
             if (selectedClusterId) {
                 setIsLoading(true);
 
@@ -103,18 +105,21 @@ function NetworkGraphPage() {
                     .then((values) => {
                         const activeNodeMap: Record<string, CustomNodeModel> = {};
                         const activeEdgeMap: Record<string, EdgeModel> = {};
-                        const policyNodeMap: Record<string, PolicyNodeModel> = {};
+                        const policyNodeMap: Record<string, DeploymentNodeModel> = {};
 
                         // get policy nodes from api response
                         const { nodes: policyNodes } = values[1].response;
                         // transform policy data to DataModel
-                        const policyDataModel = transformPolicyData(policyNodes);
+                        const policyDataModel = transformPolicyData(
+                            policyNodes,
+                            deploymentCount || 0
+                        );
                         // set policyNodeMap to be able to cross reference nodes by id
                         // to enhance active node data
                         policyDataModel.nodes?.forEach((node) => {
                             // no grouped nodes in policy graph data model
                             if (!policyNodeMap[node.id]) {
-                                policyNodeMap[node.id] = node as PolicyNodeModel;
+                                policyNodeMap[node.id] = node as DeploymentNodeModel;
                             }
                         });
 
@@ -153,7 +158,7 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl]);
+    }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount]);
 
     useEffect(() => {
         if (edgeState === 'active') {
