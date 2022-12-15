@@ -616,11 +616,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/db/restore",
-			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
-		},
-		{
 			Route:         "/api/docs/swagger",
 			Authorizer:    user.With(permissions.View(resources.Integration)),
 			ServerHandler: docs.Swagger(),
@@ -729,6 +724,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    user.WithRole(role.Admin),
 			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true)),
 			Compression:   true,
+		})
+
+		// v1 style restore endpoint, not supported for Postgres
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/db/restore",
+			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
+			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
 		})
 	}
 
