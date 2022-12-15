@@ -243,8 +243,8 @@ github.com/aws/aws-sdk-go v1.20.6/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN
 github.com/aws/aws-sdk-go v1.23.20/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/aws/aws-sdk-go v1.25.11/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/aws/aws-sdk-go v1.27.0/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
-github.com/aws/aws-sdk-go v1.44.144 h1:mMWdnYL8HZsobrQe1mwvQ18Xt8UbOVhWgipjuma5Mkg=
-github.com/aws/aws-sdk-go v1.44.144/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
+github.com/aws/aws-sdk-go v1.44.155 h1:PMHMuUS0atPD4LhiXuYrLasrlIm4u3lpNQBl9h+Lr2s=
+github.com/aws/aws-sdk-go v1.44.155/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/aws/aws-sdk-go-v2 v0.18.0/go.mod h1:JWVYvqSMppoMJC0x5wdwiImzgXTI9FuZwxzkQq9wy+g=
 github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59/go.mod h1:q/89r3U2H7sSsE2t6Kca0lfwTK8JdoNGS/yzM/4iH5I=
 github.com/beevik/etree v1.1.0 h1:T0xke/WvNtMoCqgzPhkX2r4rjY3GDZFi+FjpRZY2Jbs=
@@ -1678,8 +1678,8 @@ github.com/sigstore/cosign v1.13.1 h1:+5oF8jisEcDw2TuXxCADC1u5//HfdnJhGbpv9Isiwu
 github.com/sigstore/cosign v1.13.1/go.mod h1:PlfJODkovUOKsLrGI7Su57Ie/Eb/Ks7hRHw3tn5hQS4=
 github.com/sigstore/rekor v0.12.1-0.20220915152154-4bb6f441c1b2 h1:LD8LcwygdD2DxaINWwbkaUEBAknr205wmn66/N05s7c=
 github.com/sigstore/rekor v0.12.1-0.20220915152154-4bb6f441c1b2/go.mod h1:C/jZ3EZywl/Kew48fGMWQoh+1LxOMk0BkP3DHmtB+8M=
-github.com/sigstore/sigstore v1.4.6 h1:2F1LPnQf6h1lRDCyNMoBE0WCPsA+IU5kAEAbGxG8S+U=
-github.com/sigstore/sigstore v1.4.6/go.mod h1:jGHEfVTFgpfDpBz7pSY4X+Sd+g36qdAUxGufNk47k7g=
+github.com/sigstore/sigstore v1.5.0 h1:NqstQ6SwwhQsp6Ll0wgk/d9g5MlfmEppo14aquUjJ/8=
+github.com/sigstore/sigstore v1.5.0/go.mod h1:fRAaZ9xXh7ZQ0GJqZdpmNJ3pemuHBu2PgIAngmzIFSI=
 github.com/sirupsen/logrus v1.0.4-0.20170822132746-89742aefa4b2/go.mod h1:pMByvHTf9Beacp5x1UXfOR9xyW/9antXMhjMPG0dEzc=
 github.com/sirupsen/logrus v1.0.6/go.mod h1:pMByvHTf9Beacp5x1UXfOR9xyW/9antXMhjMPG0dEzc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
