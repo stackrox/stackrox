@@ -27,6 +27,7 @@ type Registry interface {
 // integration formed the interface
 type ImageRegistry interface {
 	Registry
+	DataSource() *storage.DataSource
 	Source() *storage.ImageIntegration
 }
 
