@@ -134,11 +134,7 @@ function setExtraneousNodes(controller, detailId) {
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
 function clearSimulationQuery(search: string): string {
     const modifiedSearchFilter = getQueryObject(search);
-    // eslint-disable-next-line @typescript-eslint/dot-notation
-    if (modifiedSearchFilter.s && modifiedSearchFilter['s']['Simulation']) {
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        delete modifiedSearchFilter['s']['Simulation'];
-    }
+    delete modifiedSearchFilter.simulation;
     const queryString = getQueryString(modifiedSearchFilter);
     return queryString;
 }

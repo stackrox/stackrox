@@ -16,10 +16,7 @@ function SimulateNetworkPolicyButton({ simulation }: SimulateNetworkPolicyButton
     const [, setSimulationQueryValue] = useURLParameter('simulation', undefined);
 
     function enableNetworkPolicySimulation() {
-        history.push({
-            path: networkBasePathPF,
-            search: history.location.search,
-        });
+        history.push(`${networkBasePathPF}${history.location.search as string}`);
         setSimulationQueryValue('networkPolicy');
     }
 
