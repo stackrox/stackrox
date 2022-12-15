@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -163,8 +164,11 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir stri
 		return err
 	}
 
-	if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
-		return errors.Wrapf(err, "failed to atomically create a symbolic link to restore directory %s", tempOutputDir)
+	// For Postgres we aren't using files and symlinks and such, so no need to do this.
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
+			return errors.Wrapf(err, "restore process succeeded, but failed to atomically create symbolic link to output directory %s", tempOutputDir)
+		}
 	}
 
 	return nil
