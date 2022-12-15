@@ -80,3 +80,18 @@ export function visitMainDashboard(staticResponseMap) {
     cy.get(`.pf-c-nav__link.pf-m-current:contains("${title}")`);
     cy.get(`h1:contains("${title}")`);
 }
+
+/**
+ * @param {{data: Record<string, number>}} staticResponseForSummaryCounts
+ */
+export function visitMainDashboardWithStaticResponseForSummaryCounts(
+    staticResponseForSummaryCounts
+) {
+    // Omit requests for widgets in case Dashboard redirects to Clusters page.
+    const staticResponseMapForSummaryCounts = {
+        [summaryCountsOpname]: staticResponseForSummaryCounts,
+    };
+    visit(basePath, routeMatcherMapForSummaryCounts, staticResponseMapForSummaryCounts);
+
+    cy.get(`h1:contains("${title}")`);
+}

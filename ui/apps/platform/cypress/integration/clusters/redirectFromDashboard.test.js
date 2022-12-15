@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { summaryCountsOpname, visitMainDashboard } from '../../helpers/main';
+import { visitMainDashboardWithStaticResponseForSummaryCounts } from '../../helpers/main';
 
 import { clustersAlias, interactAndVisitClusters } from './Clusters.helpers';
 
@@ -16,21 +16,19 @@ describe('Clusters', () => {
         };
 
         interactAndVisitClusters(() => {
-            const staticResponseMapForDashboard = {
-                [summaryCountsOpname]: {
-                    body: {
-                        data: {
-                            clusterCount: 0, // no secured clusters
-                            nodeCount: 3,
-                            violationCount: 20,
-                            deploymentCount: 35,
-                            imageCount: 31,
-                            secretCount: 15,
-                        },
+            const staticResponseForSummaryCounts = {
+                body: {
+                    data: {
+                        clusterCount: 0, // no secured clusters
+                        nodeCount: 3,
+                        violationCount: 20,
+                        deploymentCount: 35,
+                        imageCount: 31,
+                        secretCount: 15,
                     },
                 },
             };
-            visitMainDashboard(staticResponseMapForDashboard);
+            visitMainDashboardWithStaticResponseForSummaryCounts(staticResponseForSummaryCounts);
         }, staticResponseMapForClusters);
 
         cy.get(
