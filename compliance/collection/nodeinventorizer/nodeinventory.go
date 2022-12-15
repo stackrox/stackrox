@@ -60,7 +60,7 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 		log.Warn("No RHEL packages found in scan result")
 		return nil
 	}
-	v1rhelc := make([]*scannerV1.RHELComponent, len(rc.Packages))
+	v1rhelc := make([]*scannerV1.RHELComponent, 0)
 	for _, rhelc := range rc.Packages {
 		v1rhelc = append(v1rhelc, &scannerV1.RHELComponent{
 			// TODO(ROX-13936): Find out if ID field is needed here
