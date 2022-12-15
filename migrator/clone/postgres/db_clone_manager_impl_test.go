@@ -202,7 +202,7 @@ func (s *PostgresCloneManagerSuite) TestGetRestoreClone() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(clone, migrations.RestoreDatabase)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -233,7 +233,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	}
 
 	// Need to migrate from Rocks because Rocks is more current.
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion)
 	s.Equal(clone, CurrentClone)
 	s.True(migrateRocks)
 	s.Nil(err)
@@ -245,7 +245,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	}
 
 	// Need to migrate from Rocks because Rocks is more current.
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -258,7 +258,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	}
 	// Need to re-scan to get the clone deletion
 	s.Nil(dbm.Scan())
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
 	s.Equal(clone, CurrentClone)
 	s.True(migrateRocks)
 	s.Nil(err)
@@ -273,7 +273,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneFreshCurrent() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -296,7 +296,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneCurrentCurrent() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -327,23 +327,8 @@ func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(clone, PreviousClone)
 	s.False(migrateRocks)
-	s.Nil(err)
-}
-
-func (s *PostgresCloneManagerSuite) TestGetRestoreFromRocksClone() {
-	pgtest.DropDatabase(s.T(), migrations.RestoreDatabase)
-	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
-
-	dbm := New("", s.config, s.sourceMap)
-
-	// Scan the clones
-	s.Nil(dbm.Scan())
-
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, true)
-	s.Equal(clone, migrations.RestoreDatabase)
-	s.True(migrateRocks)
 	s.Nil(err)
 }

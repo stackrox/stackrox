@@ -141,15 +141,11 @@ func (d *dbCloneManagerImpl) databaseExists(clone string) bool {
 
 // GetCloneToMigrate - finds a clone to migrate.
 // It returns the database clone name, flag informing if Rocks should be used as well and error if fails.
-func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.MigrationVersion, restoreFromRocks bool) (string, bool, error) {
+func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.MigrationVersion) (string, bool, error) {
 	log.Info("GetCloneToMigrate")
 
 	// If a restore clone exists, our focus is to try to restore that database.
-	if _, ok := d.cloneMap[RestoreClone]; ok || restoreFromRocks {
-		if restoreFromRocks {
-			d.cloneMap[RestoreClone] = metadata.NewPostgres(rocksVersion, RestoreClone)
-			return RestoreClone, true, nil
-		}
+	if _, ok := d.cloneMap[RestoreClone]; ok {
 		return RestoreClone, false, nil
 	}
 
@@ -160,6 +156,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	// Otherwise we roll with Postgres->Postgres
 	if d.rocksExists(rocksVersion) {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
+		// Rocks has been used but Postgres is fresh.  So just return current.
 		if !currExists || currClone.GetMigVersion() == nil {
 			return CurrentClone, true, nil
 		}
@@ -222,7 +219,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		return PreviousClone, false, nil
 	}
 
-	log.Info("Fell through all checks to return current.")
+	log.Info("Fell through all checks to return current, meaning probably empty OR rollback disabled.")
 	return CurrentClone, false, nil
 }
 
@@ -248,7 +245,7 @@ func (d *dbCloneManagerImpl) Persist(cloneName string) error {
 	case RestoreClone:
 		// For a restore, we should analyze it to get the stats because pg_dump does not
 		// contain that information.
-		err := pgadmin.AnalyzeDatabase(d.adminConfig, cloneName)
+		err := pgadmin.AnalyzeDatabase(d.adminConfig, "central_restore")
 		if err != nil {
 			log.Warnf("unable to force analyze restore database:  %v", err)
 		}

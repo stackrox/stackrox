@@ -392,11 +392,3 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 		delete(d.cloneMap, k)
 	}
 }
-
-// CheckForRestore - checks to see if a restore clone exists
-func (d *dbCloneManagerImpl) CheckForRestore() bool {
-	if _, ok := d.cloneMap[RestoreClone]; ok {
-		return true
-	}
-	return false
-}
