@@ -3,6 +3,7 @@ import { hasFeatureFlag } from '../../helpers/features';
 
 import {
     assertClusterNameInSidePanel,
+    clusterAlias,
     visitClusterById,
     visitClusters,
     visitClustersWithFixture,
@@ -67,10 +68,11 @@ describe('Cluster page clusterRetentionInfo', () => {
     function visitClusterWithRetentionInfo(clusterRetentionInfo) {
         cy.fixture(fixturePath).then(({ clusters }) => {
             const cluster = clusters.find(({ name }) => name === clusterName);
+            const staticResponseMap = {
+                [clusterAlias]: { body: { cluster, clusterRetentionInfo } },
+            };
 
-            visitClusterById(cluster.id, {
-                cluster: { body: { cluster, clusterRetentionInfo } },
-            });
+            visitClusterById(cluster.id, staticResponseMap);
 
             assertClusterNameInSidePanel(clusterName);
         });
