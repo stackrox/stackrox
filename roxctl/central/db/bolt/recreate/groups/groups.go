@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/util"
 	bolt "go.etcd.io/bbolt"
 )
@@ -35,10 +34,27 @@ type bucketEntry struct {
 }
 
 type recreateGroupsCommand struct {
-	path string
-	env  environment.Environment
-	db   *bolt.DB
+	path   string
+	dryRun bool
+	env    environment.Environment
+	db     *bolt.DB
 }
+
+type validationErrorCode int
+
+func (v validationErrorCode) String() string {
+	return [...]string{
+		"unset", "wrong-key-format", "invalid-uuid-in-key", "marshal-proto-message-error", "invalid-group-proto-message",
+	}[v]
+}
+
+const (
+	unset validationErrorCode = iota
+	wrongKeyFormat
+	invalidUUID
+	errorMarshalProtoMessage
+	invalidGroupProto
+)
 
 // Command provides the cobra command for the re-creation of the groups bucket.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
@@ -60,6 +76,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	cmd.Flags().StringP("file", "f", "", "Path to the Bolt DB file")
+	cmd.Flags().BoolVar(&recreateCmd.dryRun, "dry-run", false, "If dry-run is set, "+
+		"the bucket will not be re-created, but only invalid entries will be printed.")
+
 	utils.Must(cmd.MarkFlagRequired("file"))
 	return cmd
 }
@@ -83,9 +102,11 @@ func (r *recreateGroupsCommand) Construct(cmd *cobra.Command) error {
 
 // Recreate will recreate the groups bucket by filtering out invalid entries.
 // An invalid entry either:
-// - Has a key that does not conform the groups UUID format (io.stackrox.authz.groups.<UUID>).
-// - Has a value that cannot be unmarshalled into a groups proto message.
-// - Has invalid values within the groups proto message (i.e. fails validation).
+//   - Has a key that does not conform the group UUID format
+//     io.stackrox.authz.groups.<UUID>/io.stackrox.authz.groups.migrated.<UUID>).
+//   - Has a value that cannot be unmarshalled into a groups proto message.
+//   - Has invalid values within the groups proto message (i.e. fails validation). Validation is based on the version
+//     of central (i.e. the ID has become required with the 3.72.0 release).
 func (r *recreateGroupsCommand) Recreate() error {
 	// Fetch all group bucket entries.
 	entries, err := fetchGroupBucketEntries(r.db)
@@ -94,12 +115,12 @@ func (r *recreateGroupsCommand) Recreate() error {
 	}
 
 	// Drop the groups bucket.
-	if err := dropGroupsBucket(r.db); err != nil {
+	if err := r.dropGroupsBucket(); err != nil {
 		return errors.Wrapf(err, "dropping bucket %q", groupsBucketName)
 	}
 
 	// Recreate bucket from previously existing entries, ensuring only to insert valid entries.
-	if err := recreateBucket(r.db, entries, r.env.Logger()); err != nil {
+	if err := r.recreateBucket(entries); err != nil {
 		return errors.Wrapf(err, "recreating bucket %q", groupsBucketName)
 	}
 
@@ -132,8 +153,11 @@ func fetchGroupBucketEntries(db *bolt.DB) ([]bucketEntry, error) {
 	return entries, nil
 }
 
-func dropGroupsBucket(db *bolt.DB) error {
-	err := db.Update(func(tx *bolt.Tx) error {
+func (r *recreateGroupsCommand) dropGroupsBucket() error {
+	if r.dryRun {
+		return nil
+	}
+	err := r.db.Update(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket([]byte(groupsBucketName))
 	})
 	if err != nil {
@@ -142,30 +166,45 @@ func dropGroupsBucket(db *bolt.DB) error {
 	return nil
 }
 
-func recreateBucket(db *bolt.DB, entries []bucketEntry, log logger.Logger) error {
-	err := db.Update(func(tx *bolt.Tx) error {
-		// Purposefully fail here, since we expect the groups bucket to _not_ exist prior, hence we are
-		// not using CreateBucketIfNotExists here.
-		bucket, err := tx.CreateBucket([]byte(groupsBucketName))
-		if err != nil {
-			return err
-		}
+func (r *recreateGroupsCommand) recreateBucket(entries []bucketEntry) error {
+	err := r.db.Update(func(tx *bolt.Tx) error {
 
+		var bucket *bolt.Bucket
+		if r.dryRun {
+			bucket = tx.Bucket([]byte(groupsBucketName))
+		} else {
+			var err error
+			// Purposefully fail here, since we expect the groups bucket to _not_ exist prior, hence we are
+			// not using CreateBucketIfNotExists here.
+			bucket, err = tx.CreateBucket([]byte(groupsBucketName))
+			if err != nil {
+				return err
+			}
+		}
 		var upsertGroupErrs *multierror.Error
 		for _, entry := range entries {
-			if !validBucketEntry(entry) {
+			valid, errCode := validBucketEntry(entry)
+			if !valid {
 				// Since we are unsure _what_ this entry actually is, we are simply going to print the hex value of
 				// both key and value, just to be sure.
-				log.WarnfLn("An invalid entry within the groups bucket has been found. "+
+				// The message will include a reason why the entry was invalid, which will also help us in figuring out
+				// what's wrong with the specific entry.
+				r.env.Logger().WarnfLn("An invalid entry within the groups bucket has been found (reason: %s). "+
 					"The entry will NOT be included in the re-created bucket.\n"+
 					"This is the entry represented encoded as Hex string:\nKey: %s\nValue: %s",
-					hex.EncodeToString(entry.key), hex.EncodeToString(entry.value))
+					errCode, hex.EncodeToString(entry.key), hex.EncodeToString(entry.value))
 				continue
 			}
 
-			if err := bucket.Put(entry.key, entry.value); err != nil {
-				upsertGroupErrs = multierror.Append(upsertGroupErrs, err)
+			if r.dryRun {
+				r.env.Logger().InfofLn("The following entry would be added to the bucket:\n"+
+					"(hex-format)\nKey: %s\nValue: %s", hex.EncodeToString(entry.key), hex.EncodeToString(entry.value))
+			} else {
+				if err := bucket.Put(entry.key, entry.value); err != nil {
+					upsertGroupErrs = multierror.Append(upsertGroupErrs, err)
+				}
 			}
+
 		}
 		return upsertGroupErrs.ErrorOrNil()
 	})
@@ -175,12 +214,12 @@ func recreateBucket(db *bolt.DB, entries []bucketEntry, log logger.Logger) error
 	return nil
 }
 
-func validBucketEntry(entry bucketEntry) bool {
+func validBucketEntry(entry bucketEntry) (bool, validationErrorCode) {
 	key := string(entry.key)
 
 	// Ensure the key has the correct prefix for a group.
 	if !strings.HasPrefix(key, groupIDPrefix) && !strings.HasPrefix(key, groupMigratedIDPrefix) {
-		return false
+		return false, wrongKeyFormat
 	}
 
 	// Ensure the key contains a valid UUID after trimming the prefix.
@@ -189,19 +228,19 @@ func validBucketEntry(entry bucketEntry) bool {
 	key = strings.TrimPrefix(key, groupIDPrefix)
 	_, err := uuid.FromString(key)
 	if err != nil {
-		return false
+		return false, invalidUUID
 	}
 
 	// Ensure that the value can be unmarshalled to a group proto message.
 	var group storage.Group
 	if err := group.Unmarshal(entry.value); err != nil {
-		return false
+		return false, errorMarshalProtoMessage
 	}
 
 	// Ensure that the group is a valid group.
 	if err := groups.ValidateGroup(&group, true); err != nil {
-		return false
+		return false, invalidGroupProto
 	}
 
-	return true
+	return true, unset
 }

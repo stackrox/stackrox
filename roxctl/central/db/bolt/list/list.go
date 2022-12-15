@@ -57,8 +57,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cmd.Flags().StringP("file", "f", "", "Path to the Bolt DB file")
 
 	utils.Must(cmd.MarkFlagRequired("file"))
-	utils.Must(cmd.MarkFlagRequired("bucket"))
-
 	return cmd
 }
 
@@ -94,9 +92,11 @@ func (l *listCommand) List() error {
 			return errox.NotFound.Newf("bucket %q does not exist", l.bucket)
 		}
 		err := bucket.ForEach(func(k, v []byte) error {
-			printStringValue(k, v, l.env.Logger())
+			l.env.Logger().PrintfLn("Key %s", k)
+
+			printStringValue(v, l.env.Logger())
 			printProtoMessage(k, v, l.bucket, l.env.Logger())
-			printHexValue(k, v, l.env.Logger())
+			printHexValue(v, l.env.Logger())
 			return nil
 		})
 		if err != nil {
@@ -110,8 +110,8 @@ func (l *listCommand) List() error {
 	return nil
 }
 
-func printStringValue(key, value []byte, log logger.Logger) {
-	log.PrintfLn("String value for key %s:\n%s", key, value)
+func printStringValue(value []byte, log logger.Logger) {
+	log.PrintfLn(">>>\tstring value:\n%s", value)
 }
 
 func printProtoMessage(key, value []byte, bucketName string, log logger.Logger) {
@@ -124,9 +124,9 @@ func printProtoMessage(key, value []byte, bucketName string, log logger.Logger) 
 			key, err)
 		return
 	}
-	log.PrintfLn("Proto message for key %s:\n%v", key, proto.MarshalTextString(obj))
+	log.PrintfLn(">>>\tproto message:\n%v", proto.MarshalTextString(obj))
 }
 
-func printHexValue(key, value []byte, log logger.Logger) {
-	log.PrintfLn("Hex value for key %s:\n%s", key, hex.EncodeToString(value))
+func printHexValue(value []byte, log logger.Logger) {
+	log.PrintfLn(">>>\thex value:\n%s", hex.EncodeToString(value))
 }

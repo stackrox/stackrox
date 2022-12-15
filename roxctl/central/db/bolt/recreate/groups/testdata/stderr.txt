@@ -1,12 +1,12 @@
-WARN:	An invalid entry within the groups bucket has been found. The entry will NOT be included in the re-created bucket.
+WARN:	An invalid entry within the groups bucket has been found (reason: invalid-group-proto-message). The entry will NOT be included in the re-created bucket.
 This is the entry represented encoded as Hex string:
-Key: 696f2e737461636b726f782e617574687a2e67726f75702e33613464306665362d626431662d346434362d393436362d3837366364326333333565306d616b652d69742d756e69717565
+Key: 696f2e737461636b726f782e617574687a2e67726f75702e39306238393832322d663365652d343330652d623661332d656435636262326137363566
 Value: 0a0c120a736f6d652d76616c7565
-WARN:	An invalid entry within the groups bucket has been found. The entry will NOT be included in the re-created bucket.
+WARN:	An invalid entry within the groups bucket has been found (reason: marshal-proto-message-error). The entry will NOT be included in the re-created bucket.
 This is the entry represented encoded as Hex string:
-Key: 736f6d652d72616e646f6d2d62797465732d6e6f2d6f6e652d6b6e6f7773
+Key: 696f2e737461636b726f782e617574687a2e67726f75702e6d696772617465642e39306238393832322d663365652d343330652d623661332d656435636262326137363566
 Value: 736f6d652d6f746865722d72616e646f6d2d6279746573
-WARN:	An invalid entry within the groups bucket has been found. The entry will NOT be included in the re-created bucket.
+WARN:	An invalid entry within the groups bucket has been found (reason: wrong-key-format). The entry will NOT be included in the re-created bucket.
 This is the entry represented encoded as Hex string:
 Key: 736f6d652d72616e646f6d2d6b6579
 Value: 0a0c120a736f6d652d76616c7565

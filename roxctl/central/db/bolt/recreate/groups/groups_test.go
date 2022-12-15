@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	groupUUID = "3a4d0fe6-bd1f-4d46-9466-876cd2c335e0"
+	groupUUID              = "3a4d0fe6-bd1f-4d46-9466-876cd2c335e0"
+	groupIDForInvalidGroup = "io.stackrox.authz.group.90b89822-f3ee-430e-b6a3-ed5cbb2a765f"
+	groupIDForInvalidBytes = "io.stackrox.authz.group.migrated.90b89822-f3ee-430e-b6a3-ed5cbb2a765f"
 )
 
 func TestGroupsRecreation(t *testing.T) {
@@ -105,13 +107,13 @@ func (s *recreateGroupsTestSuite) TestRecreate() {
 		},
 		"invalid-group-stored-by-id": {
 			entry: bucketEntry{
-				key:   []byte(existingGroup.GetProps().GetId() + "make-it-unique"),
+				key:   []byte(groupIDForInvalidGroup),
 				value: rawInvalidGroup,
 			},
 		},
 		"invalid-bytes": {
 			entry: bucketEntry{
-				key:   []byte("some-random-bytes-no-one-knows"),
+				key:   []byte(groupIDForInvalidBytes),
 				value: []byte("some-other-random-bytes"),
 			},
 		},
