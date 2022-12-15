@@ -1,10 +1,14 @@
 import React from 'react';
 import {
+    Alert,
+    AlertVariant,
+    Bullseye,
     Button,
     Checkbox,
     Divider,
     Flex,
     FlexItem,
+    Spinner,
     Stack,
     StackItem,
     Tab,
@@ -19,6 +23,7 @@ import { FileUploadIcon } from '@patternfly/react-icons';
 
 import useTabs from 'hooks/patternfly/useTabs';
 import ViewActiveYAMLs from './ViewActiveYAMLs';
+import useNetworkPolicySimulator from '../hooks/useNetworkPolicySimulator';
 
 type NetworkPolicySimulatorSidePanelProps = {
     selectedClusterId: string;
@@ -37,6 +42,31 @@ function NetworkPolicySimulatorSidePanel({
     });
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
+    // @TODO: Use the setter to change state
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
+        clusterId: selectedClusterId,
+    });
+
+    if (simulator.isLoading) {
+        return (
+            <Bullseye>
+                <Spinner isSVG size="lg" />
+            </Bullseye>
+        );
+    }
+
+    // @TODO: I just did this like this for now, but I'll look into how an error should actually be displayed
+    if (simulator.error) {
+        return (
+            <Alert
+                isInline
+                variant={AlertVariant.danger}
+                title={simulator.error}
+                className="pf-u-mb-lg"
+            />
+        );
+    }
 
     return (
         <Stack>
@@ -152,7 +182,11 @@ function NetworkPolicySimulatorSidePanel({
                     id={tabs.VIEW_ACTIVE_YAMLS}
                     hidden={activeKeyTab !== tabs.VIEW_ACTIVE_YAMLS}
                 >
-                    <ViewActiveYAMLs selectedClusterId={selectedClusterId} />
+                    <ViewActiveYAMLs
+                        networkPolicies={
+                            simulator.state === 'ACTIVE' ? simulator.networkPolicies : []
+                        }
+                    />
                 </TabContent>
             </StackItem>
         </Stack>

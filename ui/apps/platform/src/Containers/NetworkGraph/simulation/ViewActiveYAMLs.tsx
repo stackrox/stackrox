@@ -1,13 +1,10 @@
 import React, { useEffect } from 'react';
 import {
-    Alert,
-    AlertVariant,
     Bullseye,
     Button,
     EmptyState,
     EmptyStateVariant,
     SelectOption,
-    Spinner,
     Stack,
     StackItem,
     Title,
@@ -18,20 +15,16 @@ import { useTheme } from 'Containers/ThemeProvider';
 import download from 'utils/download';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
-import useFetchActiveYAMLs from '../hooks/apis/useFetchActiveYAMLs';
 
 type ViewActiveYamlsProps = {
-    selectedClusterId: string;
+    networkPolicies: NetworkPolicy[];
 };
 
 const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
     download(`${fileName}.yml`, fileContent, 'yml');
 };
 
-function ViewActiveYamls({ selectedClusterId }: ViewActiveYamlsProps) {
-    const { networkPolicies, isLoading, error } = useFetchActiveYAMLs({
-        clusterId: selectedClusterId,
-    });
+function ViewActiveYamls({ networkPolicies }: ViewActiveYamlsProps) {
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
     const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
@@ -65,20 +58,6 @@ function ViewActiveYamls({ selectedClusterId }: ViewActiveYamlsProps) {
             isVisible
         />
     );
-
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner isSVG size="lg" />
-            </Bullseye>
-        );
-    }
-
-    if (error) {
-        return (
-            <Alert isInline variant={AlertVariant.danger} title={error} className="pf-u-mb-lg" />
-        );
-    }
 
     if (networkPolicies.length === 0) {
         return (
