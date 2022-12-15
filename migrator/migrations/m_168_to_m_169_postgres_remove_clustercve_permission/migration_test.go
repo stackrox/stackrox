@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission/permissionSetPostgresStore"
+	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission/permissionsetpostgresstore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"
