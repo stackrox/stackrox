@@ -50,4 +50,7 @@ message ProcessListeningOnPortStorage {
 
     string process_indicator_id = 5
         [(gogoproto.moretags) = 'search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"'];
+
+    // XXX: Make it a partial index on only active, not closed, PLOP
+    bool closed = 6 [(gogoproto.moretags) = 'search:"Closed,store"  sql:"index=btree"'];
 }
