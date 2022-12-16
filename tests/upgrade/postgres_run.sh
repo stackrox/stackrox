@@ -7,6 +7,8 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
+# Build 3.73.x-75-gbab217c487 was chosen as it is the first build that contains the
+# capability to allow for a RocksDB backup to uploaded to Postgres
 INITIAL_POSTGRES_TAG="3.73.x-75-gbab217c487"
 INITIAL_POSTGRES_SHA="bab217c48736c4dbe4757fbb4a61579b3051bd9d"
 CURRENT_TAG="$(make --quiet tag)"
