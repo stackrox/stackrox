@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
     SELECTION_EVENT,
@@ -100,11 +100,6 @@ const TopologyComponent = ({
     const { detailId } = useParams();
     const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
     const controller = useVisualizationController();
-
-    // to prevent error where graph hasn't initialized yet
-    if (controller.hasGraph()) {
-        rerenderGraph();
-    }
 
     function rerenderGraph() {
         setNodes();
@@ -251,7 +246,14 @@ const TopologyComponent = ({
     }
 
     React.useEffect(() => {
-        controller.fromModel(model, false);
+        // to prevent error where graph hasn't initialized yet
+        if (controller.hasGraph()) {
+            rerenderGraph();
+        }
+    }, [detailId]);
+
+    React.useEffect(() => {
+        controller.fromModel(model, true);
         controller.addEventListener(SELECTION_EVENT, onSelect);
 
         rerenderGraph();
@@ -340,7 +342,7 @@ const TopologyComponent = ({
 
 const NetworkGraph = React.memo<NetworkGraphProps>(
     ({ model, edgeState, simulation, selectedClusterId }) => {
-        const controller = new Visualization();
+        const controller = useMemo(() => new Visualization(), []);
         controller.registerLayoutFactory(defaultLayoutFactory);
         controller.registerComponentFactory(defaultComponentFactory);
         controller.registerComponentFactory(stylesComponentFactory);
