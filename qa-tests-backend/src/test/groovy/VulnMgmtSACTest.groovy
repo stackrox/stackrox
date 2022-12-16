@@ -157,9 +157,9 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     // GraphQL does not provide ordering guarantees, so to compare the results
-    // of two GraphQL queries we extract just the CVE names and sort them.
-    def extractCVEsAndSort(queryCallResult) {
-        return queryCallResult.results*.cve.sort()
+    // of two GraphQL queries we extract just the CVE names as a Set.
+    Set<String> extractCVEs(queryCallResult) {
+        return queryCallResult.results*.cve.toSet() as Set<String>
     }
 
     static String getToken(String tokenName, String role = NONE) {
@@ -210,19 +210,21 @@ class VulnMgmtSACTest extends BaseSpecification {
         assert vulnCallResult.hasNoErrors()
         def componentCallResult = gqlService.Call(componentQuery, [query: ""])
         assert componentCallResult.hasNoErrors()
-        def baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
-        def sortedVulns = extractCVEsAndSort(vulnCallResult.value)
-        if ( baseSortedVulns != sortedVulns ) {
-            log.error("Item found in baseVulnCallResult but not in vulnCallResults: " + (baseSortedVulns-sortedVulns))
-            log.error("Item found in vulnCallResults but not in baseVulnCallResult: " + (sortedVulns-baseSortedVulns))
+        def baseVulns = extractCVEs(baseVulnCallResult.value)
+        def vulns = extractCVEs(vulnCallResult.value)
+        if ( baseVulns != vulns ) {
+            log.error("Item found in baseVulnCallResult but not in vulnCallResults: " + (baseVulns-vulns))
+            log.error("Item found in vulnCallResults but not in baseVulnCallResult: " + (vulns-baseVulns))
         }
+        def baseComponentVulns = extractCVEs(baseComponentCallResult.value)
+        def componentVulns = extractCVEs(componentCallResult.value)
 
         then:
         baseVulnCallResult.code == vulnCallResult.code
-        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
+        baseVulns == vulns
 
         baseComponentCallResult.code == componentCallResult.code
-        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
+        baseComponentVulns == componentVulns
 
         cleanup:
         "Cleanup"
@@ -250,31 +252,33 @@ class VulnMgmtSACTest extends BaseSpecification {
         assert vulnCallResult.hasNoErrors()
         def componentCallResult = gqlService.Call(componentQuery, [query: ""])
         assert componentCallResult.hasNoErrors()
-        def baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
-        def sortedVulns = extractCVEsAndSort(vulnCallResult.value)
-        if ( baseSortedVulns != sortedVulns ) {
-            (baseSortedVulns-sortedVulns).each {
-                item ->
-                log.error("Item found in baseVulnCallResult but not in vulnCallResults: " + item.cve)
-                for ( img in getImagesWithCVE(item.cve) ) {
-                    log.error("Vulnerability ${item.cve} is found in image {${img}}")
+        def baseVulns = extractCVEs(baseVulnCallResult.value)
+        def vulns = extractCVEs(vulnCallResult.value)
+        def baseComponentVulns = extractCVEs(baseComponentCallResult.value)
+        def componentVulns = extractCVEs(componentCallResult.value)
+        if ( baseVulns != vulns ) {
+            (baseVulns-vulns).each {
+                String cve ->
+                log.error("Item found in baseVulnCallResult but not in vulnCallResults: " + cve)
+                for ( img in getImagesWithCVE(cve) ) {
+                    log.error("Vulnerability ${cve} is found in image {${img}}")
                 }
             }
-            (sortedVulns-baseSortedVulns).each {
-                item ->
-                log.error("Item found in vulnCallResults but not in baseVulnCallResult: " + item.cve)
-                for ( img in getImagesWithCVE(item.cve) ) {
-                    log.error("Vulnerability ${item.cve} is found in image {${img}}")
+            (vulns-baseVulns).each {
+                String cve ->
+                log.error("Item found in vulnCallResults but not in baseVulnCallResult: " + cve)
+                for ( img in getImagesWithCVE(cve) ) {
+                    log.error("Vulnerability ${cve} is found in image {${img}}")
                 }
             }
         }
 
         then:
         baseVulnCallResult.code == vulnCallResult.code
-        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
+        baseVulns == vulns
 
         baseComponentCallResult.code == componentCallResult.code
-        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
+        baseComponentVulns == componentVulns
 
         cleanup:
         "Cleanup"
@@ -316,16 +320,16 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         then:
         baseImageVulnCallResult.code == imageVulnCallResult.code
-        extractCVEsAndSort(baseImageVulnCallResult.value) == extractCVEsAndSort(imageVulnCallResult.value)
+        extractCVEs(baseImageVulnCallResult.value) == extractCVEs(imageVulnCallResult.value)
 
         baseImageComponentCallResult.code == imageComponentCallResult.code
-        extractCVEsAndSort(baseImageComponentCallResult.value) == extractCVEsAndSort(imageComponentCallResult.value)
+        extractCVEs(baseImageComponentCallResult.value) == extractCVEs(imageComponentCallResult.value)
 
         baseNodeVulnCallResult.code == nodeVulnCallResult.code
-        extractCVEsAndSort(baseNodeVulnCallResult.value) == extractCVEsAndSort(nodeVulnCallResult.value)
+        extractCVEs(baseNodeVulnCallResult.value) == extractCVEs(nodeVulnCallResult.value)
 
         baseNodeComponentCallResult.code == nodeComponentCallResult.code
-        extractCVEsAndSort(baseNodeComponentCallResult.value) == extractCVEsAndSort(nodeComponentCallResult.value)
+        extractCVEs(baseNodeComponentCallResult.value) == extractCVEs(nodeComponentCallResult.value)
 
         cleanup:
         "Cleanup"
