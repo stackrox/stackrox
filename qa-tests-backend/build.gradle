@@ -128,10 +128,12 @@ dependencies {
     implementation group: 'org.bouncycastle', name: 'bcutil-jdk18on', version: '1.72'
 }
 
+// Apply some base attributes to all the test tasks.
 tasks.withType(Test) {
     testLogging {
-        events "passed", "skipped", "failed"
         showStandardStreams = true
+        exceptionFormat "full"
+        events "passed", "skipped", "failed"
     }
     timeout = Duration.ofHours(3)
 
