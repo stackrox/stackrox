@@ -45,7 +45,7 @@ push_images() {
     fi
 
     if [[ -n "${MAIN_IMAGE}" ]]; then
-        if is_OPENSHIFT_CI && is_in_PR_context && pr_has_label "turbo-build" && [[ "$brand" == "RHACS_BRANDING" ]]; then
+        if is_OPENSHIFT_CI && [[ "$brand" == "RHACS_BRANDING" ]]; then
             info "Images were built and pushed elsewhere, skipping it here."
         else
             push_main_image_set "$push_context" "$brand"
@@ -56,20 +56,18 @@ push_images() {
         push_race_condition_debug_image
     fi
     if [[ -n "${OPERATOR_IMAGE:-}" ]]; then
-        if is_OPENSHIFT_CI && is_in_PR_context && pr_has_label "turbo-build"; then
+        if is_OPENSHIFT_CI; then
             info "Operator images were built and pushed elsewhere, skipping it here."
         else
             push_operator_image_set "$push_context" "$brand"
         fi
     fi
     if [[ -n "${MOCK_GRPC_SERVER_IMAGE:-}" ]]; then
-        push_mock_grpc_server_image
-    fi
-
-    if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
-        add_build_comment_to_pr || {
-            info "Could not add a comment to the PR"
-        }
+        if is_OPENSHIFT_CI; then
+            info "Mock GRPC image was built and pushed elsewhere, skipping it here."
+        else
+            push_mock_grpc_server_image
+        fi
     fi
 }
 
