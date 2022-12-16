@@ -5,6 +5,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 
 import objects.Deployment
+import orchestratormanager.OrchestratorTypes
 import services.AlertService
 import services.ClusterService
 import util.Env
