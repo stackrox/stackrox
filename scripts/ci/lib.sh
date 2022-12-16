@@ -1170,7 +1170,9 @@ store_qa_test_results() {
 
     info "Copying qa-tests-backend results to $to"
 
-    store_test_results qa-tests-backend/build/test-results/test "$to"
+    for test_results in qa-tests-backend/build/test-results/*; do
+        store_test_results "$test_results" "$to"
+    done
 }
 
 store_test_results() {
