@@ -5,16 +5,6 @@ Entries in this file should be limited to:
 -  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
-## [NEXT RELEASE]
-
-### Added Features
-
-### Removed Features
-
-### Deprecated Features
-
-### Technical Changes
-
 ## [3.73.1]
 
 ### Added Features
