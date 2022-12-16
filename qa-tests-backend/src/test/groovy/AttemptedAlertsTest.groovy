@@ -3,17 +3,18 @@ import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
+
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
 import services.AlertService
 import services.ClusterService
+import util.Env
+
 import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
 
 @Stepwise
 class AttemptedAlertsTest extends BaseSpecification {

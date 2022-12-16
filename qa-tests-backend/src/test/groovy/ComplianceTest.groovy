@@ -32,8 +32,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.RoleOuterClass
 
 import common.Constants
-
-
 import objects.Control
 import objects.CsvRow
 import objects.Deployment
@@ -57,9 +55,9 @@ import services.RoleService
 import util.Timer
 
 import org.junit.Assume
-import spock.lang.Tag
 import spock.lang.IgnoreIf
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class ComplianceTest extends BaseSpecification {

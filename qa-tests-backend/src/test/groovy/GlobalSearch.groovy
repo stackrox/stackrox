@@ -2,10 +2,12 @@ import static Services.getSearchResponse
 import static Services.waitForViolation
 
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
+
 import objects.Deployment
+import util.Env
+
 import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
 
 class GlobalSearch extends BaseSpecification {
     static final private List<SearchServiceOuterClass.SearchCategory> EXPECTED_DEPLOYMENT_CATEGORIES = []

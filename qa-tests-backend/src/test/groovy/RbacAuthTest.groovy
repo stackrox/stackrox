@@ -1,18 +1,20 @@
-
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NetworkPolicyOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
-import spock.lang.Tag
+
 import services.ApiTokenService
 import services.AuthProviderService
 import services.BaseService
 import services.ClusterService
 import services.NetworkPolicyService
 import services.RoleService
+
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class RbacAuthTest extends BaseSpecification {

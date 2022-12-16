@@ -3,8 +3,6 @@ import static Services.waitForViolation
 
 import java.util.stream.Collectors
 
-
-
 import objects.Deployment
 import services.GraphQLService
 

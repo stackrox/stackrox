@@ -1,20 +1,21 @@
-import common.Constants
-
+import org.javers.core.Javers
+import org.javers.core.JaversBuilder
+import org.javers.core.diff.ListCompareAlgorithm
 
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NodeOuterClass.Node
+
+import common.Constants
 import objects.Namespace
-import org.javers.core.Javers
-import org.javers.core.JaversBuilder
-import org.javers.core.diff.ListCompareAlgorithm
-import org.junit.Assume
-import spock.lang.Tag
 import services.ClusterService
 import services.NamespaceService
 import services.NodeService
 import services.SummaryService
+
+import org.junit.Assume
 import spock.lang.IgnoreIf
+import spock.lang.Tag
 
 class SummaryTest extends BaseSpecification {
 

@@ -2,12 +2,14 @@ import static Services.getPolicies
 import static Services.waitForResolvedViolation
 import static Services.waitForViolation
 
+import java.util.stream.Collectors
 
 import io.stackrox.proto.storage.PolicyOuterClass
-import java.util.stream.Collectors
+
 import objects.Deployment
-import spock.lang.Tag
 import services.PolicyService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class RuntimePolicyTest extends BaseSpecification  {

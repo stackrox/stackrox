@@ -1,7 +1,5 @@
 import static Services.waitForViolation
 
-
-
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -9,16 +7,18 @@ import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
+
 import objects.DaemonSet
 import objects.Deployment
-import spock.lang.Tag
 import services.AlertService
 import services.ClusterService
 import services.PolicyService
 import services.ProcessBaselineService
-import spock.lang.Shared
-import spock.lang.Unroll
 import util.Timer
+
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class Enforcement extends BaseSpecification {
 

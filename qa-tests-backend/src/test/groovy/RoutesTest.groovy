@@ -1,11 +1,13 @@
+import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.storage.DeploymentOuterClass
+
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import spock.lang.Tag
 import services.DeploymentService
 import util.Env
+
+import org.junit.Assume
+import spock.lang.Tag
 
 class RoutesTest extends BaseSpecification {
 

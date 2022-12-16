@@ -1,20 +1,20 @@
 import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
-
-
-import spock.lang.Tag
 import services.ClusterService
 import services.GraphQLService
 import services.PolicyService
 import services.SummaryService
-import spock.lang.Unroll
 import util.Env
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class UpgradesTest extends BaseSpecification {
     private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")

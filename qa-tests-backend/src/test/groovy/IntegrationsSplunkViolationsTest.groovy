@@ -10,8 +10,6 @@ import io.restassured.response.Response
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 
-
-
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
@@ -22,8 +20,8 @@ import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
 import org.junit.Rule
-import spock.lang.Tag
 import org.junit.rules.Timeout
+import spock.lang.Tag
 
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule

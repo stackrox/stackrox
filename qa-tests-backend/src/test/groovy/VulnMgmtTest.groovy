@@ -1,9 +1,10 @@
-
 import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
-import spock.lang.Tag
+
 import services.GraphQLService
 import services.ImageIntegrationService
 import services.ImageService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("BAT")

@@ -1,10 +1,10 @@
-
-
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawSearchRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.SearchCategory
-import spock.lang.Tag
+
 import services.SearchService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class AutocompleteTest extends BaseSpecification {

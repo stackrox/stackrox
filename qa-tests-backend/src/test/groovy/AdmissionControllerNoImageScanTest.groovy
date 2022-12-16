@@ -1,16 +1,17 @@
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass
+
 import objects.Deployment
 import objects.GCRImageIntegration
-import services.PolicyService
-import services.SignatureIntegrationService
-
 import services.ClusterService
 import services.ImageIntegrationService
+import services.PolicyService
+import services.SignatureIntegrationService
+import util.Timer
+
 import spock.lang.Shared
 import spock.lang.Tag
-import util.Timer
 
 class AdmissionControllerNoImageScanTest extends BaseSpecification {
     @Shared

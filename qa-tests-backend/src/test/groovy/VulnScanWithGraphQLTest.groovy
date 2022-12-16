@@ -2,15 +2,13 @@ import static org.junit.Assume.assumeFalse
 
 import org.apache.commons.lang3.StringUtils
 
-
-
 import objects.Deployment
 import services.GraphQLService
 import util.Env
 import util.Timer
 
-import spock.lang.Tag
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("BAT")

@@ -1,24 +1,20 @@
-import static Services.waitForViolation
 import static Services.waitForSuspiciousProcessInRiskIndicators
-
-import io.stackrox.proto.storage.RiskOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.storage.AlertOuterClass
-import services.AlertService
-import services.ClusterService
-
-
-
-
-import io.stackrox.proto.storage.ProcessBaselineOuterClass
-import objects.Deployment
+import static Services.waitForViolation
 
 import org.apache.commons.lang3.StringUtils
 
-import spock.lang.Tag
+import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.storage.AlertOuterClass
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
+import io.stackrox.proto.storage.RiskOuterClass
 
+import objects.Deployment
+import services.AlertService
+import services.ClusterService
 import services.ProcessBaselineService
+
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class ProcessBaselinesTest extends BaseSpecification {

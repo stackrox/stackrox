@@ -5,8 +5,6 @@ import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
 import io.stackrox.proto.storage.Rbac
 
 import common.Constants
-
-
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
@@ -16,8 +14,8 @@ import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
 
-import spock.lang.Tag
 import spock.lang.Stepwise
+import spock.lang.Tag
 
 @Stepwise
 class K8sRbacTest extends BaseSpecification {

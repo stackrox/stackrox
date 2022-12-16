@@ -13,7 +13,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
-
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
@@ -30,8 +29,8 @@ import util.Env
 import util.NetworkGraphUtil
 
 import org.junit.AssumptionViolatedException
-import spock.lang.Tag
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("BAT")

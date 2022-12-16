@@ -1,8 +1,7 @@
-
-
-import spock.lang.Tag
 import services.CredentialExpiryService
 import util.Cert
+
+import spock.lang.Tag
 
 @Tag("BAT")
 @Tag("COMPATIBILITY")

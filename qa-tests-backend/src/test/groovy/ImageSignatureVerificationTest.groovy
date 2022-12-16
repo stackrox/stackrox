@@ -1,21 +1,21 @@
 import static Services.checkForNoViolations
 import static Services.waitForViolation
 
-
-
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignPublicKeyVerification
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
+
 import objects.Deployment
-import spock.lang.Tag
 import services.PolicyService
 import services.SignatureIntegrationService
+import util.Env
+
 import spock.lang.IgnoreIf
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
 
 // Do not run tests on crio due to an issue with crio trying to pull images referenced by digest from gcr.io.
 @IgnoreIf({ Env.CI_JOBNAME.contains("crio") })

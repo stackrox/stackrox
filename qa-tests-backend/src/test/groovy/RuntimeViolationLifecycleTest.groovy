@@ -4,15 +4,17 @@ import static Services.roxDetectedDeployment
 import static Services.updatePolicy
 import static Services.updatePolicyToExclusionDeployment
 
+import java.util.stream.Collectors
 
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
-import java.util.stream.Collectors
+
 import objects.Deployment
-import spock.lang.Tag
 import services.AlertService
 import util.Timer
+
+import spock.lang.Tag
 
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"

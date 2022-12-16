@@ -1,19 +1,20 @@
 import static Services.getAllResourceViolationsWithTimeout
 import static Services.getResourceViolationsWithTimeout
-import common.Constants
-
 
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
+
+import common.Constants
 import objects.Secret
-import org.junit.Assume
-import spock.lang.Tag
 import services.AlertService
 import services.ClusterService
 import services.PolicyService
-import spock.lang.Stepwise
-import spock.lang.Unroll
 import util.Helpers
+
+import org.junit.Assume
+import spock.lang.Stepwise
+import spock.lang.Tag
+import spock.lang.Unroll
 
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {

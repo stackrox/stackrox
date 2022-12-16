@@ -1,5 +1,6 @@
 import static Services.waitForViolation
-import common.Constants
+
+import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -9,19 +10,21 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
+
+import common.Constants
 import objects.ConfigMapKeyRef
 import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import spock.lang.Tag
 import services.AlertService
 import services.PolicyService
+import util.Env
+
+import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
 
 // TODO(ROX-12814): re-enable the test on all platforms. Scanner OOMs on this test in some Openshift jobs.
 @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })

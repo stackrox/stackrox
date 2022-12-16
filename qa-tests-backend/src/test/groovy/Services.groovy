@@ -1,4 +1,8 @@
 import groovy.transform.CompileStatic
+import orchestratormanager.OrchestratorType
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.Common.ResourceByID
@@ -28,10 +32,8 @@ import io.stackrox.proto.storage.PolicyOuterClass.ListPolicy
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.RiskOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
+
 import objects.NetworkPolicy
-import orchestratormanager.OrchestratorType
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import services.AlertService
 import services.BaseService
 import services.ImageService

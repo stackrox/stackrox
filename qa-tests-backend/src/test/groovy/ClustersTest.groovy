@@ -1,9 +1,10 @@
-
 import io.stackrox.proto.storage.ClusterOuterClass
-import spock.lang.Tag
+
 import services.ClusterService
-import spock.lang.Stepwise
 import util.Cert
+
+import spock.lang.Stepwise
+import spock.lang.Tag
 
 @Tag("BAT")
 @Stepwise

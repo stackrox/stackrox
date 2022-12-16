@@ -1,6 +1,6 @@
+import services.IntegrationHealthService
 
 import spock.lang.Tag
-import services.IntegrationHealthService
 import spock.lang.Unroll
 
 class IntegrationHealthTest extends BaseSpecification {

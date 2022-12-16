@@ -1,14 +1,16 @@
 import static org.junit.Assume.assumeTrue
 
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+
 import objects.Deployment
 import objects.Job
-import spock.lang.Tag
 import services.ClusterService
 import services.DeploymentService
 import services.ImageService
-import spock.lang.Unroll
 import util.Timer
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"

@@ -12,8 +12,6 @@ import io.stackrox.proto.storage.Rbac
 import io.stackrox.proto.storage.ScopeOuterClass.Scope
 
 import common.Constants
-
-
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
@@ -30,8 +28,8 @@ import util.Env
 import util.Timer
 
 import org.junit.Assume
-import spock.lang.Tag
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class PolicyConfigurationTest extends BaseSpecification {

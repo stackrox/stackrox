@@ -1,13 +1,14 @@
-
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.PaginationOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
+
 import objects.Deployment
-import spock.lang.Tag
 import services.AlertService
 import services.DeploymentService
 import services.ImageService
 import services.SecretService
+
+import spock.lang.Tag
 
 class PaginationTest extends BaseSpecification {
     static final private Map<String, String> SECRETS = [

@@ -1,19 +1,21 @@
 import static org.junit.Assume.assumeFalse
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
+
 import services.ApiTokenService
 import services.BaseService
 import services.GraphQLService
 import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
+import util.Env
 
 import spock.lang.Retry
 import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
 
 @Tag("Begin")
 class VulnMgmtSACTest extends BaseSpecification {

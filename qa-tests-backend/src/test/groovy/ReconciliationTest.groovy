@@ -5,8 +5,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
 import io.stackrox.proto.storage.AlertOuterClass
 
-
-
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
@@ -20,8 +18,8 @@ import services.SecretService
 import util.Timer
 
 import org.junit.Assume
-import spock.lang.Tag
 import spock.lang.Retry
+import spock.lang.Tag
 
 @Retry(count = 0)
 class ReconciliationTest extends BaseSpecification {

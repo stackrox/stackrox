@@ -1,15 +1,15 @@
 import com.google.protobuf.Timestamp
 
-
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
+
 import objects.Deployment
-import spock.lang.Tag
 import services.NetworkBaselineService
-import spock.lang.Retry
 import util.NetworkGraphUtil
 import util.Timer
 
+import spock.lang.Retry
+import spock.lang.Tag
 import spock.lang.Timeout
 
 @Retry(count = 0)

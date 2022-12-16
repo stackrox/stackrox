@@ -1,10 +1,10 @@
-
-
 import io.stackrox.proto.storage.Cve
 import io.stackrox.proto.storage.VulnRequests
+
 import objects.Deployment
-import spock.lang.Tag
 import services.VulnRequestService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class VulnMgmtWorkflowTest extends BaseSpecification {

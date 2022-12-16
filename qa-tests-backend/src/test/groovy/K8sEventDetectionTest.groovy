@@ -1,17 +1,17 @@
-
-
+import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
+
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import spock.lang.Tag
 import services.AlertService
 import services.PolicyService
-import spock.lang.Retry
-import spock.lang.Unroll
 import util.Env
+
+import org.junit.Assume
+import spock.lang.Retry
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class K8sEventDetectionTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = []

@@ -1,15 +1,17 @@
 import com.google.protobuf.util.JsonFormat
-import io.restassured.RestAssured
 import groovy.json.JsonSlurper
+import io.restassured.RestAssured
 
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
-import spock.lang.Tag
+
 import services.NotifierService
-import spock.lang.Shared
-import spock.lang.Unroll
 import util.Env
 import util.Timer
+
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
 
 @Tag("BAT")
 class AuditScrubbingTest extends BaseSpecification {

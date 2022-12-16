@@ -9,8 +9,6 @@ import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.Vulnerability
 
 import common.Constants
-
-
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -29,8 +27,8 @@ import util.Timer
 
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
-import spock.lang.Tag
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class ImageScanningTest extends BaseSpecification {

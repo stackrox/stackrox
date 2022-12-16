@@ -1,18 +1,17 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 
-import io.stackrox.proto.api.v1.SearchServiceOuterClass
-
-import common.Constants
-
+import java.util.stream.Collectors
 
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
@@ -23,26 +22,28 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.RiskOuterClass
 import io.stackrox.proto.storage.RiskOuterClass.Risk.Result
-import java.util.stream.Collectors
+
+import common.Constants
 import objects.Deployment
 import objects.GCRImageIntegration
 import objects.Service
-import org.junit.Assume
-import spock.lang.Tag
 import services.AlertService
 import services.DeploymentService
 import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
+import util.Env
+import util.Helpers
+import util.SlackUtil
+
+import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
+import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
-import util.Helpers
-import util.SlackUtil
 
 // TODO(ROX-13738): Re-enable these tests in compatibility-test step
 @Stepwise // We need to verify all of the expected alerts are present before other tests.

@@ -2,12 +2,14 @@ import static Services.getPolicies
 import static Services.waitForViolation
 
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
+
 import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
-import spock.lang.Tag
 import services.PolicyService
+
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class BuiltinPoliciesTest extends BaseSpecification {

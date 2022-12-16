@@ -1,7 +1,7 @@
 import static io.restassured.RestAssured.given
 
-import io.restassured.response.Response
 import io.grpc.StatusRuntimeException
+import io.restassured.response.Response
 import orchestratormanager.OrchestratorTypes
 import org.yaml.snakeyaml.Yaml
 
@@ -13,9 +13,6 @@ import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 
 import common.Constants
-
-
-
 import objects.DaemonSet
 import objects.Deployment
 import objects.Edge
@@ -32,11 +29,11 @@ import util.NetworkGraphUtil
 import util.Timer
 
 import org.junit.Assume
-import spock.lang.Tag
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Stepwise
+import spock.lang.Tag
 import spock.lang.Unroll
 
 // TODO(ROX-13739): Re-enable these tests in compatibility-test step

@@ -1,12 +1,14 @@
 import static java.util.UUID.randomUUID
 
 import io.stackrox.proto.api.v1.ApiTokenService
-import org.junit.Assume
-import spock.lang.Tag
+
 import services.BaseService
 import services.ClusterInitBundleService
 import services.ClusterService
+
+import org.junit.Assume
 import spock.lang.Shared
+import spock.lang.Tag
 
 @Tag("BAT")
 class ClusterInitBundleTest extends BaseSpecification {

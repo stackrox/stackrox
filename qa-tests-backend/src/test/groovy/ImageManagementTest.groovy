@@ -1,17 +1,17 @@
-
-
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+
 import objects.Deployment
 import objects.GenericNotifier
-import spock.lang.Tag
 import services.CVEService
 import services.ImageService
 import services.PolicyService
-import spock.lang.Unroll
 import util.Env
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class ImageManagementTest extends BaseSpecification {
 

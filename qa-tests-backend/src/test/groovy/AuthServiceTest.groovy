@@ -1,11 +1,11 @@
-
-
 import io.stackrox.proto.api.v1.AuthServiceOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
-import org.junit.Assume
-import spock.lang.Tag
+
 import services.AuthService
 import services.BaseService
+
+import org.junit.Assume
+import spock.lang.Tag
 
 @Tag("BAT")
 @Tag("COMPATIBILITY")

@@ -1,17 +1,17 @@
-import common.Constants
-
-
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
+
+import common.Constants
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.SlackNotifier
-import spock.lang.Tag
 import services.NetworkGraphService
 import services.NetworkPolicyService
-import spock.lang.Unroll
 import util.NetworkGraphUtil
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class NetworkSimulator extends BaseSpecification {
 

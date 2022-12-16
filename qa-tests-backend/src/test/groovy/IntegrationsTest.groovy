@@ -9,9 +9,6 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import common.Constants
-
-
-
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -37,10 +34,9 @@ import util.MailServer
 import util.SplunkUtil
 
 import org.junit.Assume
-import org.junit.AssumptionViolatedException
 import org.junit.Rule
-import spock.lang.Tag
 import org.junit.rules.Timeout
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class IntegrationsTest extends BaseSpecification {

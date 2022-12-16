@@ -1,15 +1,13 @@
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
-
-
 import objects.Deployment
 import services.DeploymentService
+import services.ProcessService
+import util.Timer
 
 import org.junit.Assume
 import spock.lang.Tag
-import services.ProcessService
 import spock.lang.Unroll
-import util.Timer
 
 class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names

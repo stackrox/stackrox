@@ -1,11 +1,13 @@
-
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
-import spock.lang.Tag
+
 import services.GroupService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("BAT")

@@ -1,11 +1,11 @@
-
-
 import io.stackrox.proto.storage.SecretOuterClass.Secret
+
 import objects.Deployment
-import spock.lang.Tag
 import services.SecretService
-import spock.lang.Unroll
 import util.Timer
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class SecretsTest extends BaseSpecification {
 

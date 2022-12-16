@@ -1,17 +1,20 @@
-
-import io.grpc.StatusRuntimeException
-import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import java.nio.file.Files
 import java.nio.file.Paths
-import spock.lang.Tag
+
+import io.grpc.StatusRuntimeException
+
+import io.stackrox.proto.api.v1.GroupServiceOuterClass
+
 import services.AuthProviderService
 import services.AuthService
 import services.BaseService
 import services.GroupService
+import util.Env
+
 import spock.lang.Shared
 import spock.lang.Stepwise
+import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
 
 @Tag("BAT")
 @Stepwise

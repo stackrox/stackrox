@@ -1,10 +1,9 @@
-
-
 import objects.Deployment
-import spock.lang.Tag
 import services.ProcessService
-import spock.lang.Unroll
 import util.Timer
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class ProcessVisualizationReplicaTest extends BaseSpecification {
     static final private Integer REPLICACOUNT = 4

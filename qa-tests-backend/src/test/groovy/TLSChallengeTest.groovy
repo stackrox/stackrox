@@ -1,21 +1,23 @@
 import static io.stackrox.proto.storage.ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel
 
-import io.fabric8.kubernetes.api.model.EnvVar
-import io.stackrox.proto.storage.ClusterOuterClass
 import java.nio.file.Files
 import java.nio.file.Paths
+
+import io.fabric8.kubernetes.api.model.EnvVar
+import orchestratormanager.OrchestratorManagerException
+
+import io.stackrox.proto.storage.ClusterOuterClass
+
 import objects.ConfigMap
 import objects.Deployment
 import objects.Secret
-import orchestratormanager.OrchestratorManagerException
-
-import spock.lang.Tag
 import services.ClusterService
+import util.ApplicationHealth
+import util.Timer
 
 import spock.lang.Retry
 import spock.lang.Shared
-import util.ApplicationHealth
-import util.Timer
+import spock.lang.Tag
 
 @Retry(count = 1)
 class TLSChallengeTest extends BaseSpecification {

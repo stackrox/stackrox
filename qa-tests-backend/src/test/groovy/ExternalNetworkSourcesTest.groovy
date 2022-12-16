@@ -1,13 +1,16 @@
+import java.util.concurrent.TimeUnit
+
 import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
-import java.util.concurrent.TimeUnit
+
 import objects.Deployment
 import objects.Edge
-import spock.lang.Tag
 import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
+
+import spock.lang.Tag
 
 class ExternalNetworkSourcesTest extends BaseSpecification {
     // Any reliable static IP address should work here.
