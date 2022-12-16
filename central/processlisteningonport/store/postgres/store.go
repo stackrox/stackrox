@@ -71,6 +71,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ProcessListeningOnPortStorage, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessListeningOnPortStorage, error)
 	Upsert(ctx context.Context, obj *storage.ProcessListeningOnPortStorage) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessListeningOnPortStorage) error
 	Delete(ctx context.Context, id string) error
@@ -493,6 +494,39 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 	return elems, missingIndices, nil
 }
 
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessListeningOnPortStorage, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "ProcessListeningOnPortStorage")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema[storage.ProcessListeningOnPortStorage](ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return rows, nil
+}
+
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessListeningOnPortStorage")
@@ -516,6 +550,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		if len(ids) == 0 {
 			break
 		}
+
 		if len(ids) < localBatchSize {
 			localBatchSize = len(ids)
 		}
@@ -669,31 +704,31 @@ func (s *storeImpl) readRows(
 
 		plop := &storage.ProcessListeningOnPort{
 			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-				Port:           msg.Port,
-				Protocol:       msg.Protocol,
+				Port:     msg.Port,
+				Protocol: msg.Protocol,
 			},
-			DeploymentId:	proc_msg.DeploymentId,
-			PodId:		podId,
-			PodUid:		proc_msg.PodUid,
-			ContainerName:	containerName,
+			DeploymentId:  proc_msg.DeploymentId,
+			PodId:         podId,
+			PodUid:        proc_msg.PodUid,
+			ContainerName: containerName,
 			Signal: &storage.ProcessSignal{
-				Id:		proc_msg.Signal.Id,
-				ContainerId:	signalContainerId,
-				Time:		proc_msg.Signal.Time,
-				Name:		signalName,
-				Args:		signalArgs,
-				ExecFilePath:	signalExecFilePath,
-				Pid:		proc_msg.Signal.Pid,
-				Uid:		proc_msg.Signal.Uid,
-				Gid:		proc_msg.Signal.Gid,
-				Lineage:	proc_msg.Signal.Lineage,
-				Scraped:	proc_msg.Signal.Scraped,
-				LineageInfo:	proc_msg.Signal.LineageInfo,
+				Id:           proc_msg.Signal.Id,
+				ContainerId:  signalContainerId,
+				Time:         proc_msg.Signal.Time,
+				Name:         signalName,
+				Args:         signalArgs,
+				ExecFilePath: signalExecFilePath,
+				Pid:          proc_msg.Signal.Pid,
+				Uid:          proc_msg.Signal.Uid,
+				Gid:          proc_msg.Signal.Gid,
+				Lineage:      proc_msg.Signal.Lineage,
+				Scraped:      proc_msg.Signal.Scraped,
+				LineageInfo:  proc_msg.Signal.LineageInfo,
 			},
-			ClusterId:		clusterId,
-			Namespace:		proc_msg.Namespace,
-			ContainerStartTime:	proc_msg.ContainerStartTime,
-			ImageId:		proc_msg.ImageId,
+			ClusterId:          clusterId,
+			Namespace:          proc_msg.Namespace,
+			ContainerStartTime: proc_msg.ContainerStartTime,
+			ImageId:            proc_msg.ImageId,
 		}
 
 		plops = append(plops, plop)
