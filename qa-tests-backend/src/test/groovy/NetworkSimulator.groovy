@@ -54,7 +54,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-@Tag("BAT")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator replace existing network policy"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -123,7 +123,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-@Tag("BAT")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator add to an existing network policy"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -197,7 +197,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-@Tag("BAT")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator with query - multiple policy simulation"() {
         given:
         def allDeps = new NetworkGraphUtil().getDeploymentsAsGraphNodes()
@@ -291,7 +291,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-@Tag("BAT")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator with query - single policy simulation"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -365,7 +365,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-@Tag("BAT")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator with delete policies"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()

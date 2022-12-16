@@ -165,7 +165,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("SMOKE")
+    @Tag("SMOKE")
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:
@@ -247,7 +247,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("SMOKE")
+    @Tag("SMOKE")
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"

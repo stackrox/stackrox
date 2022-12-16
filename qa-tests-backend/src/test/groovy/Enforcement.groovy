@@ -266,8 +266,8 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Kill Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for Kill Pod enforcement
@@ -300,8 +300,8 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -337,8 +337,8 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration (build,deploy - image tag)"() {
         // This test verifies enforcement by triggering a policy violation on an image
         // based policy that is configured for scale-down enforcement with both BUILD and
@@ -375,8 +375,8 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration (build,deploy - SEVERITY)"() {
         // This test verifies enforcement by triggering a policy violation on a SEVERITY
         // based policy that is configured for scale-down enforcement with both BUILD and
@@ -413,8 +413,8 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Node Constraint Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for node constraint enforcement
@@ -453,8 +453,8 @@ class Enforcement extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Fail Build Enforcement - #policyName - Integration (build,deploy)"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for fail build enforcement
@@ -486,7 +486,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down and Node Constraint Enforcement - Deployment"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -526,7 +526,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down and Node Constraint Enforcement - DaemonSet"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -682,7 +682,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("PolicyEnforcement")
+    @Tag("PolicyEnforcement")
     def "Test Alert and Kill Pod Enforcement - Baseline Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
@@ -732,8 +732,8 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Enforcement not done on updated - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement, but not applying enforcements because
@@ -781,8 +781,8 @@ class Enforcement extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("Integration")
-@Tag("PolicyEnforcement")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement Ignored due to Bypass Annotation - Integration"() {
         // This test verifies enforcement is skipped by triggering a policy violation on a policy
         // that is configured for scale-down enforcement with a deployment that carries a bypass

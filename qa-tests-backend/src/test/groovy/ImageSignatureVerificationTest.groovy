@@ -238,7 +238,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     @Unroll
     @SuppressWarnings('LineLength')
     @Tag("BAT")
-@Tag("Integration")
+    @Tag("Integration")
     def "Check violations of policy '#policyName' for deployment '#deployment.name'"() {
         expect:
         "Verify deployment has expected violations"

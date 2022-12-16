@@ -50,7 +50,7 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("COMPATIBILITY")
+    @Tag("COMPATIBILITY")
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -93,7 +93,7 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("COMPATIBILITY")
+    @Tag("COMPATIBILITY")
     def "Add Service Account and verify it gets scraped"() {
         given:
         "create a new service account"

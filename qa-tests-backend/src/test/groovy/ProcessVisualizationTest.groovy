@@ -84,7 +84,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     def "Verify process visualization on kube-proxy"() {
         when:
         "Check if kube-proxy is running"
@@ -109,7 +109,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process visualization on default: #depName"()  {
         when:
@@ -169,7 +169,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process paths, UIDs, and GIDs on #depName"()  {
         when:
@@ -266,7 +266,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process arguments on #depName"() {
         when:

@@ -26,7 +26,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("COMPATIBILITY")
+    @Tag("COMPATIBILITY")
     def "Verify the secret api can return the secret's information when adding a new secret"() {
         when:
         "Create a Secret"

@@ -242,7 +242,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("Notifiers")
+    @Tag("Notifiers")
     def "Verify Network Simulator Notifications: #type"() {
         when:
         "create notifier"
@@ -300,7 +300,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("Notifiers")
+    @Tag("Notifiers")
     def "Verify Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -385,7 +385,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("Notifiers")
+    @Tag("Notifiers")
     def "Verify Attempted Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -527,7 +527,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("Notifiers")
+    @Tag("Notifiers")
     def "Verify Policy Violation Notifications Destination Overrides: #type"() {
         when:
         "Create notifier"

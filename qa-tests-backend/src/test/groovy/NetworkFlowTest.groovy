@@ -278,8 +278,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("RUNTIME")
-@Tag("NetworkFlowVisualization")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
     def "Verify connections between StackRox Services"() {
         when:
         "Fetch uIDs for the central, sensor, and collector services, if present"
@@ -307,8 +307,8 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("RUNTIME")
-@Tag("NetworkFlowVisualization")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
@@ -338,8 +338,8 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("RUNTIME")
-@Tag("NetworkFlowVisualization")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
     def "Verify listen port availability matches feature flag: #targetDeployment"() {
         given:
         "Deployment with listening port"
@@ -385,8 +385,8 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("RUNTIME")
-@Tag("NetworkFlowVisualization")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
     def "Verify network graph when filtered on \"#filter\" and scoped to \"#scope\" #desc"() {
         given:
         "Orchestrator components exists"
@@ -428,7 +428,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("NetworkFlowVisualization")
+    @Tag("NetworkFlowVisualization")
     def "Verify network flows with graph filtering"() {
         given:
         "Two deployments, A and B, where B communicates to A"
@@ -838,7 +838,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("NetworkFlowVisualization")
+    @Tag("NetworkFlowVisualization")
     @Ignore("Skip this test until we can determine a more reliable way to test")
     def "Apply a generated network policy and verify connection states"() {
         given:

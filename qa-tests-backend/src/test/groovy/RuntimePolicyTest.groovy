@@ -52,7 +52,7 @@ class RuntimePolicyTest extends BaseSpecification  {
 
     @Unroll
     @Tag("BAT")
-@Tag("SMOKE")
+    @Tag("SMOKE")
     def "Verify runtime policy : #policyName can be triggered - #depName"() {
         when:
         "Validate if policy is present"

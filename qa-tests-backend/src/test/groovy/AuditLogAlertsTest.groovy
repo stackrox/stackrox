@@ -20,7 +20,7 @@ import spock.lang.Unroll
 class AuditLogAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     def "Verify Audit Log Event Source Policies Trigger: #verb - #resourceType"() {
         given:
         "Running on an OpenShift 4 cluster"
@@ -79,7 +79,7 @@ class AuditLogAlertsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     def "Verify collection continues even after ACS components restarts: #component"() {
         given:
         "Running on an OpenShift 4 cluster"
@@ -150,7 +150,7 @@ class AuditLogAlertsTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     def "Verify collection continues when it is disabled and then re-enabled"() {
         given:
         "Running on an OpenShift 4 cluster"
@@ -214,7 +214,7 @@ class AuditLogAlertsTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     def "Verify collection stops when feature is is disabled"() {
         given:
         "Running on an OpenShift 4 cluster"

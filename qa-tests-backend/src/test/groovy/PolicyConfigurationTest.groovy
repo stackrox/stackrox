@@ -218,7 +218,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("SMOKE")
+    @Tag("SMOKE")
     def "Verify policy configuration #policyName can be triggered"() {
         Assume.assumeTrue(canRun == null || canRun())
 
@@ -687,7 +687,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("SMOKE")
+    @Tag("SMOKE")
     def "Verify env var policy configuration for source #envVarSource fails validation"() {
         expect:
         assert !PolicyService.createNewPolicy(Policy.newBuilder()

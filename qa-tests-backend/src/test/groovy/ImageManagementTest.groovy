@@ -19,7 +19,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("Integration")
+    @Tag("Integration")
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
         when:
         "Update Policy to build time"
@@ -102,7 +102,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-@Tag("Integration")
+    @Tag("Integration")
     def "Verify CI/CD Integration Endpoint excluded scopes - #policy - #excludedscopes"() {
         when:
         "Update Policy to build time and mark policy excluded scope"
@@ -288,7 +288,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-@Tag("Integration")
+    @Tag("Integration")
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
         "Update policy to build time, create notifier and add it to policy"

@@ -96,7 +96,7 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Retry(count = 0)
     @Unroll
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     // "ROX-6916: Only run in reliable environments until fixed"
     @IgnoreIf({ Env.CI_JOBNAME.contains("openshift-rhel") })
     def "Verify attempted alerts on deployment create: #desc"() {
@@ -172,7 +172,7 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Retry(count = 0)
     @Unroll
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     // "ROX-6916: Only run in reliable environments until fixed"
     @IgnoreIf({ Env.CI_JOBNAME.contains("openshift-rhel") })
     def "Verify attempted alerts on deployment updates: #desc"() {
@@ -250,7 +250,7 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Retry(count = 0)
     @Unroll
     @Tag("BAT")
-@Tag("RUNTIME")
+    @Tag("RUNTIME")
     // K8s event detection is currently not supported on OpenShift.
     @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify attempted alerts on kubernetes events: #desc"() {
