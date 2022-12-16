@@ -122,7 +122,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 		{
 			Port:           1234,
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-			CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+			CloseTimestamp: nil,
 			Process: &storage.ProcessIndicatorUniqueKey{
 				PodId:               fixtureconsts.PodUID1,
 				ContainerName:       "test_container1",
@@ -153,11 +153,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
-		Endpoints: []*storage.ProcessListeningOnPort_Endpoint{
-			&storage.ProcessListeningOnPort_Endpoint{
-				Port:     1234,
-				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		Signal: &storage.ProcessSignal{
 			Name:         "test_process1",
@@ -167,10 +165,210 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	})
 }
 
+// TestPLOPAddClosed: Happy path for ProcessListeningOnPort closing, one PLOP object is added
+// with a correct process indicator reference and CloseTimestamp set. It will
+// be exluded from the API result.
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+
+	testNamespace := "test_namespace"
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container2",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process2",
+				Args:         "test_arguments2",
+				ExecFilePath: "test_path2",
+			},
+		},
+	}
+
+	plopObjectsActive := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: nil,
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjectsActive...))
+
+	// Close PLOP objects
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjectsClosed...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	// It's being closed and excluded from the API response
+	suite.Len(newPlops, 0)
+}
+
+// TestPLOPAddClosedWithoutActive: one PLOP object is added with a correct
+// process indicator reference and CloseTimestamp set, without having
+// previously active PLOP. Will be stored in the db as closed and excluded from
+// the API.
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+
+	testNamespace := "test_namespace"
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container2",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process2",
+				Args:         "test_arguments2",
+				ExecFilePath: "test_path2",
+			},
+		},
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+}
+
 // TestPLOPAddNoIndicator: A PLOP object with a wrong process indicator
 // reference. It's being stored in the database, but without the reference will
 // not be fetched via API.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: nil,
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Add PLOP referencing non existing indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+}
+
+// TestPLOPAddClosedNoIndicator: A PLOP object with a wrong process indicator
+// reference and CloseTimestamp set. It's being stored in the database, but
+// without the reference will not be fetched via API.
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
@@ -248,7 +446,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		{
 			Port:           1234,
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-			CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+			CloseTimestamp: nil,
 			Process: &storage.ProcessIndicatorUniqueKey{
 				PodId:               fixtureconsts.PodUID1,
 				ContainerName:       "test_container1",
@@ -279,11 +477,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
-		Endpoints: []*storage.ProcessListeningOnPort_Endpoint{
-			&storage.ProcessListeningOnPort_Endpoint{
-				Port:     1234,
-				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		Signal: &storage.ProcessSignal{
 			Name:         "test_process1",
