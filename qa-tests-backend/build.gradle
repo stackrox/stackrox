@@ -76,7 +76,6 @@ dependencies {
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.3.0'
-    implementation group: 'junit', name: 'junit', version: '4.12'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '1.33'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.5'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
@@ -130,20 +129,6 @@ dependencies {
     implementation group: 'org.bouncycastle', name: 'bcutil-jdk18on', version: '1.72'
 }
 
-tasks.withType(Test) {
-    def testGroups = new TestGroups(System.getProperty("groups"))
-
-    useJUnit {
-        includeCategories testGroups.getIncludedGroups()
-        excludeCategories testGroups.getExcludedGroups()
-    }
-
-    testLogging {
-        showStandardStreams true
-        exceptionFormat "full"
-    }
-}
-
 test {
     useJUnitPlatform()
     timeout = Duration.ofHours(3)
@@ -160,6 +145,24 @@ test {
             outputPerTestCase = true
             mergeReruns = true
         }
+    }
+}
+
+task testAll(type: Test) {
+    useJUnitPlatform{
+        excludeTags "Upgrade", "SensorBounce", "SensorBounceNext"
+    }
+}
+
+task testBegin(type: Test) {
+    useJUnitPlatform{
+        includeTags "Begin"
+    }
+}
+
+task testBAT(type: Test) {
+    useJUnitPlatform{
+        includeTags "BAT"
     }
 }
 

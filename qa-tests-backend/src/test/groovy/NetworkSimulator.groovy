@@ -1,13 +1,13 @@
 import common.Constants
-import groups.BAT
-import groups.NetworkPolicySimulation
+
+
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.SlackNotifier
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.NetworkGraphService
 import services.NetworkPolicyService
 import spock.lang.Unroll
@@ -53,7 +53,8 @@ class NetworkSimulator extends BaseSpecification {
         }
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+@Tag("BAT")
     def "Verify NetworkPolicy Simulator replace existing network policy"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -121,7 +122,8 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | true
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+@Tag("BAT")
     def "Verify NetworkPolicy Simulator add to an existing network policy"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -194,7 +196,8 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | true
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+@Tag("BAT")
     def "Verify NetworkPolicy Simulator with query - multiple policy simulation"() {
         given:
         def allDeps = new NetworkGraphUtil().getDeploymentsAsGraphNodes()
@@ -287,7 +290,8 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | false
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+@Tag("BAT")
     def "Verify NetworkPolicy Simulator with query - single policy simulation"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -360,7 +364,8 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | true
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+@Tag("BAT")
     def "Verify NetworkPolicy Simulator with delete policies"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -451,7 +456,7 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | true
     }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify NetworkPolicy Simulator allow traffic to an application from all namespaces"() {
         when:
         "generate simulation"
@@ -515,7 +520,7 @@ class NetworkSimulator extends BaseSpecification {
         }
      }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify yaml requires namespace in metadata"() {
         when:
         "create NetworkPolicy object"
@@ -526,7 +531,7 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy)) == null
     }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify malformed yaml returns error"() {
         when:
         "create NetworkPolicy object"
@@ -546,7 +551,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Unroll
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify NetworkPolicy Simulator results for #policy.name"() {
         when:
         "Get Base Graph"
@@ -654,7 +659,7 @@ class NetworkSimulator extends BaseSpecification {
                 orchestrator.getAllDeploymentTypesCount(Constants.ORCHESTRATOR_NAMESPACE) - 1       | _
     }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify invalid clusterId passed to notification API"() {
         when:
         "create slack notifier"
@@ -688,7 +693,7 @@ class NetworkSimulator extends BaseSpecification {
         notifier.deleteNotifier()
     }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify invalid notifierId passed to notification API"() {
         when:
         "create Netowrk Policy yaml"

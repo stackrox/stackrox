@@ -1,11 +1,11 @@
 import static Services.getPolicies
 import static Services.waitForViolation
-import groups.BAT
+
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
 import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.PolicyService
 import spock.lang.Shared
 import spock.lang.Unroll
@@ -103,7 +103,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify policy '#policyName' is triggered"(String policyName, String deploymentName) {
         when:
         "An existing policy"

@@ -10,8 +10,8 @@ import io.restassured.response.Response
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 
-import groups.BAT
-import groups.Integration
+
+
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
@@ -22,7 +22,7 @@ import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
 import org.junit.Rule
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import org.junit.rules.Timeout
 
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
@@ -101,7 +101,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
-    @Category([Integration, BAT])
+    @Tag("Integration")
+@Tag("BAT")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"

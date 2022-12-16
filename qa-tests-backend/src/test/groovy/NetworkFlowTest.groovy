@@ -13,9 +13,9 @@ import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 
 import common.Constants
-import groups.BAT
-import groups.NetworkFlowVisualization
-import groups.RUNTIME
+
+
+
 import objects.DaemonSet
 import objects.Deployment
 import objects.Edge
@@ -32,7 +32,7 @@ import util.NetworkGraphUtil
 import util.Timer
 
 import org.junit.Assume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Shared
@@ -254,7 +254,7 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
@@ -280,7 +280,9 @@ class NetworkFlowTest extends BaseSpecification {
         assert waitForEdgeToBeClosed(edges.get(0), 65)
     }
 
-    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    @Tag("BAT")
+@Tag("RUNTIME")
+@Tag("NetworkFlowVisualization")
     def "Verify connections between StackRox Services"() {
         when:
         "Fetch uIDs for the central, sensor, and collector services, if present"
@@ -307,7 +309,9 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    @Tag("BAT")
+@Tag("RUNTIME")
+@Tag("NetworkFlowVisualization")
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
@@ -336,7 +340,9 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    @Tag("BAT")
+@Tag("RUNTIME")
+@Tag("NetworkFlowVisualization")
     def "Verify listen port availability matches feature flag: #targetDeployment"() {
         given:
         "Deployment with listening port"
@@ -359,7 +365,7 @@ class NetworkFlowTest extends BaseSpecification {
         TCPCONNECTIONSOURCE   | []
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
         rebuildForRetries()
@@ -381,7 +387,9 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    @Tag("BAT")
+@Tag("RUNTIME")
+@Tag("NetworkFlowVisualization")
     def "Verify network graph when filtered on \"#filter\" and scoped to \"#scope\" #desc"() {
         given:
         "Orchestrator components exists"
@@ -422,7 +430,8 @@ class NetworkFlowTest extends BaseSpecification {
                 true | "contains stackrox deployments only"
     }
 
-    @Category([BAT, NetworkFlowVisualization])
+    @Tag("BAT")
+@Tag("NetworkFlowVisualization")
     def "Verify network flows with graph filtering"() {
         given:
         "Two deployments, A and B, where B communicates to A"
@@ -443,7 +452,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert waitForEdgeUpdate(edges.get(0), 90)
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"
@@ -458,7 +467,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     // TODO(ROX-7047): Re-enable this test
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
         Assume.assumeFalse(ClusterService.isOpenShift4())
 
@@ -503,7 +512,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     // TODO(ROX-7046): Re-enable this test
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     @Ignore("ROX-7046 - this test does not pass")
     def "Verify intra-cluster connection via external IP"() {
         given:
@@ -539,7 +548,7 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify no connections between 2 deployments"() {
         given:
         "Two deployments, A and B, where neither communicates to the other"
@@ -554,7 +563,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert !NetworkGraphUtil.checkForEdge(sourceUid, targetUid, null, 30)
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify connections between two deployments on 2 separate ports shows both edges in the graph"() {
         given:
         "Two deployments, A and B, where B communicates to A on 2 different ports"
@@ -574,7 +583,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges.size() == 2
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify cluster updates can block flow connections from showing"() {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
@@ -622,7 +631,7 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify edge timestamps are never in the future, or before start of flow tests"() {
         given:
         "Get current state of edges and current timestamp"
@@ -638,7 +647,7 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify generated network policies"() {
         // TODO(RS-178): EKS cannot NetworkPolicy
         Assume.assumeFalse(ClusterService.isEKS())
@@ -727,7 +736,7 @@ class NetworkFlowTest extends BaseSpecification {
     // standalone test runner.
     @IgnoreIf({ !Env.IN_CI })
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify network policy generator apply/undo with delete modes: #deleteMode #note"() {
         given:
         "apply network policies to the system"
@@ -831,7 +840,8 @@ class NetworkFlowTest extends BaseSpecification {
         DeleteExistingPoliciesMode.ALL | ""
     }
 
-    @Category([BAT, NetworkFlowVisualization])
+    @Tag("BAT")
+@Tag("NetworkFlowVisualization")
     @Ignore("Skip this test until we can determine a more reliable way to test")
     def "Apply a generated network policy and verify connection states"() {
         given:

@@ -1,6 +1,6 @@
 import common.Constants
-import groups.BAT
-import groups.COMPATIBILITY
+
+
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NodeOuterClass.Node
@@ -9,7 +9,7 @@ import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.ListCompareAlgorithm
 import org.junit.Assume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.ClusterService
 import services.NamespaceService
 import services.NodeService
@@ -18,7 +18,8 @@ import spock.lang.IgnoreIf
 
 class SummaryTest extends BaseSpecification {
 
-    @Category([BAT, COMPATIBILITY])
+    @Tag("BAT")
+@Tag("COMPATIBILITY")
     @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
         // https://issues.redhat.com/browse/ROX-6844
@@ -53,7 +54,7 @@ class SummaryTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify node details"() {
         given:
         "fetch the list of nodes"
@@ -100,7 +101,7 @@ class SummaryTest extends BaseSpecification {
         assert !diff, "See diff(s) above"
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify namespace details"() {
         // https://issues.redhat.com/browse/ROX-6844

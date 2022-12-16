@@ -1,9 +1,9 @@
-import groups.BAT
+
 import io.stackrox.proto.storage.DeploymentOuterClass
 import objects.Deployment
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.DeploymentService
 import util.Env
 
@@ -24,7 +24,7 @@ class RoutesTest extends BaseSpecification {
         port.getExposureInfosList().findAll { it.getLevel() == DeploymentOuterClass.PortConfig.ExposureLevel.ROUTE }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify that routes are detected correctly"() {
         boolean routeCreated
 

@@ -1,14 +1,14 @@
-import groups.BAT
+
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.GroupService
 import spock.lang.Unroll
 
-@Category(BAT)
+@Tag("BAT")
 class GroupsTest extends BaseSpecification {
 
     private static final PROVIDERS = [

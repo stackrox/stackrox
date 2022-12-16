@@ -6,9 +6,9 @@ import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
-import groups.Upgrade
 
-import org.junit.experimental.categories.Category
+
+import spock.lang.Tag
 import services.ClusterService
 import services.GraphQLService
 import services.PolicyService
@@ -45,7 +45,7 @@ class UpgradesTest extends BaseSpecification {
             }
         }"""
 
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "Verify cluster has listen on exec/pf webhook turned on"() {
         expect:
         "Migrated clusters to have admissionControllerEvents set to true"
@@ -54,7 +54,7 @@ class UpgradesTest extends BaseSpecification {
         assert(cluster.getAdmissionControllerEvents() == true)
     }
 
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "Verify cluster has disable audit logs set to true"() {
         expect:
         "Migrated k8s clusters to have disableAuditLogs set to true"
@@ -63,7 +63,7 @@ class UpgradesTest extends BaseSpecification {
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
     }
 
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "Verify that summary API returns non-zero values on upgrade"() {
         expect:
         "Summary API returns non-zero values on upgrade"
@@ -77,7 +77,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "verify that we find the correct number of #resourceType for query"() {
         when:
         "Fetch the #resourceType from GraphQL"
@@ -114,7 +114,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "verify that we find the correct number of compliance results"() {
         when:
         "Fetch the compliance results by #unit from GraphQL"
@@ -196,7 +196,7 @@ class UpgradesTest extends BaseSpecification {
         }
     }
 
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "Verify upgraded policies match default policy set"() {
         given:
         "Default policies in code"

@@ -1,12 +1,12 @@
-import groups.BAT
-import groups.K8sEvents
-import groups.RUNTIME
+
+
+
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.AlertService
 import services.PolicyService
 import spock.lang.Retry
@@ -120,7 +120,9 @@ class K8sEventDetectionTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @Category([BAT, RUNTIME, K8sEvents])
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("K8sEvents")
     def "Verify k8s exec detection into #execIntoDeploymentNames with addl groups #additionalPolicyGroups"() {
         when:
         "Create the deployments, modify the policy, exec into them"

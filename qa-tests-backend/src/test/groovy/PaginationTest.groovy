@@ -1,9 +1,9 @@
-import groups.BAT
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.PaginationOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import objects.Deployment
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.AlertService
 import services.DeploymentService
 import services.ImageService
@@ -80,7 +80,7 @@ class PaginationTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify deployment pagination"() {
         when:
         "Set pagination limit to 3"
@@ -130,7 +130,7 @@ class PaginationTest extends BaseSpecification {
         assert deployments3 == deployments4.reverse()
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify image pagination"() {
         when:
         "Set pagination limit to 3"
@@ -180,7 +180,7 @@ class PaginationTest extends BaseSpecification {
         assert images3 == images4.reverse()
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify secret pagination"() {
         when:
         "Set pagination limit to 3"
@@ -230,7 +230,7 @@ class PaginationTest extends BaseSpecification {
         assert secrets3 == secrets4.reverse()
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify violation pagination"() {
         given:
         "6 violations exist for pagination"

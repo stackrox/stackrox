@@ -1,9 +1,9 @@
 import static Services.getSearchResponse
 import static Services.waitForViolation
-import groups.BAT
+
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import objects.Deployment
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
@@ -55,7 +55,7 @@ class GlobalSearch extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify Global search (#query, #searchCategories)"(
             String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
             String expectedResultPrefix,

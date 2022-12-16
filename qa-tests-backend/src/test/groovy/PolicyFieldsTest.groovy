@@ -1,6 +1,6 @@
 import static Services.waitForViolation
 import common.Constants
-import groups.BAT
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
@@ -15,7 +15,7 @@ import objects.SecretKeyRef
 import objects.Volume
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.AlertService
 import services.PolicyService
 import spock.lang.IgnoreIf
@@ -882,7 +882,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Expect violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify expected violations are triggered"
@@ -968,7 +968,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Expect no violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify unexpected violations are not triggered"
@@ -1066,7 +1066,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Route exposure works as expected - #shouldMatch"() {
         given:
         "Running on an OpenShift 4 cluster"

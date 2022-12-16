@@ -3,14 +3,15 @@ import static Services.waitForViolation
 
 import java.util.stream.Collectors
 
-import groups.BAT
-import groups.GraphQL
+
+
 import objects.Deployment
 import services.GraphQLService
 
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 
-@Category([BAT, GraphQL])
+@Tag("BAT")
+@Tag("GraphQL")
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"
     private static final String PARENT_NAME = "/bin/sh"

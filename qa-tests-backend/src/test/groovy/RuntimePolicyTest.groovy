@@ -1,12 +1,12 @@
 import static Services.getPolicies
 import static Services.waitForResolvedViolation
 import static Services.waitForViolation
-import groups.BAT
-import groups.SMOKE
+
+
 import io.stackrox.proto.storage.PolicyOuterClass
 import java.util.stream.Collectors
 import objects.Deployment
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.PolicyService
 import spock.lang.Unroll
 
@@ -49,7 +49,8 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     @Unroll
-    @Category([BAT, SMOKE])
+    @Tag("BAT")
+@Tag("SMOKE")
     def "Verify runtime policy : #policyName can be triggered - #depName"() {
         when:
         "Validate if policy is present"
@@ -72,7 +73,7 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify runtime alert violations are resolved once policy is removed"() {
         given:
         "Create runtime alert"

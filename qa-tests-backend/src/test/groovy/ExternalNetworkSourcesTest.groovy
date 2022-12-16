@@ -1,10 +1,10 @@
 import com.google.protobuf.Timestamp
-import groups.NetworkFlowVisualization
+
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 import java.util.concurrent.TimeUnit
 import objects.Deployment
 import objects.Edge
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
@@ -50,7 +50,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify connection to a user created external sources"() {
         when:
         "Deployment is communicating with Cloudflare's IP address"
@@ -73,7 +73,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         deleteNetworkEntity(externalSourceID)
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify flow stays to the smallest subnet possible"() {
         when:
         "Supernet external source is created after subnet external source"
@@ -108,7 +108,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         deleteNetworkEntity(externalSource31ID)
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify flow re-maps to larger subnet when smaller subnet deleted"() {
         when:
         "Supernet is added after subnet followed by subnet deletion"
@@ -149,7 +149,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         deleteNetworkEntity(externalSource31ID)
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify two flows co-exist if larger network entity added first"() {
         when:
         "Supernet external source is created before subnet external source"

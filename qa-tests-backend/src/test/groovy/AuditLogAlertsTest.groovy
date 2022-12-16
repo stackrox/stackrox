@@ -1,13 +1,13 @@
 import static Services.getAllResourceViolationsWithTimeout
 import static Services.getResourceViolationsWithTimeout
 import common.Constants
-import groups.BAT
-import groups.RUNTIME
+
+
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Secret
 import org.junit.Assume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.AlertService
 import services.ClusterService
 import services.PolicyService
@@ -18,7 +18,8 @@ import util.Helpers
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
     @Unroll
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+@Tag("RUNTIME")
     def "Verify Audit Log Event Source Policies Trigger: #verb - #resourceType"() {
         given:
         "Running on an OpenShift 4 cluster"
@@ -76,7 +77,8 @@ class AuditLogAlertsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+@Tag("RUNTIME")
     def "Verify collection continues even after ACS components restarts: #component"() {
         given:
         "Running on an OpenShift 4 cluster"
@@ -146,7 +148,8 @@ class AuditLogAlertsTest extends BaseSpecification {
         // the port forward and fails the rest of the test suite.
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+@Tag("RUNTIME")
     def "Verify collection continues when it is disabled and then re-enabled"() {
         given:
         "Running on an OpenShift 4 cluster"
@@ -209,7 +212,8 @@ class AuditLogAlertsTest extends BaseSpecification {
         assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+@Tag("RUNTIME")
     def "Verify collection stops when feature is is disabled"() {
         given:
         "Running on an OpenShift 4 cluster"

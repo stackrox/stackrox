@@ -1,10 +1,8 @@
 import static org.junit.Assume.assumeFalse
-import groups.Begin
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
-import org.junit.experimental.categories.Category
 import services.ApiTokenService
 import services.BaseService
 import services.GraphQLService
@@ -13,10 +11,11 @@ import services.ImageService
 import services.RoleService
 
 import spock.lang.Retry
+import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
-@Category(Begin)
+@Tag("Begin")
 class VulnMgmtSACTest extends BaseSpecification {
     static final private String NONE = "None"
 

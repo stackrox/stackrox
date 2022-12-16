@@ -1,9 +1,9 @@
-import groups.BAT
+
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import java.nio.file.Files
 import java.nio.file.Paths
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.AuthProviderService
 import services.AuthService
 import services.BaseService
@@ -13,7 +13,7 @@ import spock.lang.Stepwise
 import spock.lang.Unroll
 import util.Env
 
-@Category(BAT)
+@Tag("BAT")
 @Stepwise
 class ClientCertAuthTest extends BaseSpecification {
 

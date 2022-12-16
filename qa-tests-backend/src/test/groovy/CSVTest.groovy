@@ -4,11 +4,11 @@ import com.opencsv.CSVReader
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 
-import groups.BAT
+
 import objects.Deployment
 import objects.Pagination
 import objects.SortOption
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.GraphQLService
 import services.ImageService
 import spock.lang.Retry
@@ -17,7 +17,7 @@ import util.Env
 
 @Retry(count = 0)
 @Unroll
-@Category(BAT)
+@Tag("BAT")
 class CSVTest extends BaseSpecification {
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
@@ -195,7 +195,7 @@ class CSVTest extends BaseSpecification {
         return "CVE Type:IMAGE_CVE+"
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify CVE CSV data scoped by entity is correct"() {
         when:
         "Query fixable CVEs from graphQL"

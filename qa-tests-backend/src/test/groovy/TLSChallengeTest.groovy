@@ -1,5 +1,5 @@
 import static io.stackrox.proto.storage.ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel
-import groups.SensorBounceNext
+
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.stackrox.proto.storage.ClusterOuterClass
 import java.nio.file.Files
@@ -9,7 +9,7 @@ import objects.Deployment
 import objects.Secret
 import orchestratormanager.OrchestratorManagerException
 
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.ClusterService
 
 import spock.lang.Retry
@@ -77,7 +77,7 @@ class TLSChallengeTest extends BaseSpecification {
         waitUntilCentralSensorConnectionIs(HealthStatusLabel.HEALTHY)
     }
 
-    @Category(SensorBounceNext)
+    @Tag("SensorBounceNext")
     def "Verify sensor can communicate with central behind an untrusted load balancer"() {
         when:
         "Deploying Sensor without root CA certs can't connect to load balancer"

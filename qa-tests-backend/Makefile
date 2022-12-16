@@ -50,13 +50,13 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test $(GRADLE_TEST_ARGS) testAll
 
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=Begin
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=BAT
+	$(GRADLE) test $(GRADLE_TEST_ARGS) testBegin
+	$(GRADLE) test $(GRADLE_TEST_ARGS) testBAT
 
 .PHONY: smoke-test
 smoke-test: compile

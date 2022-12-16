@@ -5,8 +5,8 @@ import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
 import io.stackrox.proto.storage.Rbac
 
 import common.Constants
-import groups.BAT
-import groups.COMPATIBILITY
+
+
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
@@ -16,7 +16,7 @@ import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
 
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import spock.lang.Stepwise
 
 @Stepwise
@@ -51,7 +51,8 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Tag("BAT")
+@Tag("COMPATIBILITY")
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -93,7 +94,8 @@ class K8sRbacTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Tag("BAT")
+@Tag("COMPATIBILITY")
     def "Add Service Account and verify it gets scraped"() {
         given:
         "create a new service account"
@@ -104,7 +106,7 @@ class K8sRbacTest extends BaseSpecification {
         ServiceAccountService.waitForServiceAccount(NEW_SA)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Create deployment with service account and verify relationships"() {
         given:
         Deployment deployment = new Deployment()
@@ -141,7 +143,7 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Remove Service Account and verify it is removed"() {
         given:
         "delete the created service account"
@@ -152,7 +154,7 @@ class K8sRbacTest extends BaseSpecification {
         ServiceAccountService.waitForServiceAccountRemoved(NEW_SA)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify scraped roles"() {
         expect:
         "SR should have the same roles"
@@ -187,7 +189,7 @@ class K8sRbacTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Add Role and verify it gets scraped"() {
         given:
         "create a new role"
@@ -198,7 +200,7 @@ class K8sRbacTest extends BaseSpecification {
         RbacService.waitForRole(NEW_ROLE)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Remove Role and verify it is removed"() {
         given:
         "delete the created role"
@@ -209,7 +211,7 @@ class K8sRbacTest extends BaseSpecification {
         RbacService.waitForRoleRemoved(NEW_ROLE)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Add Cluster Role and verify it gets scraped"() {
         given:
         "create a new cluster role"
@@ -220,7 +222,7 @@ class K8sRbacTest extends BaseSpecification {
         RbacService.waitForRole(NEW_CLUSTER_ROLE)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Remove Cluster Role and verify it is removed"() {
         given:
         "delete the created cluster role"
@@ -231,7 +233,7 @@ class K8sRbacTest extends BaseSpecification {
         RbacService.waitForRoleRemoved(NEW_CLUSTER_ROLE)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify scraped bindings"() {
         expect:
         "SR should have the same bindings"
@@ -266,7 +268,7 @@ class K8sRbacTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify returned subject list is complete"() {
         given:
         List<K8sSubject> orchestratorSubjects = null
@@ -293,7 +295,7 @@ class K8sRbacTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Add Binding with role ref and verify it gets scraped"() {
         given:
         "create a new role binding"
@@ -320,7 +322,7 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.deleteRole(NEW_ROLE)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Add Binding with cluster role ref and verify it gets scraped"() {
         given:
         "create a new role binding"
@@ -334,7 +336,7 @@ class K8sRbacTest extends BaseSpecification {
         RbacService.waitForRoleBinding(NEW_ROLE_BINDING_CLUSTER_ROLE_REF)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Remove Binding with cluster role ref and verify it is removed"() {
         given:
         "delete the created role binding"
@@ -349,7 +351,7 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Add cluster Binding and verify it gets scraped"() {
         given:
         "create a new cluster role binding"
@@ -362,7 +364,7 @@ class K8sRbacTest extends BaseSpecification {
         RbacService.waitForRoleBinding(NEW_CLUSTER_ROLE_BINDING)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Remove cluster Binding and verify it is removed"() {
         given:
         "delete the created cluster role binding"

@@ -1,9 +1,9 @@
 import static org.junit.Assume.assumeTrue
-import groups.BAT
+
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import objects.Deployment
 import objects.Job
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.ClusterService
 import services.DeploymentService
 import services.ImageService
@@ -43,7 +43,7 @@ class DeploymentTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify deployment of type Job is deleted once it completes"() {
         given:
         def job = orchestrator.createJob(JOB)
@@ -61,7 +61,7 @@ class DeploymentTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify deployment -> image links #query"() {
         when:
         Timer t = new Timer(3, 10)
@@ -90,7 +90,7 @@ class DeploymentTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify image -> deployment links #query"() {
         when:
         Timer t = new Timer(3, 10)
@@ -116,7 +116,7 @@ class DeploymentTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify GKE orchestrator deployment is marked appropriately"() {
         when:
         assumeTrue(orchestrator.isGKE())
@@ -133,7 +133,7 @@ class DeploymentTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Openshift orchestrator deployment is marked appropriately"() {
         when:
         assumeTrue(ClusterService.isOpenShift4())

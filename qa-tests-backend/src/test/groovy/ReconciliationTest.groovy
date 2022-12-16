@@ -5,8 +5,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
 import io.stackrox.proto.storage.AlertOuterClass
 
-import groups.COMPATIBILITY
-import groups.SensorBounce
+
+
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
@@ -20,7 +20,7 @@ import services.SecretService
 import util.Timer
 
 import org.junit.Assume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import spock.lang.Retry
 
 @Retry(count = 0)
@@ -98,7 +98,8 @@ class ReconciliationTest extends BaseSpecification {
         }
     }
 
-    @Category([SensorBounce, COMPATIBILITY])
+    @Tag("SensorBounce")
+@Tag("COMPATIBILITY")
     def "Verify the Sensor reconciles after being restarted"() {
         // RS-361 - Fails on OSD. Need help troubleshooting. Disabling for now.
         Assume.assumeFalse(ClusterService.isOpenShift3())

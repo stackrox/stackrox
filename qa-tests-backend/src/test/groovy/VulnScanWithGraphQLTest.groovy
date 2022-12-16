@@ -2,18 +2,19 @@ import static org.junit.Assume.assumeFalse
 
 import org.apache.commons.lang3.StringUtils
 
-import groups.BAT
-import groups.GraphQL
+
+
 import objects.Deployment
 import services.GraphQLService
 import util.Env
 import util.Timer
 
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import spock.lang.Shared
 import spock.lang.Unroll
 
-@Category([BAT, GraphQL])
+@Tag("BAT")
+@Tag("GraphQL")
 class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()

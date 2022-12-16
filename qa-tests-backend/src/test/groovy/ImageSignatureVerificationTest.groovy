@@ -1,15 +1,15 @@
 import static Services.checkForNoViolations
 import static Services.waitForViolation
 
-import groups.BAT
-import groups.Integration
+
+
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignPublicKeyVerification
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 import objects.Deployment
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.PolicyService
 import services.SignatureIntegrationService
 import spock.lang.IgnoreIf
@@ -237,7 +237,8 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 
     @Unroll
     @SuppressWarnings('LineLength')
-    @Category([BAT, Integration])
+    @Tag("BAT")
+@Tag("Integration")
     def "Check violations of policy '#policyName' for deployment '#deployment.name'"() {
         expect:
         "Verify deployment has expected violations"

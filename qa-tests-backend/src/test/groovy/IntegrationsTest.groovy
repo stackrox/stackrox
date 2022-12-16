@@ -9,9 +9,9 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import common.Constants
-import groups.BAT
-import groups.Integration
-import groups.Notifiers
+
+
+
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -39,7 +39,7 @@ import util.SplunkUtil
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
 import org.junit.Rule
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import org.junit.rules.Timeout
 import spock.lang.Unroll
 
@@ -74,7 +74,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify create Email Integration (disableTLS=#disableTLS, startTLS=#startTLS, authenticated=#authenticated, sendCreds=#sendCreds)"() {
         given:
         "mailserver is running"
@@ -154,7 +154,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify create Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
         when:
         "the integration is tested"
@@ -186,7 +186,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify Splunk Integration (legacy mode: #legacy)"() {
         given:
         "the integration is tested"
@@ -245,7 +245,8 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+@Tag("Notifiers")
     def "Verify Network Simulator Notifications: #type"() {
         when:
         "create notifier"
@@ -302,7 +303,8 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+@Tag("Notifiers")
     def "Verify Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -386,7 +388,8 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+@Tag("Notifiers")
     def "Verify Attempted Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -497,7 +500,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify AWS S3 Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -527,7 +530,8 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+@Tag("Notifiers")
     def "Verify Policy Violation Notifications Destination Overrides: #type"() {
         when:
         "Create notifier"
@@ -636,7 +640,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify #imageIntegration.name() integration - #testAspect"() {
         Assume.assumeTrue(imageIntegration.isTestable())
         Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
@@ -666,7 +670,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify improper #imageIntegration.name() integration - #testAspect"() {
         Assume.assumeTrue(imageIntegration.isTestable())
 
@@ -747,7 +751,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     // TODO disabled due to flaking (ROX-7902), shoudl be re-enabled once reworked (ROX-10310)
-    //@Category(Integration)
+    //@Tag("Integration")
     //def "Verify syslog notifier"() {
     //    given:
     //    "the some syslog receiver is created"

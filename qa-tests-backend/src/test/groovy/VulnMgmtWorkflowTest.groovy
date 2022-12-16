@@ -1,9 +1,9 @@
-import groups.BAT
-import groups.RUNTIME
+
+
 import io.stackrox.proto.storage.Cve
 import io.stackrox.proto.storage.VulnRequests
 import objects.Deployment
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import services.VulnRequestService
 import spock.lang.Unroll
 
@@ -28,7 +28,8 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+@Tag("RUNTIME")
     def "Verify Vulnerability Requests can transition between states - #requestType - approve?(#approve)"() {
         when:
         "A user requests a vuln be deferred or marked as FP"
