@@ -28,11 +28,11 @@ COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bun
 
 RUN microdnf upgrade -y --nobest && \
     # groupadd is in shadow-utils package that is not installed by default.
-    microdnf install -y shadow-utils && \
+    microdnf install --setopt=tsflags=nodocs --setopt=install_weak_deps=0 -y shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import RPM-GPG-KEY-PGDG-13 && \
-    microdnf install -y \
+    microdnf install --setopt=tsflags=nodocs --setopt=install_weak_deps=0 -y \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         perl-libs libxslt && \
