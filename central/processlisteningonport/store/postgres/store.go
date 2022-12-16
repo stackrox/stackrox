@@ -57,8 +57,7 @@ const (
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
-		"WHERE proc.deploymentid = $1"
-
+		"WHERE proc.deploymentid = $1 AND plop.closed = false"
 )
 
 var (

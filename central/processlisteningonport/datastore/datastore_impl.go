@@ -49,8 +49,10 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	)
 
 	var (
-		lookups       []*v1.Query
-		indicatorsMap = map[string]*storage.ProcessIndicator{}
+		indicatorLookups []*v1.Query
+		indicatorIds     []string
+		indicatorsMap    = map[string]*storage.ProcessIndicator{}
+		existingPLOPMap  = map[string]*storage.ProcessListeningOnPortStorage{}
 	)
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -72,7 +74,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			continue
 		}
 
-		lookups = append(lookups,
+		indicatorLookups = append(indicatorLookups,
 			search.NewQueryBuilder().
 				AddExactMatches(search.ContainerName, val.Process.ContainerName).
 				AddExactMatches(search.PodID, val.Process.PodId).
@@ -82,7 +84,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				ProtoQuery())
 	}
 
-	indicatorsQuery := search.DisjunctionQuery(lookups...)
+	indicatorsQuery := search.DisjunctionQuery(indicatorLookups...)
 	log.Debugf("Sending query: %s", indicatorsQuery.String())
 	indicators, err := ds.indicatorDataStore.SearchRawProcessIndicators(ctx, indicatorsQuery)
 	if err != nil {
@@ -105,6 +107,40 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		indicatorsMap[key] = val
+
+		indicatorIds = append(indicatorIds, val.GetId())
+	}
+
+	if len(indicatorIds) > 0 {
+		// If no corresponding processes found, we can't verify if the PLOP
+		// object is closing an existing one. Collect existingPLOPMap only if
+		// there are some matching indicators.
+
+		// XXX: This has to be done in a single join query fetching both
+		// ProcessIndicator and needed bits from PLOP.
+		existingPLOP, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
+			AddStrings(search.ProcessID, indicatorIds...).
+			AddBools(search.Closed, false).
+			ProtoQuery())
+		if err != nil {
+			return err
+		}
+
+		for _, val := range existingPLOP {
+			key := fmt.Sprintf("%s %d %s",
+				val.GetProtocol(),
+				val.GetPort(),
+				val.GetProcessIndicatorId(),
+			)
+
+			// A bit of paranoia is always good
+			if old, ok := existingPLOPMap[key]; ok {
+				log.Warnf("A PLOP %s is already present, overwrite with %s",
+					old.GetId(), val.GetId())
+			}
+
+			existingPLOPMap[key] = val
+		}
 	}
 
 	plopObjects := make([]*storage.ProcessListeningOnPortStorage, len(portProcesses))
@@ -127,14 +163,39 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			log.Warnf("Found no matching indicators for %s", key)
 		}
 
-		plopObjects[i] = &storage.ProcessListeningOnPortStorage{
+		newPLOP := &storage.ProcessListeningOnPortStorage{
 			// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
 			// IDENTITY, which would require changes in store generator
 			Id:                 uuid.NewV4().String(),
 			Port:               val.Port,
 			Protocol:           val.Protocol,
 			ProcessIndicatorId: indicatorID,
+			Closed:             false,
 			CloseTimestamp:     val.CloseTimestamp,
+		}
+
+		if val.CloseTimestamp != nil {
+			// We receive a closing PLOP information, check if it's present in
+			// the database
+			newPLOP.Closed = true
+
+			plopKey := fmt.Sprintf("%s %d %s",
+				val.GetProtocol(),
+				val.GetPort(),
+				indicatorID,
+			)
+
+			if activePLOP, ok := existingPLOPMap[plopKey]; ok {
+				log.Debugf("Got active PLOP: %+v", activePLOP)
+
+				activePLOP.Closed = true
+				plopObjects[i] = activePLOP
+			} else {
+				log.Warnf("Found no matching PLOP to close for %s", key)
+				plopObjects[i] = newPLOP
+			}
+		} else {
+			plopObjects[i] = newPLOP
 		}
 	}
 
