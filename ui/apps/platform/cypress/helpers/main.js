@@ -87,11 +87,11 @@ export function visitMainDashboard(staticResponseMap) {
 export function visitMainDashboardWithStaticResponseForSummaryCounts(
     staticResponseForSummaryCounts
 ) {
-    // Omit requests for widgets in case Dashboard redirects to Clusters page.
+    // Omit requests for widgets because Dashboard redirects to Clusters page.
     const staticResponseMapForSummaryCounts = {
         [summaryCountsOpname]: staticResponseForSummaryCounts,
     };
     visit(basePath, routeMatcherMapForSummaryCounts, staticResponseMapForSummaryCounts);
 
-    cy.get(`h1:contains("${title}")`);
+    // Omit assertion for Dashboard heading.
 }
