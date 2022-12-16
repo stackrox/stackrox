@@ -13,7 +13,6 @@ codenarc.reportFormat = 'text'
 // In this section you declare where to find the dependencies of your project
 repositories {
     mavenCentral()
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
 }
 
 def grpcVersion = '1.21.0'
@@ -129,10 +128,12 @@ dependencies {
     implementation group: 'org.bouncycastle', name: 'bcutil-jdk18on', version: '1.72'
 }
 
-test {
-    useJUnitPlatform()
+tasks.withType(Test) {
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+    }
     timeout = Duration.ofHours(3)
-    testLogging.showStandardStreams = true
 
     // This ensures that repeated invocations of tests actually run the tests.
     // Otherwise, if the tests pass, Gradle "caches" the result and doesn't actually run the tests,
@@ -148,21 +149,78 @@ test {
     }
 }
 
-task testAll(type: Test) {
-    useJUnitPlatform{
-        excludeTags "Upgrade", "SensorBounce", "SensorBounceNext"
+task testBegin(type: Test) {
+    useJUnitPlatform {
+        options.includeTags "Begin"
     }
 }
 
-task testBegin(type: Test) {
-    useJUnitPlatform{
-        includeTags "Begin"
+task testRest(type: Test) {
+    useJUnitPlatform {
+        excludeTags "Begin", "Upgrade", "SensorBounce", "SensorBounceNext"
     }
 }
 
 task testBAT(type: Test) {
-    useJUnitPlatform{
+    useJUnitPlatform {
         includeTags "BAT"
+    }
+}
+
+task testSMOKE(type: Test) {
+    useJUnitPlatform {
+        includeTags "SMOKE"
+    }
+}
+
+task testCOMPATIBILITY(type: Test) {
+    useJUnitPlatform {
+        includeTags "COMPATIBILITY"
+    }
+}
+
+task testRUNTIME(type: Test) {
+    useJUnitPlatform {
+        includeTags "RUNTIME"
+    }
+}
+
+task testPolicyEnforcement(type: Test) {
+    useJUnitPlatform {
+        includeTags "PolicyEnforcement"
+    }
+}
+
+task testIntegration(type: Test) {
+    useJUnitPlatform {
+        includeTags "Integration"
+    }
+}
+
+task testNetworkPolicySimulation(type: Test) {
+    useJUnitPlatform {
+        includeTags "NetworkPolicySimulation"
+    }
+}
+
+task testUpgrade(type: Test) {
+    useJUnitPlatform {
+        includeTags "Upgrade"
+    }
+}
+task testGraphQL(type: Test) {
+    useJUnitPlatform {
+        includeTags "GraphQL"
+    }
+}
+task testSensorBounce(type: Test) {
+    useJUnitPlatform {
+        includeTags "SensorBounce"
+    }
+}
+task testSensorBounceNext(type: Test) {
+    useJUnitPlatform {
+        includeTags "SensorBounceNext"
     }
 }
 
