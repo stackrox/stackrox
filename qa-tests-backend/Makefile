@@ -60,44 +60,44 @@ bat-test: compile
 .PHONY: smoke-test
 smoke-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testSMOKE $(GRADLE_TEST_ARGS)
+	$(GRADLE) testSMOKE $(GRADLE_TEST_ARGS)
 
 .PHONY: compatibility-test
 compatibility-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testCOMPATIBILITY $(GRADLE_TEST_ARGS)
+	$(GRADLE) testCOMPATIBILITY $(GRADLE_TEST_ARGS)
 
 .PHONY: runtime-test
 runtime-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testRUNTIME $(GRADLE_TEST_ARGS)
+	$(GRADLE) testRUNTIME $(GRADLE_TEST_ARGS)
 
 .PHONY: enforcement-test
 enforcement-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testPolicyEnforcement $(GRADLE_TEST_ARGS)
+	$(GRADLE) testPolicyEnforcement $(GRADLE_TEST_ARGS)
 
 .PHONY: integration-test
 integration-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testIntegration $(GRADLE_TEST_ARGS)
+	$(GRADLE) testIntegration $(GRADLE_TEST_ARGS)
 
 .PHONY: networkpolicy-simulator-test
 networkpolicy-simulator-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testNetworkPolicySimulation $(GRADLE_TEST_ARGS)
+	$(GRADLE) testNetworkPolicySimulation $(GRADLE_TEST_ARGS)
 
 .PHONY: upgrade-test
 upgrade-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testUpgrade $(GRADLE_TEST_ARGS)
+	$(GRADLE) testUpgrade $(GRADLE_TEST_ARGS)
 
 .PHONY: graphql-test
 graphql-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testGraphQL $(GRADLE_TEST_ARGS)
+	$(GRADLE) testGraphQL $(GRADLE_TEST_ARGS)
 
 .PHONY: sensor-bounce-test
 sensor-bounce-test: compile
 	@echo "+ $@"
-	$(GRADLE) test testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)
+	$(GRADLE) testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)
