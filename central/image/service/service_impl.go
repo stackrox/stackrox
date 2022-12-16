@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -193,6 +194,9 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 }
 
 func (s *serviceImpl) saveImage(img *storage.Image) error {
+	if !buildinfo.ReleaseBuild {
+		log.Warnf("Save image: %s", img.String())
+	}
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
 		return err
