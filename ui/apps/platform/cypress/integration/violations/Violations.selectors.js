@@ -1,17 +1,10 @@
-import navigationSelectors from '../selectors/navigation';
-
-export const url = '/main/violations';
-
 export const selectors = {
-    navLink: `${navigationSelectors.navLinks}:contains("Violations")`,
     tableRow: 'tbody tr',
     firstTableRow: 'tbody tr:nth(0)',
     tableRowContains: (text) => `tbody tr:contains("${text}")`,
     firstTableRowLink: 'tbody tr:nth(0) a',
     lastTableRow: 'tbody tr:last',
     lastTableRowLink: 'tbody tr:last a',
-    resultsFoundHeader: (number) =>
-        `h2:contains("${number} result${number === 1 ? '' : 's'} found")`,
     actions: {
         btn: 'td.pf-c-table__action button[aria-label="Actions"]',
         excludeDeploymentBtn: 'button:contains("Exclude deployment")',

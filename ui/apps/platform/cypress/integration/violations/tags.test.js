@@ -1,23 +1,34 @@
 import randomstring from 'randomstring';
 
-import { selectors, url } from '../../constants/ViolationsPage';
-import search from '../../selectors/search';
-import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import search from '../../selectors/search';
+
+import { selectors } from './Violations.selectors';
+
+/*
+ * Replace graphql with getRouteMatcherMapForGraphQL function from request helpers.
+ * Replace setAlertRoutes and intercept-wait in tests with interact helper functions.
+ */
+
+const graphql = (opname) => `/api/graphql?opname=${opname}`;
 
 function setAlertRoutes() {
-    cy.intercept('GET', api.alerts.alerts).as('alerts');
-    cy.intercept('GET', api.alerts.alertById).as('alertById');
-    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.addTags)).as('addTags');
-    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.getTags)).as('getTags');
-    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as(
-        'tagsAutocomplete'
-    );
-    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.bulkAddAlertTags)).as(
-        'bulkAddAlertTags'
-    );
-    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.removeTags)).as('removeTags');
+    cy.intercept('GET', '/v1/alerts').as('alerts');
+    cy.intercept('GET', '/v1/alerts/*').as('alertById');
+    cy.intercept('POST', graphql('addAlertTags')).as('addTags');
+    cy.intercept('POST', graphql('getAlertTags')).as('getTags');
+    cy.intercept('POST', graphql('autocomplete')).as('tagsAutocomplete');
+    cy.intercept('POST', graphql('bulkAddAlertTags')).as('bulkAddAlertTags');
+    cy.intercept('POST', graphql('removeAlertTags')).as('removeTags');
 }
+
+/*
+ * Encapsulate url in helpers functions.
+ * Replace visitViolationsListPage with visitViolations function from helpers.
+ * Provide response for 'should add bulk tags without duplication' test.
+ */
+
+const url = '/main/violations';
 
 function visitViolationsListPage() {
     cy.visit(url);
@@ -32,7 +43,7 @@ function clearAllTags() {
 }
 
 function enterPageSearch(searchObj, inputSelector = search.input) {
-    cy.intercept('GET', api.search.autocomplete).as('searchAutocomplete');
+    cy.intercept('GET', 'v1/search/autocomplete*').as('searchAutocomplete');
     function selectSearchOption(optionText) {
         // typing is slow, assuming we'll get autocomplete results, select them
         // also, likely it'll mimic better typical user's behavior
@@ -55,7 +66,8 @@ function enterPageSearch(searchObj, inputSelector = search.input) {
 
 // TODO: re-enable this suite and fix the flakey failures of various tests in CI
 //       see https://stack-rox.atlassian.net/browse/ROX-8717
-describe.skip('Violation Page: Tags', () => {
+// 2022-12-16 Successive tests affect tags in first row, but what if another violation appears?
+describe.skip('Violations tags', () => {
     withAuth();
 
     it('should add tag without allowing duplicates', () => {
@@ -67,6 +79,7 @@ describe.skip('Violation Page: Tags', () => {
 
             cy.visit(href);
             cy.wait('@alertById');
+            // 2022-12-16 I do not see these requests during manual testing.
             cy.wait(['@getTags', '@tagsAutocomplete']);
 
             const tag = randomstring.generate(7);
