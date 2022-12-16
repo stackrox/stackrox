@@ -128,18 +128,6 @@
         "licenseStatus": {
           "$ref": "#/definitions/MetadataLicenseStatus",
           "title": "Do not use this field. It will always contain \"VALID\""
-        },
-        "userId": {
-          "type": "string",
-          "title": "Phone-home telemetry configuration.\nAPI user ID hash:"
-        },
-        "telemetryEndpoint": {
-          "type": "string",
-          "title": "An empty endpoint means using default endpoint:"
-        },
-        "storageKeyV1": {
-          "type": "string",
-          "title": "Telemetry storage service key:"
         }
       }
     },
