@@ -1,6 +1,5 @@
 import common.Constants
 
-
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
@@ -11,13 +10,13 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import objects.GCRImageIntegration
-import spock.lang.Tag
 import services.CVEService
 import services.ClusterService
 import services.ImageIntegrationService
 import services.PolicyService
 import spock.lang.Retry
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Timeout
 import spock.lang.Unroll
 import util.ChaosMonkey
