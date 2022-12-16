@@ -15,6 +15,11 @@ const (
 	batchSize = 500
 
 	startingSeqNum = 168
+
+	// Cluster is the replacement resource
+	Cluster = "Cluster"
+	// ClusterCVE is the replaced resource
+	ClusterCVE = "ClusterCVE"
 )
 
 var (
@@ -29,24 +34,15 @@ var (
 			return nil
 		},
 	}
+
 	clusterCVEResourceName = "ClusterCVE"
-)
 
-// Replacement resources
-const (
-	Cluster = "Cluster"
-)
-
-// Replaced resources
-const (
-	ClusterCVE = "ClusterCVE"
-)
-
-var (
 	replacements = map[string]string{
 		ClusterCVE: Cluster,
 	}
 )
+
+var ()
 
 func propagateAccessForPermission(permission string, accessLevel storage.Access, permissionSet map[string]storage.Access) storage.Access {
 	oldLevel, found := permissionSet[permission]
@@ -64,7 +60,7 @@ func cleanupPermissionSets(db *pgxpool.Pool) error {
 	permissionSetStore := permissionSetPostgresStore.New(db)
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)
 	err := permissionSetStore.Walk(ctx, func(obj *storage.PermissionSet) error {
-		if _, ok := obj.GetResourceToAccess()[clusterCVEResourceName]; ok {
+		if _, ok := obj.GetResourceToAccess()[ClusterCVE]; ok {
 			// Copy the permission set, removing the deprecated resource permissions, and keeping the
 			// lowest access level between that of deprecated resource and their replacement
 			// for the replacement resource.
@@ -77,7 +73,7 @@ func cleanupPermissionSets(db *pgxpool.Pool) error {
 				newPermissionSet.ResourceToAccess[resource] =
 					propagateAccessForPermission(resource, accessLevel, newPermissionSet.ResourceToAccess)
 			}
-			delete(newPermissionSet.ResourceToAccess, clusterCVEResourceName)
+			delete(newPermissionSet.ResourceToAccess, ClusterCVE)
 			permissionSetsToInsert = append(permissionSetsToInsert, newPermissionSet)
 			if len(permissionSetsToInsert) >= batchSize {
 				err := permissionSetStore.UpsertMany(ctx, permissionSetsToInsert)
