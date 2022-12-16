@@ -35,14 +35,10 @@ var (
 		},
 	}
 
-	clusterCVEResourceName = "ClusterCVE"
-
 	replacements = map[string]string{
 		ClusterCVE: Cluster,
 	}
 )
-
-var ()
 
 func propagateAccessForPermission(permission string, accessLevel storage.Access, permissionSet map[string]storage.Access) storage.Access {
 	oldLevel, found := permissionSet[permission]
