@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/processes_listening_on_ports/deployment/{deploymentId}": {
+    "/v1/listening_endpoints/deployment/{deploymentId}": {
       "get": {
         "operationId": "ProcessesListeningOnPortsService_GetProcessesListeningOnPorts",
         "responses": {
@@ -218,7 +218,7 @@
     "v1GetProcessesListeningOnPortsResponse": {
       "type": "object",
       "properties": {
-        "processesListeningOnPorts": {
+        "listeningEndpoints": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageProcessListeningOnPort"
