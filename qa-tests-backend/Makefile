@@ -50,61 +50,54 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) testAll
+	$(GRADLE) testBegin testRest $(GRADLE_TEST_ARGS)
 
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) testBegin
-	$(GRADLE) test $(GRADLE_TEST_ARGS) testBAT
+	$(GRADLE) testBegin testBAT $(GRADLE_TEST_ARGS)
 
 .PHONY: smoke-test
 smoke-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SMOKE
+	$(GRADLE) test testSMOKE $(GRADLE_TEST_ARGS)
 
 .PHONY: compatibility-test
 compatibility-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=COMPATIBILITY
+	$(GRADLE) test testCOMPATIBILITY $(GRADLE_TEST_ARGS)
 
 .PHONY: runtime-test
 runtime-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=RUNTIME
+	$(GRADLE) test testRUNTIME $(GRADLE_TEST_ARGS)
 
 .PHONY: enforcement-test
 enforcement-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=PolicyEnforcement
+	$(GRADLE) test testPolicyEnforcement $(GRADLE_TEST_ARGS)
 
 .PHONY: integration-test
 integration-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=Integration
+	$(GRADLE) test testIntegration $(GRADLE_TEST_ARGS)
 
 .PHONY: networkpolicy-simulator-test
 networkpolicy-simulator-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=NetworkPolicySimulation
-
-.PHONY: non-bat-test
-non-bat-test: compile
-	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test testNetworkPolicySimulation $(GRADLE_TEST_ARGS)
 
 .PHONY: upgrade-test
 upgrade-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=Upgrade
+	$(GRADLE) test testUpgrade $(GRADLE_TEST_ARGS)
 
 .PHONY: graphql-test
 graphql-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=GraphQL
+	$(GRADLE) test testGraphQL $(GRADLE_TEST_ARGS)
 
 .PHONY: sensor-bounce-test
 sensor-bounce-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SensorBounce
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SensorBounceNext
+	$(GRADLE) test testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)
