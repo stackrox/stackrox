@@ -47,7 +47,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, rbac_proxy_replacements):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, version_skips, rbac_proxy_replacements):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -69,6 +69,9 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     # An olm.skipRange doesn't hurt if it references non-existing versions.
     csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {x}.{y-1}.0 < {version}'
 
+    if version_skips:
+        csv_doc["spec"]["skips"] = version_skips
+
     # multi-arch
     if "labels" not in csv_doc["metadata"]:
         csv_doc["metadata"]["labels"] = {}
@@ -81,7 +84,8 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
         else:
             csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y}.{z-1}'
 
-    # We don't know what this does or why it is there, but it breaks downstream builds.
+    # OSBS fills relatedImages therefore we must not provide that ourselves.
+    # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
     del csv_doc['spec']['relatedImages']
 
 def parse_args():
@@ -100,6 +104,11 @@ def parse_args():
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
+    parser.add_argument("--add-version-skips", action='append', required=False,
+                        help='Add spec.skips values to CSV to configure which previously released versions should be '
+                             'skipped due to being unsafe (may be passed multiple times). '
+                             'Example usage: --add-version-skips rhacs-operator.v3.73.0',
+                        default=[])
     return parser.parse_args()
 
 
@@ -112,6 +121,7 @@ def main():
               first_version=args.first_version,
               no_related_images=args.no_related_images,
               extra_supported_arches=args.add_supported_arch,
+              version_skips=args.add_version_skips,
               rbac_proxy_replacements={
                     tag: img
                     for tag, img in (spec.split(':', maxsplit=1) for spec in args.replace_rbac_proxy)
