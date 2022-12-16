@@ -18,9 +18,8 @@ import (
 
 type ProcessListeningOnPortsStoreSuite struct {
 	suite.Suite
-
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestProcessListeningOnPortsStore(t *testing.T) {
@@ -97,10 +96,12 @@ func (s *ProcessListeningOnPortsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, processListeningOnPortStorage.GetId()))
 
 	var processListeningOnPortStorages []*storage.ProcessListeningOnPortStorage
+	var processListeningOnPortStorageIDs []string
 	for i := 0; i < 200; i++ {
 		processListeningOnPortStorage := &storage.ProcessListeningOnPortStorage{}
 		s.NoError(testutils.FullInit(processListeningOnPortStorage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processListeningOnPortStorages = append(processListeningOnPortStorages, processListeningOnPortStorage)
+		processListeningOnPortStorageIDs = append(processListeningOnPortStorageIDs, processListeningOnPortStorage.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, processListeningOnPortStorages))
@@ -108,4 +109,10 @@ func (s *ProcessListeningOnPortsStoreSuite) TestStore() {
 	processListeningOnPortStorageCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, processListeningOnPortStorageCount)
+
+	s.NoError(store.DeleteMany(ctx, processListeningOnPortStorageIDs))
+
+	processListeningOnPortStorageCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, processListeningOnPortStorageCount)
 }
