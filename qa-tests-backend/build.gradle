@@ -123,15 +123,12 @@ dependencies {
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.15'
-
-    //CertRotationTest
-    implementation group: 'org.bouncycastle', name: 'bcutil-jdk18on', version: '1.72'
 }
 
 // Apply some base attributes to all the test tasks.
 tasks.withType(Test) {
     testLogging {
-        showStandardStreams = true
+        showStandardStreams true
         exceptionFormat "full"
         events "passed", "skipped", "failed"
     }
