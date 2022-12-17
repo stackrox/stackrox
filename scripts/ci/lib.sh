@@ -1214,7 +1214,7 @@ send_slack_notice_for_failures_on_merge() {
         return 0
     fi
 
-    if skip_system_tests_and_no_images; then
+    if is_system_test_without_images; then
         # Avoid multiple slack messages from the e2e tests waiting for images.
         info "Skipping slack message for a system test failure when images were not found"
         return 0
@@ -1467,7 +1467,7 @@ get_junit_parse_cli() {
     go install github.com/stackrox/junit-parse@latest
 }
 
-skip_system_tests_and_no_images() {
+is_system_test_without_images() {
     case "${CI_JOB_NAME:-missing}" in
         *-e2e-tests|*-upgrade-tests|*-version-compatibility-tests)
             [[ ! -f "${STATE_IMAGES_AVAILABLE}" ]]
