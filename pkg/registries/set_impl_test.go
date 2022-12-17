@@ -48,6 +48,10 @@ func (f *fakeRegistry) HTTPClient() *http.Client {
 	return nil
 }
 
+func (f *fakeRegistry) DataSource() *storage.DataSource {
+	return nil
+}
+
 func (f *fakeRegistry) Source() *storage.ImageIntegration {
 	return nil
 }

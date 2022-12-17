@@ -169,6 +169,9 @@ retry() {
                 info "Retrying in $wait seconds..."
                 sleep $wait
             fi
+            if [[ -n "${RETRY_HOOK:-}" ]]; then
+                $RETRY_HOOK
+            fi
         else
             echo "Retry $count/$tries exited $exit, no more retries left."
             return $exit

@@ -88,7 +88,7 @@ func (c *cliEnvironmentImpl) ColorWriter() io.Writer {
 
 // ConnectNames returns the endpoint and (SNI) server name
 func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
-	names, s, err := common.ConnectNames()
+	names, s, _, err := common.ConnectNames()
 	return names, s, errors.Wrap(err, "could not get endpoint")
 }
 

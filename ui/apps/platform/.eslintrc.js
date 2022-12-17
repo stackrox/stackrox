@@ -305,6 +305,7 @@ module.exports = {
             rules: {
                 ...commonRules,
 
+                'func-names': 'off', // omit warnings for anonymous functions to skip individual tests
                 'jest/no-focused-tests': 'error',
                 'no-unused-expressions': 'off', // allows chai-style "expect(x).to.be.true;"
             },

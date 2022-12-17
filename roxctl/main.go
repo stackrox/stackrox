@@ -31,7 +31,7 @@ func main() {
 
 	PatchPersistentPreRunHooks(c)
 
-	clientconn.SetUserAgent("roxctl")
+	clientconn.SetUserAgent(clientconn.Roxctl)
 
 	if err := c.Execute(); err != nil {
 		os.Exit(1)

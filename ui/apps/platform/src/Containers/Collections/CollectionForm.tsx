@@ -1,5 +1,4 @@
 import React, { ReactElement, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
 import {
     Alert,
     Badge,
@@ -23,19 +22,18 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { collectionsBasePath } from 'routePaths';
-import { CollectionResponse } from 'services/CollectionsService';
+import { Collection } from 'services/CollectionsService';
 import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
 import {
-    Collection,
+    ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
     selectorEntityTypes,
 } from './types';
-import { CollectionSaveError } from './errorUtils';
+import { CollectionConfigError } from './errorUtils';
 
 import './CollectionForm.css';
 
@@ -46,7 +44,7 @@ function AttachedCollectionTable({
     collections,
     collectionTableCells,
 }: {
-    collections: CollectionResponse[];
+    collections: Collection[];
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }) {
     return collections.length > 0 ? (
@@ -76,12 +74,14 @@ export type CollectionFormProps = {
     /* The user's workflow action for this collection */
     action: CollectionPageAction;
     /* parsed collection data used to populate the form */
-    initialData: Collection;
+    initialData: ClientCollection;
     /* collection responses for the embedded collections of `initialData` */
-    initialEmbeddedCollections: CollectionResponse[];
-    onSubmit: (collection: Collection) => Promise<void>;
-    saveError?: CollectionSaveError | undefined;
-    clearSaveError?: () => void;
+    initialEmbeddedCollections: Collection[];
+    onFormChange: (values: ClientCollection) => void;
+    onSubmit: (collection: ClientCollection) => Promise<void>;
+    onCancel: () => void;
+    configError?: CollectionConfigError | undefined;
+    setConfigError?: (configError: CollectionConfigError | undefined) => void;
     /* Table cells to render for each collection in the CollectionAttacher component */
     getCollectionTableCells: (
         collectionErrorId: string | undefined
@@ -118,7 +118,18 @@ function yupResourceSelectorObject() {
     });
 }
 
-function getRuleCount(resourceSelector: Collection['resourceSelector']) {
+const validationSchema = yup.object({
+    name: yup.string().trim().required(),
+    description: yup.string(),
+    embeddedCollectionIds: yup.array(yup.string().trim().required()),
+    resourceSelector: yup.object().shape({
+        Deployment: yupResourceSelectorObject(),
+        Namespace: yupResourceSelectorObject(),
+        Cluster: yupResourceSelectorObject(),
+    }),
+});
+
+function getRuleCount(resourceSelector: ClientCollection['resourceSelector']) {
     let count = 0;
 
     selectorEntityTypes.forEach((entityType) => {
@@ -138,13 +149,13 @@ function CollectionForm({
     action,
     initialData,
     initialEmbeddedCollections,
-    saveError,
-    clearSaveError = () => {},
+    configError,
+    setConfigError = () => {},
+    onFormChange,
     onSubmit,
+    onCancel,
     getCollectionTableCells,
 }: CollectionFormProps) {
-    const history = useHistory();
-
     const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
     const { isOpen: isRuleSectionOpen, onToggle: ruleSectionOnToggle } = useSelectToggle(true);
@@ -154,6 +165,7 @@ function CollectionForm({
     const {
         values,
         errors: formikErrors,
+        touched,
         handleChange,
         handleBlur,
         setFieldValue,
@@ -166,17 +178,12 @@ function CollectionForm({
                 setSubmitting(false);
             });
         },
-        validationSchema: yup.object({
-            name: yup.string().trim().required(),
-            description: yup.string(),
-            embeddedCollectionIds: yup.array(yup.string().trim().required()),
-            resourceSelector: yup.object().shape({
-                Deployment: yupResourceSelectorObject(),
-                Namespace: yupResourceSelectorObject(),
-                Cluster: yupResourceSelectorObject(),
-            }),
-        }),
+        validationSchema,
     });
+
+    useEffect(() => {
+        onFormChange(values);
+    }, [onFormChange, values]);
 
     // Synchronize the value of "name" in the form field when the page action changes
     // e.g. from 'view' -> 'clone'
@@ -193,34 +200,43 @@ function CollectionForm({
         });
     }, [action.type, initialData.name, setFieldValue]);
 
+    const clearConfigError = () => setConfigError(undefined);
+
     const errors = {
         ...formikErrors,
     };
 
     // We can associate this type of server error to a specific field, so update the formik errors
-    if (saveError?.type === 'DuplicateName') {
-        errors.name = saveError.message;
+    if (configError?.type === 'DuplicateName') {
+        errors.name = configError.message;
     }
+
+    if (configError?.type === 'EmptyName') {
+        errors.name = configError.message;
+    }
+
+    // We only want to display the error in the name field if one of the following is true:
+    //   1. The user has focused and blurred the name field, and the value is invalid
+    //   2. A request has been sent to the server that resulted in an error, and the name is invalid
+    // This prevents an error from being shown as soon as the user loads the creation form, before
+    // a name value has been entered.
+    const nameError = (touched.name || configError) && errors.name;
 
     const collectionTableCells = getCollectionTableCells(
-        saveError?.type === 'CollectionLoop' ? saveError.loopId : undefined
+        configError?.type === 'CollectionLoop' ? configError.loopId : undefined
     );
-
-    function onCancelSave() {
-        history.push({ pathname: `${collectionsBasePath}` });
-    }
 
     const onResourceSelectorChange = (
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
 
-    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) => {
+    const onEmbeddedCollectionsChange = (newCollections: Collection[]) => {
         if (
-            saveError?.type === 'CollectionLoop' &&
-            !newCollections.find(({ id }) => id === saveError.loopId)
+            configError?.type === 'CollectionLoop' &&
+            !newCollections.find(({ id }) => id === configError.loopId)
         ) {
-            clearSaveError();
+            clearConfigError();
         }
         return setFieldValue(
             'embeddedCollectionIds',
@@ -249,17 +265,20 @@ function CollectionForm({
                                 label="Name"
                                 fieldId="name"
                                 isRequired={!isReadOnly}
-                                helperTextInvalid={errors.name}
-                                validated={errors.name ? 'error' : 'default'}
+                                helperTextInvalid={nameError}
+                                validated={nameError ? 'error' : 'default'}
                             >
                                 <TextInput
                                     id="name"
                                     name="name"
                                     value={values.name}
-                                    validated={errors.name ? 'error' : 'default'}
+                                    validated={nameError ? 'error' : 'default'}
                                     onChange={(_, e) => {
-                                        if (saveError?.type === 'DuplicateName') {
-                                            clearSaveError();
+                                        if (
+                                            configError?.type === 'DuplicateName' ||
+                                            configError?.type === 'EmptyName'
+                                        ) {
+                                            clearConfigError();
                                         }
                                         handleChange(e);
                                     }}
@@ -318,16 +337,16 @@ function CollectionForm({
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
-                            {saveError?.type === 'EmptyCollection' && (
+                            {configError?.type === 'EmptyCollection' && (
                                 <Alert
                                     title="At least one rule must be configured or one collection must be attached from the section below"
                                     variant="danger"
                                     isInline
                                 />
                             )}
-                            {saveError?.type === 'InvalidRule' && (
-                                <Alert title={saveError.message} variant="danger" isInline>
-                                    {saveError.details}
+                            {configError?.type === 'InvalidRule' && (
+                                <Alert title={configError.message} variant="danger" isInline>
+                                    {configError.details}
                                 </Alert>
                             )}
                             <RuleSelector
@@ -392,16 +411,16 @@ function CollectionForm({
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
-                            {saveError?.type === 'EmptyCollection' && (
+                            {configError?.type === 'EmptyCollection' && (
                                 <Alert
                                     title="At least one collection must be attached or one rule must be configured from the section above"
                                     variant="danger"
                                     isInline
                                 />
                             )}
-                            {saveError?.type === 'CollectionLoop' && (
-                                <Alert title={saveError.message} variant="danger" isInline>
-                                    {saveError.details}
+                            {configError?.type === 'CollectionLoop' && (
+                                <Alert title={configError.message} variant="danger" isInline>
+                                    {configError.details}
                                 </Alert>
                             )}
                             {isReadOnly ? (
@@ -430,12 +449,12 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting}
+                        isDisabled={isSubmitting || !!configError}
                         isLoading={isSubmitting}
                     >
                         Save
                     </Button>
-                    <Button variant="secondary" isDisabled={isSubmitting} onClick={onCancelSave}>
+                    <Button variant="secondary" isDisabled={isSubmitting} onClick={onCancel}>
                         Cancel
                     </Button>
                 </div>

@@ -13,6 +13,7 @@ import {
 import StyleNode from './StyleNode';
 import StyleGroup from './StyleGroup';
 import StyleEdge from './StyleEdge';
+import StyleFakeGroup from './StyleFakeGroup';
 
 const stylesComponentFactory: ComponentFactory = (kind: ModelKind, type: string): any => {
     if (kind === ModelKind.graph) {
@@ -32,6 +33,12 @@ const stylesComponentFactory: ComponentFactory = (kind: ModelKind, type: string)
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 withSelection()(StyleGroup)
+            );
+        case 'fakeGroup':
+            return withDragNode(nodeDragSourceSpec('node', true, true))(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                withSelection()(StyleFakeGroup)
             );
         case 'edge':
             return StyleEdge;

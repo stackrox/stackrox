@@ -1,7 +1,7 @@
-import { CollectionRequest, CollectionResponse, SelectorRule } from 'services/CollectionsService';
+import { CollectionRequest, Collection, SelectorRule } from 'services/CollectionsService';
 import { ensureExhaustive, isNonEmptyArray } from 'utils/type.utils';
 import {
-    Collection,
+    ClientCollection,
     SelectorField,
     SelectorEntityType,
     isSupportedSelectorField,
@@ -46,9 +46,9 @@ export function isCollectionParseError(
  * it will return a list of validation errors to the caller.
  */
 export function parseCollection(
-    data: Omit<CollectionResponse, 'id'>
-): Collection | CollectionParseError {
-    const collection: Collection = {
+    data: Omit<Collection, 'id'>
+): ClientCollection | CollectionParseError {
+    const collection: ClientCollection = {
         name: data.name,
         description: data.description,
         inUse: data.inUse,
@@ -160,7 +160,7 @@ export function parseCollection(
  * This function takes the UI supported representation of a `Collection` and generates
  * a server response in the generic `CollectionRequest` format supported by the back end.
  */
-export function generateRequest(collection: Collection): CollectionRequest {
+export function generateRequest(collection: ClientCollection): CollectionRequest {
     const rules: SelectorRule[] = [];
 
     selectorEntityTypes.forEach((entityType) => {

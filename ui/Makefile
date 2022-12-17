@@ -1,4 +1,5 @@
 UI_BASE_URL ?= https://localhost:8000
+YARN_NETWORK_TIMEOUT ?= 60000
 
 .PHONY: all
 all: deps lint test build
@@ -13,7 +14,7 @@ PACKAGE_JSON_FILES := $(shell find . -type d \( -name node_modules \) -prune -fa
 export REACT_APP_ROX_PRODUCT_BRANDING := $(shell $(MAKE) --quiet --no-print-directory -C .. product-branding)
 
 deps: yarn.lock $(PACKAGE_JSON_FILES)
-	yarn install --frozen-lockfile
+	yarn install --frozen-lockfile --network-timeout=$(YARN_NETWORK_TIMEOUT)
 	@touch deps
 
 .PHONY: printsrcs

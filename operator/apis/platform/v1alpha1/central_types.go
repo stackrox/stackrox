@@ -120,6 +120,11 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings (Technology Preview)"
 	DB *CentralDBSpec `json:"db,omitempty"`
 
+	// Configures telemetry settings for Central. If enabled, Central transmits telemetry and diagnostic
+	// data to a remote storage backend.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Telemetry",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	Telemetry *Telemetry `json:"telemetry,omitempty"`
+
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
 }
@@ -408,6 +413,28 @@ type ExposureRoute struct {
 	// If unspecified, an appropriate default value will be automatically chosen by OpenShift route operator.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	Host *string `json:"host,omitempty"`
+}
+
+// Telemetry defines telemetry settings for Central.
+type Telemetry struct {
+	// Specifies if Telemetry is enabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Defines the telemetry storage backend for Central.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true"}
+	Storage *TelemetryStorage `json:"storage,omitempty"`
+}
+
+// TelemetryStorage defines the telemetry storage backend for Central.
+type TelemetryStorage struct {
+	// Storage API endpoint.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Endpoint *string `json:"endpoint,omitempty"`
+
+	// Storage API key. If not set, telemetry is disabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Key *string `json:"key,omitempty"`
 }
 
 // Note the following struct should mostly match LocalScannerComponentSpec for the SecuredCluster type. Different Scanner

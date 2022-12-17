@@ -32,20 +32,28 @@ stackrox-test container, against the cluster defined in the calling
 environment.
 
 Options:
-  -c - configure the cluster for test but do not run any tests. [qa flavor only]
-  -d - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'. [qa flavor only]
-  -t - override 'make tag' which sets the main version to install and is used by 
-       some tests.
-  -o - choose the cluster orchestrator. Either k8s or openshift. defaults to k8s.
+  -c, --config-only - configure the cluster for test but do not run
+    any tests. [qa flavor only]
+  --run-tests-only - reuse prior configuration and run tests. [qa
+    flavor only]
+  -d, --gather-debug - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'.
+    [qa flavor only]
+  -s, --spin-cycle=<count> - repeat the test portion until a failure
+    occurs or <count> is reached with no failures. [qa flavor only]
+  -t <tag> - override 'make tag' which sets the main version to install
+    and is used by some tests.
+  -o, --orchestrator=<orchestrator> - choose the cluster orchestrator.
+    Either k8s or openshift. defaults to k8s.
+  --db=<postgres|rocksdb> - defaults to postgres.
   -y - run without prompts.
   -h - show this help.
 
 E2e flavor:
-  one of qa|e2e|ui|upgrade, defaults to qa
+  one of qa|e2e, defaults to qa
 
 Examples:
 # Configure a cluster to run qa-tests-backend/ tests.
-$script -c qa
+$script --config-only qa
 
 # Run a single qa-tests-backend/ test case (expects a previously configured
 # cluster).
@@ -58,25 +66,14 @@ $script qa
 # Run the full set of 'non groovy' e2e tests. This is similar to what CI runs
 # for *-nongroovy-e2e-tests jobs on a PR.
 $script e2e
+
+For more details see tests/e2e/run-e2e-tests-README.md.
 _EOH_
     exit 1
 }
 
-option_set=":cdhyo:t:"
-
 handle_tag_requirements() {
-    while getopts "$option_set" option; do
-        case "$option" in
-            t)
-                export TAG_OVERRIDE="${OPTARG}"
-                ;;
-            h)
-                usage
-                ;;
-            *)
-                ;;
-        esac
-    done
+    get_initial_options "$@"
 
     tag="$(make tag)"
 
@@ -103,6 +100,23 @@ _EOMISSING_
     fi
 }
 
+get_initial_options() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -t)
+                export TAG_OVERRIDE="$2"
+                shift 2
+                ;;
+            -h)
+                usage
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+}
+
 if [[ ! -f "/i-am-rox-ci-image" ]]; then
     handle_tag_requirements "$@"
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
@@ -127,45 +141,110 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
     exit 0
 fi
 
-main() {
-    config_only="false"
-    orchestrator="k8s"
-    prompt="true"
+get_options() {
+    # in stackrox-test container getopt supports long options
+    normalized_opts=$(\
+      getopt \
+        -o cdo:s:t:y \
+        --long config-only,test-only,gather-debug,spin-cycle:,orchestrator:,db: \
+        -n 'run-e2e-tests.sh' -- "$@" \
+    )
 
-    while getopts "$option_set" option; do
-        case "$option" in
-            c)
-                config_only="true"
+    eval set -- "$normalized_opts"
+
+    export CONFIG_ONLY="false"
+    export TEST_ONLY="false"
+    export GATHER_QA_TEST_DEBUG_LOGS="false"
+    export SPIN_CYCLE_COUNT=1
+    export ORCHESTRATOR="k8s"
+    export DATABASE="postgres"
+    export PROMPT="true"
+
+    while true; do
+        case "$1" in
+            -c | --config-only)
+                export CONFIG_ONLY="true"
+                shift
                 ;;
-            d)
+            --test-only)
+                export TEST_ONLY="true"
+                shift
+                ;;
+            -d | --gather-debug)
                 export GATHER_QA_TEST_DEBUG_LOGS="true"
+                shift
                 ;;
-            o)
-                orchestrator="${OPTARG}"
+            -s | --spin-cycle)
+                export SPIN_CYCLE_COUNT="$2"
+                shift 2
                 ;;
-            t)
+            -o | --orchestrator)
+                export ORCHESTRATOR="$2"
+                shift 2
+                ;;
+            --db)
+                export DATABASE="$2"
+                shift 2
+                ;;
+            -t)
                 # handled in the calling context
+                shift 2
                 ;;
-            y)
-                prompt="false"
+            -y)
+                export PROMPT="false"
+                shift
                 ;;
-            *)
-                usage
+            --)
+                shift
+                break
                 ;;
         esac
     done
-    shift $((OPTIND-1))
 
-    flavor="${1:-qa}"
-    case "$flavor" in
+    export FLAVOR="${1:-qa}"
+    case "$FLAVOR" in
         qa|e2e)
             ;;
         *)
-            die "flavor $flavor not supported"
+            die "flavor $FLAVOR not supported"
             ;;
     esac
 
-    case "$orchestrator" in
+    case "$DATABASE" in
+        postgres)
+            export ROX_POSTGRES_DATASTORE="true"
+            ;;
+        rocksdb)
+            export ROX_POSTGRES_DATASTORE="false"
+            ;;
+        *)
+            die "database $DATABASE not supported"
+            ;;
+    esac
+
+    export SUITE="${2:-}"
+    export CASE="${3:-}"
+
+    export_job_name
+
+    if [[ "${CONFIG_ONLY}" == "true" && "${TEST_ONLY}" == "true" ]]; then
+        die "--config-only and --test-only are mutually exclusive"
+    fi
+
+    if [[ "$FLAVOR" == "e2e" ]]; then
+        if [[ -n "${suite}" || -n "${case}" ]]; then
+            die "ERROR: Suite and Case are not supported with e2e flavor"
+        fi
+        if [[ "${CONFIG_ONLY}" == "true" || "${TEST_ONLY}" == "true" ]]; then
+            die "--config-only and --test-only are not supported with e2e flavor"
+        fi
+    fi
+}
+
+main() {
+    get_options "$@"
+
+    case "$ORCHESTRATOR" in
         k8s|openshift)
             ;;
         *)
@@ -173,16 +252,7 @@ main() {
             ;;
     esac
 
-    suite="${2:-}"
-    case="${3:-}"
-
     cd "$ROOT"
-
-    if [[ "$flavor" == "e2e" ]]; then
-        if [[ -n "${suite}" || -n "${case}" ]]; then
-            die "ERROR: Suite and Case are not supported with e2e flavor"
-        fi
-    fi
 
     # Sanity check that the roxctl in use matches 'make tag'. This should
     # already be true due to the container copy in handle_tag_requirements() but
@@ -217,11 +287,14 @@ _EOVAULTHELP_
     fi
 
     context="$(kubectl config current-context)"
-    echo "This script will tear down resources, install ACS and dependencies and run tests against '$context'."
-
-    if [[ "$prompt" == "true" ]]; then
+    cat <<_EOWARNING_
+WARNING! This script can be destructive. Depending on how it is invoked,
+it may tear down resources, install ACS and dependencies and run tests.
+Current cluster context is: '$context'.
+_EOWARNING_
+    if [[ "$PROMPT" == "true" ]]; then
         read -p "Are you sure? " -r
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [[ ! $REPLY =~ ^[Yy]e?s?$ ]]; then
             echo "Quit."
             exit 1
         fi
@@ -247,12 +320,12 @@ _EOVAULTHELP_
 
     info "Running the test."
 
-    export ORCHESTRATOR_FLAVOR="$orchestrator"
+    export ORCHESTRATOR_FLAVOR="$ORCHESTRATOR"
 
     # required to get a running central
     export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
 
-    case "$flavor" in
+    case "$FLAVOR" in
         qa)
             run_qa_flavor
             ;;
@@ -260,33 +333,37 @@ _EOVAULTHELP_
             run_e2e_flavor
             ;;
         *)
-            die "flavor $flavor not supported"
+            die "flavor $FLAVOR not supported"
             ;;
     esac
 }
 
 run_qa_flavor() {
-    if [[ -z "$suite" && -z "$case" ]]; then
-        source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+    source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+
+    if [[ -z "$SUITE" && -z "$CASE" ]]; then
         (
-            config_part_1
-            if [[ "${config_only}" == "false" ]]; then
-                test_part_1
+            if [[ "${TEST_ONLY}" == "false" ]]; then
+                config_part_1
+                info "Config succeeded."
+            else
+                reuse_config_part_1
+                info "Config reuse succeeded."
+            fi
+            if [[ "${CONFIG_ONLY}" == "false" ]]; then
+                spin test_part_1
+                info "Test succeeded."
             fi
         ) 2>&1 | sed -e 's/^/test output: /'
     else
-        export_test_environment
-        setup_deployment_env false false
-        export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
-        wait_for_api
-        export DEPLOY_DIR="$ROOT/deploy/${ORCHESTRATOR_FLAVOR}"
-        get_central_basic_auth_creds
+        reuse_config_part_1
+        info "Config reuse succeeded."
 
         pushd qa-tests-backend
-        if [[ -z "$case" ]]; then
-            ./gradlew test --console=plain --tests="$suite"
+        if [[ -z "$CASE" ]]; then
+            spin ./gradlew test --console=plain --tests="$SUITE"
         else
-            ./gradlew test --console=plain --tests="$suite.$case"
+            spin ./gradlew test --console=plain --tests="$SUITE.$CASE"
         fi
         popd
     fi
@@ -294,6 +371,46 @@ run_qa_flavor() {
 
 run_e2e_flavor() {
     "$ROOT/tests/e2e/run.sh" 2>&1 | sed -e 's/^/test output: /'
+}
+
+spin() {
+    local count=0
+    while (( SPIN_CYCLE_COUNT > count )); do
+        "$@"
+        (( count++ )) || true
+        info "Completed test cycle: $count"
+    done
+}
+
+export_job_name() {
+    # Emulate CI_JOB_NAME (which sets Env.CI_JOBNAME for .groovy tests) as it is
+    # used to determine some test behavior.
+    local job_name=""
+
+    case "$FLAVOR" in
+        qa)
+            job_name="qa-e2e-tests"
+            ;;
+        e2e)
+            job_name="nongroovy-e2e-tests-"
+            ;;
+        *)
+            die "flavor $FLAVOR not supported"
+            ;;
+    esac
+
+    case "$DATABASE" in
+        postgres)
+            job_name="postgres-$job_name"
+            ;;
+        rocksdb)
+            ;;
+        *)
+            die "database $DATABASE not supported"
+            ;;
+    esac
+
+    export CI_JOB_NAME="$job_name"
 }
 
 main "$@"

@@ -43,7 +43,14 @@ UI_BUILD_LOG="/tmp/ui_build_log.txt"
 background_build_ui() {
     info "Building the UI in the background"
 
-    (retry 3 false make -C ui build > "$UI_BUILD_LOG" 2>&1)&
+    yarn_network_timeout=60000
+    increase_timeout_for_retries() {
+        yarn_network_timeout=$((yarn_network_timeout + 60000))
+        export YARN_NETWORK_TIMEOUT="$yarn_network_timeout"
+    }
+
+    (export RETRY_HOOK=increase_timeout_for_retries; \
+        retry 5 false make -C ui build > "$UI_BUILD_LOG" 2>&1)&
     ui_build_pid=$!
 }
 

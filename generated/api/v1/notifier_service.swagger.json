@@ -629,6 +629,12 @@
         },
         "tcpConfig": {
           "$ref": "#/definitions/SyslogTCPConfig"
+        },
+        "extraFields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageKeyValuePair"
+          }
         }
       }
     },

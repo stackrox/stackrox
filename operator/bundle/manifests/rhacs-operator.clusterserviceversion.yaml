@@ -108,6 +108,12 @@ spec:
           DB, which is responsible for data persistence.'
         displayName: Central DB Settings (Technology Preview)
         path: central.db
+      - description: Configures telemetry settings for Central. If enabled, Central
+          transmits telemetry and diagnostic data to a remote storage backend.
+        displayName: Telemetry
+        path: central.telemetry
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -291,6 +297,22 @@ spec:
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
+      - description: Specifies if Telemetry is enabled.
+        displayName: Enabled
+        path: central.telemetry.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Defines the telemetry storage backend for Central.
+        displayName: Storage
+        path: central.telemetry.storage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.telemetry.enabled:true
+      - description: Storage API endpoint.
+        displayName: Endpoint
+        path: central.telemetry.storage.endpoint
+      - description: Storage API key. If not set, telemetry is disabled.
+        displayName: Key
+        path: central.telemetry.storage.key
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels

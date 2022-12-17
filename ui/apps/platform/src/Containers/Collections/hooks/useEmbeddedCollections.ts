@@ -1,10 +1,10 @@
 import { useReducer, useEffect, Dispatch } from 'react';
 import sortBy from 'lodash/sortBy';
 
-import { CollectionResponse, listCollections } from 'services/CollectionsService';
+import { Collection, listCollections } from 'services/CollectionsService';
 import { ensureExhaustive } from 'utils/type.utils';
 
-type CollectionMap = Record<string, CollectionResponse>;
+type CollectionMap = Record<string, Collection>;
 
 // `pageSize` is the default number of items that will attempt to be pulled when the user
 // loads more items in the detached collections section
@@ -44,9 +44,9 @@ function fetchDetachedCollections(
     clientMap: CollectionMap,
     searchValue: string,
     pageNumber: number,
-    aggregateResult: CollectionResponse[]
+    aggregateResult: Collection[]
 ): Promise<{
-    detached: CollectionResponse[];
+    detached: Collection[];
     nextPage: number;
     lastResponseSize: number;
 }> {
@@ -130,7 +130,7 @@ function moveItem(from: CollectionMap, to: CollectionMap, id: string) {
     return [fromMap, toMap];
 }
 
-function arrayToMap(collections: CollectionResponse[]): Record<string, CollectionResponse> {
+function arrayToMap(collections: Collection[]): Record<string, Collection> {
     const map = {};
     collections.forEach(({ id, ...rest }) => {
         map[id] = { id, ...rest };
@@ -198,9 +198,9 @@ const initialState = {
 
 export type UseEmbeddedCollectionsReturn = {
     /** Client side state of attached collections */
-    attached: CollectionResponse[];
+    attached: Collection[];
     /** Client side state of detached collections */
-    detached: CollectionResponse[];
+    detached: Collection[];
     /** Move a collection from detached -> attached by id */
     attach: (id: string) => void;
     /** Move a collection from attached -> detached by id */
@@ -263,7 +263,7 @@ export type UseEmbeddedCollectionsReturn = {
  */
 export default function useEmbeddedCollections(
     excludedCollectionId: string | null,
-    initialAttachedCollections: CollectionResponse[]
+    initialAttachedCollections: Collection[]
 ): UseEmbeddedCollectionsReturn {
     const [state, dispatch] = useReducer(embeddedCollectionsReducer, initialState, (init) => ({
         ...init,

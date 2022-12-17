@@ -352,26 +352,6 @@ push_operator_image_set() {
     done
 }
 
-push_docs_image() {
-    info "Pushing the docs image: $PIPELINE_DOCS_IMAGE"
-
-    if ! is_OPENSHIFT_CI; then
-        die "Only supported in OpenShift CI"
-    fi
-
-    oc registry login
-    local docs_tag
-    docs_tag="$(make --quiet docs-tag)"
-
-    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
-
-    for registry in "${registries[@]}"; do
-        registry_rw_login "$registry"
-        oc_image_mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
-        oc_image_mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
-    done
-}
-
 push_race_condition_debug_image() {
     info "Pushing the -race image: $MAIN_RCD_IMAGE"
 
@@ -1204,6 +1184,15 @@ store_test_results() {
 
     local from="$1"
     local to="$2"
+
+    if ! is_in_PR_context; then
+    {
+        info "Creating JIRA task for failures found in $from"
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.1/junit2jira -o junit2jira && \
+        chmod +x junit2jira && \
+        ./junit2jira -junit-reports-dir "$from" -dry-run
+    } || true
+    fi
 
     info "Copying test results from $from to $to"
 

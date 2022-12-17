@@ -134,7 +134,7 @@ export function toggleAlertBaselineViolations({ deploymentId, enable }) {
 }
 
 /*
- * Retrieves the last security policy applied for a deployement
+ * Retrieves the last security policy applied for a deployment
  *
  * @param   {string}  deploymentId
  * @returns {Promise<Object, Error>}
@@ -153,10 +153,19 @@ export function getUndoModificationForDeployment(deploymentId) {
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkPolicyGraph(clusterId, namespaces, query, modification, includePorts) {
+export function fetchNetworkPolicyGraph(
+    clusterId,
+    namespaces,
+    deployments,
+    query,
+    modification,
+    includePorts
+) {
     const urlParams = query ? { query } : {};
     const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
+    const deploymentQuery = deployments.length > 0 ? `Deployment:${deployments.join(',')}` : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
+    urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
 
     if (includePorts) {
         urlParams.includePorts = true;
@@ -200,6 +209,7 @@ export function fetchNetworkPolicyGraph(clusterId, namespaces, query, modificati
  *
  * @param {!String} clusterId
  * @param {String[]} namespaces
+ * @param {String[]} deployments
  * @param {String} query
  * @param {Date} date
  * @param {boolean} includePorts
@@ -209,13 +219,16 @@ export function fetchNetworkPolicyGraph(clusterId, namespaces, query, modificati
 export function fetchNetworkFlowGraph(
     clusterId,
     namespaces,
+    deployments,
     query = '',
     date = null,
     includePorts = false
 ) {
     const urlParams = query ? { query } : {};
     const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
+    const deploymentQuery = deployments.length > 0 ? `Deployment:${deployments.join(',')}` : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
+    urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
     if (date) {
         urlParams.since = date.toISOString();
     }
@@ -307,6 +320,17 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
             return { applyYaml: policies.map((policy) => policy.yaml).join('\n---\n') };
         }
         return null;
+    });
+}
+
+export function fetchNetworkPoliciesByClusterId(clusterId) {
+    const params = queryString.stringify({ clusterId });
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}?${params}`,
+    };
+    return axios(options).then((response) => {
+        return response?.data?.networkPolicies;
     });
 }
 

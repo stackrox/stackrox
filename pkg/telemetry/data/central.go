@@ -54,13 +54,24 @@ type BucketStats struct {
 	Cardinality int    `json:"cardinality"`
 }
 
+// TableStats contains telemetry data about a DB table
+type TableStats struct {
+	Name      string `json:"name"`
+	RowCount  int64  `json:"rowCount"`
+	TableSize int64  `json:"tableSize"`
+	IndexSize int64  `json:"indexSize"`
+	ToastSize int64  `json:"toastSize"`
+}
+
 // DatabaseStats contains telemetry data about a DB
 type DatabaseStats struct {
-	Type      string         `json:"type"`
-	Path      string         `json:"path"`
-	UsedBytes int64          `json:"usedBytes"`
-	Buckets   []*BucketStats `json:"buckets,omitempty"`
-	Errors    []string       `json:"errors,omitempty"`
+	Type           string         `json:"type"`
+	Path           string         `json:"path"`
+	AvailableBytes int64          `json:"availableBytes"`
+	UsedBytes      int64          `json:"usedBytes"`
+	Buckets        []*BucketStats `json:"buckets,omitempty"`
+	Tables         []*TableStats  `json:"tables,omitempty"`
+	Errors         []string       `json:"errors,omitempty"`
 }
 
 // StorageInfo contains telemetry data about available disk, storage type, and the available databases

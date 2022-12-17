@@ -258,6 +258,30 @@ func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 	}
 }
 
+func TestDockerReferenceFromImageName(t *testing.T) {
+	cases := map[string]struct {
+		name *storage.ImageName
+		res  string
+	}{
+		"shouldn't rewrite registry name for quay.io": {
+			name: &storage.ImageName{FullName: "quay.io/some-repo/image:latest"},
+			res:  "quay.io/some-repo/image",
+		},
+		"should rewrite registry name for docker.io": {
+			name: &storage.ImageName{FullName: "docker.io/some-repo/image:latest"},
+			res:  "index.docker.io/some-repo/image",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			res, err := dockerReferenceFromImageName(c.name)
+			assert.NoError(t, err)
+			assert.Equal(t, c.res, res)
+		})
+	}
+}
+
 func generateImageWithCosignSignature(imgString, b64Sig, b64SigPayload string) (*storage.Image, error) {
 	cimg, err := imgUtils.GenerateImageFromString(imgString)
 	if err != nil {

@@ -503,6 +503,24 @@ func (c *clairify) KubernetesScan(version string) (map[string][]*storage.Embedde
 	return results, nil
 }
 
+// IstioScan retrieves the most recent Istio scan from scanner
+func (c *clairify) IstioScan(version string) ([]*storage.EmbeddedVulnerability, error) {
+
+	req := &clairGRPCV1.GetIstioVulnerabilitiesRequest{
+		IstioVersion: version,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	defer cancel()
+	resp, err := c.orchestratorScanServiceClient.GetIstioVulnerabilities(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	res := convertIstioVulns(resp.GetVulnerabilities())
+
+	return res, nil
+}
+
 // OpenShiftScan retrieves OpenShift scan from scanner
 func (c *clairify) OpenShiftScan(version string) ([]*storage.EmbeddedVulnerability, error) {
 	req := &clairGRPCV1.GetOpenShiftVulnerabilitiesRequest{

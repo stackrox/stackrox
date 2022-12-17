@@ -169,6 +169,10 @@ create_cluster() {
 
             if [[ "${success}" == 1 ]]; then
                 info "Successfully launched cluster ${CLUSTER_NAME}"
+                local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
+                ls -l "${kubeconfig}" || true
+                gcloud container clusters get-credentials "$CLUSTER_NAME"
+                ls -l "${kubeconfig}" || true
                 break
             fi
             info "Timed out"
@@ -184,6 +188,8 @@ create_cluster() {
         info "Cluster creation failed"
         return 1
     fi
+
+    date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/GKE_CLUSTER_CREATED_TIMESTAMP
 }
 
 wait_for_cluster() {
@@ -275,6 +281,56 @@ teardown_gke_cluster() {
     gcloud container clusters delete "$CLUSTER_NAME" --async
 
     info "Cluster deleting asynchronously"
+
+    create_log_explorer_links
+}
+
+create_log_explorer_links() {
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "No place for artifacts, skipping generation of links to logs explorer"
+        return
+    fi
+
+    artifact_file="$ARTIFACT_DIR/gke-logs-summary.html"
+
+    cat > "$artifact_file" <<- HEAD
+<html style="background: #fff">
+    <head>
+        <title><h4>GKE Logs Explorer</h4></title>
+    </head>
+    <body>
+    <p>(These links require a 'right-click -> open in new tab'. The authUser is the number for your @stackrox.com account.)</p>
+    <ul style="padding-bottom: 28px; padding-left: 30px; font-family: Roboto,Helvetica,Arial,sans-serif;">
+HEAD
+
+    local start_ts
+    start_ts="$(cat /tmp/GKE_CLUSTER_CREATED_TIMESTAMP)"
+    local end_ts
+    end_ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    local project
+    project="$(gcloud config get project --quiet)"
+
+    for authUser in {0..2}; do
+    cat >> "$artifact_file" << LINK
+      <li>
+        <a href="https://console.cloud.google.com/logs/query
+;query=
+resource.type=%22k8s_container%22%0A
+resource.labels.cluster_name%3D%22$CLUSTER_NAME%22%0A
+resource.labels.namespace_name%3D%22stackrox%22%0A
+;timeRange=$start_ts%2F$end_ts
+;cursorTimestamp=$start_ts
+?authuser=$authUser
+&project=$project
+&orgonly=true&supportedpurview=organizationId">authUser $authUser</a>
+      </li>
+LINK
+    done
+
+    cat >> "$artifact_file" <<- FOOT
+    </ul>
+</html>
+FOOT
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

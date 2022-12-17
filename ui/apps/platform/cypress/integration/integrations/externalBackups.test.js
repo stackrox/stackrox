@@ -1,17 +1,18 @@
-import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
+
 import {
     clickCreateNewIntegrationInTable,
     deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
     testIntegrationInFormWithStoredCredentials,
     visitIntegrationsTable,
-} from '../../helpers/integrations';
+} from './integrations.helpers';
+import { selectors } from './integrations.selectors';
 
 // Page address segments are the source of truth for integrationSource and integrationType.
 const integrationSource = 'backups';

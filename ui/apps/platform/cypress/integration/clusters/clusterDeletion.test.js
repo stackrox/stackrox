@@ -1,7 +1,13 @@
-import { selectors } from '../../constants/ClustersPage';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
-import { visitClusterById, visitClusters, visitClustersWithFixture } from '../../helpers/clusters';
+
+import {
+    assertClusterNameInSidePanel,
+    clusterAlias,
+    visitClusterById,
+    visitClusters,
+    visitClustersWithFixture,
+} from './Clusters.helpers';
 
 describe('Clusters list clusterIdToRetentionInfo', () => {
     withAuth();
@@ -17,7 +23,7 @@ describe('Clusters list clusterIdToRetentionInfo', () => {
     it('should display Cluster Deletion column', () => {
         visitClusters();
 
-        cy.get(`${selectors.clusters.tableHeadingCell}:contains("Cluster Deletion")`);
+        cy.get(`.rt-th:contains("Cluster Deletion")`);
     });
 
     // .rt-td:nth(6) because [data-testid="clusterDeletion"] fails for unknown reason :(
@@ -52,7 +58,7 @@ describe('Cluster page clusterRetentionInfo', () => {
 
         const clusterName = 'remote';
         cy.get(`[data-testid="cluster-name"]:contains("${clusterName}")`).click();
-        cy.get(`${selectors.clusterSidePanelHeading}:contains("${clusterName}")`);
+        assertClusterNameInSidePanel(clusterName);
         cy.get('div:contains("Cluster Deletion"):contains("Not applicable")');
     });
 
@@ -62,12 +68,13 @@ describe('Cluster page clusterRetentionInfo', () => {
     function visitClusterWithRetentionInfo(clusterRetentionInfo) {
         cy.fixture(fixturePath).then(({ clusters }) => {
             const cluster = clusters.find(({ name }) => name === clusterName);
+            const staticResponseMap = {
+                [clusterAlias]: { body: { cluster, clusterRetentionInfo } },
+            };
 
-            visitClusterById(cluster.id, {
-                cluster: { body: { cluster, clusterRetentionInfo } },
-            });
+            visitClusterById(cluster.id, staticResponseMap);
 
-            cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
+            assertClusterNameInSidePanel(clusterName);
         });
     }
 

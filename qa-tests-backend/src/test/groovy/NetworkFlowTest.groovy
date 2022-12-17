@@ -34,6 +34,7 @@ import util.Timer
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import spock.lang.Ignore
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
@@ -722,6 +723,9 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
+    // ROX-13903 - applyGeneratedNetworkPolicy() can hang when run via the
+    // standalone test runner.
+    @IgnoreIf({ !Env.IN_CI })
     @Unroll
     @Category([BAT])
     def "Verify network policy generator apply/undo with delete modes: #deleteMode #note"() {

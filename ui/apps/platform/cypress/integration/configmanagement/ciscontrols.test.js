@@ -12,6 +12,7 @@ import {
 } from '../../helpers/configWorkflowUtils';
 import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { triggerScan } from '../../helpers/compliance';
 
 const entitiesKey = 'controls';
 
@@ -19,6 +20,9 @@ describe('Configuration Management Controls', () => {
     withAuth();
 
     it('should render the controls list and open the side panel when a row is clicked', () => {
+        // ROX-13537: See if compliance scan prevents failure of last tests because no Pass or no Fail status.
+        triggerScan();
+
         visitConfigurationManagementDashboard();
 
         // This and the following tests assumes that scan results are available

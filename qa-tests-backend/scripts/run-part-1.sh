@@ -6,6 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$ROOT/scripts/ci/gcp.sh"
 source "$ROOT/scripts/ci/lib.sh"
 source "$ROOT/scripts/ci/sensor-wait.sh"
+source "$ROOT/scripts/ci/create-webhookserver.sh"
 source "$ROOT/tests/e2e/lib.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
 source "$ROOT/qa-tests-backend/scripts/lib.sh"
@@ -25,18 +26,40 @@ config_part_1() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
+    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+
     export_test_environment
 
     setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
-    setup_default_TLS_certs
+    setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
-    deploy_stackrox
+    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
 
     deploy_default_psp
-    deploy_webhook_server
+    deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
+}
+
+reuse_config_part_1() {
+    info "Reusing config from a prior part 1 e2e test"
+
+    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+
+    export_test_environment
+    setup_deployment_env false false
+    export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
+    export_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+
+    create_webhook_server_port_forward
+    export_webhook_server_certs "$ROOT/$DEPLOY_DIR/webhook_server_certs"
+    get_ECR_docker_pull_password
+
+    wait_for_api
+    get_central_basic_auth_creds
+
+    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 }
 
 test_part_1() {

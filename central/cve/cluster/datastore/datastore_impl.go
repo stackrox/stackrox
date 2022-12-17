@@ -23,6 +23,7 @@ var (
 		sac.ForResource(resources.VulnerabilityManagementRequests),
 		sac.ForResource(resources.VulnerabilityManagementApprovals),
 	)
+	clusterSAC = sac.ForResource(resources.Cluster)
 
 	accessAllCtx = sac.WithAllAccess(context.Background())
 )
@@ -37,10 +38,20 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) UpsertClusterCVEsInternal(ctx context.Context, cveType storage.CVE_CVEType, cveParts ...converter.ClusterCVEParts) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 	return ds.storage.ReconcileClusterCVEParts(ctx, cveType, cveParts...)
 }
 
 func (ds *datastoreImpl) DeleteClusterCVEsInternal(ctx context.Context, clusterID string) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 	return ds.storage.DeleteClusterCVEsForCluster(ctx, clusterID)
 }
 

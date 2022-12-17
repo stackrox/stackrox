@@ -571,6 +571,80 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 				"openshift",
 			},
 		},
+		{
+			nvdCVE: &schema.NVDCVEFeedJSON10DefCVEItem{
+				CVE: &schema.CVEJSON40{
+					CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
+						ID: "CVE-6",
+					},
+				},
+				Configurations: &schema.NVDCVEFeedJSON10DefConfigurations{
+					Nodes: []*schema.NVDCVEFeedJSON10DefNode{
+						{
+							Operator: "OR",
+							CPEMatch: []*schema.NVDCVEFeedJSON10DefCPEMatch{
+								{
+									Vulnerable:            true,
+									Cpe23Uri:              "cpe:2.3:a:istio:istio:*:*:*:*:*:*:*:*",
+									VersionStartIncluding: "1.13.12",
+									VersionEndExcluding:   "1.13.19",
+								},
+							},
+						},
+					},
+				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+					},
+				},
+			},
+			components: []string{
+				"istio",
+			}},
+		{
+			nvdCVE: &schema.NVDCVEFeedJSON10DefCVEItem{
+				CVE: &schema.CVEJSON40{
+					CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
+						ID: "CVE-7",
+					},
+				},
+				Configurations: &schema.NVDCVEFeedJSON10DefConfigurations{
+					Nodes: []*schema.NVDCVEFeedJSON10DefNode{
+						{
+							Operator: "OR",
+							CPEMatch: []*schema.NVDCVEFeedJSON10DefCPEMatch{
+								{
+									Vulnerable:            true,
+									Cpe23Uri:              "cpe:2.3:a:istio:istio:*:*:*:*:*:*:*:*",
+									VersionStartIncluding: "1.13.13",
+									VersionEndExcluding:   "1.13.18",
+								},
+							},
+						},
+					},
+				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+					},
+				},
+			},
+			components: []string{
+				"istio",
+			}},
 	}
 
 	cveMatcher, err := matcher.NewCVEMatcher(mockClusters, mockNamespaces, mockImages)
@@ -649,5 +723,31 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 		assert.Contains(t, ids, cves[1])
 	})
 	err = orchestratorCVEMgr.reconcileCVEs(clusters, utils.K8s)
+	assert.NoError(t, err)
+
+	imgName := &storage.ImageName{
+		FullName: "istioTestImg",
+		Tag:      "1.13.16",
+	}
+	img := &storage.Image{
+		Name: imgName,
+		Id:   "12345",
+	}
+
+	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
+		assert.Equal(t, 2, len(cves))
+	})
+	mockImages.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return([]*storage.Image{img}, nil).Times(1)
+	searchResults := make([]search.Result, 0, 1)
+	searchResults = append(searchResults, search.Result{
+		ID: "testID",
+	})
+	mockNamespaces.EXPECT().Search(gomock.Any(), gomock.Any()).Return(searchResults, nil)
+	mockCVEs.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+	mockClusterCveEdge.EXPECT().Search(gomock.Any(), gomock.Any()).Return(existingEdges, nil)
+	mockClusterCveEdge.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	mockCVEs.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, utils.Istio)
 	assert.NoError(t, err)
 }

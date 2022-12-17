@@ -43,7 +43,11 @@ image:
 {{- end }}
 
 central:
-  disableTelemetry: {{ not .K8sConfig.EnableTelemetry }}
+  telemetry:
+    enabled: {{ .K8sConfig.Telemetry.Enabled }}
+    storage:
+      endpoint: {{ .K8sConfig.Telemetry.StorageEndpoint }}
+      key: {{ .K8sConfig.Telemetry.StorageKey }}
 
   {{- if ne (.GetConfigOverride "endpoints.yaml") "" }}
   endpointsConfig: |
@@ -108,7 +112,7 @@ central:
       {{ .HostPath.DB.NodeSelectorKey | quote }}: {{ .HostPath.DB.NodeSelectorValue | quote }}
     {{- end }}
     {{- end }}
-  
+
     {{- if .K8sConfig.ImageOverrides.CentralDB }}
     image:
       {{- if .K8sConfig.ImageOverrides.CentralDB.Registry }}
@@ -210,7 +214,7 @@ ca:
 
 {{- if ne (index .SecretsBase64Map "central-license") "" }}
 # StackRox license key
-licenseKey: | 
+licenseKey: |
   {{- index .SecretsBase64Map "central-license" | b64dec | nindent 2 }}
 {{- end }}
 
@@ -258,7 +262,7 @@ scanner:
   dbPassword:
     value: {{ index .SecretsBase64Map "scanner-db-password" | b64dec }}
   {{- end }}
- 
+
   {{- if ne (index .SecretsBase64Map "scanner-cert.pem") "" }}
   # Internal "scanner.stackrox.svc" service TLS certificate.
   serviceTLS:
@@ -297,7 +301,7 @@ ca:
 
 {{- if ne (index .SecretsBase64Map "central-license") "" }}
 # StackRox license key
-licenseKey: | 
+licenseKey: |
   {{- index .SecretsBase64Map "central-license" | b64dec | nindent 2 }}
 {{- end }}
 
@@ -360,7 +364,7 @@ scanner:
   dbPassword:
     value: {{ index .SecretsBase64Map "scanner-db-password" | b64dec }}
   {{- end }}
- 
+
   {{- if ne (index .SecretsBase64Map "scanner-cert.pem") "" }}
   # Internal "scanner.stackrox.svc" service TLS certificate.
   serviceTLS:
