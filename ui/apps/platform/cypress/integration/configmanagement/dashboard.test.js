@@ -1,12 +1,13 @@
-import { selectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
+
 import {
     interactAndWaitForConfigurationManagementEntities,
     interactAndWaitForConfigurationManagementEntityInSidePanel,
     interactAndWaitForConfigurationManagementScan,
     visitConfigurationManagementDashboard,
-} from '../../helpers/configWorkflowUtils';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
+} from './ConfigurationManagement.helpers';
+import { selectors } from './ConfigurationManagement.selectors';
 
 // This function is more generic than its name implies.
 const policyViolationsBySeverityLinkShouldMatchList = (linkSelector, linkRegExp, keyPlural) => {
@@ -202,7 +203,7 @@ describe('Configuration Management Dashboard', () => {
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getWidget('Policy Violations by Severity'))
-                .find(selectors.viewAllButton)
+                .find('button:contains("View All")')
                 .click();
         }, entitiesKey);
     });
@@ -214,7 +215,7 @@ describe('Configuration Management Dashboard', () => {
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.cisStandardsAcrossClusters.widget)
-                .find(selectors.viewStandardButton)
+                .find('button:contains("View Standard")')
                 .click();
         }, entitiesKey);
     });
@@ -226,7 +227,7 @@ describe('Configuration Management Dashboard', () => {
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getWidget('Users with most Cluster Admin Roles'))
-                .find(selectors.viewAllButton)
+                .find('button:contains("View All")')
                 .click();
         }, entitiesKey);
     });
@@ -251,7 +252,7 @@ describe('Configuration Management Dashboard', () => {
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getWidget('Secrets Most Used Across Deployments'))
-                .find(selectors.viewAllButton)
+                .find('button:contains("View All")')
                 .click();
         }, entitiesKey);
     });
@@ -263,7 +264,7 @@ describe('Configuration Management Dashboard', () => {
         visitConfigurationManagementDashboard();
 
         policyViolationsBySeverityLinkShouldMatchList(
-            selectors.policyViolationsBySeverity.link.ratedAsHigh,
+            `${selectors.getWidget('Policy Violations by Severity')} a:contains("rated as high")`,
             /^(\d+) rated as high/,
             entitiesKey
         );
@@ -279,7 +280,7 @@ describe('Configuration Management Dashboard', () => {
         visitConfigurationManagementDashboard();
 
         policyViolationsBySeverityLinkShouldMatchList(
-            selectors.policyViolationsBySeverity.link.ratedAsLow,
+            `${selectors.getWidget('Policy Violations by Severity')} a:contains("rated as low")`,
             /^(\d+) rated as low/,
             entitiesKey
         );
@@ -294,7 +295,9 @@ describe('Configuration Management Dashboard', () => {
         visitConfigurationManagementDashboard();
 
         policyViolationsBySeverityLinkShouldMatchList(
-            selectors.policyViolationsBySeverity.link.policiesWithoutViolations,
+            `${selectors.getWidget(
+                'Policy Violations by Severity'
+            )} a:contains("without violations")`,
             /^(\d+) (policy|policies)/,
             entitiesKey
         );
