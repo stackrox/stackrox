@@ -1320,6 +1320,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"skipTLSVerify: Boolean!",
 	}))
 	utils.Must(builder.AddType("Syslog", []string{
+		"extraFields: [KeyValuePair]!",
 		"localFacility: Syslog_LocalFacility!",
 		"tcpConfig: Syslog_TCPConfig",
 		"endpoint: SyslogEndpoint",
@@ -14367,6 +14368,11 @@ func (resolver *Resolver) wrapSyslogsWithContext(ctx context.Context, values []*
 		output[i] = &syslogResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *syslogResolver) ExtraFields(ctx context.Context) ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetExtraFields()
+	return resolver.root.wrapKeyValuePairs(value, nil)
 }
 
 func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
