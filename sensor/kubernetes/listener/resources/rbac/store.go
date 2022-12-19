@@ -25,6 +25,7 @@ type Store interface {
 
 	FindSubjectForRole(namespace, roleName string) []namespacedSubject
 	FindSubjectForBindingID(namespace, uuid string) []namespacedSubject
+	FindBindingIdForRole(namespace, roleName string) []string
 }
 
 // NewStore creates a new instance of Store

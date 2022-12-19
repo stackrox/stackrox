@@ -2,7 +2,6 @@ package resource
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -217,15 +216,16 @@ func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallba
 }
 
 // RunBare runs a test case without applying any resources to the cluster.
-func (c *TestContext) RunBare(name string, testCase TestCallback) {
-	c.t.Run(name, func(t *testing.T) {
-		_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
-		defer utils.IgnoreError(removeNamespace)
-		if err != nil {
-			t.Fatalf("failed to create namespace: %s", err)
-		}
-		testCase(t, c, nil)
-	})
+func (c *TestContext) RunBare(_ string, testCase TestCallback) {
+	_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
+	defer utils.IgnoreError(removeNamespace)
+	if err != nil {
+		c.t.Fatalf("failed to create namespace: %s", err)
+	}
+	testCase(c.t, c, nil)
+	//c.t.Run(name, func(t *testing.T) {
+	//
+	//})
 }
 
 // RunWithResourcesPermutation runs the test cases using `files` similarly to `RunWithResources` but it will run the
@@ -234,9 +234,9 @@ func (c *TestContext) RunWithResourcesPermutation(files []YamlTestFile, name str
 	runPermutation(files, 0, func(f []YamlTestFile) {
 		newF := make([]YamlTestFile, len(f))
 		copy(newF, f)
-		c.t.Run(fmt.Sprintf("%s_Permutation_%s", name, permutationKind(newF)), func(t *testing.T) {
-			c.RunWithResources(newF, testCase)
-		})
+		c.RunWithResources(newF, testCase)
+		//c.t.Run(fmt.Sprintf("%s_Permutation_%s", name, permutationKind(newF)), func(t *testing.T) {
+		//})
 	})
 }
 
@@ -267,6 +267,34 @@ type AssertFunc func(deployment *storage.Deployment) error
 // LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
 func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
 	c.LastDeploymentStateWithTimeout(name, assertion, message, 3*time.Second)
+}
+
+type MatchResource func(resource *central.MsgFromSensor) bool
+type AssertFuncAny func(resource interface{}) error
+
+func (c *TestContext) LastResourceState(matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
+	c.LastResourceStateWithTimeout(matchResourceFn, assertFn, message, 3*time.Second)
+}
+
+func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	lastErr := errors.Errorf("no resource found for matching function")
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			msg := GetLastMessageMatching(messages, matchResourceFn)
+			if msg != nil {
+				lastErr = assertFn(msg.GetEvent())
+				if lastErr == nil {
+					return
+				}
+			}
+		}
+	}
 }
 
 // LastDeploymentStateWithTimeout checks that a deployment reaches a state asserted by `assertion`. If the deployment does not reach
@@ -501,6 +529,15 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 			}
 		}
 	}
+}
+
+func GetLastMessageMatching(messages []*central.MsgFromSensor, matchFn MatchResource) *central.MsgFromSensor {
+	for i := len(messages) - 1; i >= 0; i-- {
+		if matchFn(messages[i]) {
+			return messages[i]
+		}
+	}
+	return nil
 }
 
 // GetLastMessageWithDeploymentName find most recent sensor messages by namespace and deployment name

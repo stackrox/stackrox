@@ -5,11 +5,13 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/tests/resource"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	v12 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
@@ -61,13 +63,28 @@ func assertPermissionLevel(permissionLevel storage.PermissionLevel) resource.Ass
 
 }
 
+func assertBindingHasRoleId(roleId string) resource.AssertFuncAny {
+	return func(obj interface{}) error {
+		evt, ok := obj.(*central.SensorEvent)
+		if !ok {
+			return errors.Errorf("not an event")
+		}
+		binding := evt.GetBinding()
+		if binding.GetRoleId() != roleId {
+			return errors.Errorf("expected \"%s\" but found \"%s\"", roleId, binding.GetRoleId())
+		}
+		return nil
+	}
+}
+
 func (s *RoleDependencySuite) Test_PermutationTest() {
+	s.testContext.GetFakeCentral().ClearReceivedBuffer()
 	s.testContext.RunWithResourcesPermutation(
 		[]resource.YamlTestFile{
 			NginxDeployment,
 			NginxRole,
 			NginxRoleBinding,
-		}, "Role Dependency", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		}, "RoleDependency", func(t *testing.T, testC *resource.TestContext, objects map[string]k8s.Object) {
 			testC.LastDeploymentState("nginx-deployment",
 				assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
 				"Permission level has to be elevated in namespace")
@@ -76,7 +93,47 @@ func (s *RoleDependencySuite) Test_PermutationTest() {
 	)
 }
 
+func matchBinding(namespace, id string) resource.MatchResource {
+	return func(resource *central.MsgFromSensor) bool {
+		if resource.GetEvent() == nil || resource.GetEvent().GetBinding() == nil {
+			return false
+		}
+		return resource.GetEvent().GetBinding().GetId() == id && resource.GetEvent().GetBinding().GetNamespace() == namespace
+	}
+}
+
+func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
+	s.testContext.RunBare("Binding should get an update if role gets created after", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		deleteDep, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxDeployment)
+		defer utils.IgnoreError(deleteDep)
+		require.NoError(t, err)
+
+		var binding v12.RoleBinding
+		deleteRoleBinding, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRoleBinding, &binding)
+		defer utils.IgnoreError(deleteRoleBinding)
+		require.NoError(t, err)
+
+		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleId(""), "No RoleID")
+
+		var role v12.Role
+		deleteRole, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRole, &role)
+		defer utils.IgnoreError(deleteRole)
+		require.NoError(t, err)
+
+		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleId(string(role.GetUID())), "Has RoleID")
+
+		testC.GetFakeCentral().ClearReceivedBuffer()
+
+		utils.IgnoreError(deleteRole)
+		utils.IgnoreError(deleteRoleBinding)
+		utils.IgnoreError(deleteDep)
+
+		testC.GetFakeCentral().ClearReceivedBuffer()
+	})
+}
+
 func (s *RoleDependencySuite) Test_GroupSubjects() {
+	s.T().Skip()
 	s.testContext.RunWithResources(
 		[]resource.YamlTestFile{
 			NginxDeployment,

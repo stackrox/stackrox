@@ -173,3 +173,17 @@ func (rs *storeImpl) FindSubjectForRole(namespace, roleName string) []namespaced
 
 	return matched
 }
+
+func (rs *storeImpl) FindBindingIdForRole(namespace, roleName string) []string {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	var matched []string
+	for binding, ref := range rs.bindings {
+		if ref.roleRef.name == roleName && ref.roleRef.namespace == namespace {
+			matched = append(matched, binding.uid)
+		}
+	}
+
+	return matched
+}

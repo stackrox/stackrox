@@ -51,6 +51,8 @@ func (r *resolverImpl) runResolver() {
 func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	if msg.DeploymentReference != nil {
 		referenceIds := msg.DeploymentReference(r.deploymentStore)
+		log.Debugw("Processing deployment reference",
+			"Deployment IDs", referenceIds)
 
 		for _, id := range referenceIds {
 			preBuiltDeployment := r.deploymentStore.Get(id)
