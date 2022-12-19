@@ -9,7 +9,7 @@ import {
 
 import {
     clickDeploymentTabWithFixture,
-    interactAndWaitForViolationsResponses,
+    interactAndWaitForSortedViolationsResponses,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
     visitViolations,
@@ -163,13 +163,9 @@ describe('Violations', () => {
         cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
 
         // 1. Sort decending by the Severity column.
-        interactAndWaitForViolationsResponses(() => {
+        interactAndWaitForSortedViolationsResponses(() => {
             cy.get(thSelector).click();
-        });
-        cy.location('search').should(
-            'eq',
-            '?sortOption[field]=Severity&sortOption[direction]=desc'
-        );
+        }, 'desc');
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
         cy.get(tdSelector).then((items) => {
@@ -177,10 +173,9 @@ describe('Violations', () => {
         });
 
         // 2. Sort ascending by the Severity column.
-        interactAndWaitForViolationsResponses(() => {
+        interactAndWaitForSortedViolationsResponses(() => {
             cy.get(thSelector).click();
-        });
-        cy.location('search').should('eq', '?sortOption[field]=Severity&sortOption[direction]=asc');
+        }, 'asc');
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
         cy.get(tdSelector).then((items) => {
