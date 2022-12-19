@@ -279,6 +279,7 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("COMPATIBILITY")
     @Tag("NetworkFlowVisualization")
     def "Verify connections between StackRox Services"() {
         when:
@@ -308,6 +309,7 @@ class NetworkFlowTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("COMPATIBILITY")
     @Tag("NetworkFlowVisualization")
     def "Verify connections can be detected: #protocol"() {
         given:
@@ -339,6 +341,7 @@ class NetworkFlowTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("COMPATIBILITY")
     @Tag("NetworkFlowVisualization")
     def "Verify listen port availability matches feature flag: #targetDeployment"() {
         given:

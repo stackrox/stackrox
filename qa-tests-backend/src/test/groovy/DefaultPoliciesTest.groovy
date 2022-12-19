@@ -3,8 +3,8 @@ import static Services.waitForViolation
 
 import java.util.stream.Collectors
 
+import common.Constants
 import io.grpc.StatusRuntimeException
-
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
@@ -166,6 +166,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("SMOKE")
+    @Tag("COMPATIBILITY")
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:
@@ -248,6 +249,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("SMOKE")
+    @Tag("COMPATIBILITY")
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"
@@ -259,6 +261,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("COMPATIBILITY")
     @Retry(count = 0)
     @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
@@ -380,6 +383,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify risk factors on struts deployment: #riskFactor"() {
         given:
         "Check Feature Flags"
@@ -445,6 +449,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
@@ -541,6 +546,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
@@ -575,6 +581,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify that alert groups API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
