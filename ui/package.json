@@ -19,7 +19,6 @@
         "node": ">=12.13.0"
     },
     "scripts": {
-        "postinstall": "./scripts/patch-deps.sh",
         "lerna:version": "lerna version --no-git-tag-version --no-push --yes",
         "postlerna:version": "chalk bold red 'Please commit the changes and create a PR!'",
         "prelerna:publish": "if [ ! \"$CI\" = true ]; then chalk bold red 'Not expected to be used outside of CI context.'; exit 1; fi",
@@ -49,7 +48,9 @@
     },
     "devDependencies": {
         "chalk-cli": "^5.0.0",
-        "lerna": "^3.22.1",
-        "postinstall-postinstall": "^2.1.0"
+        "lerna": "^3.22.1"
+    },
+    "dependencies": {
+        "@typescript-eslint/parser": "^4.32.0"
     }
 }
