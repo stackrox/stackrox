@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
-	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -25,10 +24,8 @@ type Service interface {
 
 // New returns a new instance of service.
 func New() Service {
-	return &serviceImpl{db: globaldb.GetPostgres()}
-}
-
-// NewForPostgresTestOnly returns a new instance of service with a test Postgres connection.
-func NewForPostgresTestOnly(_ *testing.T, pool *pgxpool.Pool) Service {
-	return &serviceImpl{db: pool}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return &serviceImpl{db: globaldb.GetPostgres()}
+	}
+	return &serviceImpl{}
 }

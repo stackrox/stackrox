@@ -11,6 +11,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/suite"
@@ -119,17 +120,23 @@ func verifySignature(cert *x509.Certificate, resp *v1.TLSChallengeResponse) erro
 }
 
 func (s *serviceImplTestSuite) TestMetadata() {
-	tp := pgtest.ForT(s.T())
-	service := serviceImpl{db: tp.Pool}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		tp := pgtest.ForT(s.T())
+		service := serviceImpl{db: tp.Pool}
 
-	metadata, err := service.GetMetadata(context.Background(), nil)
-	log.Infof("SHREWS -- %v", metadata)
-	s.NoError(err)
-	s.True(metadata.DbAvailable)
+		metadata, err := service.GetMetadata(context.Background(), nil)
+		s.NoError(err)
+		s.True(metadata.DbAvailable)
 
-	tp.Pool.Close()
-	metadata, err = service.GetMetadata(context.Background(), nil)
-	log.Infof("SHREWS -- %v", metadata)
-	s.NoError(err)
-	s.False(metadata.DbAvailable)
+		tp.Pool.Close()
+		metadata, err = service.GetMetadata(context.Background(), nil)
+		s.NoError(err)
+		s.False(metadata.DbAvailable)
+	} else {
+		service := serviceImpl{}
+
+		metadata, err := service.GetMetadata(context.Background(), nil)
+		s.NoError(err)
+		s.True(metadata.DbAvailable)
+	}
 }
