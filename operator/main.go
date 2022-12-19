@@ -121,7 +121,7 @@ func run() error {
 		if err != nil {
 			return errors.Wrapf(err, "unable to parse PROFILING_THRESHOLD set to '%s' as a float", thresholdS)
 		}
-		heapProfiler := profiling.NewHeapProfiler(thresholdF, uint64(memLimit.IntegerSetting()), heapDumpDir.Setting())
+		heapProfiler := profiling.NewHeapProfiler(thresholdF, uint64(memLimit.IntegerSetting()), heapDumpDir.Setting(), profiling.DefaultHeapProfilerBackoff)
 		ctx, cancelProfiler := context.WithCancel(context.Background())
 		go heapProfiler.DumpHeapOnThreshhold(ctx, time.Second)
 		defer cancelProfiler()

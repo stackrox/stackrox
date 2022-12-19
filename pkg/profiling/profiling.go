@@ -15,15 +15,14 @@ import (
 var (
 	log                   = logging.LoggerForModule()
 	heapdumpSubfolderName = "heapdump"
-	// time to wait between heap dumps when hitting threshold in seconds
-	defaultHeapProfilerBackoff = 30
+	// DefaultHeapProfilerBackoff is the default setting for the time to wait between heap dumps when hitting threshold in seconds
+	DefaultHeapProfilerBackoff = time.Second * 30
 )
 
 // HeapProfiler is used to start a ticker that periodically checks if heap memory consumption
 // exceed the thresholdFraction, if so the heap gets dumped to a file in Directory subject to Backoff.
 type HeapProfiler struct {
-	// Backoff limits the maximum frequency of creating heap dumps
-	Backoff           time.Duration
+	backoff           time.Duration
 	thresholdFraction float64
 	limitBytes        uint64
 	directory         *fifoDir
@@ -34,7 +33,8 @@ type HeapProfiler struct {
 // NewHeapProfiler creates a new instance of HeapProfiler setting the given values.
 // It appends a subdirectory to the directory to prevent acidental deletion of user files.
 // If 0 is provides as limitBytes the limitBytes is set to 1, thus the heap dump will always run.
-func NewHeapProfiler(thresholdFraction float64, limitBytes uint64, directory string) *HeapProfiler {
+// backoff limits the maximum frequency of creating heap dumps
+func NewHeapProfiler(thresholdFraction float64, limitBytes uint64, directory string, backoff time.Duration) *HeapProfiler {
 	// default to 1 to prevent division through 0
 	if limitBytes == 0 {
 		limitBytes = 1
@@ -48,7 +48,7 @@ func NewHeapProfiler(thresholdFraction float64, limitBytes uint64, directory str
 	return &HeapProfiler{
 		thresholdFraction: thresholdFraction,
 		limitBytes:        limitBytes,
-		Backoff:           time.Second * time.Duration(defaultHeapProfilerBackoff),
+		backoff:           backoff,
 		directory:         fd,
 	}
 }
@@ -70,7 +70,7 @@ func (p *HeapProfiler) dumpHeapOnThreshhold(ctx context.Context, runCheck <-chan
 			var mem runtime.MemStats
 			runtime.ReadMemStats(&mem)
 			if float64(mem.Alloc)/float64(p.limitBytes) > p.thresholdFraction {
-				if time.Since(p.lastDump) < p.Backoff {
+				if time.Since(p.lastDump) < p.backoff {
 					continue // this will skip all code below and jump to start of the for loop
 				}
 				fileName := fmt.Sprintf("%s.dump", t.Format("20060102T15-04-05"))

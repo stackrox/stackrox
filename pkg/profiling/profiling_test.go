@@ -15,7 +15,7 @@ func TestHeapDump(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	var limitBytes int64 = 2 // to be sure the test blows this limit
-	p := NewHeapProfiler(0.80, uint64(limitBytes), tmpDir)
+	p := NewHeapProfiler(0.80, uint64(limitBytes), tmpDir, time.Duration(DefaultHeapProfilerBackoff)*time.Second)
 	runCheck := make(chan time.Time)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	now := time.Now()

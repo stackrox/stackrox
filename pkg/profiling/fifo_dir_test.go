@@ -21,7 +21,7 @@ func Test_fifoDir(t *testing.T) {
 
 	for _, fileName := range filesToCreate {
 		_, err := fs.Create(fileName)
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 100) // to prevent flakes due to inconsistent ordering in case FS time resolution is low
 		require.NoError(t, err, "creating file: %s", fileName)
 	}
 
