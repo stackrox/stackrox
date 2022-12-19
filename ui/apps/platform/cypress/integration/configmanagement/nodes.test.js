@@ -1,5 +1,8 @@
+import withAuth from '../../helpers/basicAuth';
+import { triggerScan } from '../../helpers/compliance';
+
 import {
-    renderListAndSidePanel,
+    visitConfigurationManagementEntityInSidePanel,
     navigateToSingleEntityPage,
     hasCountWidgetsFor,
     clickOnCountWidget,
@@ -9,9 +12,7 @@ import {
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
-} from '../../helpers/configWorkflowUtils';
-import withAuth from '../../helpers/basicAuth';
-import { triggerScan } from '../../helpers/compliance';
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'nodes';
 
@@ -19,7 +20,7 @@ describe('Configuration Management Nodes', () => {
     withAuth();
 
     it('should render the nodes list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
     });
 
     it('should render the nodes list and open the side panel with the clicked cluster value', () => {
@@ -27,29 +28,29 @@ describe('Configuration Management Nodes', () => {
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'clusters');
     });
 
     it('should take you to a nodes single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should show the related cluster widget', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Controls']);
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['controls']);
     });
@@ -57,7 +58,7 @@ describe('Configuration Management Nodes', () => {
     it('should click on the controls count widget in the entity page and show the controls tab', () => {
         triggerScan(); // because test assumes that scan results are available
 
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('controls', 'entityList');
     });
@@ -66,13 +67,13 @@ describe('Configuration Management Nodes', () => {
         const entitiesKey2 = 'controls';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
