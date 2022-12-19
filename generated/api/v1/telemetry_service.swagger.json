@@ -11,6 +11,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/telemetry/config": {
+      "get": {
+        "operationId": "TelemetryService_GetConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/centralTelemetryConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "TelemetryService"
+        ]
+      }
+    },
     "/v1/telemetry/configure": {
       "get": {
         "operationId": "TelemetryService_GetTelemetryConfiguration",
@@ -65,6 +87,23 @@
     }
   },
   "definitions": {
+    "centralTelemetryConfig": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "title": "API user ID hash:"
+        },
+        "endpoint": {
+          "type": "string",
+          "title": "An empty endpoint means using default endpoint:"
+        },
+        "storageKeyV1": {
+          "type": "string",
+          "title": "Telemetry storage service key:"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {

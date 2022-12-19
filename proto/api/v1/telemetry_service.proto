@@ -6,6 +6,7 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "storage/telemetry.proto";
 import "api/v1/empty.proto";
+import "internalapi/central/telemetry.proto";
 
 package v1;
 
@@ -24,6 +25,12 @@ service TelemetryService {
         option (google.api.http) = {
             put: "/v1/telemetry/configure"
             body: "*"
+        };
+    }
+
+    rpc GetConfig (Empty) returns (central.TelemetryConfig) {
+        option (google.api.http) = {
+            get: "/v1/telemetry/config"
         };
     }
 }
