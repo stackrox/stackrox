@@ -113,7 +113,7 @@ func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
 func (cfg *Config) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
-		rp := getGrpcRequestDetails(ctx, err, info, req)
+		rp := getGRPCRequestDetails(ctx, err, info, req)
 		go cfg.track(rp)
 		return resp, err
 	}
@@ -125,7 +125,7 @@ func (cfg *Config) GetHTTPInterceptor() httputil.HTTPInterceptor {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
 			handler.ServeHTTP(statusTrackingWriter, r)
-			rp := getHttpRequestDetails(r.Context(), r, statusCodeToError(statusTrackingWriter.GetStatusCode()))
+			rp := getHTTPRequestDetails(r.Context(), r, statusCodeToError(statusTrackingWriter.GetStatusCode()))
 			go cfg.track(rp)
 		})
 	}

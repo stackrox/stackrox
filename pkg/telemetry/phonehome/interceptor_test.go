@@ -117,7 +117,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
 
-	rp := getGrpcRequestDetails(ctx, err, &grpc.UnaryServerInfo{
+	rp := getGRPCRequestDetails(ctx, err, &grpc.UnaryServerInfo{
 		FullMethod: testRP.Path,
 	}, "request")
 	s.Equal(testRP.Path, rp.Path)
@@ -141,7 +141,7 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 	req.Header.Add("User-Agent", testRP.UserAgent)
 
 	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID, nil)
-	rp := getHttpRequestDetails(ctx, req, err)
+	rp := getHTTPRequestDetails(ctx, req, err)
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)

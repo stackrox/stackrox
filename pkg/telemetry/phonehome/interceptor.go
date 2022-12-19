@@ -33,7 +33,7 @@ func (cfg *Config) track(rp *RequestParams) {
 	}
 }
 
-func getGrpcRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInfo, req any) *RequestParams {
+func getGRPCRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInfo, req any) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
@@ -49,7 +49,7 @@ func getGrpcRequestDetails(ctx context.Context, err error, info *grpc.UnaryServe
 	}
 }
 
-func getHttpRequestDetails(ctx context.Context, r *http.Request, err error) *RequestParams {
+func getHTTPRequestDetails(ctx context.Context, r *http.Request, err error) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
