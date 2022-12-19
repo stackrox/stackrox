@@ -876,6 +876,7 @@ get_pr_details() {
         [[ "${pull_request}" == "null" ]] && _not_a_PR
     elif is_GITHUB_ACTIONS; then
         pull_request="$(jq -r .pull_request.number "${GITHUB_EVENT_PATH}")" || _not_a_PR
+        [[ "${pull_request}" == "null" ]] && _not_a_PR
         org="${GITHUB_REPOSITORY_OWNER}"
         repo="${GITHUB_REPOSITORY#*/}"
     else
