@@ -39,7 +39,6 @@ func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
 		props["Code"] = rp.Code
 		props["User-Agent"] = rp.UserAgent
 		props["Method"] = rp.GetMethod()
-		props["Protocol"] = rp.GetProtocol()
 		return true
 	}
 	return false
@@ -104,6 +103,5 @@ func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["Code"] = rp.Code
 	props["User-Agent"] = rp.UserAgent
 	props["Method"] = rp.GetMethod()
-	props["Protocol"] = rp.GetProtocol()
 	return true
 }

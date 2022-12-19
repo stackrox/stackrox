@@ -17,14 +17,6 @@ type RequestParams struct {
 	HTTPReq   *http.Request
 }
 
-// GetProtocol returns HTTP for requests with HTTP request and gRPC otherwise.
-func (rp *RequestParams) GetProtocol() string {
-	if rp.HTTPReq != nil {
-		return "HTTP"
-	}
-	return "gRPC"
-}
-
 // GetMethod returns the HTTP method for HTTP requests, or the method matching
 // the API path prefix for gRPC requests. Default: GET.
 func (rp *RequestParams) GetMethod() string {

@@ -7,21 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRequestParams_GetProtocol(t *testing.T) {
-	rp := &RequestParams{
-		HTTPReq: &http.Request{},
-	}
-	assert.Equal(t, "HTTP", rp.GetProtocol())
-
-	rp = &RequestParams{
-		GRPCReq: &http.Request{},
-	}
-	assert.Equal(t, "gRPC", rp.GetProtocol())
-
-	rp = &RequestParams{}
-	assert.Equal(t, "gRPC", rp.GetProtocol())
-}
-
 func TestRequestParams_GetMethod(t *testing.T) {
 	methods := map[string]string{
 		"Get":     http.MethodGet,
