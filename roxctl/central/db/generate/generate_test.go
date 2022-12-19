@@ -3,6 +3,7 @@ package generate
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -50,21 +51,19 @@ type testCaseType struct {
 }
 
 func TestCentralDBGenerateCli(t *testing.T) {
-	suite.Run(t, new(CentralDBGenerateCliTestSuite))
+	suite.Run(t, new(centralDBGenerateCliTestSuite))
 }
 
-type CentralDBGenerateCliTestSuite struct {
+type centralDBGenerateCliTestSuite struct {
 	suite.Suite
 }
 
-func (s *CentralDBGenerateCliTestSuite) SetupTest() {
+func (s *centralDBGenerateCliTestSuite) SetupTest() {
 	testutils.SetMainVersion(s.T(), "3.74.0.0")
 	testbuildinfo.SetForTest(s.T())
 }
 
-func (s *CentralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
-	baseCommand := []string{}
-
+func (s *centralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 	testCases := []testCaseType{
 		{
 			description:      "generate usage",
@@ -197,8 +196,9 @@ func (s *CentralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 		c := testCase
 		cfg = renderer.Config{}
 		s.Run(c.description, func() {
+			s.Require().NoError(os.RemoveAll(defaultCentralDBBundle), os.RemoveAll(testOutputDir))
 			rootCmd := s.createRootCommand(c)
-			cmd, output, errOut, err := executeCommand(rootCmd, append(baseCommand, c.args...)...)
+			cmd, output, errOut, err := executeCommand(rootCmd, c.args...)
 			s.Assert().NotNil(cmd)
 			s.Assert().Equal(c.cmdUse, cmd.Use)
 			if c.args[len(c.args)-1] == "-h" || c.checkUsage {
@@ -227,7 +227,7 @@ func (s *CentralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 	}
 }
 
-func (s *CentralDBGenerateCliTestSuite) createRootCommand(testCase testCaseType) *cobra.Command {
+func (s *centralDBGenerateCliTestSuite) createRootCommand(testCase testCaseType) *cobra.Command {
 	genCmd := Command(env.CLIEnvironment())
 	common.PatchPersistentPreRunHooks(genCmd)
 	if testCase.addError == downloadError {
@@ -256,7 +256,7 @@ func (s *CentralDBGenerateCliTestSuite) createRootCommand(testCase testCaseType)
 	return genCmd
 }
 
-func (s *CentralDBGenerateCliTestSuite) setRunE(testCase testCaseType, root *cobra.Command, subCmds ...string) {
+func (s *centralDBGenerateCliTestSuite) setRunE(testCase testCaseType, root *cobra.Command, subCmds ...string) {
 	command := root
 	for _, subCmd := range subCmds {
 		command = s.lookUpCommand(command.Commands(), subCmd)
@@ -273,7 +273,7 @@ func (s *CentralDBGenerateCliTestSuite) setRunE(testCase testCaseType, root *cob
 	}
 }
 
-func (s *CentralDBGenerateCliTestSuite) lookUpCommand(cmds []*cobra.Command, target string) *cobra.Command {
+func (s *centralDBGenerateCliTestSuite) lookUpCommand(cmds []*cobra.Command, target string) *cobra.Command {
 	for _, cmd := range cmds {
 		if cmd.Use == target {
 			return cmd
@@ -283,7 +283,7 @@ func (s *CentralDBGenerateCliTestSuite) lookUpCommand(cmds []*cobra.Command, tar
 	return nil
 }
 
-func (s *CentralDBGenerateCliTestSuite) parseUsage(output string) (usage string, commands map[string][]string, flags map[string][]string) {
+func (s *centralDBGenerateCliTestSuite) parseUsage(output string) (usage string, commands map[string][]string, flags map[string][]string) {
 	lines := strings.Split(output, "\n")
 	commands = make(map[string][]string)
 	flags = make(map[string][]string)
@@ -315,7 +315,7 @@ func (s *CentralDBGenerateCliTestSuite) parseUsage(output string) (usage string,
 	return
 }
 
-func (s *CentralDBGenerateCliTestSuite) verifyConfig(c testCaseType, config *renderer.Config) {
+func (s *centralDBGenerateCliTestSuite) verifyConfig(c testCaseType, config *renderer.Config) {
 	// Do not check config in case of error
 	if c.addError != noError || c.errContains != "" {
 		return
