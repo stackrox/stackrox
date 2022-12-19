@@ -22,13 +22,6 @@ export const selectors = {
         enforcementTab: 'li.pf-c-tabs__item:contains("Enforcement")',
         deploymentTab: 'li.pf-c-tabs__item:contains("Deployment")',
         policyTab: 'li.pf-c-tabs__item:contains("Policy")',
-        tags: {
-            input: '[data-testid="violation-tags"] input',
-            values: '[data-testid="violation-tags"] .pf-c-chip-group div.pf-c-chip',
-            removeValueButton: (tag) =>
-                `[data-testid="violation-tags"] div.pf-c-chip:contains(${tag}) button`,
-            clearAllTagsButton: '[data-testid="violation-tags"] .pf-c-select__toggle-clear',
-        },
     },
     enforcement: {
         detailMessage: '[data-testid="enforcement-detail-message"]',
@@ -45,16 +38,6 @@ export const selectors = {
     },
     table: {
         rows: 'tbody tr',
-    },
-    modal: {
-        excludeConfirmation: '[data-testid="exclude-confirmation-modal"]',
-        tagConfirmation: {
-            input: '[data-testid="tag-confirmation-modal"] input',
-            options: '[data-testid="tag-confirmation-modal"] li button',
-            cancelBtn: 'footer button:contains("Cancel")',
-            confirmBtn: 'footer button:contains("Confirm")',
-        },
-        resolveConfirmation: '[data-testid="resolve-confirmation-modal"]',
     },
     viewDeploymentsButton: 'button:contains("View Deployments")',
     clusterFieldInModal: '.ReactModalPortal > .ReactModal__Overlay span:contains("Cluster")',
