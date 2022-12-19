@@ -1,8 +1,13 @@
-import { interactAndWaitForResponses, interceptRequests, waitForResponses } from './request';
+import {
+    interactAndWaitForResponses,
+    interceptRequests,
+    waitForResponses,
+} from '../../helpers/request';
+
 import {
     visitSystemConfiguration,
     visitSystemConfigurationWithStaticResponseForPermissions,
-} from './systemConfig';
+} from '../systemConfig/systemConfig.helpers';
 
 // credentialexpiry
 

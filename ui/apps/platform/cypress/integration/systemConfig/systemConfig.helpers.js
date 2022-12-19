@@ -1,6 +1,7 @@
-import { visitFromLeftNavExpandable } from './nav';
-import { interactAndWaitForResponses } from './request';
-import { visit, visitWithStaticResponseForPermissions } from './visit';
+import { selectors as topNavSelectors } from '../../constants/TopNavigation';
+import { visitFromLeftNavExpandable } from '../../helpers/nav';
+import { interactAndWaitForResponses } from '../../helpers/request';
+import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
 
 const basePath = '/main/systemconfig';
 
@@ -59,4 +60,11 @@ export function saveSystemConfiguration() {
     interactAndWaitForResponses(() => {
         cy.get('button:contains("Save")').click();
     }, routeMatcherMapForPUT);
+}
+
+// interact
+
+export function logOut() {
+    cy.get(topNavSelectors.menuButton).click();
+    cy.get(topNavSelectors.menuList.logoutButton).click();
 }

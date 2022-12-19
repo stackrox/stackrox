@@ -1,15 +1,17 @@
-import selectors, { text } from '../constants/SystemConfigPage';
-import withAuth from '../helpers/basicAuth';
+import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
+
 import {
+    logOut,
     saveSystemConfiguration,
     visitSystemConfiguration,
     visitSystemConfigurationFromLeftNav,
     visitSystemConfigurationWithStaticResponseForPermissions,
-} from '../helpers/systemConfig';
-import { getRegExpForTitleWithBranding } from '../helpers/title';
+} from './systemConfig.helpers';
+import { selectors, text } from './systemConfig.selectors';
 
 function editBaseConfig(type) {
-    cy.get(selectors.pageHeader.editButton).click();
+    cy.get('button:contains("Edit")').click();
 
     cy.get(selectors[type].config.toggle).should('exist');
     cy.get(selectors[type].config.toggle).check({ force: true }); // force for PatternFly Switch element
@@ -28,7 +30,7 @@ function editBannerConfig(type) {
 }
 
 function disableConfig(type) {
-    cy.get(selectors.pageHeader.editButton).click();
+    cy.get('button:contains("Edit")').click();
     cy.get(selectors[type].config.toggle).uncheck({ force: true }); // force for PatternFly Switch element
 
     saveSystemConfiguration();
@@ -69,7 +71,7 @@ describe('System Configuration', () => {
 
         visitSystemConfigurationWithStaticResponseForPermissions(staticResponseForPermissions);
 
-        cy.get(selectors.pageHeader.editButton).should('not.exist');
+        cy.get('button:contains("Edit")').should('not.exist');
     });
 
     it('should allow the user to set data retention to "never delete"', () => {
@@ -77,7 +79,7 @@ describe('System Configuration', () => {
 
         const neverDeletedText = 'Never deleted';
 
-        cy.get(selectors.pageHeader.editButton).click();
+        cy.get('button:contains("Edit")').click();
 
         // If you reran the test without setting these random values first, it won’t save.
         // The save button is disabled when the form is pristine (ie. already 0)
@@ -93,7 +95,7 @@ describe('System Configuration', () => {
         saveSystemConfiguration();
 
         // Change input values to 0 to set it to "never delete"
-        cy.get(selectors.pageHeader.editButton).click();
+        cy.get('button:contains("Edit")').click();
 
         cy.get(getNumericInputByLabel('All runtime violations')).clear().type(0);
         cy.get(getNumericInputByLabel('Runtime violations for deleted deployments'))
@@ -151,8 +153,9 @@ describe('System Configuration', () => {
         saveSystemConfiguration();
 
         cy.get(selectors.loginNotice.state).contains('Enabled');
-        cy.get(selectors.navLinks.topNav).click();
-        cy.get(selectors.navLinks.logout).click();
+
+        logOut();
+
         cy.get(selectors.loginNotice.banner).should('exist');
     });
 });
