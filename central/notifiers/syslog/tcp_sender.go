@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/url"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -82,7 +83,17 @@ func validateRemoteConfig(endpointConfig *storage.Syslog_TCPConfig) (string, err
 		return "", errors.Errorf("invalid port number %d must be between 1 and 65535", port)
 	}
 
-	return fmt.Sprintf("%s:%d", endpointConfig.GetHostname(), endpointConfig.GetPort()), nil
+	hostName := fmt.Sprintf("%s:%d", endpointConfig.GetHostname(), endpointConfig.GetPort())
+
+	sysURL := fmt.Sprintf("tcp://%s", hostName)
+
+	_, err := url.ParseRequestURI(sysURL)
+
+	if err != nil {
+		return "", errors.New("invalid host name")
+	}
+
+	return hostName, nil
 }
 
 func (s *tcpSender) dialWithRetry() (net.Conn, error) {

@@ -56,3 +56,12 @@ message PullTelemetryDataResponse {
     string request_id                  = 1;
     TelemetryResponsePayload payload   = 2;
 }
+
+message TelemetryConfig {
+    // API user ID hash:
+    string user_id        = 1;
+    // An empty endpoint means using default endpoint:
+    string endpoint       = 2;
+    // Telemetry storage service key:
+    string storage_key_v1 = 3;
+}

@@ -1,5 +1,7 @@
+import withAuth from '../../helpers/basicAuth';
+
 import {
-    renderListAndSidePanel,
+    visitConfigurationManagementEntityInSidePanel,
     navigateToSingleEntityPage,
     hasCountWidgetsFor,
     clickOnCountWidget,
@@ -9,8 +11,7 @@ import {
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
-} from '../../helpers/configWorkflowUtils';
-import withAuth from '../../helpers/basicAuth';
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'deployments';
 
@@ -18,7 +19,7 @@ describe('Configuration Management Deployments', () => {
     withAuth();
 
     it('should render the deployments list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
     });
 
     it('should open the side panel to show the same number of secrets when the secrets link is clicked', () => {
@@ -26,17 +27,17 @@ describe('Configuration Management Deployments', () => {
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'clusters');
     });
 
     it('should take you to a deployments single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should show the related cluster, namespace, and service account widgets', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
         hasRelatedEntityFor('Namespace');
@@ -44,19 +45,19 @@ describe('Configuration Management Deployments', () => {
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Images', 'Secrets']);
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['images', 'secrets']);
     });
 
     it('should click on the images count widget in the entity page and show the images tab', () => {
-        renderListAndSidePanel(entitiesKey, 'collector');
+        visitConfigurationManagementEntityInSidePanel(entitiesKey, 'collector');
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('images', 'entityList');
     });
@@ -65,13 +66,13 @@ describe('Configuration Management Deployments', () => {
         const entitiesKey2 = 'images';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
@@ -80,13 +81,13 @@ describe('Configuration Management Deployments', () => {
         const entitiesKey2 = 'secrets';
 
         it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
+            visitConfigurationManagementEntityInSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });

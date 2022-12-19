@@ -84,6 +84,7 @@ function DeploymentSelector({
             variant={SelectVariant.checkbox}
             maxHeight="275px"
             hasInlineFilter
+            isGrouped
         >
             {deploymentSelectOptions}
         </Select>

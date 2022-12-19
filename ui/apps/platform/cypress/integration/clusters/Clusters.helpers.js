@@ -1,30 +1,41 @@
-import * as api from '../constants/apiEndpoints';
-import { selectors } from '../constants/ClustersPage';
+import { visitFromLeftNavExpandable } from '../../helpers/nav';
+import { interceptRequests, waitForResponses } from '../../helpers/request';
+import { visit } from '../../helpers/visit';
 
-import { visitFromLeftNavExpandable } from './nav';
-import { interceptRequests, waitForResponses } from './request';
-import { visit } from './visit';
+export const sensorUpgradesConfigAlias = 'sensorupgrades/config';
+export const clustersAlias = 'clusters';
+export const clusterDefaultsAlias = 'cluster-defaults';
 
-const routeMatcherMap = {
-    'sensorupgrades/config': {
+const routeMatcherMapForClusterDefaults = {
+    [clusterDefaultsAlias]: {
         method: 'GET',
-        url: api.clusters.sensorUpgradesConfig,
+        url: '/v1/cluster-defaults',
     },
-    clusters: {
+};
+
+const routeMatcherMapForClusters = {
+    [sensorUpgradesConfigAlias]: {
         method: 'GET',
-        url: api.clusters.list,
+        url: '/v1/sensorupgrades/config',
     },
-    'cluster-defaults': {
+    [clustersAlias]: {
         method: 'GET',
-        url: api.clusters.clusterDefaults,
+        url: 'v1/clusters',
     },
+    ...routeMatcherMapForClusterDefaults,
 };
 
 const basePath = '/main/clusters';
 
 const title = 'Clusters';
 
-// Navigation
+// assert
+
+export function assertClusterNameInSidePanel(clusterName) {
+    cy.get(`[data-testid="clusters-side-panel-header"]:contains("${clusterName}")`);
+}
+
+// visit
 
 /**
  * Visit clusters by interaction from another container.
@@ -34,53 +45,59 @@ const title = 'Clusters';
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function interactAndVisitClusters(interactionCallback, staticResponseMap) {
-    interceptRequests(routeMatcherMap, staticResponseMap);
+    interceptRequests(routeMatcherMapForClusters, staticResponseMap);
 
     interactionCallback();
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
 
-    waitForResponses(routeMatcherMap);
+    waitForResponses(routeMatcherMapForClusters);
 }
 
 export function visitClustersFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', title, routeMatcherMap);
+    visitFromLeftNavExpandable('Platform Configuration', title, routeMatcherMapForClusters);
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
 }
 
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitClusters(staticResponseMap) {
-    visit(basePath, routeMatcherMap, staticResponseMap);
+    visit(basePath, routeMatcherMapForClusters, staticResponseMap);
 
     cy.get(`h1:contains("${title}")`);
 }
 
 export function visitClustersWithFixture(fixturePath) {
     visitClusters({
-        clusters: { fixture: fixturePath },
+        [clustersAlias]: { fixture: fixturePath },
     });
 }
 
+export const clusterAlias = 'clusters/id';
+
+/**
+ * @param {string} clusterId
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitClusterById(clusterId, staticResponseMap) {
-    const routeMatcherMapClusterById = {
-        'cluster-defaults': {
+    const routeMatcherMapForClusterById = {
+        ...routeMatcherMapForClusterDefaults,
+        [clusterAlias]: {
             method: 'GET',
-            url: api.clusters.clusterDefaults,
-        },
-        cluster: {
-            method: 'GET',
-            url: `${api.clusters.list}/${clusterId}`,
+            url: `/v1/clusters/${clusterId}`,
         },
     };
-    visit(`${basePath}/${clusterId}`, routeMatcherMapClusterById, staticResponseMap);
+    visit(`${basePath}/${clusterId}`, routeMatcherMapForClusterById, staticResponseMap);
 
     cy.get(`h1:contains("${title}")`);
 }
 
 export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString) {
-    cy.intercept('GET', api.metadata, {
+    cy.intercept('GET', 'v1/metadata', {
         body: metadata,
     }).as('metadata');
 
@@ -99,10 +116,10 @@ export function visitClusterByNameWithFixture(clusterName, fixturePath) {
         const clusterRetentionInfo = clusterIdToRetentionInfo[cluster.id] ?? null;
 
         visitClusterById(cluster.id, {
-            cluster: { body: { cluster, clusterRetentionInfo } },
+            [clusterAlias]: { body: { cluster, clusterRetentionInfo } },
         });
 
-        cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
+        assertClusterNameInSidePanel(clusterName);
     });
 }
 
@@ -113,7 +130,7 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
     datetimeISOString
 ) {
     cy.fixture(fixturePath).then(({ clusters, clusterIdToRetentionInfo }) => {
-        cy.intercept('GET', api.metadata, {
+        cy.intercept('GET', 'v1/metadata', {
             body: metadata,
         }).as('metadata');
 
@@ -125,33 +142,10 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
         visitClusterById(cluster.id, {
-            cluster: { body: { cluster, clusterRetentionInfo } },
+            [clusterAlias]: { body: { cluster, clusterRetentionInfo } },
         });
 
         cy.wait(['@metadata']);
-        cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
+        assertClusterNameInSidePanel(clusterName);
     });
-}
-
-export function visitDashboardWithNoClusters() {
-    cy.intercept('POST', api.graphql('summary_counts'), {
-        body: {
-            data: {
-                clusterCount: 0,
-                nodeCount: 3,
-                violationCount: 20,
-                deploymentCount: 35,
-                imageCount: 31,
-                secretCount: 15,
-            },
-        },
-    }).as('summary_counts');
-    cy.intercept('GET', api.clusters.list, {
-        clusters: [],
-    }).as('clusters');
-
-    // visitMainDashboard(); // with a count of 0 clusters, app should redirect to the clusters pages
-    cy.visit('/main/dashboard'); // with a count of 0 clusters, app should redirect to the clusters pages
-
-    cy.wait(['@summary_counts', '@clusters']);
 }

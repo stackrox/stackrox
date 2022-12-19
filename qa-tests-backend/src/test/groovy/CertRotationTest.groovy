@@ -1,24 +1,27 @@
-import com.google.gson.JsonObject
-import com.google.gson.JsonPrimitive
-import groups.BAT
-import io.fabric8.kubernetes.api.model.Secret
-import io.grpc.StatusRuntimeException
-import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
-import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
 import java.nio.charset.Charset
 import java.security.cert.X509Certificate
+
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
+import io.fabric8.kubernetes.api.model.Secret
+import io.grpc.StatusRuntimeException
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.style.BCStyle
 import org.bouncycastle.asn1.x500.style.IETFUtils
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import org.yaml.snakeyaml.Yaml
+
+import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
+import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
+
 import services.ClusterService
 import services.DirectHTTPService
 import services.SensorUpgradeService
 import util.Cert
 
-@Category(BAT)
+import org.junit.Assume
+import spock.lang.Tag
+
+@Tag("BAT")
 class CertRotationTest extends BaseSpecification {
 
     def generateCerts(String path, String expectedFileName, JsonObject data = null) {

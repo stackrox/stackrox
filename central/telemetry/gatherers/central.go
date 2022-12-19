@@ -49,7 +49,7 @@ func (c *CentralGatherer) Gather(ctx context.Context) *data.CentralInfo {
 		// Despite GoLand's warning it's okay for installationInfo to be nil, GetID() will return ""
 		ID:                 installationInfo.GetId(),
 		InstallationTime:   telemetry.GetTimeOrNil(installationInfo.GetCreated()),
-		Storage:            c.databaseGatherer.Gather(),
+		Storage:            c.databaseGatherer.Gather(ctx),
 		APIStats:           c.apiGatherer.Gather(),
 		Errors:             errList,
 		AutoUpgradeEnabled: autoUpgradeEnabled.GetEnableAutoUpgrade(),

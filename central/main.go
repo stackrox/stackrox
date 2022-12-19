@@ -124,9 +124,11 @@ import (
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
+	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -312,6 +314,7 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
+	centralclient.InstanceConfig().Gatherer().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -422,6 +425,12 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
+	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		gs := cfg.Gatherer()
+		gs.AddGatherer(authProviderDS.Gather)
+		gs.AddGatherer(signatureIntegrationDS.Gather)
+		gs.AddGatherer(roleDataStore.Gather)
+	}
 	return servicesToRegister
 }
 
@@ -616,11 +625,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/db/restore",
-			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
-		},
-		{
 			Route:         "/api/docs/swagger",
 			Authorizer:    user.With(permissions.View(resources.Integration)),
 			ServerHandler: docs.Swagger(),
@@ -730,6 +734,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true)),
 			Compression:   true,
 		})
+
+		// v1 style restore endpoint, not supported for Postgres
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/db/restore",
+			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
+			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
+		})
 	}
 
 	customRoutes = append(customRoutes, routes.CustomRoute{
@@ -814,6 +825,8 @@ func waitForTerminationSignal() {
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
+		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
+		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 	}
 
 	var wg sync.WaitGroup

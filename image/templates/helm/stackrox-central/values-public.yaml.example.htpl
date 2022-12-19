@@ -19,8 +19,8 @@
 #   without TLS) in Central.
 # - `central.resources`: if the default resource configuration for Central is not adequate
 #   for your environment.
-# - `central.persistence`: for configuring where Central stores its database volume.
-#
+# - `central.persistence`: for configuring where Central stores its legacy persistent data.
+# - `db.persistence`: for configuring where Central DB stores its postgres database volume.
 
 # # BEGIN CONFIGURATION VALUES SECTION
 
@@ -45,7 +45,7 @@
 #
 # image:
 #   # The registry relative to which all image references are resolved, if no more
-#   # specify registry is specified for the workloads (see `central.image`, `scanner.image`,
+#   # specify registry is specified for the workloads (see `central.image`, `db.image`, ``scanner.image`,
 #   # and `scanner.dbImage` below).
 #   # This can be just a registry hostname such as `stackrox.io`, or a registry hostname with
 #   # a "remote" component such as `us.gcr.io/my-stackrox-mirror`.
@@ -241,6 +241,86 @@
 #       # of the pod spec.
 #       mount:
 #         mountPath: /etc/my-config-data
+#
+# # Public configuration options for the StackRox Central DB:
+# db:
+#   # If you want to enforce StackRox Central DB to only run on certain nodes, you can specify
+#   # a node selector here to make sure Central can only be scheduled on Nodes with the
+#   # given label. This is particular relevant for the "hostPath" persistence type.
+#   nodeSelector:
+#     # This can contain arbitrary `label-key: label-value` pairs.
+#     role: stackrox-central-db
+#
+#   # If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#   tolerations:
+#     - effect: NoSchedule
+#       key: infra
+#       value: reserved
+#     - effect: NoExecute
+#       key: infra
+#       value: reserved
+#
+#   # Customized Central DB source configurations to connect to Postgres database.
+#   # Default configurations are applied if the configurations are omitted.
+#   source:
+#     # ConnectionString should not be specified if the Central DB deployment is being managed by the helm chart
+#     # The connection string must be in the format described here https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
+#     # Do NOT use a connection string with a password field. Instead specify the value below in the password section in values-private.yaml.
+#     connectionString: "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full"
+#     minConns: 10
+#     maxConns: 90
+#     statementTimeoutMs: 60000
+#
+#   # Configures the Central DB image to be used. Most users will only need to configure a
+#   # custom registry (if any) at the global scope, and do not require any settings here.
+#   image:
+#     # A custom registry that will override the global `image.registry` setting for the
+#     # Central DB image.
+#     registry: us.gcr.io/central-db
+#     # A custom image name that will override the default `main`.
+#     name: custom-central-db
+#     # A custom image tag that will override the default tag based on the current
+#     # StackRox version.
+#     tag: custom-version
+#
+#   # Custom resource overrides for the Central DB deployment.
+#   resources:
+#     requests:
+#       memory: "1500Mi"
+#       cpu: "1000m"
+#     limits:
+#       memory: "4Gi"
+#       cpu: "2000m"
+#
+#   # Persistence configuration for the StackRox Central DB.
+#   # Exactly ONE of the nested values should be specified. If none is specified,
+#   # the StackRox Central DB will be configured with the default PVC-based persistence.
+#   persistence:
+#     # The path on the node where to store the StackRox Central DB volume
+#     # when using host path persistence.
+#     hostPath: /var/lib/central-db
+#     # The persistent volume claim details when storing the StackRox database
+#     # on a persistent volume managed by a Kubernetes persistent volume claim (PVC).
+#     persistentVolumeClaim:
+#       # The name of the claim. This defaults to central-db if not set.
+#       claimName: central-db
+#       # Whether to create the claim upon deployment. The default is true; set this to false
+#       # if you have a pre-existing persistent volume claim that you want to use.
+#       createClaim: true
+#       # The storage class of the persistent volume.
+#       storageClass: stackrox-gke-ssd
+#       # The size of the persistent volume managed by the claim, in Gigabytes (or with an
+#       # explicit unit, such as "1Ti"). Defaults to 100Gi.
+#       size: 100
+#       # If you want to bind a preexisting persistent volume, you can specify it here.
+#       volume:
+#         volumeSpec:
+#           # The section includes volume type specific config, the volume type can be:
+#           # gcePersistentDisk, hostpath, filestore(nfs) etc.
+#           gcePersistentDisk:
+#             # Type specific parameters. The specified persistent volume should have
+#             # been created.
+#             pdName: gke-pv
 #
 # # Public configuration options for the StackRox Scanner.
 # scanner:

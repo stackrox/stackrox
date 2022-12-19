@@ -1,17 +1,4 @@
-import navigationSelectors from '../selectors/navigation';
-
-const selectors = {
-    navLinks: {
-        configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
-        subnavMenu: '[data-testid="configure-subnav"]',
-        systemConfig: `${navigationSelectors.navLinks}:contains("System Configuration")`,
-        topNav: '[aria-label="User menu"]',
-        logout: '.pf-c-page__header-tools-item button:contains("Log out")',
-    },
-    pageHeader: {
-        editButton: 'button:contains("Edit")',
-        cancelButton: 'button:contains("Cancel")',
-    },
+export const selectors = {
     header: {
         widget: '[data-testid="header-config"]',
         state: '[data-testid="header-state"]',
@@ -66,5 +53,3 @@ export const text = {
     color: '#000000',
     backgroundColor: '#ffff00',
 };
-
-export default selectors;

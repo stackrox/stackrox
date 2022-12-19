@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
+	stats "github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 const (
@@ -111,14 +112,17 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 	return postgresDB
 }
 
-func collectPostgresStats(ctx context.Context, db *pgxpool.Pool) {
+// CollectPostgresStats -- collect table level stats for Postgres
+func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) []*stats.TableStats {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 	row, err := db.Query(ctx, tableQuery)
 	if err != nil {
 		log.Errorf("error fetching object counts: %v", err)
-		return
+		return nil
 	}
+
+	statsSlice := make([]*stats.TableStats, 0)
 
 	defer row.Close()
 	for row.Next() {
@@ -132,7 +136,7 @@ func collectPostgresStats(ctx context.Context, db *pgxpool.Pool) {
 		)
 		if err := row.Scan(&tableName, &rowEstimate, &totalSize, &indexSize, &toastSize, &tableSize); err != nil {
 			log.Errorf("error scanning row for table %s: %v", tableName, err)
-			return
+			return nil
 		}
 
 		tableLabel := prometheus.Labels{"Table": tableName}
@@ -141,13 +145,25 @@ func collectPostgresStats(ctx context.Context, db *pgxpool.Pool) {
 		metrics.PostgresIndexSize.With(tableLabel).Set(float64(indexSize))
 		metrics.PostgresToastSize.With(tableLabel).Set(float64(toastSize))
 		metrics.PostgresTableDataSize.With(tableLabel).Set(float64(tableSize))
+
+		tableStat := &stats.TableStats{
+			Name:      tableName,
+			RowCount:  int64(rowEstimate),
+			TableSize: int64(tableSize),
+			IndexSize: int64(indexSize),
+			ToastSize: int64(toastSize),
+		}
+
+		statsSlice = append(statsSlice, tableStat)
 	}
+
+	return statsSlice
 }
 
 func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool) {
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {
-		collectPostgresStats(ctx, db)
+		_ = CollectPostgresStats(ctx, db)
 	}
 }
