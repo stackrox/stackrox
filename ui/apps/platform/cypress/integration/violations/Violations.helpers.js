@@ -167,10 +167,6 @@ export function interactAndWaitForSortedViolationsResponses(interactionCallback,
 }
 
 /*
-
-*/
-
-/*
  * Assume that current location is violation page with compatible fixture for alert.
  */
 export function clickDeploymentTabWithFixture(fixturePath) {
