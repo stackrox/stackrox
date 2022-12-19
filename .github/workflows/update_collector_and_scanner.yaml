@@ -79,14 +79,8 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
-        reviewers: |
-          RTann
-          jvdm
-          daynewlee
-          dcaravel
         team-reviewers: |
-          data-shepherds
-          backend-dep-updaters
+          scanner-dep-updaters
         draft: false
     - name: Enable Pull Request Automerge
       if: steps.cpr.outputs.pull-request-operation == 'created'
