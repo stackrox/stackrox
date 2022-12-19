@@ -136,6 +136,29 @@ export function visitViolationWithFixture(fixturePath) {
 
 // interact
 
+/*
+ * Distinguish alerts request for sorted violations from polled request to prevent timing problem.
+ * Omit alertscount request because it is same as polled request.
+ */
+
+const alertsAscendingAlias = 'alerts_reversed=false';
+const alertsDescendingAlias = 'alerts_reversed=true';
+
+const routeMatcherMapForSortedViolationsMap = {
+    asc: {
+        [alertsAscendingAlias]: {
+            method: 'GET',
+            url: '/v1/alerts?query=&pagination.offset=0&pagination.limit=50&pagination.sortOption.field=Severity&pagination.sortOption.reversed=false',
+        },
+    },
+    desc: {
+        [alertsDescendingAlias]: {
+            method: 'GET',
+            url: '/v1/alerts?query=&pagination.offset=0&pagination.limit=50&pagination.sortOption.field=Severity&pagination.sortOption.reversed=true',
+        },
+    },
+};
+
 /**
  * Assume that current location is violations table without fixture.
  *
@@ -143,22 +166,10 @@ export function visitViolationWithFixture(fixturePath) {
  * @param {'asc' | 'desc'} direction
  */
 export function interactAndWaitForSortedViolationsResponses(interactionCallback, direction) {
-    const directionToReversedMap = {
-        asc: false,
-        desc: true,
-    };
-    const reversed = directionToReversedMap[direction];
-
-    const routeMatcherMapForSortedViolations = {
-        // Distinguish request for sorted violations from polled request to prevent timing problem.
-        [alertsAlias]: {
-            method: 'GET',
-            url: `/v1/alerts?query=&pagination.offset=0&pagination.limit=50&pagination.sortOption.field=Severity&pagination.sortOption.reversed=${reversed}`,
-        },
-        // Omit alertcount because it is same as polled request.
-    };
-
-    interactAndWaitForResponses(interactionCallback, routeMatcherMapForSortedViolations);
+    interactAndWaitForResponses(
+        interactionCallback,
+        routeMatcherMapForSortedViolationsMap[direction]
+    );
 
     cy.location('search').should(
         'eq',
