@@ -5,11 +5,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/installation/store"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/version"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -21,29 +23,38 @@ var (
 	log    = logging.LoggerForModule()
 )
 
-func getInstanceConfig() (*phonehome.Config, error) {
+func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	key := env.TelemetryStorageKey.Setting()
 	if key == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 	rc, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	clientset, err := kubernetes.NewForConfig(rc)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	v, err := clientset.ServerVersion()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	deployments := clientset.AppsV1().Deployments(env.Namespace.Setting())
 	central, err := deployments.Get(context.Background(), "central", v1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot get central deployment")
+		return nil, nil, errors.Wrap(err, "cannot get central deployment")
+	}
+
+	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
+	if env.OpenshiftAPI.BooleanSetting() {
+		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
 	ii, _, err := store.Singleton().Get(sac.WithAllAccess(context.Background()))
 	if err != nil || ii == nil {
-		return nil, errors.Wrap(err, "cannot get installation information")
+		return nil, nil, errors.Wrap(err, "cannot get installation information")
 	}
 	centralID := ii.Id
 
@@ -54,13 +65,18 @@ func getInstanceConfig() (*phonehome.Config, error) {
 	}
 
 	return &phonehome.Config{
-		ClientID:     centralID,
-		ClientName:   "Central",
-		GroupID:      tenantID,
-		StorageKey:   key,
-		Endpoint:     env.TelemetryEndpoint.Setting(),
-		PushInterval: env.TelemetryFrequency.DurationSetting(),
-	}, nil
+			ClientID:     centralID,
+			ClientName:   "Central",
+			GroupID:      tenantID,
+			StorageKey:   key,
+			Endpoint:     env.TelemetryEndpoint.Setting(),
+			PushInterval: env.TelemetryFrequency.DurationSetting(),
+		}, map[string]any{
+			"Central version":    version.GetMainVersion(),
+			"Chart version":      version.GetChartVersion(),
+			"Orchestrator":       orchestrator,
+			"Kubernetes version": v.GitVersion,
+		}, nil
 }
 
 // InstanceConfig collects the central instance telemetry configuration from
@@ -70,7 +86,8 @@ func getInstanceConfig() (*phonehome.Config, error) {
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
 		var err error
-		config, err = getInstanceConfig()
+		var props map[string]any
+		config, props, err = getInstanceConfig()
 		if err != nil {
 			log.Errorf("Failed to get telemetry configuration: %v.", err)
 			return
@@ -81,6 +98,10 @@ func InstanceConfig() *phonehome.Config {
 		}
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
+
+		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
+			return props, nil
+		})
 	})
 	return config
 }
