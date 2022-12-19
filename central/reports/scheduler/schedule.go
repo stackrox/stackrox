@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
@@ -119,6 +120,11 @@ var (
 	log = logging.LoggerForModule()
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
+
+	deploymentSortOption = &v1.QuerySortOption{
+		Field:    search.DeploymentPriority.String(),
+		Reversed: false,
+	}
 )
 
 // Scheduler maintains the schedules for reports
@@ -386,7 +392,11 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 
 func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
 	if features.ObjectCollections.Enabled() {
-		result, err := s.runPaginatedQuery(ctx, "", rQuery.CveFieldsQuery, rQuery.DeploymentsQuery)
+		deploymentIds, err := s.getDeploymentIDs(ctx, rQuery.DeploymentsQuery)
+		if err != nil {
+			return nil, err
+		}
+		result, err := s.runPaginatedDeploymentsQuery(ctx, rQuery.CveFieldsQuery, deploymentIds)
 		if err != nil {
 			return nil, err
 		}
@@ -395,7 +405,7 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 	}
 	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
 	for _, sq := range rQuery.ScopeQueries {
-		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery, rQuery.DeploymentsQuery)
+		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -404,41 +414,19 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 	return r, nil
 }
 
-func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string, deploymentsQuery *v1.Query) (common.Result, error) {
+func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string) (common.Result, error) {
 	offset := paginatedQueryStartOffset
 	var resultData common.Result
 	for {
 		var gqlQuery string
-		gqlPaginationOffset := offset
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			gqlQuery = reportQueryPostgres
-			if features.ObjectCollections.Enabled() {
-				deploymentIds, err := s.getDeploymentIDs(ctx, deploymentsQuery, int32(offset))
-				if err != nil || len(deploymentIds) == 0 {
-					return common.Result{}, err
-				}
-				scopeQuery = fmt.Sprintf("%s:%s", search.DeploymentID.String(), strings.Join(deploymentIds, ","))
-				gqlPaginationOffset = paginatedQueryStartOffset
-			}
 		} else {
 			gqlQuery = reportDataQuery
 		}
-		response := s.Schema.Exec(ctx,
-			gqlQuery, "getVulnReportData", map[string]interface{}{
-				"scopequery": scopeQuery,
-				"cvequery":   cveQuery,
-				"pagination": map[string]interface{}{
-					"offset": gqlPaginationOffset,
-					"limit":  numDeploymentsLimit,
-				},
-			})
-		if len(response.Errors) > 0 {
-			log.Errorf("error running graphql query: %s", response.Errors[0].Message)
-			return common.Result{}, response.Errors[0].Err
-		}
-		var r common.Result
-		if err := json.Unmarshal(response.Data, &r); err != nil {
-			return common.Result{}, err
+		r, err := s.execReportDataQuery(ctx, gqlQuery, scopeQuery, cveQuery, offset)
+		if err != nil {
+			return r, err
 		}
 		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
 		if len(r.Deployments) < numDeploymentsLimit {
@@ -449,10 +437,62 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 	return resultData, nil
 }
 
-func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query, offset int32) ([]string, error) {
+// Returns vuln report data from deployments matched by embedded resource collection.
+func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery string, deploymentIds []string) (common.Result, error) {
+	offset := paginatedQueryStartOffset
+	var resultData common.Result
+	for {
+		if offset >= len(deploymentIds) {
+			break
+		}
+		// deploymentsQuery is a *v1.Query and graphQL resolvers accept a string queries.
+		// With nested collections, deploymentsQuery could be a disjunction of conjunctions like the example below.
+		// [(Cluster: c1 AND Namespace: n1 AND Deployment: d1) OR (Cluster: c2 AND Namespace: n2 AND Deployment: d2)]
+		// Current string query language doesn't support disjunction of multiple conjunctions, so we cannot build a
+		// string equivalent of deploymentsQuery for graphQL. Because of this, we first fetch deploymentIDs from
+		// deploymentDatastore using deploymentsQuery and then build string query for graphQL using those deploymentIDs.
+		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
+			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+numDeploymentsLimit, len(deploymentIds))], ","))
+		r, err := s.execReportDataQuery(ctx, reportQueryPostgres, scopeQuery, cveQuery, paginatedQueryStartOffset)
+		if err != nil {
+			return r, err
+		}
+		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
+		offset += numDeploymentsLimit
+	}
+	return resultData, nil
+}
+
+func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuery, cveQuery string, offset int) (common.Result, error) {
+	response := s.Schema.Exec(ctx,
+		gqlQuery, "getVulnReportData", map[string]interface{}{
+			"scopequery": scopeQuery,
+			"cvequery":   cveQuery,
+			"pagination": map[string]interface{}{
+				"offset": offset,
+				"limit":  numDeploymentsLimit,
+				"sortOption": map[string]interface{}{
+					"field":    deploymentSortOption.GetField(),
+					"reversed": deploymentSortOption.GetReversed(),
+				},
+			},
+		})
+	if len(response.Errors) > 0 {
+		log.Errorf("error running graphql query: %s", response.Errors[0].Message)
+		return common.Result{}, response.Errors[0].Err
+	}
+	var res common.Result
+	if err := json.Unmarshal(response.Data, &res); err != nil {
+		return common.Result{}, err
+	}
+	return res, nil
+}
+
+func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query) ([]string, error) {
 	deploymentsQuery.Pagination = &v1.QueryPagination{
-		Limit:  numDeploymentsLimit,
-		Offset: offset,
+		SortOptions: []*v1.QuerySortOption{
+			deploymentSortOption,
+		},
 	}
 	results, err := s.deploymentDatastore.Search(ctx, deploymentsQuery)
 	if err != nil {
