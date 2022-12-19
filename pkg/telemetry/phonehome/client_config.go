@@ -3,6 +3,7 @@ package phonehome
 import (
 	"time"
 
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
 )
@@ -10,6 +11,8 @@ import (
 var (
 	onceGatherer  sync.Once
 	onceTelemeter sync.Once
+
+	log = logging.LoggerForModule()
 )
 
 // TenantIDLabel is the name of the k8s object label that holds the cloud

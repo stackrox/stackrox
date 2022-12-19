@@ -8,7 +8,8 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
-// Gather a few properties for phone home telemetry.
+// Gather the total amount of permission sets, access scopes, and roles for
+// phone home telemetry.
 var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, error) {
 	// WithAllAccess is required only to fetch and calculate the number of
 	// permission sets, roles and access scopes. It is not propagated anywhere
