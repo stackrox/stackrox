@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
+
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
@@ -94,6 +96,10 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 func (c *nodeInventoryHandlerImpl) handleNodeInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
 	// TODO(ROX-12943): Replace fakeNode with proper solution for finding the node
 	node := c.fakeNode(inventory)
+	for _, n := range inventory.Notes {
+		log.Infof("Current node inventory [%s] note is: %s", inventory.NodeName, scannerV1.NodeNote_name[int32(n)])
+	}
+
 	c.sendNode(toC, node)
 }
 

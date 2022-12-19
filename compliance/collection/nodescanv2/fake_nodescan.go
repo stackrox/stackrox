@@ -43,7 +43,9 @@ func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeInventory, error) 
 				},
 			},
 		},
-		Notes: nil,
+		Notes: []scannerV1.Note{3, 1},
 	}
+	msg.Notes = append(msg.Notes, scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE)
+	log.Infof("Fake scan result message notes added: %d", len(msg.Notes))
 	return msg, nil
 }
