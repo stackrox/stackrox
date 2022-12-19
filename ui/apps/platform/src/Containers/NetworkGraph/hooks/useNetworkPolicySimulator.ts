@@ -50,7 +50,8 @@ type SetNetworkPolicyModificationAction =
     | {
           state: 'UPLOAD';
           options: {
-              modification: NetworkPolicyModification;
+              modification: NetworkPolicyModification | null;
+              error: string;
           };
       };
 
@@ -178,7 +179,7 @@ function useNetworkPolicySimulator({ clusterId }): {
                 setSimulator({
                     state,
                     modification: options.modification,
-                    error: '',
+                    error: options.error,
                     isLoading: false,
                 });
                 break;
