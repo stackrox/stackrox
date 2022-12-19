@@ -1,15 +1,15 @@
 import com.google.protobuf.Timestamp
 
-import groups.NetworkBaseline
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
+
 import objects.Deployment
-import org.junit.experimental.categories.Category
 import services.NetworkBaselineService
-import spock.lang.Retry
 import util.NetworkGraphUtil
 import util.Timer
 
+import spock.lang.Retry
+import spock.lang.Tag
 import spock.lang.Timeout
 
 @Retry(count = 0)
@@ -161,7 +161,7 @@ class NetworkBaselineTest extends BaseSpecification {
         }
     }
 
-    @Category(NetworkBaseline)
+    @Tag("NetworkBaseline")
     @Timeout(1600)
     def "Verify network baseline functionality"() {
         when:

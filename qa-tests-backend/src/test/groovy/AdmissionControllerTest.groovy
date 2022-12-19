@@ -1,6 +1,3 @@
-import common.Constants
-import groups.BAT
-import groups.SensorBounceNext
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
@@ -9,21 +6,24 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
+
+import common.Constants
 import objects.Deployment
 import objects.GCRImageIntegration
-import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ClusterService
 import services.ImageIntegrationService
 import services.PolicyService
-import spock.lang.Retry
-import spock.lang.Shared
-import spock.lang.Timeout
-import spock.lang.Unroll
 import util.ChaosMonkey
 import util.Env
 import util.Helpers
 import util.Timer
+
+import spock.lang.Retry
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Timeout
+import spock.lang.Unroll
 
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
@@ -120,7 +120,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Admission Controller Config (#desc)"() {
         when:
 
@@ -157,7 +157,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
          "Create policy looking for a specific CVE"
@@ -275,7 +275,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Admission Controller Enforcement on Updates (#desc)"() {
         when:
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
@@ -319,7 +319,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes (match: #clusterMatch/#nsMatch)"() {
         when:
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
@@ -448,7 +448,7 @@ class AdmissionControllerTest extends BaseSpecification {
         }
     }
 
-    @Category([SensorBounceNext])
+    @Tag("SensorBounceNext")
     def "Verify admission controller performs image scans if Sensor is Unavailable"() {
         given:
         "Admission controller is enabled"

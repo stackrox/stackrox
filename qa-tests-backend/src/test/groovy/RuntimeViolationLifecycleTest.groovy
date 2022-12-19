@@ -3,16 +3,18 @@ import static Services.getViolationsByDeploymentID
 import static Services.roxDetectedDeployment
 import static Services.updatePolicy
 import static Services.updatePolicyToExclusionDeployment
-import groups.BAT
-import groups.COMPATIBILITY
+
+import java.util.stream.Collectors
+
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
-import java.util.stream.Collectors
+
 import objects.Deployment
-import org.junit.experimental.categories.Category
 import services.AlertService
 import util.Timer
+
+import spock.lang.Tag
 
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"
@@ -61,7 +63,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
 /*
     TODO(ROX-3101)
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify runtime resolution lifecycle"() {
         setup:
         "Create the deployment, verify that policy exists"
@@ -108,7 +110,8 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
     }
 */
 
-    @Category([BAT, COMPATIBILITY])
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify runtime excluded scope lifecycle"() {
         setup:
         "Create the deployment, verify that policy exists"
@@ -178,7 +181,8 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         }
     }
 
-    @Category([BAT, COMPATIBILITY])
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify runtime alert remains after deletion"() {
         setup:
         "Create the deployment, verify that policy exists"

@@ -1,18 +1,20 @@
-import groups.BAT
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NetworkPolicyOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
-import org.junit.experimental.categories.Category
+
 import services.ApiTokenService
 import services.AuthProviderService
 import services.BaseService
 import services.ClusterService
 import services.NetworkPolicyService
 import services.RoleService
+
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class RbacAuthTest extends BaseSpecification {
@@ -112,7 +114,7 @@ spec:
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"

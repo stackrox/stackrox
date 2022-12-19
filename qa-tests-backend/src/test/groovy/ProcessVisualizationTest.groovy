@@ -1,15 +1,13 @@
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
-import groups.BAT
-import groups.RUNTIME
 import objects.Deployment
 import services.DeploymentService
+import services.ProcessService
+import util.Timer
 
 import org.junit.Assume
-import org.junit.experimental.categories.Category
-import services.ProcessService
+import spock.lang.Tag
 import spock.lang.Unroll
-import util.Timer
 
 class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names
@@ -85,7 +83,8 @@ class ProcessVisualizationTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     def "Verify process visualization on kube-proxy"() {
         when:
         "Check if kube-proxy is running"
@@ -109,7 +108,8 @@ class ProcessVisualizationTest extends BaseSpecification {
         assert receivedProcessPaths.size() > 0
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process visualization on default: #depName"()  {
         when:
@@ -168,7 +168,8 @@ class ProcessVisualizationTest extends BaseSpecification {
         ["/qa/exec.sh", "/bin/sleep"] as Set | ROX4979DEPLOYMENT
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process paths, UIDs, and GIDs on #depName"()  {
         when:
@@ -264,7 +265,8 @@ class ProcessVisualizationTest extends BaseSpecification {
         */
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process arguments on #depName"() {
         when:

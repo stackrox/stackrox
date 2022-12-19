@@ -1,6 +1,6 @@
-import groups.BAT
-import org.junit.experimental.categories.Category
 import services.IntegrationHealthService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class IntegrationHealthTest extends BaseSpecification {
@@ -9,7 +9,7 @@ class IntegrationHealthTest extends BaseSpecification {
     def cleanupSpec() { }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify vulnerability definitions information is available"() {
         when:
         "Vulnerability definition is requested"

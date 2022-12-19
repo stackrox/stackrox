@@ -1,10 +1,9 @@
-import groups.BAT
-import groups.RUNTIME
 import objects.Deployment
-import org.junit.experimental.categories.Category
 import services.ProcessService
-import spock.lang.Unroll
 import util.Timer
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class ProcessVisualizationReplicaTest extends BaseSpecification {
     static final private Integer REPLICACOUNT = 4
@@ -54,7 +53,8 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
         return counts
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process visualization with replicas on #depName"()  {
         when:

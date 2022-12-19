@@ -1,10 +1,10 @@
-import groups.BAT
-import groups.COMPATIBILITY
-import org.junit.experimental.categories.Category
 import services.CredentialExpiryService
 import util.Cert
 
-@Category([BAT, COMPATIBILITY])
+import spock.lang.Tag
+
+@Tag("BAT")
+@Tag("COMPATIBILITY")
 class CertExpiryTest extends BaseSpecification {
 
     def "Test Central cert expiry"() {

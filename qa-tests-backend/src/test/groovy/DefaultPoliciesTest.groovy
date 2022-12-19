@@ -1,18 +1,17 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 
-import io.stackrox.proto.api.v1.SearchServiceOuterClass
+import java.util.stream.Collectors
 
-import common.Constants
-import groups.BAT
-import groups.SMOKE
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
@@ -23,26 +22,28 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.RiskOuterClass
 import io.stackrox.proto.storage.RiskOuterClass.Risk.Result
-import java.util.stream.Collectors
+
+import common.Constants
 import objects.Deployment
 import objects.GCRImageIntegration
 import objects.Service
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import services.AlertService
 import services.DeploymentService
 import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
+import util.Env
+import util.Helpers
+import util.SlackUtil
+
+import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
+import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
-import util.Helpers
-import util.SlackUtil
 
 // TODO(ROX-13738): Re-enable these tests in compatibility-test step
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
@@ -163,7 +164,8 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, SMOKE])
+    @Tag("BAT")
+    @Tag("SMOKE")
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:
@@ -244,7 +246,8 @@ class DefaultPoliciesTest extends BaseSpecification {
         return strutsComponent.getVulnsList().find { it.cve == "CVE-2017-5638" } != null
     }
 
-    @Category([BAT, SMOKE])
+    @Tag("BAT")
+    @Tag("SMOKE")
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"
@@ -255,7 +258,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         waitForViolation(K8S_DASHBOARD,  "Kubernetes Dashboard Deployed", 30)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     @Retry(count = 0)
     @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
@@ -376,7 +379,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify risk factors on struts deployment: #riskFactor"() {
         given:
         "Check Feature Flags"
@@ -441,7 +444,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 //                 []
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
@@ -537,7 +540,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return total
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
@@ -571,7 +574,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return m
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify that alert groups API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()

@@ -1,9 +1,11 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.apache.commons.codec.digest.DigestUtils
+
+import util.Env
+
 import spock.lang.IgnoreIf
 import spock.lang.Specification
-import util.Env
 
 @IgnoreIf({ Env.IN_CI })
 class LocalQaPropsTest extends Specification {

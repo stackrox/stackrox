@@ -1,24 +1,25 @@
-import groups.BAT
-import groups.Integration
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+
 import objects.Deployment
 import objects.GenericNotifier
-import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ImageService
 import services.PolicyService
-import spock.lang.Unroll
 import util.Env
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class ImageManagementTest extends BaseSpecification {
 
     private static final String FEDORA_28 = "fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187"
 
     @Unroll
-    @Category([BAT, Integration])
+    @Tag("BAT")
+    @Tag("Integration")
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
         when:
         "Update Policy to build time"
@@ -60,7 +61,7 @@ class ImageManagementTest extends BaseSpecification {
         "Apache Struts: CVE-2017-5638"    | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify two consecutive latest tag image have different scans"() {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
@@ -77,7 +78,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify image scan finds correct base OS - #qaImageTag"() {
         when:
         def img = Services.scanImage("quay.io/rhacs-eng/qa:$qaImageTag")
@@ -100,7 +101,8 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration])
+    @Tag("BAT")
+    @Tag("Integration")
     def "Verify CI/CD Integration Endpoint excluded scopes - #policy - #excludedscopes"() {
         when:
         "Update Policy to build time and mark policy excluded scope"
@@ -133,7 +135,7 @@ class ImageManagementTest extends BaseSpecification {
         "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["library/busybox:1.10"]              | true
     }
 
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify lifecycle Stage can only be build time for policies with image criteria"() {
         when:
         "Update Policy to build time"
@@ -148,7 +150,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify CVE snoozing applies to build time detection"() {
         given:
         "Create policy looking for a specific CVE applying to build time"
@@ -195,7 +197,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify risk is properly being attributed to scanned images"() {
         when:
         "Scan an image and then grab the image data"
@@ -212,7 +214,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify risk is properly being attributed to run images"() {
         when:
         "Create deployment that runs an image and verify that image has a non-zero riskScore"
@@ -244,7 +246,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify image scan results when CVEs are suppressed: "() {
         given:
         "Scan image"
@@ -285,7 +287,8 @@ class ImageManagementTest extends BaseSpecification {
         CVEService.unsuppressImageCVE(cve)
     }
 
-    @Category([BAT, Integration])
+    @Tag("BAT")
+    @Tag("Integration")
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
         "Update policy to build time, create notifier and add it to policy"

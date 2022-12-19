@@ -95,7 +95,7 @@ The report is generated with all the tests executed with asserts for the failed 
 
 # Adding Tests
 ## Annotations
-New tests are added with a `@Category` annotation to indicate which to which
+New tests are added with a `@Tag` annotation to indicate which to which
 group the test belongs. The default test group that runs in CI is the `BAT`
 group.
 
