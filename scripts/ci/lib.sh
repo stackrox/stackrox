@@ -1190,7 +1190,7 @@ store_test_results() {
         info "Creating JIRA task for failures found in $from"
         curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.1/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
-        ./junit2jira -junit-reports-dir "$from" -dry-run
+        ./junit2jira -junit-reports-dir "$from"
     } || true
     fi
 
