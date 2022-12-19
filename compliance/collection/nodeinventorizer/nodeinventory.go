@@ -32,11 +32,13 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
+	log.Info("Generating node inventory ...")
 	m := &storage.NodeInventory{
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
 		Components: protoComponents,
 	}
+	m.Notes = []scannerV1.Note{scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE}
 	return m, nil
 }
 

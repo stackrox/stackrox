@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
@@ -88,6 +89,9 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
 	if inventory == nil {
 		return
+	}
+	for _, n := range inventory.Notes {
+		log.Infof("Current node inventory [%s] note is: %s", inventory.NodeName, scannerV1.Note_name[int32(n)])
 	}
 	select {
 	case <-c.stopper.Flow().StopRequested():
