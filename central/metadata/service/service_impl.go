@@ -7,6 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -25,6 +26,8 @@ import (
 // Service is the struct that manages the Metadata API
 type serviceImpl struct {
 	v1.UnimplementedMetadataServiceServer
+
+	db *pgxpool.Pool
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -46,7 +49,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadata, error) {
 	dbAvailable := true
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// TODO:  call to ping the DB.
+		if err := s.db.Ping(ctx); err != nil {
+			dbAvailable = false
+			log.Warn("central is unable to communicate with the database.")
+		}
 	}
 
 	metadata := &v1.Metadata{
