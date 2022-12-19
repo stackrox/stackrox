@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	clairGRPCV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	scannerApiV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/clairify/client"
 	"github.com/stackrox/scanner/pkg/clairify/types"
 	"google.golang.org/grpc"
@@ -411,6 +412,7 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 // GetNodeScan retrieves the most recent node scan
 func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
 	req := convertNodeToVulnRequest(node)
+	req.Notes = append(req.Notes, scannerApiV1.Note_LANGUAGE_CVES_UNAVAILABLE)
 	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
 	defer cancel()
 	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)

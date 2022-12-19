@@ -67,7 +67,7 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 				Vulns:   convertNodeVulns(resp.GetKubeproxyVulnerabilities()),
 			},
 		},
-		Notes: convertNodeNotes(resp.GetNotes()),
+		Notes: convertNodeNotes(resp.GetNodeNotes()),
 	}
 	if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
 		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
