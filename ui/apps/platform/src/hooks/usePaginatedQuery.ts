@@ -4,18 +4,18 @@ import { debounce } from 'lodash';
 function filterNextPage<Item, ItemKey>(
     results: Item[],
     itemKeys: Set<ItemKey>,
-    keyFn: ((item: Item) => ItemKey) | undefined
+    dedupKeyFn: ((item: Item) => ItemKey) | undefined
 ) {
     // If a deduplication function has been provided, use it to ensure only unique items
     // are added to the data results. Otherwise, return the results directly without the need
     // to update the key Set.
-    if (!keyFn) {
+    if (!dedupKeyFn) {
         return { nextPageItems: results, nextKeys: itemKeys };
     }
     const nextPageItems: Item[] = [];
     const nextKeys = new Set(itemKeys);
     results.forEach((item) => {
-        const itemKey = keyFn(item);
+        const itemKey = dedupKeyFn(item);
         if (!nextKeys.has(itemKey)) {
             nextKeys.add(itemKey);
             nextPageItems.push(item);
@@ -80,6 +80,9 @@ export function usePaginatedQuery<Item, ItemKey>(
         manualFetch?: boolean;
     } = {}
 ): UsePaginatedQueryReturn<Item> {
+    // These initialOptions are stored in state instead of being destructured directly since
+    // the `fetchPageHandler` function below relies on the reference of `dedupKeyFn`. By storing these
+    // in state, it removes the burden of wrapping in a useCallback or useMemo from the caller.
     const [{ debounceRate, dedupKeyFn, onError, manualFetch = false }] = useState(initialOptions);
     const [isRefreshingResults, setIsRefreshingResults] = useState(false);
     const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
