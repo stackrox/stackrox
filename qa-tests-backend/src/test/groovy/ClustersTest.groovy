@@ -1,11 +1,12 @@
-import groups.BAT
 import io.stackrox.proto.storage.ClusterOuterClass
-import org.junit.experimental.categories.Category
+
 import services.ClusterService
-import spock.lang.Stepwise
 import util.Cert
 
-@Category(BAT)
+import spock.lang.Stepwise
+import spock.lang.Tag
+
+@Tag("BAT")
 @Stepwise
 class ClustersTest extends BaseSpecification {
 

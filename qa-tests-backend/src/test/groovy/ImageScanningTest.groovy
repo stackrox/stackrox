@@ -9,8 +9,6 @@ import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.Vulnerability
 
 import common.Constants
-import groups.BAT
-import groups.Integration
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -29,8 +27,8 @@ import util.Timer
 
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
-import org.junit.experimental.categories.Category
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class ImageScanningTest extends BaseSpecification {
@@ -186,7 +184,8 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration])
+    @Tag("BAT")
+    @Tag("Integration")
     def "Verify Image Registry+Scanner Integrations: #testName"() {
         cleanupSetupForRetry()
 
@@ -375,7 +374,8 @@ class ImageScanningTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT, Integration])
+    @Tag("BAT")
+    @Tag("Integration")
     def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #idx"() {
         Assume.assumeTrue(scanner.isTestable())
         cleanupSetupForRetry()
@@ -434,7 +434,8 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration])
+    @Tag("BAT")
+    @Tag("Integration")
     def "Verify Scan Results from Registries - #registry.name() - #component:#version - #image - #cve - #idx"() {
         cleanupSetupForRetry()
         ImageIntegrationService.addStackroxScannerIntegration()
@@ -489,7 +490,7 @@ class ImageScanningTest extends BaseSpecification {
     ]
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify image scan exceptions - #scanner.name() - #testAspect"() {
         Assume.assumeTrue(scanner.isTestable())
         // TODO(ROX-13345): Remove the following call to re-enable the test when the cause is fixed.
@@ -530,7 +531,8 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration])
+    @Tag("BAT")
+    @Tag("Integration")
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
         cleanupSetupForRetry()
@@ -626,7 +628,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Image scanning test to check if scan time is not null #image from stackrox"() {
         cleanupSetupForRetry()
 
@@ -726,7 +728,8 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration])
+    @Tag("BAT")
+    @Tag("Integration")
     def "Quay registry and scanner supports token and/or robot credentials - #testName"() {
         cleanupSetupForRetry()
         if (coreImageIntegrationId != null) {

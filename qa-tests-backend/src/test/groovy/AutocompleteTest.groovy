@@ -1,10 +1,10 @@
-import groups.BAT
-import groups.COMPATIBILITY
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawSearchRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.SearchCategory
-import org.junit.experimental.categories.Category
+
 import services.SearchService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class AutocompleteTest extends BaseSpecification {
@@ -15,7 +15,8 @@ class AutocompleteTest extends BaseSpecification {
 
     private static final String GROUP_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
 
-    @Category([BAT, COMPATIBILITY])
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify Autocomplete: #query #category #contains"() {
         when:
         SearchServiceOuterClass.AutocompleteResponse resp = SearchService.autocomplete(
@@ -40,7 +41,8 @@ class AutocompleteTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, COMPATIBILITY])
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify #category search options contains #options"() {
         when:
         def resp = SearchService.options(category)

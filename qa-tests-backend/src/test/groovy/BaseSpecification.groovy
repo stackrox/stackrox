@@ -1,13 +1,7 @@
-import com.jayway.restassured.RestAssured
-import common.Constants
-
-import io.stackrox.proto.api.v1.ApiTokenService
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
-import io.stackrox.proto.storage.RoleOuterClass
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
-import objects.K8sServiceAccount
-import objects.Secret
+
+import io.restassured.RestAssured
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import orchestratormanager.OrchestratorTypes
@@ -15,23 +9,31 @@ import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.Diff
 import org.javers.core.diff.ListCompareAlgorithm
-import org.junit.Rule
-import org.junit.rules.TestName
-import org.junit.rules.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.storage.ImageIntegrationOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
+
+import common.Constants
+import objects.K8sServiceAccount
+import objects.Secret
 import services.BaseService
 import services.ClusterService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
-
-import spock.lang.Retry
-import spock.lang.Shared
-import spock.lang.Specification
 import util.Env
 import util.Helpers
 import util.OnFailure
+
+import org.junit.Rule
+import org.junit.rules.TestName
+import org.junit.rules.Timeout
+import spock.lang.Retry
+import spock.lang.Shared
+import spock.lang.Specification
 
 @Retry(condition = { Helpers.determineRetry(failure) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })

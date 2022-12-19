@@ -1,19 +1,22 @@
-import groups.BAT
-import io.grpc.StatusRuntimeException
-import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import java.nio.file.Files
 import java.nio.file.Paths
-import org.junit.experimental.categories.Category
+
+import io.grpc.StatusRuntimeException
+
+import io.stackrox.proto.api.v1.GroupServiceOuterClass
+
 import services.AuthProviderService
 import services.AuthService
 import services.BaseService
 import services.GroupService
-import spock.lang.Shared
-import spock.lang.Stepwise
-import spock.lang.Unroll
 import util.Env
 
-@Category(BAT)
+import spock.lang.Shared
+import spock.lang.Stepwise
+import spock.lang.Tag
+import spock.lang.Unroll
+
+@Tag("BAT")
 @Stepwise
 class ClientCertAuthTest extends BaseSpecification {
 

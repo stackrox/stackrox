@@ -1,24 +1,20 @@
-import static Services.waitForViolation
 import static Services.waitForSuspiciousProcessInRiskIndicators
-
-import io.stackrox.proto.storage.RiskOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.storage.AlertOuterClass
-import services.AlertService
-import services.ClusterService
-
-import groups.BAT
-import groups.COMPATIBILITY
-
-import io.stackrox.proto.storage.ProcessBaselineOuterClass
-import objects.Deployment
+import static Services.waitForViolation
 
 import org.apache.commons.lang3.StringUtils
 
-import org.junit.experimental.categories.Category
+import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.storage.AlertOuterClass
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
+import io.stackrox.proto.storage.RiskOuterClass
 
+import objects.Deployment
+import services.AlertService
+import services.ClusterService
 import services.ProcessBaselineService
+
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class ProcessBaselinesTest extends BaseSpecification {
@@ -103,7 +99,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify processes risk indicators for the given key after lock on #deploymentName"() {
         when:
         "exec into the container and run a process and wait for lock to kick in"
@@ -163,7 +159,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     /* TODO(ROX-3108)
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify baseline processes for the given key before and after locking "() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -200,7 +196,8 @@ class ProcessBaselinesTest extends BaseSpecification {
     */
 
     @Unroll
-    @Category([BAT, COMPATIBILITY])
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
                     a)Lock the processes in the baseline for the key
@@ -300,7 +297,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION | "/usr/sbin/nginx" | true          | 0
      }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify baselines are deleted when their deployment is deleted"() {
         /*
                 a)get all baselines
@@ -336,7 +333,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify removed baseline process not getting added back to baseline after rerun on #deploymentName"() {
         /*
                 1.run a process and verify if it exists in the baseline
@@ -400,7 +397,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Delete process baselines via API"() {
         given:
         "a baseline is deleted"
@@ -431,7 +428,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
