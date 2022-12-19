@@ -41,7 +41,10 @@ func (resolver *nodeScanResolver) NodeComponentCount(_ context.Context, args Raw
 	return resolver.root.NodeComponentCount(resolver.ctx, args)
 }
 
-func (resolver *nodeScanResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+func (resolver *nodeScanResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err

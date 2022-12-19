@@ -523,10 +523,6 @@ func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, ar
 }
 
 func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-
 	// If Postgres is not enabled, node loader always pulls full node along with scan
 	scan := resolver.data.GetScan()
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -574,11 +570,9 @@ func (resolver *nodeResolver) nodeScopeContext(ctx context.Context) context.Cont
 //// Node scan-related fields pulled as direct sub-resolvers of node.
 
 func (resolver *nodeResolver) ScanNotes(ctx context.Context) []string {
-	value := resolver.data.GetScan().GetNotes()
-	return stringSlice(value)
+	return stringSlice(resolver.data.GetScan().GetNotes())
 }
 
 func (resolver *nodeResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetScan().GetScanTime()
-	return timestamp(value)
+	return timestamp(resolver.data.GetScan().GetScanTime())
 }
