@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState, useMemo, ReactNode } from 'react';
+import React, { useCallback, useEffect, useState, ReactNode } from 'react';
 import {
-    debounce,
     Button,
     Divider,
     EmptyState,
@@ -22,6 +21,7 @@ import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 
 import { CollectionRequest, dryRunCollection } from 'services/CollectionsService';
 import { ListDeployment } from 'types/deployment.proto';
+import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
 import { CollectionConfigError, parseConfigError } from './errorUtils';
 import { SelectorEntityType } from './types';
 
@@ -84,13 +84,22 @@ function CollectionResults({
     setConfigError = () => {},
 }: CollectionResultsProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
-    const [isRefreshingResults, setIsRefreshingResults] = useState(false);
     const [selected, setSelected] = useState<SelectorEntityType>('Deployment');
     const [filterText, setFilterText] = useState<string>('');
-    const [isEndOfResults, setIsEndOfResults] = useState<boolean>(false);
-    const [deployments, setDeployments] = useState<ListDeployment[]>([]);
+    const queryFn = useCallback(
+        (page: number) => fetchMatchingDeployments(dryRunConfig, page, filterText, selected),
+        [dryRunConfig, filterText, selected]
+    );
+    const { data, fetchNextPage, resetPages, clearPages, isEndOfResults, isRefreshingResults } =
+        usePaginatedQuery(queryFn, 10, {
+            debounceRate: 800,
+            manualFetch: true,
+            dedupKeyFn: ({ id }) => id,
+            onError: (err) => {
+                setConfigError(parseConfigError(err));
+            },
+        });
 
-    const currentPage: number = Math.floor((deployments.length - 1) / 10);
     const selectorRulesExist =
         dryRunConfig.resourceSelectors?.[0]?.rules?.length > 0 ||
         dryRunConfig.embeddedCollectionIds.length > 0;
@@ -101,47 +110,18 @@ function CollectionResults({
         closeSelect();
     }
 
-    const fetchDryRun = useCallback(
-        (currConfig, currPage, currFilter, currEntity) => {
-            fetchMatchingDeployments(currConfig, currPage, currFilter, currEntity)
-                .then((results) => {
-                    setIsEndOfResults(results.length < 10);
-                    setDeployments((current) =>
-                        currPage === 0 ? results : [...current, ...results]
-                    );
-                })
-                .catch((err) => {
-                    setConfigError(parseConfigError(err));
-                })
-                .finally(() => {
-                    setIsRefreshingResults(false);
-                });
-        },
-        [setConfigError]
-    );
-
-    const fetchDryRunDebounced = useMemo(() => debounce(fetchDryRun, 800), [fetchDryRun]);
-
     useEffect(() => {
         if (configError) {
-            setDeployments([]);
+            clearPages();
         }
-    }, [configError]);
+    }, [clearPages, configError]);
 
     const refreshResults = useCallback(() => {
         setConfigError(undefined);
         if (selectorRulesExist) {
-            setIsRefreshingResults(true);
-            fetchDryRunDebounced(dryRunConfig, 0, filterText, selected);
+            resetPages();
         }
-    }, [
-        dryRunConfig,
-        fetchDryRunDebounced,
-        filterText,
-        selected,
-        selectorRulesExist,
-        setConfigError,
-    ]);
+    }, [resetPages, selectorRulesExist, setConfigError]);
 
     useEffect(() => {
         refreshResults();
@@ -214,29 +194,24 @@ function CollectionResults({
                 >
                     {isRefreshingResults ? (
                         <>
-                            {deployments.map((deployment: ListDeployment) => (
-                                <DeploymentSkeleton key={`refreshing-${deployment.id}`} />
+                            {Array.from(Array(10).keys()).map((index: number) => (
+                                <DeploymentSkeleton key={`refreshing-deployment-${index}`} />
                             ))}
                             <Spinner className="pf-u-align-self-center" size="lg" />
                         </>
                     ) : (
                         <>
-                            {deployments.map((deployment: ListDeployment) => (
-                                <DeploymentResult key={deployment.id} deployment={deployment} />
-                            ))}
+                            {data.map((page) =>
+                                page.map((deployment: ListDeployment) => (
+                                    <DeploymentResult key={deployment.id} deployment={deployment} />
+                                ))
+                            )}
                             {!isEndOfResults ? (
                                 <Button
                                     variant="link"
                                     isInline
                                     className="pf-u-text-align-center"
-                                    onClick={() => {
-                                        fetchDryRun(
-                                            dryRunConfig,
-                                            currentPage + 1,
-                                            filterText,
-                                            selected
-                                        );
-                                    }}
+                                    onClick={() => fetchNextPage(true)}
                                 >
                                     View more
                                 </Button>
