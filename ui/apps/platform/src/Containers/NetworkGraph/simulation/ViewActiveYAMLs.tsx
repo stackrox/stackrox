@@ -14,9 +14,15 @@ import NetworkPoliciesYAML from './NetworkPoliciesYAML';
 
 type ViewActiveYamlsProps = {
     networkPolicies: NetworkPolicy[];
+    generateNetworkPolicies: () => void;
+    undoNetworkPolicies: () => void;
 };
 
-function ViewActiveYamls({ networkPolicies }: ViewActiveYamlsProps) {
+function ViewActiveYamls({
+    networkPolicies,
+    generateNetworkPolicies,
+    undoNetworkPolicies,
+}: ViewActiveYamlsProps) {
     const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
         NetworkPolicy | undefined
     >(networkPolicies?.[0]);
@@ -73,7 +79,11 @@ function ViewActiveYamls({ networkPolicies }: ViewActiveYamlsProps) {
                 </StackItem>
                 {selectedNetworkPolicy && (
                     <StackItem>
-                        <NetworkPoliciesYAML yaml={selectedNetworkPolicy.yaml} />
+                        <NetworkPoliciesYAML
+                            yaml={selectedNetworkPolicy.yaml}
+                            generateNetworkPolicies={generateNetworkPolicies}
+                            undoNetworkPolicies={undoNetworkPolicies}
+                        />
                     </StackItem>
                 )}
             </Stack>

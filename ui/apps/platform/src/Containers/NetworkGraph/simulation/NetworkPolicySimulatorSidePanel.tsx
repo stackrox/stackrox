@@ -284,6 +284,8 @@ function NetworkPolicySimulatorSidePanel({
                         networkPolicies={
                             simulator.state === 'ACTIVE' ? simulator.networkPolicies : []
                         }
+                        generateNetworkPolicies={generateNetworkPolicies}
+                        undoNetworkPolicies={undoNetworkPolicies}
                     />
                 </TabContent>
             </StackItem>

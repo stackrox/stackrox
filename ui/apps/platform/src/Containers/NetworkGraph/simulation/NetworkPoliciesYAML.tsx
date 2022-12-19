@@ -17,6 +17,12 @@ type NetworkPoliciesYAMLProp = {
     undoNetworkPolicies: () => void;
 };
 
+const labels = {
+    downloadYAML: 'Download YAML',
+    generateYAML: 'Generate a new YAML',
+    revertMostRecentYAML: 'Revert most recently applied YAML',
+};
+
 const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
     download(`${fileName}.yml`, fileContent, 'yml');
 };
@@ -46,8 +52,8 @@ function NetworkPoliciesYAML({
     const downloadYAMLControl = (
         <CodeEditorControl
             icon={<DownloadIcon />}
-            aria-label="Download YAML"
-            toolTipText="Download YAML"
+            aria-label={labels.downloadYAML}
+            toolTipText={labels.downloadYAML}
             onClick={downloadYAMLHandler('networkPolicy', yaml)}
             isVisible
         />
@@ -56,8 +62,8 @@ function NetworkPoliciesYAML({
     const generateNewYAMLControl = (
         <CodeEditorControl
             icon={<ProcessAutomationIcon />}
-            aria-label="Generate a new YAML"
-            toolTipText="Generate a new YAML"
+            aria-label={labels.generateYAML}
+            toolTipText={labels.generateYAML}
             onClick={generateNetworkPolicies}
             isVisible
         />
@@ -66,8 +72,8 @@ function NetworkPoliciesYAML({
     const revertRecentYAML = (
         <CodeEditorControl
             icon={<UndoIcon />}
-            aria-label="Revert most recently applied YAML"
-            toolTipText="Revert most recently applied YAML"
+            aria-label={labels.revertMostRecentYAML}
+            toolTipText={labels.revertMostRecentYAML}
             onClick={undoNetworkPolicies}
             isVisible
         />
