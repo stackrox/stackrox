@@ -123,7 +123,7 @@ spec:
           name: certs
           readOnly: true
         - mountPath: /tmp/
-          name: tmp-ed
+          name: tmp-volume
       volumes:
       - hostPath:
           path: /var/run/docker.sock
@@ -163,5 +163,5 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
-      - name: tmp-ed
+      - name: tmp-volume
         emptyDir: {}

@@ -14,6 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 
 ### Technical Changes
+- ROX-12967: Introduce `rpm` to the main image to parse installed packages on RHCOS nodes
 
 ## [3.73.1]
 

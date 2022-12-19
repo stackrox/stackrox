@@ -13,19 +13,22 @@ type NodeInventorizer interface {
 	Scan(nodeName string) (*storage.NodeInventory, error)
 }
 
-// NodeInventoryCollector is the implementation of NodeInventorizer
+// NodeInventoryCollector is an implementation of NodeInventorizer
 type NodeInventoryCollector struct {
 }
 
 // Scan scans the current node and returns the results as storage.NodeInventory object
 func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, error) {
+	log.Info("Started node inventory")
+	// uncertifiedRHEL is set to false, as scans are only supported on RHCOS for now,
+	// which only exists in certified versions
 	componentsHost, err := nodes.Analyze(nodeName, "/host/", false)
-	log.Info("Finished node inventory /host scan")
+	log.Info("Finished node inventory")
 	if err != nil {
 		log.Errorf("Error scanning node /host inventory: %v", err)
 		return nil, err
 	}
-	log.Infof("Components found under /host: %v", componentsHost)
+	log.Debugf("Components found under /host: %v", componentsHost)
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
