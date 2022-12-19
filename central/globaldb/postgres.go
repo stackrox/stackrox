@@ -129,9 +129,22 @@ func GetPostgresVersion(ctx context.Context, db *pgxpool.Pool) string {
 }
 
 // CollectPostgresStats -- collect table level stats for Postgres
-func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) []*stats.TableStats {
+func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.DatabaseStats {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
+
+	dbStats := &stats.DatabaseStats{}
+
+	if err := db.Ping(ctx); err != nil {
+		metrics.PostgresConnected.Set(float64(0))
+		dbStats.DatabaseAvailable = false
+		log.Errorf("not connected to Postgres: %v", err)
+		return nil
+	} else {
+		metrics.PostgresConnected.Set(float64(1))
+		dbStats.DatabaseAvailable = true
+	}
+
 	row, err := db.Query(ctx, tableQuery)
 	if err != nil {
 		log.Errorf("error fetching object counts: %v", err)
@@ -173,7 +186,8 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) []*stats.TableS
 		statsSlice = append(statsSlice, tableStat)
 	}
 
-	return statsSlice
+	dbStats.Tables = statsSlice
+	return dbStats
 }
 
 func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool) {

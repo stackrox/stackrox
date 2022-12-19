@@ -66,13 +66,14 @@ type TableStats struct {
 
 // DatabaseStats contains telemetry data about a DB
 type DatabaseStats struct {
-	Type           string         `json:"type"`
-	Path           string         `json:"path"`
-	AvailableBytes int64          `json:"availableBytes"`
-	UsedBytes      int64          `json:"usedBytes"`
-	Buckets        []*BucketStats `json:"buckets,omitempty"`
-	Tables         []*TableStats  `json:"tables,omitempty"`
-	Errors         []string       `json:"errors,omitempty"`
+	Type              string         `json:"type"`
+	Path              string         `json:"path"`
+	AvailableBytes    int64          `json:"availableBytes"`
+	DatabaseAvailable bool           `json:"databaseAvailable,omitempty"`
+	UsedBytes         int64          `json:"usedBytes"`
+	Buckets           []*BucketStats `json:"buckets,omitempty"`
+	Tables            []*TableStats  `json:"tables,omitempty"`
+	Errors            []string       `json:"errors,omitempty"`
 }
 
 // StorageInfo contains telemetry data about available disk, storage type, and the available databases

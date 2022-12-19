@@ -30,14 +30,10 @@ func (d *postgresGatherer) Gather(ctx context.Context) *data.DatabaseStats {
 	currentDBBytes, err := pgadmin.GetDatabaseSize(d.adminConfig, migrations.GetCurrentClone())
 	errorList.AddError(err)
 
-	tableStats := globaldb.CollectPostgresStats(ctx, d.db)
-
-	dbStats := &data.DatabaseStats{
-		Type:      "postgres",
-		UsedBytes: currentDBBytes,
-		Tables:    tableStats,
-		Errors:    errorList.ErrorStrings(),
-	}
+	dbStats := globaldb.CollectPostgresStats(ctx, d.db)
+	dbStats.Type = "postgres"
+	dbStats.UsedBytes = currentDBBytes
+	dbStats.Errors = errorList.ErrorStrings()
 
 	// Check Postgres remaining capacity
 	availableDBBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)

@@ -177,6 +177,20 @@ var (
 		Name:      "postgres_table_toast_bytes",
 		Help:      "bytes being used by toast for a table",
 	}, []string{"Table"})
+
+	PostgresDBSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_db_size",
+		Help:      "bytes being used by Postgres Database",
+	})
+
+	PostgresConnected = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_connected",
+		Help:      "flag indicating if central is connected to the Postgres Database",
+	})
 )
 
 // SetGaugeInt sets a value for a gauge from an int
