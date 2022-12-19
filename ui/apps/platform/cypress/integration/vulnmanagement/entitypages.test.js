@@ -75,7 +75,7 @@ describe('Entities single views', () => {
                         expect(headerText).not.to.equal('0 deployments');
                     });
 
-                cy.get(`${selectors.sidePanel} ${selectors.paginationHeader}`)
+                cy.get(`${selectors.sidePanel} [data-testid="pagination-header"]`)
                     .invoke('text')
                     .then((paginationText) => {
                         expect(paginationText).not.to.contain('of 0');
