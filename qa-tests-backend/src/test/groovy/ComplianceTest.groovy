@@ -32,8 +32,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.RoleOuterClass
 
 import common.Constants
-import groups.BAT
-import groups.SensorBounceNext
 import objects.Control
 import objects.CsvRow
 import objects.Deployment
@@ -57,10 +55,9 @@ import services.RoleService
 import util.Timer
 
 import org.junit.Assume
-import org.junit.experimental.categories.Category
 import spock.lang.IgnoreIf
-import spock.lang.Requires
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class ComplianceTest extends BaseSpecification {
@@ -122,7 +119,7 @@ class ComplianceTest extends BaseSpecification {
         assert orchestrator.waitForAllPodsToBeRemoved("stackrox", complianceLabels, 30, 5)
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify static compliance checks"() {
         given:
         "given a known list of static checks"
@@ -214,7 +211,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify compliance aggregation results"() {
         given:
         "get compliance aggregation results"
@@ -269,7 +266,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify compliance checks contain no ERROR states"() {
         expect:
         "check that each check does not have ERROR state"
@@ -299,7 +296,7 @@ class ComplianceTest extends BaseSpecification {
         assert errorChecks.size() == 0
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify all compliance checks contain evidence"() {
         expect:
         "check that each check contains evidence"
@@ -339,7 +336,7 @@ class ComplianceTest extends BaseSpecification {
         return returnState
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify overall state of each check is correct based on each piece of evidence"() {
         expect:
         "check that the state of each check is correct based on each piece of evidence"
@@ -369,7 +366,7 @@ class ComplianceTest extends BaseSpecification {
         assert invalidOverallState.size() == 0
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify all kube-system namespace checks are SKIPPED"() {
         expect:
         "check that each check does not have ERROR state"
@@ -403,7 +400,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify compliance csv export"() {
         when:
         "a compliance CSV export file"
@@ -512,7 +509,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify a subset of the checks in nodes were run in each node"() {
         expect:
         "check a subset of the checks run in the compliance pods are present in the results"
@@ -551,7 +548,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify per-node cluster checks generate correct results when there is a master node"() {
         given:
         "a control result which should only be returned from a master node"
@@ -597,7 +594,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Compliance aggregations with caching"() {
         given:
         "get compliance aggregation results"
@@ -625,7 +622,7 @@ class ComplianceTest extends BaseSpecification {
     **  compliance run, add them above this comment and use the compliance data in BASE_RESULTS.
     */
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify checks based on Integrations"() {
         def failureEvidence = ["No image scanners are being used in the cluster"]
         def controls = [
@@ -705,7 +702,7 @@ class ComplianceTest extends BaseSpecification {
         ImageIntegrationService.addStackroxScannerIntegration()
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify checks based on Deployments"() {
         def controls = [
                 new Control(
@@ -823,7 +820,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify checks based on Policies"() {
         def controls = [
                 new Control(
@@ -947,7 +944,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify controls that rely on CIS Benchmarks"() {
         def controls = [
                 new Control(
@@ -994,10 +991,11 @@ class ComplianceTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
-    @Requires({ ClusterService.isOpenShift4() })
+    @Tag("BAT")
     @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Compliance Operator aggregation results on OpenShift for machine configs #standard"() {
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
         given:
         "get compliance aggregation results"
         log.info "Getting compliance results for ${standard}"
@@ -1031,10 +1029,11 @@ class ComplianceTest extends BaseSpecification {
         "rhcos4-moderate-modified"   | _
     }
 
-    @Category(BAT)
-    @Requires({ ClusterService.isOpenShift4() })
+    @Tag("BAT")
     @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Tailored Profile does not have evidence for disabled rule"() {
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
         given:
         "get compliance aggregation results"
         log.info "Getting compliance results for rhcos4-moderate-modified"
@@ -1058,10 +1057,11 @@ class ComplianceTest extends BaseSpecification {
         assert machineConfigsWithResults == 2
     }
 
-    @Category(BAT)
-    @Requires({ ClusterService.isOpenShift4() })
+    @Tag("BAT")
     @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Compliance Operator aggregation results on OpenShift for cluster results"() {
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
         given:
         "get compliance aggregation results"
         log.info "Getting compliance results for ocp4-cis"
@@ -1080,7 +1080,7 @@ class ComplianceTest extends BaseSpecification {
         assert numErrors == 0
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify controls that checks for fixable CVEs"() {
         def controls = [
                 new Control(
@@ -1152,7 +1152,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([SensorBounceNext])
+    @Tag("SensorBounceNext")
     def "Verify failed run result"() {
         // This seems to be using an auth token for some reason.  Explicitly specify basic auth.
         BaseService.useBasicAuth()
@@ -1219,7 +1219,7 @@ class ComplianceTest extends BaseSpecification {
         log.info "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Docker 5_6, no SSH processes"() {
         def deployment = new Deployment()
                 .setName("triggerssh")
@@ -1276,7 +1276,7 @@ class ComplianceTest extends BaseSpecification {
         orchestrator.deleteDeployment(deployment)
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Compliance aggregation cache cleared after each compliance run"() {
         // This seems to be using an auth token for some reason.  Explicitly specify basic auth.
         BaseService.useBasicAuth()
@@ -1307,7 +1307,7 @@ class ComplianceTest extends BaseSpecification {
         ClusterService.deleteCluster(ClusterService.getClusterId(otherClusterName))
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify ComplianceRuns with SAC on clusters with wildcard"() {
         def otherClusterName = "disallowedCluster"
 

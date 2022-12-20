@@ -1,17 +1,17 @@
-import groups.BAT
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass
+
 import objects.Deployment
 import objects.GCRImageIntegration
-import services.PolicyService
-import services.SignatureIntegrationService
-
-import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ImageIntegrationService
-import spock.lang.Shared
+import services.PolicyService
+import services.SignatureIntegrationService
 import util.Timer
+
+import spock.lang.Shared
+import spock.lang.Tag
 
 class AdmissionControllerNoImageScanTest extends BaseSpecification {
     @Shared
@@ -68,7 +68,7 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
         SignatureIntegrationService.deleteSignatureIntegration(imageSignatureIntegrationID)
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Admission Controller Behavior for No Image Scans Policy"() {
         String gcrId
 

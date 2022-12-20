@@ -13,12 +13,6 @@ function searchObjToQuery(searchObj) {
     return encodeURI(result);
 }
 
-export const general = {
-    graphqlOps: {
-        summaryCounts: 'summary_counts',
-    },
-};
-
 export const search = {
     results: '/v1/search?query=*',
     options: '/v1/search/metadata/options*',
@@ -28,24 +22,6 @@ export const search = {
         `v1/search/autocomplete?query=${searchObjToQuery(searchObj)}&categories=${category}`,
     graphqlOps: {
         autocomplete: 'autocomplete',
-    },
-};
-
-export const alerts = {
-    countsByCluster: '/v1/alerts/summary/counts?*group_by=CLUSTER*',
-    countsByCategory: '/v1/alerts/summary/counts?*group_by=CATEGORY*',
-    alerts: '/v1/alerts',
-    alertsWithQuery: '/v1/alerts?query=*',
-    alertById: '/v1/alerts/*',
-    resolveAlert: '/v1/alerts/*/resolve',
-    alertsCountWithQuery: '/v1/alertscount?query=*',
-    pageSearchAutocomplete: (searchObj) => search.autocompleteBySearch(searchObj, 'ALERTS'),
-    graphqlOps: {
-        addTags: 'addAlertTags',
-        getTags: 'getAlertTags',
-        tagsAutocomplete: 'autocomplete',
-        bulkAddAlertTags: 'bulkAddAlertTags',
-        removeTags: 'removeAlertTags',
     },
 };
 
@@ -69,22 +45,12 @@ export const risks = {
     },
 };
 
-export const images = {
-    list: '/v1/images*',
-    count: '/v1/imagescount*',
-    get: '/v1/images/*',
-};
-
 export const auth = {
     availableAuthProviders: '/v1/availableAuthProviders',
     loginAuthProviders: '/v1/login/authproviders',
     authProviders: '/v1/authProviders',
     authStatus: '/v1/auth/status',
     tokenRefresh: '/sso/session/tokenrefresh',
-};
-
-export const dashboard = {
-    summaryCounts: graphql('summary_counts'),
 };
 
 export const metadata = 'v1/metadata';
@@ -132,8 +98,6 @@ export const groups = {
 export const userAttributes = {
     list: '/v1/userattributes/*',
 };
-
-export const logs = '/api/logimbue';
 
 export const featureFlags = '/v1/featureflags';
 

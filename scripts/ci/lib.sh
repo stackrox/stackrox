@@ -876,6 +876,7 @@ get_pr_details() {
         [[ "${pull_request}" == "null" ]] && _not_a_PR
     elif is_GITHUB_ACTIONS; then
         pull_request="$(jq -r .pull_request.number "${GITHUB_EVENT_PATH}")" || _not_a_PR
+        [[ "${pull_request}" == "null" ]] && _not_a_PR
         org="${GITHUB_REPOSITORY_OWNER}"
         repo="${GITHUB_REPOSITORY#*/}"
     else
@@ -1170,7 +1171,9 @@ store_qa_test_results() {
 
     info "Copying qa-tests-backend results to $to"
 
-    store_test_results qa-tests-backend/build/test-results/test "$to"
+    for test_results in qa-tests-backend/build/test-results/*; do
+        store_test_results "$test_results" "$to"
+    done
 }
 
 store_test_results() {
@@ -1188,9 +1191,9 @@ store_test_results() {
     if ! is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.1/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.2/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
-        ./junit2jira -junit-reports-dir "$from" -dry-run
+        ./junit2jira -junit-reports-dir "$from" -threshold 5
     } || true
     fi
 
@@ -1211,6 +1214,12 @@ send_slack_notice_for_failures_on_merge() {
     local tag
     tag="$(make --quiet tag)"
     if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
+        return 0
+    fi
+
+    if is_system_test_without_images; then
+        # Avoid multiple slack messages from the e2e tests waiting for images.
+        info "Skipping slack message for a system test failure when images were not found"
         return 0
     fi
 
@@ -1459,6 +1468,17 @@ EOT
 
 get_junit_parse_cli() {
     go install github.com/stackrox/junit-parse@latest
+}
+
+is_system_test_without_images() {
+    case "${CI_JOB_NAME:-missing}" in
+        *-e2e-tests|*-upgrade-tests|*-version-compatibility-tests)
+            [[ ! -f "${STATE_IMAGES_AVAILABLE}" ]]
+            ;;
+        *)
+            false
+            ;;
+    esac
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

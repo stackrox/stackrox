@@ -1,10 +1,14 @@
 import React from 'react';
 import {
+    Alert,
+    AlertVariant,
+    Bullseye,
     Button,
     Checkbox,
     Divider,
     Flex,
     FlexItem,
+    Spinner,
     Stack,
     StackItem,
     Tab,
@@ -19,6 +23,9 @@ import { FileUploadIcon } from '@patternfly/react-icons';
 
 import useTabs from 'hooks/patternfly/useTabs';
 import ViewActiveYAMLs from './ViewActiveYAMLs';
+import useNetworkPolicySimulator from '../hooks/useNetworkPolicySimulator';
+import NetworkPoliciesYAML from './NetworkPoliciesYAML';
+import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorUtils';
 
 type NetworkPolicySimulatorSidePanelProps = {
     selectedClusterId: string;
@@ -37,11 +44,84 @@ function NetworkPolicySimulatorSidePanel({
     });
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
+    const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
+        clusterId: selectedClusterId,
+    });
+
+    function generateNetworkPolicies() {
+        setNetworkPolicyModification({
+            state: 'GENERATED',
+            options: {
+                clusterId: selectedClusterId,
+                searchQuery: '',
+                networkDataSince: '',
+                excludePortsAndProtocols: isExcludingPortsAndProtocols,
+            },
+        });
+    }
+
+    if (simulator.isLoading) {
+        return (
+            <Bullseye>
+                <Spinner isSVG size="lg" />
+            </Bullseye>
+        );
+    }
+
+    // @TODO: I just did this like this for now, but I'll look into how an error should actually be displayed
+    if (simulator.error) {
+        return (
+            <Alert
+                isInline
+                variant={AlertVariant.danger}
+                title={simulator.error}
+                className="pf-u-mb-lg"
+            />
+        );
+    }
+
+    if (simulator.state === 'GENERATED') {
+        const yaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
+        return (
+            <div>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsFlexEnd' }}
+                    className="pf-u-p-lg pf-u-mb-0"
+                >
+                    <FlexItem>
+                        <TextContent>
+                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
+                                Network Policy Simulator
+                            </Text>
+                        </TextContent>
+                    </FlexItem>
+                </Flex>
+                <Divider component="div" />
+                <Stack hasGutter>
+                    <StackItem className="pf-u-p-md">
+                        <Alert
+                            variant="success"
+                            isInline
+                            isPlain
+                            title="Policies generated from all network activity"
+                        />
+                    </StackItem>
+                    <StackItem isFilled style={{ overflow: 'auto' }}>
+                        <NetworkPoliciesYAML
+                            yaml={yaml}
+                            generateNetworkPolicies={generateNetworkPolicies}
+                        />
+                    </StackItem>
+                </Stack>
+            </div>
+        );
+    }
 
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                <Flex direction={{ default: 'row' }} className="pf-u-p-lg pf-u-mb-0">
                     <FlexItem>
                         <TextContent>
                             <Text component={TextVariants.h2} className="pf-u-font-size-xl">
@@ -71,7 +151,7 @@ function NetworkPolicySimulatorSidePanel({
                     id={tabs.SIMULATE_NETWORK_POLICIES}
                     hidden={activeKeyTab !== tabs.SIMULATE_NETWORK_POLICIES}
                 >
-                    <div className="pf-u-p-lg">
+                    <div className="pf-u-p-lg pf-u-h-100">
                         <Stack hasGutter>
                             <StackItem>
                                 <Stack hasGutter>
@@ -106,7 +186,10 @@ function NetworkPolicySimulatorSidePanel({
                                         />
                                     </StackItem>
                                     <StackItem>
-                                        <Button variant="secondary">
+                                        <Button
+                                            variant="secondary"
+                                            onClick={generateNetworkPolicies}
+                                        >
                                             Generate and simulate network policies
                                         </Button>
                                     </StackItem>
@@ -152,7 +235,11 @@ function NetworkPolicySimulatorSidePanel({
                     id={tabs.VIEW_ACTIVE_YAMLS}
                     hidden={activeKeyTab !== tabs.VIEW_ACTIVE_YAMLS}
                 >
-                    <ViewActiveYAMLs selectedClusterId={selectedClusterId} />
+                    <ViewActiveYAMLs
+                        networkPolicies={
+                            simulator.state === 'ACTIVE' ? simulator.networkPolicies : []
+                        }
+                    />
                 </TabContent>
             </StackItem>
         </Stack>

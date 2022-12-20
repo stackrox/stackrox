@@ -1,8 +1,8 @@
 package services
 
-import static com.jayway.restassured.RestAssured.given
+import static io.restassured.RestAssured.given
 
-import com.jayway.restassured.config.RestAssuredConfig
+import io.restassured.config.RestAssuredConfig
 import groovy.util.logging.Slf4j
 
 import util.Keys
@@ -10,7 +10,7 @@ import util.Keys
 import javax.net.ssl.SSLContext
 import java.security.SecureRandom
 
-import com.jayway.restassured.config.SSLConfig
+import io.restassured.config.SSLConfig
 import org.apache.http.conn.ssl.SSLSocketFactory
 import util.Env
 

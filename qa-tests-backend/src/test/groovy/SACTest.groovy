@@ -13,7 +13,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
-import groups.BAT
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
@@ -30,11 +29,11 @@ import util.Env
 import util.NetworkGraphUtil
 
 import org.junit.AssumptionViolatedException
-import org.junit.experimental.categories.Category
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
-@Category(BAT)
+@Tag("BAT")
 class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String NAMESPACE_QA1 = "qa-test1"

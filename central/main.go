@@ -124,9 +124,11 @@ import (
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
+	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -163,6 +165,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -312,6 +315,7 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
+	centralclient.InstanceConfig().Gatherer().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -422,6 +426,12 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
+	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		gs := cfg.Gatherer()
+		gs.AddGatherer(authProviderDS.Gather)
+		gs.AddGatherer(signatureIntegrationDS.Gather)
+		gs.AddGatherer(roleDataStore.Gather)
+	}
 	return servicesToRegister
 }
 
@@ -525,6 +535,15 @@ func startGRPCServer() {
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
+
+	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
+		config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
+		// Central adds itself to the tenant group, with no group properties:
+		cfg.Telemeter().Group(cfg.GroupID, cfg.ClientID, nil)
+		// Add the local admin user as well, with no extra group properties:
+		cfg.Telemeter().Group(cfg.GroupID, cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), nil)
+	}
 
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
@@ -816,6 +835,8 @@ func waitForTerminationSignal() {
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
+		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
+		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 	}
 
 	var wg sync.WaitGroup
