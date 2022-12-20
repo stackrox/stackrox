@@ -49,6 +49,8 @@ func init() {
 		PostgresTableTotalSize,
 		PostgresTableDataSize,
 		PostgresToastSize,
+		PostgresDBSize,
+		PostgresConnected,
 	)
 }
 
@@ -178,12 +180,12 @@ var (
 		Help:      "bytes being used by toast for a table",
 	}, []string{"Table"})
 
-	PostgresDBSize = prometheus.NewGauge(prometheus.GaugeOpts{
+	PostgresDBSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_db_size",
 		Help:      "bytes being used by Postgres Database",
-	})
+	}, []string{"Clone"})
 
 	PostgresConnected = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,

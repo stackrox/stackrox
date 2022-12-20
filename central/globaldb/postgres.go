@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
@@ -108,7 +109,7 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 		if err != nil {
 			log.Errorf("Could not create pg_stat_statements extension: %v", err)
 		}
-		go startMonitoringPostgres(ctx, postgresDB)
+		go startMonitoringPostgres(ctx, postgresDB, dbConfig)
 
 	})
 	return postgresDB
@@ -190,10 +191,30 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 	return dbStats
 }
 
-func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool) {
+// CollectPostgresDatabaseStats -- collect database level stats for Postgres
+func CollectPostgresDatabaseStats(ctx context.Context, postgresConfig *pgxpool.Config) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	clones := pgadmin.GetDatabaseClones(postgresConfig)
+
+	for _, clone := range clones {
+		cloneSize, err := pgadmin.GetDatabaseSize(postgresConfig, clone)
+		if err != nil {
+			log.Errorf("error fetching clone size: %v", err)
+			return
+		}
+
+		cloneLabel := prometheus.Labels{"Clone": clone}
+		metrics.PostgresDBSize.With(cloneLabel).Set(float64(cloneSize))
+	}
+}
+
+func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool, postgresConfig *pgxpool.Config) {
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {
 		_ = CollectPostgresStats(ctx, db)
+		CollectPostgresDatabaseStats(ctx, postgresConfig)
 	}
 }
