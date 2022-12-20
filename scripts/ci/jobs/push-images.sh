@@ -53,7 +53,11 @@ push_images() {
         fi
     fi
     if [[ -n "${MAIN_RCD_IMAGE:-}" ]]; then
-        push_race_condition_debug_image
+        if is_OPENSHIFT_CI; then
+            info "-race image was built and pushed elsewhere, skipping it here."
+        else
+            push_race_condition_debug_image
+        fi
     fi
     if [[ -n "${OPERATOR_IMAGE:-}" ]]; then
         if is_OPENSHIFT_CI; then
