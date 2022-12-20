@@ -43,6 +43,11 @@ spec:
         - name: RELATED_IMAGE_COLLECTOR_FULL
         - name: RELATED_IMAGE_ROXCTL
         - name: RELATED_IMAGE_CENTRAL_DB
+        - name: MEMORY_LIMIT_BYTES
+          valueFrom:
+            resourceFieldRef:
+              containerName: manager
+              resource: limits.memory
         image: controller:latest
         name: manager
         securityContext:
