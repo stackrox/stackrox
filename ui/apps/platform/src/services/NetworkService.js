@@ -354,14 +354,19 @@ export function getUndoNetworkModification(clusterId) {
  *
  * @param {!String} clusterId
  * @param {!Object} query
- * @param {!String} date
+ * @param {!String} networkDataSince
  * @param {Boolean} excludePortsProtocols
  * @returns {Promise<Object, Error>}
  */
-export function generateNetworkModification(clusterId, query, date, excludePortsProtocols = null) {
+export function generateNetworkModification(
+    clusterId,
+    query,
+    networkDataSince,
+    excludePortsProtocols = null
+) {
     const urlParams = query ? { query } : {};
-    if (date) {
-        urlParams.networkDataSince = date.toISOString();
+    if (networkDataSince) {
+        urlParams.networkDataSince = networkDataSince.toISOString();
     }
 
     if (excludePortsProtocols !== null) {
