@@ -8,7 +8,6 @@ import services.AlertService
 import services.PolicyService
 import util.Env
 
-import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Tag
