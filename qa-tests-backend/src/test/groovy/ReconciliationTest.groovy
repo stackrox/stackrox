@@ -98,11 +98,9 @@ class ReconciliationTest extends BaseSpecification {
 
     @Tag("SensorBounce")
     @Tag("COMPATIBILITY")
+    // RS-361 - Fails on OSD
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify the Sensor reconciles after being restarted"() {
-        // RS-361 - Fails on OSD. Need help troubleshooting. Disabling for now.
-        Assume.assumeFalse(ClusterService.isOpenShift3())
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
         when:
         "Get Sensor and counts"
 
