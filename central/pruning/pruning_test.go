@@ -565,7 +565,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			alerts, config, images, deployments, pods, indexQ := s.generateImageDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -823,7 +823,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 				lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 			}
 
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -955,7 +955,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 			// Run GC
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1127,7 +1127,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			alerts, config, images, deployments := s.generateAlertDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
