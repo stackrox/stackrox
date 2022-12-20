@@ -57,7 +57,7 @@ function NetworkPoliciesYAML({ yaml, generateNetworkPolicies }: NetworkPoliciesY
         return (
             <Bullseye>
                 <EmptyState variant={EmptyStateVariant.xs}>
-                    <Title headingLevel="h4" size="md">
+                    <Title headingLevel="h2" size="md">
                         No network policies
                     </Title>
                 </EmptyState>

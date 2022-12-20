@@ -10,13 +10,11 @@ export function getDisplayYAMLFromNetworkPolicyModification(
     const shouldDelete = toDelete && toDelete.length > 0;
     const showApplyYaml = applyYaml && applyYaml.length >= 2;
 
-    // Format toDelete portion of YAML.
-    let toDeleteSection;
-    if (shouldDelete && toDelete) {
-        toDeleteSection = toDelete
-            .map((entry) => `# kubectl -n ${entry.namespace} delete networkpolicy ${entry.name}`)
-            .join('\n');
-    }
+    const toDeleteSection = shouldDelete
+        ? toDelete
+              .map((entry) => `# kubectl -n ${entry.namespace} delete networkpolicy ${entry.name}`)
+              .join('\n')
+        : '';
 
     // Format complete YAML for display.
     let displayYaml: string;
