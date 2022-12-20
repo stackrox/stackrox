@@ -6,7 +6,6 @@ import (
 	segment "github.com/segmentio/analytics-go"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -48,7 +47,7 @@ type logWrapper struct {
 }
 
 func (l *logWrapper) Logf(format string, args ...any) {
-	l.internal.Logf(zapcore.InfoLevel, format, args...)
+	l.internal.Infof(format, args...)
 }
 
 func (l *logWrapper) Errorf(format string, args ...any) {
