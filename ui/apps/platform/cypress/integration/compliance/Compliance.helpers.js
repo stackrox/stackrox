@@ -44,6 +44,7 @@ const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
 
 const opnameForEntities = {
     clusters: 'clustersList', // just clusters would be even better, and so on
+    controls: 'controls',
     deployments: 'deploymentsList',
     namespaces: 'namespaceList', // singular: too bad, so sad
     nodes: 'nodesList',
