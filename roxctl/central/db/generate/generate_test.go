@@ -70,7 +70,7 @@ func (s *centralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 			args:             []string{"-h"},
 			cmdUse:           "generate",
 			containsCommands: []string{"k8s", "openshift"},
-			containsFlags:    []string{"--debug", "--debug-path", "--enable-pod-security-policies"},
+			containsFlags:    []string{"--enable-pod-security-policies"},
 		},
 		{
 			description: "generate wrong cluster type",
@@ -117,7 +117,7 @@ func (s *centralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 			},
 			testCaseType{
 				description: fmt.Sprintf("generate %s unknown", clusterType),
-				args:        []string{clusterType, "--debug", "unknown"},
+				args:        []string{clusterType, "--enable-pod-security-policies=false", "unknown"},
 				cmdUse:      clusterType,
 				errContains: "Error: unexpected storage type \"unknown\"",
 				checkUsage:  true,
