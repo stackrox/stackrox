@@ -62,7 +62,7 @@ update_junit_prefix_with_sensor_version() {
     result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
     info "Updating all test in $result_folder to have $SENSOR_CHART_VERSION prefix"
     for f in $result_folder/*.xml; do
-        sed -i "s/testcase name=\"/testcase name=\"[${SENSOR_CHART_VERSION}]/g" "$f"
+        sed -i "s/testcase name=\"/testcase name=\"[${SENSOR_CHART_VERSION}] /g" "$f"
     done
 }
 
