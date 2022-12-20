@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Alert,
-    AlertVariant,
     Bullseye,
     Button,
     Checkbox,
@@ -60,23 +59,20 @@ function NetworkPolicySimulatorSidePanel({
         });
     }
 
+    function undoNetworkPolicies() {
+        setNetworkPolicyModification({
+            state: 'UNDO',
+            options: {
+                clusterId: selectedClusterId,
+            },
+        });
+    }
+
     if (simulator.isLoading) {
         return (
             <Bullseye>
                 <Spinner isSVG size="lg" />
             </Bullseye>
-        );
-    }
-
-    // @TODO: I just did this like this for now, but I'll look into how an error should actually be displayed
-    if (simulator.error) {
-        return (
-            <Alert
-                isInline
-                variant={AlertVariant.danger}
-                title={simulator.error}
-                className="pf-u-mb-lg"
-            />
         );
     }
 
@@ -101,16 +97,65 @@ function NetworkPolicySimulatorSidePanel({
                 <Stack hasGutter>
                     <StackItem className="pf-u-p-md">
                         <Alert
-                            variant="success"
+                            variant={simulator.error ? 'danger' : 'success'}
                             isInline
                             isPlain
-                            title="Policies generated from all network activity"
+                            title={
+                                simulator.error
+                                    ? simulator.error
+                                    : 'Policies generated from all network activity'
+                            }
                         />
                     </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>
                         <NetworkPoliciesYAML
                             yaml={yaml}
                             generateNetworkPolicies={generateNetworkPolicies}
+                            undoNetworkPolicies={undoNetworkPolicies}
+                        />
+                    </StackItem>
+                </Stack>
+            </div>
+        );
+    }
+
+    // @TODO: Consider how to reuse parts of this that are similiar between states
+    if (simulator.state === 'UNDO') {
+        const yaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
+        return (
+            <div>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsFlexEnd' }}
+                    className="pf-u-p-lg pf-u-mb-0"
+                >
+                    <FlexItem>
+                        <TextContent>
+                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
+                                Network Policy Simulator
+                            </Text>
+                        </TextContent>
+                    </FlexItem>
+                </Flex>
+                <Divider component="div" />
+                <Stack hasGutter>
+                    <StackItem className="pf-u-p-md">
+                        <Alert
+                            variant={simulator.error ? 'danger' : 'success'}
+                            isInline
+                            isPlain
+                            title={
+                                simulator.error
+                                    ? simulator.error
+                                    : 'Viewing modification that will undo last applied change'
+                            }
+                        />
+                    </StackItem>
+                    <StackItem isFilled style={{ overflow: 'auto' }}>
+                        <NetworkPoliciesYAML
+                            yaml={yaml}
+                            generateNetworkPolicies={generateNetworkPolicies}
+                            undoNetworkPolicies={undoNetworkPolicies}
                         />
                     </StackItem>
                 </Stack>
@@ -239,6 +284,8 @@ function NetworkPolicySimulatorSidePanel({
                         networkPolicies={
                             simulator.state === 'ACTIVE' ? simulator.networkPolicies : []
                         }
+                        generateNetworkPolicies={generateNetworkPolicies}
+                        undoNetworkPolicies={undoNetworkPolicies}
                     />
                 </TabContent>
             </StackItem>
