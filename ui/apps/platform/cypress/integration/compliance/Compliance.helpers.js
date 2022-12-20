@@ -17,8 +17,8 @@ const segmentForEntity = {
     nodes: 'node',
 };
 
-function getEntityPagePath(entitiesKey, id = '') {
-    return `${basePath}/${segmentForEntity[entitiesKey]}${id && `/${id}`}`;
+function getEntityPagePath(entitiesKey) {
+    return `${basePath}/${segmentForEntity[entitiesKey]}`;
 }
 
 // opname
