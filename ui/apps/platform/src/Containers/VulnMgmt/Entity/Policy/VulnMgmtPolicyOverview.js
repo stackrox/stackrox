@@ -59,6 +59,7 @@ const emptyPolicy = {
     exclusions: [],
 };
 
+const deploymentPageSize = 20;
 const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
@@ -244,7 +245,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                 ...queryService.entityContextToQueryObject(fullEntityContext),
             }),
             ...vulMgmtPolicyQuery,
-            pagination: queryService.getPagination(sort, page, 2 /* TODO Remove this param */),
+            pagination: queryService.getPagination(sort, page, deploymentPageSize),
         };
 
         policyFindingsContent = (
@@ -269,8 +270,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                 noDataText="No deployments have failed across this policy"
                                 className="bg-base-100"
                                 columns={getDeploymentTableColumns(workflowState)}
-                                /* TODO Remove `pageSize` */
-                                pageSize={2}
+                                pageSize={deploymentPageSize}
                                 parentPageState={{ page, setPage, totalCount }}
                                 sortHandler={setSort}
                             />
