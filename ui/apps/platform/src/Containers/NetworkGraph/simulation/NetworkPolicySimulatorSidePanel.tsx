@@ -39,14 +39,15 @@ const tabs = {
 function NetworkPolicySimulatorSidePanel({
     selectedClusterId,
 }: NetworkPolicySimulatorSidePanelProps) {
-    const { activeKeyTab, onSelectTab } = useTabs({
+    const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
     });
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
-    const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
-        clusterId: selectedClusterId,
-    });
+    const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
+        useNetworkPolicySimulator({
+            clusterId: selectedClusterId,
+        });
 
     function handleFileInputChange(
         _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
@@ -109,6 +110,11 @@ function NetworkPolicySimulatorSidePanel({
         });
     }
 
+    function applyNetworkPolicies() {
+        applyNetworkPolicyModification();
+        setActiveKeyTab(tabs.VIEW_ACTIVE_YAMLS);
+    }
+
     if (simulator.isLoading) {
         return (
             <Bullseye>
@@ -156,6 +162,7 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
+                            applyNetworkPolicies={applyNetworkPolicies}
                         />
                     </StackItem>
                 </Stack>
@@ -203,6 +210,7 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
+                            applyNetworkPolicies={applyNetworkPolicies}
                         />
                     </StackItem>
                 </Stack>
@@ -231,10 +239,12 @@ function NetworkPolicySimulatorSidePanel({
                 <Stack hasGutter>
                     <StackItem className="pf-u-p-md">
                         <Alert
-                            variant="success"
+                            variant={simulator.error ? 'danger' : 'success'}
                             isInline
                             isPlain
-                            title="Uploaded policies processed"
+                            title={
+                                simulator.error ? simulator.error : 'Uploaded policies processed'
+                            }
                         />
                     </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>
@@ -245,6 +255,7 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
+                            applyNetworkPolicies={applyNetworkPolicies}
                         />
                     </StackItem>
                 </Stack>
