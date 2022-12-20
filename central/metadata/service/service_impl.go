@@ -7,12 +7,14 @@ import (
 	"github.com/golang/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -24,6 +26,8 @@ import (
 // Service is the struct that manages the Metadata API
 type serviceImpl struct {
 	v1.UnimplementedMetadataServiceServer
+
+	db *pgxpool.Pool
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -43,10 +47,19 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadata, error) {
+	dbAvailable := true
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := s.db.Ping(ctx); err != nil {
+			dbAvailable = false
+			log.Warn("central is unable to communicate with the database.")
+		}
+	}
+
 	metadata := &v1.Metadata{
 		BuildFlavor:   buildinfo.BuildFlavor,
 		ReleaseBuild:  buildinfo.ReleaseBuild,
 		LicenseStatus: v1.Metadata_VALID,
+		DbAvailable:   dbAvailable,
 	}
 	// Only return the version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
