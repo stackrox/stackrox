@@ -9,9 +9,8 @@ import (
 )
 
 func hash(id string) string {
-	sha := sha256.New()
-	_, _ = sha.Write([]byte(id))
-	return base64.StdEncoding.EncodeToString(sha.Sum(nil))
+	h := sha256.Sum256([]byte(id))
+	return base64.StdEncoding.EncodeToString(h[:])
 }
 
 // HashUserID anonymizes user ID so that it can be sent to the external
