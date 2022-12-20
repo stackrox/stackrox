@@ -8,30 +8,13 @@ import (
 )
 
 func TestRequestParams_GetMethod(t *testing.T) {
-	methods := map[string]string{
-		"Get":     http.MethodGet,
-		"Post":    http.MethodPost,
-		"Put":     http.MethodPut,
-		"Delete":  http.MethodDelete,
-		"Patch":   http.MethodPatch,
-		"Head":    http.MethodHead,
-		"Connect": http.MethodConnect,
-		"Options": http.MethodOptions,
-		"Trace":   http.MethodTrace,
-		"Sixth":   http.MethodGet,
-	}
-	for prefix, method := range methods {
-		rp := &RequestParams{
-			Path: "/v1.Service/" + prefix + "Finger",
-		}
-		assert.Equal(t, method, rp.GetMethod())
-	}
-	rp := &RequestParams{
-		Path: "",
-	}
-	assert.Equal(t, http.MethodGet, rp.GetMethod())
-	rp = &RequestParams{
-		Path: "PutFinger",
-	}
-	assert.Equal(t, http.MethodPut, rp.GetMethod())
+	rp := &RequestParams{Path: "/v1.Service/Method"}
+	assert.Equal(t, rp.Path, rp.GetMethod(), "must be equal to Path, as there's no request details")
+
+	rp = &RequestParams{Path: "/v1/method"}
+	rp.HTTPReq, _ = http.NewRequest(http.MethodPost, "/path", nil)
+	assert.Equal(t, http.MethodPost, rp.GetMethod(), "must be POST, as the HTTP request is provided")
+
+	rp.HTTPReq, _ = http.NewRequest("", "/path", nil)
+	assert.Equal(t, http.MethodGet, rp.GetMethod(), "must be GET, as this is the default HTTP method")
 }
