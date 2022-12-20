@@ -19,7 +19,7 @@ type interceptorsTest struct {
 	suite.Suite
 }
 
-func (i *interceptorsTest) SetupTest() {
+func (t *interceptorsTest) SetupTest() {
 	// clean the global set of uninitialized clusters:
 	uninitializedClusters = set.NewSet[string]()
 }
