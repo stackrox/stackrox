@@ -18,7 +18,6 @@ let opnamesForDashboard = [
     'recentlyDetectedImageVulnerabilities',
     'mostCommonVulnerabilities',
     'mostCommonImageVulnerabilities',
-    'deploymentsWithMostSeverePolicyViolations',
     'clustersWithMostOrchestratorIstioVulnerabilities',
     'clustersWithMostClusterVulnerabilities',
 ];

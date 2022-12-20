@@ -9,7 +9,6 @@ import StatusChip from 'Components/StatusChip';
 import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
-import PolicyViolationsBySeverity from 'Containers/VulnMgmt/widgets/PolicyViolationsBySeverity';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
@@ -153,9 +152,6 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                                 labels={labels}
                                 annotations={annotations}
                             />
-                        </div>
-                        <div className="s-1">
-                            <PolicyViolationsBySeverity entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
                             <CvesByCvssScore entityContext={currentEntity} />
