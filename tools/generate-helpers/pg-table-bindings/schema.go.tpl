@@ -23,7 +23,7 @@ import (
 &postgres.CreateStmts{
     GormModel: (*{{$schema.Table|upperCamelCase}})(nil),
     Children: []*postgres.CreateStmts{
-     {{- range $idx, $child := $schema.Children }}
+     {{- range $index, $child := $schema.Children }}
         {{- template "createTableStmt" $child }},
     {{- end }}
     },
@@ -80,7 +80,7 @@ var (
 {{- $schema := .Schema }}
     // {{$schema.Table|upperCamelCase}} holds the Gorm model for Postgres table `{{$schema.Table|lowerCase}}`.
     type {{$schema.Table|upperCamelCase}} struct {
-    {{- range $idx, $field := $schema.DBColumnFields }}
+    {{- range $index, $field := $schema.DBColumnFields }}
         {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"{{- /**/ -}}
         column:{{$field.ColumnName|lowerCase}};{{- /**/ -}}
         type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{- /**/ -}}
@@ -93,7 +93,7 @@ var (
         {{end}}{{- /**/ -}}
         "`
     {{- end}}
-    {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
+    {{- range $index, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
         {{$rel.OtherSchema.Table|upperCamelCase}}{{if $rel.CycleReference}}Cycle{{end}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"{{- /**/ -}}
         foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};{{- /**/ -}}
         references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;{{- /**/ -}}
@@ -101,13 +101,13 @@ var (
         "`
     {{- end}}
     }
-    {{- range $idx, $child := $schema.Children }}
+    {{- range $index, $child := $schema.Children }}
         {{- template "createGormModel"  dict "Schema" $child "Obj" $obj }}
     {{- end }}
 {{- end}}
 {{- define "createTableNames" }}
 	{{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
-	{{- range $idx, $child := .Children }}
+	{{- range $index, $child := .Children }}
 	   {{- template "createTableNames" $child }}
     {{- end }}
 {{- end}}

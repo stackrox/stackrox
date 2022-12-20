@@ -1,10 +1,10 @@
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
-{{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
-{{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
+{{define "paramList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
+{{define "argList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
+{{define "whereMatch"}}{{range $index, $pk := .}}{{if $index}} AND {{end}}{{$pk.ColumnName}} = ${{add $index 1}}{{end}}{{end}}
+{{define "commaSeparatedColumns"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
+{{define "commandSeparatedRefs"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.Reference}}{{end}}{{end}}
+{{define "updateExclusions"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
 
 {{- $ := . }}
 {{- $pks := .Schema.PrimaryKeys }}
@@ -169,20 +169,20 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
     var query string
     {{end}}
 
-    {{range $idx, $child := $schema.Children }}
+    {{range $index, $child := $schema.Children }}
     for childIndex, child := range obj.{{$child.ObjectGetter}} {
         if err := {{ template "insertFunctionName" $child }}(ctx, batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
             return err
         }
     }
 
-    query = "delete from {{$child.Table}} where {{ range $idx, $field := $child.FieldsReferringToParent }}{{if $idx}} AND {{end}}{{$field.ColumnName}} = ${{add $idx 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
+    query = "delete from {{$child.Table}} where {{ range $index, $field := $child.FieldsReferringToParent }}{{if $index}} AND {{end}}{{$field.ColumnName}} = ${{add $index 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
     batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
     {{- end}}
     return nil
 }
 
-{{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false "migration" $migration }}{{end}}
+{{range $index, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false "migration" $migration }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
@@ -195,7 +195,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
 {{- define "copyObject"}}
 {{- $migration := .migration }}
 {{- $schema := .schema }}
-func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, {{ range $idx, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
 
     inputRows := [][]interface{}{}
 
@@ -208,7 +208,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     {{end}}
 
     copyCols := []string {
-    {{range $idx, $field := $schema.DBColumnFields}}
+    {{range $index, $field := $schema.DBColumnFields}}
         "{{$field.ColumnName|lowerCase}}",
     {{end}}
     }
@@ -228,7 +228,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         {{end}}
 
         inputRows = append(inputRows, []interface{}{
-            {{ range $idx, $field := $schema.DBColumnFields }}
+            {{ range $index, $field := $schema.DBColumnFields }}
             {{if eq $field.DataType "datetime"}}
             pgutils.NilOrTime({{$field.Getter "obj"}}),
             {{- else if eq $field.SQLType "uuid" }}
@@ -288,7 +288,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     for idx, obj := range objs {
         _ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
         {{range $child := $schema.Children }}
-        if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $idx, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
+        if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
         {{- end}}
@@ -523,7 +523,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 
     q := search.ConjunctionQuery(
         sacQueryFilter,
-    {{- range $idx, $pk := $pks}}
+    {{- range $index, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
         search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
@@ -574,7 +574,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 
     q := search.ConjunctionQuery(
     sacQueryFilter,
-    {{- range $idx, $pk := $pks}}
+    {{- range $index, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
             search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
@@ -656,7 +656,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 
     q := search.ConjunctionQuery(
         sacQueryFilter,
-    {{- range $idx, $pk := $pks}}
+    {{- range $index, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
         search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
