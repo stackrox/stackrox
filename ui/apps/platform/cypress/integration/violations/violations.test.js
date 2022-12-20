@@ -1,35 +1,36 @@
-import { selectors } from '../../constants/ViolationsPage';
 import withAuth from '../../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
+
+import {
+    assertSortedItems,
+    callbackForPairOfAscendingPolicySeverityValuesFromElements,
+    callbackForPairOfDescendingPolicySeverityValuesFromElements,
+} from '../../helpers/sort';
+
 import {
     clickDeploymentTabWithFixture,
-    sortViolationsTableByColumn,
+    interactAndWaitForSortedViolationsResponses,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
     visitViolations,
     visitViolationsFromLeftNav,
     visitViolationsWithFixture,
-} from '../../helpers/violations';
+} from './Violations.helpers';
+import { selectors } from './Violations.selectors';
 
-describe('Violations page', () => {
+describe('Violations', () => {
     withAuth();
 
     it('should visit via left nav', () => {
         visitViolationsFromLeftNav();
     });
 
-    it('should select item in left nav', () => {
-        visitViolations();
-
-        cy.get(selectors.navLink).should('have.class', 'pf-m-current');
-    });
-
     it('should have violations in table', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
         const count = 2;
-        cy.get(selectors.resultsFoundHeader(count));
-        cy.get(selectors.table.rows).should('have.length', count);
+        cy.get(`h2:contains("${count} result")`); // Partial match is independent of singular or plural count
+        cy.get('tbody tr').should('have.length', count);
     });
 
     it('should have title and table column headings', () => {
@@ -46,18 +47,9 @@ describe('Violations page', () => {
         cy.get('th[scope="col"]:contains("Lifecycle")');
         cy.get('th[scope="col"]:contains("Time")');
 
-        cy.get(`${selectors.firstTableRow} td[data-label="Entity"]`).should(
-            'contain',
-            'ip-masq-agent'
-        ); // table cell also has cluster/namespace
-        cy.get(`${selectors.firstTableRow} td[data-label="Type"]`).should(
-            'have.text',
-            'deployment'
-        );
-        cy.get(`${selectors.firstTableRow} td[data-label="Lifecycle"]`).should(
-            'have.text',
-            'Runtime'
-        );
+        cy.get('tbody tr:nth-child(1) td[data-label="Entity"]').should('contain', 'ip-masq-agent'); // table cell also has cluster/namespace
+        cy.get('tbody tr:nth-child(1) td[data-label="Type"]').should('have.text', 'deployment');
+        cy.get('tbody tr:nth-child(1) td[data-label="Lifecycle"]').should('have.text', 'Runtime');
     });
 
     it('should go to the detail page on row click', () => {
@@ -90,26 +82,26 @@ describe('Violations page', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
         // Lifecycle: Runtime
-        cy.get(`${selectors.firstTableRow} ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get(selectors.firstTableRow)
+        cy.get(`tbody tr:nth-child(1) ${selectors.actions.btn}`).click(); // click kabob to open actions menu
+        cy.get('tbody tr:nth-child(1)')
             .get(selectors.actions.excludeDeploymentBtn)
             .should('exist')
             .get(selectors.actions.resolveBtn)
             .should('exist')
             .get(selectors.actions.resolveAndAddToBaselineBtn)
             .should('exist');
-        cy.get(`${selectors.firstTableRow} ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(1) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
 
         // Lifecycle: Deploy
-        cy.get(`${selectors.lastTableRow} ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get(selectors.lastTableRow)
+        cy.get(`tbody tr:nth-child(2) ${selectors.actions.btn}`).click(); // click kabob to open actions menu
+        cy.get('tbody tr:nth-child(2)')
             .get(selectors.actions.resolveBtn)
             .should('not.exist')
             .get(selectors.actions.resolveAndAddToBaselineBtn)
             .should('not.exist')
             .get(selectors.actions.excludeDeploymentBtn)
             .should('exist');
-        cy.get(`${selectors.lastTableRow} ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(2) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
     });
 
     // TODO test of bulk actions
@@ -161,35 +153,33 @@ describe('Violations page', () => {
         // Conditionally rendered: Policy scope
     });
 
-    it('should sort violations when clicking on a table header', () => {
+    it('should sort the Severity column', () => {
         visitViolations();
 
-        // First click sorts in descending order.
-        sortViolationsTableByColumn('Policy');
+        const thSelector = 'th[scope="col"]:contains("Severity")';
+        const tdSelector = 'td[data-label="Severity"]';
 
-        cy.get('td[data-label="Policy"] a').should(($anchors) => {
-            const firstName = $anchors.first().text();
-            const lastName = $anchors.last().text();
-            const policyNamesReceivedOrder = [firstName, lastName];
-            const policyNamesExpectedOrder =
-                firstName.localeCompare(lastName) >= 0
-                    ? [firstName, lastName]
-                    : [lastName, firstName];
-            expect(policyNamesReceivedOrder).to.deep.equal(policyNamesExpectedOrder);
+        // 0. Initial table state is sorted descending by Time.
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
+
+        // 1. Sort decending by the Severity column.
+        interactAndWaitForSortedViolationsResponses(() => {
+            cy.get(thSelector).click();
+        }, 'desc');
+
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
         });
 
-        // Second click sorts in ascending order.
-        sortViolationsTableByColumn('Policy');
+        // 2. Sort ascending by the Severity column.
+        interactAndWaitForSortedViolationsResponses(() => {
+            cy.get(thSelector).click();
+        }, 'asc');
 
-        cy.get('td[data-label="Policy"] a').should(($anchors) => {
-            const firstName = $anchors.first().text();
-            const lastName = $anchors.last().text();
-            const policyNamesReceivedOrder = [firstName, lastName];
-            const policyNamesExpectedOrder =
-                firstName.localeCompare(lastName) <= 0
-                    ? [firstName, lastName]
-                    : [lastName, firstName];
-            expect(policyNamesReceivedOrder).to.deep.equal(policyNamesExpectedOrder);
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
         });
     });
 });
