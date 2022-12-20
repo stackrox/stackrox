@@ -193,10 +193,7 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 }
 
 // CollectPostgresDatabaseStats -- collect database level stats for Postgres
-func CollectPostgresDatabaseStats(ctx context.Context, postgresConfig *pgxpool.Config) {
-	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
-	defer cancel()
-
+func CollectPostgresDatabaseStats(postgresConfig *pgxpool.Config) {
 	cloneSize, err := pgadmin.GetDatabaseSize(postgresConfig, migrations.CurrentDatabase)
 	if err != nil {
 		log.Errorf("error fetching clone size: %v", err)
@@ -211,6 +208,6 @@ func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool, postgresConf
 	defer t.Stop()
 	for range t.C {
 		_ = CollectPostgresStats(ctx, db)
-		CollectPostgresDatabaseStats(ctx, postgresConfig)
+		CollectPostgresDatabaseStats(postgresConfig)
 	}
 }
