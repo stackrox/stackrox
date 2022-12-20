@@ -261,8 +261,36 @@ check_stackrox_logs() {
         die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
+    check_for_stackrox_OOMs "$dir"
     check_for_stackrox_restarts "$dir"
     check_for_errors_in_stackrox_logs "$dir"
+}
+
+check_for_stackrox_OOMs() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: check_for_stackrox_OOMs <dir>"
+    fi
+
+    local dir="$1"
+
+    if [[ ! -d "$dir/stackrox/pods" ]]; then
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+    fi
+
+    local objects
+    objects=$(ls "$dir"/stackrox/pods/*_object.json || true)
+    if [[ -n "$objects" ]]; then
+        for describe in $objects; do
+            echo "$describe"
+            if grep OOMKilled "$describe"; then
+                echo "OOM $describe"
+                save_junit_failure "OOMCheck/$container" "OOMed"
+            else
+                echo "NOT OOM $describe"
+                save_junit_success "OOMCheck/$container"
+            fi
+        done
+    fi
 }
 
 check_for_stackrox_restarts() {
