@@ -2,6 +2,7 @@ package centralclient
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/installation/store"
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
@@ -18,6 +20,8 @@ import (
 )
 
 var (
+	apiWhiteList = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
+
 	config *phonehome.Config
 	once   sync.Once
 	log    = logging.LoggerForModule()
@@ -46,6 +50,8 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "cannot get central deployment")
 	}
+
+	trackedPaths = set.NewFrozenSet(strings.Split(apiWhiteList.Setting(), ",")...)
 
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.OpenshiftAPI.BooleanSetting() {
@@ -80,7 +86,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 }
 
 // InstanceConfig collects the central instance telemetry configuration from
-// central Deployment labels and annotations, installation store and
+// central Deployment labels and environment variables, installation store and
 // orchestrator properties. The collected data is used for configuring the
 // telemetry client.
 func InstanceConfig() *phonehome.Config {
@@ -98,6 +104,13 @@ func InstanceConfig() *phonehome.Config {
 		}
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
+		log.Info("API path telemetry enabled for: ", trackedPaths)
+
+		for event, funcs := range interceptors {
+			for _, f := range funcs {
+				config.AddInterceptorFunc(event, f)
+			}
+		}
 
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 			return props, nil

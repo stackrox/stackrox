@@ -39,3 +39,8 @@ func TestConfig_HashUserAuthID(t *testing.T) {
 	h = cfg.HashUserAuthID(id)
 	assert.Equal(t, hash("test-client:test-provider:test-id"), h)
 }
+
+func TestConfig_HashAdminUserID(t *testing.T) {
+	admin := "2a3e1829-8f84-40c1-a761-006f07a59666:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin"
+	assert.Equal(t, "+5GOIqkMuJMFDqJcMKvAGvbSRtCUjqdCB+UeU1hOqQA=", hash(admin))
+}
