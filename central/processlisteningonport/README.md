@@ -43,3 +43,38 @@ information nor Networking information, because:
   collect information: either it's going to be from the process (then join the
   process to the listening info) or from the networking point of view (join
   listening to the process info).
+
+PLOP lifecycle looks like this:
+
+* When the process starts listen on a port, Collector sends the PLOP event with
+  CloseTimestamp = null to indicate that the endpoint is active.
+* As soon as the process finishes listening, Collector sends a new PLOP event
+  with the same information and CloseTimestamp set to an actual timestamp
+  value. This indicates that the PLOP object is closed, have to be excluded
+  from the API (which only returns active endpoints) and will be cleaned up
+  together with the process during process pruning.
+
+In case if you need to troubleshoot PLOP, there are following metrics
+available (including generated metrics):
+
+Storage:
+
+* ProcessListeningOnPortStorage.UpsertMany -- represents the time frame
+  how long does it take to add or replace new PLOP objects
+
+* ProcessListeningOnPortStorage.RemoveMany -- how long does it take to remove
+  PLOP objects (being used for pruning with process information)
+
+* ProcessListeningOnPortStorage.GetByQuery --  time it takes to fetch PLOPs
+  (used to fetch esiting record for marking them as closed)
+
+* ProcessListeningOnPortStorage.GetProcessListeningOnPort -- represents how
+  long does it take to fetch PLOP objects for the API
+
+There are more storage metrics available, but operations they represent are not
+in use at the moment.
+
+Internal API:
+
+* ProcessListeningOnPort -- counter, represents how many PLOP objects Sensor
+  has sent to the Central.
