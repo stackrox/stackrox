@@ -912,6 +912,12 @@ spec:
                 - name: RELATED_IMAGE_COLLECTOR_FULL
                 - name: RELATED_IMAGE_ROXCTL
                 - name: RELATED_IMAGE_CENTRAL_DB
+                - name: MEMORY_LIMIT_BYTES
+                  valueFrom:
+                    resourceFieldRef:
+                      containerName: manager
+                      divisor: '0'
+                      resource: limits.memory
                 image: quay.io/stackrox-io/stackrox-operator:0.0.1
                 livenessProbe:
                   httpGet:
