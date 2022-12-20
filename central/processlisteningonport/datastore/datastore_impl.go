@@ -228,3 +228,36 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 
 	return processesListeningOnPorts, nil
 }
+
+func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
+	if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	return ds.storage.Walk(ctx, fn)
+}
+
+func (ds *datastoreImpl) RemovePLOP(ctx context.Context, ids []string) error {
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	return ds.removePLOP(ctx, ids)
+}
+
+func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
+	log.Infof("Deleting PLOP records")
+
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
+		return err
+	}
+
+	return nil
+}

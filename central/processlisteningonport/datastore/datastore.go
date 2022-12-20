@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+type WalkFn = func(plop *storage.ProcessListeningOnPortStorage) error
+
 // DataStore interface for ProcessListeningOnPort object interaction with the database
 //go:generate mockgen-wrapper
 type DataStore interface {
@@ -16,6 +18,8 @@ type DataStore interface {
 		ctx context.Context,
 		deployment string,
 	) ([]*storage.ProcessListeningOnPort, error)
+	WalkAll(ctx context.Context, fn WalkFn) error
+	RemovePLOP(ctx context.Context, ids []string) error
 }
 
 // New creates a data store object to access the database. Since some
