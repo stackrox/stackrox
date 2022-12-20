@@ -5,6 +5,10 @@ export const selectors = {
                 tile: "[data-testid='tile-link']:contains('cluster')",
                 value: "[data-testid='tile-link']:contains('cluster') [data-testid='tile-link-value']",
             },
+            deployment: {
+                tile: "[data-testid='tile-link']:contains('deployment')",
+                value: "[data-testid='tile-link']:contains('deployment') [data-testid='tile-link-value']",
+            },
             namespace: {
                 tile: "[data-testid='tile-link']:contains('namespace')",
                 value: "[data-testid='tile-link']:contains('namespace') [data-testid='tile-link-value']",
