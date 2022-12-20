@@ -180,18 +180,18 @@ var (
 		Help:      "bytes being used by toast for a table",
 	}, []string{"Table"})
 
-	PostgresDBSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	PostgresDBSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "postgres_db_size",
+		Name:      "postgres_active_db_size",
 		Help:      "bytes being used by Postgres Database",
-	}, []string{"Clone"})
+	})
 
 	PostgresConnected = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_connected",
-		Help:      "flag indicating if central is connected to the Postgres Database",
+		Help:      "flag indicating if central is connected to the Postgres Database. 0 NOT connected, 1 connected",
 	})
 )
 

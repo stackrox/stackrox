@@ -1,11 +1,14 @@
 package globaldb
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -17,7 +20,7 @@ func TestConfigSetup(t *testing.T) {
 	suite.Run(t, new(PostgresUtilitySuite))
 }
 
-func (s *PostgresUtilitySuite) SetupTest() {
+func (s *PostgresUtilitySuite) SetupSuite() {
 	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -87,4 +90,20 @@ func (s *PostgresUtilitySuite) TestSourceParser() {
 		s.Equal(c.expectedMap, sourceMap)
 	}
 
+}
+
+func (s *PostgresUtilitySuite) TestCollectPostgresStats() {
+	ctx := sac.WithAllAccess(context.Background())
+	tp := pgtest.ForT(s.T())
+
+	stats := CollectPostgresStats(ctx, tp.Pool)
+	s.NotNil(stats)
+	s.Equal(true, stats.DatabaseAvailable)
+	s.True(len(stats.Tables) > 0)
+
+	tp.Pool.Close()
+
+	stats = CollectPostgresStats(ctx, tp.Pool)
+	s.NotNil(stats)
+	s.Equal(false, stats.DatabaseAvailable)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
@@ -140,16 +141,16 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 		metrics.PostgresConnected.Set(float64(0))
 		dbStats.DatabaseAvailable = false
 		log.Errorf("not connected to Postgres: %v", err)
-		return nil
-	} else {
-		metrics.PostgresConnected.Set(float64(1))
-		dbStats.DatabaseAvailable = true
+		return dbStats
 	}
+
+	metrics.PostgresConnected.Set(float64(1))
+	dbStats.DatabaseAvailable = true
 
 	row, err := db.Query(ctx, tableQuery)
 	if err != nil {
 		log.Errorf("error fetching object counts: %v", err)
-		return nil
+		return dbStats
 	}
 
 	statsSlice := make([]*stats.TableStats, 0)
@@ -196,18 +197,13 @@ func CollectPostgresDatabaseStats(ctx context.Context, postgresConfig *pgxpool.C
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 
-	clones := pgadmin.GetDatabaseClones(postgresConfig)
-
-	for _, clone := range clones {
-		cloneSize, err := pgadmin.GetDatabaseSize(postgresConfig, clone)
-		if err != nil {
-			log.Errorf("error fetching clone size: %v", err)
-			return
-		}
-
-		cloneLabel := prometheus.Labels{"Clone": clone}
-		metrics.PostgresDBSize.With(cloneLabel).Set(float64(cloneSize))
+	cloneSize, err := pgadmin.GetDatabaseSize(postgresConfig, migrations.CurrentDatabase)
+	if err != nil {
+		log.Errorf("error fetching clone size: %v", err)
+		return
 	}
+
+	metrics.PostgresDBSize.Set(float64(cloneSize))
 }
 
 func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool, postgresConfig *pgxpool.Config) {
