@@ -24,10 +24,10 @@ var (
 	}
 )
 
-// Adds Path, Code and User-Agent properties to API Call events for the API
-// paths which start from the prefixes specified in the
-// rhacs.redhat.com/telemetry-apipaths central deployment annotation
-// ("*" value enables all paths) and are not in the ignoredPath list.
+// Adds Path, Code, User-Agent and Method properties to API Call events for the
+// API paths specified in the ROX_TELEMETRY_API_WHITELIST central deployment
+// environment variable ("*" value enables all paths) and have no prefix from
+// the ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
 	for _, ip := range ignoredPaths {
 		if strings.HasPrefix(rp.Path, ip) {
