@@ -53,7 +53,7 @@ func (b *indexerImpl) AddSecrets(_ []*storage.Secret) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteSecret(id string) error {
+func (b *indexerImpl) DeleteSecret(identifier string) error {
 	return nil
 }
 

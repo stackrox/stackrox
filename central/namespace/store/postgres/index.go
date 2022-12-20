@@ -53,7 +53,7 @@ func (b *indexerImpl) AddNamespaceMetadatas(_ []*storage.NamespaceMetadata) erro
 	return nil
 }
 
-func (b *indexerImpl) DeleteNamespaceMetadata(id string) error {
+func (b *indexerImpl) DeleteNamespaceMetadata(identifier string) error {
 	return nil
 }
 

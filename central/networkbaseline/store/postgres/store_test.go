@@ -198,7 +198,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACWalk() {
 	s.store.Upsert(withAllAccessCtx, objB)
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIds := range map[string][]string{
+	for name, expectedIDs := range map[string][]string{
 		withAllAccess:           []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
 		withNoAccess:            []string{},
 		withNoAccessToCluster:   []string{},
@@ -207,14 +207,14 @@ func (s *NetworkBaselinesStoreSuite) TestSACWalk() {
 		withAccessToCluster:     []string{objA.GetDeploymentId()},
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			ids := []string{}
-			getIds := func(obj *storage.NetworkBaseline) error {
-				ids = append(ids, obj.GetDeploymentId())
+			identifiers := []string{}
+			getIDs := func(obj *storage.NetworkBaseline) error {
+				identifiers = append(identifiers, obj.GetDeploymentId())
 				return nil
 			}
-			err := s.store.Walk(ctxs[name], getIds)
+			err := s.store.Walk(ctxs[name], getIDs)
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, expectedIds, ids)
+			assert.ElementsMatch(t, expectedIDs, identifiers)
 		})
 	}
 }
@@ -231,7 +231,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetIDs() {
 	s.store.Upsert(withAllAccessCtx, objB)
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIds := range map[string][]string{
+	for name, expectedIDs := range map[string][]string{
 		withAllAccess:           []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
 		withNoAccess:            []string{},
 		withNoAccessToCluster:   []string{},
@@ -240,9 +240,9 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetIDs() {
 		withAccessToCluster:     []string{objA.GetDeploymentId()},
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			ids, err := s.store.GetIDs(ctxs[name])
+			identifiers, err := s.store.GetIDs(ctxs[name])
 			assert.NoError(t, err)
-			assert.EqualValues(t, expectedIds, ids)
+			assert.EqualValues(t, expectedIDs, identifiers)
 		})
 	}
 }
@@ -399,7 +399,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetMany() {
 		})
 	}
 
-	s.T().Run("with no ids", func(t *testing.T) {
+	s.T().Run("with no identifiers", func(t *testing.T) {
 		actual, missingIndices, err := s.store.GetMany(withAllAccessCtx, []string{})
 		assert.Nil(t, err)
 		assert.Nil(t, actual)

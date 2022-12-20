@@ -53,7 +53,7 @@ func (b *indexerImpl) AddNetworkEntities(_ []*storage.NetworkEntity) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteNetworkEntity(id string) error {
+func (b *indexerImpl) DeleteNetworkEntity(identifier string) error {
 	return nil
 }
 

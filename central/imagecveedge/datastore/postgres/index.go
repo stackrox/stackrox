@@ -53,7 +53,7 @@ func (b *indexerImpl) AddImageCVEEdges(_ []*storage.ImageCVEEdge) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteImageCVEEdge(id string) error {
+func (b *indexerImpl) DeleteImageCVEEdge(identifier string) error {
 	return nil
 }
 

@@ -53,7 +53,7 @@ func (b *indexerImpl) AddProcessIndicators(_ []*storage.ProcessIndicator) error 
 	return nil
 }
 
-func (b *indexerImpl) DeleteProcessIndicator(id string) error {
+func (b *indexerImpl) DeleteProcessIndicator(identifier string) error {
 	return nil
 }
 

@@ -53,7 +53,7 @@ func (b *indexerImpl) AddTestSingleKeyStructs(_ []*storage.TestSingleKeyStruct) 
 	return nil
 }
 
-func (b *indexerImpl) DeleteTestSingleKeyStruct(id string) error {
+func (b *indexerImpl) DeleteTestSingleKeyStruct(identifier string) error {
 	return nil
 }
 

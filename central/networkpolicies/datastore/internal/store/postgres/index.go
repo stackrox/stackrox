@@ -53,7 +53,7 @@ func (b *indexerImpl) AddNetworkPolicies(_ []*storage.NetworkPolicy) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteNetworkPolicy(id string) error {
+func (b *indexerImpl) DeleteNetworkPolicy(identifier string) error {
 	return nil
 }
 

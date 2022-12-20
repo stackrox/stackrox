@@ -53,7 +53,7 @@ func (b *indexerImpl) AddImageComponents(_ []*storage.ImageComponent) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteImageComponent(id string) error {
+func (b *indexerImpl) DeleteImageComponent(identifier string) error {
 	return nil
 }
 

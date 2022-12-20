@@ -53,7 +53,7 @@ func (b *indexerImpl) AddTestParent3s(_ []*storage.TestParent3) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteTestParent3(id string) error {
+func (b *indexerImpl) DeleteTestParent3(identifier string) error {
 	return nil
 }
 

@@ -12,7 +12,7 @@
 {{- $singlePK := false }}
 {{- if eq (len $pks) 1 }}
 {{ $singlePK = index $pks 0 }}
-{{/*If there are multiple pks, then use the explicitly specified id column.*/}}
+{{/*If there are multiple pks, then use the explicitly specified ID column.*/}}
 {{- else if .Schema.ID.ColumnName}}
 {{ $singlePK = .Schema.ID }}
 {{- end }}
@@ -97,9 +97,9 @@ type Store interface {
 
 {{- if $singlePK }}
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
-    GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
+    GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
 {{- if not .JoinTable }}
-    DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
+    DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
 {{- end }}
 {{- end }}
 
@@ -170,8 +170,8 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
     {{end}}
 
     {{range $idx, $child := $schema.Children }}
-    for childIdx, child := range obj.{{$child.ObjectGetter}} {
-        if err := {{ template "insertFunctionName" $child }}(ctx, batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
+    for childIndex, child := range obj.{{$child.ObjectGetter}} {
+        if err := {{ template "insertFunctionName" $child }}(ctx, batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
             return err
         }
     }
@@ -215,7 +215,9 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     for idx, obj := range objs {
         // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+		"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+		"to simply use the object.  %s", obj)
 
         {{/* If embedded, the top-level has the full serialized object */}}
         {{if not $schema.Parent }}
@@ -249,7 +251,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
         {{ if not $schema.Parent }}
         {{if eq (len $schema.PrimaryKeys) 1}}
-        // Add the id to be deleted.
+        // Add the ID to be deleted.
         deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
         {{else}}
         if err := s.Delete(ctx, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
@@ -408,7 +410,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     {{- else if .Obj.IsDirectlyScoped -}}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     if !scopeChecker.IsAllowed() {
-        var deniedIds []string
+        var deniedIDs []string
         for _, obj := range objs {
             {{- if .Obj.IsClusterScope }}
             subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }})
@@ -416,11 +418,11 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
             subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
             {{- end }}
             if !subScopeChecker.IsAllowed() {
-                deniedIds = append(deniedIds, {{ "obj" | .Obj.GetID }})
+                deniedIDs = append(deniedIDs, {{ "obj" | .Obj.GetID }})
             }
         }
-        if len(deniedIds) != 0 {
-            return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying {{ .TrimmedType|lowerCamelCase }}s with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+        if len(deniedIDs) != 0 {
+            return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying {{ .TrimmedType|lowerCamelCase }}s with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
         }
     }
     {{- end }}
@@ -439,9 +441,8 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 
 		if len(objs) < batchAfter {
 			return s.upsert(ctx, objs...)
-		} else {
-			return s.copyFrom(ctx, objs...)
 		}
+		return s.copyFrom(ctx, objs...)
 	})
     {{- end }}
 }
@@ -486,7 +487,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the id exists in the store
+// Exists returns if the ID exists in the store
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
@@ -754,21 +755,21 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 		return nil, err
 	}
 
-	ids := make([]string, 0, len(result))
+	identifiers := make([]string, 0, len(result))
 	for _, entry := range result {
-		ids = append(ids, entry.ID)
+		identifiers = append(identifiers, entry.ID)
 	}
 
-	return ids, nil
+	return identifiers, nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.TrimmedType}}")
     {{- end}}{{/* if not .inMigration */}}
 
-    if len(ids) == 0 {
+    if len(identifiers) == 0 {
         return nil, nil, nil
     }
 
@@ -806,14 +807,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
     {{- end}}{{/* if not .inMigration */}}
     q := search.ConjunctionQuery(
         sacQueryFilter,
-        search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+        search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
     )
 
 	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
+			missingIndices := make([]int, 0, len(identifiers))
+			for i := range identifiers {
 				missingIndices = append(missingIndices, i)
 			}
 			return nil, missingIndices, nil
@@ -824,12 +825,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
     for _, msg := range rows {
 		resultsByID[{{$singlePK.Getter "msg"}}] = msg
 	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
+	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input identifiers
 	// slice, since some calling code relies on that to maintain order.
 	elems := make([]*{{.Type}}, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
+	for i, identifier := range identifiers {
+		if result, ok := resultsByID[identifier]; !ok {
 			missingIndices = append(missingIndices, i)
 		} else {
 		    elems = append(elems, result)
@@ -894,7 +895,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
 
 {{- if not .JoinTable }}
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error {
+func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
     {{- end }}{{/* if not $inMigration */}}
@@ -931,30 +932,30 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
 
     // Batch the deletes
     localBatchSize := deleteBatchSize
-    numRecordsToDelete := len(ids)
+    numRecordsToDelete := len(identifiers)
     for {
-        if len(ids) == 0 {
+        if len(identifiers) == 0 {
             break
         }
 
-        if len(ids) < localBatchSize {
-            localBatchSize = len(ids)
+        if len(identifiers) < localBatchSize {
+            localBatchSize = len(identifiers)
         }
 
-        idBatch := ids[:localBatchSize]
+        identifierBatch := identifiers[:localBatchSize]
         q := search.ConjunctionQuery(
         sacQueryFilter,
-            search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+            search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
         )
 
         if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-            err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(ids), numRecordsToDelete)
+            err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
             log.Error(err)
             return err
         }
 
         // Move the slice forward to start the next batch
-        ids = ids[localBatchSize:]
+        identifiers = identifiers[localBatchSize:]
     }
 
     return nil

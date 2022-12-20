@@ -56,8 +56,8 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.TestGrandparent, []int, error)
-	DeleteMany(ctx context.Context, ids []string) error
+	GetMany(ctx context.Context, identifiers []string) ([]*storage.TestGrandparent, []int, error)
+	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.TestGrandparent) error) error
 
@@ -98,8 +98,8 @@ func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *stor
 
 	var query string
 
-	for childIdx, child := range obj.GetEmbedded() {
-		if err := insertIntoTestGrandparentsEmbeddeds(ctx, batch, child, obj.GetId(), childIdx); err != nil {
+	for childIndex, child := range obj.GetEmbedded() {
+		if err := insertIntoTestGrandparentsEmbeddeds(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -123,8 +123,8 @@ func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, 
 
 	var query string
 
-	for childIdx, child := range obj.GetEmbedded2() {
-		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, batch, child, test_grandparents_Id, idx, childIdx); err != nil {
+	for childIndex, child := range obj.GetEmbedded2() {
+		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, batch, child, test_grandparents_Id, idx, childIndex); err != nil {
 			return err
 		}
 	}
@@ -175,7 +175,9 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, obj
 
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -195,7 +197,7 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, obj
 			serialized,
 		})
 
-		// Add the id to be deleted.
+		// Add the ID to be deleted.
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
@@ -248,7 +250,9 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx pg
 
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -305,7 +309,9 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Conte
 
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -419,9 +425,8 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestGrandpar
 
 		if len(objs) < batchAfter {
 			return s.upsert(ctx, objs...)
-		} else {
-			return s.copyFrom(ctx, objs...)
 		}
+		return s.copyFrom(ctx, objs...)
 	})
 }
 
@@ -445,7 +450,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the id exists in the store
+// Exists returns if the ID exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestGrandparent")
 
@@ -574,19 +579,19 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	ids := make([]string, 0, len(result))
+	identifiers := make([]string, 0, len(result))
 	for _, entry := range result {
-		ids = append(ids, entry.ID)
+		identifiers = append(identifiers, entry.ID)
 	}
 
-	return ids, nil
+	return identifiers, nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestGrandparent, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.TestGrandparent, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestGrandparent")
 
-	if len(ids) == 0 {
+	if len(identifiers) == 0 {
 		return nil, nil, nil
 	}
 
@@ -606,14 +611,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestG
 	}
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
 	)
 
 	rows, err := postgres.RunGetManyQueryForSchema[storage.TestGrandparent](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
+			missingIndices := make([]int, 0, len(identifiers))
+			for i := range identifiers {
 				missingIndices = append(missingIndices, i)
 			}
 			return nil, missingIndices, nil
@@ -624,12 +629,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestG
 	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
+	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input identifiers
 	// slice, since some calling code relies on that to maintain order.
 	elems := make([]*storage.TestGrandparent, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
+	for i, identifier := range identifiers {
+		if result, ok := resultsByID[identifier]; !ok {
 			missingIndices = append(missingIndices, i)
 		} else {
 			elems = append(elems, result)
@@ -672,7 +677,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 }
 
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TestGrandparent")
 
 	var sacQueryFilter *v1.Query
@@ -689,30 +694,30 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(ids)
+	numRecordsToDelete := len(identifiers)
 	for {
-		if len(ids) == 0 {
+		if len(identifiers) == 0 {
 			break
 		}
 
-		if len(ids) < localBatchSize {
-			localBatchSize = len(ids)
+		if len(identifiers) < localBatchSize {
+			localBatchSize = len(identifiers)
 		}
 
-		idBatch := ids[:localBatchSize]
+		identifierBatch := identifiers[:localBatchSize]
 		q := search.ConjunctionQuery(
 			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
 		)
 
 		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
 			log.Error(err)
 			return err
 		}
 
 		// Move the slice forward to start the next batch
-		ids = ids[localBatchSize:]
+		identifiers = identifiers[localBatchSize:]
 	}
 
 	return nil

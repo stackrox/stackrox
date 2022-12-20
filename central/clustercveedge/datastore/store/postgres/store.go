@@ -50,7 +50,7 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.ClusterCVEEdge, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ClusterCVEEdge, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.ClusterCVEEdge, []int, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storage.ClusterCVEEdge, []int, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ClusterCVEEdge) error) error
 
@@ -90,7 +90,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the id exists in the store
+// Exists returns if the ID exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ClusterCVEEdge")
 
@@ -173,19 +173,19 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	ids := make([]string, 0, len(result))
+	identifiers := make([]string, 0, len(result))
 	for _, entry := range result {
-		ids = append(ids, entry.ID)
+		identifiers = append(identifiers, entry.ID)
 	}
 
-	return ids, nil
+	return identifiers, nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ClusterCVEEdge, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.ClusterCVEEdge, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdge")
 
-	if len(ids) == 0 {
+	if len(identifiers) == 0 {
 		return nil, nil, nil
 	}
 
@@ -205,14 +205,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Clust
 	}
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
 	)
 
 	rows, err := postgres.RunGetManyQueryForSchema[storage.ClusterCVEEdge](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
+			missingIndices := make([]int, 0, len(identifiers))
+			for i := range identifiers {
 				missingIndices = append(missingIndices, i)
 			}
 			return nil, missingIndices, nil
@@ -223,12 +223,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Clust
 	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
+	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input identifiers
 	// slice, since some calling code relies on that to maintain order.
 	elems := make([]*storage.ClusterCVEEdge, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
+	for i, identifier := range identifiers {
+		if result, ok := resultsByID[identifier]; !ok {
 			missingIndices = append(missingIndices, i)
 		} else {
 			elems = append(elems, result)

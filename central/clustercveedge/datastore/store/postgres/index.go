@@ -53,7 +53,7 @@ func (b *indexerImpl) AddClusterCVEEdges(_ []*storage.ClusterCVEEdge) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteClusterCVEEdge(id string) error {
+func (b *indexerImpl) DeleteClusterCVEEdge(identifier string) error {
 	return nil
 }
 

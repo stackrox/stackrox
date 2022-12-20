@@ -53,7 +53,7 @@ func (b *indexerImpl) AddReportConfigurations(_ []*storage.ReportConfiguration) 
 	return nil
 }
 
-func (b *indexerImpl) DeleteReportConfiguration(id string) error {
+func (b *indexerImpl) DeleteReportConfiguration(identifier string) error {
 	return nil
 }
 

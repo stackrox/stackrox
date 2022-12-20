@@ -53,7 +53,7 @@ func (b *indexerImpl) AddClusters(_ []*storage.Cluster) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteCluster(id string) error {
+func (b *indexerImpl) DeleteCluster(identifier string) error {
 	return nil
 }
 
