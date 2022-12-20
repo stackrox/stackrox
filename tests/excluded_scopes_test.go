@@ -16,8 +16,8 @@ import (
 )
 
 func TestExcludedScopes(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("ROX-13420")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("No need to run with legacy database")
 	}
 	defer teardownTestExcludedScopes(t)
 	setupNginxLatestTagDeployment(t)

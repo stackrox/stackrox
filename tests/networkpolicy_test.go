@@ -120,8 +120,8 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 	if buildinfo.ReleaseBuild || !CheckIfCentralHasFeatureFlag(t, conn) {
 		t.Skip("Feature flag disabled")
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("ROX-13420")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("No need to run with legacy database")
 	}
 
 	testCases := map[string]struct {

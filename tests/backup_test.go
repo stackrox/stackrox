@@ -23,8 +23,8 @@ import (
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
 func TestBackup(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("ROX-13420")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("No need to run with legacy database")
 	}
 
 	setupNginxLatestTagDeployment(t)
