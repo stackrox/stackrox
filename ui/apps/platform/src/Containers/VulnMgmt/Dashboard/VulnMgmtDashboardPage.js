@@ -22,7 +22,6 @@ import TopRiskiestEntities from '../widgets/TopRiskiestEntities';
 import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
 import RecentlyDetectedImageVulnerabilities from '../widgets/RecentlyDetectedImageVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
-import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostClusterVulnerabilities from '../widgets/ClustersWithMostClusterVulnerabilities';
 import CvesMenu from './CvesMenu';
 
@@ -139,9 +138,6 @@ const VulnDashboardPage = ({ history }) => {
                 </div>
                 <div className="s-2 md:sy-2 md:sx-2 lg:sy-4 xxxl:sx-2">
                     <MostCommonVulnerabilities search={searchState} />
-                </div>
-                <div className="s-2 xxxl:sx-2">
-                    <DeploymentsWithMostSeverePolicyViolations limit={DASHBOARD_LIMIT} />
                 </div>
                 <div className="s-2 xxxl:sx-2">
                     <ClustersWithMostClusterVulnerabilities />

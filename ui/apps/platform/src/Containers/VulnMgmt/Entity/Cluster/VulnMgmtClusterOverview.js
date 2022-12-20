@@ -18,7 +18,6 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedImageVulnerabilities from '../../widgets/RecentlyDetectedImageVulnerabilities';
 import TopRiskiestEntities from '../../widgets/TopRiskiestEntities';
-import DeploymentsWithMostSeverePolicyViolations from '../../widgets/DeploymentsWithMostSeverePolicyViolations';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
@@ -130,12 +129,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                         </div>
                         <div className="s-1">
                             <TopRiskiestEntities
-                                limit={OVERVIEW_LIMIT}
-                                entityContext={currentEntity}
-                            />
-                        </div>
-                        <div className="s-1">
-                            <DeploymentsWithMostSeverePolicyViolations
                                 limit={OVERVIEW_LIMIT}
                                 entityContext={currentEntity}
                             />
