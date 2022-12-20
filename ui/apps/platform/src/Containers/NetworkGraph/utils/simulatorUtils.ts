@@ -3,9 +3,6 @@ import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 export function getDisplayYAMLFromNetworkPolicyModification(
     modification: NetworkPolicyModification | null
 ): string {
-    if (!modification) {
-        return '';
-    }
     const { applyYaml, toDelete } = modification || {};
     const shouldDelete = toDelete && toDelete.length > 0;
     const showApplyYaml = applyYaml && applyYaml.length >= 2;
