@@ -27,7 +27,7 @@
         "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports jest --verbose=true --slowTestThreshold=1 --coverage --reporters=default --reporters=jest-junit",
         "test:watch": "jest --watch-all",
         "lint:non-src": "prettier --check '**/*.{md,css,json}'",
-        "lint:src": "eslint --cache --ext .js,.ts,.tsx ./",
+        "lint:src": "eslint --ext .js,.ts,.tsx ./",
         "lint": "npm-run-all lint:*",
         "lint-fix:non-src": "prettier --write '**/*.{md,css,json}'",
         "lint-fix:src": "eslint --fix --ext .js,.ts,.tsx ./",
