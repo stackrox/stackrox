@@ -11,13 +11,12 @@ import {
 } from '@patternfly/react-core';
 import xor from 'lodash/xor';
 
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { PolicySeverity } from 'types/policy.proto';
 
 import useWidgetConfig from 'hooks/useWidgetConfig';
-import useAlertGroups from '../hooks/useAlertGroups';
+import useViolationsByCategory from '../hooks/useViolationsByCategory';
 import WidgetCard from './WidgetCard';
 import NoDataEmptyState from './NoDataEmptyState';
 import ViolationsByPolicyCategoryChart, { Config } from './ViolationsByPolicyCategoryChart';
@@ -58,8 +57,7 @@ function ViolationsByPolicyCategory() {
     } else if (lifecycle === 'RUNTIME') {
         queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.RUNTIME;
     }
-    const query = getRequestQueryStringForSearchFilter(queryFilter);
-    const { data: alertGroups, loading, error } = useAlertGroups(query, 'CATEGORY');
+    const { data: alertGroups, loading, error } = useViolationsByCategory(queryFilter);
 
     const isOptionsChanged =
         lifecycle !== defaultConfig.lifecycle ||
