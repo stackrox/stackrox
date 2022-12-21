@@ -41,7 +41,7 @@ type Event struct {
 
 func TestPod(testT *testing.T) {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		testT.Skip("No need to run with legacy database")
+		testT.Skip("Skip for legacy databases")
 	}
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.

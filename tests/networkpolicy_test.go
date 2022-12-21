@@ -121,7 +121,7 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 		t.Skip("Feature flag disabled")
 	}
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("No need to run with legacy database")
+		t.Skip("Skip for legacy databases")
 	}
 
 	testCases := map[string]struct {

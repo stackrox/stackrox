@@ -17,7 +17,7 @@ import (
 
 func TestExcludedScopes(t *testing.T) {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("No need to run with legacy database")
+		t.Skip("Skip for legacy databases")
 	}
 	defer teardownTestExcludedScopes(t)
 	setupNginxLatestTagDeployment(t)
