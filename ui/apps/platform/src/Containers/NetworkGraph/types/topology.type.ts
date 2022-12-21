@@ -51,6 +51,7 @@ export type DeploymentData = {
     };
     policyIds: string[];
     networkPolicyState: NetworkPolicyState;
+    showPolicyState: boolean;
 };
 
 export type ExternalData = {
