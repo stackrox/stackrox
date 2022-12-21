@@ -17,7 +17,7 @@ import services.NetworkPolicyService
 import services.SecretService
 import util.Timer
 
-import org.junit.Assume
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Tag
 
