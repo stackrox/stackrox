@@ -40,6 +40,7 @@ export enum DataTypes {
     Alternate,
 }
 const ICON_PADDING = 20;
+const CUSTOM_DECORATOR_PADDING = 2.5;
 
 type StyleNodeProps = {
     element: Node;
@@ -112,7 +113,7 @@ const renderDecorator = (
         : getDefaultShapeDecoratorCenter(quadrant, element);
     const padding =
         quadrant === TopologyQuadrant.lowerLeft
-            ? DEFAULT_DECORATOR_PADDING - 2.5
+            ? DEFAULT_DECORATOR_PADDING - CUSTOM_DECORATOR_PADDING
             : DEFAULT_DECORATOR_PADDING;
 
     return (
@@ -141,12 +142,6 @@ const renderDecorators = (
     const { showPolicyState, networkPolicyState } = data;
     return (
         <>
-            {/* {renderDecorator(
-                element,
-                TopologyQuadrant.upperLeft,
-                <FolderOpenIcon />,
-                getShapeDecoratorCenter
-            )} */}
             {/* {renderDecorator(
                 element,
                 TopologyQuadrant.upperRight,
