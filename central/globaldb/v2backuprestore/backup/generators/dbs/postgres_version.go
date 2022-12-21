@@ -2,7 +2,6 @@ package dbs
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -31,7 +30,7 @@ func (ps *PostgresVersion) WriteTo(ctx context.Context, out io.Writer) error {
 		return err
 	}
 
-	_, err = out.Write([]byte(fmt.Sprint("VERSION FILE FOR INFORMATION PURPOSES ONLY.  NO LONGER USED TO CALCULATE VERSION.\n")))
+	_, err = out.Write([]byte("VERSION FILE FOR INFORMATION PURPOSES ONLY.  NO LONGER USED TO CALCULATE VERSION.\n"))
 	if err != nil {
 		return err
 	}
