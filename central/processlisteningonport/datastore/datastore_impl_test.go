@@ -560,11 +560,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndCloseMultipleTimes() {
 	// It's being closed and excluded from the API response
 	suite.Len(newPlops, 0)
 
-	plopStorage, err := suite.datastore.GetProcessListeningOnPortStorage(
-		suite.hasWriteCtx, fixtureconsts.ProcessIndicatorID1)
-	suite.NoError(err)
+	//  plopStorage, err := suite.datastore.GetProcessListeningOnPortStorage(
+	//  	suite.hasWriteCtx, fixtureconsts.ProcessIndicatorID1)
+	//  suite.NoError(err)
 
-	// suite.Len(plopStorage, 1) //Unclear what the expected behavior here should be. I think this should return 1 plop storage object, but two are returned.
+	//  suite.Len(plopStorage, 1) //Unclear what the expected behavior here should be. I think this should return 1 plop storage object, but two are returned.
 }
 
 // TestPLOPAddClosedWithoutActive: one PLOP object is added with a correct
