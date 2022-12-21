@@ -163,6 +163,20 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 			ExecFilePath: "test_path1",
 		},
 	})
+
+	// Verify that newly added PLOP object doesn't have Process field set in
+	// the serialized column (because all the info is stored in the referenced
+	// process indicator record)
+	processInfo := []*storage.ProcessIndicatorUniqueKey{}
+	suite.datastore.WalkAll(suite.hasWriteCtx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			if plop.GetProcess() != nil {
+				processInfo = append(processInfo, plop.GetProcess())
+			}
+			return nil
+		})
+
+	suite.Len(processInfo, 0)
 }
 
 // TestPLOPAddClosed: Happy path for ProcessListeningOnPort closing, one PLOP object is added
@@ -398,6 +412,21 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	// Verify that newly added PLOP has Process field set, because we were not
+	// able to establish reference to a process indicator and don't want to
+	// loose the data
+	processInfo := []*storage.ProcessIndicatorUniqueKey{}
+	suite.datastore.WalkAll(suite.hasWriteCtx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			if plop.GetProcess() != nil {
+				processInfo = append(processInfo, plop.GetProcess())
+			}
+			return nil
+		})
+
+	suite.Len(processInfo, 1)
+	suite.Equal(processInfo[0], plopObjects[0].Process)
 }
 
 // TestPLOPAddMultipleIndicators: A PLOP object is added with a valid reference
