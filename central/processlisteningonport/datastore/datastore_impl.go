@@ -228,3 +228,24 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 
 	return processesListeningOnPorts, nil
 }
+
+func (ds *datastoreImpl) GetProcessListeningOnPortStorage(
+	ctx context.Context, indicatorId string,
+) (
+	processesListeningOnPorts []*storage.ProcessListeningOnPortStorage, err error,
+) {
+	if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	processesListeningOnPorts, err = ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
+			AddStrings(search.ProcessID, indicatorId).ProtoQuery())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return processesListeningOnPorts, nil
+}
