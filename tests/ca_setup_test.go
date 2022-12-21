@@ -75,7 +75,9 @@ func TestCASetup(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.url, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+			internalServiceTimeout := 20 * time.Second
+			testTimeoutPadding := 500 * time.Millisecond
+			ctx, cancel := context.WithTimeout(context.Background(), internalServiceTimeout+testTimeoutPadding)
 			defer cancel()
 			resp, err := service.URLHasValidCert(ctx, &central.URLHasValidCertRequest{Url: c.url})
 			require.NoError(t, err)
