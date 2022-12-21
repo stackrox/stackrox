@@ -30,11 +30,6 @@ func (ps *PostgresVersion) WriteTo(ctx context.Context, out io.Writer) error {
 		return err
 	}
 
-	_, err = out.Write([]byte("VERSION FILE FOR INFORMATION PURPOSES ONLY.  NO LONGER USED TO CALCULATE VERSION.\n"))
-	if err != nil {
-		return err
-	}
-
 	bytes, err := yaml.Marshal(version)
 	if err != nil {
 		return err
