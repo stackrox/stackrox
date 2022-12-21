@@ -1,5 +1,7 @@
 import static Services.getViolationsWithTimeout
 
+import orchestratormanager.OrchestratorTypes
+
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
@@ -16,8 +18,9 @@ import services.NamespaceService
 import services.NetworkPolicyService
 import services.SecretService
 import util.Timer
+import util.Env
 
-import org.junit.Assume
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Tag
 
@@ -98,11 +101,9 @@ class ReconciliationTest extends BaseSpecification {
 
     @Tag("SensorBounce")
     @Tag("COMPATIBILITY")
+    // RS-361 - Fails on OSD
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify the Sensor reconciles after being restarted"() {
-        // RS-361 - Fails on OSD. Need help troubleshooting. Disabling for now.
-        Assume.assumeFalse(ClusterService.isOpenShift3())
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
         when:
         "Get Sensor and counts"
 
