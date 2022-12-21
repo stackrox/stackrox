@@ -29,6 +29,7 @@ def make_qa_e2e_test_runner(cluster):
                     check_stackrox_logs=True,
                     artifact_destination_prefix="part-2",
                 ),
+                "always_run": False,
             },
             {
                 "name": "DB backup and restore",
