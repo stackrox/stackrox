@@ -53,4 +53,8 @@ message ProcessListeningOnPortStorage {
 
     // XXX: Make it a partial index on only active, not closed, PLOP
     bool closed = 6 [(gogoproto.moretags) = 'search:"Closed,store"  sql:"index=btree"'];
+
+    // ProcessIndicator will be not empty only for those cases when we were not
+    // able to find references process in the database
+    ProcessIndicatorUniqueKey process = 7;
 }
