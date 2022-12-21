@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -116,17 +115,23 @@ func TestActiveVulnerability_SetImage(t *testing.T) {
 
 func checkActiveVulnerability(t *testing.T, image nginxImage, deploymentID string) {
 	waitForCondition(t, func() bool {
-		deployment := getDeploymentActiveStates(t, deploymentID)
-		return image.activeComponents <= getActiveComponentCount(deployment)
-	}, "active components populated", 5*time.Minute, 30*time.Second)
-	fromDeployment := getDeploymentActiveStates(t, deploymentID)
-	assert.LessOrEqual(t, image.activeComponents, getActiveComponentCount(fromDeployment))
-	// The active vulns are not stable over time. But at least one vuln should exist.
-	assert.NotZero(t, getActiveVulnCount(t, fromDeployment))
+		fromDeployment := getDeploymentActiveStates(t, deploymentID)
+		return image.activeComponents <= getActiveComponentCount(fromDeployment)
+	}, "active components for the deployment populated", 5*time.Minute, 30*time.Second)
 
-	fromImage := getImageActiveStates(t, image.SHA, deploymentID)
-	assert.LessOrEqual(t, image.activeComponents, getActiveComponentCount(fromImage))
-	assert.Equal(t, getActiveVulnCount(t, fromDeployment), getActiveVulnCount(t, fromImage))
+	waitForCondition(t, func() bool {
+		fromImage := getImageActiveStates(t, image.SHA, deploymentID)
+		return image.activeComponents <= getActiveComponentCount(fromImage)
+	}, "active components for the image populated", 3*time.Minute, 20*time.Second)
+
+	// The active vulns are not stable over time. But at least one vuln should exist and the same
+	// number of vulns from the deployment and the image.
+	waitForCondition(t, func() bool {
+		fromDeployment := getDeploymentActiveStates(t, deploymentID)
+		fromImage := getImageActiveStates(t, image.SHA, deploymentID)
+		numVulnFromDeployment := getActiveVulnCount(t, fromDeployment)
+		return numVulnFromDeployment > 0 && numVulnFromDeployment == getActiveVulnCount(t, fromImage)
+	}, "the same number of active vulns from the deployment and the image", 2*time.Minute, 10*time.Second)
 }
 
 func getActiveComponentCount(entity ComponentsAndVulnsWithActiveState) int {
