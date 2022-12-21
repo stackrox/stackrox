@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/maincommand"
 	"github.com/stackrox/rox/roxctl/properties"
 
@@ -29,7 +30,7 @@ func main() {
 	// we simply add the usage information "(default false)" to our affected boolean flags.
 	AddMissingDefaultsToFlagUsage(c)
 
-	PatchPersistentPreRunHooks(c)
+	common.PatchPersistentPreRunHooks(c)
 
 	clientconn.SetUserAgent(clientconn.Roxctl)
 
