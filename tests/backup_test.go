@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/backup"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -23,10 +22,6 @@ import (
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
 func TestBackup(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("ROX-14073")
-	}
-
 	setupNginxLatestTagDeployment(t)
 	defer teardownNginxLatestTagDeployment(t)
 
@@ -71,12 +66,12 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 
 	if !postgresEnabled {
 		checkZipForRocks(t, zipFile)
+		checkZipForVersion(t, zipFile)
 	} else {
 		checkZipForPostgres(t, zipFile)
 		checkZipForPassword(t, zipFile, includeCerts)
 	}
 	checkZipForCerts(t, zipFile, includeCerts)
-	checkZipForVersion(t, zipFile)
 }
 
 func checkZipForVersion(t *testing.T, zipFile *zip.ReadCloser) {
