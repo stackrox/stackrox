@@ -146,6 +146,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	plopObjects := make([]*storage.ProcessListeningOnPortStorage, len(portProcesses))
 	for i, val := range portProcesses {
 		indicatorID := ""
+		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		key := fmt.Sprintf("%s %s %s %s %s",
 			val.Process.ContainerName,
@@ -161,6 +162,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		} else {
 			// XXX: Create a metric for this
 			log.Warnf("Found no matching indicators for %s", key)
+			processInfo = val.Process
 		}
 
 		newPLOP := &storage.ProcessListeningOnPortStorage{
@@ -170,6 +172,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			Port:               val.Port,
 			Protocol:           val.Protocol,
 			ProcessIndicatorId: indicatorID,
+			Process:            processInfo,
 			Closed:             false,
 			CloseTimestamp:     val.CloseTimestamp,
 		}
