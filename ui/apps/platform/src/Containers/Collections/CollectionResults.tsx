@@ -33,7 +33,11 @@ function fetchMatchingDeployments(
 ) {
     const pageSize = 10;
     const query = { [entity]: filterText };
-    const { request } = dryRunCollection(dryRunConfig, query, page, pageSize);
+    const sortOption = {
+        field: 'Deployment',
+        reversed: false,
+    };
+    const { request } = dryRunCollection(dryRunConfig, query, page, pageSize, sortOption);
     return request;
 }
 
