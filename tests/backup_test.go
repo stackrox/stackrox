@@ -22,10 +22,10 @@ import (
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
 func TestBackup(t *testing.T) {
-	setupNginxLatestTagDeployment(t)
-	defer teardownNginxLatestTagDeployment(t)
-
-	waitForDeployment(t, nginxDeploymentName)
+	//setupNginxLatestTagDeployment(t)
+	//defer teardownNginxLatestTagDeployment(t)
+	//
+	//waitForDeployment(t, nginxDeploymentName)
 
 	for _, includeCerts := range []bool{false, true} {
 		t.Run(fmt.Sprintf("includeCerts=%t", includeCerts), func(t *testing.T) {
@@ -66,12 +66,12 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 
 	if !postgresEnabled {
 		checkZipForRocks(t, zipFile)
-		checkZipForVersion(t, zipFile)
 	} else {
 		checkZipForPostgres(t, zipFile)
 		checkZipForPassword(t, zipFile, includeCerts)
 	}
 	checkZipForCerts(t, zipFile, includeCerts)
+	checkZipForVersion(t, zipFile)
 }
 
 func checkZipForVersion(t *testing.T, zipFile *zip.ReadCloser) {
