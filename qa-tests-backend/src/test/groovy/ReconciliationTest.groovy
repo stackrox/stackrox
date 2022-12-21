@@ -1,5 +1,7 @@
 import static Services.getViolationsWithTimeout
 
+import orchestratormanager.OrchestratorTypes
+
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
