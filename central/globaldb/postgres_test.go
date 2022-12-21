@@ -21,13 +21,10 @@ func TestConfigSetup(t *testing.T) {
 }
 
 func (s *PostgresUtilitySuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-
 }
 
 func (s *PostgresUtilitySuite) TestSourceParser() {
