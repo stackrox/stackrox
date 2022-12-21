@@ -100,9 +100,6 @@ jobs:
           path: go-binaries-build.tgz
 
   pre-build-go-binaries-rcd:
-    if: |
-      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
-      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
@@ -257,9 +254,6 @@ jobs:
             add_build_comment_to_pr
 
   build-and-push-main-rcd:
-    if: |
-      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
-      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     needs:
     - pre-build-ui
