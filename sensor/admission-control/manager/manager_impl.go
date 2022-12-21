@@ -163,13 +163,8 @@ func (m *manager) Sync(ctx context.Context) error {
 	}
 }
 
-func (m *manager) Start() error {
-	if m.stopper.LowLevel().ResetStopRequest() {
-		return pkgErr.New("admission control manager has already been started")
-	}
-
+func (m *manager) Start() {
 	go m.run()
-	return nil
 }
 
 func (m *manager) Stop() {
