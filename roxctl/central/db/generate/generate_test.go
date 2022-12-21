@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/set"
@@ -22,7 +23,6 @@ type emulatedError int
 
 const (
 	testImageDefault = "opensource"
-	testOutputDir    = "outputdir"
 
 	testHostPathPath      = "/var/lib/hostpath-path"
 	testNodeSelectorValue = "host"
@@ -31,7 +31,9 @@ const (
 	testPvcName         = "pvcname"
 	testPvcSize         = 33
 	testPvcStorageClass = "storageclass"
+)
 
+const (
 	noError emulatedError = iota
 	downloadError
 	renderError
@@ -48,6 +50,31 @@ type testCaseType struct {
 	errContains       string
 	checkUsage        bool
 	enablePodSecurity bool
+	expectedImage     string
+	expectedOutputDir string
+	expectedPVC       *renderer.ExternalPersistenceInstance
+	expectedHostPath  *renderer.HostPathPersistenceInstance
+}
+
+func (c *testCaseType) shouldCheckUsage() bool {
+	return c.checkUsage || len(c.args) != 0 && c.args[len(c.args)-1] == "-h"
+}
+
+func (c *testCaseType) shouldVerifyConfig() bool {
+	// Do not check config in case of error
+	if c.addError != noError || c.errContains != "" {
+		return false
+	}
+	// Do not check config in case of usage
+	if c.shouldCheckUsage() {
+		return false
+	}
+
+	// Only verify config when the command is complete.
+	if !set.NewFrozenStringSet("none", "pvc", "hostpath").Contains(c.cmdUse) {
+		return false
+	}
+	return true
 }
 
 func TestCentralDBGenerateCli(t *testing.T) {
@@ -56,11 +83,18 @@ func TestCentralDBGenerateCli(t *testing.T) {
 
 type centralDBGenerateCliTestSuite struct {
 	suite.Suite
+
+	testOutputDir string
 }
 
 func (s *centralDBGenerateCliTestSuite) SetupTest() {
 	testutils.SetMainVersion(s.T(), "3.74.0.0")
 	testbuildinfo.SetForTest(s.T())
+	s.testOutputDir = s.T().TempDir()
+}
+
+func (s *centralDBGenerateCliTestSuite) TeardownTest() {
+	_ = os.RemoveAll(s.testOutputDir)
 }
 
 func (s *centralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
@@ -123,20 +157,30 @@ func (s *centralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 				checkUsage:  true,
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s pvc", clusterType),
-				args:        []string{clusterType, "pvc"},
-				cmdUse:      "pvc",
+				description:       fmt.Sprintf("generate %s pvc", clusterType),
+				args:              []string{clusterType, "pvc"},
+				cmdUse:            "pvc",
+				expectedImage:     "quay.io/rhacs-eng/central-db:3.74.0.0",
+				expectedOutputDir: defaultCentralDBBundle,
+				expectedPVC:       &renderer.ExternalPersistenceInstance{Name: "central-db", Size: 100},
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s hostpath", clusterType),
-				args:        []string{clusterType, "hostpath"},
-				cmdUse:      "hostpath",
+				description:       fmt.Sprintf("generate %s hostpath", clusterType),
+				args:              []string{clusterType, "hostpath"},
+				cmdUse:            "hostpath",
+				expectedImage:     "quay.io/rhacs-eng/central-db:3.74.0.0",
+				expectedOutputDir: defaultCentralDBBundle,
+				expectedHostPath: &renderer.HostPathPersistenceInstance{
+					HostPath: defaultHostPathPath,
+				},
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s none", clusterType),
-				args:        []string{clusterType, "none"},
-				cmdUse:      "none",
-				checkUsage:  true,
+				description:       fmt.Sprintf("generate %s none", clusterType),
+				args:              []string{clusterType, "none"},
+				cmdUse:            "none",
+				checkUsage:        true,
+				expectedImage:     "quay.io/rhacs-eng/central-db:3.74.0.0",
+				expectedOutputDir: defaultCentralDBBundle,
 			},
 			testCaseType{
 				description: fmt.Sprintf("generate %s wrong storage type", clusterType),
@@ -160,34 +204,58 @@ func (s *centralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 				errContains: "Error: render error",
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s one disabled pod security", clusterType),
-				args:        []string{clusterType, "none", "--enable-pod-security-policies=false"},
-				cmdUse:      "none",
+				description:       fmt.Sprintf("generate %s one disabled pod security", clusterType),
+				args:              []string{clusterType, "none", "--enable-pod-security-policies=false"},
+				cmdUse:            "none",
+				expectedImage:     "quay.io/rhacs-eng/central-db:3.74.0.0",
+				expectedOutputDir: defaultCentralDBBundle,
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s none output", clusterType),
-				args:        []string{"k8s", "none", "--output-dir", testOutputDir},
-				cmdUse:      "none",
+				description:       fmt.Sprintf("generate %s none output", clusterType),
+				args:              []string{"k8s", "none", "--output-dir", s.testOutputDir},
+				cmdUse:            "none",
+				expectedImage:     "quay.io/rhacs-eng/central-db:3.74.0.0",
+				expectedOutputDir: s.testOutputDir,
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s pvc image", clusterType),
-				args:        []string{"k8s", "pvc", "--central-db-image", "quay.io/rhacs-eng/central-db:3.72.0.0"},
-				cmdUse:      "pvc",
+				description:       fmt.Sprintf("generate %s pvc image", clusterType),
+				args:              []string{"k8s", "pvc", "--central-db-image", "quay.io/rhacs-eng/central-db:3.72.0.0"},
+				cmdUse:            "pvc",
+				expectedImage:     "quay.io/rhacs-eng/central-db:3.72.0.0",
+				expectedOutputDir: defaultCentralDBBundle,
+				expectedPVC:       &renderer.ExternalPersistenceInstance{Name: "central-db", Size: 100},
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s hostpath image default", clusterType),
-				args:        []string{"k8s", "hostpath", "--image-defaults", testImageDefault},
-				cmdUse:      "hostpath",
+				description:       fmt.Sprintf("generate %s hostpath image default", clusterType),
+				args:              []string{"k8s", "hostpath", "--image-defaults", testImageDefault},
+				cmdUse:            "hostpath",
+				expectedImage:     "quay.io/stackrox-io/central-db:3.74.0.0",
+				expectedOutputDir: defaultCentralDBBundle,
+				expectedHostPath:  &renderer.HostPathPersistenceInstance{HostPath: defaultHostPathPath},
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s pvc config", clusterType),
-				args:        []string{"k8s", "pvc", "--name", testPvcName, "--size", fmt.Sprint(testPvcSize), "--storage-class", testPvcStorageClass},
-				cmdUse:      "pvc",
+				description:       fmt.Sprintf("generate %s pvc config", clusterType),
+				args:              []string{"k8s", "pvc", "--name", testPvcName, "--size", fmt.Sprint(testPvcSize), "--storage-class", testPvcStorageClass},
+				cmdUse:            "pvc",
+				expectedImage:     "quay.io/rhacs-eng/central-db:3.74.0.0",
+				expectedOutputDir: defaultCentralDBBundle,
+				expectedPVC: &renderer.ExternalPersistenceInstance{
+					Name:         testPvcName,
+					Size:         uint32(testPvcSize),
+					StorageClass: testPvcStorageClass,
+				},
 			},
 			testCaseType{
-				description: fmt.Sprintf("generate %s hostpath config", clusterType),
-				args:        []string{"k8s", "hostpath", "--hostpath", testHostPathPath, "--node-selector-key", testNodeSelectorKey, "--node-selector-value", testNodeSelectorValue},
-				cmdUse:      "hostpath",
+				description:       fmt.Sprintf("generate %s hostpath config", clusterType),
+				args:              []string{"k8s", "hostpath", "--hostpath", testHostPathPath, "--node-selector-key", testNodeSelectorKey, "--node-selector-value", testNodeSelectorValue},
+				cmdUse:            "hostpath",
+				expectedImage:     "quay.io/rhacs-eng/central-db:3.74.0.0",
+				expectedOutputDir: defaultCentralDBBundle,
+				expectedHostPath: &renderer.HostPathPersistenceInstance{
+					HostPath:          testHostPathPath,
+					NodeSelectorKey:   testNodeSelectorKey,
+					NodeSelectorValue: testNodeSelectorValue,
+				},
 			},
 		)
 	}
@@ -196,15 +264,15 @@ func (s *centralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 		c := testCase
 		cfg = renderer.Config{}
 		s.Run(c.description, func() {
-			s.Require().NoError(os.RemoveAll(defaultCentralDBBundle), os.RemoveAll(testOutputDir))
+			s.Require().NoError(os.RemoveAll(defaultCentralDBBundle), os.RemoveAll(s.testOutputDir))
 			rootCmd := s.createRootCommand(c)
 			cmd, output, errOut, err := executeCommand(rootCmd, c.args...)
 			s.Assert().NotNil(cmd)
 			s.Assert().Equal(c.cmdUse, cmd.Use)
-			if c.args[len(c.args)-1] == "-h" || c.checkUsage {
+			if c.shouldCheckUsage() {
 				_, cmds, flags := s.parseUsage(output)
-				for _, contain := range c.containsCommands {
-					s.Assert().Contains(cmds, contain)
+				for _, expectCmd := range c.containsCommands {
+					s.Assert().Contains(cmds, expectCmd)
 				}
 				for _, flag := range c.containsFlags {
 					s.Assert().Contains(flags, flag)
@@ -256,8 +324,7 @@ func (s *centralDBGenerateCliTestSuite) createRootCommand(testCase testCaseType)
 	return genCmd
 }
 
-func (s *centralDBGenerateCliTestSuite) setRunE(testCase testCaseType, root *cobra.Command, subCmds ...string) {
-	command := root
+func (s *centralDBGenerateCliTestSuite) setRunE(testCase testCaseType, command *cobra.Command, subCmds ...string) {
 	for _, subCmd := range subCmds {
 		command = s.lookUpCommand(command.Commands(), subCmd)
 	}
@@ -316,39 +383,18 @@ func (s *centralDBGenerateCliTestSuite) parseUsage(output string) (usage string,
 }
 
 func (s *centralDBGenerateCliTestSuite) verifyConfig(c testCaseType, config *renderer.Config) {
-	// Do not check config in case of error
-	if c.addError != noError || c.errContains != "" {
+	if !c.shouldVerifyConfig() {
 		return
 	}
-	// Do not check config in case of usage
-	if c.checkUsage || len(c.args) != 0 && c.args[len(c.args)-1] == "-h" {
-		return
-	}
-
-	// Only verify config when the command is complete.
-	if !set.NewFrozenStringSet("none", "pvc", "hostpath").Contains(c.cmdUse) {
-		return
-	}
-
 	args := set.NewFrozenStringSet(c.args...)
 
 	// Verify generate and k8s settings.
 	s.Assert().Len(config.SecretsByteMap, 4)
 	s.Assert().Equal(args.Contains("--enable-pod-security-policies=false"), !config.EnablePodSecurityPolicies)
 	s.Assert().True(config.K8sConfig.EnableCentralDB)
-
-	if args.Contains("--output-dir") {
-		s.Assert().Equal(testOutputDir, config.OutputDir)
-	} else {
-		s.Assert().Equal(config.OutputDir, defaultCentralDBBundle)
-	}
-
-	if args.Contains("--central-db-image") {
-		s.Assert().Equal(config.K8sConfig.CentralDBImage, "quay.io/rhacs-eng/central-db:3.72.0.0")
-	} else if args.Contains("--image-defaults") {
-		s.Assert().Equal(config.K8sConfig.CentralDBImage, "quay.io/stackrox-io/central-db:3.74.0.0")
-	} else {
-		s.Assert().Equal(config.K8sConfig.CentralDBImage, "quay.io/rhacs-eng/central-db:3.74.0.0")
+	s.Assert().Equal(c.expectedOutputDir, config.OutputDir)
+	if buildinfo.BuildFlavor == "development" {
+		s.Assert().Equal(config.K8sConfig.CentralDBImage, c.expectedImage)
 	}
 
 	if args.Contains("--image-defaults") {
@@ -356,40 +402,18 @@ func (s *centralDBGenerateCliTestSuite) verifyConfig(c testCaseType, config *ren
 	}
 
 	// Verify settings for each storage type
-	switch c.cmdUse {
-	case "none":
-		s.Assert().Nil(config.External)
-		s.Assert().Nil(config.HostPath)
-	case "pvc":
-		s.Assert().Nil(config.HostPath)
+	if c.expectedPVC != nil {
 		s.Assert().NotNil(config.External)
-		if args.Contains("--name") {
-			s.Assert().Equal(testPvcName, config.External.DB.Name)
-		} else {
-			s.Assert().Equal("central-db", config.External.DB.Name)
-		}
-		if args.Contains("--size") {
-			s.Assert().Equal(uint32(testPvcSize), config.External.DB.Size)
-		} else {
-			s.Assert().Equal(uint32(100), config.External.DB.Size)
-		}
-	case "hostpath":
+		s.Assert().Equal(c.expectedPVC, config.External.DB)
+	} else {
 		s.Assert().Nil(config.External)
-		if args.Contains("--hostpath") {
-			s.Assert().Equal(testHostPathPath, config.HostPath.DB.HostPath)
-		} else {
-			s.Assert().Equal(defaultHostPathPath, config.HostPath.DB.HostPath)
-		}
-		if args.Contains("--node-selector-key") {
-			s.Assert().Equal(testNodeSelectorKey, config.HostPath.DB.NodeSelectorKey)
-		} else {
-			s.Assert().Empty(config.HostPath.DB.NodeSelectorKey)
-		}
-		if args.Contains("--node-selector-value") {
-			s.Assert().Equal(testNodeSelectorValue, config.HostPath.DB.NodeSelectorValue)
-		} else {
-			s.Assert().Empty(config.HostPath.DB.NodeSelectorValue)
-		}
+	}
+
+	if c.expectedHostPath != nil {
+		s.Assert().NotNil(config.HostPath)
+		s.Assert().Equal(c.expectedHostPath, config.HostPath.DB)
+	} else {
+		s.Assert().Nil(config.HostPath)
 	}
 }
 
