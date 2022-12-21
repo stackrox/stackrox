@@ -51,10 +51,18 @@ func getGRPCRequestDetails(ctx context.Context, err error, info *grpc.UnaryServe
 		log.Debug("Cannot identify user from context: ", iderr)
 	}
 
+	// Keep gRPC full method in the form of /service/method if there's no
+	// original HTTP request provided:
+	path := info.FullMethod
+	ri := requestinfo.FromContext(ctx)
+	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
+		path = ri.HTTPRequest.URL.Path
+	}
+
 	return &RequestParams{
-		UserAgent: getUserAgent(requestinfo.FromContext(ctx).Metadata.Get),
+		UserAgent: getUserAgent(ri.Metadata.Get),
 		UserID:    id,
-		Path:      info.FullMethod,
+		Path:      path,
 		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
 		GRPCReq:   req,
 	}
