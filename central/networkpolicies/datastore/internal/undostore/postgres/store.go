@@ -47,16 +47,18 @@ var (
 )
 
 type Store interface {
-	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, clusterId string) (bool, error)
-	Get(ctx context.Context, clusterId string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error)
 	Upsert(ctx context.Context, obj *storage.NetworkPolicyApplicationUndoRecord) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkPolicyApplicationUndoRecord) error
 	Delete(ctx context.Context, clusterId string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
-	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkPolicyApplicationUndoRecord, []int, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
+
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, clusterId string) (bool, error)
+
+	Get(ctx context.Context, clusterId string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkPolicyApplicationUndoRecord, []int, error)
+	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.NetworkPolicyApplicationUndoRecord) error) error
 
@@ -75,6 +77,27 @@ func New(db *pgxpool.Pool) Store {
 		db: db,
 	}
 }
+
+//// Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableNetworkpolicyapplicationundorecords(ctx, db)
+}
+
+func dropTableNetworkpolicyapplicationundorecords(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkpolicyapplicationundorecords CASCADE")
+
+}
+
+//// Used for testing - END
+
+//// Helper functions
 
 func insertIntoNetworkpolicyapplicationundorecords(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoRecord) error {
 
@@ -158,6 +181,14 @@ func (s *storeImpl) copyFromNetworkpolicyapplicationundorecords(ctx context.Cont
 	return err
 }
 
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, conn.Release, nil
+}
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkPolicyApplicationUndoRecord")
 	if err != nil {
@@ -210,6 +241,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkPolicyAp
 	return nil
 }
 
+//// Helper functions - END
+
+//// Interface functions
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkPolicyApplicationUndoRecord) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkPolicyApplicationUndoRecord")
 
@@ -222,7 +256,6 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkPolicyApplic
 		return s.upsert(ctx, obj)
 	})
 }
-
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkPolicyApplicationUndoRecord) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkPolicyApplicationUndoRecord")
 
@@ -243,6 +276,99 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkPolic
 		}
 		return s.copyFrom(ctx, objs...)
 	})
+}
+
+// Delete removes the specified ID from the store
+func (s *storeImpl) Delete(ctx context.Context, clusterId string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicyApplicationUndoRecord")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(clusterId).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+}
+
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicyApplicationUndoRecord")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+}
+
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkPolicyApplicationUndoRecord")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	// Batch the deletes
+	localBatchSize := deleteBatchSize
+	numRecordsToDelete := len(identifiers)
+	for {
+		if len(identifiers) == 0 {
+			break
+		}
+
+		if len(identifiers) < localBatchSize {
+			localBatchSize = len(identifiers)
+		}
+
+		identifierBatch := identifiers[:localBatchSize]
+		q := search.ConjunctionQuery(
+			sacQueryFilter,
+			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
+		)
+
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
+			log.Error(err)
+			return err
+		}
+
+		// Move the slice forward to start the next batch
+		identifiers = identifiers[localBatchSize:]
+	}
+
+	return nil
 }
 
 // Count returns the number of objects in the store
@@ -320,88 +446,6 @@ func (s *storeImpl) Get(ctx context.Context, clusterId string) (*storage.Network
 	return data, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, clusterId string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicyApplicationUndoRecord")
-
-	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(clusterId).ProtoQuery(),
-	)
-
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
-// DeleteByQuery removes the objects based on the passed query
-func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicyApplicationUndoRecord")
-
-	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NetworkPolicyApplicationUndoRecordIDs")
-	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
-	}
-	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
-}
-
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkPolicyApplicationUndoRecord, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicyApplicationUndoRecord")
@@ -458,51 +502,31 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 	return elems, missingIndices, nil
 }
 
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkPolicyApplicationUndoRecord")
-
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NetworkPolicyApplicationUndoRecordIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
 	}
 
-	// Batch the deletes
-	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(identifiers)
-	for {
-		if len(identifiers) == 0 {
-			break
-		}
-
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
-		}
-
-		identifierBatch := identifiers[:localBatchSize]
-		q := search.ConjunctionQuery(
-			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-		)
-
-		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
-			log.Error(err)
-			return err
-		}
-
-		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
+	identifiers := make([]string, 0, len(result))
+	for _, entry := range result {
+		identifiers = append(identifiers, entry.ID)
 	}
 
-	return nil
+	return identifiers, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -528,23 +552,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkPolicy
 		}
 	}
 	return nil
-}
-
-//// Used for testing
-
-func dropTableNetworkpolicyapplicationundorecords(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkpolicyapplicationundorecords CASCADE")
-
-}
-
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNetworkpolicyapplicationundorecords(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

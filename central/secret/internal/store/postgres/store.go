@@ -48,17 +48,19 @@ var (
 )
 
 type Store interface {
-	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.Secret, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Secret, error)
 	Upsert(ctx context.Context, obj *storage.Secret) error
 	UpsertMany(ctx context.Context, objs []*storage.Secret) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
-	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.Secret, []int, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
+
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+
+	Get(ctx context.Context, id string) (*storage.Secret, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Secret, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storage.Secret, []int, error)
+	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.Secret) error) error
 
@@ -77,6 +79,39 @@ func New(db *pgxpool.Pool) Store {
 		db: db,
 	}
 }
+
+//// Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableSecrets(ctx, db)
+}
+
+func dropTableSecrets(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets CASCADE")
+	dropTableSecretsFiles(ctx, db)
+
+}
+
+func dropTableSecretsFiles(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_files CASCADE")
+	dropTableSecretsFilesRegistries(ctx, db)
+
+}
+
+func dropTableSecretsFilesRegistries(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_files_registries CASCADE")
+
+}
+
+//// Used for testing - END
+
+//// Helper functions
 
 func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secret) error {
 
@@ -359,6 +394,14 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 	return err
 }
 
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, conn.Release, nil
+}
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Secret) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Secret")
 	if err != nil {
@@ -411,6 +454,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Secret) error {
 	return nil
 }
 
+//// Helper functions - END
+
+//// Interface functions
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Secret) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Secret")
 
@@ -424,7 +470,6 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Secret) error {
 		return s.upsert(ctx, obj)
 	})
 }
-
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Secret) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Secret")
 
@@ -454,6 +499,99 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Secret) erro
 		}
 		return s.copyFrom(ctx, objs...)
 	})
+}
+
+// Delete removes the specified ID from the store
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Secret")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+}
+
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Secret")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+}
+
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Secret")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	// Batch the deletes
+	localBatchSize := deleteBatchSize
+	numRecordsToDelete := len(identifiers)
+	for {
+		if len(identifiers) == 0 {
+			break
+		}
+
+		if len(identifiers) < localBatchSize {
+			localBatchSize = len(identifiers)
+		}
+
+		identifierBatch := identifiers[:localBatchSize]
+		q := search.ConjunctionQuery(
+			sacQueryFilter,
+			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
+		)
+
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
+			log.Error(err)
+			return err
+		}
+
+		// Move the slice forward to start the next batch
+		identifiers = identifiers[localBatchSize:]
+	}
+
+	return nil
 }
 
 // Count returns the number of objects in the store
@@ -531,86 +669,37 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Secret, bool, 
 	return data, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Secret")
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Secret, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "Secret")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
-// DeleteByQuery removes the objects based on the passed query
-func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Secret")
-
-	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return err
-	}
-
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		query,
 	)
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.SecretIDs")
-	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	rows, err := postgres.RunGetManyQueryForSchema[storage.Secret](ctx, schema, q, s.db)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
-	}
-	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
+	return rows, nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
@@ -669,17 +758,13 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 	return elems, missingIndices, nil
 }
 
-// GetByQuery returns the objects matching the query
-func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Secret, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "Secret")
-
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.SecretIDs")
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, err
 	}
@@ -687,66 +772,17 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	if err != nil {
 		return nil, err
 	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-
-	rows, err := postgres.RunGetManyQueryForSchema[storage.Secret](ctx, schema, q, s.db)
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	return rows, nil
-}
 
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Secret")
-
-	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return err
+	identifiers := make([]string, 0, len(result))
+	for _, entry := range result {
+		identifiers = append(identifiers, entry.ID)
 	}
 
-	// Batch the deletes
-	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(identifiers)
-	for {
-		if len(identifiers) == 0 {
-			break
-		}
-
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
-		}
-
-		identifierBatch := identifiers[:localBatchSize]
-		q := search.ConjunctionQuery(
-			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-		)
-
-		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
-			log.Error(err)
-			return err
-		}
-
-		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
-	}
-
-	return nil
+	return identifiers, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -784,35 +820,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Secret) error
 		}
 	}
 	return nil
-}
-
-//// Used for testing
-
-func dropTableSecrets(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets CASCADE")
-	dropTableSecretsFiles(ctx, db)
-
-}
-
-func dropTableSecretsFiles(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_files CASCADE")
-	dropTableSecretsFilesRegistries(ctx, db)
-
-}
-
-func dropTableSecretsFilesRegistries(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_files_registries CASCADE")
-
-}
-
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableSecrets(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

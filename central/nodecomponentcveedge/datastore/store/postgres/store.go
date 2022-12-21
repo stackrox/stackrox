@@ -47,10 +47,11 @@ var (
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
+
 	Get(ctx context.Context, id string) (*storage.NodeComponentCVEEdge, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentCVEEdge, error)
-	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.NodeComponentCVEEdge, []int, error)
+	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.NodeComponentCVEEdge) error) error
 
@@ -69,6 +70,40 @@ func New(db *pgxpool.Pool) Store {
 		db: db,
 	}
 }
+
+//// Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableNodeComponentsCvesEdges(ctx, db)
+}
+
+func dropTableNodeComponentsCvesEdges(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_components_cves_edges CASCADE")
+
+}
+
+//// Used for testing - END
+
+//// Helper functions
+
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, conn.Release, nil
+}
+
+//// Helper functions - END
+
+//// Interface functions
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
@@ -145,22 +180,17 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NodeComponentC
 	return data, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentCVEEdge, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "NodeComponentCVEEdge")
 
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NodeComponentCVEEdgeIDs")
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -168,17 +198,19 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema[storage.NodeComponentCVEEdge](ctx, schema, q, s.db)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
+	return rows, nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
@@ -237,17 +269,13 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 	return elems, missingIndices, nil
 }
 
-// GetByQuery returns the objects matching the query
-func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentCVEEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "NodeComponentCVEEdge")
-
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NodeComponentCVEEdgeIDs")
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, err
 	}
@@ -255,19 +283,17 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	if err != nil {
 		return nil, err
 	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-
-	rows, err := postgres.RunGetManyQueryForSchema[storage.NodeComponentCVEEdge](ctx, schema, q, s.db)
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	return rows, nil
+
+	identifiers := make([]string, 0, len(result))
+	for _, entry := range result {
+		identifiers = append(identifiers, entry.ID)
+	}
+
+	return identifiers, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -293,23 +319,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponent
 		}
 	}
 	return nil
-}
-
-//// Used for testing
-
-func dropTableNodeComponentsCvesEdges(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_components_cves_edges CASCADE")
-
-}
-
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNodeComponentsCvesEdges(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

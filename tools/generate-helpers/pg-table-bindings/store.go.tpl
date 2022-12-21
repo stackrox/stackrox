@@ -79,28 +79,29 @@ var (
 )
 
 type Store interface {
-    Count(ctx context.Context) (int, error)
-    Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
-    Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error)
-{{- if .SearchCategory }}
-    GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error)
-{{- end }}
-{{- if .GetAll }}
-    GetAll(ctx context.Context) ([]*{{.Type}}, error)
-{{- end }}
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *{{.Type}}) error
     UpsertMany(ctx context.Context, objs []*{{.Type}}) error
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
     DeleteByQuery(ctx context.Context, q *v1.Query) error
-{{- end }}
-
 {{- if $singlePK }}
-    GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
-    GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
-{{- if not .JoinTable }}
     DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
 {{- end }}
+{{- end }}
+
+    Count(ctx context.Context) (int, error)
+    Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
+
+    Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error)
+{{- if .SearchCategory }}
+    GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error)
+{{- end }}
+{{- if $singlePK }}
+    GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
+    GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
+{{- end }}
+{{- if .GetAll }}
+    GetAll(ctx context.Context) ([]*{{.Type}}, error)
 {{- end }}
 
     Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error
@@ -124,6 +125,38 @@ func New(db *pgxpool.Pool) Store {
         db: db,
     }
 }
+
+//// Used for testing
+
+{{ if not $inMigration }}
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+{{- end}}
+
+{{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
+
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+    {{template "dropTableFunctionName" .Schema}}(ctx, db)
+}
+
+{{- define "dropTable"}}
+{{- $schema := . }}
+func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
+    _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
+    {{range $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
+    {{end}}
+}
+{{range $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
+{{- end}}
+
+{{template "dropTable" .Schema}}
+
+//// Used for testing - END
+
+//// Helper functions
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
 {{- end}}
@@ -306,6 +339,17 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{- end }}
 {{- end }}
 
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+    {{- if not $inMigration}}
+	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+    {{- end}}{{/* if not .inMigration */}}
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+	    return nil, nil, err
+	}
+	return conn, conn.Release, nil
+}
+
 {{- if not .JoinTable }}
 {{- if not .NoCopyFrom }}
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
@@ -360,7 +404,13 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
     }
     return nil
 }
+{{- end }}
 
+//// Helper functions - END
+
+//// Interface functions
+
+{{- if not .JoinTable }}
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     {{- if not $inMigration}}
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
@@ -391,7 +441,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 		return s.upsert(ctx, obj)
 	})
 }
+{{- end }}
 
+{{- if not .JoinTable }}
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     {{- if not $inMigration}}
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
@@ -446,6 +498,176 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	})
     {{- end }}
 }
+{{- end }}
+
+{{- if not .JoinTable }}
+// Delete removes the specified ID from the store
+func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
+    {{- if not $inMigration}}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
+    {{- end}}{{/* if not .inMigration */}}
+
+    var sacQueryFilter *v1.Query
+    {{- if not $inMigration}}
+    {{- if .PermissionChecker }}
+    if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    if !scopeChecker.IsAllowed() {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+	if err != nil {
+		return err
+	}
+    {{- end }}
+    {{- end}}{{/* if not .inMigration */}}
+
+    q := search.ConjunctionQuery(
+        sacQueryFilter,
+    {{- range $index, $pk := $pks}}
+        {{- if eq $pk.Name $singlePK.Name }}
+        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- else }}
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- end}}
+    {{- end}}
+    )
+
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+}
+{{- end}}
+
+
+{{- if not .JoinTable }}
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+    {{- if not $inMigration}}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
+    {{- end}}{{/* if not .inMigration */}}
+
+    var sacQueryFilter *v1.Query
+    {{- if not $inMigration}}
+    {{- if .PermissionChecker }}
+    if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    if !scopeChecker.IsAllowed() {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+	if err != nil {
+		return err
+	}
+    {{- end }}
+    {{- end}}{{/* if not .inMigration */}}
+
+    q := search.ConjunctionQuery(
+        sacQueryFilter,
+        query,
+    )
+
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+}
+{{- end}}
+
+{{- if $singlePK }}
+{{- if not .JoinTable }}
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error {
+    {{- if not $inMigration}}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
+    {{- end }}{{/* if not $inMigration */}}
+
+    var sacQueryFilter *v1.Query
+    {{- if not $inMigration}}
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.DeleteManyAllowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    if !scopeChecker.IsAllowed() {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+    if err != nil {
+        return err
+    }
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+    if err != nil {
+        return err
+    }
+    {{- end }}
+    {{- end }}{{/* if not $inMigration */}}
+
+    // Batch the deletes
+    localBatchSize := deleteBatchSize
+    numRecordsToDelete := len(identifiers)
+    for {
+        if len(identifiers) == 0 {
+            break
+        }
+
+        if len(identifiers) < localBatchSize {
+            localBatchSize = len(identifiers)
+        }
+
+        identifierBatch := identifiers[:localBatchSize]
+        q := search.ConjunctionQuery(
+        sacQueryFilter,
+            search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
+        )
+
+        if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+            err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
+            log.Error(err)
+            return err
+        }
+
+        // Move the slice forward to start the next batch
+        identifiers = identifiers[localBatchSize:]
+    }
+
+    return nil
+}
+{{- end }}
 {{- end }}
 
 // Count returns the number of objects in the store
@@ -591,143 +813,21 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	return data, true, nil
 }
 
-{{- if .GetAll }}
-func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
-    {{- if not $inMigration}}
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.TrimmedType}}")
-    {{- end}}{{/* if not .inMigration */}}
-
-    var objs []*{{.Type}}
-    err := s.Walk(ctx, func(obj *{{.Type}}) error {
-        objs = append(objs, obj)
-        return nil
-    })
-    return objs, err
-}
-{{- end}}
-
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-    {{- if not $inMigration}}
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-    {{- end}}{{/* if not .inMigration */}}
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-	    return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
-{{- if not .JoinTable }}
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
-    {{- if not $inMigration}}
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
-    {{- end}}{{/* if not .inMigration */}}
-
-    var sacQueryFilter *v1.Query
-    {{- if not $inMigration}}
-    {{- if .PermissionChecker }}
-    if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
-        return err
-    } else if !ok {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    if !scopeChecker.IsAllowed() {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
-	if err != nil {
-		return err
-	}
-    {{- end }}
-    {{- end}}{{/* if not .inMigration */}}
-
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-    {{- range $index, $pk := $pks}}
-        {{- if eq $pk.Name $singlePK.Name }}
-        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- end}}
-    {{- end}}
-    )
-
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-{{- end}}
-
-
-{{- if not .JoinTable }}
-// DeleteByQuery removes the objects based on the passed query
-func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
-    {{- if not $inMigration}}
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
-    {{- end}}{{/* if not .inMigration */}}
-
-    var sacQueryFilter *v1.Query
-    {{- if not $inMigration}}
-    {{- if .PermissionChecker }}
-    if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
-        return err
-    } else if !ok {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    if !scopeChecker.IsAllowed() {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
-	if err != nil {
-		return err
-	}
-    {{- end }}
-    {{- end}}{{/* if not .inMigration */}}
-
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        query,
-    )
-
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-{{- end}}
-
 {{- if $singlePK }}
-
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
+{{- if .SearchCategory }}
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error) {
     {{- if not $inMigration}}
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "{{.TrimmedType}}")
     {{- end}}{{/* if not .inMigration */}}
+
     var sacQueryFilter *v1.Query
     {{- if not $inMigration}}
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
+    {{ if .Obj.HasPermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
         return nil, err
+    } else if !ok {
+        return nil, nil
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
@@ -736,9 +836,12 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return nil, err
+        return nil, err
 	}
     {{- if .Obj.IsClusterScope }}
     sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
@@ -746,23 +849,28 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 	if err != nil {
-		return nil, err
+        return nil, err
 	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
-    result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+    q := search.ConjunctionQuery(
+        sacQueryFilter,
+        query,
+    )
+
+	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+		    return nil, nil
+		}
 		return nil, err
 	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
+	return rows, nil
 }
+{{- end }}
+{{- end }}
 
+{{- if $singlePK }}
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
     {{- if not $inMigration}}
@@ -838,130 +946,70 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
 	}
 	return elems, missingIndices, nil
 }
-{{- if .SearchCategory }}
-// GetByQuery returns the objects matching the query
-func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error) {
-    {{- if not $inMigration}}
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "{{.TrimmedType}}")
-    {{- end}}{{/* if not .inMigration */}}
-
-    var sacQueryFilter *v1.Query
-    {{- if not $inMigration}}
-    {{ if .Obj.HasPermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
-        return nil, err
-    } else if !ok {
-        return nil, nil
-    }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    if !scopeChecker.IsAllowed() {
-        return nil, nil
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-        return nil, err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
-	if err != nil {
-        return nil, err
-	}
-    {{- end }}
-    {{- end}}{{/* if not .inMigration */}}
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        query,
-    )
-
-	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-		    return nil, nil
-		}
-		return nil, err
-	}
-	return rows, nil
-}
 {{- end }}
 
-{{- if not .JoinTable }}
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error {
-    {{- if not $inMigration}}
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
-    {{- end }}{{/* if not $inMigration */}}
+{{- if $singlePK }}
 
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
+    {{- if not $inMigration}}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
+    {{- end}}{{/* if not .inMigration */}}
     var sacQueryFilter *v1.Query
     {{- if not $inMigration}}
     {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.DeleteManyAllowed(ctx); err != nil {
-        return err
-    } else if !ok {
-        return sac.ErrResourceAccessDenied
+    if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
+        return nil, err
     }
     {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
+    {{ template "defineScopeChecker" "READ" }}
     if !scopeChecker.IsAllowed() {
-        return sac.ErrResourceAccessDenied
+        return nil, nil
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-    if err != nil {
-        return err
-    }
+    {{ template "defineScopeChecker" "READ" }}
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, err
+	}
     {{- if .Obj.IsClusterScope }}
     sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
     sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return nil, err
+	}
     {{- end }}
-    {{- end }}{{/* if not $inMigration */}}
+    {{- end}}{{/* if not .inMigration */}}
+    result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
 
-    // Batch the deletes
-    localBatchSize := deleteBatchSize
-    numRecordsToDelete := len(identifiers)
-    for {
-        if len(identifiers) == 0 {
-            break
-        }
+	identifiers := make([]string, 0, len(result))
+	for _, entry := range result {
+		identifiers = append(identifiers, entry.ID)
+	}
 
-        if len(identifiers) < localBatchSize {
-            localBatchSize = len(identifiers)
-        }
-
-        identifierBatch := identifiers[:localBatchSize]
-        q := search.ConjunctionQuery(
-        sacQueryFilter,
-            search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-        )
-
-        if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-            err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
-            log.Error(err)
-            return err
-        }
-
-        // Move the slice forward to start the next batch
-        identifiers = identifiers[localBatchSize:]
-    }
-
-    return nil
+	return identifiers, nil
 }
 {{- end }}
-{{- end }}
+
+{{- if .GetAll }}
+func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
+    {{- if not $inMigration}}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.TrimmedType}}")
+    {{- end}}{{/* if not .inMigration */}}
+
+    var objs []*{{.Type}}
+    err := s.Walk(ctx, func(obj *{{.Type}}) error {
+        objs = append(objs, obj)
+        return nil
+    })
+    return objs, err
+}
+{{- end}}
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error {
@@ -1016,32 +1064,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 	}
 	return nil
 }
-
-//// Used for testing
-{{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
-{{- define "dropTable"}}
-{{- $schema := . }}
-func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
-    _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
-    {{range $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
-    {{end}}
-}
-{{range $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
-{{- end}}
-
-{{template "dropTable" .Schema}}
-
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-    {{template "dropTableFunctionName" .Schema}}(ctx, db)
-}
-
-{{ if not $inMigration }}
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-{{- end}}
 
 //// Stubs for satisfying legacy interfaces
 
