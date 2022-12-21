@@ -1490,7 +1490,7 @@ handle_gha_tagged_build() {
     if [[ "${GITHUB_REF:-}" =~ ^refs/tags/ ]]; then
         tag="${GITHUB_REF#refs/tags/*}"
         echo "This is a tagged build: $tag"
-        echo "::set-output name=CIRCLE_TAG::$tag"
+        echo "CIRCLE_TAG=$tag" >> "$GITHUB_ENV"
     else
         echo "This is not a tagged build"
     fi

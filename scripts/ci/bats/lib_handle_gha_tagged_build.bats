@@ -6,14 +6,19 @@ load "../../test_helpers.bats"
 function setup() {
     unset OPENSHIFT_CI
     unset GITHUB_REF
+    export GITHUB_ENV="$(mktemp)"
     source "${BATS_TEST_DIRNAME}/../lib.sh"
+}
+
+function cleanup() {
+    rm -f "$GITHUB_ENV"
 }
 
 @test "without any env" {
     run handle_gha_tagged_build
     assert_success
     assert_output --partial 'No GITHUB_REF in env'
-    refute_output --partial 'set-output'
+    assert_equal "$(cat $GITHUB_ENV)" ""
 }
 
 @test "with a ref that does not indicate a tagged build" {
@@ -21,7 +26,7 @@ function setup() {
     run handle_gha_tagged_build
     assert_success
     assert_output --partial 'This is not a tagged build'
-    refute_output --partial 'set-output'
+    assert_equal "$(cat $GITHUB_ENV)" ""
 }
 
 @test "with a highly unusual ref that might incorrectly indicate a tagged build" {
@@ -29,7 +34,7 @@ function setup() {
     run handle_gha_tagged_build
     assert_success
     assert_output --partial 'This is not a tagged build'
-    refute_output --partial 'set-output'
+    assert_equal "$(cat $GITHUB_ENV)" ""
 }
 
 @test "with a ref that indicates a tagged build" {
@@ -37,5 +42,5 @@ function setup() {
     run handle_gha_tagged_build
     assert_success
     assert_output --partial 'This is a tagged build: 3.73.x-nightly-20221221'
-    assert_output --partial '::set-output name=CIRCLE_TAG::3.73.x-nightly-20221221'
+    assert_equal "$(cat $GITHUB_ENV)" "CIRCLE_TAG=3.73.x-nightly-20221221"
 }
