@@ -26,6 +26,7 @@ import NetworkPoliciesYAML from './NetworkPoliciesYAML';
 import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorUtils';
 import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
+import NotifyYAMLModal from './NotifyYAMLModal';
 
 type NetworkPolicySimulatorSidePanelProps = {
     selectedClusterId: string;
@@ -44,6 +45,7 @@ function NetworkPolicySimulatorSidePanel({
     });
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
+    const [isNotifyModalOpen, setIsNotifyModalOpen] = React.useState(false);
     const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
         useNetworkPolicySimulator({
             clusterId: selectedClusterId,
@@ -115,6 +117,10 @@ function NetworkPolicySimulatorSidePanel({
         setActiveKeyTab(tabs.VIEW_ACTIVE_YAMLS);
     }
 
+    function openNotifyYAMLModal() {
+        setIsNotifyModalOpen(true);
+    }
+
     if (simulator.isLoading) {
         return (
             <Bullseye>
@@ -163,9 +169,16 @@ function NetworkPolicySimulatorSidePanel({
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
                             applyNetworkPolicies={applyNetworkPolicies}
+                            openNotifyYAMLModal={openNotifyYAMLModal}
                         />
                     </StackItem>
                 </Stack>
+                <NotifyYAMLModal
+                    isModalOpen={isNotifyModalOpen}
+                    setIsModalOpen={setIsNotifyModalOpen}
+                    clusterId={selectedClusterId}
+                    modification={simulator.modification}
+                />
             </div>
         );
     }
@@ -211,9 +224,16 @@ function NetworkPolicySimulatorSidePanel({
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
                             applyNetworkPolicies={applyNetworkPolicies}
+                            openNotifyYAMLModal={openNotifyYAMLModal}
                         />
                     </StackItem>
                 </Stack>
+                <NotifyYAMLModal
+                    isModalOpen={isNotifyModalOpen}
+                    setIsModalOpen={setIsNotifyModalOpen}
+                    clusterId={selectedClusterId}
+                    modification={simulator.modification}
+                />
             </div>
         );
     }
@@ -256,9 +276,16 @@ function NetworkPolicySimulatorSidePanel({
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
                             applyNetworkPolicies={applyNetworkPolicies}
+                            openNotifyYAMLModal={openNotifyYAMLModal}
                         />
                     </StackItem>
                 </Stack>
+                <NotifyYAMLModal
+                    isModalOpen={isNotifyModalOpen}
+                    setIsModalOpen={setIsNotifyModalOpen}
+                    clusterId={selectedClusterId}
+                    modification={simulator.modification}
+                />
             </div>
         );
     }
