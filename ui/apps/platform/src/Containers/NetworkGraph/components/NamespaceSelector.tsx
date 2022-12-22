@@ -117,6 +117,7 @@ function NamespaceSelector({
             variant={SelectVariant.checkbox}
             maxHeight="275px"
             hasInlineFilter
+            isPlain
         >
             {namespaceSelectOptions}
         </Select>

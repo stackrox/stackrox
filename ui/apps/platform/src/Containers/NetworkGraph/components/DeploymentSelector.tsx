@@ -85,6 +85,7 @@ function DeploymentSelector({
             maxHeight="275px"
             hasInlineFilter
             isGrouped
+            isPlain
         >
             {deploymentSelectOptions}
         </Select>

@@ -59,7 +59,7 @@ button.pf-c-toggle-group__button:disabled {
     opacity: inherit;
 }
 
-.pf-c-select__toggle::before {
+.pf-c-select__toggle:not(.pf-m-plain)::before {
     position: absolute;
     top: 0;
     right: 0;
