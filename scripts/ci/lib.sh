@@ -1481,6 +1481,21 @@ is_system_test_without_images() {
     esac
 }
 
+handle_gha_tagged_build() {
+    if [[ -z "${GITHUB_REF:-}" ]]; then
+        echo "No GITHUB_REF in env"
+        exit 0
+    fi
+    echo "GITHUB_REF: ${GITHUB_REF}"
+    if [[ "${GITHUB_REF:-}" =~ ^refs/tags/ ]]; then
+        tag="${GITHUB_REF#refs/tags/*}"
+        echo "This is a tagged build: $tag"
+        echo "CIRCLE_TAG=$tag" >> "$GITHUB_ENV"
+    else
+        echo "This is not a tagged build"
+    fi
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."
