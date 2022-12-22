@@ -69,6 +69,7 @@ const VulnMgmtEntityPolicy = ({
                         name
                     }
                 }
+                deploymentCount${queryVarParam}
                 unusedVarSink(query: $scopeQuery)
             }
         }
