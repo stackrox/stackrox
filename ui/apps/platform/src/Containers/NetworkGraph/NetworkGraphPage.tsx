@@ -51,6 +51,9 @@ const timeWindow = 'Past hour';
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
+// for MVP, always show Orchestrator Components
+const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
+
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
     const [activeModel, setActiveModel] = useState<CustomModel>(emptyModel);
@@ -91,7 +94,8 @@ function NetworkGraphPage() {
                         deploymentsFromUrl,
                         queryToUse,
                         timestampToUse || undefined,
-                        includePorts
+                        includePorts,
+                        ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
                     ),
                     fetchNetworkPolicyGraph(
                         selectedClusterId,
@@ -99,7 +103,8 @@ function NetworkGraphPage() {
                         deploymentsFromUrl,
                         queryToUse,
                         undefined,
-                        includePorts
+                        includePorts,
+                        ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
                     ),
                 ])
                     .then((values) => {
