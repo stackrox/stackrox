@@ -111,7 +111,12 @@ function NamespaceSelector({
             onSelect={onNamespaceSelect}
             onFilter={onFilterNamespaces}
             className="namespace-select"
-            placeholderText="Namespaces"
+            placeholderText={
+                <span>
+                    <NamespaceIcon className="pf-u-mr-xs" />{' '}
+                    <span style={{ position: 'relative', top: '1px' }}>Namespaces</span>
+                </span>
+            }
             isDisabled={namespaceSelectOptions.length === 0}
             selections={selectedNamespaces}
             variant={SelectVariant.checkbox}

@@ -37,7 +37,7 @@ function ClusterSelector({
     const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => (
         <SelectOption key={cluster.id} value={cluster.name}>
             <span>
-                <ClusterIcon /> {cluster.name}
+                <ClusterIcon className="pf-u-mr-xs" /> {cluster.name}
             </span>
         </SelectOption>
     ));
@@ -45,7 +45,12 @@ function ClusterSelector({
     return (
         <Select
             isPlain
-            placeholderText={<em>Select a cluster</em>}
+            placeholderText={
+                <span>
+                    <ClusterIcon className="pf-u-mr-xs" />{' '}
+                    <span style={{ position: 'relative', top: '1px' }}>Cluster</span>
+                </span>
+            }
             aria-label="Select a cluster"
             onToggle={toggleIsClusterOpen}
             onSelect={onClusterSelect}
