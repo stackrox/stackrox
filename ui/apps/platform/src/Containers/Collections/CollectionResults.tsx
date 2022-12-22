@@ -33,7 +33,11 @@ function fetchMatchingDeployments(
 ) {
     const pageSize = 10;
     const query = { [entity]: filterText };
-    const { request } = dryRunCollection(dryRunConfig, query, page, pageSize);
+    const sortOption = {
+        field: 'Deployment',
+        reversed: false,
+    };
+    const { request } = dryRunCollection(dryRunConfig, query, page, pageSize, sortOption);
     return request;
 }
 
@@ -81,7 +85,7 @@ function CollectionResults({
     headerContent,
     dryRunConfig,
     configError,
-    setConfigError = () => {},
+    setConfigError,
 }: CollectionResultsProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [selected, setSelected] = useState<SelectorEntityType>('Deployment');
@@ -96,7 +100,7 @@ function CollectionResults({
             manualFetch: true,
             dedupKeyFn: ({ id }) => id,
             onError: (err) => {
-                setConfigError(parseConfigError(err));
+                setConfigError?.(parseConfigError(err));
             },
         });
 
@@ -117,7 +121,7 @@ function CollectionResults({
     }, [clearPages, configError]);
 
     const refreshResults = useCallback(() => {
-        setConfigError(undefined);
+        setConfigError?.(undefined);
         if (selectorRulesExist) {
             resetPages();
         }
