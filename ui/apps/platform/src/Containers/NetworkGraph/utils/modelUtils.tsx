@@ -255,6 +255,9 @@ function getNetworkPolicyState(
     return networkPolicyState;
 }
 
+// external connections can only be active, so this is hard coded to false
+const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
+
 export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
     const dataModel = {
         graph: graphModel,
@@ -263,7 +266,13 @@ export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
     };
     nodes.forEach(({ entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress }) => {
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
-        const node = getNodeModel(entity, policyIds, networkPolicyState, false, outEdges);
+        const node = getNodeModel(
+            entity,
+            policyIds,
+            networkPolicyState,
+            POLICY_NODE_EXTERNALLY_CONNECTED_VALUE,
+            outEdges
+        );
         dataModel.nodes.push(node);
 
         // creating edges based off of outEdges per node and adding to data model
