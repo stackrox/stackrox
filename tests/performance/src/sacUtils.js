@@ -10,7 +10,7 @@ function getRandomInt(max) {
 }
 
 // Fetch clusters and all namespaces for them sorted by cluster and namespace.
-function getNamespaces(host, headers) {
+function getNamespacesByCluster(host, headers) {
     // We are using GraphQL here, because we can ensure order and less data will be returned.
     const response = http.post(
         `${host}/api/graphql`,
@@ -38,34 +38,34 @@ function getNamespaces(host, headers) {
 }
 
 // Get randomized list of namespaces for access scope.
-function getScopeNamespaces(clusterNamespaces, numClusters, numNamespacesPerCluster) {
-    const clusterNames = Object.keys(clusterNamespaces);
+function getScopeNamespaces(namespacesByClusterMap, numClusters, numNamespacesPerCluster) {
+    const clusterIDs = Object.keys(namespacesByClusterMap);
 
     const usedClusters = new Set();
     const usedNamespaces = new Set();
 
     const includeNamespaces = [];
-    while (usedClusters.size < numClusters && usedClusters.size < clusterNames.length) {
-        const clusterIndex = getRandomInt(numClusters);
-        const clusterName = clusterNames[clusterIndex];
+    while (usedClusters.size < numClusters && usedClusters.size < clusterIDs.length) {
+        const clusterIndex = getRandomInt(clusterIDs.length);
+        const clusterID = clusterIDs[clusterIndex];
 
-        if (!usedClusters.has(clusterName)) {
-            usedClusters.add(clusterName);
+        if (!usedClusters.has(clusterID)) {
+            usedClusters.add(clusterID);
 
-            var namespacesCount = 0;
+            let namespacesCount = 0;
             while (
                 namespacesCount < numNamespacesPerCluster &&
-                namespacesCount < clusterNamespaces[clusterName].length
+                namespacesCount < namespacesByClusterMap[clusterID].length
             ) {
-                const namespaceIndex = getRandomInt(clusterNamespaces[clusterName].length);
-                const namespaceName = clusterNamespaces[clusterName][namespaceIndex];
+                const namespaceIndex = getRandomInt(namespacesByClusterMap[clusterID].length);
+                const namespaceName = namespacesByClusterMap[clusterID][namespaceIndex];
 
-                if (!usedNamespaces.has(`${clusterName}:${namespaceName}`)) {
+                if (!usedNamespaces.has(`${clusterID}:${namespaceName}`)) {
                     namespacesCount += 1;
-                    usedNamespaces.add(`${clusterName}:${namespaceName}`);
+                    usedNamespaces.add(`${clusterID}:${namespaceName}`);
 
                     includeNamespaces.push({
-                        clusterName: clusterName,
+                        clusterName: clusterID,
                         namespaceName: namespaceName,
                     });
                 }
@@ -80,7 +80,7 @@ function getScopeNamespaces(clusterNamespaces, numClusters, numNamespacesPerClus
 function createAccessScopeWithNamespaces(host, headers, name, includeNamespaces) {
     console.info('Create SAC', name, includeNamespaces);
 
-    const payload = JSON.stringify({
+    const requestPayload = {
         name: name,
         description: name,
         rules: {
@@ -88,44 +88,74 @@ function createAccessScopeWithNamespaces(host, headers, name, includeNamespaces)
             clusterLabelSelectors: [],
             namespaceLabelSelectors: [],
         },
-    });
+    };
 
-    const response = http.post(`${host}/v1/simpleaccessscopes`, payload, {
-        headers,
-        tags: libTags,
-    });
+    const response = http
+        .post(`${host}/v1/simpleaccessscopes`, JSON.stringify(requestPayload), {
+            headers,
+            tags: libTags,
+        })
+        .json();
 
-    return response.json();
+    if (response['error']) {
+        console.error('Error: createAccessScopeWithNamespaces', {
+            requestPayload,
+            response,
+        });
+    }
+
+    return response;
 }
 
 // Create role for already existing access scope.
 function createRole(host, headers, name, accessScopeId) {
-    const payload = JSON.stringify({
+    const requestPayload = {
         name: name,
         resourceToAccess: {},
         description: `Test: ${name}`,
-        permissionSetId: 'io.stackrox.authz.permissionset.analyst',
+        permissionSetId: 'ffffffff-ffff-fff4-f5ff-fffffffffffe',
         accessScopeId: accessScopeId,
-    });
+    };
 
-    const response = http.post(`${host}/v1/roles/${name}`, payload, { headers, tags: libTags });
+    const response = http
+        .post(`${host}/v1/roles/${name}`, JSON.stringify(requestPayload), {
+            headers,
+            tags: libTags,
+        })
+        .json();
 
-    return response.json();
+    if (response['error']) {
+        console.error('Error: createRole', {
+            requestPayload,
+            response,
+        });
+    }
+
+    return response;
 }
 
 // Create token for existing role.
 function createToken(host, headers, roleName) {
-    const payload = JSON.stringify({
+    const requestPayload = {
         name: roleName,
         roles: [roleName],
-    });
+    };
 
-    const response = http.post(`${host}/v1/apitokens/generate`, payload, {
-        headers,
-        tags: libTags,
-    });
+    const response = http
+        .post(`${host}/v1/apitokens/generate`, JSON.stringify(requestPayload), {
+            headers,
+            tags: libTags,
+        })
+        .json();
 
-    return response.json();
+    if (response['error']) {
+        console.error('Error: createToken', {
+            requestPayload,
+            response,
+        });
+    }
+
+    return response;
 }
 
 function deleteToken(host, headers, tokenId) {
@@ -145,8 +175,8 @@ export function createSac(host, headers, roleName, numClusters, numNamespaces) {
     // the same for the same scopes over different executions.
     randomSeed(numClusters * 10000 + numNamespaces);
 
-    const clusterNamespaces = getNamespaces(host, headers);
-    const scopeNamespaces = getScopeNamespaces(clusterNamespaces, numClusters, numNamespaces);
+    const namespacesByClusterMap = getNamespacesByCluster(host, headers);
+    const scopeNamespaces = getScopeNamespaces(namespacesByClusterMap, numClusters, numNamespaces);
     const createSacResult = createAccessScopeWithNamespaces(
         host,
         headers,

@@ -71,10 +71,13 @@ const runAllGroups = (header, tags) => {
 
 export default function main(sacInfos) {
     // Run all with admin.
+    console.log('Running tests for admin scope');
     runAllGroups(getHeaderWithAdminPass(__ENV.ROX_ADMIN_PASSWORD), { sac_user: 'admin' });
 
     // Run all groups for different scopes.
     sacOptions.forEach((sacOption) => {
+        console.log('Running tests for scope', sacOption);
+
         runAllGroups(getHeaderWithToken(sacInfos[sacOption.name]['token']), {
             sac_user: sacOption.tag,
         });
