@@ -16,7 +16,7 @@ import (
 func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
 	storage := postgresStore.New(pool)
 	indexer := postgresStore.NewIndexer(pool)
-	searcher := search.New(storage, indexer)
+	searcher := search.New(storage, indexer, nil)
 	return New(nil, storage, indexer, searcher), nil
 }
 
@@ -24,6 +24,6 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 func GetTestRocksBleveDataStore(_ *testing.T, bleveIndex bleve.Index, dacky *dackbox.DackBox) (DataStore, error) {
 	storage := dackboxStore.New(dacky)
 	indexer := dackboxIndex.New(bleveIndex)
-	searcher := search.New(storage, indexer)
+	searcher := search.New(storage, indexer, dacky)
 	return New(dacky, storage, indexer, searcher), nil
 }

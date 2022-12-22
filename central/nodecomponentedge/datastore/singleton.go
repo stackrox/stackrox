@@ -29,12 +29,12 @@ func initialize() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
-		searcher = search.New(storage, indexer)
+		searcher = search.New(storage, indexer, nil)
 	} else {
 		graphProvider = globalDackbox.GetGlobalDackBox()
 		storage = dackbox.New(globalDackbox.GetGlobalDackBox())
 		indexer = index.New(globalindex.GetGlobalIndex())
-		searcher = search.New(storage, indexer)
+		searcher = search.New(storage, indexer, graphProvider)
 	}
 
 	ad = New(graphProvider, storage, indexer, searcher)
