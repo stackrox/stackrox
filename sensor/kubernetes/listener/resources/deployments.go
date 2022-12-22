@@ -186,7 +186,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
 			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
 			// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
-			events := component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
+			events = component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
 				{
 					Object: deploymentWrap.GetDeployment(),
 					Action: action,
