@@ -260,7 +260,7 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 }
 
 // AssertFunc is the deployment state assertion function signature.
-type AssertFunc func(deployment *storage.Deployment) error
+type AssertFunc func(deployment *storage.Deployment, action central.ResourceAction) error
 
 // MatchResource is a function to match sensor messages to be filtered.
 type MatchResource func(resource *central.MsgFromSensor) bool
@@ -314,8 +314,9 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 			messages := c.GetFakeCentral().GetAllMessages()
 			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "sensor-integration", name)
 			deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
+			action := lastDeploymentUpdate.GetEvent().GetAction()
 			if deployment != nil {
-				if lastErr = assertion(deployment); lastErr == nil {
+				if lastErr = assertion(deployment, action); lastErr == nil {
 					return
 				}
 			}
@@ -367,12 +368,61 @@ func (c *TestContext) LastViolationStateWithTimeout(name string, assertion Alert
 
 }
 
+// LastViolationStateByID checks the violation state by deployment ID
+func (c *TestContext) LastViolationStateByID(id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool) {
+	c.LastViolationStateByIDWithTimeout(id, assertion, message, checkEmptyAlertResults, 3*time.Second)
+}
+
+// LastViolationStateByIDWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
+// until `timeout` the test fails.
+func (c *TestContext) LastViolationStateByIDWithTimeout(id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(10 * time.Millisecond)
+	var lastErr error
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			alerts := GetAllAlertsForDeploymentID(messages, id, checkEmptyAlertResults)
+			var lastViolationState *central.AlertResults
+			if len(alerts) > 0 {
+				lastViolationState = alerts[len(alerts)-1].GetEvent().GetAlertResults()
+			}
+			if lastErr = assertion(lastViolationState); lastErr == nil {
+				// Assertion matched the case. We can return here without failing the test case
+				return
+			}
+		}
+	}
+
+}
+
 // GetAllAlertsForDeploymentName filters sensor messages and gets all alerts for a deployment with `name`
 func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name string) []*central.MsgFromSensor {
 	var selected []*central.MsgFromSensor
 	for _, m := range messages {
 		for _, alert := range m.GetEvent().GetAlertResults().GetAlerts() {
 			if alert.GetDeployment().GetName() == name {
+				selected = append(selected, m)
+				break
+			}
+		}
+	}
+	return selected
+}
+
+// GetAllAlertsForDeploymentID filters sensor messages and gets all alerts for a deployment with `id`. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
+func GetAllAlertsForDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) []*central.MsgFromSensor {
+	var selected []*central.MsgFromSensor
+	for _, m := range messages {
+		if checkEmptyAlertResults && m.GetEvent().GetAlertResults().GetDeploymentId() == id && len(m.GetEvent().GetAlertResults().GetAlerts()) == 0 {
+			selected = append(selected, m)
+			break
+		}
+		for _, alert := range m.GetEvent().GetAlertResults().GetAlerts() {
+			if alert.GetDeployment().GetId() == id {
 				selected = append(selected, m)
 				break
 			}

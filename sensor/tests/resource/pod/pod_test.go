@@ -1,14 +1,17 @@
 package pod
 
 import (
+	"context"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/tests/resource"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -53,7 +56,7 @@ func sortAlphabetically(list []string) {
 }
 
 func assertDeploymentContainerImages(images ...string) resource.AssertFunc {
-	return func(deployment *storage.Deployment) error {
+	return func(deployment *storage.Deployment, _ central.ResourceAction) error {
 		if len(deployment.GetContainers()) != len(images) {
 			return errors.Errorf("number of containers does not match slice of images provided: %d != %d", len(deployment.GetContainers()), len(images))
 		}
@@ -121,5 +124,72 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 		uniquePodNames := resource.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
 		s.Require().Len(uniquePodNames, 4,
 			"Should have received four different pod events (3 from nginx-deployment and 1 from nginx-rouge")
+	})
+}
+
+func (s *PodHierarchySuite) Test_DeleteDeployment() {
+	s.testContext.RunBare("Removing a deployment should send empty violation", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		deleteDep, err := testC.ApplyFileNoObject(context.Background(), resource.DefaultNamespace, NginxDeployment)
+		require.NoError(t, err)
+
+		var id string
+		// Check the deployment is processed
+		testC.LastDeploymentState("nginx-deployment", func(deployment *storage.Deployment, _ central.ResourceAction) error {
+			id = deployment.GetId()
+			return nil
+		}, "deployment should be processed")
+		testC.GetFakeCentral().ClearReceivedBuffer()
+
+		// Delete the deployment
+		err = deleteDep()
+		require.NoError(t, err)
+
+		// Check deployment and action
+		testC.LastDeploymentStateWithTimeout("nginx-deployment", func(_ *storage.Deployment, action central.ResourceAction) error {
+			if action != central.ResourceAction_REMOVE_RESOURCE {
+				return errors.New("ResourceAction should be REMOVE_RESOURCE")
+			}
+			return nil
+		}, "deployment should be deleted", 10*time.Second)
+		testC.LastViolationStateByID(id, func(alertResults *central.AlertResults) error {
+			if alertResults.GetAlerts() != nil {
+				return errors.New("AlertResults should be empty")
+			}
+			return nil
+		}, "Should have an empty violation", true)
+		testC.GetFakeCentral().ClearReceivedBuffer()
+	})
+}
+
+func (s *PodHierarchySuite) Test_DeletePod() {
+	s.testContext.RunBare("Removing a rogue pod should send empty violation", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		deletePod, err := testC.ApplyFileNoObject(context.Background(), resource.DefaultNamespace, NginxPod)
+		require.NoError(t, err)
+		var id string
+		// Check the pod is processed
+		testC.LastDeploymentState("nginx-rogue", func(deployment *storage.Deployment, _ central.ResourceAction) error {
+			id = deployment.GetId()
+			return nil
+		}, "rogue pod should be processed")
+		testC.GetFakeCentral().ClearReceivedBuffer()
+
+		// Delete the pod
+		err = deletePod()
+		require.NoError(t, err)
+
+		// Check pod and action
+		testC.LastDeploymentStateWithTimeout("nginx-rogue", func(_ *storage.Deployment, action central.ResourceAction) error {
+			if action != central.ResourceAction_REMOVE_RESOURCE {
+				return errors.New("ResourceAction should be REMOVE_RESOURCE")
+			}
+			return nil
+		}, "rogue pod should be deleted", 10*time.Second)
+		testC.LastViolationStateByID(id, func(alertResults *central.AlertResults) error {
+			if alertResults.GetAlerts() != nil {
+				return errors.New("AlertResults should be empty")
+			}
+			return nil
+		}, "Should have an empty violation", true)
+		testC.GetFakeCentral().ClearReceivedBuffer()
 	})
 }
