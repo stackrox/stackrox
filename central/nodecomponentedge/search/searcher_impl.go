@@ -8,8 +8,6 @@ import (
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/filtered"
@@ -19,7 +17,6 @@ type searcherImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
-	provider graph.Provider
 }
 
 // SearchEdges returns the search results from indexed edges for the query.
@@ -38,16 +35,7 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 
 // Count returns the number of search results from the query
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return ds.searcher.Count(ctx, q)
-	}
-	var count int
-	var err error
-	graph.Context(ctx, ds.provider, func(inner context.Context) {
-		count, err = ds.searcher.Count(inner, q)
-	})
-	return count, err
-	// return ds.searcher.Count(ctx, q)
+	return ds.searcher.Count(ctx, q)
 }
 
 // SearchRawEdges retrieves edges from the indexer and storage
@@ -56,16 +44,7 @@ func (ds *searcherImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*sto
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return ds.searcher.Search(ctx, q)
-	}
-	var res []search.Result
-	var err error
-	graph.Context(ctx, ds.provider, func(inner context.Context) {
-		res, err = ds.searcher.Search(inner, q)
-	})
-	return res, err
-	// return ds.searcher.Search(ctx, q)
+	return ds.searcher.Search(ctx, q)
 }
 
 // resultsToNodeComponentEdges returns the cves from the db for the given search results.

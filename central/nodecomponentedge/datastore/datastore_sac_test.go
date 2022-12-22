@@ -294,10 +294,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
-	// if !env.PostgresDatastoreEnabled.BooleanSetting() {
-	// 	s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-	// 		"to enable Search test case in non-postgres mode")
-	// }
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
+			"to enable Search test case in non-postgres mode")
+	}
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -322,10 +322,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	// if !env.PostgresDatastoreEnabled.BooleanSetting() {
-	// 	s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-	// 		"to enable Search test case in non-postgres mode")
-	// }
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
+			"to enable Search test case in non-postgres mode")
+	}
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -355,10 +355,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	// if !env.PostgresDatastoreEnabled.BooleanSetting() {
-	// 	s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-	// 		"to enable Search test case in non-postgres mode")
-	// }
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
+			"to enable Search test case in non-postgres mode")
+	}
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -388,10 +388,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	// if !env.PostgresDatastoreEnabled.BooleanSetting() {
-	// 	s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-	// 		"to enable Search test case in non-postgres mode")
-	// }
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
+			"to enable Search test case in non-postgres mode")
+	}
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
 	s.Require().NoError(err)

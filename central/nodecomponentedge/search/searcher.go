@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -32,7 +31,7 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage store.Store, indexer index.Indexer, provider graph.Provider) Searcher {
+func New(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImpl{
 		storage: storage,
 		indexer: indexer,
@@ -42,7 +41,6 @@ func New(storage store.Store, indexer index.Indexer, provider graph.Provider) Se
 			}
 			return formatSearcher(indexer)
 		}(),
-		provider: provider,
 	}
 }
 
