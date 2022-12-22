@@ -16,6 +16,7 @@ type NetworkSimulatorActionsProps = {
         _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
         file: File
     ) => void;
+    applyNetworkPolicies?: () => void;
 };
 
 const actionsDropdownId = 'network-simulator-actions-dropdown';
@@ -31,6 +32,7 @@ function NetworkSimulatorActions({
     generateNetworkPolicies,
     undoNetworkPolicies,
     onFileInputChange,
+    applyNetworkPolicies,
 }: NetworkSimulatorActionsProps) {
     const [isActionsOpen, setIsActionsOpen] = React.useState(false);
 
@@ -56,6 +58,14 @@ function NetworkSimulatorActions({
             {labels.undo}
         </DropdownItem>,
     ];
+
+    if (applyNetworkPolicies) {
+        actionsDropdownItems.unshift(
+            <DropdownItem key="apply" tooltip="" onClick={applyNetworkPolicies}>
+                {labels.apply}
+            </DropdownItem>
+        );
+    }
 
     return (
         <Split hasGutter className="pf-u-p-md">
