@@ -62,6 +62,14 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 	return integrations, nil
 }
 
+func (d *datastoreImpl) CountSignatureIntegrations(ctx context.Context) (int, error) {
+	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
+		return 0, err
+	}
+
+	return d.storage.Count(ctx)
+}
+
 func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
 	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err

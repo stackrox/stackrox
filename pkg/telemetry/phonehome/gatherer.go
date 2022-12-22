@@ -110,13 +110,13 @@ func (g *gatherer) AddGatherer(f GatherFunc) {
 	g.gatherFuncs = append(g.gatherFuncs, f)
 }
 
-// AddTotal sets an entry in the props map with key and number of elements
-// returned by f as the value.
-func AddTotal[T any](ctx context.Context, props map[string]any, key string, f func(context.Context) ([]*T, error)) error {
+// AddTotal sets an entry in the props map with key and number returned by f as
+//the value.
+func AddTotal(ctx context.Context, props map[string]any, key string, f func(context.Context) (int, error)) error {
 	ps, err := f(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get %s", key)
 	}
-	props["Total "+key] = len(ps)
+	props["Total "+key] = ps
 	return nil
 }

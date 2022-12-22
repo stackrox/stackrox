@@ -18,7 +18,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 			sac.ResourceScopeKeys(resources.Integration)))
 	totals := make(map[string]any)
 	si := Singleton()
-	if err := phonehome.AddTotal(ctx, totals, "Signature Integrations", si.GetAllSignatureIntegrations); err != nil {
+	if err := phonehome.AddTotal(ctx, totals, "Signature Integrations", si.CountSignatureIntegrations); err != nil {
 		return nil, errors.Wrap(err, "failed to get signature integrations")
 	}
 	return totals, nil
