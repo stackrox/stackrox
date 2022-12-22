@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/installation/store"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -58,7 +59,12 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
-	ii, _, err := store.Singleton().Get(sac.WithAllAccess(context.Background()))
+	ii, _, err := store.Singleton().Get(
+		sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.InstallationInfo))))
+
 	if err != nil || ii == nil {
 		return nil, nil, errors.Wrap(err, "cannot get installation information")
 	}
