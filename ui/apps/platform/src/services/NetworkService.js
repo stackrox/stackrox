@@ -159,7 +159,8 @@ export function fetchNetworkPolicyGraph(
     deployments,
     query,
     modification,
-    includePorts
+    includePorts,
+    includeOrchestratorComponents = false
 ) {
     const urlParams = query ? { query } : {};
     const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
@@ -172,7 +173,10 @@ export function fetchNetworkPolicyGraph(
     }
 
     // for openshift filtering toggle
-    if (localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true') {
+    if (
+        !includeOrchestratorComponents &&
+        localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true'
+    ) {
         urlParams.scope = {
             query: 'Orchestrator Component:false',
         };
@@ -213,6 +217,7 @@ export function fetchNetworkPolicyGraph(
  * @param {String} query
  * @param {Date} date
  * @param {boolean} includePorts
+ * @param {boolean} includeOrchestratorComponents
  *
  * @returns {Promise<Object, Error>}
  */
@@ -222,7 +227,8 @@ export function fetchNetworkFlowGraph(
     deployments,
     query = '',
     date = null,
-    includePorts = false
+    includePorts = false,
+    includeOrchestratorComponents = false
 ) {
     const urlParams = query ? { query } : {};
     const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
@@ -236,7 +242,10 @@ export function fetchNetworkFlowGraph(
         urlParams.includePorts = true;
     }
     // for openshift filtering toggle
-    if (localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true') {
+    if (
+        !includeOrchestratorComponents &&
+        localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true'
+    ) {
         urlParams.scope = {
             query: 'Orchestrator Component:false',
         };
