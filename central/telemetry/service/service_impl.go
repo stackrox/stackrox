@@ -28,32 +28,14 @@ var (
 		user.With(permissions.Modify(resources.DebugLogs)): {
 			"/v1.TelemetryService/ConfigureTelemetry",
 		},
-		anyAuthenticated{}: {
+		user.With(): {
 			"/v1.TelemetryService/GetConfig",
 		},
 	})
 )
 
-type anyAuthenticated struct{}
-
-// Authorized implements authz.Authorizer for anyAuthenticated struct.
-func (anyAuthenticated) Authorized(ctx context.Context, fullMethodName string) error {
-	id, err := authn.IdentityFromContext(ctx)
-	if err != nil {
-		return errox.NotAuthorized.CausedBy(err)
-	}
-	if id == nil || id.UID() == "" {
-		return errox.NotAuthorized.CausedBy(errox.NoCredentials)
-	}
-	return nil
-}
-
 type serviceImpl struct {
 	v1.UnimplementedTelemetryServiceServer
-}
-
-func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
@@ -62,6 +44,11 @@ func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	return v1.RegisterTelemetryServiceHandler(ctx, mux, conn)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) GetTelemetryConfiguration(ctx context.Context, _ *v1.Empty) (*storage.TelemetryConfiguration, error) {
