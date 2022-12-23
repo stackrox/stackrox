@@ -57,18 +57,6 @@ func (mr *MockTelemeterMockRecorder) Identify(userID, props interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), userID, props)
 }
 
-// Start mocks base method.
-func (m *MockTelemeter) Start() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Start")
-}
-
-// Start indicates an expected call of Start.
-func (mr *MockTelemeterMockRecorder) Start() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockTelemeter)(nil).Start))
-}
-
 // Stop mocks base method.
 func (m *MockTelemeter) Stop() {
 	m.ctrl.T.Helper()
