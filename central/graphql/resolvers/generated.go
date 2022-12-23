@@ -790,6 +790,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
+		"dbAvailable: Boolean!",
 		"licenseStatus: Metadata_LicenseStatus!",
 		"releaseBuild: Boolean!",
 		"version: String!",
@@ -9311,6 +9312,11 @@ func (resolver *Resolver) wrapMetadatasWithContext(ctx context.Context, values [
 
 func (resolver *metadataResolver) BuildFlavor(ctx context.Context) string {
 	value := resolver.data.GetBuildFlavor()
+	return value
+}
+
+func (resolver *metadataResolver) DbAvailable(ctx context.Context) bool {
+	value := resolver.data.GetDbAvailable()
 	return value
 }
 

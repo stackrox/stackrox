@@ -10,6 +10,7 @@ import (
 //go:generate mockgen-wrapper
 type PermissionSetStore interface {
 	Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error)
+	Count(ctx context.Context) (int, error)
 	Upsert(ctx context.Context, obj *storage.PermissionSet) error
 	UpsertMany(ctx context.Context, obj []*storage.PermissionSet) error
 	Delete(ctx context.Context, id string) error
@@ -20,6 +21,7 @@ type PermissionSetStore interface {
 //go:generate mockgen-wrapper
 type SimpleAccessScopeStore interface {
 	Get(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
+	Count(ctx context.Context) (int, error)
 	Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error
 	UpsertMany(ctx context.Context, obj []*storage.SimpleAccessScope) error
 	Delete(ctx context.Context, id string) error
@@ -30,6 +32,7 @@ type SimpleAccessScopeStore interface {
 //go:generate mockgen-wrapper
 type RoleStore interface {
 	Get(ctx context.Context, id string) (*storage.Role, bool, error)
+	Count(ctx context.Context) (int, error)
 	Upsert(ctx context.Context, obj *storage.Role) error
 	UpsertMany(ctx context.Context, obj []*storage.Role) error
 	Delete(ctx context.Context, id string) error
