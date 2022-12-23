@@ -55,9 +55,6 @@ func (l *logWrapper) Errorf(format string, args ...any) {
 	l.internal.Errorf(format, args...)
 }
 
-func (t *segmentTelemeter) Start() {
-}
-
 func (t *segmentTelemeter) Stop() {
 	if t != nil {
 		if err := t.client.Close(); err != nil {
