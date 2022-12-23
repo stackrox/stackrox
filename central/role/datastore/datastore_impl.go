@@ -174,7 +174,7 @@ func (ds *dataStoreImpl) CountPermissionSets(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return ds.CountPermissionSets(ctx)
+	return ds.permissionSetStorage.Count(ctx)
 }
 
 func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
@@ -308,7 +308,7 @@ func (ds *dataStoreImpl) CountAccessScopes(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return ds.CountAccessScopes(ctx)
+	return ds.accessScopeStorage.Count(ctx)
 }
 
 func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
