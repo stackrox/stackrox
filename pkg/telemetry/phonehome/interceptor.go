@@ -10,18 +10,15 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 )
 
 const grpcGatewayUserAgentHeader = runtime.MetadataPrefix + "User-Agent"
 
-var (
-	mux = &sync.Mutex{}
-)
-
 func (cfg *Config) track(rp *RequestParams) {
 	id := cfg.HashUserAuthID(rp.UserID)
+	cfg.interceptorsLock.Lock()
+	defer cfg.interceptorsLock.Unlock()
 	for event, funcs := range cfg.interceptors {
 		props := map[string]any{}
 		ok := true
