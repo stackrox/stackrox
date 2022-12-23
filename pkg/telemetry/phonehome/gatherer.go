@@ -111,7 +111,7 @@ func (g *gatherer) AddGatherer(f GatherFunc) {
 }
 
 // AddTotal sets an entry in the props map with key and number returned by f as
-//the value.
+// the value.
 func AddTotal(ctx context.Context, props map[string]any, key string, f func(context.Context) (int, error)) error {
 	ps, err := f(ctx)
 	if err != nil {
