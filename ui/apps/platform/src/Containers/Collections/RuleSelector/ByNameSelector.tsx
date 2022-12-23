@@ -1,19 +1,19 @@
-import React, { ReactNode, useCallback } from 'react';
-import { Button, Flex, FormGroup, ValidatedOptions } from '@patternfly/react-core';
+import React from 'react';
+import { Button, SelectOption, TextInput, ValidatedOptions } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { FormikErrors } from 'formik';
 import useIndexKey from 'hooks/useIndexKey';
-import { getCollectionAutoComplete } from 'services/CollectionsService';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 import {
+    ByNameMatchType,
     ByNameResourceSelector,
     ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
 } from '../types';
-import { generateRequest } from '../converter';
+import { NameMatchTypeSelect } from './MatchTypeSelect';
 
 export type ByNameSelectorProps = {
     collection: ClientCollection;
@@ -23,9 +23,9 @@ export type ByNameSelectorProps = {
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
     ) => void;
+    placeholder: string;
     validationErrors: FormikErrors<ByNameResourceSelector> | undefined;
     isDisabled: boolean;
-    OptionComponent: ReactNode;
 };
 
 function ByNameSelector({
@@ -33,33 +33,34 @@ function ByNameSelector({
     entityType,
     scopedResourceSelector,
     handleChange,
+    placeholder,
     validationErrors,
     isDisabled,
-    OptionComponent,
 }: ByNameSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
     const lowerCaseEntity = entityType.toLowerCase();
-    const autocompleteProvider = useCallback(
-        (search: string) => {
-            const req = generateRequest(collection);
-            return getCollectionAutoComplete(req.resourceSelectors, entityType, search);
-        },
-        [collection, entityType]
-    );
 
     function onAddValue() {
         const selector = cloneDeep(scopedResourceSelector);
         // Only add a new form row if there are no blank entries
-        if (selector.rule.values.every((value) => value)) {
-            selector.rule.values.push('');
+        if (selector.rule.values.every(({ value }) => value)) {
+            selector.rule.values.push({ value: '', matchType: 'EXACT' });
             handleChange(entityType, selector);
         }
+    }
+
+    function onChangeMatchType(resourceSelector: ByNameResourceSelector, valueIndex: number) {
+        return (value: ByNameMatchType) => {
+            const newSelector = cloneDeep(resourceSelector);
+            newSelector.rule.values[valueIndex].matchType = value;
+            handleChange(entityType, newSelector);
+        };
     }
 
     function onChangeValue(resourceSelector, valueIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            newSelector.rule.values[valueIndex] = value;
+            newSelector.rule.values[valueIndex].value = value;
             handleChange(entityType, newSelector);
         };
     }
@@ -78,58 +79,85 @@ function ByNameSelector({
     }
 
     return (
-        <FormGroup
-            fieldId={`${entityType}-name-value`}
-            label={`${entityType} name`}
-            isRequired={!isDisabled}
-        >
-            <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
-                {scopedResourceSelector.rule.values.map((value, index) => (
-                    <Flex key={keyFor(index)}>
-                        <AutoCompleteSelect
-                            id={`${entityType}-name-value-${index}`}
-                            typeAheadAriaLabel={`Select value ${index + 1} of ${
-                                scopedResourceSelector.rule.values.length
-                            } for the ${lowerCaseEntity} name`}
-                            className="pf-u-flex-grow-1 pf-u-w-auto"
-                            selectedOption={value}
-                            onChange={onChangeValue(scopedResourceSelector, index)}
-                            validated={
-                                validationErrors?.rule?.values?.[index]
-                                    ? ValidatedOptions.error
-                                    : ValidatedOptions.default
-                            }
-                            isDisabled={isDisabled}
-                            autocompleteProvider={autocompleteProvider}
-                            OptionComponent={OptionComponent}
-                        />
-                        {!isDisabled && (
-                            <Button
-                                aria-label={`Delete ${value}`}
-                                variant="plain"
-                                onClick={() => onDeleteValue(index)}
-                            >
-                                <TrashIcon
-                                    className="pf-u-flex-shrink-1"
-                                    style={{ cursor: 'pointer' }}
-                                    color="var(--pf-global--Color--dark-200)"
+        <>
+            <div className="rule-selector-list">
+                {scopedResourceSelector.rule.values.map(({ matchType, value }, index) => {
+                    const inputId = `${entityType}-name-value-${index}`;
+                    const inputAriaLabel = `Select value ${index + 1} of ${
+                        scopedResourceSelector.rule.values.length
+                    } for the ${lowerCaseEntity} name`;
+                    const inputClassName = 'pf-u-flex-grow-1 pf-u-w-auto';
+                    const inputOnChange = onChangeValue(scopedResourceSelector, index);
+                    const inputValidated = validationErrors?.rule?.values?.[index]
+                        ? ValidatedOptions.error
+                        : ValidatedOptions.default;
+
+                    return (
+                        <div className="rule-selector-list-item" key={keyFor(index)}>
+                            <div className="rule-selector-match-type-select">
+                                <NameMatchTypeSelect
+                                    selected={matchType}
+                                    isDisabled={isDisabled}
+                                    onChange={onChangeMatchType(scopedResourceSelector, index)}
+                                >
+                                    <SelectOption value="EXACT">An exact value of</SelectOption>
+                                    <SelectOption value="REGEX">A regex value of</SelectOption>
+                                </NameMatchTypeSelect>
+                            </div>
+                            {matchType === 'REGEX' ? (
+                                <TextInput
+                                    id={inputId}
+                                    aria-label={inputAriaLabel}
+                                    placeholder={`^${placeholder}$`}
+                                    className={inputClassName}
+                                    onChange={inputOnChange}
+                                    validated={inputValidated}
+                                    value={value}
+                                    isDisabled={isDisabled}
                                 />
-                            </Button>
-                        )}
-                    </Flex>
-                ))}
-            </Flex>
+                            ) : (
+                                <AutoCompleteSelect
+                                    id={inputId}
+                                    entityType={entityType}
+                                    typeAheadAriaLabel={inputAriaLabel}
+                                    className={inputClassName}
+                                    onChange={inputOnChange}
+                                    placeholder={placeholder}
+                                    validated={inputValidated}
+                                    selectedOption={value}
+                                    isDisabled={isDisabled}
+                                    collection={collection}
+                                    autocompleteField={entityType}
+                                />
+                            )}
+                            {!isDisabled && (
+                                <Button
+                                    aria-label={`Delete ${value}`}
+                                    variant="plain"
+                                    onClick={() => onDeleteValue(index)}
+                                >
+                                    <TrashIcon
+                                        className="pf-u-flex-shrink-1"
+                                        style={{ cursor: 'pointer' }}
+                                        color="var(--pf-global--Color--dark-200)"
+                                    />
+                                </Button>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
             {!isDisabled && (
                 <Button
                     aria-label={`Add ${lowerCaseEntity} name value`}
-                    className="pf-u-pl-0 pf-u-pt-md"
+                    className="rule-selector-add-value-button"
                     variant="link"
                     onClick={onAddValue}
                 >
-                    Add value
+                    OR...
                 </Button>
             )}
-        </FormGroup>
+        </>
     );
 }
 

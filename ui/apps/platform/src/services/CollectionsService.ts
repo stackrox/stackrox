@@ -14,7 +14,7 @@ export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
 export type SelectorRule = {
     fieldName: string;
-    values: { value: string }[];
+    values: { value: string; matchType: string }[];
     operator: 'AND' | 'OR';
 };
 

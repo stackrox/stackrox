@@ -14,20 +14,31 @@ describe('Collection parser', () => {
                         {
                             operator: 'OR',
                             fieldName: 'Cluster',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Namespace Label',
                             values: [
-                                { value: 'kubernetes.io/metadata.name=backend' },
-                                { value: 'kubernetes.io/metadata.name=frontend' },
+                                {
+                                    value: 'kubernetes.io/metadata.name=backend',
+                                    matchType: 'EXACT',
+                                },
+                                {
+                                    value: 'kubernetes.io/metadata.name=frontend',
+                                    matchType: 'EXACT',
+                                },
                             ],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Namespace Label',
-                            values: [{ value: 'kubernetes.io/metadata.release=stable' }],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.release=stable',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                     ],
                 },
@@ -45,20 +56,32 @@ describe('Collection parser', () => {
                     rules: [
                         {
                             operator: 'OR',
-                            key: 'kubernetes.io/metadata.name',
-                            values: ['backend', 'frontend'],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.name=backend',
+                                    matchType: 'EXACT',
+                                },
+                                {
+                                    value: 'kubernetes.io/metadata.name=frontend',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                         {
                             operator: 'OR',
-                            key: 'kubernetes.io/metadata.release',
-                            values: ['stable'],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.release=stable',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                     ],
                 },
                 Cluster: {
                     type: 'ByName',
                     field: 'Cluster',
-                    rule: { operator: 'OR', values: ['production'] },
+                    rule: { operator: 'OR', values: [{ value: 'production', matchType: 'EXACT' }] },
                 },
             },
             embeddedCollectionIds: ['12', '13', '14'],
@@ -98,12 +121,12 @@ describe('Collection parser', () => {
                         {
                             operator: 'OR',
                             fieldName: 'Cluster',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Cluster Label',
-                            values: [{ value: 'key=value' }],
+                            values: [{ value: 'key=value', matchType: 'EXACT' }],
                         },
                     ],
                 },
@@ -125,7 +148,7 @@ describe('Collection parser', () => {
                         {
                             operator: 'AND',
                             fieldName: 'Cluster',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                     ],
                 },
@@ -147,7 +170,7 @@ describe('Collection parser', () => {
                         {
                             operator: 'AND',
                             fieldName: 'Cluster Annotation',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                     ],
                 },
@@ -166,7 +189,11 @@ describe('Collection parser', () => {
             resourceSelectors: [
                 {
                     rules: [
-                        { operator: 'OR', fieldName: 'Cluster Label', values: [{ value: '' }] },
+                        {
+                            operator: 'OR',
+                            fieldName: 'Cluster Label',
+                            values: [{ value: '', matchType: 'EXACT' }],
+                        },
                     ],
                 },
             ],
@@ -226,13 +253,25 @@ describe('Collection response generator', () => {
                     rules: [
                         {
                             operator: 'OR',
-                            key: 'kubernetes.io/metadata.name',
-                            values: ['backend', 'frontend'],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.name=backend',
+                                    matchType: 'EXACT',
+                                },
+                                {
+                                    value: 'kubernetes.io/metadata.name=frontend',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                         {
                             operator: 'OR',
-                            key: 'kubernetes.io/metadata.release',
-                            values: ['stable'],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.release=stable',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                     ],
                 },
@@ -240,7 +279,7 @@ describe('Collection response generator', () => {
                 Cluster: {
                     type: 'ByName',
                     field: 'Cluster',
-                    rule: { operator: 'OR', values: ['production'] },
+                    rule: { operator: 'OR', values: [{ value: 'production', matchType: 'EXACT' }] },
                 },
             },
             embeddedCollectionIds: ['12', '13', '14'],
@@ -255,20 +294,31 @@ describe('Collection response generator', () => {
                         {
                             operator: 'OR',
                             fieldName: 'Cluster',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Namespace Label',
                             values: [
-                                { value: 'kubernetes.io/metadata.name=backend' },
-                                { value: 'kubernetes.io/metadata.name=frontend' },
+                                {
+                                    value: 'kubernetes.io/metadata.name=backend',
+                                    matchType: 'EXACT',
+                                },
+                                {
+                                    value: 'kubernetes.io/metadata.name=frontend',
+                                    matchType: 'EXACT',
+                                },
                             ],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Namespace Label',
-                            values: [{ value: 'kubernetes.io/metadata.release=stable' }],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.release=stable',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                     ],
                 },
