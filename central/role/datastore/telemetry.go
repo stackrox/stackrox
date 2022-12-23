@@ -22,9 +22,9 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	rs := Singleton()
 
 	gatherErrs := errorhelpers.NewErrorList("cannot gather from role store")
-	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "PermissionSets", rs.GetAllPermissionSets))
-	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "Roles", rs.GetAllRoles))
-	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "Access Scopes", rs.GetAllAccessScopes))
+	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "PermissionSets", rs.CountPermissionSets))
+	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "Roles", rs.CountRoles))
+	gatherErrs.AddError(phonehome.AddTotal(ctx, totals, "Access Scopes", rs.CountAccessScopes))
 
 	return totals, gatherErrs.ToError()
 }

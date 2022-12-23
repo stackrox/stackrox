@@ -78,6 +78,51 @@ func (mr *MockDataStoreMockRecorder) AddRole(ctx, role interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRole", reflect.TypeOf((*MockDataStore)(nil).AddRole), ctx, role)
 }
 
+// CountAccessScopes mocks base method.
+func (m *MockDataStore) CountAccessScopes(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAccessScopes", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountAccessScopes indicates an expected call of CountAccessScopes.
+func (mr *MockDataStoreMockRecorder) CountAccessScopes(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAccessScopes", reflect.TypeOf((*MockDataStore)(nil).CountAccessScopes), ctx)
+}
+
+// CountPermissionSets mocks base method.
+func (m *MockDataStore) CountPermissionSets(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountPermissionSets", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountPermissionSets indicates an expected call of CountPermissionSets.
+func (mr *MockDataStoreMockRecorder) CountPermissionSets(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountPermissionSets", reflect.TypeOf((*MockDataStore)(nil).CountPermissionSets), ctx)
+}
+
+// CountRoles mocks base method.
+func (m *MockDataStore) CountRoles(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountRoles", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountRoles indicates an expected call of CountRoles.
+func (mr *MockDataStoreMockRecorder) CountRoles(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountRoles", reflect.TypeOf((*MockDataStore)(nil).CountRoles), ctx)
+}
+
 // GetAccessScope mocks base method.
 func (m *MockDataStore) GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error) {
 	m.ctrl.T.Helper()
