@@ -27,20 +27,47 @@ export function isByAnnotationField(field: SelectorField): field is ByAnnotation
     return byAnnotationRegExp.test(field);
 }
 
+export const byLabelMatchTypes = ['EXACT'] as const;
+export type ByLabelMatchType = typeof byLabelMatchTypes[number];
+export const byNameMatchType = ['EXACT', 'REGEX'] as const;
+export type ByNameMatchType = typeof byNameMatchType[number];
+export type MatchType = ByNameMatchType | ByLabelMatchType;
+
 /**
  * A valid server side `SelectorRule` can use either 'AND' or 'OR' operations to resolve values, but
  * the current UI implementation only supports 'OR'.
  */
 export type NameSelectorRule = {
     operator: 'OR';
-    values: string[];
+    values: { value: string; matchType: ByNameMatchType }[];
 };
 
 export type LabelSelectorRule = {
     operator: 'OR';
-    key: string;
-    values: string[];
+    values: { value: string; matchType: ByLabelMatchType }[];
 };
+
+export function isNameMatchValue(value: {
+    value: string;
+    matchType: string;
+}): value is NameSelectorRule['values'][number] {
+    /*
+     TODO - Requires BE
+    return byNameMatchType.includes(value.matchType as ByNameMatchType);
+    */
+    return true;
+}
+
+export function isLabelMatchValue(value: {
+    value: string;
+    matchType: string;
+}): value is LabelSelectorRule['values'][number] {
+    /*
+     TODO - Requires BE
+    return byLabelMatchTypes.includes(value.matchType as ByLabelMatchType);
+    */
+    return true;
+}
 
 /**
  * The front end currently only supports rules defined for names and labels, annotations are excluded.

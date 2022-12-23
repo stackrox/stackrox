@@ -23,11 +23,16 @@ import * as yup from 'yup';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Collection } from 'services/CollectionsService';
-import { getIsValidLabelKey } from 'utils/labels';
+import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
+import { ensureExhaustive } from 'utils/type.utils';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
 import {
+    byLabelMatchTypes,
+    ByLabelResourceSelector,
+    byNameMatchType,
+    ByNameResourceSelector,
     ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
@@ -90,31 +95,80 @@ export type CollectionFormProps = {
     headerContent?: ReactElement;
 };
 
-function yupResourceSelectorObject() {
-    return yup.lazy((ruleObject) => {
-        if (ruleObject.type === 'All') {
-            return yup.object().shape({});
-        }
+function yupLabelRuleObject({ field }: ByLabelResourceSelector) {
+    return yup.object().shape({
+        field: yup.string().required().matches(new RegExp(field)),
+        rules: yup.array().of(
+            yup.object().shape({
+                operator: yup.string().required().matches(/OR/),
+                values: yup
+                    .array()
+                    .of(
+                        yup.object().shape({
+                            value: yup
+                                .string()
+                                .trim()
+                                .required()
+                                .test(
+                                    'label-value-k8s-format',
+                                    'Label values must be valid k8s labels',
+                                    (val) => {
+                                        const parts = val.split('=');
+                                        if (parts.length !== 2) {
+                                            return false;
+                                        }
+                                        const validKey = getIsValidLabelKey(parts[0]);
+                                        const validLabel = getIsValidLabelValue(parts[1]);
+                                        return validKey && validLabel;
+                                    }
+                                ),
+                            matchType: yup
+                                .string()
+                                // TODO - requires BE
+                                // .required()
+                                .matches(new RegExp(byLabelMatchTypes.join('|'))),
+                        })
+                    )
+                    .required(),
+            })
+        ),
+    });
+}
 
-        const { field } = ruleObject;
-        return typeof field === 'string' && field.endsWith('Label')
-            ? yup.object().shape({
-                  field: yup.string().required().matches(new RegExp(field)),
-                  rules: yup.array().of(
-                      yup.object().shape({
-                          operator: yup.string().required().matches(/OR/),
-                          key: yup.string().trim().required().test(getIsValidLabelKey),
-                          values: yup.array().of(yup.string().trim().required()).required(),
-                      })
-                  ),
-              })
-            : yup.object().shape({
-                  field: yup.string().required().matches(new RegExp(field)),
-                  rule: yup.object().shape({
-                      operator: yup.string().required().matches(/OR/),
-                      values: yup.array().of(yup.string().trim().required()).required(),
-                  }),
-              });
+function yupNameRuleObject({ field }: ByNameResourceSelector) {
+    return yup.object().shape({
+        field: yup.string().required().matches(new RegExp(field)),
+        rule: yup.object().shape({
+            operator: yup.string().required().matches(/OR/),
+            values: yup
+                .array()
+                .of(
+                    yup.object().shape({
+                        value: yup.string().trim().required(),
+                        matchType: yup
+                            .string()
+                            // TODO - requires BE
+                            // .required()
+                            .matches(new RegExp(byNameMatchType.join('|'))),
+                    })
+                )
+                .required(),
+        }),
+    });
+}
+
+function yupResourceSelectorObject() {
+    return yup.lazy((ruleObject: ScopedResourceSelector) => {
+        switch (ruleObject.type) {
+            case 'All':
+                return yup.object().shape({});
+            case 'ByName':
+                return yupNameRuleObject(ruleObject);
+            case 'ByLabel':
+                return yupLabelRuleObject(ruleObject);
+            default:
+                return ensureExhaustive(ruleObject);
+        }
     });
 }
 
@@ -319,12 +373,7 @@ function CollectionForm({
                             </Title>
                             <Badge isRead>{ruleCount}</Badge>
                         </Flex>
-                        {!isReadOnly && (
-                            <p>
-                                Select deployments via rules. You can use regular expressions (RE2
-                                syntax).
-                            </p>
-                        )}
+                        {!isReadOnly && <p>Select deployments using names or labels</p>}
                     </ExpandableSectionToggle>
 
                     <ExpandableSection
