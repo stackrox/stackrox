@@ -1,28 +1,9 @@
 import withAuth from '../../helpers/basicAuth';
-import { visitCollections } from '../../helpers/collections';
 import { hasFeatureFlag } from '../../helpers/features';
+import { tryDeleteCollection, visitCollections } from './Collections.helpers';
 
 const baseUrl = '/v1/collections';
 const autocompleteUrl = `${baseUrl}/autocomplete`;
-
-// Cleanup an existing collection via API call
-function tryDeleteCollection(collectionName) {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
-
-    cy.request({
-        url: `${baseUrl}?query.query=Collection Name:"${collectionName}"`,
-        auth,
-    }).as('listCollections');
-
-    cy.get('@listCollections').then((res) => {
-        const collection = res.body.collections.find(({ name }) => name === collectionName);
-        if (collection) {
-            const { id } = collection;
-            const url = `${baseUrl}/${id}`;
-            cy.request({ url, auth, method: 'DELETE' });
-        }
-    });
-}
 
 /* 
     Each test in this spec builds upon the previous by executing another piece
