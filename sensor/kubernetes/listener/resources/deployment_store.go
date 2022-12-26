@@ -168,5 +168,6 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	if err := clonedWrap.updateHash(); err != nil {
 		return nil, err
 	}
+	ds.addOrUpdateDeployment(clonedWrap)
 	return clonedWrap.GetDeployment(), nil
 }
