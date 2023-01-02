@@ -105,7 +105,7 @@ require (
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.4.0
 	golang.stackrox.io/grpc-http1 v0.2.5
-	google.golang.org/api v0.104.0
+	google.golang.org/api v0.105.0
 	google.golang.org/genproto v0.0.0-20221206210731-b1a01be3a5f6
 	google.golang.org/grpc v1.51.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
