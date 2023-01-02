@@ -23,6 +23,8 @@ var (
 		"Cluster Registered":  {clusterRegistered},
 		"Cluster Initialized": {clusterInitialized},
 		"roxctl":              {roxctl},
+
+		"Create Auth Provider": {createAuthProvider},
 	}
 )
 
@@ -114,4 +116,36 @@ func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["User-Agent"] = rp.UserAgent
 	props["Method"] = rp.Method
 	return true
+}
+
+// Access control.
+
+var postAuthProvider = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.AuthProviderService/PostAuthProvider",
+	HTTPMethod: http.MethodPost,
+	HTTPPath:   "/v1/authprovider",
+}
+
+var putAuthProvider = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.AuthProviderService/PutAuthProvider",
+	HTTPMethod: http.MethodPut,
+	HTTPPath:   "/v1/authprovider",
+}
+
+func createAuthProvider(rp *phonehome.RequestParams, props map[string]any) bool {
+	switch {
+	case rp.Is(postAuthProvider):
+		ap := getRequestPtr(v1.AuthProviderServiceServer.PostAuthProvider)
+		if err := phonehome.GetRequestBody(rp, &ap); err == nil {
+			props["Type"] = ap.GetProvider().GetType()
+		}
+		return true
+	case rp.Is(putAuthProvider):
+		ap := getRequestPtr(v1.AuthProviderServiceServer.PutAuthProvider)
+		if err := phonehome.GetRequestBody(rp, &ap); err == nil {
+			props["Type"] = ap.GetType()
+		}
+		return true
+	}
+	return false
 }
