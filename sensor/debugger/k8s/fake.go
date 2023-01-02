@@ -309,7 +309,7 @@ func (f *FakeEventsManager) eventsCreation() (<-chan string, <-chan error) {
 				return
 			}
 			if err = f.waitOnMode(msg.EventsOutput); err != nil {
-				errorCh <- err
+				errorCh <- errors.Wrapf(err, " InformerK8sMsg: %+v", msg)
 				return
 			}
 		}
