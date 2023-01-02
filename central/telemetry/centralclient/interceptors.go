@@ -24,7 +24,10 @@ var (
 		"Cluster Initialized": {clusterInitialized},
 		"roxctl":              {roxctl},
 
-		"Create Auth Provider": {createAuthProvider},
+		"Create Auth Provider":  {createAuthProvider},
+		"Create Access Scope":   {createSimpleAccessScope},
+		"Create Permission Set": {createPermissionSet},
+		"Create Role":           {createRole},
 	}
 )
 
@@ -118,18 +121,22 @@ func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
 	return true
 }
 
+//
 // Access control.
+//
+
+// Auth Provider:
 
 var postAuthProvider = &phonehome.ServiceMethod{
 	GRPCMethod: "/v1.AuthProviderService/PostAuthProvider",
 	HTTPMethod: http.MethodPost,
-	HTTPPath:   "/v1/authprovider",
+	HTTPPath:   "/v1/authProviders",
 }
 
 var putAuthProvider = &phonehome.ServiceMethod{
 	GRPCMethod: "/v1.AuthProviderService/PutAuthProvider",
 	HTTPMethod: http.MethodPut,
-	HTTPPath:   "/v1/authprovider",
+	HTTPPath:   "/v1/authProviders/*",
 }
 
 func createAuthProvider(rp *phonehome.RequestParams, props map[string]any) bool {
@@ -148,4 +155,58 @@ func createAuthProvider(rp *phonehome.RequestParams, props map[string]any) bool 
 		return true
 	}
 	return false
+}
+
+// Simple Access Scope:
+
+var postSimpleAccessScope = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.RoleService/PostSimpleAccessScope",
+	HTTPMethod: http.MethodPost,
+	HTTPPath:   "/v1/simpleaccessscopes",
+}
+
+var putSimpleAccessScope = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.RoleService/PutSimpleAccessScope",
+	HTTPMethod: http.MethodPut,
+	HTTPPath:   "/v1/simpleaccessscopes/*",
+}
+
+func createSimpleAccessScope(rp *phonehome.RequestParams, props map[string]any) bool {
+	return rp.Is(postSimpleAccessScope) || rp.Is(putSimpleAccessScope)
+}
+
+// Permission Set:
+
+var postPermissionSet = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.RoleService/PostPermissionSet",
+	HTTPMethod: http.MethodPost,
+	HTTPPath:   "/v1/permissionsets",
+}
+
+var putPermissionSet = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.RoleService/PutPermissionSet",
+	HTTPMethod: http.MethodPut,
+	HTTPPath:   "/v1/permissionsets/*",
+}
+
+func createPermissionSet(rp *phonehome.RequestParams, props map[string]any) bool {
+	return rp.Is(postPermissionSet) || rp.Is(putPermissionSet)
+}
+
+// Role:
+
+var postRole = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.RoleService/CreateRole",
+	HTTPMethod: http.MethodPost,
+	HTTPPath:   "/v1/roles",
+}
+
+var putRole = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.RoleService/UpdateRole",
+	HTTPMethod: http.MethodPut,
+	HTTPPath:   "/v1/roles/*",
+}
+
+func createRole(rp *phonehome.RequestParams, props map[string]any) bool {
+	return rp.Is(postRole) || rp.Is(putRole)
 }
