@@ -29,9 +29,11 @@ class ClusterService extends BaseService {
     }
 
     static getClusterId(String name = DEFAULT_CLUSTER_NAME) {
-        return getClusterServiceClient().getClusters(
+        io.stackrox.proto.api.v1.ClusterService.ClustersList clusters = getClusterServiceClient().getClusters(
                 GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
-        ).clustersList.find { it.name == name }?.id
+        )
+        log.info "/v1/clusters?query=\"Cluster:${name}\": ${clusters.clustersList}"
+        return clusters.clustersList.find { it.name == name }?.id
     }
 
     static createCluster(String name, String mainImage, String centralEndpoint) {
