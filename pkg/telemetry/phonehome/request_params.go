@@ -10,20 +10,21 @@ import (
 type RequestParams struct {
 	UserAgent string
 	UserID    authn.Identity
+	Method    string
 	Path      string
 	Code      int
 	GRPCReq   any
 	HTTPReq   *http.Request
 }
 
-// GetMethod returns the HTTP method for HTTP requests, or rp.Path otherwise.
-func (rp *RequestParams) GetMethod() string {
-	switch {
-	case rp.HTTPReq == nil:
-		return rp.Path // i.e. in the form of /service/method for gRPC requests.
-	case rp.HTTPReq.Method != "":
-		return rp.HTTPReq.Method
-	default:
-		return http.MethodGet
-	}
+// ServiceMethod describes a service method with its gRPC and HTTP variants.
+type ServiceMethod struct {
+	GRPCMethod string
+	HTTPMethod string
+	HTTPPath   string
+}
+
+// Is checks wether the request targets the service method: either gRPC or HTTP.
+func (rp *RequestParams) Is(s *ServiceMethod) bool {
+	return rp.Method == s.GRPCMethod || (rp.Method == s.HTTPMethod && rp.Path == s.HTTPPath)
 }
