@@ -34,7 +34,7 @@ type PolicyDatastoreTestSuite struct {
 	clusterDatastore  *clusterMocks.MockDataStore
 	notifierDatastore *notifierMocks.MockDataStore
 
-	allAccess context.Context
+	hasReadWritePolicyAccess context.Context
 
 	hasReadWriteWorkflowAdministrationAccess context.Context
 
@@ -53,7 +53,7 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 	s.datastore = newWithoutDefaults(s.store, s.indexer, nil, s.clusterDatastore, s.notifierDatastore)
 
 	// TODO: ROX-13888 Remove duplicated contexts.
-	s.allAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
+	s.hasReadWritePolicyAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Policy),
@@ -73,10 +73,6 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration),
 		))
-}
-
-func (s *PolicyDatastoreTestSuite) TearDownTest() {
-	s.mockCtrl.Finish()
 }
 
 func (s *PolicyDatastoreTestSuite) testImportSuccessResponse(expectedPolicy *storage.Policy, resp *v1.ImportPolicyResponse) {
@@ -106,8 +102,8 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 	}
 
 	// Should work with READ access to Policy.
-	s.store.EXPECT().Get(s.allAccess, policy.GetId()).Return(nil, false, nil).Times(1)
-	_, _, err := s.datastore.GetPolicy(s.allAccess, policy.GetId())
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil, false, nil).Times(1)
+	_, _, err := s.datastore.GetPolicy(s.hasReadWritePolicyAccess, policy.GetId())
 	s.NoError(err)
 
 	// Should work with READ access to WorkflowAdministration.
@@ -132,15 +128,15 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	// Should work with READ/WRITE access to Policy.
-	s.store.EXPECT().Upsert(s.allAccess, policy).Return(nil).Times(1)
-	s.store.EXPECT().GetAll(s.allAccess).Return(nil, nil).Times(1)
-	s.store.EXPECT().Delete(s.allAccess, policy.GetId()).Return(nil).Times(1)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy).Return(nil).Times(1)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return(nil, nil).Times(1)
+	s.store.EXPECT().Delete(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil).Times(1)
 	s.indexer.EXPECT().DeletePolicy(policy.GetId()).Return(nil).Times(1)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil).Times(1)
 
-	_, err = s.datastore.AddPolicy(s.allAccess, policy)
+	_, err = s.datastore.AddPolicy(s.hasReadWritePolicyAccess, policy)
 	s.NoError(err)
-	err = s.datastore.RemovePolicy(s.allAccess, policy.GetId())
+	err = s.datastore.RemovePolicy(s.hasReadWritePolicyAccess, policy.GetId())
 	s.NoError(err)
 
 	// Should work with READ/WRITE access to WorkflowAdministration.
@@ -163,12 +159,12 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 		SORTName: "policy-to-import",
 	}
 
-	s.clusterDatastore.EXPECT().GetClusters(s.allAccess).Return(nil, nil)
-	s.store.EXPECT().Get(s.allAccess, policy.GetId()).Return(nil, false, nil)
-	s.store.EXPECT().GetAll(s.allAccess).Return(nil, nil)
-	s.store.EXPECT().Upsert(s.allAccess, policy).Return(nil)
+	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil, false, nil)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.allAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -186,12 +182,12 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 	errString1 := "policy with id '\"test-policy-1\"' already exists, unable to import policy"
 	errString2 := "policy with name 'test policy' already exists, unable to import policy"
 
-	s.clusterDatastore.EXPECT().GetClusters(s.allAccess).Return(nil, nil)
-	s.store.EXPECT().Get(s.allAccess, policy.GetId()).Return(policy, true, nil)
-	s.store.EXPECT().GetAll(s.allAccess).Return([]*storage.Policy{
+	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.GetId()).Return(policy, true, nil)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return([]*storage.Policy{
 		policy,
 	}, nil)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.allAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -210,16 +206,16 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 
 	errString := fmt.Sprintf("policy with name '%s' already exists, unable to import policy", name)
 
-	s.clusterDatastore.EXPECT().GetClusters(s.allAccess).Return(nil, nil)
-	s.store.EXPECT().Get(s.allAccess, policy.GetId()).Return(nil, false, nil)
-	s.store.EXPECT().GetAll(s.allAccess).Return([]*storage.Policy{
+	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil, false, nil)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return([]*storage.Policy{
 		{
 			Name:     name,
 			Id:       "some-other-id",
 			SORTName: name,
 		},
 	}, nil)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.allAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -265,18 +261,18 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 		},
 	}
 
-	s.clusterDatastore.EXPECT().GetClusters(s.allAccess).Return(nil, nil)
+	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
 
-	s.store.EXPECT().GetAll(s.allAccess).Return(nil, nil)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return(nil, nil)
 
-	s.store.EXPECT().Upsert(s.allAccess, policySucceed).Return(nil)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policySucceed).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policySucceed).Return(nil)
-	s.store.EXPECT().Get(s.allAccess, gomock.Any()).Return(nil, false, nil).AnyTimes()
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, gomock.Any()).Return(nil, false, nil).AnyTimes()
 
-	s.store.EXPECT().Upsert(s.allAccess, policyFail1).Return(errorFail1)
-	s.store.EXPECT().Upsert(s.allAccess, policyFail2).Return(errorFail2)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policyFail1).Return(errorFail1)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policyFail2).Return(errorFail2)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.allAccess, []*storage.Policy{policySucceed.Clone(), policyFail1.Clone(), policyFail2.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policySucceed.Clone(), policyFail1.Clone(), policyFail2.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 3)
@@ -299,11 +295,11 @@ func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 	errString := "this is not a structured error type"
 	storeError := errors.New(errString)
 
-	s.clusterDatastore.EXPECT().GetClusters(s.allAccess).Return(nil, nil)
-	s.store.EXPECT().Get(s.allAccess, policy.GetId()).Return(nil, false, nil)
-	s.store.EXPECT().GetAll(s.allAccess).Return(nil, nil)
-	s.store.EXPECT().Upsert(s.allAccess, policy).Return(storeError)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.allAccess, []*storage.Policy{policy.Clone()}, false)
+	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil, false, nil)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy).Return(storeError)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -335,23 +331,23 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 		Id:   "existing ID 2",
 	}
 
-	s.clusterDatastore.EXPECT().GetClusters(s.allAccess).Return(nil, nil)
+	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
 
-	s.store.EXPECT().GetAll(s.allAccess).Return([]*storage.Policy{existingPolicy1, existingPolicy2}, nil)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return([]*storage.Policy{existingPolicy1, existingPolicy2}, nil)
 
-	s.store.EXPECT().Get(s.allAccess, existingPolicy1.GetId()).Return(nil, true, nil)
-	s.store.EXPECT().Delete(s.allAccess, existingPolicy1.GetId()).Return(nil)
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, existingPolicy1.GetId()).Return(nil, true, nil)
+	s.store.EXPECT().Delete(s.hasReadWritePolicyAccess, existingPolicy1.GetId()).Return(nil)
 	s.indexer.EXPECT().DeletePolicy(existingPolicy1.GetId()).Return(nil)
-	s.store.EXPECT().Upsert(s.allAccess, policy1).Return(nil)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy1).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy1).Return(nil)
 
-	s.store.EXPECT().Get(s.allAccess, policy2.GetId()).Return(nil, false, nil)
-	s.store.EXPECT().Delete(s.allAccess, existingPolicy2.GetId()).Return(nil)
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy2.GetId()).Return(nil, false, nil)
+	s.store.EXPECT().Delete(s.hasReadWritePolicyAccess, existingPolicy2.GetId()).Return(nil)
 	s.indexer.EXPECT().DeletePolicy(existingPolicy2.GetId()).Return(nil)
-	s.store.EXPECT().Upsert(s.allAccess, policy2).Return(nil)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy2).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy2).Return(nil)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.allAccess, []*storage.Policy{policy1.Clone(), policy2.Clone()}, true)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy1.Clone(), policy2.Clone()}, true)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 2)
@@ -390,14 +386,14 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 		SORTName: "Boo's policy",
 	}
 
-	s.clusterDatastore.EXPECT().GetClusters(s.allAccess).Return(nil, nil)
-	s.notifierDatastore.EXPECT().GetNotifier(s.allAccess, notifierName).Return(nil, false, nil)
-	s.store.EXPECT().Get(s.allAccess, policy.GetId()).Return(nil, false, nil)
-	s.store.EXPECT().GetAll(s.allAccess).Return(nil, nil)
-	s.store.EXPECT().Upsert(s.allAccess, policy).Return(nil)
+	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.notifierDatastore.EXPECT().GetNotifier(s.hasReadWritePolicyAccess, notifierName).Return(nil, false, nil)
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil, false, nil)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.allAccess, []*storage.Policy{policy}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -440,14 +436,14 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 			Id: clusterID,
 		},
 	}
-	s.clusterDatastore.EXPECT().GetClusters(s.allAccess).Return(mockClusters, nil)
-	s.notifierDatastore.EXPECT().GetNotifier(s.allAccess, notifierName).Return(nil, true, nil)
-	s.store.EXPECT().GetAll(s.allAccess).Return(nil, nil)
-	s.store.EXPECT().Get(s.allAccess, policy.Id).Return(nil, false, nil)
-	s.store.EXPECT().Upsert(s.allAccess, policy).Return(nil)
+	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(mockClusters, nil)
+	s.notifierDatastore.EXPECT().GetNotifier(s.hasReadWritePolicyAccess, notifierName).Return(nil, true, nil)
+	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return(nil, nil)
+	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.Id).Return(nil, false, nil)
+	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.allAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)

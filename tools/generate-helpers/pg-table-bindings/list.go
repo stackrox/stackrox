@@ -63,6 +63,7 @@ func init() {
 		&storage.PermissionSet{}:                                resources.Role,
 		&storage.Pod{}:                                          resources.Deployment,
 		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
+		&storage.Policy{}:                 resources.Policy,
 		&storage.PolicyCategory{}:         resources.Policy,
 		&storage.ProcessBaselineResults{}: resources.DeploymentExtension,
 		&storage.ProcessBaseline{}:        resources.DeploymentExtension,
