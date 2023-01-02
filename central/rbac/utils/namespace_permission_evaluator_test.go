@@ -119,7 +119,7 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+			ctx := sac.WithAllAccess(context.Background())
 
 			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, namespaceScopeQuery).Return(c.inputBindings, nil).AnyTimes()
 			mockRoleDatastore.EXPECT().GetRole(ctx, "role1").Return(c.inputRoles[0], true, nil).AnyTimes()

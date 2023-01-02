@@ -114,7 +114,7 @@ func (suite *ServiceAccountServiceTestSuite) SetupTest() {
 	suite.service = New(suite.mockServiceAccountStore, suite.mockBindingStore, suite.mockRoleStore,
 		suite.mockDeploymentStore, suite.mockNamespaceStore)
 
-	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	suite.ctx = sac.WithAllAccess(context.Background())
 }
 
 // Test happy path for getting service accounts

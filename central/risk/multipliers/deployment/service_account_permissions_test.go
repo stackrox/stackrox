@@ -215,7 +215,7 @@ func TestPermissionScore(t *testing.T) {
 
 	for _, c := range clusterCases {
 		t.Run(c.name, func(t *testing.T) {
-			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+			ctx := sac.WithAllAccess(context.Background())
 
 			mockCtrl := gomock.NewController(t)
 
