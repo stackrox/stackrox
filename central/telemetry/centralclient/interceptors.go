@@ -1,6 +1,7 @@
 package centralclient
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -37,18 +38,25 @@ func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
 		props["Path"] = rp.Path
 		props["Code"] = rp.Code
 		props["User-Agent"] = rp.UserAgent
-		props["Method"] = rp.GetMethod()
+		props["Method"] = rp.Method
 		return true
 	}
 	return false
 }
 
+var postCluster = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.ClustersService/PostCluster",
+	HTTPMethod: http.MethodPost,
+	HTTPPath:   "/v1/cluster",
+}
+
 // clusterRegistered enables the Cluster Registered event and adds specific
 // properties.
 func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
-	if rp.Path != "/v1.ClustersService/PostCluster" {
+	if !rp.Is(postCluster) {
 		return false
 	}
+
 	props["Code"] = rp.Code
 	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
 		props["Cluster Type"] = req.GetType().String()
@@ -63,14 +71,19 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 	return true
 }
 
+var putCluster = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.ClustersService/PutCluster",
+	HTTPMethod: http.MethodPut,
+	HTTPPath:   "/v1/cluster",
+}
+
 // clusterInitialized enables the Cluster Initialized event and adds specific
 // properties.
-// The event is triggered when a previously posted cluster changes state from
-// UNINITIALIZED to something else.
 func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool {
-	if rp.Path != "/v1.ClustersService/PutCluster" {
+	if !rp.Is(putCluster) {
 		return false
 	}
+
 	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
 		uninitializedClustersLock.Lock()
 		defer uninitializedClustersLock.Unlock()
@@ -103,6 +116,6 @@ func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["Path"] = rp.Path
 	props["Code"] = rp.Code
 	props["User-Agent"] = rp.UserAgent
-	props["Method"] = rp.GetMethod()
+	props["Method"] = rp.Method
 	return true
 }

@@ -27,22 +27,22 @@ func (t *interceptorsTest) SetupTest() {
 func (t *interceptorsTest) TestClusterRegisteredNoFire() {
 	props := map[string]any{}
 
-	// Path is not "/v1.ClustersService/PostCluster":
+	// Method is not "/v1.ClustersService/PostCluster":
 	rp := &phonehome.RequestParams{
-		Path: "random",
+		Method: "random",
 	}
-	t.False(clusterRegistered(rp, props), "must not fire, as Path doesn't match")
+	t.False(clusterRegistered(rp, props), "must not fire, as Method doesn't match")
 	t.Empty(props, "props must not be touched")
 }
 
 func (t *interceptorsTest) TestClusterRegisteredFire() {
 	props := map[string]any{}
 
-	// Test for matching Path:
+	// Test for matching Method:
 	rp := &phonehome.RequestParams{
-		Path: "/v1.ClustersService/PostCluster",
+		Method: "/v1.ClustersService/PostCluster",
 	}
-	t.True(clusterRegistered(rp, props), "must fire, as Path matches")
+	t.True(clusterRegistered(rp, props), "must fire, as Method matches")
 	t.Equal(map[string]any{"Code": 0}, props, "props must have only Code, as gRPC request details are not provided")
 
 	// Test with gRPC request details:
@@ -56,7 +56,7 @@ func (t *interceptorsTest) TestClusterRegisteredFire() {
 	}
 	t.False(uninitializedClusters.Contains("cluster-id"), "cluster-id must not be registered as uninitialized yet")
 	// remembers the uninitialized cluster in memory:
-	t.True(clusterRegistered(rp, props), "must fire, as Path matches, and cluster-id has not been registered")
+	t.True(clusterRegistered(rp, props), "must fire, as Method matches, and cluster-id has not been registered")
 	t.Equal(map[string]any{
 		"Code":         0,
 		"Cluster ID":   "cluster-id",
@@ -69,11 +69,11 @@ func (t *interceptorsTest) TestClusterRegisteredFire() {
 func (t *interceptorsTest) TestClusterInitializedNoFire() {
 	props := map[string]any{}
 
-	// Path is not "/v1.ClustersService/PutCluster":
+	// Method is not "/v1.ClustersService/PutCluster":
 	rp := &phonehome.RequestParams{
-		Path: "random",
+		Method: "random",
 	}
-	t.False(clusterInitialized(rp, props), "must not fire, as Path doesn't match")
+	t.False(clusterInitialized(rp, props), "must not fire, as Method doesn't match")
 	t.Empty(props)
 	t.False(uninitializedClusters.Contains("cluster-id"))
 }
@@ -84,7 +84,7 @@ func (t *interceptorsTest) TestClusterInitializedFire() {
 
 	props := map[string]any{}
 	rp := &phonehome.RequestParams{
-		Path: "/v1.ClustersService/PutCluster",
+		Method: "/v1.ClustersService/PutCluster",
 		GRPCReq: &storage.Cluster{
 			Type:      storage.ClusterType_GENERIC_CLUSTER,
 			Id:        "cluster-id",
