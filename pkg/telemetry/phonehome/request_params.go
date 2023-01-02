@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
-var errNoBody = errors.New("empty body")
+var ErrNoBody = errors.New("empty body")
 var errBadType = errors.New("unexpected body type")
 
 // RequestParams holds intercepted call parameters.
@@ -55,23 +55,23 @@ func (rp *RequestParams) Is(s *ServiceMethod) bool {
 	return rp.Method == s.GRPCMethod || (rp.Method == s.HTTPMethod && rp.PathMatches(s.HTTPPath))
 }
 
-// GetRequestBody returns the request body.
-func GetRequestBody[T any](rp *RequestParams) (*T, error) {
-	if rp.GRPCReq != nil {
-		if b, ok := rp.GRPCReq.(*T); ok {
-			return b, nil
-		} else {
-			return nil, errBadType
-		}
-	}
-	if rp.HTTPReq == nil {
+func getGRPCBody[T any](req any) (*T, error) {
+	if req == nil {
 		return nil, nil
 	}
-	if rp.HTTPReq.GetBody == nil {
-		return nil, errNoBody
+	body, ok := req.(*T)
+	if !ok {
+		return nil, errBadType
+	}
+	return body, nil
+}
+
+func getHTTPBody[T any](req *http.Request) (*T, error) {
+	if req == nil || req.GetBody == nil {
+		return nil, nil
 	}
 
-	br, err := rp.HTTPReq.GetBody()
+	br, err := req.GetBody()
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +83,25 @@ func GetRequestBody[T any](rp *RequestParams) (*T, error) {
 	var body *T
 	if err = json.Unmarshal(bb, &body); err != nil {
 		return nil, errors.Wrap(errBadType, err.Error())
+	}
+	return body, nil
+}
+
+// GetRequestBody returns the request body. Returns ErrNoBody error on nil body.
+func GetRequestBody[T any](rp *RequestParams) (*T, error) {
+	body, err := getGRPCBody[T](rp.GRPCReq)
+	if err != nil {
+		return nil, err
+	}
+	if body == nil {
+		body, err = getHTTPBody[T](rp.HTTPReq)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if body == nil {
+		return nil, ErrNoBody
 	}
 	return body, nil
 }

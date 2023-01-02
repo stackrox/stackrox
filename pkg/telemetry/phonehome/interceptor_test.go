@@ -166,14 +166,14 @@ func (s *interceptorTestSuite) TestHttpWithBody() {
 	req, _ = http.NewRequest(http.MethodPost, "/http/body", nil)
 	rp = getHTTPRequestDetails(context.Background(), req, nil)
 	rb, err = GetRequestBody[testBody](rp)
-	s.ErrorIs(err, errNoBody)
+	s.ErrorIs(err, ErrNoBody)
 	s.Nil(rb)
 
 	body = "null"
 	req, _ = http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
 	rp = getHTTPRequestDetails(context.Background(), req, nil)
 	rb, err = GetRequestBody[testBody](rp)
-	s.NoError(err)
+	s.ErrorIs(err, ErrNoBody)
 	s.Nil(rb)
 }
 
@@ -189,7 +189,7 @@ func (s *interceptorTestSuite) TestGrpcWithBody() {
 	rp = getGRPCRequestDetails(context.Background(), nil, "/grpc/body", nil)
 
 	rb, err = GetRequestBody[testBody](rp)
-	s.NoError(err)
+	s.ErrorIs(err, ErrNoBody)
 	s.Nil(rb)
 }
 
