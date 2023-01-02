@@ -1344,7 +1344,7 @@ func TestDifferentBaseTypes(t *testing.T) {
 				FieldQueries: []*query.FieldQuery{
 					// This test will fail in three years, but if this test still matters then,
 					// we have other problems...
-					{Field: "BaseTS", Values: []string{">1000d"}},
+					{Field: "BaseTS", Values: []string{">2000d"}},
 				},
 			},
 		},
