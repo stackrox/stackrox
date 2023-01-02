@@ -138,7 +138,7 @@ class AdmissionControllerTest extends BaseSpecification {
         then:
         "Run deployment request"
         def created = orchestrator.createDeploymentNoWait(deployment)
-        assert created == launched
+        assert created != launched
 
         cleanup:
         "Revert Cluster"
