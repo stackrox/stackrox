@@ -16,9 +16,7 @@ type CentralSender interface {
 // NewCentralSender returns a new instance of a CentralSender.
 func NewCentralSender(senders ...common.SensorComponent) CentralSender {
 	return &centralSenderImpl{
-		stopC:    concurrency.NewErrorSignal(),
-		stoppedC: concurrency.NewErrorSignal(),
-
+		stopper: concurrency.NewStopper(),
 		senders: senders,
 	}
 }

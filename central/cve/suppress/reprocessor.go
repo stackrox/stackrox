@@ -68,8 +68,7 @@ func newLoopWithDuration(tickerDuration time.Duration, cveStores ...vulnsStore) 
 		cveStores:                 cveStores,
 		cveSuppressTickerDuration: tickerDuration,
 
-		stopChan: concurrency.NewSignal(),
-		stopped:  concurrency.NewSignal(),
+		stopper: concurrency.NewStopper(),
 	}
 }
 
@@ -79,8 +78,7 @@ type cveUnsuppressLoopImpl struct {
 
 	cveStores []vulnsStore
 
-	stopChan concurrency.Signal
-	stopped  concurrency.Signal
+	stopper concurrency.Stopper
 }
 
 // Start starts the CVE unsuppress loop.
@@ -91,13 +89,15 @@ func (l *cveUnsuppressLoopImpl) Start() {
 
 // Stop stops the CVE unsuppress loop.
 func (l *cveUnsuppressLoopImpl) Stop() {
-	l.stopChan.Signal()
-	l.stopped.Wait()
+	l.stopper.Client().Stop()
+	_ = l.stopper.Client().Stopped().Wait()
 }
 
 func (l *cveUnsuppressLoopImpl) unsuppressCVEsWithExpiredSuppressState() {
-	if l.stopped.IsDone() {
+	select {
+	case <-l.stopper.Flow().StopRequested():
 		return
+	default:
 	}
 
 	totalUnsuppressedCVEs := 0
@@ -142,13 +142,13 @@ func getCVEsWithExpiredSuppressState(cveStore vulnsStore) ([]string, error) {
 }
 
 func (l *cveUnsuppressLoopImpl) loop() {
-	defer l.stopped.Signal()
+	defer l.stopper.Flow().ReportStopped()
 	defer l.cveSuppressTicker.Stop()
 
 	go l.unsuppressCVEsWithExpiredSuppressState()
 	for {
 		select {
-		case <-l.stopChan.Done():
+		case <-l.stopper.Flow().StopRequested():
 			return
 		case <-l.cveSuppressTicker.C:
 			l.unsuppressCVEsWithExpiredSuppressState()

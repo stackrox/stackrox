@@ -51,9 +51,9 @@ func (cm *clusterMetricsImpl) Start() error {
 	return nil
 }
 
-func (cm *clusterMetricsImpl) Stop(err error) {
-	cm.stopper.Stop()
-	cm.stopper.WaitForStopped()
+func (cm *clusterMetricsImpl) Stop(_ error) {
+	cm.stopper.Client().Stop()
+	_ = cm.stopper.Client().Stopped().Wait()
 }
 
 func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
@@ -71,13 +71,13 @@ func (cm *clusterMetricsImpl) ResponsesC() <-chan *central.MsgFromSensor {
 func (cm *clusterMetricsImpl) ProcessIndicator(pi *storage.ProcessIndicator) {}
 
 func (cm *clusterMetricsImpl) Poll() {
-	defer cm.stopper.Stopped()
+	defer cm.stopper.Flow().ReportStopped()
 
 	ticker := time.NewTicker(cm.pollingInterval)
 	go func() {
 		for {
 			select {
-			case <-cm.stopper.StopDone():
+			case <-cm.stopper.Flow().StopRequested():
 				return
 			case <-ticker.C:
 				if metrics, err := cm.collectMetrics(); err == nil {

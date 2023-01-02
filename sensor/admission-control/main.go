@@ -5,7 +5,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -77,9 +76,7 @@ func mainCmd() error {
 	}
 
 	mgr := manager.New(sensorConn, namespace)
-	if err := mgr.Start(); err != nil {
-		return errors.Wrap(err, "starting admission control manager")
-	}
+	mgr.Start()
 
 	if err := settingswatch.WatchK8sForSettingsUpdatesAsync(mgr.Stopped(), mgr.SettingsUpdateC(), namespace); err != nil {
 		log.Errorf("Could not watch Kubernetes for settings updates: %v. Functionality might be impacted", err)

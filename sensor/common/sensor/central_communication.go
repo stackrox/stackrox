@@ -22,7 +22,6 @@ func NewCentralCommunication(components ...common.SensorComponent) CentralCommun
 		sender:     NewCentralSender(components...),
 		components: components,
 
-		stopC:    concurrency.NewErrorSignal(),
-		stoppedC: concurrency.NewErrorSignal(),
+		stopper: concurrency.NewStopper(),
 	}
 }

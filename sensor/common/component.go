@@ -10,7 +10,7 @@ import (
 // as well as sending messages back to central.
 type SensorComponent interface {
 	Start() error
-	Stop(err error)
+	Stop(err error) // TODO: get rid of err argument as it always seems to be effectively nil.
 	Capabilities() []centralsensor.SensorCapability
 
 	ProcessMessage(msg *central.MsgToSensor) error
