@@ -1,3 +1,9 @@
+defs: |
+  def container(obj; name):
+  obj.spec.template.spec.containers[] | select(.name == name);
+
+  def envVars(obj; container):
+  container(obj; container) | .env | from_entries;
 values:
   ca:
     cert: ""
@@ -85,3 +91,15 @@ tests:
     .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
+
+- name: Tenant ID should be set when env.managedServices is true
+  set:
+    env.managedServices: true
+  expect: |
+    envVars(.deployments.central; "central") | assertThat(has("ROX_TENANT_ID") == true)
+
+- name: Tenant ID should not be set when env.managedServices is false
+  set:
+    env.managedServices: false
+  expect: |
+    envVars(.deployments.central; "central") | assertThat(has("ROX_TENANT_ID") == false)

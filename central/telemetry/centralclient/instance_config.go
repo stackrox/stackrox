@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sVersion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -33,23 +33,13 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	if key == "" {
 		return nil, nil, nil
 	}
-	rc, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, nil, err
-	}
-	clientset, err := kubernetes.NewForConfig(rc)
-	if err != nil {
-		return nil, nil, err
-	}
-	v, err := clientset.ServerVersion()
-	if err != nil {
-		return nil, nil, err
-	}
 
-	deployments := clientset.AppsV1().Deployments(env.Namespace.Setting())
-	central, err := deployments.Get(context.Background(), "central", v1.GetOptions{})
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "cannot get central deployment")
+	// k8s apiserver is not accessible in cloud service environment.
+	v := &k8sVersion.Info{GitVersion: "unknown"}
+	if rc, err := rest.InClusterConfig(); err == nil {
+		if clientset, err := kubernetes.NewForConfig(rc); err == nil {
+			v, _ = clientset.ServerVersion()
+		}
 	}
 
 	trackedPaths = set.NewFrozenSet(strings.Split(apiWhiteList.Setting(), ",")...)
@@ -70,7 +60,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	}
 	centralID := ii.Id
 
-	tenantID := central.GetLabels()[phonehome.TenantIDLabel]
+	tenantID := env.TenantID.Setting()
 	// Consider on-prem central a tenant of itself:
 	if tenantID == "" {
 		tenantID = centralID
