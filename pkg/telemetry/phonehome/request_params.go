@@ -1,11 +1,17 @@
 package phonehome
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
+
+var errNoBody = errors.New("empty body")
+var errBadType = errors.New("unexpected body type")
 
 // RequestParams holds intercepted call parameters.
 type RequestParams struct {
@@ -47,4 +53,36 @@ func (rp *RequestParams) HasPathIn(patterns []string) bool {
 // Is checks wether the request targets the service method: either gRPC or HTTP.
 func (rp *RequestParams) Is(s *ServiceMethod) bool {
 	return rp.Method == s.GRPCMethod || (rp.Method == s.HTTPMethod && rp.PathMatches(s.HTTPPath))
+}
+
+// GetRequestBody returns the request body.
+func GetRequestBody[T any](rp *RequestParams) (*T, error) {
+	if rp.GRPCReq != nil {
+		if b, ok := rp.GRPCReq.(*T); ok {
+			return b, nil
+		} else {
+			return nil, errBadType
+		}
+	}
+	if rp.HTTPReq == nil {
+		return nil, nil
+	}
+	if rp.HTTPReq.GetBody == nil {
+		return nil, errNoBody
+	}
+
+	br, err := rp.HTTPReq.GetBody()
+	if err != nil {
+		return nil, err
+	}
+
+	var bb []byte
+	if bb, err = ioutil.ReadAll(br); err != nil {
+		return nil, err
+	}
+	var body *T
+	if err = json.Unmarshal(bb, &body); err != nil {
+		return nil, errors.Wrap(errBadType, err.Error())
+	}
+	return body, nil
 }

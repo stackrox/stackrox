@@ -114,7 +114,7 @@ func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
 func (cfg *Config) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
-		rp := getGRPCRequestDetails(ctx, err, info, req)
+		rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
 		go cfg.track(rp)
 		return resp, err
 	}

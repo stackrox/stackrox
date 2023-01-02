@@ -1,6 +1,7 @@
 package phonehome
 
 import (
+	"bytes"
 	"context"
 	"net"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/mocks"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 )
@@ -117,9 +117,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
 
-	rp := getGRPCRequestDetails(ctx, err, &grpc.UnaryServerInfo{
-		FullMethod: testRP.Path,
-	}, "request")
+	rp := getGRPCRequestDetails(ctx, err, testRP.Path, "request")
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)
@@ -137,15 +135,62 @@ func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
 
-	rp := getGRPCRequestDetails(ctx, err, &grpc.UnaryServerInfo{
-		FullMethod: "ignored grpc method",
-	}, "request")
+	rp := getGRPCRequestDetails(ctx, err, "ignored grpc method", "request")
 	s.Equal(http.StatusOK, rp.Code)
 	s.Equal("test", rp.UserAgent)
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
 	s.Equal("/wrapped/http", rp.Path)
 	s.Equal(http.MethodPatch, rp.Method)
+}
+
+type testBody struct {
+	N int `json:"n"`
+}
+
+func (s *interceptorTestSuite) TestHttpWithBody() {
+	body := "{ \"n\": 42 }"
+	req, _ := http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
+	rp := getHTTPRequestDetails(context.Background(), req, nil)
+
+	rb, err := GetRequestBody[testBody](rp)
+	if s.NoError(err) {
+		s.NotNil(rb)
+		s.Equal(42, rb.N)
+	}
+
+	e, err := GetRequestBody[error](rp)
+	s.ErrorIs(err, errBadType)
+	s.Nil(e)
+
+	req, _ = http.NewRequest(http.MethodPost, "/http/body", nil)
+	rp = getHTTPRequestDetails(context.Background(), req, nil)
+	rb, err = GetRequestBody[testBody](rp)
+	s.ErrorIs(err, errNoBody)
+	s.Nil(rb)
+
+	body = "null"
+	req, _ = http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
+	rp = getHTTPRequestDetails(context.Background(), req, nil)
+	rb, err = GetRequestBody[testBody](rp)
+	s.NoError(err)
+	s.Nil(rb)
+}
+
+func (s *interceptorTestSuite) TestGrpcWithBody() {
+	rp := getGRPCRequestDetails(context.Background(), nil, "/grpc/body", &testBody{N: 42})
+
+	rb, err := GetRequestBody[testBody](rp)
+	if s.NoError(err) {
+		s.NotNil(rb)
+		s.Equal(42, rb.N)
+	}
+
+	rp = getGRPCRequestDetails(context.Background(), nil, "/grpc/body", nil)
+
+	rb, err = GetRequestBody[testBody](rp)
+	s.NoError(err)
+	s.Nil(rb)
 }
 
 func (s *interceptorTestSuite) TestHttpRequestInfo() {

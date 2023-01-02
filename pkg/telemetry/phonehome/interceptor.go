@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"google.golang.org/grpc"
 )
 
 const grpcGatewayUserAgentHeader = runtime.MetadataPrefix + "User-Agent"
@@ -45,7 +44,7 @@ func getUserAgent[getter func(string) []string](headers getter) string {
 	return strings.Join(userAgentValues, " ")
 }
 
-func getGRPCRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInfo, req any) *RequestParams {
+func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
@@ -67,8 +66,8 @@ func getGRPCRequestDetails(ctx context.Context, err error, info *grpc.UnaryServe
 	return &RequestParams{
 		UserAgent: getUserAgent(ri.Metadata.Get),
 		UserID:    id,
-		Method:    info.FullMethod,
-		Path:      info.FullMethod,
+		Method:    grpcFullMethod,
+		Path:      grpcFullMethod,
 		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
 		GRPCReq:   req,
 	}
