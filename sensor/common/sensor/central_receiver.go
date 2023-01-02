@@ -16,9 +16,7 @@ type CentralReceiver interface {
 // NewCentralReceiver returns a new instance of a Receiver.
 func NewCentralReceiver(receivers ...common.SensorComponent) CentralReceiver {
 	return &centralReceiverImpl{
-		stopC:    concurrency.NewErrorSignal(),
-		stoppedC: concurrency.NewErrorSignal(),
-
+		stopper:   concurrency.NewStopper(),
 		receivers: receivers,
 	}
 }

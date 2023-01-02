@@ -97,8 +97,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		k8sRoles:        k8sRoles,
 		k8sRoleBindings: k8sRoleBindings,
 		logimbueStore:   logimbueStore,
-		stopSig:         concurrency.NewSignal(),
-		stoppedSig:      concurrency.NewSignal(),
+		stopper:         concurrency.NewStopper(),
 	}
 }
 
@@ -120,8 +119,7 @@ type garbageCollectorImpl struct {
 	k8sRoles        k8sRoleDataStore.DataStore
 	k8sRoleBindings roleBindingDataStore.DataStore
 	logimbueStore   logimbueDataStore.Store
-	stopSig         concurrency.Signal
-	stoppedSig      concurrency.Signal
+	stopper         concurrency.Stopper
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -159,6 +157,8 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 }
 
 func (g *garbageCollectorImpl) runGC() {
+	defer g.stopper.Flow().ReportStopped()
+
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
 	g.pruneBasedOnConfig()
@@ -168,8 +168,7 @@ func (g *garbageCollectorImpl) runGC() {
 		select {
 		case <-t.C:
 			g.pruneBasedOnConfig()
-		case <-g.stopSig.Done():
-			g.stoppedSig.Signal()
+		case <-g.stopper.Flow().StopRequested():
 			return
 		}
 	}
@@ -876,6 +875,6 @@ func (g *garbageCollectorImpl) pruneLogImbues() {
 }
 
 func (g *garbageCollectorImpl) Stop() {
-	g.stopSig.Signal()
-	<-g.stoppedSig.Done()
+	g.stopper.Client().Stop()
+	_ = g.stopper.Client().Stopped().Wait()
 }

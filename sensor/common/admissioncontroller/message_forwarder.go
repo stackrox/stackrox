@@ -13,13 +13,13 @@ type AdmCtrlMsgForwarder interface {
 	common.SensorComponent
 }
 
-// NewAdmCtrlMsgForwarder returns a new intance of AdmCtrlMsgForwarder.
+// NewAdmCtrlMsgForwarder returns a new instance of AdmCtrlMsgForwarder.
 func NewAdmCtrlMsgForwarder(admCtrlMgr SettingsManager, components ...common.SensorComponent) AdmCtrlMsgForwarder {
 	return &admCtrlMsgForwarderImpl{
 		admCtrlMgr: admCtrlMgr,
 		components: components,
 
-		stopSig:  concurrency.NewSignal(),
+		stopper:  concurrency.NewStopper(),
 		centralC: make(chan *central.MsgFromSensor),
 	}
 }
@@ -30,7 +30,7 @@ type admCtrlMsgForwarderImpl struct {
 
 	centralC chan *central.MsgFromSensor
 
-	stopSig concurrency.Signal
+	stopper concurrency.Stopper
 }
 
 func (h *admCtrlMsgForwarderImpl) Start() error {
@@ -49,7 +49,7 @@ func (h *admCtrlMsgForwarderImpl) Stop(err error) {
 		component.Stop(err)
 	}
 
-	h.stopSig.Signal()
+	h.stopper.Client().Stop()
 }
 
 func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapability {
@@ -73,6 +73,7 @@ func (h *admCtrlMsgForwarderImpl) run() {
 }
 
 func (h *admCtrlMsgForwarderImpl) forwardResponses(from <-chan *central.MsgFromSensor) {
+	defer h.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case msg, ok := <-from:
@@ -86,9 +87,9 @@ func (h *admCtrlMsgForwarderImpl) forwardResponses(from <-chan *central.MsgFromS
 
 			select {
 			case h.centralC <- msg:
-			case <-h.stopSig.Done():
+			case <-h.stopper.Flow().StopRequested():
 			}
-		case <-h.stopSig.Done():
+		case <-h.stopper.Flow().StopRequested():
 			return
 		}
 	}

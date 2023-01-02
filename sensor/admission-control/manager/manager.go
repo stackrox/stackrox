@@ -13,7 +13,7 @@ import (
 
 // Manager manages the main business logic of the admission control service.
 type Manager interface {
-	Start() error
+	Start()
 	Stop()
 	Stopped() concurrency.ErrorWaitable
 
