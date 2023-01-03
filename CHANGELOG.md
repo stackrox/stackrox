@@ -15,10 +15,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 - ROX-12620: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
   - The permission `WorkflowAdministration` will deprecate the permissions `Policy, VulnerabilityReports`.
-  ACTION REQUIRED: As a result, you should preemptively start replacing the `Policy and VulnerabilityReports` resources within your roles in favor of the `WorkflowAdministration` resource.
-  Once the resources will be removed (starting with the 3.76 release), all references to `Policy and VulnerabilityReports` will be removed in favor of `WorkflowAdministration`. During the
-  removal, the lowest access permission will be granted for `WorkflowAdministration`. As an example, if a permission set contains `WRITE Policy` and `READ VulnerabilityReports`, after 3.76,
-  the permission set will contain `READ WorkflowAdministration` permission, leading to unwanted side-effects if you do not update your permission sets beforehand.
+
+### Required Actions
+- The permission `WorkflowAdministration` will replace `Policy, VulnerabilityReports` in permission sets starting with the 3.76 release.
+  You should preemptively start replacing the `Policy` and `VulnerabilityReports` resources within your permission sets in favor of `WorkflowAdministration`.
+  During the migration of the permission sets within the 3.76, the `WorfklowAdministration` permission will have the lowest access permission granted for either `Policy` or `VulnerabilityReports`.
+  As an example, a permission set with `WRITE Policy` and `READ VulnerabilityReports` access will have `READ WorkflowAdministration` access after the migration within the 3.76 release, leading to
+  potentially unwanted side-effects and missing access if you did not update your permission sets beforehand.
 
 ### Technical Changes
 - ROX-12967: Re-introduce `rpm` to the main image in order to be able parse installed packages on RHCOS nodes (from Compliance container)
