@@ -446,6 +446,7 @@ jobs:
           quay.io/rhacs-eng/grpc-server:${{ steps.tag.outputs.TAG }}
 
   scan-images-with-roxctl:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs:
       - build-and-push-main
@@ -482,5 +483,4 @@ jobs:
 
       - name: Scan images
         run: |
-          roxctl version
           ./release/scripts/scan-images-with-roxctl.sh
