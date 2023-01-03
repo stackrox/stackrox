@@ -229,3 +229,7 @@ task runSampleScript(dependsOn: 'classes', type: JavaExec) {
         classpath = sourceSets.main.runtimeClasspath
     }
 }
+
+test {
+    useJUnitPlatform()
+}
