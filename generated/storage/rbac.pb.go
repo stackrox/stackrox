@@ -366,14 +366,11 @@ func (m *PolicyRule) Clone() *PolicyRule {
 // Properties of an individual k8s RoleBinding or ClusterRoleBinding.
 //////////////////////////////////////////
 type K8SRoleBinding struct {
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Role Binding ID,hidden" sql:"pk,type(uuid)"`
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Role Binding"`
-	Namespace   string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`
-	ClusterId   string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`
-	ClusterName string `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`
-	// ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether
-	// the binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is
-	// empty and cluster role is true, the binding is a cluster role binding.
+	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Role Binding ID,hidden" sql:"pk,type(uuid)"`
+	Name                 string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Role Binding"`
+	Namespace            string            `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`
+	ClusterId            string            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`
+	ClusterName          string            `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`
 	ClusterRole          bool              `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty" search:"Cluster Role"`
 	Labels               map[string]string `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" search:"Role Binding Label" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Annotations          map[string]string `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" search:"Role Binding Annotation" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`

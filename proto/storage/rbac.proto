@@ -51,9 +51,6 @@ message K8sRoleBinding {
     string namespace                        = 3 [(gogoproto.moretags) = 'search:"Namespace,store"'];
     string cluster_id                       = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" sql:"type(uuid)"'];
     string cluster_name                     = 5 [(gogoproto.moretags) = 'search:"Cluster"'];
-    // ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether
-    // the binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is
-    // empty and cluster role is true, the binding is a cluster role binding.
     bool cluster_role                       = 6 [(gogoproto.moretags) = 'search:"Cluster Role"'];
     map<string, string> labels              = 7 [(gogoproto.moretags) = 'search:"Role Binding Label"'];
     map<string, string> annotations         = 8 [(gogoproto.moretags) = 'search:"Role Binding Annotation"'];

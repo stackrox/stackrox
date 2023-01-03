@@ -110,18 +110,18 @@ func clusterRoleAsNamespacedRole(role *v1.ClusterRole) namespacedRole {
 	}
 }
 
-func roleBindingToNamespacedRoleRef(roleBinding *v1.RoleBinding) (namespacedRoleRef, bool) {
+func roleBindingToNamespacedRoleRef(roleBinding *v1.RoleBinding) namespacedRoleRef {
 	if roleBinding.RoleRef.Kind == "ClusterRole" {
 		return namespacedRoleRef{
 			namespace: "",
 			name:      roleBinding.RoleRef.Name,
-		}, true
+		}
 	}
 
 	return namespacedRoleRef{
 		namespace: roleBinding.GetNamespace(),
 		name:      roleBinding.RoleRef.Name,
-	}, false
+	}
 }
 
 func clusterRoleBindingToNamespacedRoleRef(clusterRoleBinding *v1.ClusterRoleBinding) namespacedRoleRef {

@@ -50,9 +50,7 @@ func clusterRoleBindingToNamespacedBindingID(clusterRoleBinding *v1.ClusterRoleB
 	return namespacedBindingID{namespace: "", uid: string(clusterRoleBinding.GetUID())}
 }
 
-// roleBindingToNamespacedBinding returns the namespaced binding from the role binding.
-// The boolean value will indicate whether the binding binds a cluster role.
-func roleBindingToNamespacedBinding(roleBinding *v1.RoleBinding) (*namespacedBinding, bool) {
+func roleBindingToNamespacedBinding(roleBinding *v1.RoleBinding) *namespacedBinding {
 	subjects := make([]namespacedSubject, 0, len(roleBinding.Subjects))
 	for _, s := range getSubjects(roleBinding.Subjects) {
 		// We only need this information for evaluating Deployment permission level,
@@ -61,12 +59,10 @@ func roleBindingToNamespacedBinding(roleBinding *v1.RoleBinding) (*namespacedBin
 			subjects = append(subjects, nsSubjectFromSubject(s))
 		}
 	}
-	ref, isClusterRole := roleBindingToNamespacedRoleRef(roleBinding)
-
 	return &namespacedBinding{
 		subjects: subjects,
-		roleRef:  ref,
-	}, isClusterRole
+		roleRef:  roleBindingToNamespacedRoleRef(roleBinding),
+	}
 }
 
 func clusterRoleBindingToNamespacedBinding(clusterRoleBinding *v1.ClusterRoleBinding) *namespacedBinding {

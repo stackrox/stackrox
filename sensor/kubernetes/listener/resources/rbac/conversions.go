@@ -55,7 +55,7 @@ func toRoxClusterRole(role *v1.ClusterRole) *storage.K8SRole {
 	return roxRole.Clone() // Clone the labels, annotations, and policy rules.
 }
 
-func toRoxRoleBinding(roleBinding *v1.RoleBinding, roleID string, clusterRole bool) *storage.K8SRoleBinding {
+func toRoxRoleBinding(roleBinding *v1.RoleBinding, roleID string) *storage.K8SRoleBinding {
 	roxBinding := &storage.K8SRoleBinding{
 		Id:          string(roleBinding.GetUID()),
 		RoleId:      roleID,
@@ -63,7 +63,7 @@ func toRoxRoleBinding(roleBinding *v1.RoleBinding, roleID string, clusterRole bo
 		Namespace:   roleBinding.GetNamespace(),
 		Labels:      roleBinding.GetLabels(),
 		Annotations: roleBinding.GetAnnotations(),
-		ClusterRole: clusterRole,
+		ClusterRole: false,
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(roleBinding.GetCreationTimestamp().Time),
 		Subjects:    getSubjects(roleBinding.Subjects),
 	}
