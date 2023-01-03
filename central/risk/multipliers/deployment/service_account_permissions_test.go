@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/risk/multipliers"
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
@@ -215,7 +214,7 @@ func TestPermissionScore(t *testing.T) {
 
 	for _, c := range clusterCases {
 		t.Run(c.name, func(t *testing.T) {
-			ctx := sac.WithAllAccess(context.Background())
+			ctx := context.Background()
 
 			mockCtrl := gomock.NewController(t)
 
@@ -231,7 +230,6 @@ func TestPermissionScore(t *testing.T) {
 			clusterScopeQuery := search.NewQueryBuilder().
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 				AddExactMatches(search.SubjectName, c.sa.Name).
-				AddNullField(search.Namespace).
 				AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 				AddBools(search.ClusterRole, true).ProtoQuery()
 
@@ -241,7 +239,8 @@ func TestPermissionScore(t *testing.T) {
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 				AddExactMatches(search.Namespace, deployment.GetNamespace()).
 				AddExactMatches(search.SubjectName, c.sa.Name).
-				AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).ProtoQuery()
+				AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
+				AddBools(search.ClusterRole, false).ProtoQuery()
 
 			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, namespaceScopeQuery).Return([]*storage.K8SRoleBinding{}, nil).AnyTimes()
 

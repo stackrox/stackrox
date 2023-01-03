@@ -14,7 +14,6 @@ import (
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -99,8 +98,6 @@ type ServiceAccountServiceTestSuite struct {
 	service                 Service
 
 	mockCtrl *gomock.Controller
-
-	ctx context.Context
 }
 
 func (suite *ServiceAccountServiceTestSuite) SetupTest() {
@@ -113,8 +110,6 @@ func (suite *ServiceAccountServiceTestSuite) SetupTest() {
 
 	suite.service = New(suite.mockServiceAccountStore, suite.mockBindingStore, suite.mockRoleStore,
 		suite.mockDeploymentStore, suite.mockNamespaceStore)
-
-	suite.ctx = sac.WithAllAccess(context.Background())
 }
 
 // Test happy path for getting service accounts
@@ -124,7 +119,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return(expectedSA, true, nil)
 
-	sa, err := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
+	sa, err := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
 	suite.NoError(err)
 	suite.Equal(expectedSA, sa.SaAndRole.ServiceAccount)
 	suite.Equal(1, len(sa.SaAndRole.DeploymentRelationships))
@@ -140,7 +135,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSANotExists() {
 
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), false, nil)
 
-	_, err := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
+	_, err := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
 	suite.Error(err)
 }
 
@@ -151,7 +146,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSAFailure() {
 	expectedErr := errors.New("failure")
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), true, expectedErr)
 
-	_, actualErr := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
+	_, actualErr := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
 	suite.Error(actualErr)
 }
 
@@ -167,7 +162,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccount() {
 
 	suite.mockDeploymentStore.EXPECT().SearchListDeployments(gomock.Any(), q).AnyTimes().Return([]*storage.ListDeployment{listDeployment}, nil)
 
-	_, err := suite.service.ListServiceAccounts(suite.ctx, &v1.RawQuery{})
+	_, err := suite.service.ListServiceAccounts((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
 }
 
@@ -177,7 +172,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccountFailure() {
 
 	suite.mockServiceAccountStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, expectedError)
 
-	_, actualErr := suite.service.ListServiceAccounts(suite.ctx, &v1.RawQuery{})
+	_, actualErr := suite.service.ListServiceAccounts((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))
 }
 
@@ -199,7 +194,6 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.SubjectName, expectedSA.Name).
-		AddNullField(search.Namespace).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, true).ProtoQuery()
 	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).AnyTimes().
@@ -209,7 +203,8 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
 		AddExactMatches(search.SubjectName, expectedSA.Name).
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).ProtoQuery()
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
+		AddBools(search.ClusterRole, false).ProtoQuery()
 	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), namespaceScopeQuery).AnyTimes().
 		Return([]*storage.K8SRoleBinding{rolebinding}, nil)
 
