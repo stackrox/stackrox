@@ -49,17 +49,16 @@ func (c *namespacePermissionEvaluator) getBindingsAndRoles(ctx context.Context, 
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, c.clusterID).
 		AddExactMatches(search.Namespace, c.namespace).
-		AddBools(search.ClusterRole, false).
 		AddExactMatches(search.SubjectName, subject.GetName()).
 		AddExactMatches(search.SubjectKind, subject.GetKind().String()).
 		ProtoQuery()
-	rolebindings, err := c.bindingsStore.SearchRawRoleBindings(ctx, q)
+	roleBindings, err := c.bindingsStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
-		log.Errorf("error searching for rolebindings: %v", err)
+		log.Errorf("error searching for roleBindings: %v", err)
 		return nil, nil
 	}
 
-	roles := getRolesForBindings(ctx, c.roleStore, rolebindings)
-	return rolebindings, roles
+	roles := getRolesForRoleBindings(ctx, c.roleStore, roleBindings, c.clusterID, c.namespace)
+	return roleBindings, roles
 }
