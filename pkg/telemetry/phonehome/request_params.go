@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
+// ErrNoBody tells that the request has got no body.
 var ErrNoBody = errors.New("empty body")
 var errBadType = errors.New("unexpected body type")
 
