@@ -53,6 +53,10 @@ func (c *clusterPermissionEvaluator) RolesForSubject(ctx context.Context, subjec
 func (c *clusterPermissionEvaluator) getBindingsAndRoles(ctx context.Context, subject *storage.Subject) ([]*storage.K8SRoleBinding, []*storage.K8SRole) {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, c.clusterID).
+		// Only evaluate bindings which have bind a cluster role _and_ have no namespace. Otherwise, we are evaluating
+		// role bindings which bind a cluster role to a specific namespace and would mistakenly
+		// see them as "cluster scoped".
+		AddNullField(search.Namespace).
 		AddBools(search.ClusterRole, true).
 		AddExactMatches(search.SubjectName, subject.GetName()).
 		AddExactMatches(search.SubjectKind, subject.GetKind().String()).
@@ -63,7 +67,6 @@ func (c *clusterPermissionEvaluator) getBindingsAndRoles(ctx context.Context, su
 		log.Errorf("error searching for clusterrolebindings: %v", err)
 		return nil, nil
 	}
-
-	roles := getRolesForBindings(ctx, c.roleStore, clusterRoleBindings)
+	roles := getRolesForRoleBindings(ctx, c.roleStore, clusterRoleBindings, c.clusterID, "")
 	return clusterRoleBindings, roles
 }
