@@ -467,9 +467,20 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - uses: actions/download-artifact@v3
+        with:
+          name: cli-build
+
       - name: Unpack cli build
         run: |
           tar xvzf cli-build.tgz
-          source ./scripts/ci/lib.sh
-          install_built_roxctl_in_gopath
+
+      - name: Install roxctl
+        run: |
+          ./scripts/ci/lib.sh install_built_roxctl_in_gopath
           roxctl version
+
+      - name: Scan images
+        run: |
+          roxctl version
+          ./release/scripts/scan-images-with-roxctl.sh
