@@ -185,6 +185,7 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	}
 	clonedWrap := wrap.Clone()
 
+	clonedWrap.populatePorts()
 	// Clone does not copy properly the Port and portConfigs
 	if clonedWrap.portConfigs != nil {
 		clonedWrap.Ports = nil
