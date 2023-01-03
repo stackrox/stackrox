@@ -28,12 +28,11 @@ describe('Collection deployment matching', () => {
     });
 
     // Clean up when the test suite exits
-    after(function afterHook() {
-        if (!hasFeatureFlag('ROX_OBJECT_COLLECTIONS')) {
-            this.skip();
+    after(() => {
+        if (hasFeatureFlag('ROX_OBJECT_COLLECTIONS')) {
+            tryDeleteCollection(withEmbeddedCollectionName);
+            tryDeleteCollection(sampleCollectionName);
         }
-        tryDeleteCollection(withEmbeddedCollectionName);
-        tryDeleteCollection(sampleCollectionName);
     });
 
     it('should preview deployments matching specified rules', () => {
