@@ -186,9 +186,11 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	clonedWrap := wrap.Clone()
 
 	// Clone does not copy properly the Port and portConfigs
-	clonedWrap.Ports = nil
-	for _, p := range clonedWrap.portConfigs {
-		clonedWrap.Ports = append(clonedWrap.Ports, p)
+	if clonedWrap.portConfigs != nil {
+		clonedWrap.Ports = nil
+		for _, p := range clonedWrap.portConfigs {
+			clonedWrap.Ports = append(clonedWrap.Ports, p)
+		}
 	}
 
 	clonedWrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
