@@ -56,6 +56,8 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 	roleIDs := set.NewStringSet()
 	for _, binding := range relevantBindings {
 		roleIDs.Add(binding.GetRoleId())
+		// A binding is only binding cluster-wide if cluster role is true _and_ namespace is empty. Namespaced
+		// bindings may bind to cluster roles as well.
 		if binding.GetClusterRole() && binding.GetNamespace() == "" {
 			clusterBindings = append(clusterBindings, binding)
 		} else {

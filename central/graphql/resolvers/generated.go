@@ -519,7 +519,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: ContainerRuntime!",
 		"version: String!",
 	}))
-	utils.Must(builder.AddType("CosignSignature", []string{}))
+	utils.Must(builder.AddType("CosignSignature", []string{
+	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
 		"name: String!",
@@ -596,7 +597,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
 	}))
-	utils.Must(builder.AddType("FalsePositiveRequest", []string{}))
+	utils.Must(builder.AddType("FalsePositiveRequest", []string{
+	}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
 		"cve: String",
@@ -620,7 +622,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"invalidRunIds: [String!]!",
 		"runs: [ComplianceRun]!",
 	}))
-	utils.Must(builder.AddType("GetPermissionsResponse", []string{}))
+	utils.Must(builder.AddType("GetPermissionsResponse", []string{
+	}))
 	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
 		"project: String!",
@@ -1318,6 +1321,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"skipTLSVerify: Boolean!",
 	}))
 	utils.Must(builder.AddType("Syslog", []string{
+		"extraFields: [KeyValuePair]!",
 		"localFacility: Syslog_LocalFacility!",
 		"tcpConfig: Syslog_TCPConfig",
 		"endpoint: SyslogEndpoint",
@@ -1417,7 +1421,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"VulnerabilityRequest_Scope_Image",
 		"VulnerabilityRequest_Scope_Global",
 	}))
-	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{}))
+	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
+	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
 		"registry: String!",
 		"remote: String!",
@@ -14369,6 +14374,11 @@ func (resolver *Resolver) wrapSyslogsWithContext(ctx context.Context, values []*
 		output[i] = &syslogResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *syslogResolver) ExtraFields(ctx context.Context) ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetExtraFields()
+	return resolver.root.wrapKeyValuePairs(value, nil)
 }
 
 func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
