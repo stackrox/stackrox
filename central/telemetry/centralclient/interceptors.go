@@ -1,9 +1,11 @@
 package centralclient
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -24,6 +26,18 @@ var (
 		"roxctl":              {roxctl},
 	}
 )
+
+// apiHandler represents a typical API handler type,
+// Example:
+//   (v1.ClustersServiceServer).PostCluster(context.Context, *storage.Cluster) (*storage.Cluster, error)
+type apiHandler[Service any, Request any, Response any] func(Service, context.Context, *Request) (*Response, error)
+
+// getRequestPtr returns a nil pointer of the API handler response type.
+// Example:
+//   getRequestPtr(v1.ClustersServiceServer.PostCluster) *storage.Cluster
+func getRequestPtr[Service any, Request any, Response any](apiHandler[Service, Request, Response]) *Request {
+	return nil
+}
 
 // apiCall enables API Call events for the API paths specified in the
 // trackedPaths ("*" value enables all paths) and have no match in the
@@ -53,7 +67,8 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 	}
 
 	props["Code"] = rp.Code
-	if cluster, err := phonehome.GetRequestBody[storage.Cluster](rp); err == nil {
+	cluster := getRequestPtr(v1.ClustersServiceServer.PostCluster)
+	if err := phonehome.GetRequestBody(rp, &cluster); err == nil {
 		props["Cluster Type"] = cluster.GetType().String()
 		props["Cluster ID"] = cluster.GetId()
 		props["Managed By"] = cluster.GetManagedBy().String()
@@ -79,24 +94,25 @@ func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool 
 		return false
 	}
 
-	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
+	cluster := getRequestPtr(v1.ClustersServiceServer.PutCluster)
+	if err := phonehome.GetRequestBody(rp, &cluster); err == nil {
 		uninitializedClustersLock.Lock()
 		defer uninitializedClustersLock.Unlock()
 
-		newStatus := req.GetHealthStatus().GetSensorHealthStatus()
+		newStatus := cluster.GetHealthStatus().GetSensorHealthStatus()
 		if newStatus == storage.ClusterHealthStatus_UNINITIALIZED {
-			uninitializedClusters.Add(req.GetId())
+			uninitializedClusters.Add(cluster.GetId())
 		} else
 		// Fire an event if the sensor moves from UNINITIALIZED state.
 		// The event will be missed if the central restarts between
 		// postCluster and first putCluster.
-		if uninitializedClusters.Contains(req.GetId()) &&
+		if uninitializedClusters.Contains(cluster.GetId()) &&
 			newStatus != storage.ClusterHealthStatus_UNINITIALIZED {
-			uninitializedClusters.Remove(req.GetId())
+			uninitializedClusters.Remove(cluster.GetId())
 			props["Code"] = rp.Code
-			props["Cluster Type"] = req.GetType().String()
-			props["Cluster ID"] = req.GetId()
-			props["Managed By"] = req.GetManagedBy().String()
+			props["Cluster Type"] = cluster.GetType().String()
+			props["Cluster ID"] = cluster.GetId()
+			props["Managed By"] = cluster.GetManagedBy().String()
 			return true
 		}
 	}

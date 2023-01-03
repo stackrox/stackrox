@@ -87,21 +87,24 @@ func getHTTPBody[T any](req *http.Request) (*T, error) {
 	return body, nil
 }
 
-// GetRequestBody returns the request body. Returns ErrNoBody error on nil body.
-func GetRequestBody[T any](rp *RequestParams) (*T, error) {
-	body, err := getGRPCBody[T](rp.GRPCReq)
+// GetRequestBody sets the output body argument. Returns ErrNoBody error on nil
+// result.
+func GetRequestBody[T any](rp *RequestParams, body **T) error {
+	var err error
+
+	*body, err = getGRPCBody[T](rp.GRPCReq)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if body == nil {
-		body, err = getHTTPBody[T](rp.HTTPReq)
+	if *body == nil {
+		*body, err = getHTTPBody[T](rp.HTTPReq)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if body == nil {
-		return nil, ErrNoBody
+	if *body == nil {
+		return ErrNoBody
 	}
-	return body, nil
+	return nil
 }

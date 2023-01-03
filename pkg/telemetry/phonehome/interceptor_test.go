@@ -153,34 +153,37 @@ func (s *interceptorTestSuite) TestHttpWithBody() {
 	req, _ := http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
 	rp := getHTTPRequestDetails(context.Background(), req, nil)
 
-	rb, err := GetRequestBody[testBody](rp)
+	var rb *testBody
+	err := GetRequestBody(rp, &rb)
 	if s.NoError(err) {
 		s.NotNil(rb)
 		s.Equal(42, rb.N)
 	}
 
-	e, err := GetRequestBody[error](rp)
+	var e *error
+	err = GetRequestBody(rp, &e)
 	s.ErrorIs(err, errBadType)
 	s.Nil(e)
 
 	req, _ = http.NewRequest(http.MethodPost, "/http/body", nil)
 	rp = getHTTPRequestDetails(context.Background(), req, nil)
-	rb, err = GetRequestBody[testBody](rp)
+	err = GetRequestBody(rp, &rb)
 	s.ErrorIs(err, ErrNoBody)
 	s.Nil(rb)
 
 	body = "null"
 	req, _ = http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
 	rp = getHTTPRequestDetails(context.Background(), req, nil)
-	rb, err = GetRequestBody[testBody](rp)
+	err = GetRequestBody(rp, &rb)
 	s.ErrorIs(err, ErrNoBody)
 	s.Nil(rb)
 }
 
 func (s *interceptorTestSuite) TestGrpcWithBody() {
 	rp := getGRPCRequestDetails(context.Background(), nil, "/grpc/body", &testBody{N: 42})
+	var rb *testBody
 
-	rb, err := GetRequestBody[testBody](rp)
+	err := GetRequestBody(rp, &rb)
 	if s.NoError(err) {
 		s.NotNil(rb)
 		s.Equal(42, rb.N)
@@ -188,7 +191,7 @@ func (s *interceptorTestSuite) TestGrpcWithBody() {
 
 	rp = getGRPCRequestDetails(context.Background(), nil, "/grpc/body", nil)
 
-	rb, err = GetRequestBody[testBody](rp)
+	err = GetRequestBody(rp, &rb)
 	s.ErrorIs(err, ErrNoBody)
 	s.Nil(rb)
 }
