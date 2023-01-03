@@ -26,7 +26,7 @@ var (
 )
 
 // apiCall enables API Call events for the API paths specified in the
-// trackedPaths set ("*" value enables all paths) and have no prefix from the
+// trackedPaths ("*" value enables all paths) and have no match in the
 // ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
 	if !rp.HasPathIn(ignoredPaths) && rp.HasPathIn(trackedPaths) {
@@ -53,14 +53,14 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 	}
 
 	props["Code"] = rp.Code
-	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
-		props["Cluster Type"] = req.GetType().String()
-		props["Cluster ID"] = req.GetId()
-		props["Managed By"] = req.GetManagedBy().String()
+	if cluster, err := phonehome.GetRequestBody[storage.Cluster](rp); err == nil {
+		props["Cluster Type"] = cluster.GetType().String()
+		props["Cluster ID"] = cluster.GetId()
+		props["Managed By"] = cluster.GetManagedBy().String()
 		uninitializedClustersLock.Lock()
 		defer uninitializedClustersLock.Unlock()
-		if req.GetHealthStatus().GetSensorHealthStatus() == storage.ClusterHealthStatus_UNINITIALIZED {
-			uninitializedClusters.Add(req.GetId())
+		if cluster.GetHealthStatus().GetSensorHealthStatus() == storage.ClusterHealthStatus_UNINITIALIZED {
+			uninitializedClusters.Add(cluster.GetId())
 		}
 	}
 	return true
@@ -103,7 +103,7 @@ func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool 
 	return false
 }
 
-// roxctl enables the roxctl event and adds specific properties.
+// roxctl enables the roxctl event.
 func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
 	if !strings.Contains(rp.UserAgent, "roxctl") {
 		return false
