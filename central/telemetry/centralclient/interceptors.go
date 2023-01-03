@@ -190,7 +190,7 @@ func createPermissionSet(rp *phonehome.RequestParams, props map[string]any) bool
 var postRole = &phonehome.ServiceMethod{
 	GRPCMethod: "/v1.RoleService/CreateRole",
 	HTTPMethod: http.MethodPost,
-	HTTPPath:   "/v1/roles",
+	HTTPPath:   "/v1/roles/*",
 }
 
 var putRole = &phonehome.ServiceMethod{
