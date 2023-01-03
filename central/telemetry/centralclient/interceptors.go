@@ -19,30 +19,31 @@ var (
 	uninitializedClustersLock = &sync.Mutex{}
 
 	interceptors = map[string][]phonehome.Interceptor{
-		"API Call":            {apiCall},
+		"API Call":            {apiCall, addDefaultProps},
 		"Cluster Registered":  {clusterRegistered},
 		"Cluster Initialized": {clusterInitialized},
-		"roxctl":              {roxctl},
+		"roxctl":              {roxctl, addDefaultProps},
 
-		"Create Auth Provider":  {createAuthProvider},
-		"Create Access Scope":   {createSimpleAccessScope},
-		"Create Permission Set": {createPermissionSet},
-		"Create Role":           {createRole},
+		"Create Auth Provider":  {createAuthProvider, addDefaultProps},
+		"Create Access Scope":   {createSimpleAccessScope, addDefaultProps},
+		"Create Permission Set": {createPermissionSet, addDefaultProps},
+		"Create Role":           {createRole, addDefaultProps},
 	}
 )
+
+func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
+	props["Path"] = rp.Path
+	props["Code"] = rp.Code
+	props["Method"] = rp.Method
+	props["User-Agent"] = rp.UserAgent
+	return true
+}
 
 // apiCall enables API Call events for the API paths specified in the
 // trackedPaths ("*" value enables all paths) and have no match in the
 // ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
-	if !rp.HasPathIn(ignoredPaths) && rp.HasPathIn(trackedPaths) {
-		props["Path"] = rp.Path
-		props["Code"] = rp.Code
-		props["User-Agent"] = rp.UserAgent
-		props["Method"] = rp.Method
-		return true
-	}
-	return false
+	return !rp.HasPathIn(ignoredPaths) && rp.HasPathIn(trackedPaths)
 }
 
 var postCluster = &phonehome.ServiceMethod{
@@ -111,14 +112,7 @@ func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool 
 
 // roxctl enables the roxctl event.
 func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
-	if !strings.Contains(rp.UserAgent, "roxctl") {
-		return false
-	}
-	props["Path"] = rp.Path
-	props["Code"] = rp.Code
-	props["User-Agent"] = rp.UserAgent
-	props["Method"] = rp.Method
-	return true
+	return strings.Contains(rp.UserAgent, "roxctl")
 }
 
 //
@@ -142,14 +136,12 @@ var putAuthProvider = &phonehome.ServiceMethod{
 func createAuthProvider(rp *phonehome.RequestParams, props map[string]any) bool {
 	switch {
 	case rp.Is(postAuthProvider):
-		ap := getRequestPtr(v1.AuthProviderServiceServer.PostAuthProvider)
-		if err := phonehome.GetRequestBody(rp, &ap); err == nil {
+		if ap, err := phonehome.GetGRPCRequestBody(v1.AuthProviderServiceServer.PostAuthProvider, rp); err == nil {
 			props["Type"] = ap.GetProvider().GetType()
 		}
 		return true
 	case rp.Is(putAuthProvider):
-		ap := getRequestPtr(v1.AuthProviderServiceServer.PutAuthProvider)
-		if err := phonehome.GetRequestBody(rp, &ap); err == nil {
+		if ap, err := phonehome.GetGRPCRequestBody(v1.AuthProviderServiceServer.PutAuthProvider, rp); err == nil {
 			props["Type"] = ap.GetType()
 		}
 		return true
