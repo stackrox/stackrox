@@ -373,7 +373,8 @@
           "type": "string"
         },
         "clusterRole": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether\nthe binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is\nempty and cluster role is true, the binding is a cluster role binding."
         },
         "labels": {
           "type": "object",
