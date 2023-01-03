@@ -69,6 +69,10 @@ function AccessControl(): ReactElement {
                                 <b>Policy, VulnerabilityReports</b>
                             </ListItem>
                         </List>
+                        <p>
+                            For additional information on deprecation and required actions, please
+                            consolidate the release notes.
+                        </p>
                     </>
                 }
             />
