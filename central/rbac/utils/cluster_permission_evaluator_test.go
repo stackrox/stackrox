@@ -97,7 +97,6 @@ func TestIsClusterAdmin(t *testing.T) {
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
-		AddNullField(search.Namespace).
 		AddExactMatches(search.SubjectName, "foo").
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, true).ProtoQuery()
@@ -194,7 +193,6 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
-		AddNullField(search.Namespace).
 		AddExactMatches(search.SubjectName, "foo").
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, true).ProtoQuery()

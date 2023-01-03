@@ -231,7 +231,6 @@ func TestPermissionScore(t *testing.T) {
 			clusterScopeQuery := search.NewQueryBuilder().
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 				AddExactMatches(search.SubjectName, c.sa.Name).
-				AddNullField(search.Namespace).
 				AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 				AddBools(search.ClusterRole, true).ProtoQuery()
 
