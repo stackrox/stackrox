@@ -132,17 +132,10 @@ function CollectionsTable({
             <TableComposable variant={TableVariant.compact}>
                 <Thead>
                     <Tr>
-                        <Th
-                            modifier="wrap"
-                            width={25}
-                            sort={getEnabledSortParams('Collection Name')}
-                        >
+                        <Th modifier="wrap" sort={getEnabledSortParams('Collection Name')}>
                             Collection
                         </Th>
                         <Th modifier="wrap">Description</Th>
-                        <Th modifier="wrap" width={10}>
-                            In use
-                        </Th>
                         <Th aria-label="Row actions" />
                     </Tr>
                 </Thead>
@@ -166,7 +159,7 @@ function CollectionsTable({
                         </Tr>
                     )}
                     {collections.map((collection) => {
-                        const { id, name, description, inUse } = collection;
+                        const { id, name, description } = collection;
                         const actionItems = [
                             {
                                 title: 'Edit collection',
@@ -180,9 +173,8 @@ function CollectionsTable({
                                 isSeparator: true,
                             },
                             {
-                                title: inUse ? 'Cannot delete (in use)' : 'Delete collection',
+                                title: 'Delete collection',
                                 onClick: () => setCollectionToDelete(collection),
-                                isDisabled: inUse,
                             },
                         ];
 
@@ -201,7 +193,6 @@ function CollectionsTable({
                                 <Td dataLabel="Description">
                                     <Truncate content={description || '-'} tooltipPosition="top" />
                                 </Td>
-                                <Td dataLabel="In Use">{inUse ? 'Yes' : 'No'}</Td>
                                 {hasWriteAccess && <Td actions={{ items: actionItems }} />}
                             </Tr>
                         );

@@ -28,7 +28,6 @@ function DeploymentRuleSelector({ defaultSelector, onChange }) {
             collection={{
                 name: '',
                 description: '',
-                inUse: false,
                 resourceSelector: {
                     Deployment: { type: 'All' },
                     Namespace: { type: 'All' },
