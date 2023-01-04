@@ -44,9 +44,7 @@ func MakeClusterEvaluator(roles []*storage.K8SRole, bindings []*storage.K8SRoleB
 	// Collect cluster role bindings.
 	var clusterBindings []*storage.K8SRoleBinding
 	for _, binding := range bindings {
-		// A binding is only binding cluster-wide if cluster role is true _and_ namespace is empty. Namespaced
-		// bindings may bind to cluster roles as well.
-		if binding.GetClusterRole() && binding.GetNamespace() == "" {
+		if IsClusterRoleBinding(binding) {
 			clusterBindings = append(clusterBindings, binding)
 		}
 	}
