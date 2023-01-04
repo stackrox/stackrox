@@ -53,7 +53,7 @@ func (b *indexerImpl) AddImageIntegrations(_ []*storage.ImageIntegration) error 
 	return nil
 }
 
-func (b *indexerImpl) DeleteImageIntegration(identifier string) error {
+func (b *indexerImpl) DeleteImageIntegration(id string) error {
 	return nil
 }
 

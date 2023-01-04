@@ -53,7 +53,7 @@ func (b *indexerImpl) AddNodeComponentEdges(_ []*storage.NodeComponentEdge) erro
 	return nil
 }
 
-func (b *indexerImpl) DeleteNodeComponentEdge(identifier string) error {
+func (b *indexerImpl) DeleteNodeComponentEdge(id string) error {
 	return nil
 }
 

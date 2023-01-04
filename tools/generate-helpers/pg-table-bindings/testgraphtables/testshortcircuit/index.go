@@ -53,7 +53,7 @@ func (b *indexerImpl) AddTestShortCircuits(_ []*storage.TestShortCircuit) error 
 	return nil
 }
 
-func (b *indexerImpl) DeleteTestShortCircuit(identifier string) error {
+func (b *indexerImpl) DeleteTestShortCircuit(id string) error {
 	return nil
 }
 

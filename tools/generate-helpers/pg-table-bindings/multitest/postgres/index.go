@@ -53,7 +53,7 @@ func (b *indexerImpl) AddTestMultiKeyStructs(_ []*storage.TestMultiKeyStruct) er
 	return nil
 }
 
-func (b *indexerImpl) DeleteTestMultiKeyStruct(identifier string) error {
+func (b *indexerImpl) DeleteTestMultiKeyStruct(id string) error {
 	return nil
 }
 

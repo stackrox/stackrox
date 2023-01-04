@@ -53,7 +53,7 @@ func (b *indexerImpl) AddNetworkBaselines(_ []*storage.NetworkBaseline) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteNetworkBaseline(identifier string) error {
+func (b *indexerImpl) DeleteNetworkBaseline(id string) error {
 	return nil
 }
 

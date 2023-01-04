@@ -53,7 +53,7 @@ func (b *indexerImpl) AddNodeCVEs(_ []*storage.NodeCVE) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteNodeCVE(identifier string) error {
+func (b *indexerImpl) DeleteNodeCVE(id string) error {
 	return nil
 }
 

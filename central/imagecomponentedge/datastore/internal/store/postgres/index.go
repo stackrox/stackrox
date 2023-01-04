@@ -53,7 +53,7 @@ func (b *indexerImpl) AddImageComponentEdges(_ []*storage.ImageComponentEdge) er
 	return nil
 }
 
-func (b *indexerImpl) DeleteImageComponentEdge(identifier string) error {
+func (b *indexerImpl) DeleteImageComponentEdge(id string) error {
 	return nil
 }
 

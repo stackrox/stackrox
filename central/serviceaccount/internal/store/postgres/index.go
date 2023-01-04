@@ -53,7 +53,7 @@ func (b *indexerImpl) AddServiceAccounts(_ []*storage.ServiceAccount) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteServiceAccount(identifier string) error {
+func (b *indexerImpl) DeleteServiceAccount(id string) error {
 	return nil
 }
 

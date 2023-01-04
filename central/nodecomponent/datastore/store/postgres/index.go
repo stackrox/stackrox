@@ -53,7 +53,7 @@ func (b *indexerImpl) AddNodeComponents(_ []*storage.NodeComponent) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteNodeComponent(identifier string) error {
+func (b *indexerImpl) DeleteNodeComponent(id string) error {
 	return nil
 }
 

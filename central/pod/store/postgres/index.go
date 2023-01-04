@@ -53,7 +53,7 @@ func (b *indexerImpl) AddPods(_ []*storage.Pod) error {
 	return nil
 }
 
-func (b *indexerImpl) DeletePod(identifier string) error {
+func (b *indexerImpl) DeletePod(id string) error {
 	return nil
 }
 

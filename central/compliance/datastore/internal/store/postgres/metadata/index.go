@@ -53,7 +53,7 @@ func (b *indexerImpl) AddComplianceRunMetadatas(_ []*storage.ComplianceRunMetada
 	return nil
 }
 
-func (b *indexerImpl) DeleteComplianceRunMetadata(identifier string) error {
+func (b *indexerImpl) DeleteComplianceRunMetadata(id string) error {
 	return nil
 }
 

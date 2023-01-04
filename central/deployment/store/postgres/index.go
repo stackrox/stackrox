@@ -53,7 +53,7 @@ func (b *indexerImpl) AddDeployments(_ []*storage.Deployment) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteDeployment(identifier string) error {
+func (b *indexerImpl) DeleteDeployment(id string) error {
 	return nil
 }
 

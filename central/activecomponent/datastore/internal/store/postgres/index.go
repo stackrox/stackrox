@@ -53,7 +53,7 @@ func (b *indexerImpl) AddActiveComponents(_ []*storage.ActiveComponent) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteActiveComponent(identifier string) error {
+func (b *indexerImpl) DeleteActiveComponent(id string) error {
 	return nil
 }
 

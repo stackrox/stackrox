@@ -53,7 +53,7 @@ func (b *indexerImpl) AddClusterCVEs(_ []*storage.ClusterCVE) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteClusterCVE(identifier string) error {
+func (b *indexerImpl) DeleteClusterCVE(id string) error {
 	return nil
 }
 

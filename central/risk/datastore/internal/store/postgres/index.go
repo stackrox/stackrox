@@ -53,7 +53,7 @@ func (b *indexerImpl) AddRisks(_ []*storage.Risk) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteRisk(identifier string) error {
+func (b *indexerImpl) DeleteRisk(id string) error {
 	return nil
 }
 

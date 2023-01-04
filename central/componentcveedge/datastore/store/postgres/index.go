@@ -53,7 +53,7 @@ func (b *indexerImpl) AddComponentCVEEdges(_ []*storage.ComponentCVEEdge) error 
 	return nil
 }
 
-func (b *indexerImpl) DeleteComponentCVEEdge(identifier string) error {
+func (b *indexerImpl) DeleteComponentCVEEdge(id string) error {
 	return nil
 }
 

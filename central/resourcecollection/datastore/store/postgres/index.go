@@ -53,7 +53,7 @@ func (b *indexerImpl) AddResourceCollections(_ []*storage.ResourceCollection) er
 	return nil
 }
 
-func (b *indexerImpl) DeleteResourceCollection(identifier string) error {
+func (b *indexerImpl) DeleteResourceCollection(id string) error {
 	return nil
 }
 

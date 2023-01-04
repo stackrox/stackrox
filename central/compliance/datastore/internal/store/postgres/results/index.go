@@ -53,7 +53,7 @@ func (b *indexerImpl) AddComplianceRunResultss(_ []*storage.ComplianceRunResults
 	return nil
 }
 
-func (b *indexerImpl) DeleteComplianceRunResults(identifier string) error {
+func (b *indexerImpl) DeleteComplianceRunResults(id string) error {
 	return nil
 }
 

@@ -53,7 +53,7 @@ func (b *indexerImpl) AddComplianceDomains(_ []*storage.ComplianceDomain) error 
 	return nil
 }
 
-func (b *indexerImpl) DeleteComplianceDomain(identifier string) error {
+func (b *indexerImpl) DeleteComplianceDomain(id string) error {
 	return nil
 }
 

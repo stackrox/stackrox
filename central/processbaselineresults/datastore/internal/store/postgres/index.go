@@ -53,7 +53,7 @@ func (b *indexerImpl) AddProcessBaselineResultss(_ []*storage.ProcessBaselineRes
 	return nil
 }
 
-func (b *indexerImpl) DeleteProcessBaselineResults(identifier string) error {
+func (b *indexerImpl) DeleteProcessBaselineResults(id string) error {
 	return nil
 }
 

@@ -54,7 +54,7 @@ func (b *indexerImpl) Add{{pluralType .TrimmedType}}(_ []*{{.Type}}) error {
 	return nil
 }
 
-func (b *indexerImpl) Delete{{.TrimmedType}}(identifier string) error {
+func (b *indexerImpl) Delete{{.TrimmedType}}(id string) error {
 	return nil
 }
 

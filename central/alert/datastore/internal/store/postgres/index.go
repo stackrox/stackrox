@@ -53,7 +53,7 @@ func (b *indexerImpl) AddAlerts(_ []*storage.Alert) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteAlert(identifier string) error {
+func (b *indexerImpl) DeleteAlert(id string) error {
 	return nil
 }
 

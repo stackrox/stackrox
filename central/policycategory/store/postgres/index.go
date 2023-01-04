@@ -53,7 +53,7 @@ func (b *indexerImpl) AddPolicyCategories(_ []*storage.PolicyCategory) error {
 	return nil
 }
 
-func (b *indexerImpl) DeletePolicyCategory(identifier string) error {
+func (b *indexerImpl) DeletePolicyCategory(id string) error {
 	return nil
 }
 

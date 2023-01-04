@@ -53,7 +53,7 @@ func (b *indexerImpl) AddTestG3GrandChild1s(_ []*storage.TestG3GrandChild1) erro
 	return nil
 }
 
-func (b *indexerImpl) DeleteTestG3GrandChild1(identifier string) error {
+func (b *indexerImpl) DeleteTestG3GrandChild1(id string) error {
 	return nil
 }
 

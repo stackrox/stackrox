@@ -53,7 +53,7 @@ func (b *indexerImpl) AddImageCVEs(_ []*storage.ImageCVE) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteImageCVE(identifier string) error {
+func (b *indexerImpl) DeleteImageCVE(id string) error {
 	return nil
 }
 

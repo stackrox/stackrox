@@ -53,7 +53,7 @@ func (b *indexerImpl) AddClusterHealthStatuss(_ []*storage.ClusterHealthStatus) 
 	return nil
 }
 
-func (b *indexerImpl) DeleteClusterHealthStatus(identifier string) error {
+func (b *indexerImpl) DeleteClusterHealthStatus(id string) error {
 	return nil
 }
 

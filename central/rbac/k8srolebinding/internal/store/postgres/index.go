@@ -53,7 +53,7 @@ func (b *indexerImpl) AddK8SRoleBindings(_ []*storage.K8SRoleBinding) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteK8SRoleBinding(identifier string) error {
+func (b *indexerImpl) DeleteK8SRoleBinding(id string) error {
 	return nil
 }
 
