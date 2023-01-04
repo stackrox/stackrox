@@ -126,36 +126,6 @@ func New(db *pgxpool.Pool) Store {
     }
 }
 
-//// Used for testing
-
-{{ if not $inMigration }}
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-{{- end}}
-
-{{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
-
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-    {{template "dropTableFunctionName" .Schema}}(ctx, db)
-}
-
-{{- define "dropTable"}}
-{{- $schema := . }}
-func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
-    _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
-    {{range $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
-    {{end}}
-}
-{{range $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
-{{- end}}
-
-{{template "dropTable" .Schema}}
-
-//// Used for testing - END
-
 //// Helper functions
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
@@ -352,6 +322,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 {{- if not .JoinTable }}
 {{- if not .NoCopyFrom }}
+
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
@@ -411,6 +382,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 //// Interface functions
 
 {{- if not .JoinTable }}
+
+// Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     {{- if not $inMigration}}
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
@@ -444,6 +417,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 {{- end }}
 
 {{- if not .JoinTable }}
+
+// UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     {{- if not $inMigration}}
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
@@ -501,7 +476,8 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 {{- end }}
 
 {{- if not .JoinTable }}
-// Delete removes the specified ID from the store
+
+// Delete removes the object associated to the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
@@ -552,9 +528,9 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 }
 {{- end}}
 
-
 {{- if not .JoinTable }}
-// DeleteByQuery removes the objects based on the passed query
+
+// DeleteByQuery removes the objects from the store based on the passed query.
 func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
@@ -601,7 +577,8 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 
 {{- if $singlePK }}
 {{- if not .JoinTable }}
-// Delete removes the specified IDs from the store
+
+// DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
@@ -670,7 +647,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
 {{- end }}
 {{- end }}
 
-// Count returns the number of objects in the store
+// Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "{{.TrimmedType}}")
@@ -709,7 +686,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the ID exists in the store
+// Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
@@ -760,7 +737,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 	return count > 0, err
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
@@ -815,7 +792,8 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 
 {{- if $singlePK }}
 {{- if .SearchCategory }}
-// GetByQuery returns the objects matching the query
+
+// GetByQuery returns the objects from the store matching the query.
 func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "{{.TrimmedType}}")
@@ -871,7 +849,8 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
 {{- end }}
 
 {{- if $singlePK }}
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+
+// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.TrimmedType}}")
@@ -950,7 +929,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
 
 {{- if $singlePK }}
 
-// GetIDs returns all the IDs for the store
+// GetIDs returns all the IDs for the store.
 func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
@@ -997,6 +976,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 {{- end }}
 
 {{- if .GetAll }}
+
+// GetAll retrieves all objects from the store.
 func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.TrimmedType}}")
@@ -1011,7 +992,7 @@ func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
 }
 {{- end}}
 
-// Walk iterates over all of the objects in the store and applies the closure
+// Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error {
     var sacQueryFilter *v1.Query
 {{- if not $inMigration}}
@@ -1068,21 +1049,59 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 //// Stubs for satisfying legacy interfaces
 
 {{- if eq .TrimmedType "Policy" }}
+
+// RenamePolicyCategory is not implemented in postgres mode.
 func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
     return errors.New("unimplemented")
 }
 
+// DeletePolicyCategory is not implemented in postgres mode.
 func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
     return errors.New("unimplemented")
 }
 {{- end }}
 
-// AckKeysIndexed acknowledges the passed keys were indexed
+// AckKeysIndexed acknowledges the passed keys were indexed.
 func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
-// GetKeysToIndex returns the keys that need to be indexed
+// GetKeysToIndex returns the keys that need to be indexed.
 func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
+
+//// Interface functions - END
+
+//// Used for testing
+
+{{- if not $inMigration }}
+
+// CreateTableAndNewStore returns a new Store instance for testing.
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+{{- end}}
+
+{{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
+
+
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+    {{template "dropTableFunctionName" .Schema}}(ctx, db)
+}
+
+{{- define "dropTable"}}
+{{- $schema := . }}
+func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
+    _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
+    {{range $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
+    {{end}}
+}
+{{range $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
+{{- end}}
+
+{{template "dropTable" .Schema}}
+
+//// Used for testing - END

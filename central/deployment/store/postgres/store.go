@@ -80,61 +80,6 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-//// Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableDeployments(ctx, db)
-}
-
-func dropTableDeployments(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments CASCADE")
-	dropTableDeploymentsContainers(ctx, db)
-	dropTableDeploymentsPorts(ctx, db)
-
-}
-
-func dropTableDeploymentsContainers(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers CASCADE")
-	dropTableDeploymentsContainersEnvs(ctx, db)
-	dropTableDeploymentsContainersVolumes(ctx, db)
-	dropTableDeploymentsContainersSecrets(ctx, db)
-
-}
-
-func dropTableDeploymentsContainersEnvs(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_envs CASCADE")
-
-}
-
-func dropTableDeploymentsContainersVolumes(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_volumes CASCADE")
-
-}
-
-func dropTableDeploymentsContainersSecrets(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_secrets CASCADE")
-
-}
-
-func dropTableDeploymentsPorts(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_ports CASCADE")
-	dropTableDeploymentsPortsExposureInfos(ctx, db)
-
-}
-
-func dropTableDeploymentsPortsExposureInfos(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_ports_exposure_infos CASCADE")
-
-}
-
-//// Used for testing - END
-
 //// Helper functions
 
 func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.Deployment) error {
@@ -928,6 +873,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	}
 	return conn, conn.Release, nil
 }
+
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Deployment) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Deployment")
 	if err != nil {
@@ -983,6 +929,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Deployment) err
 //// Helper functions - END
 
 //// Interface functions
+
+// Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Deployment) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Deployment")
 
@@ -996,6 +944,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Deployment) error {
 		return s.upsert(ctx, obj)
 	})
 }
+
+// UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Deployment")
 
@@ -1027,7 +977,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) 
 	})
 }
 
-// Delete removes the specified ID from the store
+// Delete removes the object associated to the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
@@ -1050,7 +1000,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
-// DeleteByQuery removes the objects based on the passed query
+// DeleteByQuery removes the objects from the store based on the passed query.
 func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
@@ -1073,7 +1023,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
-// Delete removes the specified IDs from the store
+// DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Deployment")
 
@@ -1120,7 +1070,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 	return nil
 }
 
-// Count returns the number of objects in the store
+// Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Deployment")
 
@@ -1140,7 +1090,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the ID exists in the store
+// Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Deployment")
 
@@ -1166,7 +1116,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return count > 0, err
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Deployment, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Deployment")
 
@@ -1195,7 +1145,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Deployment, bo
 	return data, true, nil
 }
 
-// GetByQuery returns the objects matching the query
+// GetByQuery returns the objects from the store matching the query.
 func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Deployment, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "Deployment")
 
@@ -1228,7 +1178,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	return rows, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.Deployment, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
@@ -1284,7 +1234,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 	return elems, missingIndices, nil
 }
 
-// GetIDs returns all the IDs for the store
+// GetIDs returns all the IDs for the store.
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.DeploymentIDs")
 	var sacQueryFilter *v1.Query
@@ -1311,7 +1261,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return identifiers, nil
 }
 
-// Walk iterates over all of the objects in the store and applies the closure
+// Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Deployment) error) error {
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
@@ -1350,12 +1300,70 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Deployment) e
 
 //// Stubs for satisfying legacy interfaces
 
-// AckKeysIndexed acknowledges the passed keys were indexed
+// AckKeysIndexed acknowledges the passed keys were indexed.
 func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
-// GetKeysToIndex returns the keys that need to be indexed
+// GetKeysToIndex returns the keys that need to be indexed.
 func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
+
+//// Interface functions - END
+
+//// Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing.
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableDeployments(ctx, db)
+}
+
+func dropTableDeployments(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments CASCADE")
+	dropTableDeploymentsContainers(ctx, db)
+	dropTableDeploymentsPorts(ctx, db)
+
+}
+
+func dropTableDeploymentsContainers(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers CASCADE")
+	dropTableDeploymentsContainersEnvs(ctx, db)
+	dropTableDeploymentsContainersVolumes(ctx, db)
+	dropTableDeploymentsContainersSecrets(ctx, db)
+
+}
+
+func dropTableDeploymentsContainersEnvs(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_envs CASCADE")
+
+}
+
+func dropTableDeploymentsContainersVolumes(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_volumes CASCADE")
+
+}
+
+func dropTableDeploymentsContainersSecrets(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_secrets CASCADE")
+
+}
+
+func dropTableDeploymentsPorts(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_ports CASCADE")
+	dropTableDeploymentsPortsExposureInfos(ctx, db)
+
+}
+
+func dropTableDeploymentsPortsExposureInfos(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_ports_exposure_infos CASCADE")
+
+}
+
+//// Used for testing - END

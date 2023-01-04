@@ -78,25 +78,6 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-//// Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableExternalBackups(ctx, db)
-}
-
-func dropTableExternalBackups(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS external_backups CASCADE")
-
-}
-
-//// Used for testing - END
-
 //// Helper functions
 
 func insertIntoExternalBackups(ctx context.Context, batch *pgx.Batch, obj *storage.ExternalBackup) error {
@@ -189,6 +170,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	}
 	return conn, conn.Release, nil
 }
+
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ExternalBackup) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "ExternalBackup")
 	if err != nil {
@@ -244,6 +226,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ExternalBackup)
 //// Helper functions - END
 
 //// Interface functions
+
+// Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ExternalBackup) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ExternalBackup")
 
@@ -256,6 +240,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ExternalBackup) err
 		return s.upsert(ctx, obj)
 	})
 }
+
+// UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ExternalBackup) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ExternalBackup")
 
@@ -278,7 +264,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ExternalBack
 	})
 }
 
-// Delete removes the specified ID from the store
+// Delete removes the object associated to the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ExternalBackup")
 
@@ -296,7 +282,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
-// DeleteByQuery removes the objects based on the passed query
+// DeleteByQuery removes the objects from the store based on the passed query.
 func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ExternalBackup")
 
@@ -314,7 +300,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
-// Delete removes the specified IDs from the store
+// DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ExternalBackup")
 
@@ -356,7 +342,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 	return nil
 }
 
-// Count returns the number of objects in the store
+// Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ExternalBackup")
 
@@ -370,7 +356,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the ID exists in the store
+// Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ExternalBackup")
 
@@ -391,7 +377,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return count > 0, err
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ExternalBackup, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ExternalBackup")
 
@@ -415,7 +401,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ExternalBackup
 	return data, true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.ExternalBackup, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ExternalBackup")
 
@@ -463,7 +449,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 	return elems, missingIndices, nil
 }
 
-// GetIDs returns all the IDs for the store
+// GetIDs returns all the IDs for the store.
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ExternalBackupIDs")
 	var sacQueryFilter *v1.Query
@@ -484,6 +470,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 
 	return identifiers, nil
 }
+
+// GetAll retrieves all objects from the store.
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.ExternalBackup, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ExternalBackup")
 
@@ -495,7 +483,7 @@ func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.ExternalBackup, erro
 	return objs, err
 }
 
-// Walk iterates over all of the objects in the store and applies the closure
+// Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ExternalBackup) error) error {
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
@@ -526,12 +514,34 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ExternalBacku
 
 //// Stubs for satisfying legacy interfaces
 
-// AckKeysIndexed acknowledges the passed keys were indexed
+// AckKeysIndexed acknowledges the passed keys were indexed.
 func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
-// GetKeysToIndex returns the keys that need to be indexed
+// GetKeysToIndex returns the keys that need to be indexed.
 func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
+
+//// Interface functions - END
+
+//// Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing.
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableExternalBackups(ctx, db)
+}
+
+func dropTableExternalBackups(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS external_backups CASCADE")
+
+}
+
+//// Used for testing - END

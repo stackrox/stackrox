@@ -80,31 +80,6 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-//// Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTablePods(ctx, db)
-}
-
-func dropTablePods(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods CASCADE")
-	dropTablePodsLiveInstances(ctx, db)
-
-}
-
-func dropTablePodsLiveInstances(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods_live_instances CASCADE")
-
-}
-
-//// Used for testing - END
-
 //// Helper functions
 
 func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) error {
@@ -299,6 +274,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	}
 	return conn, conn.Release, nil
 }
+
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Pod) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Pod")
 	if err != nil {
@@ -354,6 +330,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Pod) error {
 //// Helper functions - END
 
 //// Interface functions
+
+// Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Pod) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Pod")
 
@@ -367,6 +345,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Pod) error {
 		return s.upsert(ctx, obj)
 	})
 }
+
+// UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Pod) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Pod")
 
@@ -398,7 +378,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Pod) error {
 	})
 }
 
-// Delete removes the specified ID from the store
+// Delete removes the object associated to the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Pod")
 
@@ -421,7 +401,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
-// DeleteByQuery removes the objects based on the passed query
+// DeleteByQuery removes the objects from the store based on the passed query.
 func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Pod")
 
@@ -444,7 +424,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
-// Delete removes the specified IDs from the store
+// DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Pod")
 
@@ -491,7 +471,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 	return nil
 }
 
-// Count returns the number of objects in the store
+// Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Pod")
 
@@ -511,7 +491,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the ID exists in the store
+// Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Pod")
 
@@ -537,7 +517,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return count > 0, err
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Pod, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Pod")
 
@@ -566,7 +546,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Pod, bool, err
 	return data, true, nil
 }
 
-// GetByQuery returns the objects matching the query
+// GetByQuery returns the objects from the store matching the query.
 func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Pod, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "Pod")
 
@@ -599,7 +579,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	return rows, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.Pod, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Pod")
 
@@ -655,7 +635,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 	return elems, missingIndices, nil
 }
 
-// GetIDs returns all the IDs for the store
+// GetIDs returns all the IDs for the store.
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.PodIDs")
 	var sacQueryFilter *v1.Query
@@ -682,7 +662,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return identifiers, nil
 }
 
-// Walk iterates over all of the objects in the store and applies the closure
+// Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Pod) error) error {
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
@@ -721,12 +701,40 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Pod) error) e
 
 //// Stubs for satisfying legacy interfaces
 
-// AckKeysIndexed acknowledges the passed keys were indexed
+// AckKeysIndexed acknowledges the passed keys were indexed.
 func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
-// GetKeysToIndex returns the keys that need to be indexed
+// GetKeysToIndex returns the keys that need to be indexed.
 func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
+
+//// Interface functions - END
+
+//// Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing.
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTablePods(ctx, db)
+}
+
+func dropTablePods(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods CASCADE")
+	dropTablePodsLiveInstances(ctx, db)
+
+}
+
+func dropTablePodsLiveInstances(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods_live_instances CASCADE")
+
+}
+
+//// Used for testing - END
