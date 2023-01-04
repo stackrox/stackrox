@@ -1,9 +1,5 @@
 #!/usr/bin/env -S python3 -u
 
-# ROX-14056 - Disabled
-import sys
-sys.exit(0)
-
 """
 Run version compatibility tests
 """
