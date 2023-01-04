@@ -127,3 +127,4 @@ If you need a specific image from DockerHub, pull it, retag as
 `quay.io/rhacs-eng/qa:<your-tag-here>` and push. 
 Then consume the new image from `quay.io/rhacs-eng/qa:<your-tag-here>`
 in tests. Such pulls shouldn't get throttled.
+
