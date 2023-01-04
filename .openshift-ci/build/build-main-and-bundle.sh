@@ -97,7 +97,7 @@ create_main_bundle_and_scripts() {
     fi
 
     DEBUG_BUILD="${DEBUG_BUILD}" \
-       "$ROOT/image/rhel/create-bundle.sh" image "local" "local" image/rhel
+       "$ROOT/image/rhel/create-bundle.sh" image "local" "local" image/rhel "true"
 }
 
 cleanup_image() {
