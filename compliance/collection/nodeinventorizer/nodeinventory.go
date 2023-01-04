@@ -42,7 +42,6 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 }
 
 func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Components {
-
 	if c == nil {
 		return nil
 	}
@@ -66,7 +65,7 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 	}
 	v1rhelc := make([]*scannerV1.RHELComponent, 0, len(rc.Packages))
 	for _, rhelc := range rc.Packages {
-		rhelcId, err := hashstructure.Hash(v1rhelc, hashstructure.FormatV2, nil)
+		rhelcId, err := hashstructure.Hash(rhelc, hashstructure.FormatV2, nil)
 		if err != nil {
 			log.Warnf("Could not create id for RHELComponent %d", rhelc.Name)
 			rhelcId = 0
