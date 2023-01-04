@@ -175,6 +175,9 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 			Name:          roleName,
 			Description:   attributes.description,
 			AccessScopeId: rolePkg.AccessScopeIncludeAll.GetId(),
+			Traits: &storage.Traits{
+				Origin: storage.Traits_DEFAULT,
+			},
 		}
 
 		permissionSet := &storage.PermissionSet{
@@ -182,6 +185,9 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 			Name:             role.Name,
 			Description:      role.Description,
 			ResourceToAccess: resourceToAccess,
+			Traits: &storage.Traits{
+				Origin: storage.Traits_DEFAULT,
+			},
 		}
 		role.PermissionSetId = permissionSet.Id
 		permissionSets = append(permissionSets, permissionSet)

@@ -53,6 +53,9 @@ var (
 		Name:        "Deny All",
 		Description: "No access to scoped resources",
 		Rules:       &storage.SimpleAccessScope_Rules{},
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
 	}
 
 	// AccessScopeIncludeAll gives access to all resources. It is checked by ID, as
@@ -61,6 +64,9 @@ var (
 		Id:          getAccessScopeIncludeAllID(),
 		Name:        "Unrestricted",
 		Description: "Access to all clusters and namespaces",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
 	}
 )
 
