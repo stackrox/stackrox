@@ -31,6 +31,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
 import PageTitle from 'Components/PageTitle';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { CollectionPageAction } from './collections.utils';
 import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import useCollection from './hooks/useCollection';
@@ -111,10 +112,11 @@ function CollectionsFormPage({
         deleteCollection(deleteId)
             .request.then(history.goBack)
             .catch((err) => {
+                const message = getAxiosErrorMessage(err);
                 addToast(
                     `Could not delete collection ${data?.collection?.name ?? ''}`,
                     'danger',
-                    err.message
+                    message
                 );
             })
             .finally(() => {
@@ -268,14 +270,11 @@ function CollectionsFormPage({
                                                 <DropdownItem
                                                     key="Delete collection"
                                                     component="button"
-                                                    isDisabled={data.collection.inUse}
                                                     onClick={() =>
                                                         setDeleteId(pageAction.collectionId)
                                                     }
                                                 >
-                                                    {data.collection.inUse
-                                                        ? 'Cannot delete (in use)'
-                                                        : 'Delete collection'}
+                                                    Delete collection
                                                 </DropdownItem>,
                                             ]}
                                         />

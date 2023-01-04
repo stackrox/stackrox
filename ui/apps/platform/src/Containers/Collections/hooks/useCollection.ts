@@ -11,7 +11,6 @@ import {
 const defaultCollectionData: Omit<Collection, 'id'> = {
     name: '',
     description: '',
-    inUse: false,
     embeddedCollections: [],
     resourceSelectors: [],
 };

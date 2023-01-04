@@ -81,7 +81,6 @@ export type ClientCollection = {
     id?: string;
     name: string;
     description: string;
-    inUse: boolean;
     resourceSelector: Record<SelectorEntityType, ScopedResourceSelector>;
     embeddedCollectionIds: string[];
 };
