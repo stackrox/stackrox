@@ -67,6 +67,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
+	portProcesses = normalizePLOPs(portProcesses)
+
 	// First query all needed process indicators in one go
 	for _, val := range portProcesses {
 		if val.Process == nil {
@@ -263,4 +265,93 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 	}
 
 	return nil
+}
+
+// OpenClosedPLOPs: Convenient type alias to use in PLOP normalization
+type OpenClosedPLOPs struct {
+	open   []*storage.ProcessListeningOnPortFromSensor
+	closed []*storage.ProcessListeningOnPortFromSensor
+}
+
+// normalizePLOPs
+//
+// In the batch of PLOP events there could be many open & close events for the
+// same combination of port, protocol, process. Find and squash them into a
+// single event.
+//
+// Open/close state will be calculated from the totall number of open/close
+// events in the batch, assuming every single open will eventually be followed
+// by close. In this way in the case of:
+// * Out-of-order events, we would be able to establish correct status
+// * Pairs split across two batches, the status will be correct after processing both batches
+// * Lost events, the status will be incorrect
+// Another alternative would be to set the status based on the final PLOP
+// event, which will produce the same results for case 2 and 3. But such
+// approach will produce incorrect status in the case 1 as well, so counting
+// seems to be more preferrable.
+func normalizePLOPs(
+	plops []*storage.ProcessListeningOnPortFromSensor,
+) []*storage.ProcessListeningOnPortFromSensor {
+
+	normalizedMap := map[string]OpenClosedPLOPs{}
+	normalizedResult := []*storage.ProcessListeningOnPortFromSensor{}
+
+	for _, val := range plops {
+		key := fmt.Sprintf("%d %d %s",
+			val.GetProtocol(),
+			val.GetPort(),
+			getProcesUniqueKey(val),
+		)
+
+		if prev, ok := normalizedMap[key]; ok {
+
+			if val.GetCloseTimestamp() == nil {
+				prev.open = append(prev.open, val)
+			} else {
+				prev.closed = append(prev.closed, val)
+			}
+
+			normalizedMap[key] = prev
+
+		} else {
+
+			newValue := OpenClosedPLOPs{
+				open:   []*storage.ProcessListeningOnPortFromSensor{},
+				closed: []*storage.ProcessListeningOnPortFromSensor{},
+			}
+
+			if val.GetCloseTimestamp() == nil {
+				newValue.open = append(newValue.open, val)
+			} else {
+				newValue.closed = append(newValue.closed, val)
+			}
+
+			normalizedMap[key] = newValue
+		}
+	}
+
+	for _, value := range normalizedMap {
+		nOpen := len(value.open)
+		nClosed := len(value.closed)
+
+		// Take the last open PLOP if there are more open in total, otherwise
+		// the last closed PLOP
+		if nOpen > nClosed {
+			normalizedResult = append(normalizedResult, value.open[nOpen-1])
+		} else {
+			normalizedResult = append(normalizedResult, value.closed[nClosed-1])
+		}
+	}
+
+	return normalizedResult
+}
+
+func getProcesUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
+	return fmt.Sprintf("%s %s %s %s %s",
+		plop.Process.ContainerName,
+		plop.Process.PodId,
+		plop.Process.ProcessName,
+		plop.Process.ProcessArgs,
+		plop.Process.ProcessExecFilePath,
+	)
 }
