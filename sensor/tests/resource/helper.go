@@ -261,6 +261,33 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 
 // AssertFunc is the deployment state assertion function signature.
 type AssertFunc func(deployment *storage.Deployment) error
+type MatchResource func(resource *central.MsgFromSensor) bool
+type AssertFuncAny func(resource interface{}) error
+
+func (c *TestContext) LastResourceState(matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
+	c.LastResourceStateWithTimeout(matchResourceFn, assertFn, message, 3*time.Second)
+}
+
+func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	lastErr := errors.Errorf("no resource found for matching function")
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			msg := GetLastMessageMatching(messages, matchResourceFn)
+			if msg != nil {
+				lastErr = assertFn(msg.GetEvent())
+				if lastErr == nil {
+					return
+				}
+			}
+		}
+	}
+}
 
 // LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
 func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
@@ -288,6 +315,15 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 			}
 		}
 	}
+}
+
+func GetLastMessageMatching(messages []*central.MsgFromSensor, matchFn MatchResource) *central.MsgFromSensor {
+	for i := len(messages) - 1; i >= 0; i-- {
+		if matchFn(messages[i]) {
+			return messages[i]
+		}
+	}
+	return nil
 }
 
 // AlertAssertFunc is the alert assertion function signature.
