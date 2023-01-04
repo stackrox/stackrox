@@ -265,19 +265,19 @@ validate-crs:
 .PHONY: test-e2e
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
+	KUTTL=$(KUTTL) ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
 
 .PHONY: test-e2e-deployed
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} SKIP_MANAGER_START=1 $(KUTTL) test
+	KUTTL=$(KUTTL) SKIP_MANAGER_START=1 $(KUTTL) test
 
 .PHONY: test-upgrade
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts-upgrade
 	SKIP_MANAGER_START=1 \
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
-	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade tests/upgrade
+	KUTTL=$(KUTTL) $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade tests/upgrade
 
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
