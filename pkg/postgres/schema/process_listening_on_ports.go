@@ -46,8 +46,10 @@ const (
 
 // ProcessListeningOnPorts holds the Gorm model for Postgres table `process_listening_on_ports`.
 type ProcessListeningOnPorts struct {
-	Id                 string `gorm:"column:id;type:uuid;primaryKey"`
-	ProcessIndicatorId string `gorm:"column:processindicatorid;type:uuid;index:processlisteningonports_processindicatorid,type:btree"`
-	Closed             bool   `gorm:"column:closed;type:bool;index:processlisteningonports_closed,type:btree"`
-	Serialized         []byte `gorm:"column:serialized;type:bytea"`
+	Id                 string             `gorm:"column:id;type:uuid;primaryKey"`
+	Port               uint32             `gorm:"column:port;type:bigint"`
+	Protocol           storage.L4Protocol `gorm:"column:protocol;type:integer"`
+	ProcessIndicatorId string             `gorm:"column:processindicatorid;type:uuid;index:processlisteningonports_processindicatorid,type:btree"`
+	Closed             bool               `gorm:"column:closed;type:bool;index:processlisteningonports_closed,type:btree"`
+	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
 }

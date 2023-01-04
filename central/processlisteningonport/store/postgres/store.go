@@ -112,12 +112,14 @@ func insertIntoProcessListeningOnPorts(ctx context.Context, batch *pgx.Batch, ob
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
+		obj.GetPort(),
+		obj.GetProtocol(),
 		pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 		obj.GetClosed(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO process_listening_on_ports (Id, ProcessIndicatorId, Closed, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_listening_on_ports (Id, Port, Protocol, ProcessIndicatorId, Closed, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -136,6 +138,10 @@ func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx pgx.
 	copyCols := []string{
 
 		"id",
+
+		"port",
+
+		"protocol",
 
 		"processindicatorid",
 
@@ -156,6 +162,10 @@ func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx pgx.
 		inputRows = append(inputRows, []interface{}{
 
 			pgutils.NilOrUUID(obj.GetId()),
+
+			obj.GetPort(),
+
+			obj.GetProtocol(),
 
 			pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 
