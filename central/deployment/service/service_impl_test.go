@@ -141,7 +141,7 @@ func TestLabelsMap(t *testing.T) {
 			results, err := ds.Search(ctx, queryForLabels())
 			assert.NoError(t, err)
 			actualMap, actualValues := labelsMapFromSearchResults(results)
-			
+
 			assert.Equal(t, c.expectedMap, actualMap)
 			assert.ElementsMatch(t, c.expectedValues, actualValues)
 		})
