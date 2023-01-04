@@ -71,6 +71,7 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		Name:                    node.Name,
 		Taints:                  convertTaints(node.Spec.Taints),
 		Labels:                  node.GetLabels(),
+		NodeInventory:           nil,
 		Annotations:             node.GetAnnotations(),
 		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
 		InternalIpAddresses:     internal,

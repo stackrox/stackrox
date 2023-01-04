@@ -20,7 +20,6 @@ type enricherImpl struct {
 
 	lock     sync.RWMutex
 	scanners map[string]types.NodeScannerWithDataSource
-
 	creators map[string]pkgScanners.NodeScannerCreator
 
 	metrics metrics
@@ -97,6 +96,10 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	_ = sema.Acquire(context.Background(), 1)
 	defer sema.Release(1)
 
+	if node == nil {
+		return errors.Errorf("invalid request: called enrichNodeWithScanner '%s'  with nil Node", scanner.Name())
+	}
+
 	scanStartTime := time.Now()
 	scan, err := scanner.GetNodeScan(node)
 
@@ -107,7 +110,6 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	if scan == nil {
 		return nil
 	}
-
 	node.Scan = scan
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		converter.FillV2NodeVulnerabilities(node)

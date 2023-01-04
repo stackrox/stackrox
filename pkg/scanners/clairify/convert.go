@@ -19,6 +19,16 @@ func convertNodeToVulnRequest(node *storage.Node) *v1.GetNodeVulnerabilitiesRequ
 		KubeletVersion:   node.GetKubeletVersion(),
 		KubeproxyVersion: node.GetKubeProxyVersion(),
 		Runtime:          convertContainerRuntime(node.GetContainerRuntime()),
+		Components:       convertComponents(node.GetNodeInventory().GetComponents()),
+	}
+}
+
+func convertComponents(c *storage.NodeInventory_Components) *v1.Components {
+	return &v1.Components{
+		Namespace:          c.Namespace,
+		OsComponents:       nil,
+		LanguageComponents: nil,
+		RhelComponents:     c.RhelComponents,
 	}
 }
 
@@ -67,7 +77,17 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 				Vulns:   convertNodeVulns(resp.GetKubeproxyVulnerabilities()),
 			},
 		},
-		Notes: convertNodeNotes(resp.GetNotes()),
+		Notes: convertNodeNotes(resp.GetNodeNotes()),
+	}
+	if resp.GetFeatures() != nil {
+		for _, feature := range resp.GetFeatures() {
+			scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
+				Name:    feature.GetName(),
+				Version: feature.GetVersion(),
+				Vulns:   convertNodeVulns(feature.GetVulnerabilities()),
+			})
+		}
+
 	}
 	if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
 		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
@@ -77,6 +97,22 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 		})
 	}
 	return scan
+}
+
+func convertImageVulnResponseToNodeScan(resp *v1.GetImageVulnerabilitiesResponse) *storage.NodeScan {
+	c := make([]*storage.EmbeddedNodeScanComponent, len(resp.GetImage().GetFeatures()))
+	for i, feature := range resp.GetImage().GetFeatures() {
+		c[i] = &storage.EmbeddedNodeScanComponent{
+			Name:    feature.GetName(),
+			Version: feature.GetVersion(),
+			Vulns:   convertVulnerabilities(feature.GetVulnerabilities(), storage.EmbeddedVulnerability_NODE_VULNERABILITY),
+		}
+	}
+	return &storage.NodeScan{
+		ScanTime:        gogoProto.TimestampNow(),
+		OperatingSystem: "RHCOS-hardcoded-value",
+		Components:      c,
+	}
 }
 
 func convertNodeNotes(v1Notes []v1.NodeNote) []storage.NodeScan_Note {

@@ -85,7 +85,7 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220930104945-c4a3c15e834a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
-	github.com/stackrox/scanner v0.0.0-20221122151333-4c8cbd61bfa7
+	github.com/stackrox/scanner v0.0.0-20230104122550-d26da561cb06
 	github.com/stretchr/testify v1.8.1
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
@@ -306,7 +306,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.13.0 // indirect
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
-	github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 // indirect
 	github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d // indirect
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
@@ -361,6 +360,8 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )
+
+require github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 // indirect
 
 // To bump the version of a replacement package, use:
 //
