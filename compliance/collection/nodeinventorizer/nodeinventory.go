@@ -32,6 +32,10 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
+	if protoComponents == nil {
+		log.Warn("Empty components returned from NodeInventory")
+	}
+
 	m := &storage.NodeInventory{
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
@@ -42,7 +46,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 
 func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Components {
 
-	if c == nil {
+	if c == nil || c.OSNamespace == nil {
 		return nil
 	}
 
