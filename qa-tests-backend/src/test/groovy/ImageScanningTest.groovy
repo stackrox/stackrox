@@ -785,21 +785,22 @@ class ImageScanningTest extends BaseSpecification {
         where:
         testName                                           | integrationName  | scannerName |
                 imageIntegrationConfig
-        "quay registry with token"                         | "quay"           | "Stackrox Scanner" |
-                { -> QuayImageIntegration.createCustomIntegration(
-                        [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), includeScanner: false,]) }
+        // TODO ROX-14183: Re-enable the tests once QUAY_RHACS_ENG_BEARER_TOKEN holds a valid token.
+        //"quay registry with token"                         | "quay"           | "Stackrox Scanner" |
+        //        { -> QuayImageIntegration.createCustomIntegration(
+        //                [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), includeScanner: false,]) }
         "quay with robot creds only"                      | "quay"    |  "Stackrox Scanner" |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: "", useRobotCreds: true, includeScanner: false,]) }
 
-        "quay registry+scanner with token"                  | "quay"   | "quay" |
-                { -> QuayImageIntegration.createCustomIntegration(
-                        [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), includeScanner: true,]) }
+        //"quay registry+scanner with token"                  | "quay"   | "quay" |
+        //        { -> QuayImageIntegration.createCustomIntegration(
+        //                [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), includeScanner: true,]) }
 
-        "quay registry+scanner with token and robot creds"  | "quay"   | "quay" |
-                { -> QuayImageIntegration.createCustomIntegration(
-                        [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), useRobotCreds: true,
-                         includeScanner: true,]) }
+        //"quay registry+scanner with token and robot creds"  | "quay"   | "quay" |
+        //        { -> QuayImageIntegration.createCustomIntegration(
+        //                [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), useRobotCreds: true,
+        //                 includeScanner: true,]) }
     }
 
     @SuppressWarnings('LineLength')
