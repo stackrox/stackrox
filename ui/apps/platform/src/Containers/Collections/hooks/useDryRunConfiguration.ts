@@ -29,7 +29,14 @@ export default function useDryRunConfiguration(
                 nextConfig.resourceSelectors
             );
             const isNameChange = dryRunConfig.name !== nextConfig.name;
-            if (isEmbeddedCollectionsChanged || isResourceSelectorChanged || isNameChange) {
+            const hasEmptyValue = nextConfig.resourceSelectors
+                .flatMap((rs) => rs.rules)
+                .flatMap((rule) => rule.values)
+                .some(({ value }) => value === '');
+            if (
+                (isEmbeddedCollectionsChanged || isResourceSelectorChanged || isNameChange) &&
+                !hasEmptyValue
+            ) {
                 setDryRunConfig(nextConfig);
             }
         },
