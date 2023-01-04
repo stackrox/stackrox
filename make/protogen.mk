@@ -68,7 +68,6 @@ PROTOC_FILE := $(PROTOC_DOWNLOADS_DIR)/$(PROTOC_ZIP)
 include $(BASE_PATH)/make/github.mk
 
 $(PROTOC_FILE): $(PROTOC_DOWNLOADS_DIR)
-	@echo "+ $@"
 	@$(GET_GITHUB_RELEASE_FN); \
 	get_github_release "$@" "https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP)"
 

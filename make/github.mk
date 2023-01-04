@@ -6,6 +6,7 @@
 GET_GITHUB_RELEASE_FN = get_github_release() { \
 	[ -x $${1} ] || { \
 		set -euo pipefail ;\
+		echo "+ $${1}" ;\
 		mkdir -p bin ;\
 		attempts=5 ;\
 		for i in $$(seq $$attempts); do \
