@@ -242,4 +242,4 @@ clean-proto-deps:
 	@echo "+ $@"
 	rm -f $(PROTOC_FILE)
 	rm -rf $(PROTOC_DIR)
-	rm -f $(PROTO_GOBIN)
+	rm -rf $(PROTO_GOBIN)
