@@ -115,21 +115,19 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	if len(indicatorIds) > 0 {
 		// If no corresponding processes found, we can't verify if the PLOP
-		// object is closing an existing one. Collect existingPLOPMap only if
-		// there are some matching indicators.
+		// object is opening/closing an existing one. Collect existingPLOPMap
+		// only if there are some matching indicators.
 
 		// XXX: This has to be done in a single join query fetching both
 		// ProcessIndicator and needed bits from PLOP.
 		existingPLOP, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
-			AddStrings(search.ProcessID, indicatorIds...).
-			AddBools(search.Closed, false).
-			ProtoQuery())
+			AddStrings(search.ProcessID, indicatorIds...).ProtoQuery())
 		if err != nil {
 			return err
 		}
 
 		for _, val := range existingPLOP {
-			key := fmt.Sprintf("%s %d %s",
+			key := fmt.Sprintf("%d %d %s",
 				val.GetProtocol(),
 				val.GetPort(),
 				val.GetProcessIndicatorId(),
@@ -150,13 +148,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
-		key := fmt.Sprintf("%s %s %s %s %s",
-			val.Process.ContainerName,
-			val.Process.PodId,
-			val.Process.ProcessName,
-			val.Process.ProcessArgs,
-			val.Process.ProcessExecFilePath,
-		)
+		key := getProcesUniqueKey(val)
 
 		if indicator, ok := indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
@@ -167,39 +159,48 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			processInfo = val.Process
 		}
 
-		newPLOP := &storage.ProcessListeningOnPortStorage{
-			// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
-			// IDENTITY, which would require changes in store generator
-			Id:                 uuid.NewV4().String(),
-			Port:               val.Port,
-			Protocol:           val.Protocol,
-			ProcessIndicatorId: indicatorID,
-			Process:            processInfo,
-			Closed:             false,
-			CloseTimestamp:     val.CloseTimestamp,
+		plopKey := fmt.Sprintf("%d %d %s",
+			val.GetProtocol(),
+			val.GetPort(),
+			indicatorID,
+		)
+
+		existingPLOP, prevExists := existingPLOPMap[plopKey]
+
+		// There are three options:
+		// * We found an existing PLOP object with different close timestamp.
+		//   It has to be updated.
+		// * We found an existing PLOP object with the same close timestamp.
+		//   Nothing has to be changed (XXX: Ideally it has to be excluded from
+		//   the upsert later on).
+		// * No existing PLOP object, create a new one with whatever close
+		//   timestamp we have received and fetched indicator ID.
+		if prevExists && existingPLOP.CloseTimestamp != val.CloseTimestamp {
+			log.Debugf("Got existing PLOP: %+v", existingPLOP)
+
+			existingPLOP.CloseTimestamp = val.CloseTimestamp
+			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
+			plopObjects[i] = existingPLOP
 		}
 
-		if val.CloseTimestamp != nil {
-			// We receive a closing PLOP information, check if it's present in
-			// the database
-			newPLOP.Closed = true
-
-			plopKey := fmt.Sprintf("%s %d %s",
-				val.GetProtocol(),
-				val.GetPort(),
-				indicatorID,
-			)
-
-			if activePLOP, ok := existingPLOPMap[plopKey]; ok {
-				log.Debugf("Got active PLOP: %+v", activePLOP)
-
-				activePLOP.Closed = true
-				plopObjects[i] = activePLOP
-			} else {
+		if !prevExists {
+			if val.CloseTimestamp != nil {
+				// We try to close a not existing Endpoint, something is wrong
 				log.Warnf("Found no matching PLOP to close for %s", key)
-				plopObjects[i] = newPLOP
 			}
-		} else {
+
+			newPLOP := &storage.ProcessListeningOnPortStorage{
+				// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
+				// IDENTITY, which would require changes in store generator
+				Id:                 uuid.NewV4().String(),
+				Port:               val.Port,
+				Protocol:           val.Protocol,
+				ProcessIndicatorId: indicatorID,
+				Process:            processInfo,
+				Closed:             val.CloseTimestamp != nil,
+				CloseTimestamp:     val.CloseTimestamp,
+			}
+
 			plopObjects[i] = newPLOP
 		}
 	}
