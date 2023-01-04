@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - master
-      - gavin/CI/slack-on-build-failure
     tags:
       - '*-nightly-*'
 
@@ -488,7 +487,7 @@ jobs:
 
   slack-on-build-failure:
     if: github.event_name == 'push' && failure()
-    name: Post Workflow Status To Slack
+    name: Post Build Failure
     runs-on: ubuntu-latest
     needs:
       - pre-build-ui
@@ -506,4 +505,4 @@ jobs:
         uses: Gamesight/slack-workflow-status@v1.1.0
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          slack_webhook_url: ${{secrets.SLACK_MAIN_WEBHOOK}}
+          slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}
