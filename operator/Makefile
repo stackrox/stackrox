@@ -159,6 +159,7 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 	$(MAKE) docker-push-index
 
 ##@ Dependencies download
+include $(PROJECT_DIR)/../make/github.mk
 
 CONTROLLER_GEN_VERSION = 0.10.0
 CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen-$(CONTROLLER_GEN_VERSION)
@@ -196,20 +197,6 @@ ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
-
-GET_GITHUB_RELEASE_FN = get_github_release() { \
-	[ -x $${1} ] || { \
-		set -euxo pipefail ;\
-		mkdir -p bin ;\
-		attempts=5 ;\
-		for i in $$(seq $$attempts); do \
-			curl --fail --location --output $${1} $${2} && break ;\
-			[ $$i -eq $$attempts ] && exit 1; \
-		done ;\
-		[[ "$$(uname -s)" != "Darwin" ]] || xattr -c $${1} ;\
-		chmod +x $${1} ;\
-	} \
-}
 
 # go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
 define go-get-tool
