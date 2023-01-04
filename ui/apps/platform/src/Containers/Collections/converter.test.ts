@@ -8,7 +8,6 @@ describe('Collection parser', () => {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
-            inUse: false,
             resourceSelectors: [
                 {
                     rules: [
@@ -38,7 +37,6 @@ describe('Collection parser', () => {
         const expectedCollection: ClientCollection = {
             name: 'Sample',
             description: 'Sample description',
-            inUse: false,
             resourceSelector: {
                 Deployment: { type: 'All' },
                 Namespace: {
@@ -83,7 +81,6 @@ describe('Collection parser', () => {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
-            inUse: false,
             resourceSelectors: [{ rules: [] }, { rules: [] }],
             embeddedCollections: [],
         };
@@ -95,7 +92,6 @@ describe('Collection parser', () => {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
-            inUse: false,
             resourceSelectors: [
                 {
                     rules: [
@@ -123,7 +119,6 @@ describe('Collection parser', () => {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
-            inUse: false,
             resourceSelectors: [
                 {
                     rules: [
@@ -146,7 +141,6 @@ describe('Collection parser', () => {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
-            inUse: false,
             resourceSelectors: [
                 {
                     rules: [
@@ -169,7 +163,6 @@ describe('Collection parser', () => {
             id: 'a-b-c',
             name: 'Sample',
             description: 'Sample description',
-            inUse: false,
             resourceSelectors: [
                 {
                     rules: [
@@ -223,7 +216,6 @@ describe('Collection response generator', () => {
         const collection: ClientCollection = {
             name: 'Sample',
             description: 'Sample description',
-            inUse: false,
             resourceSelector: {
                 // "All" should result in no rules
                 Deployment: { type: 'All' },
