@@ -343,6 +343,16 @@
       "default": "ALLOW_MUTATE",
       "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
     },
+    "TraitsOrigin": {
+      "type": "string",
+      "enum": [
+        "IMPERATIVE",
+        "DEFAULT",
+        "DECLARATIVE"
+      ],
+      "default": "IMPERATIVE",
+      "description": "Origin specifies the origin of an object.\nObjects can have three different origins:\n- IMPERATIVE: the object was created via the API. This is assumed by default.\n- DEFAULT: the object is a default object, such as default image integrations, access scopes etc.\n- DECLARATIVE: the object is created via declarative configuration.\nBased on the origin, different rules apply to the objects.\nObjects with the DECLARATIVE origin are not allowed to be modified via API. Additionally, they may not reference\nobjects with the IMPERATIVE origin.\nObjects with the DEFAULT origin are not allowed to be modified via API. They may be referenced by all other objects.\nObjects with the IMPERATIVE origin are allowed to be modified via API. They may reference all other objects."
+    },
     "TraitsVisibility": {
       "type": "string",
       "enum": [
@@ -518,9 +528,11 @@
         },
         "visibility": {
           "$ref": "#/definitions/TraitsVisibility"
+        },
+        "origin": {
+          "$ref": "#/definitions/TraitsOrigin"
         }
-      },
-      "description": "EXPERIMENTAL."
+      }
     },
     "storageUserInfo": {
       "type": "object",
