@@ -2,6 +2,7 @@ package nodeinventorizer
 
 import (
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -65,8 +66,13 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 	}
 	v1rhelc := make([]*scannerV1.RHELComponent, 0, len(rc.Packages))
 	for _, rhelc := range rc.Packages {
+		rhelcId, err := hashstructure.Hash(v1rhelc, hashstructure.FormatV2, nil)
+		if err != nil {
+			log.Warnf("Could not create id for RHELComponent %d", rhelc.Name)
+			rhelcId = 0
+		}
 		v1rhelc = append(v1rhelc, &scannerV1.RHELComponent{
-			// TODO(ROX-13936): Find out if ID field is needed here
+			Id:          int64(rhelcId),
 			Name:        rhelc.Name,
 			Namespace:   rc.Dist,
 			Version:     rhelc.Version,
