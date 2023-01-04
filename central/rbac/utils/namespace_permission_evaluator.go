@@ -58,7 +58,6 @@ func (c *namespacePermissionEvaluator) getBindingsAndRoles(ctx context.Context, 
 		log.Errorf("error searching for roleBindings: %v", err)
 		return nil, nil
 	}
-
 	roles := getRolesForRoleBindings(ctx, c.roleStore, roleBindings, c.clusterID, c.namespace)
 	return roleBindings, roles
 }

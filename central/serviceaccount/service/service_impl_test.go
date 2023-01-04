@@ -199,7 +199,6 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.SubjectName, expectedSA.Name).
-		AddNullField(search.Namespace).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, true).ProtoQuery()
 	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).AnyTimes().
