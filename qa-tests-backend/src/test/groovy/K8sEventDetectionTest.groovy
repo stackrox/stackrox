@@ -18,7 +18,7 @@ class K8sEventDetectionTest extends BaseSpecification {
 
     static private registerDeployment(String name, boolean privileged) {
         DEPLOYMENTS.add(
-            new Deployment().setName(name).setImage("quay.io/rhacs-eng/qa:nginx-1.14-alpine").addLabel("app", name).
+            new Deployment().setName(name).setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine").addLabel("app", name).
                 setPrivilegedFlag(privileged)
         )
         return name

@@ -26,8 +26,8 @@ class AttemptedAlertsTest extends BaseSpecification {
             (DEP_NAMES[1]): createDeployment(DEP_NAMES[1], "nginx:latest"),
             (DEP_NAMES[2]): createDeployment(DEP_NAMES[2], "nginx:latest"),
             (DEP_NAMES[3]): createDeployment(DEP_NAMES[3], "nginx:latest"),
-            (DEP_NAMES[4]): createDeployment(DEP_NAMES[4], "quay.io/rhacs-eng/qa:nginx-1-14-alpine"),
-            (DEP_NAMES[5]): createDeployment(DEP_NAMES[5], "quay.io/rhacs-eng/qa:nginx-1-14-alpine"),
+            (DEP_NAMES[4]): createDeployment(DEP_NAMES[4], "quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine"),
+            (DEP_NAMES[5]): createDeployment(DEP_NAMES[5], "quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine"),
     ]
 
     static final private String LATEST_TAG_POLICY_NAME = "Latest tag"

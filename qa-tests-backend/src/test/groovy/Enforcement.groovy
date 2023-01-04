@@ -156,35 +156,35 @@ class Enforcement extends BaseSpecification {
     private final static Map<String, Deployment> DEPLOYMENTS = [
             (KILL_ENFORCEMENT):
                     new Deployment()
-                            .setImage("quay.io/rhacs-eng/qa:nginx")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                             .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE):
                     new Deployment()
-                            .setImage("quay.io/rhacs-eng/qa:enforcement")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:enforcement")
                             .addPort(22)
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY):
                     new Deployment()
-                            .setImage("us.gcr.io/stackrox-ci/nginx:1.9.1")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-12-1")
                             .addPort(22)
                             .setSkipReplicaWait(true)
                             .setCommand(["sleep", "600"]),
             (NODE_CONSTRAINT_ENFORCEMENT):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_AND_NODE_CONSTRAINT):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
@@ -196,13 +196,13 @@ class Enforcement extends BaseSpecification {
                             .setEnv(["CLUSTER_NAME": "main"]),
             (NO_ENFORCEMENT_ON_UPDATE):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .addAnnotation("admission.stackrox.io/break-glass", "yay")
@@ -213,7 +213,7 @@ class Enforcement extends BaseSpecification {
             (SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS):
                     new DaemonSet()
                             .setName("dset1")
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true) as DaemonSet,

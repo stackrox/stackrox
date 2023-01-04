@@ -79,11 +79,11 @@ class PolicyConfigurationTest extends BaseSpecification {
                             mountPath: "/tmp/test")),
             new Deployment()
                     .setName(STRUTS)
-                    .setImage("quay.io/rhacs-eng/qa:struts-app")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DNS)
-                    .setImage("quay.io/rhacs-eng/qa:apache-dns")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:apache-dns")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_LB)
@@ -104,7 +104,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setName(DEPLOYMENT_RBAC)
                     .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
                     .setServiceAccountName(SERVICE_ACCOUNT_NAME)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1-15-4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .setSkipReplicaWait(true),
     ]
 
