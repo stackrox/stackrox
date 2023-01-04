@@ -15,7 +15,7 @@ import (
 
 func main() {
 	c := maincommand.Command()
-	addHelp(c.Commands())
+	addHlp(c.Commands())
 
 	// This is a workaround. Cobra/pflag takes care of presenting flag usage information
 	// to the user including the respective flag default values.
