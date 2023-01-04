@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -126,15 +125,12 @@ func (cfg *Config) GetHTTPInterceptor() httputil.HTTPInterceptor {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
 			handler.ServeHTTP(statusTrackingWriter, r)
-			rp := getHTTPRequestDetails(r.Context(), r, statusCodeToError(statusTrackingWriter.GetStatusCode()))
+			status := 0
+			if sptr := statusTrackingWriter.GetStatusCode(); sptr != nil {
+				status = *sptr
+			}
+			rp := getHTTPRequestDetails(r.Context(), r, status)
 			go cfg.track(rp)
 		})
 	}
-}
-
-func statusCodeToError(code *int) error {
-	if code == nil || *code == http.StatusOK {
-		return nil
-	}
-	return errors.Errorf("%d %s", *code, http.StatusText(*code))
 }

@@ -3,6 +3,7 @@ package phonehome
 import (
 	"bytes"
 	"context"
+	"io"
 	"net"
 	"net/http"
 	"testing"
@@ -151,31 +152,11 @@ type testBody struct {
 func (s *interceptorTestSuite) TestHttpWithBody() {
 	body := "{ \"n\": 42 }"
 	req, _ := http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
-	rp := getHTTPRequestDetails(context.Background(), req, nil)
+	rp := getHTTPRequestDetails(context.Background(), req, 0)
 
 	var rb *testBody
-	err := GetRequestBody(rp, &rb)
-	if s.NoError(err) {
-		s.NotNil(rb)
-		s.Equal(42, rb.N)
-	}
-
-	var e *error
-	err = GetRequestBody(rp, &e)
-	s.ErrorIs(err, errBadType)
-	s.Nil(e)
-
-	req, _ = http.NewRequest(http.MethodPost, "/http/body", nil)
-	rp = getHTTPRequestDetails(context.Background(), req, nil)
-	err = GetRequestBody(rp, &rb)
-	s.ErrorIs(err, ErrNoBody)
-	s.Nil(rb)
-
-	body = "null"
-	req, _ = http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
-	rp = getHTTPRequestDetails(context.Background(), req, nil)
-	err = GetRequestBody(rp, &rb)
-	s.ErrorIs(err, ErrNoBody)
+	err := GetGRPCRequestBody(rp, &rb)
+	s.ErrorIs(err, io.EOF, "body is not captured for HTTP requests")
 	s.Nil(rb)
 }
 
@@ -183,7 +164,7 @@ func (s *interceptorTestSuite) TestGrpcWithBody() {
 	rp := getGRPCRequestDetails(context.Background(), nil, "/grpc/body", &testBody{N: 42})
 	var rb *testBody
 
-	err := GetRequestBody(rp, &rb)
+	err := GetGRPCRequestBody(rp, &rb)
 	if s.NoError(err) {
 		s.NotNil(rb)
 		s.Equal(42, rb.N)
@@ -191,8 +172,8 @@ func (s *interceptorTestSuite) TestGrpcWithBody() {
 
 	rp = getGRPCRequestDetails(context.Background(), nil, "/grpc/body", nil)
 
-	err = GetRequestBody(rp, &rb)
-	s.ErrorIs(err, ErrNoBody)
+	err = GetGRPCRequestBody(rp, &rb)
+	s.ErrorIs(err, io.EOF)
 	s.Nil(rb)
 }
 
@@ -210,7 +191,7 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 	req.Header.Add("User-Agent", testRP.UserAgent)
 
 	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID, nil)
-	rp := getHTTPRequestDetails(ctx, req, err)
+	rp := getHTTPRequestDetails(ctx, req, 200)
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)

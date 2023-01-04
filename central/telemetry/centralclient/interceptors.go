@@ -27,7 +27,7 @@ var (
 	}
 )
 
-// apiHandler represents a typical API handler type,
+// apiHandler represents a typical API handler type.
 // Example:
 //   (v1.ClustersServiceServer).PostCluster(context.Context, *storage.Cluster) (*storage.Cluster, error)
 type apiHandler[Service any, Request any, Response any] func(Service, context.Context, *Request) (*Response, error)
@@ -68,7 +68,7 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 
 	props["Code"] = rp.Code
 	cluster := getRequestPtr(v1.ClustersServiceServer.PostCluster)
-	if err := phonehome.GetRequestBody(rp, &cluster); err == nil {
+	if phonehome.GetGRPCRequestBody(rp, &cluster) == nil {
 		props["Cluster Type"] = cluster.GetType().String()
 		props["Cluster ID"] = cluster.GetId()
 		props["Managed By"] = cluster.GetManagedBy().String()
@@ -95,7 +95,7 @@ func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool 
 	}
 
 	cluster := getRequestPtr(v1.ClustersServiceServer.PutCluster)
-	if err := phonehome.GetRequestBody(rp, &cluster); err == nil {
+	if phonehome.GetGRPCRequestBody(rp, &cluster) == nil {
 		uninitializedClustersLock.Lock()
 		defer uninitializedClustersLock.Unlock()
 

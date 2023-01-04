@@ -73,7 +73,7 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 	}
 }
 
-func getHTTPRequestDetails(ctx context.Context, r *http.Request, err error) *RequestParams {
+func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
@@ -84,7 +84,7 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, err error) *Req
 		UserID:    id,
 		Method:    r.Method,
 		Path:      r.URL.Path,
-		Code:      grpcError.ErrToHTTPStatus(err),
+		Code:      status,
 		HTTPReq:   r,
 	}
 }

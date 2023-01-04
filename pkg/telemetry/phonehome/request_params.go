@@ -1,7 +1,6 @@
 package phonehome
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -10,8 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
-// ErrNoBody tells that the request has got no body.
-var ErrNoBody = errors.New("empty body")
 var errBadType = errors.New("unexpected body type")
 
 // RequestParams holds intercepted call parameters.
@@ -56,56 +53,11 @@ func (rp *RequestParams) Is(s *ServiceMethod) bool {
 	return rp.Method == s.GRPCMethod || (rp.Method == s.HTTPMethod && rp.PathMatches(s.HTTPPath))
 }
 
-func getGRPCBody[T any](req any) (*T, error) {
-	if req == nil {
-		return nil, nil
-	}
-	body, ok := req.(*T)
-	if !ok {
-		return nil, errBadType
-	}
-	return body, nil
-}
-
-func getHTTPBody[T any](req *http.Request) (*T, error) {
-	if req == nil || req.GetBody == nil {
-		return nil, nil
-	}
-
-	br, err := req.GetBody()
-	if err != nil {
-		return nil, err
-	}
-
-	var bb []byte
-	if bb, err = io.ReadAll(br); err != nil {
-		return nil, err
-	}
-	var body *T
-	if err = json.Unmarshal(bb, &body); err != nil {
-		return nil, errors.Wrap(errBadType, err.Error())
-	}
-	return body, nil
-}
-
-// GetRequestBody sets the output body argument. Returns ErrNoBody error on nil
-// result.
-func GetRequestBody[T any](rp *RequestParams, body **T) error {
-	var err error
-
-	*body, err = getGRPCBody[T](rp.GRPCReq)
-	if err != nil {
-		return err
-	}
-	if *body == nil {
-		*body, err = getHTTPBody[T](rp.HTTPReq)
-	}
-	if err != nil {
-		return err
-	}
-
-	if *body == nil {
-		return ErrNoBody
+// GetGRPCRequestBody sets the output body argument. Returns io.EOF on empty body.
+func GetGRPCRequestBody[T any](rp *RequestParams, body **T) error {
+	var ok bool
+	if *body, ok = rp.GRPCReq.(*T); !ok || *body == nil {
+		return io.EOF
 	}
 	return nil
 }
