@@ -78,7 +78,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
     static final private Deployment DISTROLESS_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-distroless")
-            .setImage("gcr.io/distroless/base@sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766")
+            .setImage("gcr.io/distroless/base:debug")
             .addLabel("app", "image-with-signature-distroless-test")
             .setCommand(["sleep", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -86,8 +86,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which has a cosign signature that is verifiable with the TEKTON_PUBLIC_KEY.
     static final private Deployment TEKTON_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-tekton")
-            .setImage("gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init@" +
-                    "sha256:79f768d28ff9af9fcbf186f9fc1b8e9f88835dfb07be91610a1f17cf862db89e")
+            .setImage("gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:latest")
             .addLabel("app", "image-with-signature-tekton-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -95,7 +94,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which has a cosign signature that is not verifiable by any cosign public key.
     static final private Deployment UNVERIFIABLE_DEPLOYMENT = new Deployment()
             .setName("with-signature-unverifiable")
-            .setImage("docker.io/istio/proxyv2@sha256:134e99aa9597fdc17305592d13add95e2032609d23b4c508bd5ebd32ed2df47d")
+            .setImage("registry.redhat.io/openshift-service-mesh/proxyv2-rhel8@sha256:5716a22874c9afa06159da127caf28809ae4f3c18a58605ee662021eb8c9099a")
             .addLabel("app", "image-with-unverifiable-signature-test")
             .setCommand(["/usr/local/bin/pilot-agent", "wait", "--timeoutSeconds", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -103,7 +102,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which does not have a cosign signature.
     static final private Deployment WITHOUT_SIGNATURE_DEPLOYMENT = new Deployment()
             .setName("without-signature")
-            .setImage("docker.io/nginx@sha256:63aa22a3a677b20b74f4c977a418576934026d8562c04f6a635f0e71e0686b6d")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1")
             .addLabel("app", "image-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 

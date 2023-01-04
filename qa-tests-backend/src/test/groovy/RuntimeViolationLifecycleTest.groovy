@@ -22,7 +22,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String DEPLOYMENTNAME = "runtimeviolationlifecycle"
     static final private Deployment DEPLOYMENT = new Deployment()
         .setName(DEPLOYMENTNAME)
-        .setImage ("quay.io/rhacs-eng/qa:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
+        .setImage ("quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
         .addLabel ("app", DEPLOYMENTNAME)
         .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"])
 
