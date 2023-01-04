@@ -47,6 +47,12 @@ message TLSChallengeRequest {
     string challenge_token = 1;
 }
 
+message DatabaseStatus {
+    bool database_available = 1;
+    string database_type = 2;
+    string database_version = 3;
+}
+
 service MetadataService {
 
     rpc GetMetadata(Empty) returns (Metadata) {
@@ -58,6 +64,12 @@ service MetadataService {
     rpc TLSChallenge(TLSChallengeRequest) returns (TLSChallengeResponse) {
         option(google.api.http) = {
             get: "/v1/tls-challenge"
+        };
+    }
+
+    rpc GetDatabaseStatus(Empty) returns (DatabaseStatus) {
+        option (google.api.http) = {
+            get: "/v1/database-status"
         };
     }
 }

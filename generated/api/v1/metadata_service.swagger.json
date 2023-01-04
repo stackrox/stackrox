@@ -11,6 +11,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/database-status": {
+      "get": {
+        "operationId": "MetadataService_GetDatabaseStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
     "/v1/metadata": {
       "get": {
         "operationId": "MetadataService_GetMetadata",
@@ -110,6 +132,20 @@
           "items": {
             "$ref": "#/definitions/protobufAny"
           }
+        }
+      }
+    },
+    "v1DatabaseStatus": {
+      "type": "object",
+      "properties": {
+        "databaseAvailable": {
+          "type": "boolean"
+        },
+        "databaseType": {
+          "type": "string"
+        },
+        "databaseVersion": {
+          "type": "string"
         }
       }
     },
