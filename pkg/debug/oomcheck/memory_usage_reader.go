@@ -109,7 +109,7 @@ func (r *memoryUsageReaderImpl) Open() error {
 	// Try cgroupv2 in case v1 did not work
 	subdir, err := getCgroupv2Subdir(r.procCgroupFilePath)
 	if err != nil {
-		result = multierror.Append(result, err)
+		result = multierror.Append(result, errors.Wrap(err, "cannot identify cgroupv2 subdirectory"))
 		return result
 	}
 
@@ -196,7 +196,7 @@ func (r *memoryUsageReaderImpl) getUsageCgroupV1() (MemoryUsage, error) {
 
 	n, err := readFromStart(r.v1StatFile, buffer[:])
 	if err != nil {
-		return MemoryUsage{}, err
+		return MemoryUsage{}, v1Error(err)
 	}
 
 	statStr := string(buffer[:n])
@@ -208,7 +208,7 @@ func (r *memoryUsageReaderImpl) getUsageCgroupV1() (MemoryUsage, error) {
 		}
 		val, err := strconv.ParseUint(parts[1], 10, 64)
 		if err != nil {
-			return MemoryUsage{}, err
+			return MemoryUsage{}, v1Error(err)
 		}
 
 		for _, knownUsageComponent := range memoryUsageComponents {
@@ -228,14 +228,47 @@ func (r *memoryUsageReaderImpl) getUsageCgroupV1() (MemoryUsage, error) {
 	if r.v1UsageFile != nil {
 		n, err = readFromStart(r.v1UsageFile, buffer[:])
 		if err != nil {
-			return MemoryUsage{}, err
+			return MemoryUsage{}, v1Error(err)
 		}
 
 		val, err := strconv.ParseUint(strings.TrimSpace(string(buffer[:n])), 10, 64)
 		if err != nil {
-			return MemoryUsage{}, err
+			return MemoryUsage{}, v1Error(err)
 		}
 		result.Used = mathutil.MaxUint64(result.Used, val)
+	}
+
+	return result, nil
+}
+
+func (r *memoryUsageReaderImpl) getUsageCgroupV2() (MemoryUsage, error) {
+	var buffer [64]byte
+
+	var result MemoryUsage
+
+	n, err := readFromStart(r.v2CurrentFile, buffer[:])
+	if err != nil {
+		return MemoryUsage{}, v2Error(err)
+	}
+	val, err := strconv.ParseUint(strings.TrimSpace(string(buffer[:n])), 10, 64)
+	if err != nil {
+		return MemoryUsage{}, v2Error(err)
+	}
+	result.Used = val
+
+	n, err = readFromStart(r.v2MaxFile, buffer[:])
+	if err != nil {
+		return MemoryUsage{}, v2Error(err)
+	}
+	content := strings.TrimSpace(string(buffer[:n]))
+	if content == maxUsage {
+		result.Limit = maxValue
+	} else {
+		val, err = strconv.ParseUint(content, 10, 64)
+		if err != nil {
+			return MemoryUsage{}, v2Error(err)
+		}
+		result.Limit = val
 	}
 
 	return result, nil
@@ -246,46 +279,13 @@ func readFromStart(file *os.File, data []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, err := file.Read(data)
-	if err != nil {
-		return 0, err
-	}
-	_, err = file.Seek(0, io.SeekStart)
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return file.Read(data)
 }
 
-func (r *memoryUsageReaderImpl) getUsageCgroupV2() (MemoryUsage, error) {
-	var buffer [64]byte
+func v1Error(err error) error {
+	return errors.Wrap(err, "reading cgroupv1 memory information")
+}
 
-	var result MemoryUsage
-
-	n, err := readFromStart(r.v2CurrentFile, buffer[:])
-	if err != nil {
-		return MemoryUsage{}, err
-	}
-	val, err := strconv.ParseUint(strings.TrimSpace(string(buffer[:n])), 10, 64)
-	if err != nil {
-		return MemoryUsage{}, err
-	}
-	result.Used = val
-
-	n, err = readFromStart(r.v2MaxFile, buffer[:])
-	if err != nil {
-		return MemoryUsage{}, err
-	}
-	content := strings.TrimSpace(string(buffer[:n]))
-	if content == maxUsage {
-		result.Limit = maxValue
-	} else {
-		val, err = strconv.ParseUint(content, 10, 64)
-		if err != nil {
-			return MemoryUsage{}, err
-		}
-		result.Limit = val
-	}
-
-	return result, nil
+func v2Error(err error) error {
+	return errors.Wrap(err, "reading cgroupv2 memory information")
 }
