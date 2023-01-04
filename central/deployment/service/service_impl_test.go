@@ -6,14 +6,13 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/ranking"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -118,34 +118,30 @@ func TestLabelsMap(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			rocksDB := rocksdbtest.RocksDBForT(t)
-			defer rocksDB.Close()
-
-			bleveIndex, err := globalindex.MemOnlyIndex()
-			require.NoError(t, err)
-
-			dacky, registry, indexingQ := testDackBoxInstance(t, rocksDB, bleveIndex)
-			registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-
-			var pool *pgxpool.Pool
+			var ds datastore.DataStore
+			var indexingQ queue.WaitableQueue
+			var closer func()
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				pool = globaldb.GetPostgresTest(t)
+				ds, closer = setupPostgresDatastore(t)
+			} else {
+				ds, indexingQ, closer = setupRocksDB(t)
 			}
-			deploymentsDS, err := datastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-			require.NoError(t, err)
+			defer closer()
 
 			for _, deployment := range c.deployments {
-				assert.NoError(t, deploymentsDS.UpsertDeployment(ctx, deployment))
+				assert.NoError(t, ds.UpsertDeployment(ctx, deployment))
 			}
 
-			indexingDone := concurrency.NewSignal()
-			indexingQ.PushSignal(&indexingDone)
-			indexingDone.Wait()
+			if !env.PostgresDatastoreEnabled.BooleanSetting() {
+				indexingDone := concurrency.NewSignal()
+				indexingQ.PushSignal(&indexingDone)
+				indexingDone.Wait()
+			}
 
-			results, err := deploymentsDS.Search(ctx, queryForLabels())
+			results, err := ds.Search(ctx, queryForLabels())
 			assert.NoError(t, err)
 			actualMap, actualValues := labelsMapFromSearchResults(results)
-
+			
 			assert.Equal(t, c.expectedMap, actualMap)
 			assert.ElementsMatch(t, c.expectedValues, actualValues)
 		})
@@ -162,4 +158,36 @@ func testDackBoxInstance(t *testing.T, db *rocksdb.RocksDB, index bleve.Index) (
 	lazy.Start()
 
 	return dacky, reg, indexingQ
+}
+
+func setupRocksDB(t *testing.T) (datastore.DataStore, queue.WaitableQueue, func()) {
+	rocksDB := rocksdbtest.RocksDBForT(t)
+	bleveIndex, err := globalindex.MemOnlyIndex()
+	require.NoError(t, err)
+
+	dacky, registry, indexingQ := testDackBoxInstance(t, rocksDB, bleveIndex)
+	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
+
+	ds, err := datastore.GetTestRocksBleveDataStore(t, rocksDB, bleveIndex, dacky, dackboxConcurrency.NewKeyFence())
+	require.NoError(t, err)
+
+	closer := func() {
+		rocksDB.Close()
+	}
+	return ds, indexingQ, closer
+}
+
+func setupPostgresDatastore(t *testing.T) (datastore.DataStore, func()) {
+	testingDB := pgtest.ForT(t)
+	pool := testingDB.Pool
+
+	mockCtrl := gomock.NewController(t)
+	riskDataStore := riskMocks.NewMockDataStore(mockCtrl)
+	ds, err := datastore.New(nil, nil, pool, nil, nil, nil, nil, nil, riskDataStore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	require.NoError(t, err)
+
+	closer := func() {
+		pool.Close()
+	}
+	return ds, closer
 }
