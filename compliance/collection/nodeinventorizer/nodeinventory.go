@@ -65,13 +65,13 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 	}
 	v1rhelc := make([]*scannerV1.RHELComponent, 0, len(rc.Packages))
 	for _, rhelc := range rc.Packages {
-		rhelcId, err := hashstructure.Hash(rhelc, hashstructure.FormatV2, nil)
+		rhelcID, err := hashstructure.Hash(rhelc, hashstructure.FormatV2, nil)
 		if err != nil {
-			log.Warnf("Could not create id for RHELComponent %d", rhelc.Name)
-			rhelcId = 0
+			log.Warnf("Could not create id for RHELComponent %q", rhelc.Name)
+			rhelcID = 0
 		}
 		v1rhelc = append(v1rhelc, &scannerV1.RHELComponent{
-			Id:          int64(rhelcId),
+			Id:          int64(rhelcID),
 			Name:        rhelc.Name,
 			Namespace:   rc.Dist,
 			Version:     rhelc.Version,
