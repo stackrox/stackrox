@@ -2,7 +2,7 @@ package phonehome
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -78,7 +78,7 @@ func getHTTPBody[T any](req *http.Request) (*T, error) {
 	}
 
 	var bb []byte
-	if bb, err = ioutil.ReadAll(br); err != nil {
+	if bb, err = io.ReadAll(br); err != nil {
 		return nil, err
 	}
 	var body *T
