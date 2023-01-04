@@ -1,4 +1,4 @@
-const resultsPanel = `*:has(h2:contains("Collection results")) `;
+const resultsPanel = `.pf-c-drawer__panel:has(h2:contains("Collection results")) `;
 const deploymentIcon = `*[title="Deployment"]`;
 const deploymentResults = `${resultsPanel} ${deploymentIcon} `;
 const deploymentResult = (deploymentName) =>
