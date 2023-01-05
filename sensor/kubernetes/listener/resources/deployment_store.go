@@ -164,7 +164,8 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	wrap := ds.getWrap(id)
+	// Get wrap with no lock since ds.lock.Lock() was already requested above
+	wrap := ds.deployments[id]
 	if wrap == nil {
 		return nil, errors.Errorf("deployment with ID %s doesn't exist in the internal deployment store", id)
 	}
