@@ -302,7 +302,7 @@ ensure-rox-main-image-exists:
 
 .PHONY: build
 build: generate fmt vet ## Build operator local binary.
-	../scripts/go-build-file.sh ./main.go bin/manager
+	CGO_ENABLED=0 ../scripts/go-build-file.sh ./main.go bin/manager
 
 .PHONY: smuggled-status-sh
 smuggled-status-sh:
@@ -329,11 +329,11 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen test smuggled-status-sh ## Build docker image with the operator.
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+docker-build: build/Dockerfile.gen build test smuggled-status-sh ## Build docker image with the operator.
+	docker build \
 		-t ${IMG} \
 		-f $< \
-		..
+		.
 
 ##@ Deployment
 
