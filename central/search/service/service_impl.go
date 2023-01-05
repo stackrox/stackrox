@@ -250,6 +250,9 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		}
 		for _, r := range results {
 			matches := trimMatches(r.Matches, fieldPaths)
+			// In postgres, we do not need to combine map key and values matches as `k=v` because it is already done by postgres searcher.
+			// With postgres, the following condition will not pass anyway.
+			//
 			// This implies that the object is a map because it has multiple values
 			if isMapMatch(matches) {
 				autocompleteResults = append(autocompleteResults, handleMapResults(matches, r.Score)...)
