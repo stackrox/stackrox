@@ -38,14 +38,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = frozenSchema.APITokensSchema
+	schema    = frozenSchema.ApiTokensSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableAPITokensStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableApiTokensStmt)
 	var apiTokens []*storage.TokenMetadata
 	err := walk(ctx, legacyStore, func(obj *storage.TokenMetadata) error {
 		apiTokens = append(apiTokens, obj)
