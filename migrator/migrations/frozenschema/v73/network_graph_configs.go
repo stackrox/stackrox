@@ -25,6 +25,7 @@ var (
 )
 
 const (
+	// NetworkGraphConfigsTableName is the name of the table storing *storage.NetworkGraphConfig
 	NetworkGraphConfigsTableName = "network_graph_configs"
 )
 

@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// IntegrationHealthsTableName is the name of the table storing *storage.IntegrationHealth
 	IntegrationHealthsTableName = "integration_healths"
 )
 

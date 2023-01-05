@@ -25,6 +25,7 @@ var (
 )
 
 const (
+	// ApiTokensTableName is the name of the table storing *storage.TokenMetadata
 	ApiTokensTableName = "api_tokens"
 )
 

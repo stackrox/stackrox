@@ -47,6 +47,7 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
+// Store is the interface to interact with the storage for storage.ProcessIndicator
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ProcessIndicator) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessIndicator) error

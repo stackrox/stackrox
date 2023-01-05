@@ -33,6 +33,7 @@ var (
 )
 
 const (
+	// ProcessBaselineResultsTableName is the name of the table storing *storage.ProcessBaselineResults
 	ProcessBaselineResultsTableName = "process_baseline_results"
 )
 

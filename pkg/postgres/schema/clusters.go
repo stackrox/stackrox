@@ -33,6 +33,7 @@ var (
 )
 
 const (
+	// ClustersTableName is the name of the table storing *storage.Cluster
 	ClustersTableName = "clusters"
 )
 

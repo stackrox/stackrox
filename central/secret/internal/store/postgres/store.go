@@ -47,6 +47,7 @@ var (
 	targetResource = resources.Secret
 )
 
+// Store is the interface to interact with the storage for storage.Secret
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.Secret) error
 	UpsertMany(ctx context.Context, objs []*storage.Secret) error

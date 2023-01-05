@@ -45,6 +45,7 @@ var (
 	targetResource = resources.Access
 )
 
+// Store is the interface to interact with the storage for storage.AuthProvider
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.AuthProvider) error
 	UpsertMany(ctx context.Context, objs []*storage.AuthProvider) error

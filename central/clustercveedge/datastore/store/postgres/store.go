@@ -44,6 +44,7 @@ var (
 	targetResource = resources.Cluster
 )
 
+// Store is the interface to interact with the storage for storage.ClusterCVEEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)

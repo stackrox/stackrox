@@ -45,6 +45,7 @@ var (
 	targetResource = resources.Integration
 )
 
+// Store is the interface to interact with the storage for storage.IntegrationHealth
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.IntegrationHealth) error
 	UpsertMany(ctx context.Context, objs []*storage.IntegrationHealth) error

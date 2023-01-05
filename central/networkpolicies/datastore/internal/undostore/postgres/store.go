@@ -46,6 +46,7 @@ var (
 	targetResource = resources.NetworkPolicy
 )
 
+// Store is the interface to interact with the storage for storage.NetworkPolicyApplicationUndoRecord
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.NetworkPolicyApplicationUndoRecord) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkPolicyApplicationUndoRecord) error

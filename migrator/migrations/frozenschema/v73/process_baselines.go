@@ -28,6 +28,7 @@ var (
 )
 
 const (
+	// ProcessBaselinesTableName is the name of the table storing *storage.ProcessBaseline
 	ProcessBaselinesTableName = "process_baselines"
 )
 

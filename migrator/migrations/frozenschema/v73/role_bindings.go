@@ -33,7 +33,9 @@ var (
 )
 
 const (
-	RoleBindingsTableName         = "role_bindings"
+	// RoleBindingsTableName is the name of the table storing *storage.K8SRoleBinding
+	RoleBindingsTableName = "role_bindings"
+	// RoleBindingsSubjectsTableName is the name of the table storing *storage.Subject
 	RoleBindingsSubjectsTableName = "role_bindings_subjects"
 )
 

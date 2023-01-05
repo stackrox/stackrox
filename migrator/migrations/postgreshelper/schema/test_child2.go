@@ -37,6 +37,7 @@ var (
 )
 
 const (
+	// TestChild2TableName is the name of the table storing *storage.TestChild2
 	TestChild2TableName = "test_child2"
 )
 

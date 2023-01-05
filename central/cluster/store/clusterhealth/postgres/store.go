@@ -46,6 +46,7 @@ var (
 	targetResource = resources.Cluster
 )
 
+// Store is the interface to interact with the storage for storage.ClusterHealthStatus
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ClusterHealthStatus) error
 	UpsertMany(ctx context.Context, objs []*storage.ClusterHealthStatus) error

@@ -47,6 +47,7 @@ var (
 	targetResource = resources.K8sRole
 )
 
+// Store is the interface to interact with the storage for storage.K8SRole
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.K8SRole) error
 	UpsertMany(ctx context.Context, objs []*storage.K8SRole) error

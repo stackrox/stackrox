@@ -33,7 +33,9 @@ var (
 )
 
 const (
-	CollectionsTableName                    = "collections"
+	// CollectionsTableName is the name of the table storing *storage.ResourceCollection
+	CollectionsTableName = "collections"
+	// CollectionsEmbeddedCollectionsTableName is the name of the table storing *storage.ResourceCollection_EmbeddedResourceCollection
 	CollectionsEmbeddedCollectionsTableName = "collections_embedded_collections"
 )
 

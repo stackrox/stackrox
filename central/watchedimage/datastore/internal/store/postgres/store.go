@@ -45,6 +45,7 @@ var (
 	targetResource = resources.WatchedImage
 )
 
+// Store is the interface to interact with the storage for storage.WatchedImage
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.WatchedImage) error
 	UpsertMany(ctx context.Context, objs []*storage.WatchedImage) error

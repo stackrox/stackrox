@@ -46,6 +46,7 @@ var (
 	targetResource = resources.Image
 )
 
+// Store is the interface to interact with the storage for storage.ImageComponent
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ImageComponent) error
 	UpsertMany(ctx context.Context, objs []*storage.ImageComponent) error

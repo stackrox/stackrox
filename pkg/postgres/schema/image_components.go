@@ -44,6 +44,7 @@ var (
 )
 
 const (
+	// ImageComponentsTableName is the name of the table storing *storage.ImageComponent
 	ImageComponentsTableName = "image_components"
 )
 

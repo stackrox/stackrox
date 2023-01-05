@@ -25,6 +25,7 @@ var (
 )
 
 const (
+	// InstallationInfosTableName is the name of the table storing *storage.InstallationInfo
 	InstallationInfosTableName = "installation_infos"
 )
 

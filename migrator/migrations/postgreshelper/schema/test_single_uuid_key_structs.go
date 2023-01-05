@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// TestSingleUuidKeyStructsTableName is the name of the table storing *storage.TestSingleUUIDKeyStruct
 	TestSingleUuidKeyStructsTableName = "test_single_uuid_key_structs"
 )
 

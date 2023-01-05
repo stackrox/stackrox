@@ -53,6 +53,7 @@ var (
 )
 
 const (
+	// ImageComponentEdgesTableName is the name of the table storing *storage.ImageComponentEdge
 	ImageComponentEdgesTableName = "image_component_edges"
 )
 

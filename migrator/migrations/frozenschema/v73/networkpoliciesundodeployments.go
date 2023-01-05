@@ -25,6 +25,7 @@ var (
 )
 
 const (
+	// NetworkpoliciesundodeploymentsTableName is the name of the table storing *storage.NetworkPolicyApplicationUndoDeploymentRecord
 	NetworkpoliciesundodeploymentsTableName = "networkpoliciesundodeployments"
 )
 

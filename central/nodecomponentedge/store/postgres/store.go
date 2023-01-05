@@ -44,6 +44,7 @@ var (
 	targetResource = resources.Node
 )
 
+// Store is the interface to interact with the storage for storage.NodeComponentEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)

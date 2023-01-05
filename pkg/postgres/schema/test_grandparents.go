@@ -43,8 +43,11 @@ var (
 )
 
 const (
-	TestGrandparentsTableName                   = "test_grandparents"
-	TestGrandparentsEmbeddedsTableName          = "test_grandparents_embeddeds"
+	// TestGrandparentsTableName is the name of the table storing *storage.TestGrandparent
+	TestGrandparentsTableName = "test_grandparents"
+	// TestGrandparentsEmbeddedsTableName is the name of the table storing *storage.TestGrandparent_Embedded
+	TestGrandparentsEmbeddedsTableName = "test_grandparents_embeddeds"
+	// TestGrandparentsEmbeddedsEmbedded2TableName is the name of the table storing *storage.TestGrandparent_Embedded_Embedded2
 	TestGrandparentsEmbeddedsEmbedded2TableName = "test_grandparents_embeddeds_embedded2"
 )
 

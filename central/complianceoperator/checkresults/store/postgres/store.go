@@ -45,6 +45,7 @@ var (
 	targetResource = resources.ComplianceOperator
 )
 
+// Store is the interface to interact with the storage for storage.ComplianceOperatorCheckResult
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ComplianceOperatorCheckResult) error
 	UpsertMany(ctx context.Context, objs []*storage.ComplianceOperatorCheckResult) error

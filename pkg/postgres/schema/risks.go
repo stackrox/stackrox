@@ -33,6 +33,7 @@ var (
 )
 
 const (
+	// RisksTableName is the name of the table storing *storage.Risk
 	RisksTableName = "risks"
 )
 

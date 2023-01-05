@@ -28,6 +28,7 @@ var (
 )
 
 const (
+	// ImageIntegrationsTableName is the name of the table storing *storage.ImageIntegration
 	ImageIntegrationsTableName = "image_integrations"
 )
 

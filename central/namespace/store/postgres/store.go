@@ -47,6 +47,7 @@ var (
 	targetResource = resources.Namespace
 )
 
+// Store is the interface to interact with the storage for storage.NamespaceMetadata
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.NamespaceMetadata) error
 	UpsertMany(ctx context.Context, objs []*storage.NamespaceMetadata) error

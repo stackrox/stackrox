@@ -46,6 +46,7 @@ var (
 	targetResource = resources.Image
 )
 
+// Store is the interface to interact with the storage for storage.ImageCVE
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ImageCVE) error
 	UpsertMany(ctx context.Context, objs []*storage.ImageCVE) error

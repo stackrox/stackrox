@@ -46,7 +46,9 @@ var (
 )
 
 const (
-	ImagesTableName       = "images"
+	// ImagesTableName is the name of the table storing *storage.Image
+	ImagesTableName = "images"
+	// ImagesLayersTableName is the name of the table storing *storage.ImageLayer
 	ImagesLayersTableName = "images_layers"
 )
 

@@ -45,6 +45,7 @@ var (
 	targetResource = resources.Role
 )
 
+// Store is the interface to interact with the storage for storage.PermissionSet
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.PermissionSet) error
 	UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error

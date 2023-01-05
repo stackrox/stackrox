@@ -40,6 +40,7 @@ var (
 )
 
 const (
+	// TestParent4TableName is the name of the table storing *storage.TestParent4
 	TestParent4TableName = "test_parent4"
 )
 

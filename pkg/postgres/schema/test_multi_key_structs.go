@@ -40,7 +40,9 @@ var (
 )
 
 const (
-	TestMultiKeyStructsTableName        = "test_multi_key_structs"
+	// TestMultiKeyStructsTableName is the name of the table storing *storage.TestMultiKeyStruct
+	TestMultiKeyStructsTableName = "test_multi_key_structs"
+	// TestMultiKeyStructsNestedsTableName is the name of the table storing *storage.TestMultiKeyStruct_Nested
 	TestMultiKeyStructsNestedsTableName = "test_multi_key_structs_nesteds"
 )
 

@@ -25,6 +25,7 @@ var (
 )
 
 const (
+	// ComplianceStringsTableName is the name of the table storing *storage.ComplianceStrings
 	ComplianceStringsTableName = "compliance_strings"
 )
 

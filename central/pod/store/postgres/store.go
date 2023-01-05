@@ -47,6 +47,7 @@ var (
 	targetResource = resources.Deployment
 )
 
+// Store is the interface to interact with the storage for storage.Pod
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.Pod) error
 	UpsertMany(ctx context.Context, objs []*storage.Pod) error

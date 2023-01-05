@@ -45,6 +45,7 @@ var (
 	targetResource = resources.Integration
 )
 
+// Store is the interface to interact with the storage for storage.ImageIntegration
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ImageIntegration) error
 	UpsertMany(ctx context.Context, objs []*storage.ImageIntegration) error

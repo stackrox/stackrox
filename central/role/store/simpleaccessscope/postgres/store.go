@@ -45,6 +45,7 @@ var (
 	targetResource = resources.Role
 )
 
+// Store is the interface to interact with the storage for storage.SimpleAccessScope
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error
 	UpsertMany(ctx context.Context, objs []*storage.SimpleAccessScope) error

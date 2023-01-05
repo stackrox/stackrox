@@ -31,6 +31,7 @@ var (
 	targetResource = resources.Config
 )
 
+// Store is the interface to interact with the storage for storage.Config
 type Store interface {
 	Get(ctx context.Context) (*storage.Config, bool, error)
 	Upsert(ctx context.Context, obj *storage.Config) error
@@ -181,6 +182,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 
 // Used for Testing
 
+// Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS configs CASCADE")
 }

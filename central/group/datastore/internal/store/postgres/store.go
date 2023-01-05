@@ -45,6 +45,7 @@ var (
 	targetResource = resources.Access
 )
 
+// Store is the interface to interact with the storage for storage.Group
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.Group) error
 	UpsertMany(ctx context.Context, objs []*storage.Group) error

@@ -47,6 +47,7 @@ var (
 	targetResource = resources.NetworkPolicy
 )
 
+// Store is the interface to interact with the storage for storage.NetworkPolicy
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.NetworkPolicy) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkPolicy) error

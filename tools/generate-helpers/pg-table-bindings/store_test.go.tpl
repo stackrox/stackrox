@@ -202,8 +202,8 @@ func (s *{{$namePrefix}}StoreSuite) TestSACCount() {
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expectedCount := range map[string]int{
@@ -230,8 +230,8 @@ func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expectedIDs := range map[string][]string{
@@ -264,8 +264,8 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expectedIDs := range map[string][]string{
@@ -290,7 +290,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACExists() {
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expected := range map[string]bool{
@@ -314,7 +314,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGet() {
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expected := range map[string]bool{
@@ -415,8 +415,8 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expected := range map[string]struct{

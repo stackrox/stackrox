@@ -39,6 +39,7 @@ var (
 )
 
 const (
+	// ClusterCvesTableName is the name of the table storing *storage.ClusterCVE
 	ClusterCvesTableName = "cluster_cves"
 )
 

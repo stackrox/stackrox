@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// SignatureIntegrationsTableName is the name of the table storing *storage.SignatureIntegration
 	SignatureIntegrationsTableName = "signature_integrations"
 )
 

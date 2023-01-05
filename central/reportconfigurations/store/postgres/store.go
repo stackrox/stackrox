@@ -45,6 +45,7 @@ var (
 	targetResource = resources.VulnerabilityReports
 )
 
+// Store is the interface to interact with the storage for storage.ReportConfiguration
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ReportConfiguration) error
 	UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error

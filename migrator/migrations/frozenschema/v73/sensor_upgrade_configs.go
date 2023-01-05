@@ -25,6 +25,7 @@ var (
 )
 
 const (
+	// SensorUpgradeConfigsTableName is the name of the table storing *storage.SensorUpgradeConfig
 	SensorUpgradeConfigsTableName = "sensor_upgrade_configs"
 )
 

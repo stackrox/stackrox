@@ -78,6 +78,7 @@ var (
     {{- end }}
 )
 
+// Store is the interface to interact with the storage for {{.Type}}
 type Store interface {
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *{{.Type}}) error

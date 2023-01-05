@@ -47,6 +47,7 @@ var (
 	targetResource = resources.ServiceAccount
 )
 
+// Store is the interface to interact with the storage for storage.ServiceAccount
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ServiceAccount) error
 	UpsertMany(ctx context.Context, objs []*storage.ServiceAccount) error

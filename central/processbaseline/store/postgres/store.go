@@ -47,6 +47,7 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
+// Store is the interface to interact with the storage for storage.ProcessBaseline
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ProcessBaseline) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error

@@ -33,6 +33,7 @@ var (
 )
 
 const (
+	// ComplianceDomainsTableName is the name of the table storing *storage.ComplianceDomain
 	ComplianceDomainsTableName = "compliance_domains"
 )
 

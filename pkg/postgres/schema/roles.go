@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// RolesTableName is the name of the table storing *storage.Role
 	RolesTableName = "roles"
 )
 

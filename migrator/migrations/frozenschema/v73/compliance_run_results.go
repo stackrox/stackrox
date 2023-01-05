@@ -29,6 +29,7 @@ var (
 )
 
 const (
+	// ComplianceRunResultsTableName is the name of the table storing *storage.ComplianceRunResults
 	ComplianceRunResultsTableName = "compliance_run_results"
 )
 

@@ -33,6 +33,7 @@ var (
 )
 
 const (
+	// ReportConfigurationsTableName is the name of the table storing *storage.ReportConfiguration
 	ReportConfigurationsTableName = "report_configurations"
 )
 

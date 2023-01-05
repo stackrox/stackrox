@@ -45,6 +45,7 @@ var (
 	targetResource = resources.DebugLogs
 )
 
+// Store is the interface to interact with the storage for storage.LogImbue
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.LogImbue) error
 	UpsertMany(ctx context.Context, objs []*storage.LogImbue) error

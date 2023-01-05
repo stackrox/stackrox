@@ -46,6 +46,7 @@ var (
 	targetResource = resources.Deployment
 )
 
+// Store is the interface to interact with the storage for storage.ActiveComponent
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ActiveComponent) error
 	UpsertMany(ctx context.Context, objs []*storage.ActiveComponent) error

@@ -42,6 +42,7 @@ var (
 )
 
 const (
+	// NodeCvesTableName is the name of the table storing *storage.NodeCVE
 	NodeCvesTableName = "node_cves"
 )
 

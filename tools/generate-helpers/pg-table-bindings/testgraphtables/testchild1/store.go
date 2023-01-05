@@ -46,6 +46,7 @@ var (
 	targetResource = resources.Namespace
 )
 
+// Store is the interface to interact with the storage for storage.TestChild1
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.TestChild1) error
 	UpsertMany(ctx context.Context, objs []*storage.TestChild1) error

@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// VersionsTableName is the name of the table storing *storage.Version
 	VersionsTableName = "versions"
 )
 

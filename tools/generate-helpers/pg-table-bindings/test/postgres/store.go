@@ -46,6 +46,7 @@ var (
 	targetResource = resources.Namespace
 )
 
+// Store is the interface to interact with the storage for storage.TestSingleKeyStruct
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.TestSingleKeyStruct) error
 	UpsertMany(ctx context.Context, objs []*storage.TestSingleKeyStruct) error

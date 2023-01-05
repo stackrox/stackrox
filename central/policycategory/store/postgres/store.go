@@ -45,6 +45,7 @@ var (
 	targetResource = resources.Policy
 )
 
+// Store is the interface to interact with the storage for storage.PolicyCategory
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.PolicyCategory) error
 	UpsertMany(ctx context.Context, objs []*storage.PolicyCategory) error

@@ -50,7 +50,9 @@ var (
 )
 
 const (
-	NodesTableName       = "nodes"
+	// NodesTableName is the name of the table storing *storage.Node
+	NodesTableName = "nodes"
+	// NodesTaintsTableName is the name of the table storing *storage.Taint
 	NodesTaintsTableName = "nodes_taints"
 )
 

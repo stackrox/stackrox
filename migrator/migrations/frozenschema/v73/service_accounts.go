@@ -28,6 +28,7 @@ var (
 )
 
 const (
+	// ServiceAccountsTableName is the name of the table storing *storage.ServiceAccount
 	ServiceAccountsTableName = "service_accounts"
 )
 

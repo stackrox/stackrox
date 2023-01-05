@@ -45,6 +45,7 @@ var (
 	targetResource = resources.WorkflowAdministration
 )
 
+// Store is the interface to interact with the storage for storage.ResourceCollection
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ResourceCollection) error
 	UpsertMany(ctx context.Context, objs []*storage.ResourceCollection) error

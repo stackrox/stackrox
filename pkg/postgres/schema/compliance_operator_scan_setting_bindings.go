@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// ComplianceOperatorScanSettingBindingsTableName is the name of the table storing *storage.ComplianceOperatorScanSettingBinding
 	ComplianceOperatorScanSettingBindingsTableName = "compliance_operator_scan_setting_bindings"
 )
 

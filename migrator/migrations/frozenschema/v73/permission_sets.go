@@ -25,6 +25,7 @@ var (
 )
 
 const (
+	// PermissionSetsTableName is the name of the table storing *storage.PermissionSet
 	PermissionSetsTableName = "permission_sets"
 )
 

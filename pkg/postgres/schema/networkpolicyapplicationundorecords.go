@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// NetworkpolicyapplicationundorecordsTableName is the name of the table storing *storage.NetworkPolicyApplicationUndoRecord
 	NetworkpolicyapplicationundorecordsTableName = "networkpolicyapplicationundorecords"
 )
 

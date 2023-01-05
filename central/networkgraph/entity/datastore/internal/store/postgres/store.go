@@ -43,6 +43,7 @@ var (
 	schema = pkgSchema.NetworkEntitiesSchema
 )
 
+// Store is the interface to interact with the storage for storage.NetworkEntity
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.NetworkEntity) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error

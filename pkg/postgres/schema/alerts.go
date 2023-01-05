@@ -35,6 +35,7 @@ var (
 )
 
 const (
+	// AlertsTableName is the name of the table storing *storage.Alert
 	AlertsTableName = "alerts"
 )
 

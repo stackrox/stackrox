@@ -25,6 +25,7 @@ var (
 )
 
 const (
+	// NotifiersTableName is the name of the table storing *storage.Notifier
 	NotifiersTableName = "notifiers"
 )
 

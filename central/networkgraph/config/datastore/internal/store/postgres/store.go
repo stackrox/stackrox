@@ -45,6 +45,7 @@ var (
 	targetResource = resources.NetworkGraphConfig
 )
 
+// Store is the interface to interact with the storage for storage.NetworkGraphConfig
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.NetworkGraphConfig) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkGraphConfig) error
