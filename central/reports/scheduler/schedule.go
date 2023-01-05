@@ -78,9 +78,7 @@ const (
 	reportQueryPostgres = `query getVulnReportData($scopequery: String, 
 							$cvequery: String, $pagination: Pagination) {
 							deployments: deployments(query: $scopequery, pagination: $pagination) {
-								cluster {
-									name
-								}
+								clusterName
 								namespace
 								name
 								images {
@@ -400,7 +398,7 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 		if err != nil {
 			return nil, err
 		}
-		result = groupByClusterAndNamespace(result)
+		result.Deployments = groupByClusterAndNamespace(result.Deployments)
 		return []common.Result{result}, nil
 	}
 	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
@@ -501,12 +499,11 @@ func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Q
 	return search.ResultsToIDs(results), nil
 }
 
-func groupByClusterAndNamespace(result common.Result) common.Result {
-	groupedDeployments := make([]*common.Deployment, 0, len(result.Deployments))
+func groupByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {
+	groupedDeployments := make([]*common.Deployment, 0, len(deployments))
 	deploymentsByCluster := make(map[string][]*common.Deployment)
-	for _, deployment := range result.Deployments {
-		clusterName := deployment.Cluster.GetName()
-		deploymentsByCluster[clusterName] = append(deploymentsByCluster[clusterName], deployment)
+	for _, deployment := range deployments {
+		deploymentsByCluster[deployment.GetClusterName()] = append(deploymentsByCluster[deployment.GetClusterName()], deployment)
 	}
 
 	for _, deployments := range deploymentsByCluster {
@@ -519,7 +516,7 @@ func groupByClusterAndNamespace(result common.Result) common.Result {
 		}
 	}
 
-	return common.Result{Deployments: groupedDeployments}
+	return groupedDeployments
 }
 
 func (s *scheduler) Start() {

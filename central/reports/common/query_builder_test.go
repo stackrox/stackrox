@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 )
@@ -68,7 +69,10 @@ var vulnFilters = &storage.VulnerabilityReportFilters{
 }
 
 func TestBuildQuery(t *testing.T) {
-	// TODO(ROX-13958) : Skip if collections is enabled
+	if features.ObjectCollections.Enabled() {
+		t.Skip("Skip test when ObjectCollections is enabled")
+		t.SkipNow()
+	}
 	qb := NewVulnReportQueryBuilder(clusters, namespaces, accessScope, nil, vulnFilters, nil, time.Now())
 	ctx := sac.WithAllAccess(context.Background())
 	rq, err := qb.BuildQuery(ctx)
