@@ -139,7 +139,7 @@ func (s *serviceImplTestSuite) TestDatabaseStatus() {
 		dbStatus, err := service.GetDatabaseStatus(ctx, nil)
 		s.NoError(err)
 		s.True(dbStatus.DatabaseAvailable)
-		s.Equal("Postgres", dbStatus.DatabaseType)
+		s.Equal("PostgresDB", dbStatus.DatabaseType)
 		s.NotEqual("", dbStatus.DatabaseVersion)
 
 		dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)

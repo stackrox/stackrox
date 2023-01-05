@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -145,18 +146,21 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 	}
 
 	dbType := "RocksDB"
+	var dbVersion string
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		dbType = "Postgres"
+		dbType = "PostgresDB"
 		if err := s.db.Ping(ctx); err != nil {
 			dbStatus.DatabaseAvailable = false
 			log.Warn("central is unable to communicate with the database.")
 			return dbStatus, nil
 		}
+
+		dbVersion = globaldb.GetPostgresVersion(ctx, s.db)
 	}
 
 	// Only return the database type and version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
-		dbStatus.DatabaseVersion = "working on it"
+		dbStatus.DatabaseVersion = dbVersion
 		dbStatus.DatabaseType = dbType
 	}
 
