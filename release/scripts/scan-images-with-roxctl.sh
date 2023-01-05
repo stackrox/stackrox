@@ -17,15 +17,10 @@ scan_images_with_roxctl() {
     collector_tag=$(make collector-tag)
     local scanner_tag
     scanner_tag=$(make scanner-tag)
-    local docs_prerelease_tag
-    docs_prerelease_tag=$(make docs-tag)
 
     # check main images
     images+=("main:$release_tag")
     images+=("central-db:$release_tag")
-
-    # check docs image - using the pre-release tag (not the release tag)
-    images+=("docs:$docs_prerelease_tag")
 
     # check collector images
     images+=("collector:${collector_tag}-slim")

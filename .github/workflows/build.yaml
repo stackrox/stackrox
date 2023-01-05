@@ -444,3 +444,43 @@ jobs:
         push: true
         tags: |
           quay.io/rhacs-eng/grpc-server:${{ steps.tag.outputs.TAG }}
+
+  scan-images-with-roxctl:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs:
+      - build-and-push-main
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      env:
+        STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
+        STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout submodules
+        run: |
+            git submodule update --init
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: cli-build
+
+      - name: Unpack cli build
+        run: |
+          tar xvzf cli-build.tgz
+
+      - name: Install roxctl
+        run: |
+          ./scripts/ci/lib.sh install_built_roxctl_in_gopath
+          roxctl version
+
+      - name: Scan images
+        run: |
+          ./release/scripts/scan-images-with-roxctl.sh

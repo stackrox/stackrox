@@ -30,10 +30,6 @@ release_mgmt() {
 
     fi
 
-    "$ROOT/release/scripts/scan-images-with-roxctl.sh" || {
-        pre_release_warnings+=("Errors were found in image scans.")
-    }
-
     if [[ "${#pre_release_warnings[@]}" != "0" ]]; then
         info "ERROR: Issues were found:"
         for issue in "${pre_release_warnings[@]}"; do
