@@ -32,16 +32,16 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
+	// uncertifiedRHEL is false since scanning is only supported on RHCOS for now,
+	// which only exists in certified versions. Therefore, no specific notes needed
+	// if uncertifiedRHEL can be true in the future, we can add Note_CERTIFIED_RHEL_SCAN_UNAVAILABLE
 	m := &storage.NodeInventory{
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
 		Components: protoComponents,
+		Notes:      []scannerV1.Note{scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE},
 	}
-	// uncertifiedRHEL is false since scanning is only supported on RHCOS for now,
-	// which only exists in certified versions. Therefore, no specific notes needed
-	// if uncertifiedRHEL can be true in the future, we can add Note_CERTIFIED_RHEL_SCAN_UNAVAILABLE
-	m.Notes = []scannerV1.Note{scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE}
-
+	
 	return m, nil
 }
 
