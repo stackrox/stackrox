@@ -1,4 +1,4 @@
-package nodescanv2
+package nodeinventorizer
 
 import (
 	timestamp "github.com/gogo/protobuf/types"
@@ -11,12 +11,12 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// FakeNodeScanner can be used to send fake messages that would be emitted by NodeInventory
-type FakeNodeScanner struct {
+// FakeNodeInventorizer can be used to send fake messages that would be emitted by NodeInventory
+type FakeNodeInventorizer struct {
 }
 
 // Scan returns a fake message in the same format a real NodeInventory would produce
-func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
+func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, error) {
 	log.Infof("Generating fake scan result message...")
 	msg := &storage.NodeInventory{
 		NodeId:   "",

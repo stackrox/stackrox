@@ -58,12 +58,11 @@ test_roxctl_cmd() {
 
 test_roxctl_cmd central generate k8s none --output-format kubectl
 test_roxctl_cmd central generate openshift none
-if [ -z "${ROX_POSTGRES_DATASTORE}" ] || [ "${ROX_POSTGRES_DATASTORE}" == "false" ]; then #TODO(ROX-13420): Fix and enable on postgres
-    test_roxctl_cmd sensor generate k8s --name k8s-istio-test-cluster  --continue-if-exists
-    test_roxctl_cmd sensor get-bundle k8s-istio-test-cluster
-    test_roxctl_cmd sensor generate openshift --name os-istio-test-cluster --continue-if-exists
-    test_roxctl_cmd sensor get-bundle os-istio-test-cluster
-fi
+
+test_roxctl_cmd sensor generate k8s --name k8s-istio-test-cluster  --continue-if-exists
+test_roxctl_cmd sensor get-bundle k8s-istio-test-cluster
+test_roxctl_cmd sensor generate openshift --name os-istio-test-cluster --continue-if-exists
+test_roxctl_cmd sensor get-bundle os-istio-test-cluster
 
 if [ $FAILURES -eq 0 ]; then
   echo "Passed"

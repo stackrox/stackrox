@@ -256,19 +256,6 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('clicking the "Deployments With Most Severe Policy Violations" widget\'s "View All" button should take you to the policies list', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'deployments';
-        const widgetHeading = 'Deployments With Most Severe Policy Violations';
-
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
-        }, entitiesKey);
-
-        cy.location('search').should('eq', '');
-    });
-
     it('clicking the "Clusters With Most Orchestrator & Istio Vulnerabilities" widget\'s "View All" button should take you to the clusters list', () => {
         visitVulnerabilityManagementDashboard();
 

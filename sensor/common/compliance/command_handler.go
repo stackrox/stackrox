@@ -24,7 +24,6 @@ func NewCommandHandler(complianceService Service) CommandHandler {
 
 		scrapeIDToState: make(map[string]*scrapeState),
 
-		stopC:    concurrency.NewErrorSignal(),
-		stoppedC: concurrency.NewErrorSignal(),
+		stopper: concurrency.NewStopper(),
 	}
 }

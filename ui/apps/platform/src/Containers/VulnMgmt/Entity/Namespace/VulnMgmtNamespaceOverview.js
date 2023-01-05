@@ -13,7 +13,6 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
-import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widgets/DeploymentsWithMostSeverePolicyViolations';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -113,11 +112,6 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                         </div>
                         <div className="s-1">
                             <TopRiskiestEntities entityContext={currentEntity} />
-                        </div>
-                        <div className="s-1">
-                            <DeploymentsWithMostSeverePolicyViolations
-                                entityContext={currentEntity}
-                            />
                         </div>
                     </div>
                 </CollapsibleSection>

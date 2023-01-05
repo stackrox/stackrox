@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 const (
@@ -24,9 +23,12 @@ func orchestratorCommand(shortName, longName string) *cobra.Command {
 		Use:   shortName,
 		Short: shortName,
 		Long:  longName,
-		RunE: util.RunENoArgs(func(*cobra.Command) error {
-			return errox.InvalidArgs.New("storage type must be specified")
-		}),
+		RunE: func(_ *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return errox.InvalidArgs.New("storage type must be specified")
+			}
+			return errox.InvalidArgs.Newf("unexpected storage type %q", args[0])
+		},
 	}
 	if !roxctl.InMainImage() {
 		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultCentralDBBundle), "output-dir", "the directory to output the deployment bundle to")

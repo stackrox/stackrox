@@ -18,6 +18,6 @@ func init() {
 		common.NewFileHandler(path.Join(backup.KeysBaseFolder, backup.JwtKeyInDer), true, formats.Discard),
 		common.NewFileHandler(path.Join(backup.KeysBaseFolder, backup.JwtKeyInPem), true, formats.Discard),
 		common.NewFileHandler(path.Join(backup.DatabaseBaseFolder, backup.DatabasePassword), true, formats.Discard),
-		common.NewFileHandler(backup.MigrationVersion, true, common.RestoreMigrationVersion),
+		common.NewFileHandler(backup.MigrationVersion, true, formats.Discard),
 	)
 }

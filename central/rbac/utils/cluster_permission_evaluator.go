@@ -58,12 +58,10 @@ func (c *clusterPermissionEvaluator) getBindingsAndRoles(ctx context.Context, su
 		AddExactMatches(search.SubjectKind, subject.GetKind().String()).
 		ProtoQuery()
 	clusterRoleBindings, err := c.bindingsStore.SearchRawRoleBindings(ctx, q)
-
 	if err != nil {
 		log.Errorf("error searching for clusterrolebindings: %v", err)
 		return nil, nil
 	}
-
-	roles := getRolesForBindings(ctx, c.roleStore, clusterRoleBindings)
+	roles := getRolesForRoleBindings(ctx, c.roleStore, clusterRoleBindings, c.clusterID, "")
 	return clusterRoleBindings, roles
 }

@@ -244,7 +244,7 @@ func (qb *QueryBuilder) AddStringsHighlighted(k FieldLabel, v ...string) *QueryB
 	return qb.AddStrings(k, v...).MarkHighlighted(k)
 }
 
-// AddNullField adds a very for documents that don't contain the specified field.
+// AddNullField adds a query for documents that don't contain the specified field.
 func (qb *QueryBuilder) AddNullField(k FieldLabel) *QueryBuilder {
 	return qb.AddStrings(k, NullString)
 }

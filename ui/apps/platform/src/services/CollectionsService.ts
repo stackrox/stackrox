@@ -33,7 +33,6 @@ export type Collection = {
     id: string;
     name: string;
     description: string;
-    inUse: boolean;
     resourceSelectors: ResourceSelector[];
     embeddedCollections: { id: string }[];
 };

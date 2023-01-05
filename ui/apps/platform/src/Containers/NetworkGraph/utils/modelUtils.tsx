@@ -79,6 +79,7 @@ function getDataByEntityType(
                 ...entity,
                 policyIds,
                 networkPolicyState,
+                showPolicyState: true,
             };
         case 'INTERNET':
             return { ...entity, type: 'EXTERNAL_ENTITIES' };
