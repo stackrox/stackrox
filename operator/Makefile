@@ -323,16 +323,17 @@ smuggled-status-sh:
 	)
 
 # Force re-building the file to make sure the current environment is correctly reflected.
+# Deprecated: This is used only by OSCI (aka prow) and should be remove soon.
 .PHONY: build/Dockerfile.gen
-build/Dockerfile.gen: Dockerfile
+build/Dockerfile.gen: Dockerfile.osci
 	mkdir -p build/
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen build test smuggled-status-sh ## Build docker image with the operator.
+docker-build: build test smuggled-status-sh ## Build docker image with the operator.
 	docker build \
+		--build-arg ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
 		-t ${IMG} \
-		-f $< \
 		.
 
 ##@ Deployment
