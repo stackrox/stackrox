@@ -92,8 +92,8 @@ func (k *listenerImpl) handleAllEvents() {
 
 	roleInformer := sif.Rbac().V1().Roles().Informer()
 	clusterRoleInformer := sif.Rbac().V1().ClusterRoles().Informer()
-	roleBindingInformer := resyncingSif.Rbac().V1().RoleBindings().Informer()
-	clusterRoleBindingInformer := resyncingSif.Rbac().V1().ClusterRoleBindings().Informer()
+	roleBindingInformer := sif.Rbac().V1().RoleBindings().Informer()
+	clusterRoleBindingInformer := sif.Rbac().V1().ClusterRoleBindings().Informer()
 
 	// prePodWaitGroup
 	prePodWaitGroup := &concurrency.WaitGroup{}

@@ -22,6 +22,8 @@ type Store interface {
 	UpsertClusterBinding(binding *v1.ClusterRoleBinding)
 	RemoveClusterBinding(binding *v1.ClusterRoleBinding)
 	GetPermissionLevelForDeployment(deployment rbac.NamespacedServiceAccount) storage.PermissionLevel
+
+	FindBindingIDForRole(namespace, roleName string, clusterWide bool) []string
 }
 
 // NewStore creates a new instance of Store

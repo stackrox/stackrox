@@ -111,6 +111,23 @@ func (rs *storeImpl) RemoveClusterBinding(binding *v1.ClusterRoleBinding) {
 	rs.removeRoleBindingGenericNoLock(bindingID)
 }
 
+func (rs *storeImpl) FindBindingIDForRole(namespace, roleName string, clusterWide bool) []string {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	var matched []string
+	for binding, ref := range rs.bindings {
+		if ref.roleRef.name != roleName {
+			continue
+		}
+		if clusterWide || ref.roleRef.namespace == namespace {
+			matched = append(matched, binding.uid)
+		}
+	}
+
+	return matched
+}
+
 func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() {
 	rs.bucketEvaluator = newBucketEvaluator(rs.roles, rs.bindings)
 	rs.dirty = false
