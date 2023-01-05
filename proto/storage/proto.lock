@@ -25,7 +25,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Deployment ID,hidden\"sql:\"fk(Deployment:id),no-fk-constraint,directional,index=hash\""
+                    "value": "search:\"Deployment ID,hidden\"sql:\"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)\""
                   }
                 ]
               },
@@ -101,7 +101,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -192,7 +202,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sensorhash:\"ignore\"sql:\"pk\""
+                    "value": "sensorhash:\"ignore\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -225,7 +235,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store\""
+                    "value": "search:\"Cluster ID,store\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -258,7 +268,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Namespace ID\""
+                    "value": "search:\"Namespace ID\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -381,7 +391,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\"Deployment ID,store,hidden\"sql:\"index=hash\""
+                        "value": "search:\"Deployment ID,store,hidden\"sql:\"index=hash,type(uuid)\""
                       }
                     ]
                   },
@@ -809,7 +819,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\"Cluster ID,store\""
+                        "value": "search:\"Cluster ID,store\"sql:\"type(uuid)\""
                       }
                     ]
                   },
@@ -820,7 +830,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\"Namespace ID\""
+                        "value": "search:\"Namespace ID\"sql:\"type(uuid)\""
                       }
                     ]
                   },
@@ -1041,7 +1051,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -1112,7 +1132,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -1206,6 +1236,14 @@
                   "name": "config",
                   "type": "string"
                 }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 13,
+                  "name": "claim_mappings",
+                  "type": "string"
+                }
               }
             ],
             "messages": [
@@ -1237,7 +1275,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -1712,7 +1760,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\"sql:\"pk\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -2026,7 +2074,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(Cluster:id),no-fk-constraint\""
+                    "value": "sql:\"pk,fk(Cluster:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -2212,7 +2260,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -2274,7 +2332,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -2299,7 +2367,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -2674,7 +2752,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -2936,7 +3014,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -3300,7 +3388,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -3507,7 +3605,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -3561,7 +3669,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -4598,7 +4716,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -4709,7 +4837,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Deployment ID,store,hidden\"sql:\"pk\""
+                    "value": "search:\"Deployment ID,store,hidden\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -4731,7 +4859,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "hash:\"ignore\""
+                    "value": "hash:\"ignore\"sensorhash:\"ignore\""
                   }
                 ]
               },
@@ -4764,7 +4892,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Namespace ID\"sql:\"fk(NamespaceMetadata:id),no-fk-constraint\""
+                    "value": "search:\"Namespace ID\"sql:\"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -4813,7 +4941,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store,hidden\""
+                    "value": "search:\"Cluster ID,store,hidden\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -5322,7 +5450,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Pod ID,hidden\"sql:\"pk\""
+                    "value": "search:\"Pod ID,hidden\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -5344,7 +5472,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Deployment ID,hidden\"sql:\"fk(Deployment:id),no-fk-constraint\""
+                    "value": "search:\"Deployment ID,hidden\"sql:\"fk(Deployment:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -5366,7 +5494,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store,hidden\""
+                    "value": "search:\"Cluster ID,store,hidden\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -5943,7 +6071,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -6119,7 +6257,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -6188,7 +6336,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -6213,7 +6371,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -6301,7 +6469,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -6440,6 +6618,18 @@
                 "id": 1,
                 "name": "name",
                 "type": "ImageName"
+              },
+              {
+                "id": 18,
+                "name": "names",
+                "type": "ImageName",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"-\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -6668,6 +6858,12 @@
                 "id": 4,
                 "name": "description",
                 "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "verified_image_references",
+                "type": "string",
+                "is_repeated": true
               }
             ]
           },
@@ -7155,7 +7351,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -7276,7 +7482,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -7311,7 +7527,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -7368,6 +7584,11 @@
                 "type": "ClairConfig"
               },
               {
+                "id": 22,
+                "name": "clair_v4",
+                "type": "ClairV4Config"
+              },
+              {
                 "id": 20,
                 "name": "ibm",
                 "type": "IBMRegistryConfig"
@@ -7384,7 +7605,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -7392,6 +7613,11 @@
                 "id": 18,
                 "name": "skip_test_integration",
                 "type": "bool"
+              },
+              {
+                "id": 21,
+                "name": "source",
+                "type": "Source"
               }
             ],
             "reserved_ids": [
@@ -7401,6 +7627,28 @@
               12,
               17,
               19
+            ],
+            "messages": [
+              {
+                "name": "Source",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "namespace",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "image_pull_secret_name",
+                    "type": "string"
+                  }
+                ]
+              }
             ]
           },
           {
@@ -7492,6 +7740,27 @@
           },
           {
             "name": "ClairConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "validate:\"nolocalendpoint\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "insecure",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "ClairV4Config",
             "fields": [
               {
                 "id": 1,
@@ -7736,7 +8005,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -7766,7 +8045,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -7863,7 +8152,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -8146,7 +8445,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -8287,7 +8596,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -8317,7 +8636,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -8361,7 +8690,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -8476,7 +8815,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -8493,7 +8842,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Namespace ID\"sql:\"pk\""
+                    "value": "search:\"Namespace ID\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -8515,7 +8864,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -8583,7 +8932,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -8636,7 +8995,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -8647,7 +9006,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -8717,7 +9076,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -8808,7 +9177,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               }
@@ -9038,7 +9407,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -9074,7 +9453,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -9145,7 +9534,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -9364,7 +9753,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -9400,7 +9789,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -9441,7 +9830,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -9484,7 +9883,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Node ID,store\"sql:\"pk\""
+                    "value": "search:\"Node ID,store\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -9512,7 +9911,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store\"sql:\"fk(Cluster:id),no-fk-constraint\""
+                    "value": "search:\"Cluster ID,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -9774,6 +10173,55 @@
             ]
           },
           {
+            "name": "NodeInventory",
+            "fields": [
+              {
+                "id": 1,
+                "name": "node_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Node ID,store\"sql:\"pk,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "node_name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Node,store\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Node Scan Time,store\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "components",
+                "type": "scannerV1.Components"
+              },
+              {
+                "id": 5,
+                "name": "notes",
+                "type": "scannerV1.Note",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
             "name": "EmbeddedNodeScanComponent",
             "fields": [
               {
@@ -9833,6 +10281,12 @@
             "path": "google/protobuf/timestamp.proto"
           },
           {
+            "path": "scanner/api/v1/note.proto"
+          },
+          {
+            "path": "scanner/api/v1/component.proto"
+          },
+          {
             "path": "storage/container_runtime.proto"
           },
           {
@@ -9847,7 +10301,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -9944,7 +10408,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -9984,7 +10458,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -10533,6 +11017,12 @@
                 "id": 2,
                 "name": "tcp_config",
                 "type": "TCPConfig"
+              },
+              {
+                "id": 3,
+                "name": "extra_fields",
+                "type": "KeyValuePair",
+                "is_repeated": true
               }
             ],
             "messages": [
@@ -10583,7 +11073,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -10623,7 +11123,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -11423,7 +11933,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -11470,7 +11990,21 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "cc_enable_arenas",
+            "value": "true"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -11509,7 +12043,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Deployment ID,hidden\""
+                    "value": "search:\"Deployment ID,hidden\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -11525,7 +12059,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -11656,7 +12190,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -11667,7 +12201,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -11701,7 +12235,21 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "cc_enable_arenas",
+            "value": "true"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -11718,7 +12266,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Process ID,store,hidden\"sql:\"pk\""
+                    "value": "search:\"Process ID,store,hidden\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -11729,7 +12277,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Deployment ID,store,hidden\"policy:\",prefer-parent\"sql:\"index=hash,fk(Deployment:id),no-fk-constraint\""
+                    "value": "search:\"Deployment ID,store,hidden\"policy:\",prefer-parent\"sql:\"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -11762,7 +12310,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Pod UID,hidden\"sql:\"index=hash\""
+                    "value": "search:\"Pod UID,hidden\"sql:\"index=hash,type(uuid)\""
                   }
                 ]
               },
@@ -11778,7 +12326,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store,hidden\"policy:\",prefer-parent\""
+                    "value": "search:\"Cluster ID,store,hidden\"policy:\",prefer-parent\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -11834,6 +12382,26 @@
               },
               {
                 "id": 5,
+                "name": "process_args",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "NetworkProcessUniqueKey",
+            "fields": [
+              {
+                "id": 1,
+                "name": "process_name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "process_exec_file_path",
+                "type": "string"
+              },
+              {
+                "id": 3,
                 "name": "process_args",
                 "type": "string"
               }
@@ -11976,7 +12544,77 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "cc_enable_arenas",
+            "value": "true"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "process_listening_on_port.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "ProcessListeningOnPort",
+            "fields": [
+              {
+                "id": 1,
+                "name": "port",
+                "type": "uint32"
+              },
+              {
+                "id": 2,
+                "name": "protocol",
+                "type": "L4Protocol"
+              },
+              {
+                "id": 3,
+                "name": "process",
+                "type": "ProcessIndicatorUniqueKey"
+              },
+              {
+                "id": 4,
+                "name": "close_timestamp",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/network_flow.proto"
+          },
+          {
+            "path": "storage/process_indicator.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "cc_enable_arenas",
+            "value": "true"
+          }
+        ]
       }
     },
     {
@@ -12043,7 +12681,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Role ID,hidden\"sql:\"pk\""
+                    "value": "search:\"Role ID,hidden\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -12076,7 +12714,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store,hidden\""
+                    "value": "search:\"Cluster ID,store,hidden\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -12190,7 +12828,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Role Binding ID,hidden\"sql:\"pk\""
+                    "value": "search:\"Role Binding ID,hidden\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -12223,7 +12861,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store,hidden\""
+                    "value": "search:\"Cluster ID,store,hidden\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -12267,7 +12905,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Role ID\""
+                    "value": "search:\"Role ID\"sql:\"type(uuid)\""
                   }
                 ]
               }
@@ -12361,7 +12999,21 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          },
+          {
+            "name": "(gogoproto.equal_all)",
+            "value": "true"
+          }
+        ]
       }
     },
     {
@@ -12563,7 +13215,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"fk(Node:id),index=hash\""
+                    "value": "sql:\"fk(Node:id),index=hash,type(uuid)\""
                   }
                 ]
               },
@@ -12683,7 +13335,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"fk(Cluster:id)\""
+                    "value": "sql:\"fk(Cluster:id),type(uuid)\""
                   }
                 ]
               },
@@ -12714,7 +13366,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -12906,7 +13568,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -12923,7 +13595,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "search:\"Collection ID\"sql:\"pk\""
                   }
                 ]
               },
@@ -12987,7 +13659,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\"Embedded Collection ID,hidden\"sql:\"fk(ResourceCollection:id)\""
+                        "value": "search:\"Embedded Collection ID,hidden\"sql:\"fk(ResourceCollection:id),restrict-delete\""
                       }
                     ]
                   }
@@ -13054,7 +13726,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -13207,7 +13889,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store,hidden\""
+                    "value": "search:\"Cluster ID,store,hidden\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -13232,7 +13914,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -13299,12 +13991,24 @@
               {
                 "id": 6,
                 "name": "permission_set_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"type(uuid)\""
+                  }
+                ]
               },
               {
                 "id": 7,
                 "name": "access_scope_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"type(uuid)\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -13348,7 +14052,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -13390,7 +14094,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -13555,7 +14259,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -13656,7 +14370,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -13703,7 +14427,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -13774,7 +14508,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Secret ID,store,hidden\"sql:\"pk\""
+                    "value": "search:\"Secret ID,store,hidden\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -13796,7 +14530,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store,hidden\""
+                    "value": "search:\"Cluster ID,store,hidden\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -14131,7 +14865,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -14151,7 +14895,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -14168,7 +14922,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -14212,7 +14966,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,store,hidden\""
+                    "value": "search:\"Cluster ID,store,hidden\"sql:\"type(uuid)\""
                   }
                 ]
               },
@@ -14281,7 +15035,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -14442,7 +15206,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -14517,7 +15291,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -14645,7 +15429,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -14675,7 +15469,21 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "cc_enable_arenas",
+            "value": "true"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -14684,6 +15492,22 @@
         "enums": [
           {
             "name": "TestSingleKeyStruct.Enum",
+            "enum_fields": [
+              {
+                "name": "ENUM0"
+              },
+              {
+                "name": "ENUM1",
+                "integer": 1
+              },
+              {
+                "name": "ENUM2",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "TestSingleUUIDKeyStruct.Enum",
             "enum_fields": [
               {
                 "name": "ENUM0"
@@ -14727,6 +15551,243 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "sql:\"pk,index=hash\"search:\"Test Key\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"unique\"search:\"Test Name\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "string_slice",
+                "type": "string",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test String Slice\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "bool",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Bool\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "uint64",
+                "type": "uint64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Uint64\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "int64",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Int64\""
+                  }
+                ]
+              },
+              {
+                "id": 7,
+                "name": "float",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Float\""
+                  }
+                ]
+              },
+              {
+                "id": 9,
+                "name": "timestamp",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Timestamp\""
+                  }
+                ]
+              },
+              {
+                "id": 10,
+                "name": "enum",
+                "type": "Enum",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Enum\""
+                  }
+                ]
+              },
+              {
+                "id": 11,
+                "name": "enums",
+                "type": "Enum",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Enum Slice\""
+                  }
+                ]
+              },
+              {
+                "id": 12,
+                "name": "embedded",
+                "type": "Embedded"
+              },
+              {
+                "id": 13,
+                "name": "nested",
+                "type": "Nested",
+                "is_repeated": true
+              },
+              {
+                "id": 14,
+                "name": "oneofstring",
+                "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "oneofnested",
+                "type": "OneOfNested"
+              },
+              {
+                "id": 16,
+                "name": "bytess",
+                "type": "bytes"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 8,
+                  "name": "labels",
+                  "type": "string",
+                  "options": [
+                    {
+                      "name": "(gogoproto.moretags)",
+                      "value": "search:\"Test Labels\""
+                    }
+                  ]
+                }
+              }
+            ],
+            "messages": [
+              {
+                "name": "Embedded",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "embedded",
+                    "type": "string"
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Embedded2",
+                    "fields": [
+                      {
+                        "id": 2,
+                        "name": "embedded",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "Nested",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "nested",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "nested2",
+                    "type": "Nested2"
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Nested2",
+                    "fields": [
+                      {
+                        "id": 2,
+                        "name": "nested2",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "OneOfNested",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "nested",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "nested2",
+                    "type": "Nested2"
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Nested2",
+                    "fields": [
+                      {
+                        "id": 2,
+                        "name": "nested2",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestSingleUUIDKeyStruct",
+            "fields": [
+              {
+                "id": 1,
+                "name": "key",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,index=hash,type(uuid)\"search:\"Test Key\""
                   }
                 ]
               },
@@ -15629,7 +16690,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Parent2 ID\"sql:\"pk\""
+                    "value": "search:\"Test Parent2 ID\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -15667,7 +16728,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Child2 ID\"sql:\"pk\""
+                    "value": "search:\"Test Child2 ID\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -15754,7 +16815,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Parent4 ID\"sql:\"pk\""
+                    "value": "search:\"Test Parent4 ID\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -15803,7 +16864,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"fk(TestParent4:id)\""
+                    "value": "sql:\"fk(TestParent4:id),type(uuid)\""
                   }
                 ]
               },
@@ -15869,7 +16930,21 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "cc_enable_arenas",
+            "value": "true"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -15920,7 +16995,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -16066,7 +17151,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -16101,7 +17196,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -16319,7 +17424,7 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "ids",
+                    "name": "cves",
                     "type": "string",
                     "is_repeated": true,
                     "options": [
@@ -16390,7 +17495,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {
@@ -16663,7 +17778,17 @@
         ],
         "package": {
           "name": "storage"
-        }
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     }
   ]
