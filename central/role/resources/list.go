@@ -78,8 +78,6 @@ var (
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
 		Administration)
-	// To-be-deprecated in 3.74 (deprecation notice in 3.72).
-	ClusterCVE = newDeprecatedResourceMetadata("ClusterCVE", permissions.ClusterScope, Cluster)
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
