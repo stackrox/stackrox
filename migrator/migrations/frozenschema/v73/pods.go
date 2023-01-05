@@ -41,9 +41,7 @@ var (
 )
 
 const (
-	// PodsTableName is the name of the table storing *storage.Pod
-	PodsTableName = "pods"
-	// PodsLiveInstancesTableName is the name of the table storing *storage.ContainerInstance
+	PodsTableName              = "pods"
 	PodsLiveInstancesTableName = "pods_live_instances"
 )
 

@@ -25,7 +25,6 @@ var (
 )
 
 const (
-	// ConfigsTableName is the name of the table storing *storage.Config
 	ConfigsTableName = "configs"
 )
 

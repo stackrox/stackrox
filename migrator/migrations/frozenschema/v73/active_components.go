@@ -42,9 +42,7 @@ var (
 )
 
 const (
-	// ActiveComponentsTableName is the name of the table storing *storage.ActiveComponent
-	ActiveComponentsTableName = "active_components"
-	// ActiveComponentsActiveContextsSlicesTableName is the name of the table storing *storage.ActiveComponent_ActiveContext
+	ActiveComponentsTableName                     = "active_components"
 	ActiveComponentsActiveContextsSlicesTableName = "active_components_active_contexts_slices"
 )
 

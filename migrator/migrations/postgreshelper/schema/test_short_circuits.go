@@ -37,7 +37,6 @@ var (
 )
 
 const (
-	// TestShortCircuitsTableName is the name of the table storing *storage.TestShortCircuit
 	TestShortCircuitsTableName = "test_short_circuits"
 )
 

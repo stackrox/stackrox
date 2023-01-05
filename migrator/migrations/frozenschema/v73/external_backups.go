@@ -25,7 +25,6 @@ var (
 )
 
 const (
-	// ExternalBackupsTableName is the name of the table storing *storage.ExternalBackup
 	ExternalBackupsTableName = "external_backups"
 )
 

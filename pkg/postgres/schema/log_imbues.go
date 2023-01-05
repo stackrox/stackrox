@@ -30,7 +30,6 @@ var (
 )
 
 const (
-	// LogImbuesTableName is the name of the table storing *storage.LogImbue
 	LogImbuesTableName = "log_imbues"
 )
 

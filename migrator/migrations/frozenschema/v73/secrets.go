@@ -39,11 +39,8 @@ var (
 )
 
 const (
-	// SecretsTableName is the name of the table storing *storage.Secret
-	SecretsTableName = "secrets"
-	// SecretsFilesTableName is the name of the table storing *storage.SecretDataFile
-	SecretsFilesTableName = "secrets_files"
-	// SecretsFilesRegistriesTableName is the name of the table storing *storage.ImagePullSecret_Registry
+	SecretsTableName                = "secrets"
+	SecretsFilesTableName           = "secrets_files"
 	SecretsFilesRegistriesTableName = "secrets_files_registries"
 )
 

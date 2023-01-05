@@ -37,7 +37,6 @@ var (
 )
 
 const (
-	// ClusterHealthStatusesTableName is the name of the table storing *storage.ClusterHealthStatus
 	ClusterHealthStatusesTableName = "cluster_health_statuses"
 )
 

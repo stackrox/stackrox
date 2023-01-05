@@ -36,7 +36,6 @@ var (
 )
 
 const (
-	// NodeComponentsTableName is the name of the table storing *storage.NodeComponent
 	NodeComponentsTableName = "node_components"
 )
 

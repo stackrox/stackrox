@@ -25,7 +25,6 @@ var (
 )
 
 const (
-	// ClusterInitBundlesTableName is the name of the table storing *storage.InitBundleMeta
 	ClusterInitBundlesTableName = "cluster_init_bundles"
 )
 

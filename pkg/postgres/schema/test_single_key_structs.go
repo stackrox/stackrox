@@ -35,7 +35,6 @@ var (
 )
 
 const (
-	// TestSingleKeyStructsTableName is the name of the table storing *storage.TestSingleKeyStruct
 	TestSingleKeyStructsTableName = "test_single_key_structs"
 )
 

@@ -69,6 +69,7 @@ func insertIntoInstallationInfos(ctx context.Context, tx pgx.Tx, obj *storage.In
 	return nil
 }
 
+// Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.InstallationInfo) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "InstallationInfo")
 
@@ -110,7 +111,7 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Installati
 	return nil
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context) (*storage.InstallationInfo, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "InstallationInfo")
 

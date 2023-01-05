@@ -30,7 +30,6 @@ var (
 )
 
 const (
-	// ComplianceOperatorScansTableName is the name of the table storing *storage.ComplianceOperatorScan
 	ComplianceOperatorScansTableName = "compliance_operator_scans"
 )
 

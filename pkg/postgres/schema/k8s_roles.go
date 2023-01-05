@@ -33,7 +33,6 @@ var (
 )
 
 const (
-	// K8sRolesTableName is the name of the table storing *storage.K8SRole
 	K8sRolesTableName = "k8s_roles"
 )
 

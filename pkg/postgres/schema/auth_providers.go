@@ -30,7 +30,6 @@ var (
 )
 
 const (
-	// AuthProvidersTableName is the name of the table storing *storage.AuthProvider
 	AuthProvidersTableName = "auth_providers"
 )
 

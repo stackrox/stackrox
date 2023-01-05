@@ -47,9 +47,7 @@ var (
 )
 
 const (
-	// TestParent1TableName is the name of the table storing *storage.TestParent1
-	TestParent1TableName = "test_parent1"
-	// TestParent1ChildrensTableName is the name of the table storing *storage.TestParent1_Child1Ref
+	TestParent1TableName          = "test_parent1"
 	TestParent1ChildrensTableName = "test_parent1_childrens"
 )
 

@@ -106,8 +106,7 @@ var (
     {{- end }}
 {{- end}}
 {{- define "createTableNames" }}
-    // {{.Table|upperCamelCase}}TableName is the name of the table storing {{.Type}}
-	{{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
+    {{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
 	{{- range $index, $child := .Children }}
 	   {{- template "createTableNames" $child }}
     {{- end }}

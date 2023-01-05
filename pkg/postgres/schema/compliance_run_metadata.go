@@ -34,7 +34,6 @@ var (
 )
 
 const (
-	// ComplianceRunMetadataTableName is the name of the table storing *storage.ComplianceRunMetadata
 	ComplianceRunMetadataTableName = "compliance_run_metadata"
 )
 

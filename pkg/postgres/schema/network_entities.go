@@ -33,7 +33,6 @@ var (
 )
 
 const (
-	// NetworkEntitiesTableName is the name of the table storing *storage.NetworkEntity
 	NetworkEntitiesTableName = "network_entities"
 )
 

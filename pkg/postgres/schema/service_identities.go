@@ -30,7 +30,6 @@ var (
 )
 
 const (
-	// ServiceIdentitiesTableName is the name of the table storing *storage.ServiceIdentity
 	ServiceIdentitiesTableName = "service_identities"
 )
 

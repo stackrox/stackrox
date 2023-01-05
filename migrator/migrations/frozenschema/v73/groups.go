@@ -25,7 +25,6 @@ var (
 )
 
 const (
-	// GroupsTableName is the name of the table storing *storage.Group
 	GroupsTableName = "groups"
 )
 

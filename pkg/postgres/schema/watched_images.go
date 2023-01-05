@@ -30,7 +30,6 @@ var (
 )
 
 const (
-	// WatchedImagesTableName is the name of the table storing *storage.WatchedImage
 	WatchedImagesTableName = "watched_images"
 )
 

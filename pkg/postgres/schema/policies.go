@@ -35,7 +35,6 @@ var (
 )
 
 const (
-	// PoliciesTableName is the name of the table storing *storage.Policy
 	PoliciesTableName = "policies"
 )
 

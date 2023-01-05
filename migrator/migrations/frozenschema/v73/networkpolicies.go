@@ -28,7 +28,6 @@ var (
 )
 
 const (
-	// NetworkpoliciesTableName is the name of the table storing *storage.NetworkPolicy
 	NetworkpoliciesTableName = "networkpolicies"
 )
 

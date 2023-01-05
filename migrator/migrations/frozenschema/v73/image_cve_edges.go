@@ -49,7 +49,6 @@ var (
 )
 
 const (
-	// ImageCveEdgesTableName is the name of the table storing *storage.ImageCVEEdge
 	ImageCveEdgesTableName = "image_cve_edges"
 )
 

@@ -47,7 +47,6 @@ var (
 )
 
 const (
-	// NamespacesTableName is the name of the table storing *storage.NamespaceMetadata
 	NamespacesTableName = "namespaces"
 )
 

@@ -107,6 +107,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 
 {{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable }}
 
+// Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     {{- if not $inMigration}}
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
@@ -149,7 +150,7 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *{{.Type}}) error {
     return nil
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")

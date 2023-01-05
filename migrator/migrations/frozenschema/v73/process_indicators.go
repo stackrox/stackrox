@@ -36,7 +36,6 @@ var (
 )
 
 const (
-	// ProcessIndicatorsTableName is the name of the table storing *storage.ProcessIndicator
 	ProcessIndicatorsTableName = "process_indicators"
 )
 

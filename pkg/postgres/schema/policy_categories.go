@@ -33,7 +33,6 @@ var (
 )
 
 const (
-	// PolicyCategoriesTableName is the name of the table storing *storage.PolicyCategory
 	PolicyCategoriesTableName = "policy_categories"
 )
 

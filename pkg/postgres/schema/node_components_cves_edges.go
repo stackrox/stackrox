@@ -50,7 +50,6 @@ var (
 )
 
 const (
-	// NodeComponentsCvesEdgesTableName is the name of the table storing *storage.NodeComponentCVEEdge
 	NodeComponentsCvesEdgesTableName = "node_components_cves_edges"
 )
 

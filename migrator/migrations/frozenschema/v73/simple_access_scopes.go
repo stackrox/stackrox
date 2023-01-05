@@ -25,7 +25,6 @@ var (
 )
 
 const (
-	// SimpleAccessScopesTableName is the name of the table storing *storage.SimpleAccessScope
 	SimpleAccessScopesTableName = "simple_access_scopes"
 )
 

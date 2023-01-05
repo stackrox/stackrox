@@ -25,7 +25,6 @@ var (
 )
 
 const (
-	// ComplianceOperatorCheckResultsTableName is the name of the table storing *storage.ComplianceOperatorCheckResult
 	ComplianceOperatorCheckResultsTableName = "compliance_operator_check_results"
 )
 

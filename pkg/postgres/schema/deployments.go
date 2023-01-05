@@ -83,19 +83,12 @@ var (
 )
 
 const (
-	// DeploymentsTableName is the name of the table storing *storage.Deployment
-	DeploymentsTableName = "deployments"
-	// DeploymentsContainersTableName is the name of the table storing *storage.Container
-	DeploymentsContainersTableName = "deployments_containers"
-	// DeploymentsContainersEnvsTableName is the name of the table storing *storage.ContainerConfig_EnvironmentConfig
-	DeploymentsContainersEnvsTableName = "deployments_containers_envs"
-	// DeploymentsContainersVolumesTableName is the name of the table storing *storage.Volume
-	DeploymentsContainersVolumesTableName = "deployments_containers_volumes"
-	// DeploymentsContainersSecretsTableName is the name of the table storing *storage.EmbeddedSecret
-	DeploymentsContainersSecretsTableName = "deployments_containers_secrets"
-	// DeploymentsPortsTableName is the name of the table storing *storage.PortConfig
-	DeploymentsPortsTableName = "deployments_ports"
-	// DeploymentsPortsExposureInfosTableName is the name of the table storing *storage.PortConfig_ExposureInfo
+	DeploymentsTableName                   = "deployments"
+	DeploymentsContainersTableName         = "deployments_containers"
+	DeploymentsContainersEnvsTableName     = "deployments_containers_envs"
+	DeploymentsContainersVolumesTableName  = "deployments_containers_volumes"
+	DeploymentsContainersSecretsTableName  = "deployments_containers_secrets"
+	DeploymentsPortsTableName              = "deployments_ports"
 	DeploymentsPortsExposureInfosTableName = "deployments_ports_exposure_infos"
 )
 
