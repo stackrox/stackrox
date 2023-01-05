@@ -23,9 +23,11 @@ import (
 )
 
 var (
+	startingSeqNum = pkgMigrations.BasePostgresDBVersionSeqNum() + 30 // 141
+
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 30,
-		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.BasePostgresDBVersionSeqNum()) + 31},
+		StartingSeqNum: startingSeqNum,
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 142
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.NewClusterStore(databases.PkgRocksDB)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
