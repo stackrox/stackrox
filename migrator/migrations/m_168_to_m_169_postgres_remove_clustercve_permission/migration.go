@@ -14,7 +14,7 @@ import (
 const (
 	batchSize = 500
 
-	startingSeqNum = 168
+	startSeqNum = 168
 
 	// Cluster is the replacement resource
 	Cluster = "Cluster"
@@ -24,8 +24,8 @@ const (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: startingSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 169
+		StartingSeqNum: startSeqNum,
+		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 169
 		Run: func(databases *types.Databases) error {
 			err := cleanupPermissionSets(databases.PostgresDB)
 			if err != nil {
