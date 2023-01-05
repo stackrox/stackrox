@@ -178,7 +178,7 @@ OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
 .PHONY: operator-sdk
 operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
 # See https://sdk.operatorframework.io/docs/installation/#install-from-github-release
-	@ARCH=$$(case $$(uname -m) in (x86_64) echo -n amd64 ;; (aarch64) echo -n arm64 ;; (*) echo -n $$(uname -m) ;; esac) ;\
+	@ARCH=$$(case $$(uname -m) in (x86_64) echo amd64 ;; (aarch64) echo arm64 ;; (*) uname -m ;; esac) ;\
 	OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$(OPERATOR_SDK_VERSION)/operator-sdk_$(OS)_$${ARCH} ;\
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(OPERATOR_SDK) $${OPERATOR_SDK_URL}
@@ -188,7 +188,7 @@ KUTTL_UPSTREAM = porridge
 KUTTL ?= $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
 .PHONY: kuttl
 kuttl: ## Download kuttl.
-	@ARCH=$$(case $$(uname -m) in (aarch64) echo -n armv6 ;; (*) echo -n $$(uname -m) ;; esac) ;\
+	@ARCH=$$(case $$(uname -m) in (aarch64) echo armv6 ;; (*) uname -m ;; esac) ;\
 	KUTTL_URL=https://github.com/$(KUTTL_UPSTREAM)/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(OS)_$${ARCH} ;\
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(KUTTL) $${KUTTL_URL}

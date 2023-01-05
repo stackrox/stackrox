@@ -42,11 +42,11 @@ endif
 ifeq ($(UNAME_S),Darwin)
 PROTOC_OS = osx
 endif
-PROTOC_ARCH=$(shell case $$(uname -m) in (aarch64) echo -n armv6 ;; (*) echo -n $$(uname -m) ;; esac)
+PROTOC_ARCH=$(shell case $$(uname -m) in (aarch64) echo armv6 ;; (*) uname -m ;; esac)
 
 PROTO_PRIVATE_DIR := $(BASE_PATH)/.proto
 
-PROTOC_DIR := $(PROTO_PRIVATE_DIR)/protoc-$(PROTOC_OS)-$(PROTOC_VERSION)
+PROTOC_DIR := $(PROTO_PRIVATE_DIR)/protoc-$(PROTOC_OS)-$(PROTOC_ARCH)-$(PROTOC_VERSION)
 
 PROTOC := $(PROTOC_DIR)/bin/protoc
 
