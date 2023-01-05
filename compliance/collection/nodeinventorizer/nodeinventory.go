@@ -32,6 +32,10 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
+	if protoComponents == nil {
+		log.Warn("Empty components returned from NodeInventory")
+	}
+
 	m := &storage.NodeInventory{
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
@@ -46,11 +50,19 @@ func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Component
 		return nil
 	}
 
+	var namespace string
+	if c.OSNamespace == nil {
+		namespace = "unknown"
+		// TODO(ROX-14186): Also set a note here that this is an uncertified scan
+	} else {
+		namespace = c.OSNamespace.Name
+	}
+
 	// For now, we only care about RHEL components, but this must be extended once we support non-RHCOS
 	rhelComponents := convertRHELComponents(c.CertifiedRHELComponents)
 
 	protoComponents := &scannerV1.Components{
-		Namespace:          c.OSNamespace.Name,
+		Namespace:          namespace,
 		OsComponents:       nil,
 		RhelComponents:     rhelComponents,
 		LanguageComponents: nil,
