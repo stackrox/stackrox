@@ -277,7 +277,7 @@ func (c *TestContext) LastResourceState(matchResourceFn MatchResource, assertFn 
 func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(500 * time.Millisecond)
-	lastErr := errors.Errorf("no resource found for matching function")
+	lastErr := errors.New("no resource found for matching function")
 	for {
 		select {
 		case <-timer.C:
