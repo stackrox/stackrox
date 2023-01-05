@@ -117,12 +117,6 @@ func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
 		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(string(role.GetUID())), "Has RoleID")
 
 		testC.GetFakeCentral().ClearReceivedBuffer()
-
-		utils.IgnoreError(deleteRole)
-		utils.IgnoreError(deleteRoleBinding)
-		utils.IgnoreError(deleteDep)
-
-		testC.GetFakeCentral().ClearReceivedBuffer()
 	})
 }
 
