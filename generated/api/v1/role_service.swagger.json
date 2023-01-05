@@ -405,6 +405,48 @@
         ]
       }
     },
+    "/v1/sac/clusters": {
+      "get": {
+        "operationId": "RoleService_GetClustersForPermission",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetClustersForPermissionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "permission.resource",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "permission.access",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NO_ACCESS",
+              "READ_ACCESS",
+              "READ_WRITE_ACCESS"
+            ],
+            "default": "NO_ACCESS"
+          }
+        ],
+        "tags": [
+          "RoleService"
+        ]
+      }
+    },
     "/v1/simpleaccessscopes": {
       "get": {
         "operationId": "RoleService_ListSimpleAccessScopes",
@@ -894,8 +936,33 @@
         }
       }
     },
+    "v1ClusterForPermission": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "v1Empty": {
       "type": "object"
+    },
+    "v1GetClustersForPermissionResponse": {
+      "type": "object",
+      "properties": {
+        "permission": {
+          "$ref": "#/definitions/v1Permission"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1ClusterForPermission"
+          }
+        }
+      }
     },
     "v1GetPermissionsResponse": {
       "type": "object",
@@ -950,6 +1017,17 @@
           "items": {
             "$ref": "#/definitions/storageSimpleAccessScope"
           }
+        }
+      }
+    },
+    "v1Permission": {
+      "type": "object",
+      "properties": {
+        "resource": {
+          "type": "string"
+        },
+        "access": {
+          "$ref": "#/definitions/storageAccess"
         }
       }
     }

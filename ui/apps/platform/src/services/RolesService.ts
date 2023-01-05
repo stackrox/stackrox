@@ -1,3 +1,4 @@
+import qs from 'qs';
 import axios from './instance';
 import { Empty } from './types';
 
@@ -115,4 +116,27 @@ export function updatePermissionSet(entity: PermissionSet): Promise<Empty> {
  */
 export function deletePermissionSet(id: string): Promise<Empty> {
     return axios.delete(`${permissionSetsUrl}/${id}`);
+}
+
+const clustersForPermissionUrl = '/v1/sac/clusters';
+
+export type RolePermission = {
+    resource: string;
+    access: AccessLevel;
+};
+
+export type ClusterForPermission = {
+    id: string;
+    name: string;
+};
+
+export type ClustersForPermissionResponse = {
+    permission: RolePermission;
+    clusters: ClusterForPermission[];
+}
+
+export function getClustersForPermission(permission: RolePermission): Promise<ClustersForPermissionResponse> {
+    const params = qs.stringify(permission,{ arrayFormat: 'repeat' })
+    return axios.get(`${clustersForPermissionUrl}?${params}`)
+        .then((response) => response.data);
 }

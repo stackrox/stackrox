@@ -75,6 +75,10 @@ message PutNetworkGraphConfigRequest {
     storage.NetworkGraphConfig config = 1;
 }
 
+message GetNetworkGraphClustersResponse {
+    repeated string cluster_ids = 1;
+}
+
 service NetworkGraphService {
     rpc GetNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {
         option (google.api.http) = {
@@ -118,6 +122,12 @@ service NetworkGraphService {
         option (google.api.http) = {
             put: "/v1/networkgraph/config"
             body: "*"
+        };
+    }
+
+    rpc GetNetworkGraphClusters(Empty) returns (GetNetworkGraphClustersResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkgraph/clusters"
         };
     }
 }

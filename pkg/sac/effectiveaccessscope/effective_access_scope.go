@@ -221,6 +221,11 @@ func (root *ScopeTree) GetClusterIDs() []string {
 	return clusterIDs
 }
 
+// GetClusterNameForID returns the name of the cluster matching the given ID.
+func (root *ScopeTree) GetClusterNameForID(clusterID string) string {
+	return root.clusterIDToName[clusterID]
+}
+
 // GetClusterByID returns ClusterScopeSubTree for given cluster ID.
 // Returns nil when clusterID is not known.
 func (root *ScopeTree) GetClusterByID(clusterID string) *clustersScopeSubTree {

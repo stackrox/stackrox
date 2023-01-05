@@ -2,26 +2,31 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	schema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
 
@@ -53,12 +58,9 @@ var (
 		allow.Anonymous(): {
 			"/v1.RoleService/GetResources",
 			"/v1.RoleService/GetMyPermissions",
+			"/v1.RoleService/GetClustersForPermission",
 		},
 	})
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type serviceImpl struct {
@@ -340,6 +342,103 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
 
+	return response, nil
+}
+
+func (s *serviceImpl) GetClustersForPermission(ctx context.Context, req *v1.GetClustersForPermissionRequest) (*v1.GetClustersForPermissionResponse, error) {
+	if req == nil {
+		return nil, errox.InvalidArgs
+	}
+	if req.Permission == nil {
+		return nil, errox.InvalidArgs
+	}
+	response := &v1.GetClustersForPermissionResponse{
+		Permission: req.GetPermission(),
+	}
+	targetResource := permissions.Resource(req.GetPermission().GetResource())
+	targetResourceMetadata, found := resources.MetadataForResource(targetResource)
+	if !found {
+		return response, nil
+	}
+	targetAccess := req.GetPermission().GetAccess()
+	targetResourceWithAccess := permissions.ResourceWithAccess{
+		Resource: targetResourceMetadata,
+		Access:   targetAccess,
+	}
+	scopeChecker := sac.ForResource(targetResourceMetadata).ScopeChecker(ctx, targetAccess)
+	scope, err := scopeChecker.EffectiveAccessScope(targetResourceWithAccess)
+	if err != nil {
+		return nil, err
+	}
+	if scope != nil {
+		if scope.State == effectiveaccessscope.Included {
+			elevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Cluster),
+				),
+			)
+			query := search.NewQueryBuilder().AddStringsHighlighted(search.Cluster, search.WildcardString).ProtoQuery()
+			results, err := s.clusterDataStore.Search(elevatedCtx, query)
+			if err != nil {
+				return nil, err
+			}
+			var clusterOptionsMap search.OptionsMap
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
+				clusterOptionsMap = schema.ClustersSchema.OptionsMap
+			} else {
+				clusterOptionsMap = clusterMappings.OptionsMap
+			}
+			targetField, fieldFound := clusterOptionsMap.Get(search.Cluster.String())
+			for _, r := range results {
+				clusterID := r.ID
+				clusterName := ""
+				if fieldFound {
+					for _, v := range r.Matches[targetField.GetFieldPath()] {
+						if len(v) > 0 {
+							clusterName = v
+							break
+						}
+					}
+				} else {
+					clusterName = fmt.Sprintf("Cluster with ID %q", clusterID)
+				}
+				clusterInfo := &v1.ClusterForPermission{
+					Id:   clusterID,
+					Name: clusterName,
+				}
+				response.Clusters = append(response.Clusters, clusterInfo)
+			}
+		} else if scope.State != effectiveaccessscope.Excluded {
+			for _, clusterID := range scope.GetClusterIDs() {
+				clusterName := scope.GetClusterNameForID(clusterID)
+				clusterData := scope.GetClusterByID(clusterID)
+				if clusterData == nil {
+					continue
+				}
+				if clusterData.State == effectiveaccessscope.Excluded {
+					continue
+				}
+				hasIncludedNamespace := false
+				for _, nsData := range clusterData.Namespaces {
+					if nsData == nil {
+						continue
+					}
+					if nsData.State != effectiveaccessscope.Excluded {
+						hasIncludedNamespace = true
+						break
+					}
+				}
+				if hasIncludedNamespace {
+					clusterInfo := &v1.ClusterForPermission{
+						Id:   clusterID,
+						Name: clusterName,
+					}
+					response.Clusters = append(response.Clusters, clusterInfo)
+				}
+			}
+		}
+	}
 	return response, nil
 }
 

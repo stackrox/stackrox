@@ -14,10 +14,11 @@ import {
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { timeWindows } from 'constants/timeWindows';
-import useFetchClusters from 'hooks/useFetchClusters';
+import useFetchClustersForPermission from 'hooks/useFetchClustersForPerms';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNetworkPolicyGraph } from 'services/NetworkService';
+import { AccessLevel } from 'services/RolesService';
 import queryService from 'utils/queryService';
 import timeWindowToDate from 'utils/timeWindows';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
@@ -53,6 +54,9 @@ const emptyModel = {
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
+const networkGraphResource: string = 'NetworkGraph';
+const readAccess: AccessLevel = 'READ_ACCESS';
+
 // for MVP, always show Orchestrator Components
 const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
 
@@ -85,7 +89,7 @@ function NetworkGraphPage() {
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
-    const { clusters } = useFetchClusters();
+    const { clusters } = useFetchClustersForPermission(networkGraphResource, readAccess);
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
     const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');

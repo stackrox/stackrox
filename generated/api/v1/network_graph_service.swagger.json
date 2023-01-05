@@ -138,6 +138,28 @@
         ]
       }
     },
+    "/v1/networkgraph/clusters": {
+      "get": {
+        "operationId": "NetworkGraphService_GetNetworkGraphClusters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetNetworkGraphClustersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "NetworkGraphService"
+        ]
+      }
+    },
     "/v1/networkgraph/config": {
       "get": {
         "operationId": "NetworkGraphService_GetNetworkGraphConfig",
@@ -435,6 +457,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageNetworkEntity"
+          }
+        }
+      }
+    },
+    "v1GetNetworkGraphClustersResponse": {
+      "type": "object",
+      "properties": {
+        "clusterIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }

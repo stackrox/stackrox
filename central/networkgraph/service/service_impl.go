@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/set"
@@ -42,6 +43,7 @@ var (
 		user.With(permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/GetNetworkGraph",
 			"/v1.NetworkGraphService/GetExternalNetworkEntities",
+			"/v1.NetworkGraphService/GetNetworkGraphClusters",
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
@@ -525,4 +527,53 @@ func filterFlowsAndMaskScopeAlienDeployments(
 		}
 	}
 	return filtered, visibleNeighbors, masker.GetMaskedDeployments(), nil
+}
+
+func (s *serviceImpl) GetNetworkGraphClusters(ctx context.Context, _ *v1.Empty) (*v1.GetNetworkGraphClustersResponse, error) {
+	clusterIDs := make([]string, 0)
+
+	// Use the NetworkGraph scope to determine the list of clusters the requester has access to
+	scopeChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS)
+	graphScope, err := scopeChecker.EffectiveAccessScope(permissions.View(resources.NetworkGraph))
+	if graphScope == nil || err != nil {
+		return nil, err
+	}
+
+	if graphScope.State == effectiveaccessscope.Included {
+		// The current requester has unrestricted access to NetworkGraph.
+		// This means access to the complete list of existing clusters
+		elevatedCtx := sac.WithAllAccess(ctx)
+		results, err := s.clusters.Search(elevatedCtx, search.EmptyQuery())
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range results {
+			clusterIDs = append(clusterIDs, r.ID)
+		}
+	} else if graphScope.State != effectiveaccessscope.Excluded {
+		for _, clusterID := range graphScope.GetClusterIDs() {
+			cluster := graphScope.GetClusterByID(clusterID)
+			if cluster == nil {
+				continue
+			}
+			if cluster.State != effectiveaccessscope.Excluded {
+				hasAllowedNamespace := false
+				for _, n := range cluster.Namespaces {
+					if n == nil {
+						continue
+					}
+					if n.State != effectiveaccessscope.Excluded {
+						hasAllowedNamespace = true
+						break
+					}
+				}
+				if hasAllowedNamespace {
+					clusterIDs = append(clusterIDs, clusterID)
+				}
+			}
+		}
+	}
+	return &v1.GetNetworkGraphClustersResponse{
+		ClusterIds: clusterIDs,
+	}, nil
 }
