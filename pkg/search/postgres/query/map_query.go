@@ -11,7 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func parseMapQuery(label string) (string, string, bool) {
+// ParseMapQuery parses a label stored in the form k=v.
+func ParseMapQuery(label string) (string, string, bool) {
 	hasEquals := strings.Contains(label, "=")
 	key, value := stringutils.Split2(label, "=")
 	return key, value, hasEquals
@@ -54,7 +55,7 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		}), nil
 	}
 
-	key, value, hasEquals := parseMapQuery(query)
+	key, value, hasEquals := ParseMapQuery(query)
 	keyNegated := stringutils.ConsumePrefix(&key, search.NegationPrefix)
 	// This is a special case where the query we construct becomes a (non) existence query
 	if value == "" && key != "" && hasEquals {
