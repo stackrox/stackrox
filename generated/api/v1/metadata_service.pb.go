@@ -387,8 +387,11 @@ func (m *TLSChallengeRequest) Clone() *TLSChallengeRequest {
 }
 
 type DatabaseStatus struct {
-	DatabaseAvailable    bool     `protobuf:"varint,1,opt,name=database_available,json=databaseAvailable,proto3" json:"database_available,omitempty"`
-	DatabaseType         string   `protobuf:"bytes,2,opt,name=database_type,json=databaseType,proto3" json:"database_type,omitempty"`
+	// indicates whether or not central can communicate with the database
+	DatabaseAvailable bool `protobuf:"varint,1,opt,name=database_available,json=databaseAvailable,proto3" json:"database_available,omitempty"`
+	// type of database serving central
+	DatabaseType string `protobuf:"bytes,2,opt,name=database_type,json=databaseType,proto3" json:"database_type,omitempty"`
+	// version of the database
 	DatabaseVersion      string   `protobuf:"bytes,3,opt,name=database_version,json=databaseVersion,proto3" json:"database_version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

@@ -48,8 +48,11 @@ message TLSChallengeRequest {
 }
 
 message DatabaseStatus {
+    // indicates whether or not central can communicate with the database
     bool database_available = 1;
+    // type of database serving central
     string database_type = 2;
+    // version of the database
     string database_version = 3;
 }
 

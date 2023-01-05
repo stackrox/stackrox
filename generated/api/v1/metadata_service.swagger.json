@@ -139,13 +139,16 @@
       "type": "object",
       "properties": {
         "databaseAvailable": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "indicates whether or not central can communicate with the database"
         },
         "databaseType": {
-          "type": "string"
+          "type": "string",
+          "title": "type of database serving central"
         },
         "databaseVersion": {
-          "type": "string"
+          "type": "string",
+          "title": "version of the database"
         }
       }
     },
