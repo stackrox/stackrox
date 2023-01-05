@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	numDeploymentsLimit = 50
+	deploymentsPaginationLimit = 50
 
 	reportDataQuery = `query getVulnReportData($scopequery: String, 
 							$cvequery: String, $pagination: Pagination) {
@@ -427,7 +427,7 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 			return r, err
 		}
 		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
-		if len(r.Deployments) < numDeploymentsLimit {
+		if len(r.Deployments) < deploymentsPaginationLimit {
 			break
 		}
 		offset += len(r.Deployments)
@@ -450,13 +450,13 @@ func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery s
 		// string equivalent of deploymentsQuery for graphQL. Because of this, we first fetch deploymentIDs from
 		// deploymentDatastore using deploymentsQuery and then build string query for graphQL using those deploymentIDs.
 		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
-			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+numDeploymentsLimit, len(deploymentIds))], ","))
+			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+deploymentsPaginationLimit, len(deploymentIds))], ","))
 		r, err := s.execReportDataQuery(ctx, reportQueryPostgres, scopeQuery, cveQuery, paginatedQueryStartOffset)
 		if err != nil {
 			return r, err
 		}
 		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
-		offset += numDeploymentsLimit
+		offset += deploymentsPaginationLimit
 	}
 	return resultData, nil
 }
@@ -468,7 +468,7 @@ func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuer
 			"cvequery":   cveQuery,
 			"pagination": map[string]interface{}{
 				"offset": offset,
-				"limit":  numDeploymentsLimit,
+				"limit":  deploymentsPaginationLimit,
 				"sortOption": map[string]interface{}{
 					"field":    deploymentSortOption.GetField(),
 					"reversed": deploymentSortOption.GetReversed(),
