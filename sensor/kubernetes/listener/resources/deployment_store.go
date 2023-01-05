@@ -31,6 +31,10 @@ func (ds *DeploymentStore) addOrUpdateDeployment(wrap *deploymentWrap) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
+	ds.addOrUpdateDeploymentNoLock(wrap)
+}
+
+func (ds *DeploymentStore) addOrUpdateDeploymentNoLock(wrap *deploymentWrap) {
 	ids, ok := ds.deploymentIDs[wrap.GetNamespace()]
 	if !ok {
 		ids = make(map[string]struct{})
@@ -157,7 +161,11 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
 func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, error) {
-	wrap := ds.getWrap(id)
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	// Get wrap with no lock since ds.lock.Lock() was already requested above
+	wrap := ds.deployments[id]
 	if wrap == nil {
 		return nil, errors.Errorf("deployment with ID %s doesn't exist in the internal deployment store", id)
 	}
@@ -168,6 +176,6 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	if err := clonedWrap.updateHash(); err != nil {
 		return nil, err
 	}
-	ds.addOrUpdateDeployment(clonedWrap)
+	ds.addOrUpdateDeploymentNoLock(clonedWrap)
 	return clonedWrap.GetDeployment(), nil
 }
