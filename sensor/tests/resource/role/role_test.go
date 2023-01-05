@@ -57,15 +57,15 @@ func assertPermissionLevel(permissionLevel storage.PermissionLevel) resource.Ass
 
 }
 
-func assertBindingHasRoleID(roleId string) resource.AssertFuncAny {
+func assertBindingHasRoleID(roleID string) resource.AssertFuncAny {
 	return func(obj interface{}) error {
 		evt, ok := obj.(*central.SensorEvent)
 		if !ok {
 			return errors.Errorf("not an event")
 		}
 		binding := evt.GetBinding()
-		if binding.GetRoleId() != roleId {
-			return errors.Errorf("expected \"%s\" but found \"%s\"", roleId, binding.GetRoleId())
+		if binding.GetRoleId() != roleID {
+			return errors.Errorf("expected \"%s\" but found \"%s\"", roleID, binding.GetRoleId())
 		}
 		return nil
 	}
