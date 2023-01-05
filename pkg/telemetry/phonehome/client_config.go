@@ -52,7 +52,7 @@ type Config struct {
 	// Map of event name to the list of interceptors, that gather properties for
 	// the event.
 	interceptors     map[string][]Interceptor
-	interceptorsLock sync.Mutex
+	interceptorsLock sync.RWMutex
 }
 
 // Enabled tells whether telemetry data collection is enabled.
