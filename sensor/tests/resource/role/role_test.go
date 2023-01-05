@@ -57,7 +57,7 @@ func assertPermissionLevel(permissionLevel storage.PermissionLevel) resource.Ass
 
 }
 
-func assertBindingHasRoleId(roleId string) resource.AssertFuncAny {
+func assertBindingHasRoleID(roleId string) resource.AssertFuncAny {
 	return func(obj interface{}) error {
 		evt, ok := obj.(*central.SensorEvent)
 		if !ok {
@@ -107,14 +107,14 @@ func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
 		defer utils.IgnoreError(deleteRoleBinding)
 		require.NoError(t, err)
 
-		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleId(""), "No RoleID")
+		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(""), "No RoleID")
 
 		var role v12.Role
 		deleteRole, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRole, &role)
 		defer utils.IgnoreError(deleteRole)
 		require.NoError(t, err)
 
-		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleId(string(role.GetUID())), "Has RoleID")
+		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(string(role.GetUID())), "Has RoleID")
 
 		testC.GetFakeCentral().ClearReceivedBuffer()
 

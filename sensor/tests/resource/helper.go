@@ -261,13 +261,19 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 
 // AssertFunc is the deployment state assertion function signature.
 type AssertFunc func(deployment *storage.Deployment) error
+
+// MatchResource is a function to match sensor messages to be filtered.
 type MatchResource func(resource *central.MsgFromSensor) bool
+
+// AssertFuncAny is similar to AssertFunc but generic to any type of resource.
 type AssertFuncAny func(resource interface{}) error
 
+// LastResourceState same as LastResourceStateWithTimeout with a 3s default timeout.
 func (c *TestContext) LastResourceState(matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
 	c.LastResourceStateWithTimeout(matchResourceFn, assertFn, message, 3*time.Second)
 }
 
+// LastResourceStateWithTimeout filters all messages by `matchResourceFn` and checks that the last message matches `assertFn`. Timeouts after `timeout`.
 func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -317,6 +323,7 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 	}
 }
 
+// GetLastMessageMatching finds last element in slice matching `matchFn`.
 func GetLastMessageMatching(messages []*central.MsgFromSensor, matchFn MatchResource) *central.MsgFromSensor {
 	for i := len(messages) - 1; i >= 0; i-- {
 		if matchFn(messages[i]) {
