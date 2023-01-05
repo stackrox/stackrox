@@ -48,13 +48,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		"AddProcessListeningOnPort",
 	)
 
-	var (
-		indicatorLookups []*v1.Query
-		indicatorIds     []string
-		indicatorsMap    = map[string]*storage.ProcessIndicator{}
-		existingPLOPMap  = map[string]*storage.ProcessListeningOnPortStorage{}
-	)
-
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
 		log.Warnf("Tried to add PLOP not on Postgres, ignore: %+v", portProcesses)
@@ -69,78 +62,17 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	portProcesses = normalizePLOPs(portProcesses)
 
-	// First query all needed process indicators in one go
-	for _, val := range portProcesses {
-		if val.Process == nil {
-			log.Warnf("Got PLOP object without Process information, ignore: %+v", val)
-			continue
-		}
-
-		indicatorLookups = append(indicatorLookups,
-			search.NewQueryBuilder().
-				AddExactMatches(search.ContainerName, val.Process.ContainerName).
-				AddExactMatches(search.PodID, val.Process.PodId).
-				AddExactMatches(search.ProcessName, val.Process.ProcessName).
-				AddExactMatches(search.ProcessArguments, val.Process.ProcessArgs).
-				AddExactMatches(search.ProcessExecPath, val.Process.ProcessExecFilePath).
-				ProtoQuery())
-	}
-
-	indicatorsQuery := search.DisjunctionQuery(indicatorLookups...)
-	log.Debugf("Sending query: %s", indicatorsQuery.String())
-	indicators, err := ds.indicatorDataStore.SearchRawProcessIndicators(ctx, indicatorsQuery)
+	// XXX: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
+	// be done in a single join query fetching both ProcessIndicator and needed
+	// bits from PLOP.
+	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, portProcesses...)
 	if err != nil {
 		return err
 	}
 
-	for _, val := range indicators {
-		key := fmt.Sprintf("%s %s %s %s %s",
-			val.GetContainerName(),
-			val.GetPodId(),
-			val.GetSignal().GetName(),
-			val.GetSignal().GetArgs(),
-			val.GetSignal().GetExecFilePath(),
-		)
-
-		// A bit of paranoia is always good
-		if old, ok := indicatorsMap[key]; ok {
-			log.Warnf("An indicator %s is already present, overwrite with %s",
-				old.GetId(), val.GetId())
-		}
-
-		indicatorsMap[key] = val
-
-		indicatorIds = append(indicatorIds, val.GetId())
-	}
-
-	if len(indicatorIds) > 0 {
-		// If no corresponding processes found, we can't verify if the PLOP
-		// object is opening/closing an existing one. Collect existingPLOPMap
-		// only if there are some matching indicators.
-
-		// XXX: This has to be done in a single join query fetching both
-		// ProcessIndicator and needed bits from PLOP.
-		existingPLOP, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
-			AddStrings(search.ProcessID, indicatorIds...).ProtoQuery())
-		if err != nil {
-			return err
-		}
-
-		for _, val := range existingPLOP {
-			key := fmt.Sprintf("%d %d %s",
-				val.GetProtocol(),
-				val.GetPort(),
-				val.GetProcessIndicatorId(),
-			)
-
-			// A bit of paranoia is always good
-			if old, ok := existingPLOPMap[key]; ok {
-				log.Warnf("A PLOP %s is already present, overwrite with %s",
-					old.GetId(), val.GetId())
-			}
-
-			existingPLOPMap[key] = val
-		}
+	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds, portProcesses...)
+	if err != nil {
+		return err
 	}
 
 	plopObjects := make([]*storage.ProcessListeningOnPortStorage, len(portProcesses))
@@ -268,7 +200,115 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 	return nil
 }
 
-// OpenClosedPLOPs: Convenient type alias to use in PLOP normalization
+// fetchExistingPLOPs: Query already existing PLOP objects belonging to the
+// specified process indicators.
+//
+// XXX: This function queries all PLOP, no matter if they are matching port +
+// protocol we've got or not. This means potentially dangerous corner cases
+// when one process listenst to a huge number of ports. To address it we could
+// introduce filtering by port and protocol to the query, and even without
+// extra indices PostgreSQL will be able to do it relatively efficiently using
+// bitmap scan.
+func (ds *datastoreImpl) fetchExistingPLOPs(
+	ctx context.Context,
+	indicatorIds []string,
+	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
+) (map[string]*storage.ProcessListeningOnPortStorage, error) {
+
+	var existingPLOPMap = map[string]*storage.ProcessListeningOnPortStorage{}
+
+	if len(indicatorIds) == 0 {
+		return nil, nil
+	}
+
+	// If no corresponding processes found, we can't verify if the PLOP
+	// object is opening/closing an existing one. Collect existingPLOPMap
+	// only if there are some matching indicators.
+	existingPLOP, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
+		AddStrings(search.ProcessID, indicatorIds...).ProtoQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, val := range existingPLOP {
+		key := fmt.Sprintf("%d %d %s",
+			val.GetProtocol(),
+			val.GetPort(),
+			val.GetProcessIndicatorId(),
+		)
+
+		// A bit of paranoia is always good
+		if old, ok := existingPLOPMap[key]; ok {
+			log.Warnf("A PLOP %s is already present, overwrite with %s",
+				old.GetId(), val.GetId())
+		}
+
+		existingPLOPMap[key] = val
+	}
+
+	return existingPLOPMap, nil
+}
+
+// fetchIndicators: Query all needed process indicators references from PLOPS
+// in one go. Besides the indicator map it also returns the list of ids for
+// convenience to pass it further.
+func (ds *datastoreImpl) fetchIndicators(
+	ctx context.Context,
+	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
+) (map[string]*storage.ProcessIndicator, []string, error) {
+
+	var (
+		indicatorLookups []*v1.Query
+		indicatorIds     []string
+		indicatorsMap    = map[string]*storage.ProcessIndicator{}
+	)
+
+	for _, val := range portProcesses {
+		if val.Process == nil {
+			log.Warnf("Got PLOP object without Process information, ignore: %+v", val)
+			continue
+		}
+
+		indicatorLookups = append(indicatorLookups,
+			search.NewQueryBuilder().
+				AddExactMatches(search.ContainerName, val.Process.ContainerName).
+				AddExactMatches(search.PodID, val.Process.PodId).
+				AddExactMatches(search.ProcessName, val.Process.ProcessName).
+				AddExactMatches(search.ProcessArguments, val.Process.ProcessArgs).
+				AddExactMatches(search.ProcessExecPath, val.Process.ProcessExecFilePath).
+				ProtoQuery())
+	}
+
+	indicatorsQuery := search.DisjunctionQuery(indicatorLookups...)
+	log.Debugf("Sending query: %s", indicatorsQuery.String())
+	indicators, err := ds.indicatorDataStore.SearchRawProcessIndicators(ctx, indicatorsQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, val := range indicators {
+		key := fmt.Sprintf("%s %s %s %s %s",
+			val.GetContainerName(),
+			val.GetPodId(),
+			val.GetSignal().GetName(),
+			val.GetSignal().GetArgs(),
+			val.GetSignal().GetExecFilePath(),
+		)
+
+		// A bit of paranoia is always good
+		if old, ok := indicatorsMap[key]; ok {
+			log.Warnf("An indicator %s is already present, overwrite with %s",
+				old.GetId(), val.GetId())
+		}
+
+		indicatorsMap[key] = val
+		indicatorIds = append(indicatorIds, val.GetId())
+	}
+
+	return indicatorsMap, indicatorIds, nil
+}
+
+// OpenClosedPLOPs is a convenient type alias to use in PLOP normalization
 type OpenClosedPLOPs struct {
 	open   []*storage.ProcessListeningOnPortFromSensor
 	closed []*storage.ProcessListeningOnPortFromSensor

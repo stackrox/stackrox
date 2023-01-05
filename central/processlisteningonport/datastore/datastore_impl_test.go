@@ -168,14 +168,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	// the serialized column (because all the info is stored in the referenced
 	// process indicator record)
 	processInfo := []*storage.ProcessIndicatorUniqueKey{}
-	suite.datastore.WalkAll(suite.hasWriteCtx,
+	err = suite.datastore.WalkAll(suite.hasWriteCtx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			if plop.GetProcess() != nil {
 				processInfo = append(processInfo, plop.GetProcess())
 			}
 			return nil
 		})
-
+	suite.NoError(err)
 	suite.Len(processInfo, 0)
 }
 
@@ -384,12 +384,12 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 	// Verify that PLOP object was updated and no new records were created
 	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	suite.datastore.WalkAll(suite.hasWriteCtx,
+	err = suite.datastore.WalkAll(suite.hasWriteCtx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			plopsFromDB = append(plopsFromDB, plop)
 			return nil
 		})
-
+	suite.NoError(err)
 	suite.Len(plopsFromDB, 1)
 }
 
@@ -625,14 +625,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	// able to establish reference to a process indicator and don't want to
 	// loose the data
 	processInfo := []*storage.ProcessIndicatorUniqueKey{}
-	suite.datastore.WalkAll(suite.hasWriteCtx,
+	err = suite.datastore.WalkAll(suite.hasWriteCtx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			if plop.GetProcess() != nil {
 				processInfo = append(processInfo, plop.GetProcess())
 			}
 			return nil
 		})
-
+	suite.NoError(err)
 	suite.Len(processInfo, 1)
 	suite.Equal(processInfo[0], plopObjects[0].Process)
 }
