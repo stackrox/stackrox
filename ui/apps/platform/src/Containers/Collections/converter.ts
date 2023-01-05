@@ -51,7 +51,6 @@ export function parseCollection(
     const collection: ClientCollection = {
         name: data.name,
         description: data.description,
-        inUse: data.inUse,
         embeddedCollectionIds: data.embeddedCollections.map(({ id }) => id),
         resourceSelector: {
             Deployment: { type: 'All' },

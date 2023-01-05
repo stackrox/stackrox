@@ -17,8 +17,8 @@ const grpcGatewayUserAgentHeader = runtime.MetadataPrefix + "User-Agent"
 
 func (cfg *Config) track(rp *RequestParams) {
 	id := cfg.HashUserAuthID(rp.UserID)
-	cfg.interceptorsLock.Lock()
-	defer cfg.interceptorsLock.Unlock()
+	cfg.interceptorsLock.RLock()
+	defer cfg.interceptorsLock.RUnlock()
 	for event, funcs := range cfg.interceptors {
 		props := map[string]any{}
 		ok := true

@@ -32,6 +32,10 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
+	if protoComponents == nil {
+		log.Warn("Empty components returned from NodeInventory")
+	}
+
 	// uncertifiedRHEL is false since scanning is only supported on RHCOS for now,
 	// which only exists in certified versions. Therefore, no specific notes needed
 	// if uncertifiedRHEL can be true in the future, we can add Note_CERTIFIED_RHEL_SCAN_UNAVAILABLE
@@ -41,7 +45,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 		Components: protoComponents,
 		Notes:      []scannerV1.Note{scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE},
 	}
-	
+
 	return m, nil
 }
 
@@ -51,11 +55,19 @@ func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Component
 		return nil
 	}
 
+	var namespace string
+	if c.OSNamespace == nil {
+		namespace = "unknown"
+		// TODO(ROX-14186): Also set a note here that this is an uncertified scan
+	} else {
+		namespace = c.OSNamespace.Name
+	}
+
 	// For now, we only care about RHEL components, but this must be extended once we support non-RHCOS
 	rhelComponents := convertRHELComponents(c.CertifiedRHELComponents)
 
 	protoComponents := &scannerV1.Components{
-		Namespace:          c.OSNamespace.Name,
+		Namespace:          namespace,
 		OsComponents:       nil,
 		RhelComponents:     rhelComponents,
 		LanguageComponents: nil,

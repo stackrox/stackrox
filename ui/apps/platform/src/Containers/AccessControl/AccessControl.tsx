@@ -40,6 +40,9 @@ function AccessControl(): ReactElement {
                             <ListItem>
                                 <b>Image</b> now also covers <b>ImageComponent</b>
                             </ListItem>
+                            <ListItem>
+                                <b>Cluster</b> now also covers <b>ClusterCVE</b>
+                            </ListItem>
                         </List>
 
                         <p>
@@ -57,9 +60,6 @@ function AccessControl(): ReactElement {
                             </ListItem>
                             <ListItem>
                                 <b>Compliance</b> will replace <b>ComplianceRuns</b>
-                            </ListItem>
-                            <ListItem>
-                                <b>Cluster</b> will cover <b>ClusterCVE</b>
                             </ListItem>
                         </List>
                     </>
