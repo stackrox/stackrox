@@ -8,3 +8,9 @@ To deploy the scanner, you need to run the deploy script. e.g.:
 ```
 ./scripts/ci/clairv4/deploy.sh qa-clairv4
 ```
+
+To tear it down, run:
+
+```
+./scripts/ci/clairv4/teardown.sh qa-clairv4
+```

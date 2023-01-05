@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: clairv4
-        # This image is based on registry.redhat.io/quay/clair-rhel8:v3.7.10-2
-        image: us.gcr.io/stackrox-ci/clair:v4.4.4
+        # This image is based on registry.redhat.io/quay/clair-rhel8:v3.8.0-10
+        image: us.gcr.io/stackrox-ci/clair:v4.5.1
         env:
         - name: CLAIR_CONF
           value: /clair/config.yaml
