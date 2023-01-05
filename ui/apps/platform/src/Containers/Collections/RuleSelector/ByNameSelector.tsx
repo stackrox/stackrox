@@ -94,7 +94,7 @@ function ByNameSelector({
 
                     return (
                         <div className="rule-selector-list-item" key={keyFor(index)}>
-                            <div style={{ width: '180px' }}>
+                            <div className="rule-selector-match-type-select">
                                 <NameMatchTypeSelect
                                     selected={matchType}
                                     isDisabled={isDisabled}

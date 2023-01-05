@@ -41,3 +41,7 @@
   content: "";
   display: inline-block;
 }
+
+.rule-selector-match-type-select {
+  width: 180px;
+}
