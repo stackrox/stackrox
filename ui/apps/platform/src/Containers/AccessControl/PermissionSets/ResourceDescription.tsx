@@ -11,7 +11,6 @@ const resourceDescriptions: Record<ResourceName, string> = {
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
     CVE: 'Internal use only',
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
-    ClusterCVE: 'Internal use only',
     Compliance:
         'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs.',
     Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A',

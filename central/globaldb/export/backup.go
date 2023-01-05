@@ -68,5 +68,9 @@ func BackupPostgres(ctx context.Context, postgresDB *pgxpool.Pool, includeCerts 
 		}
 	}
 
+	if err := generators.PutStreamInZip(dbs.NewPostgresVersion(postgresDB), backup.MigrationVersion).WriteTo(ctx, zipWriter); err != nil {
+		return errors.Wrap(err, "unable to get postgres version")
+	}
+
 	return zipWriter.Close()
 }

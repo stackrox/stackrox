@@ -19,7 +19,6 @@ import usePermissions from 'hooks/usePermissions';
 import { clustersBasePath } from 'routePaths';
 
 import CredentialExpiryBanner from './CredentialExpiryBanner';
-import DatabaseUnavailableBanner from './DatabaseUnavailableBanner';
 import VersionOutOfDate from './VersionOutOfDate';
 import Masthead from './Header/Masthead';
 import NavigationSidebar from './Sidebar/NavigationSidebar';
@@ -99,7 +98,6 @@ function MainPage(): ReactElement {
                     hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
                 />
                 {metadata?.stale && <VersionOutOfDate />}
-                {metadata && !metadata.dbAvailable && <DatabaseUnavailableBanner />}
                 <Page
                     mainContainerId="main-page-container"
                     header={<Masthead />}

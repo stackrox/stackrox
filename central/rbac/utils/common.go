@@ -16,7 +16,7 @@ import (
 // If the namespace is set to empty, the given context will be used to retrieve the cluster roles.
 func getRolesForRoleBindings(ctx context.Context, roleStore datastore.DataStore,
 	bindings []*storage.K8SRoleBinding, clusterID string, namespace string) []*storage.K8SRole {
-	roleIDs, clusterRoleIDs := getRoleIDsFromBindings(bindings)
+	roleIDs, clusterRoleIDs := getRoleIDsFromBindings(bindings, namespace)
 	roles := make([]*storage.K8SRole, 0, roleIDs.Cardinality()+clusterRoleIDs.Cardinality())
 
 	// Fetch the roles without elevating the context.
@@ -51,13 +51,17 @@ func getRolesForRoleBindings(ctx context.Context, roleStore datastore.DataStore,
 	return roles
 }
 
-func getRoleIDsFromBindings(bindings []*storage.K8SRoleBinding) (set.StringSet, set.StringSet) {
+func getRoleIDsFromBindings(bindings []*storage.K8SRoleBinding, namespace string) (set.StringSet, set.StringSet) {
 	roleIDs := set.NewStringSet()
 	clusterRoleIDs := set.NewStringSet()
 	for _, binding := range bindings {
 		roleID := binding.GetRoleId()
 		if roleID != "" {
-			if binding.GetClusterRole() {
+			// In cae of evaluating namespace permission where a specific namespace will be set, we will filter relevant
+			// bindings to cluster roles to the specific namespace.
+			// In case of evaluating cluster permission where no namespace will be set, we will only look at bindings
+			// without a namespace being set, since bindings bound to a specific namespace are not relevant.
+			if binding.GetClusterRole() && binding.GetNamespace() == namespace {
 				clusterRoleIDs.Add(roleID)
 			} else {
 				roleIDs.Add(roleID)

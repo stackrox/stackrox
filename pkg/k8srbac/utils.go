@@ -20,11 +20,8 @@ var DefaultLabel = struct {
 	Value string
 }{Key: "kubernetes.io/bootstrapping", Value: "rbac-defaults"}
 
-// IsDefaultRole identifies default roles.
-// TODO(): Need to wire labels for this.
-func IsDefaultRole(role *storage.K8SRole) bool {
-	return role.GetLabels()[DefaultLabel.Key] == DefaultLabel.Value
-}
+// DefaultServiceAccountName is the name of service accounts that get created by default.
+const DefaultServiceAccountName = "default"
 
 // IsDefaultRoleBinding identifies default role bindings.
 // TODO(): Need to wire labels for this.
@@ -32,12 +29,11 @@ func IsDefaultRoleBinding(roleBinding *storage.K8SRoleBinding) bool {
 	return roleBinding.GetLabels()[DefaultLabel.Key] == DefaultLabel.Value
 }
 
-// DefaultServiceAccountName is the name of service accounts that get created by default.
-const DefaultServiceAccountName = "default"
-
-// IsDefaultServiceAccountSubject identifies subjects that are default service accounts.
-func IsDefaultServiceAccountSubject(sub *storage.Subject) bool {
-	return sub.GetKind() == storage.SubjectKind_SERVICE_ACCOUNT && sub.GetName() == DefaultServiceAccountName
+// IsClusterRoleBinding identifies cluster role bindings.
+func IsClusterRoleBinding(binding *storage.K8SRoleBinding) bool {
+	// A binding is only binding cluster-wide if cluster role is true _and_ namespace is empty. Namespaced
+	// bindings may bind to cluster roles as well.
+	return binding.GetClusterRole() && binding.GetNamespace() == ""
 }
 
 // EffectiveAdmin represents the rule that grants admin if granted by a policy rule.
