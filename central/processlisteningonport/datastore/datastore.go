@@ -8,9 +8,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+// WalkFn is a convenient type alias to use for the Walk function
 type WalkFn = func(plop *storage.ProcessListeningOnPortStorage) error
 
 // DataStore interface for ProcessListeningOnPort object interaction with the database
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	AddProcessListeningOnPort(context.Context, ...*storage.ProcessListeningOnPortFromSensor) error
