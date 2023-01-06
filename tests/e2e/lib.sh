@@ -11,6 +11,7 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+export PORT_FORWARD_LOGS="/tmp/port-forward-logs"
 
 # shellcheck disable=SC2120
 deploy_stackrox() {
@@ -239,8 +240,12 @@ start_port_forwards_for_test() {
     ulimit -n 65535 || true
 
     central_pod="$(kubectl -n stackrox get po -lapp=central -oname | head -n 1)"
+
+    mkdir -p "$PORT_FORWARD_LOGS"
+
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
-        nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" </dev/null &>/dev/null &
+        log_file="$PORT_FORWARD_LOGS/central-${target_port}.log"
+        nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" > "${log_file}" 2>&1 &
     done
     sleep 1
 }
