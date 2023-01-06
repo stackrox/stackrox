@@ -43,6 +43,9 @@ type Versions struct {
 	// or rely on defaults.ImageFlavor if you need a default collector image tag.
 	ScannerVersion string `json:"ScannerVersion"`
 	ChartVersion   string `json:"ChartVersion"`
+	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
+	Database        string `json:"Database"`
+	DatabaseVersion string `json:"DatabaseVersion"`
 }
 
 // GetAllVersionsDevelopment returns all of the various pieces of version information for development builds of the product.

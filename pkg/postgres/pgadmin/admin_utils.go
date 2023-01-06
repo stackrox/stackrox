@@ -426,3 +426,25 @@ func GetDatabaseSize(postgresConfig *pgxpool.Config, dbName string) (int64, erro
 	log.Infof("%q size = %d.", dbName, dbSize)
 	return dbSize, nil
 }
+
+// GetDatabaseVersion - returns the version of the database in use
+func GetDatabaseVersion(postgresConfig *pgxpool.Config) string {
+	// Connect to different database for admin functions
+	connectPool := GetAdminPool(postgresConfig)
+	// Close the admin connection pool
+	defer connectPool.Close()
+
+	// Create a context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
+	defer cancel()
+
+	versionStmt := "SHOW server_version;"
+
+	row := connectPool.QueryRow(ctx, versionStmt)
+	var version string
+	if err := row.Scan(&version); err != nil {
+		return ""
+	}
+
+	return version
+}

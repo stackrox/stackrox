@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	groupDS "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/logimbue/writer"
@@ -348,10 +349,16 @@ func getLogFile(zipWriter *zip.Writer, targetPath string, sourcePath string) err
 	return err
 }
 
-func getVersion(zipWriter *zip.Writer) error {
+func getVersion(ctx context.Context, zipWriter *zip.Writer) error {
 	versions := version.GetAllVersionsDevelopment()
 	if buildinfo.ReleaseBuild {
 		versions = version.GetAllVersionsUnified()
+	}
+
+	// Add the database version if Postgres
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		versions.Database = "PostgresDB"
+		versions.DatabaseVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
 	}
 
 	return addJSONToZip(zipWriter, "versions.json", versions)
@@ -505,7 +512,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 	zipWriter := zip.NewWriter(w)
 
-	if err := getVersion(zipWriter); err != nil {
+	if err := getVersion(ctx, zipWriter); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -598,6 +605,11 @@ func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
 	versions := version.GetAllVersionsDevelopment()
 	if buildinfo.ReleaseBuild {
 		versions = version.GetAllVersionsUnified()
+	}
+	// Add the database version if Postgres
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		versions.Database = "PostgresDB"
+		versions.DatabaseVersion = globaldb.GetPostgresVersion(r.Context(), globaldb.GetPostgres())
 	}
 	versionsJSON, err := json.Marshal(&versions)
 	if err != nil {

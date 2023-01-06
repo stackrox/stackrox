@@ -54,6 +54,8 @@ SELECT TABLE_NAME
   ) a
   WHERE oid = parent
 ) a;`
+
+	versionQuery = `SHOW server_version;`
 )
 
 var (
@@ -110,6 +112,20 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 
 	})
 	return postgresDB
+}
+
+// GetPostgresVersion -- return version of the database
+func GetPostgresVersion(ctx context.Context, db *pgxpool.Pool) string {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	row := db.QueryRow(ctx, versionQuery)
+	var version string
+	if err := row.Scan(&version); err != nil {
+		log.Errorf("error fetching database version: %v", err)
+		return ""
+	}
+	return version
 }
 
 // CollectPostgresStats -- collect table level stats for Postgres
