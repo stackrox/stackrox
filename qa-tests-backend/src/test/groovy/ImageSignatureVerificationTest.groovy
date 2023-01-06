@@ -94,7 +94,8 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which has a cosign signature that is not verifiable by any cosign public key.
     static final private Deployment UNVERIFIABLE_DEPLOYMENT = new Deployment()
             .setName("with-signature-unverifiable")
-            .setImage("registry.redhat.io/openshift-service-mesh/proxyv2-rhel8@sha256:5716a22874c9afa06159da127caf28809ae4f3c18a58605ee662021eb8c9099a")
+            .setImage("registry.redhat.io/openshift-service-mesh/proxyv2-rhel8@" +
+                    "sha256:5716a22874c9afa06159da127caf28809ae4f3c18a58605ee662021eb8c9099a")
             .addLabel("app", "image-with-unverifiable-signature-test")
             .setCommand(["/usr/local/bin/pilot-agent", "wait", "--timeoutSeconds", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)

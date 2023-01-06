@@ -33,7 +33,8 @@ class RuntimePolicyTest extends BaseSpecification  {
 
     static final private DEPLOYMENTREMOVAL =  new Deployment()
             .setName ("runtimeremoval")
-            .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-" +
+                    "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
             .addLabel ( "app", "test" )
             .setCommand(["sh" , "-c" , "apt -y update && sleep 600"])
 

@@ -221,7 +221,8 @@ class ImageManagementTest extends BaseSpecification {
         def deployment = new Deployment()
                 .setName("risk-image")
                 .setReplicas(1)
-                .setImage("registry.redhat.io/rhel8/mysql-80@sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
+                .setImage("registry.redhat.io/rhel8/mysql-80@" +
+                        "sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
                 .setCommand(["sleep", "60000"])
                 .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
 
