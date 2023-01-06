@@ -20,7 +20,7 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 	testCases := map[string]struct {
 		inComponents  []*database.RHELv2Package
 		outComponents []*scannerV1.RHELComponent
-		expectedIDs   []int64
+		expectedLen   int
 	}{
 		"nil-inComponents": {
 			inComponents: nil,
@@ -42,7 +42,22 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 					Arch:    "x86_64",
 				},
 			},
-			expectedIDs: []int64{811302696907806633, -6830193034404301455},
+			expectedLen: 2,
+		},
+		"collision-component": {
+			inComponents: []*database.RHELv2Package{
+				{
+					Name:    "redhat-release",
+					Version: "8.3-1.0.el8",
+					Arch:    "x86_64",
+				},
+				{
+					Name:    "redhat-release",
+					Version: "8.3-1.0.el8",
+					Arch:    "x86_64",
+				},
+			},
+			expectedLen: 1,
 		},
 	}
 	for caseName, testCase := range testCases {
@@ -58,10 +73,125 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 				for _, entry := range convertedComponents {
 					convertedIDs = append(convertedIDs, entry.Id)
 				}
-				s.ElementsMatch(testCase.expectedIDs, convertedIDs)
+				s.Equal(testCase.expectedLen, len(convertedComponents))
 			} else {
 				s.Nil(convertedComponents)
 			}
+		})
+	}
+}
+
+func (s *NodeInventorizerTestSuite) TestEqualRHELv2Packages() {
+	testcases := map[string]struct {
+		a        *database.RHELv2Package
+		b        *database.RHELv2Package
+		expected bool
+	}{
+		"equal components": {
+			a: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+				Module:  "mod",
+			},
+			b: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+				Module:  "mod",
+			},
+			expected: true,
+		},
+		"empty comparable": {
+			a: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+				Module:  "mod",
+			},
+			b: &database.RHELv2Package{
+				Name:    "",
+				Version: "1.0",
+				Arch:    "x86",
+				Module:  "mod",
+			},
+			expected: false,
+		},
+		"missing comparable": {
+			a: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+				Module:  "mod",
+			},
+			b: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+			},
+			expected: false,
+		},
+		"missing comparables": {
+			a: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+			},
+			b: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+			},
+			expected: true,
+		},
+		"diff comparable": {
+			a: &database.RHELv2Package{
+				Name:   "tes",
+				Arch:   "x86",
+				Module: "mod",
+			},
+			b: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+			},
+			expected: false,
+		},
+		"capitalized components": {
+			a: &database.RHELv2Package{
+				Name:    "Tes",
+				Version: "1.0",
+				Arch:    "x86",
+				Module:  "mod",
+			},
+			b: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+				Module:  "moD",
+			},
+			expected: false,
+		},
+		"Nil component": {
+			a: &database.RHELv2Package{
+				Name:    "tes",
+				Version: "1.0",
+				Arch:    "x86",
+				Module:  "mod",
+			},
+			b:        nil,
+			expected: false,
+		},
+		"Nil components": {
+			a:        nil,
+			b:        nil,
+			expected: false,
+		},
+	}
+
+	for testName, testCase := range testcases {
+		s.Run(testName, func() {
+			s.Equal(testCase.expected, equalRHELv2Packages(testCase.a, testCase.b))
 		})
 	}
 }

@@ -2,7 +2,6 @@ package nodeinventorizer
 
 import (
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -63,15 +62,25 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 		log.Warn("No RHEL packages found in scan result")
 		return nil
 	}
+
+	seenEntries := make(map[int]*database.RHELv2Package)
 	v1rhelc := make([]*scannerV1.RHELComponent, 0, len(rc.Packages))
-	for _, rhelc := range rc.Packages {
-		rhelcID, err := hashstructure.Hash(rhelc, hashstructure.FormatV2, nil)
-		if err != nil {
-			log.Warnf("Could not create id for RHELComponent %q", rhelc.Name)
-			rhelcID = 0
+
+	// referencing this label by the inner `continue` lets us skip the rest of the outer loop as well,
+	// resulting in the colliding component not being added to v1rhelc.
+COMPONENTS:
+	for i, rhelc := range rc.Packages {
+		for _, candidate := range seenEntries {
+			if equalRHELv2Packages(candidate, rhelc) {
+				log.Warnf("Detected package collision in Node Inventory scan. Skipping package %v for id %v", candidate, i)
+				continue COMPONENTS
+			}
 		}
+		// If the entry didn't produce a collision, add it to seenEntries and result
+		seenEntries[i] = rhelc
+		log.Debugf("Adding component %v to v1rhelc", rhelc.Name)
 		v1rhelc = append(v1rhelc, &scannerV1.RHELComponent{
-			Id:          int64(rhelcID),
+			Id:          int64(i),
 			Name:        rhelc.Name,
 			Namespace:   rc.Dist,
 			Version:     rhelc.Version,
@@ -82,4 +91,14 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 		})
 	}
 	return v1rhelc
+}
+
+func equalRHELv2Packages(a *database.RHELv2Package, b *database.RHELv2Package) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	if a.Name == b.Name && a.Version == b.Version && a.Arch == b.Arch && a.Module == b.Module {
+		return true
+	}
+	return false
 }
