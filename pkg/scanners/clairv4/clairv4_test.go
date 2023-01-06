@@ -17,15 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	_ http.Handler = (*noopHandler)(nil)
-	_ http.Handler = (*mockClair)(nil)
-)
-
-type noopHandler struct {}
-
-func (n *noopHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {}
-
 var _ types.Registry = (*mockRegistry)(nil)
 
 type mockRegistry struct {
@@ -57,6 +48,15 @@ func (m *mockRegistry) Name() string {
 func (m *mockRegistry) HTTPClient() *http.Client {
 	return http.DefaultClient
 }
+
+var (
+	_ http.Handler = (*noopHandler)(nil)
+	_ http.Handler = (*mockClair)(nil)
+)
+
+type noopHandler struct {}
+
+func (n *noopHandler) ServeHTTP(_ http.ResponseWriter, _ *http.Request) {}
 
 type mockClair struct {}
 
