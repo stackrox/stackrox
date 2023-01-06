@@ -220,7 +220,7 @@ func (c *clairv4) index(manifest *claircore.Manifest) error {
 		case http.StatusOK, http.StatusCreated:
 			// The index report was created, hopefully...
 		case http.StatusInternalServerError:
-			return errInternal
+			return retry.MakeRetryable(errInternal)
 		default:
 			return newUnexpectedStatusCodeError(resp.StatusCode)
 		}
@@ -257,7 +257,7 @@ func (c *clairv4) getVulnerabilityReport(digest string) (*claircore.Vulnerabilit
 		case http.StatusOK:
 		case http.StatusAccepted, http.StatusInternalServerError:
 			// http.StatusAccepted is treated like an internal error.
-			return errInternal
+			return retry.MakeRetryable(errInternal)
 		default:
 			return newUnexpectedStatusCodeError(resp.StatusCode)
 		}
