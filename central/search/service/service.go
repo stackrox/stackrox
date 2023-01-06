@@ -45,7 +45,7 @@ type Builder interface {
 	WithPolicyStore(store policyDataStore.DataStore) Builder
 	WithSecretStore(store secretDataStore.DataStore) Builder
 	WithServiceAccountStore(store serviceAccountDataStore.DataStore) Builder
-	WithNodeStore(store nodeDataStore.GlobalDataStore) Builder
+	WithNodeStore(store nodeDataStore.DataStore) Builder
 	WithNamespaceStore(store namespaceDataStore.DataStore) Builder
 	WithRiskStore(store riskDataStore.DataStore) Builder
 	WithRoleStore(store roleDataStore.DataStore) Builder
