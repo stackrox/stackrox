@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -118,11 +119,6 @@ var (
 	log = logging.LoggerForModule()
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
-
-	deploymentSortOption = &v1.QuerySortOption{
-		Field:    search.DeploymentPriority.String(),
-		Reversed: false,
-	}
 )
 
 // Scheduler maintains the schedules for reports
@@ -398,7 +394,7 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 		if err != nil {
 			return nil, err
 		}
-		result.Deployments = groupByClusterAndNamespace(result.Deployments)
+		result.Deployments = orderByClusterAndNamespace(result.Deployments)
 		return []common.Result{result}, nil
 	}
 	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
@@ -469,10 +465,6 @@ func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuer
 			"pagination": map[string]interface{}{
 				"offset": offset,
 				"limit":  deploymentsPaginationLimit,
-				"sortOption": map[string]interface{}{
-					"field":    deploymentSortOption.GetField(),
-					"reversed": deploymentSortOption.GetReversed(),
-				},
 			},
 		})
 	if len(response.Errors) > 0 {
@@ -487,11 +479,6 @@ func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuer
 }
 
 func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query) ([]string, error) {
-	deploymentsQuery.Pagination = &v1.QueryPagination{
-		SortOptions: []*v1.QuerySortOption{
-			deploymentSortOption,
-		},
-	}
 	results, err := s.deploymentDatastore.Search(ctx, deploymentsQuery)
 	if err != nil {
 		return nil, err
@@ -499,24 +486,14 @@ func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Q
 	return search.ResultsToIDs(results), nil
 }
 
-func groupByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {
-	groupedDeployments := make([]*common.Deployment, 0, len(deployments))
-	deploymentsByCluster := make(map[string][]*common.Deployment)
-	for _, deployment := range deployments {
-		deploymentsByCluster[deployment.GetClusterName()] = append(deploymentsByCluster[deployment.GetClusterName()], deployment)
-	}
-
-	for _, deployments := range deploymentsByCluster {
-		deploymentsByNamespace := make(map[string][]*common.Deployment)
-		for _, deployment := range deployments {
-			deploymentsByNamespace[deployment.Namespace] = append(deploymentsByNamespace[deployment.Namespace], deployment)
+func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {
+	sort.SliceStable(deployments, func(i, j int) bool {
+		if deployments[i].Cluster.GetName() == deployments[j].Cluster.GetName() {
+			return deployments[i].Namespace < deployments[j].Namespace
 		}
-		for _, deps := range deploymentsByNamespace {
-			groupedDeployments = append(groupedDeployments, deps...)
-		}
-	}
-
-	return groupedDeployments
+		return deployments[i].Cluster.GetName() < deployments[j].Cluster.GetName()
+	})
+	return deployments
 }
 
 func (s *scheduler) Start() {
