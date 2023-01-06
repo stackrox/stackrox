@@ -53,7 +53,7 @@ function ByLabelSelector({
         const selector = cloneDeep(scopedResourceSelector);
 
         // Only add a new form row if there are no blank entries
-        if (selector.rules.every(({ values }) => values.every((value) => value))) {
+        if (selector.rules.every(({ values }) => values.every(({ value }) => value))) {
             selector.rules.push({
                 operator: 'OR',
                 values: [{ value: '', matchType: 'EXACT' }],
@@ -105,7 +105,6 @@ function ByLabelSelector({
                                 <Label variant="outline" isCompact>
                                     and
                                 </Label>
-                                <span />
                             </div>
                         )}
 
