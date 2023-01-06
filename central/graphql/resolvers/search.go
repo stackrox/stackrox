@@ -159,7 +159,7 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_POLICIES:         resolver.PolicyDataStore.SearchPolicies,
 		v1.SearchCategory_SECRETS:          resolver.SecretsDataStore.SearchSecrets,
 		v1.SearchCategory_NAMESPACES:       resolver.NamespaceDataStore.SearchResults,
-		v1.SearchCategory_NODES:            resolver.NodeGlobalDataStore.SearchResults,
+		v1.SearchCategory_NODES:            resolver.NodeDataStore.SearchNodes,
 		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore.SearchServiceAccounts,
 		v1.SearchCategory_ROLES:            resolver.K8sRoleStore.SearchRoles,
 		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore.SearchRoleBindings,
