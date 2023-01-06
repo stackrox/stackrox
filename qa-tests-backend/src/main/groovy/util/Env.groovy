@@ -25,6 +25,7 @@ class Env {
     static final CI_TAG = System.getenv("CIRCLE_TAG")
     static final GATHER_QA_TEST_DEBUG_LOGS = (System.getenv("GATHER_QA_TEST_DEBUG_LOGS") == "true")
     static final QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
+    static final HW_ARCH = System.getenv("CLUSTER_HW_ARCH")
 
     private static final Env INSTANCE = new Env()
 

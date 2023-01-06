@@ -22,7 +22,11 @@ import util.Timer
 import org.junit.Rule
 import org.junit.rules.Timeout
 import spock.lang.Tag
+import spock.lang.IgnoreIf
+import util.Env
 
+// ROX-14228 skipping tests for 1st release on power & z
+@IgnoreIf({ Env.HW_ARCH == "ppc64le" || Env.HW_ARCH == "s390x" })
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
