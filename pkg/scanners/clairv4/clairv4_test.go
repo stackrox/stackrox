@@ -37,7 +37,7 @@ func (m *mockRegistry) Test() error {
 
 func (m *mockRegistry) Config() *types.Config {
 	return &types.Config{
-		URL:  m.url,
+		URL: m.url,
 	}
 }
 
