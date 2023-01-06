@@ -31,6 +31,7 @@ import { getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel } from './types/topology.type';
 import { createExtraneousEdges } from './utils/modelUtils';
 import { Simulation } from './utils/getSimulation';
+import LegendContent from './components/LegendContent';
 
 import './Topology.css';
 
@@ -324,9 +325,7 @@ const TopologyComponent = ({
                             controller.getGraph().reset();
                             controller.getGraph().layout();
                         },
-                        legendCallback: () => {
-                            // console.log('hi');
-                        },
+                        legend: true,
                     })}
                 />
             }
