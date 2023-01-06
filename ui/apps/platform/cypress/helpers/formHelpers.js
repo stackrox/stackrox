@@ -40,6 +40,16 @@ export function getHelperElementByLabel(label) {
         });
 }
 
+/**
+ * Gets the parent `div` of a dt/dd description list group given the text value of the `dt`
+ * element and the text value of the `dd` element.
+ * @param {string} term The text content of the `dt` element
+ * @param {string} description The text content of the `dd` element
+ */
+export function getDescriptionListGroup(term, description) {
+    return cy.get(`div:has(dt:has(*:contains("${term}")) + dd:has(*:contains("${description}")))`);
+}
+
 export function generateNameWithDate(name) {
     const randomValue = new Date().toISOString();
     return `${name}-${randomValue}`;

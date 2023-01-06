@@ -140,3 +140,27 @@ export function interactAndWaitToCreateReport(
         : routeMatcherMapToCreate;
     interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
 }
+
+/**
+ * Deletes a VM report configuration via API, given the report config name. Note that since
+ * report configuration names are not unique, this will delete all reports matching the provided
+ * argument.
+ * @param {string} reportConfigName The name of the report to delete.
+ */
+export function tryDeleteVMReportConfigs(reportConfigName) {
+    const baseUrl = `/v1/report/configurations`;
+    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+
+    // Note that this list is unfiltered, which shouldn't be a problem in CI environments but we
+    // can change to a search filter once https://issues.redhat.com/browse/ROX-14238 is fixed
+    // if neded.
+    cy.request({ url: baseUrl, auth }).as('listReportConfigs');
+
+    cy.get('@listReportConfigs').then((res) => {
+        res.body.reportConfigs.forEach(({ id, name }) => {
+            if (name === reportConfigName) {
+                cy.request({ url: `${baseUrl}/${id}`, auth, method: 'DELETE' });
+            }
+        });
+    });
+}
