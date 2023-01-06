@@ -10,9 +10,10 @@ import (
 
 func TestConversion(t *testing.T) {
 	type conversionTestCase struct {
-		desc    string
-		str     string
-		escaped bool
+		desc            string
+		str             string
+		escaped         bool
+		addUnknonwField bool
 	}
 
 	testCases := []conversionTestCase{
@@ -20,21 +21,35 @@ func TestConversion(t *testing.T) {
 			"String without special characters is preserved",
 			"E = mc^2",
 			false,
+			false,
 		},
 		{
 			"Some special characters (<, >, &) are escaped",
 			"A <= B & B >= C",
+			true,
+			false,
+		},
+		{
+			"String without special characters is preserved",
+			"E = mc^2",
+			false,
+			true,
+		},
+		{
+			"Some special characters (<, >, &) are escaped",
+			"A <= B & B >= C",
+			true,
 			true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonify(tc.str), !tc.escaped, []ConversionOption{})
+			verifyJSONToProtoToJSON(t, jsonify(tc.str, tc.addUnknonwField), !tc.escaped, []ConversionOption{})
 		})
 
 		t.Run(tc.desc+" in compact JSON", func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str), !tc.escaped, []ConversionOption{OptCompact})
+			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str, tc.addUnknonwField), !tc.escaped, []ConversionOption{OptCompact})
 		})
 	}
 }
@@ -66,23 +81,23 @@ func TestConversionWithUnEscape(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonify(tc.str), true, []ConversionOption{OptUnEscape})
+			verifyJSONToProtoToJSON(t, jsonify(tc.str, false), true, []ConversionOption{OptUnEscape})
 		})
 
 		t.Run(tc.desc+" in compact JSON", func(t *testing.T) {
 			// Prevent JSON conversion from escaping specific charters.
-			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str), true, []ConversionOption{OptUnEscape, OptCompact})
+			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str, false), true, []ConversionOption{OptUnEscape, OptCompact})
 		})
 	}
 }
 
 // Hand-made compact JSON representation of v1.ResourceByID.
-func jsonifyCompact(value string) string {
+func jsonifyCompact(value string, unknownField bool) string {
 	return fmt.Sprintf(`{"id":"%s"}`, value)
 }
 
 // Hand-made JSON representation of v1.ResourceByID.
-func jsonify(value string) string {
+func jsonify(value string, unknownField bool) string {
 	return fmt.Sprintf(`{
   "id": "%s"
 }`, value)
