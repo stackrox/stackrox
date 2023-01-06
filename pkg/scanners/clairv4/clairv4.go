@@ -142,12 +142,12 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		}
 
 		// The index report does not exist, so we need to index the image's manifest.
-		manifest, err := manifestForImage(registry, image)
+		manifest, err := manifest(registry, image)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Clair v4: creating manifest for %s", imgName)
 		}
 
-		log.Infof("Manifest for %s: %+v", imgName, manifest)
+		log.Debugf("Manifest for %s: %+v", imgName, manifest)
 
 		if err := c.index(manifest); err != nil {
 			return nil, errors.Wrapf(err, "Clair v4: indexing manifest for %s", imgName)
@@ -160,7 +160,7 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, errors.Wrapf(err, "Clair v4: getting vulnerability report for %s", imgName)
 	}
 
-	return imageScanFromReport(report), nil
+	return imageScan(report), nil
 }
 
 func (c *clairv4) indexReportExists(digest string) (bool, error) {

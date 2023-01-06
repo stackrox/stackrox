@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// manifestForImage returns a ClairCore image manifest for the given image.
-func manifestForImage(registry registrytypes.Registry, image *storage.Image) (*claircore.Manifest, error) {
+// manifest returns a ClairCore image manifest for the given image.
+func manifest(registry registrytypes.Registry, image *storage.Image) (*claircore.Manifest, error) {
 	// Ensure this exists before bothering to continue.
 	cfg := registry.Config()
 	if cfg == nil {
@@ -80,7 +80,8 @@ func fetchLayerURIAndHeader(client *http.Client, url, repository, digest string)
 	return res.Request.URL.String(), res.Request.Header, nil
 }
 
-func imageScanFromReport(report *claircore.VulnerabilityReport) *storage.ImageScan {
+// imageScan converts the given report to an image scan.
+func imageScan(report *claircore.VulnerabilityReport) *storage.ImageScan {
 	scan := &storage.ImageScan{
 		ScanTime:        gogotypes.TimestampNow(),
 		Components:      components(report),
@@ -110,6 +111,7 @@ func components(report *claircore.VulnerabilityReport) []*storage.EmbeddedImageS
 	return components
 }
 
+// vulnerabilities returns a list of vulnerabilities from the given map indexed by the given ids.
 func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
 	// vulns will have at most len(ids) entries.
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(ids))
@@ -121,8 +123,11 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 			continue
 		}
 
-		// Ignore the error, as publishedTime will just be `nil` if the given time is invalid.
-		publishedTime, _ := gogotypes.TimestampProto(ccVuln.Issued)
+		var publishedTime *gogotypes.Timestamp
+		if !ccVuln.Issued.IsZero() {
+			// Ignore the error, as publishedTime will just be `nil` if the given time is invalid.
+			publishedTime, _ = gogotypes.TimestampProto(ccVuln.Issued)
+		}
 		vuln := &storage.EmbeddedVulnerability{
 			Cve:               ccVuln.Name,
 			Summary:           ccVuln.Description,
