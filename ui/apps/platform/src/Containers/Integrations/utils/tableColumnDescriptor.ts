@@ -186,6 +186,10 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'name', Header: 'Name' },
             { accessor: 'clair.endpoint', Header: 'Endpoint' },
         ],
+        clairV4: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'clairV4.endpoint', Header: 'Endpoint' },
+        ],
         clairify: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'clairify.endpoint', Header: 'Endpoint' },
