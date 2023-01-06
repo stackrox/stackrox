@@ -37,7 +37,7 @@ var (
 	log = logging.LoggerForModule()
 
 	errNoMetadata = errors.New("Clair v4: Unable to complete scan because the image is missing metadata")
-	errInternal   = errors.New("Clair v4: Internal error")
+	errInternal   = errors.New("Clair v4: Clair internal server error")
 )
 
 // Creator provides the type a scanners.Creator to add to the scanners Registry.
