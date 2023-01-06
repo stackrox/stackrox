@@ -484,3 +484,25 @@ jobs:
       - name: Scan images
         run: |
           ./release/scripts/scan-images-with-roxctl.sh
+
+  slack-on-build-failure:
+    if: github.event_name == 'push' && failure()
+    name: Post Build Failure
+    runs-on: ubuntu-latest
+    needs:
+      - pre-build-ui
+      - pre-build-cli
+      - pre-build-go-binaries
+      - pre-build-go-binaries-rcd
+      - pre-build-docs
+      - build-and-push-main
+      - build-and-push-main-rcd
+      - build-and-push-operator
+      - build-and-push-mock-grpc-server
+      - scan-images-with-roxctl
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@v1.1.0
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}
