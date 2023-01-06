@@ -54,11 +54,11 @@ var (
 	_ http.Handler = (*mockClair)(nil)
 )
 
-type noopHandler struct {}
+type noopHandler struct{}
 
 func (n *noopHandler) ServeHTTP(_ http.ResponseWriter, _ *http.Request) {}
 
-type mockClair struct {}
+type mockClair struct{}
 
 func (m *mockClair) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Check existence of manifest.
