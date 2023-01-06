@@ -20,7 +20,7 @@ import {
     CIDRBlockNodeModel,
     CustomNodeModel,
     ExternalEntitiesNodeModel,
-    ExternalNodeModel,
+    ExternalGroupNodeModel,
 } from '../types/topology.type';
 
 import { CidrBlockIcon, ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
@@ -44,7 +44,7 @@ function ExternalGroupSideBar({ id, nodes, edges }: ExternalGroupSideBarProps): 
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
 
     // derived data
-    const externalGroupNode = getNodeById(nodes, id) as ExternalNodeModel;
+    const externalGroupNode = getNodeById(nodes, id) as ExternalGroupNodeModel;
     const externalNodes = nodes.filter(
         (node) => node.data.type === 'CIDR_BLOCK' || node.data.type === 'EXTERNAL_ENTITIES'
     ) as (ExternalEntitiesNodeModel | CIDRBlockNodeModel)[];

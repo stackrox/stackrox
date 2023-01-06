@@ -1,38 +1,42 @@
 import { EdgeModel, EdgeStyle } from '@patternfly/react-topology';
 
-import { NetworkEntityInfo, Node } from 'types/networkFlow.proto';
+import {
+    DeploymentNetworkEntityInfo,
+    ExternalSourceNetworkEntityInfo,
+    InternetNetworkEntityInfo,
+    NetworkEntityInfo,
+    Node,
+    Edge,
+} from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
     CustomModel,
-    CustomNodeData,
     CustomNodeModel,
-    ExternalNodeModel,
-    ExternalData,
+    ExternalGroupNodeModel,
+    ExternalGroupData,
     NamespaceData,
     NamespaceNodeModel,
     DeploymentNodeModel,
     ExtraneousNodeModel,
     NetworkPolicyState,
+    ExternalEntitiesNodeModel,
+    CIDRBlockNodeModel,
 } from '../types/topology.type';
-
-function getNameByEntity(entity: NetworkEntityInfo): string {
-    switch (entity.type) {
-        case 'DEPLOYMENT':
-            return entity.deployment.name;
-        case 'INTERNET':
-            return 'External Entities';
-        case 'EXTERNAL_SOURCE':
-            return entity.externalSource.name;
-        default:
-            return ensureExhaustive(entity);
-    }
-}
 
 export const graphModel = {
     id: 'stackrox-active-graph',
     type: 'graph',
     layout: 'ColaGroups',
 };
+
+function getBaseNode(id: string): CustomNodeModel {
+    return {
+        id,
+        type: 'node',
+        width: 75,
+        height: 75,
+    } as CustomNodeModel;
+}
 
 function getNamespaceNode(namespace: string, deploymentId: string): NamespaceNodeModel {
     const namespaceData: NamespaceData = {
@@ -51,11 +55,11 @@ function getNamespaceNode(namespace: string, deploymentId: string): NamespaceNod
     };
 }
 
-function getExternalGroupNode(): ExternalNodeModel {
-    const externalGroupData: ExternalData = {
+function getExternalGroupNode(): ExternalGroupNodeModel {
+    const externalGroupData: ExternalGroupData = {
         collapsible: true,
         showContextMenu: false,
-        type: 'EXTERNAL',
+        type: 'EXTERNAL_GROUP',
     };
     return {
         id: 'External to cluster',
@@ -68,23 +72,45 @@ function getExternalGroupNode(): ExternalNodeModel {
     };
 }
 
-function getDataByEntityType(
-    entity: NetworkEntityInfo,
+function getDeploymentNodeModel(
+    entity: DeploymentNetworkEntityInfo,
     policyIds: string[],
-    networkPolicyState: NetworkPolicyState
-): CustomNodeData {
+    networkPolicyState: NetworkPolicyState,
+    isExternallyConnected: boolean
+): DeploymentNodeModel {
+    const baseNode = getBaseNode(entity.id) as DeploymentNodeModel;
+    return {
+        ...baseNode,
+        label: entity.deployment.name,
+        data: {
+            ...entity,
+            policyIds,
+            networkPolicyState,
+            showPolicyState: true,
+            isExternallyConnected,
+            showExternalState: true,
+        },
+    };
+}
+
+function getExternalNodeModel(
+    entity: ExternalSourceNetworkEntityInfo | InternetNetworkEntityInfo,
+    outEdges: Edge[]
+): ExternalEntitiesNodeModel | CIDRBlockNodeModel {
+    const baseNode = getBaseNode(entity.id);
     switch (entity.type) {
-        case 'DEPLOYMENT':
-            return {
-                ...entity,
-                policyIds,
-                networkPolicyState,
-                showPolicyState: true,
-            };
         case 'INTERNET':
-            return { ...entity, type: 'EXTERNAL_ENTITIES' };
+            return {
+                ...baseNode,
+                label: 'External Entities',
+                data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges },
+            };
         case 'EXTERNAL_SOURCE':
-            return { ...entity, type: 'CIDR_BLOCK' };
+            return {
+                ...baseNode,
+                label: entity.externalSource.name,
+                data: { ...entity, type: 'CIDR_BLOCK', outEdges },
+            };
         default:
             return ensureExhaustive(entity);
     }
@@ -93,17 +119,24 @@ function getDataByEntityType(
 function getNodeModel(
     entity: NetworkEntityInfo,
     policyIds: string[],
-    networkPolicyState: NetworkPolicyState
+    networkPolicyState: NetworkPolicyState,
+    isExternallyConnected: boolean,
+    outEdges: Edge[]
 ): CustomNodeModel {
-    const node = {
-        id: entity.id,
-        type: 'node',
-        width: 75,
-        height: 75,
-        label: getNameByEntity(entity),
-    } as CustomNodeModel;
-    node.data = getDataByEntityType(entity, policyIds, networkPolicyState);
-    return node;
+    switch (entity.type) {
+        case 'DEPLOYMENT':
+            return getDeploymentNodeModel(
+                entity,
+                policyIds,
+                networkPolicyState,
+                isExternallyConnected
+            );
+        case 'EXTERNAL_SOURCE':
+        case 'INTERNET':
+            return getExternalNodeModel(entity, outEdges);
+        default:
+            return ensureExhaustive(entity);
+    }
 }
 
 export function transformActiveData(
@@ -117,15 +150,16 @@ export function transformActiveData(
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
-    let externalNode: ExternalNodeModel | null = null;
+    const externalNodes: Record<string, ExternalEntitiesNodeModel | CIDRBlockNodeModel> = {};
+    const deploymentNodes: Record<string, DeploymentNodeModel> = {};
 
     nodes.forEach(({ entity, policyIds, outEdges }) => {
         const { type, id } = entity;
         const { networkPolicyState } = policyNodeMap[id]?.data || {};
-        // creating each node and adding to data model
-        const node = getNodeModel(entity, policyIds, networkPolicyState);
-
-        dataModel.nodes.push(node);
+        const isExternallyConnected = Object.keys(outEdges).some((nodeIdx) => {
+            const { entity: targetEntity } = nodes[nodeIdx];
+            return targetEntity.type === 'EXTERNAL_SOURCE' || targetEntity.type === 'INTERNET';
+        });
 
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
@@ -136,15 +170,23 @@ export function transformActiveData(
             } else {
                 namespaceNodes[namespace] = getNamespaceNode(namespace, id);
             }
+
+            // creating deployment nodes
+            const deploymentNode = getDeploymentNodeModel(
+                entity,
+                policyIds,
+                networkPolicyState,
+                isExternallyConnected
+            );
+
+            deploymentNodes[id] = deploymentNode;
         }
 
         // to group external entities and cidr blocks to external grouping
         if (type === 'EXTERNAL_SOURCE' || type === 'INTERNET') {
-            if (!externalNode) {
-                externalNode = getExternalGroupNode();
-            }
-            if (externalNode && externalNode?.children) {
-                externalNode.children.push(id);
+            const externalNode = getExternalNodeModel(entity, outEdges);
+            if (!externalNodes[id]) {
+                externalNodes[id] = externalNode;
             }
         }
 
@@ -161,13 +203,38 @@ export function transformActiveData(
         });
     });
 
+    const externalNodeIds = Object.keys(externalNodes);
+    if (externalNodeIds.length > 0) {
+        // adding external outEdges to nodes to indicate externally connected state
+        Object.values(externalNodes).forEach((externalNode) => {
+            const { outEdges } = externalNode.data || {};
+            Object.keys(outEdges).forEach((nodeIdx) => {
+                const { id: targetNodeId } = nodes[nodeIdx];
+                if (deploymentNodes[targetNodeId]) {
+                    deploymentNodes[targetNodeId].data.isExternallyConnected = true;
+                }
+            });
+        });
+        // add external group node to data model
+        const externalGroupNode: ExternalGroupNodeModel = getExternalGroupNode();
+        externalNodeIds.forEach((externalNodeId) => {
+            if (externalGroupNode?.children) {
+                externalGroupNode.children.push(externalNodeId);
+            }
+        });
+
+        // add external group node to data model
+        dataModel.nodes.push(externalGroupNode);
+    }
+
+    // add deployment nodes to data model
+    dataModel.nodes.push(...Object.values(deploymentNodes));
+
     // add namespace nodes to data model
     dataModel.nodes.push(...Object.values(namespaceNodes));
 
-    // add external group node to data model
-    if (externalNode) {
-        dataModel.nodes.push(externalNode);
-    }
+    // add external nodes to data model
+    dataModel.nodes.push(...Object.values(externalNodes));
 
     return dataModel;
 }
@@ -188,6 +255,9 @@ function getNetworkPolicyState(
     return networkPolicyState;
 }
 
+// external connections can only be active, so this is hard coded to false
+const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
+
 export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
     const dataModel = {
         graph: graphModel,
@@ -196,7 +266,13 @@ export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
     };
     nodes.forEach(({ entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress }) => {
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
-        const node = getNodeModel(entity, policyIds, networkPolicyState);
+        const node = getNodeModel(
+            entity,
+            policyIds,
+            networkPolicyState,
+            POLICY_NODE_EXTERNALLY_CONNECTED_VALUE,
+            outEdges
+        );
         dataModel.nodes.push(node);
 
         // creating edges based off of outEdges per node and adding to data model
@@ -229,7 +305,7 @@ export function createExtraneousFlowsModel(
         edges: [] as EdgeModel[],
     };
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
-    let externalNode: ExternalNodeModel | null = null;
+    let externalNode: ExternalGroupNodeModel | null = null;
     // add all non-group nodes from the active graph
     Object.values(activeNodeMap).forEach((node) => {
         if (!node.group) {

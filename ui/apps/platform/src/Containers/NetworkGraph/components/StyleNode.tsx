@@ -24,7 +24,7 @@ import {
 } from '@patternfly/react-topology';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
 import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
-// import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
+import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
@@ -139,15 +139,17 @@ const renderDecorators = (
         y: number;
     }
 ): React.ReactNode => {
-    const { showPolicyState, networkPolicyState } = data;
+    const { showPolicyState, networkPolicyState, showExternalState, isExternallyConnected } = data;
     return (
         <>
-            {/* {renderDecorator(
-                element,
-                TopologyQuadrant.upperRight,
-                <PficonNetworkRangeIcon />,
-                getShapeDecoratorCenter
-            )} */}
+            {showExternalState &&
+                isExternallyConnected &&
+                renderDecorator(
+                    element,
+                    TopologyQuadrant.upperRight,
+                    <PficonNetworkRangeIcon />,
+                    getShapeDecoratorCenter
+                )}
             {showPolicyState &&
                 renderDecorator(
                     element,
