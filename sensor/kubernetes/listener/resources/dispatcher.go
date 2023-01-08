@@ -20,6 +20,7 @@ import (
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -66,6 +67,7 @@ func NewDispatcherRegistry(
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
 	storeProvider *InMemoryStoreProvider,
+	k8sApi kubernetes.Interface,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
@@ -83,7 +85,7 @@ func NewDispatcherRegistry(
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, namespaces, registryStore, credentialsManager),
 
-		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
+		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater, k8sApi),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
 		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),

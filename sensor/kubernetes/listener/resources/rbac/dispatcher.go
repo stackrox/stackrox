@@ -1,11 +1,15 @@
 package rbac
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // Dispatcher handles RBAC-related events
@@ -15,6 +19,8 @@ type Dispatcher struct {
 	// a role does not influence in the `PermissionLevel` of a deployment, so holding the binding until a role that
 	// matches it is received won't cause any loss of updates. This maps binding IDs to their K8s resource objects.
 	pendingBindings map[string]*storage.K8SRoleBinding
+
+	k8sApi kubernetes.Interface
 }
 
 // rbacUpdate represents an RBAC event with the reference to deployments that might require reprocessing. These
@@ -26,10 +32,11 @@ type rbacUpdate struct {
 }
 
 // NewDispatcher creates new instance of Dispatcher
-func NewDispatcher(store Store) *Dispatcher {
+func NewDispatcher(store Store, k8sApi kubernetes.Interface) *Dispatcher {
 	return &Dispatcher{
 		store:           store,
 		pendingBindings: map[string]*storage.K8SRoleBinding{},
+		k8sApi:          k8sApi,
 	}
 }
 
@@ -49,7 +56,9 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 			r.store.UpsertRole(obj)
 		}
 		update.events = append(update.events, toRoleEvent(toRoxRole(obj), action))
-		update.events = append(update.events, r.processPendingBindingsMatching(obj.GetNamespace(), obj.GetName(), string(obj.GetUID()), false)...)
+		if action != central.ResourceAction_UPDATE_RESOURCE {
+			update.events = append(update.events, r.processPendingBindingsMatching(obj.GetNamespace(), obj.GetName(), string(obj.GetUID()), false, action)...)
+		}
 	case *v1.RoleBinding:
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			r.store.RemoveBinding(obj)
@@ -68,7 +77,9 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 			r.store.UpsertClusterRole(obj)
 		}
 		update.events = append(update.events, toRoleEvent(toRoxClusterRole(obj), action))
-		update.events = append(update.events, r.processPendingBindingsMatching(obj.GetNamespace(), obj.GetName(), string(obj.GetUID()), true)...)
+		if action != central.ResourceAction_UPDATE_RESOURCE {
+			update.events = append(update.events, r.processPendingBindingsMatching(obj.GetNamespace(), obj.GetName(), string(obj.GetUID()), true, action)...)
+		}
 	case *v1.ClusterRoleBinding:
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			r.store.RemoveClusterBinding(obj)
@@ -87,15 +98,36 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 // processPendingBindingsMatching finds any binding events that were sent without a roleID, updates the roleID and
 // send them to central. Pending Bindings are then removed from the internal map, as any new updates will be able
 // to fetch the matching RoleID in the RBAC store.
-func (r *Dispatcher) processPendingBindingsMatching(namespace, name, id string, clusterWide bool) []*central.SensorEvent {
+func (r *Dispatcher) processPendingBindingsMatching(namespace, name, id string, clusterWide bool, action central.ResourceAction) []*central.SensorEvent {
 	var updateEvents []*central.SensorEvent
 	bindings := r.store.FindBindingIDForRole(namespace, name, clusterWide)
 	log.Debugf("Found (%d) bindings for role (%s, %s): %+v", len(bindings), namespace, name, bindings)
 	for _, binding := range bindings {
-		if preProcessed, ok := r.pendingBindings[binding]; ok {
-			preProcessed.RoleId = id
-			updateEvents = append(updateEvents, toBindingEvent(preProcessed, central.ResourceAction_UPDATE_RESOURCE))
-			delete(r.pendingBindings, binding)
+		// Find binding in API
+		if binding.namespace == "" {
+			clusterBinding, err := r.k8sApi.RbacV1().ClusterRoleBindings().Get(context.TODO(), binding.name, metav1.GetOptions{})
+			if err != nil {
+				// handle err properly
+				log.Warnf("Failed to fetch k8s API (ClusterRoleBinding %s): %s", binding, err)
+				continue
+			}
+			if action == central.ResourceAction_REMOVE_RESOURCE {
+				updateEvents = append(updateEvents, toBindingEvent(toRoxClusterRoleBinding(clusterBinding, ""), central.ResourceAction_UPDATE_RESOURCE))
+			} else {
+				updateEvents = append(updateEvents, toBindingEvent(toRoxClusterRoleBinding(clusterBinding, id), central.ResourceAction_UPDATE_RESOURCE))
+			}
+		} else {
+			namespacedBinding, err := r.k8sApi.RbacV1().RoleBindings(binding.namespace).Get(context.TODO(), binding.name, metav1.GetOptions{})
+			if err != nil {
+				// handle err properly
+				log.Warnf("Failed to fetch k8s API (Namespace %s RoleBinding %s): %s", namespace, binding, err)
+				continue
+			}
+			if action == central.ResourceAction_REMOVE_RESOURCE {
+				updateEvents = append(updateEvents, toBindingEvent(toRoxRoleBinding(namespacedBinding, "", clusterWide), central.ResourceAction_UPDATE_RESOURCE))
+			} else {
+				updateEvents = append(updateEvents, toBindingEvent(toRoxRoleBinding(namespacedBinding, id, clusterWide), central.ResourceAction_UPDATE_RESOURCE))
+			}
 		}
 	}
 	return updateEvents

@@ -111,17 +111,18 @@ func (rs *storeImpl) RemoveClusterBinding(binding *v1.ClusterRoleBinding) {
 	rs.removeRoleBindingGenericNoLock(bindingID)
 }
 
-func (rs *storeImpl) FindBindingIDForRole(namespace, roleName string, clusterWide bool) []string {
+// TODO: Change name
+func (rs *storeImpl) FindBindingIDForRole(namespace, roleName string, clusterWide bool) []namespacedBindingID {
 	rs.lock.RLock()
 	defer rs.lock.RUnlock()
 
-	var matched []string
+	var matched []namespacedBindingID
 	for binding, ref := range rs.bindings {
 		if ref.roleRef.name != roleName {
 			continue
 		}
 		if clusterWide || ref.roleRef.namespace == namespace {
-			matched = append(matched, binding.uid)
+			matched = append(matched, binding)
 		}
 	}
 
