@@ -12,6 +12,7 @@ import (
 )
 
 type endpointManager interface {
+	OnDeploymentCreateOrUpdateByID(id string)
 	OnDeploymentCreateOrUpdate(deployment *deploymentWrap)
 	OnDeploymentRemove(deployment *deploymentWrap)
 
@@ -250,6 +251,14 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	}
 
 	m.entityStore.Apply(updates, false)
+}
+
+func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
+	deployment := m.deploymentStore.getWrap(id)
+	if deployment == nil {
+		return
+	}
+	m.OnDeploymentCreateOrUpdate(deployment)
 }
 
 func (m *endpointManagerImpl) OnDeploymentCreateOrUpdate(deployment *deploymentWrap) {
