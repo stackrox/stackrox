@@ -191,16 +191,16 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByLabels() {
 		"Labels do not match": {
 			namespace: "test-ns",
 			labels: map[string]string{
-				"app": "nginx",
+				"app": "no-match",
 			},
-			expectedIDs: []string{"uuid-2"},
+			expectedIDs: nil,
 		},
-		"Namespace do not match": {
-			namespace: "test-ns",
+		"Namespaces do not match": {
+			namespace: "ns-no-match",
 			labels: map[string]string{
 				"app": "nginx",
 			},
-			expectedIDs: []string{"uuid-2"},
+			expectedIDs: nil,
 		},
 		"Deployment with two labels vs a subset Selector": {
 			namespace: "test-ns",
@@ -223,9 +223,7 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByLabels() {
 		s.Run(testName, func() {
 			ids := s.deploymentStore.FindDeploymentIDsByLabels(c.namespace, selector.CreateSelector(c.labels))
 			s.Equal(len(c.expectedIDs), len(ids))
-			sort.Strings(ids)
-			sort.Strings(c.expectedIDs)
-			s.Equal(c.expectedIDs, ids)
+			s.ElementsMatch(c.expectedIDs, ids)
 		})
 	}
 }

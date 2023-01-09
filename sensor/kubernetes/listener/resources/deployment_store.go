@@ -160,7 +160,7 @@ func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selec
 			continue
 		}
 
-		if sel.Matches(selector.CreateLabelsWithLen(wrap.PodLabels)) {
+		if sel.Matches(selector.CreateLabelsWithLen(wrap.GetPodLabels())) {
 			resIDs = append(resIDs, id)
 		}
 	}
