@@ -72,6 +72,8 @@ central:
     route:
       enabled: null # bool
       host: null # string
+  declarativeConfiguration:
+    mounts: null # [string]
   extraMounts: null # [dict]
   db:
     enabled: false # bool
