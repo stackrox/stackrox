@@ -35,6 +35,18 @@ func (r *bindingFetcher) generateManyDependentEvents(bindings []namespacedBindin
 	return result, nil
 }
 
+// generateDependentEvent generates a fake update event for a RoleBinding or a ClusterRoleBinding from a Role or ClusterRole
+// that received an update. `relatedBinding` is the metadata reference to the binding that needs to be updated with a new `updateRoleID`.
+// Rather than storing all Bindings observed by sensor, we've decided to try something different: fetch Binding data from the K8s API
+// when needed. This should only be called on CREATE/DELETE events from Roles. Because any legitimate Role updates won't affect rox bindings.
+// Rox bindings need to have a RoleID reference to roles, which can't be changed with an Update event. Therefore the two scenario where this
+// functionality is needed is:
+// 1) Binding was created first and has RoleID == "" and a Role event creates a Role that matches Binding's roleRef.
+// 2) Binding already has a RoleID and matching Role receives a delete event.
+//
+// This behavior is required in order to disable the re-sync of RoleBindings. This wasn't needed previously because every minute
+// role bindings were updated by re-sync. The update events on RoleBindings would pick up any created/removed roles and update
+// RoleID accordingly.
 func (r *bindingFetcher) generateDependentEvent(relatedBinding namespacedBindingID, updateRoleID string, isClusterRole bool) (*central.SensorEvent, error) {
 	if relatedBinding.IsClusterBinding() {
 		clusterBinding, err := r.k8sAPI.RbacV1().ClusterRoleBindings().Get(context.TODO(), relatedBinding.name, metav1.GetOptions{})

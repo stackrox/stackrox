@@ -111,13 +111,16 @@ func (rs *storeImpl) RemoveClusterBinding(binding *v1.ClusterRoleBinding) {
 	rs.removeRoleBindingGenericNoLock(bindingID)
 }
 
-// TODO: Change name
-func (rs *storeImpl) FindBindingIDForRole(namespace, roleName string) []namespacedBindingID {
+func (rs *storeImpl) FindBindingForNamespacedRole(namespace, roleName string) []namespacedBindingID {
 	rs.lock.RLock()
 	defer rs.lock.RUnlock()
 
 	var matched []namespacedBindingID
 	for binding, ref := range rs.bindings {
+		// During binding processing `ref.roleRef.namespace` will be set to "" if binding references a ClusterRole.
+		// `namespace` parameter is also set to "" here, meaning that if the binding stored references a ClusterRole
+		// we can determine such by checking if ref.roleRef.namespace == namespace. Otherwise, this simply matches that
+		// a RoleBinding is in the same namespace that the Role being matched against.
 		if ref.roleRef.name == roleName && ref.roleRef.namespace == namespace {
 			matched = append(matched, binding)
 		}

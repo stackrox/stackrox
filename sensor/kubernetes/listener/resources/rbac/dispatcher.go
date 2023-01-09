@@ -42,15 +42,15 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 	switch obj := obj.(type) {
 	case *v1.Role:
 		update.events = append(update.events, toRoleEvent(toRoxRole(obj), action))
-		relatedBindings := r.store.FindBindingIDForRole(obj.GetNamespace(), obj.GetName())
+		relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			r.store.RemoveRole(obj)
 			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, "", false)...)
-		} else if action == central.ResourceAction_CREATE_RESOURCE {
+		} else if action == central.ResourceAction_UPDATE_RESOURCE {
+			r.store.UpsertRole(obj)
+		} else { // Create or Sync
 			r.store.UpsertRole(obj)
 			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, string(obj.GetUID()), false)...)
-		} else {
-			r.store.UpsertRole(obj)
 		}
 	case *v1.RoleBinding:
 		if action == central.ResourceAction_REMOVE_RESOURCE {
@@ -62,15 +62,15 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 		update.events = append(update.events, toBindingEvent(roxBinding, action))
 	case *v1.ClusterRole:
 		update.events = append(update.events, toRoleEvent(toRoxClusterRole(obj), action))
-		relatedBindings := r.store.FindBindingIDForRole(obj.GetNamespace(), obj.GetName())
+		relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			r.store.RemoveClusterRole(obj)
 			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, "", true)...)
-		} else if action == central.ResourceAction_CREATE_RESOURCE {
+		} else if action == central.ResourceAction_UPDATE_RESOURCE {
+			r.store.UpsertClusterRole(obj)
+		} else { // Create or Sync
 			r.store.UpsertClusterRole(obj)
 			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, string(obj.GetUID()), true)...)
-		} else {
-			r.store.UpsertClusterRole(obj)
 		}
 	case *v1.ClusterRoleBinding:
 		if action == central.ResourceAction_REMOVE_RESOURCE {
