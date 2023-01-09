@@ -19,7 +19,7 @@ import (
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIntegrationDataStoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"
@@ -77,7 +77,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalDataStore(mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockDataStore(mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
 		WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
@@ -186,7 +186,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalDataStore(s.mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockDataStore(s.mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(s.mockCtrl)).
 		WithRiskStore(riskDatastoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
@@ -281,7 +281,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithPolicyStore(ds).
 		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalDataStore(s.mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockDataStore(s.mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
@@ -345,7 +345,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalDataStore(s.mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockDataStore(s.mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(s.mockCtrl)).
 		WithRiskStore(riskDatastoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
@@ -429,7 +429,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalDataStore(s.mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockDataStore(s.mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(s.mockCtrl)).
 		WithRiskStore(riskDatastoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
