@@ -3,6 +3,7 @@ module github.com/stackrox/stackrox/tools/linters
 go 1.18
 
 require (
+	// TODO: remove the github.com/sourcegraph/go-diff replacement once updated.
 	github.com/golangci/golangci-lint v1.50.1
 	github.com/nilslice/protolock v0.16.0
 )
@@ -178,3 +179,10 @@ require (
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 	mvdan.cc/unparam v0.0.0-20220706161116-678bad134442 // indirect
 )
+
+// TODO: Remove once golangci is updated.
+// This is added because github.com/sourcegraph/go-diff v0.6.1 (shipped with github.com/golangci/golangci-lint v1.50.1)
+// does not support Apple's `diff` as shipped with macOS Ventura.
+// Adding this replacement so macOS Ventura users can run golangci.
+// See https://github.com/golangci/golangci-lint/issues/3087 and https://github.com/sourcegraph/go-diff/pull/65 for details.
+replace github.com/sourcegraph/go-diff => github.com/sourcegraph/go-diff v0.6.2-0.20221031073116-7ef5f68ebea1
