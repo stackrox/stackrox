@@ -129,7 +129,7 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	}
 	digest := ccDigest.String()
 
-	exists, err := c.indexReportExists(digest)
+	exists, err := c.getIndexReport(digest)
 	// Exit early if this is an unexpected status code error.
 	// If it's not an unexpected error, then continue as normal and ignore the error.
 	if isUnexpectedStatusCodeError(err) {
@@ -149,7 +149,7 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 		log.Debugf("Manifest for %s: %+v", imgName, manifest)
 
-		if err := c.index(manifest); err != nil {
+		if err := c.postIndex(manifest); err != nil {
 			return nil, errors.Wrapf(err, "Clair v4: indexing manifest for %s", imgName)
 		}
 	}
@@ -163,7 +163,7 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	return imageScan(report), nil
 }
 
-func (c *clairv4) indexReportExists(digest string) (bool, error) {
+func (c *clairv4) getIndexReport(digest string) (bool, error) {
 	// FIXME: go1.19 adds https://pkg.go.dev/net/url#JoinPath, which seems more idiomatic.
 	url := strings.Join([]string{c.indexReportEndpoint, digest}, "/")
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -191,7 +191,7 @@ func (c *clairv4) indexReportExists(digest string) (bool, error) {
 	}
 }
 
-func (c *clairv4) index(manifest *claircore.Manifest) error {
+func (c *clairv4) postIndex(manifest *claircore.Manifest) error {
 	body, err := json.Marshal(manifest)
 	if err != nil {
 		return err
