@@ -6,13 +6,18 @@ import {
 } from '@patternfly/react-core';
 
 type DescriptionListItemProps = {
-    term: string;
+    term: string | ReactNode;
     desc: string | ReactNode;
+    groupClassName?: string;
 };
 
-function DescriptionListItem({ term, desc }: DescriptionListItemProps): ReactElement {
+function DescriptionListItem({
+    term,
+    desc,
+    groupClassName,
+}: DescriptionListItemProps): ReactElement {
     return (
-        <DescriptionListGroup>
+        <DescriptionListGroup className={groupClassName}>
             <DescriptionListTerm>{term}</DescriptionListTerm>
             <DescriptionListDescription>{desc}</DescriptionListDescription>
         </DescriptionListGroup>

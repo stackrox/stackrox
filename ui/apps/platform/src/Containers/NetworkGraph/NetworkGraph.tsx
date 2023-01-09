@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
     SELECTION_EVENT,
@@ -97,6 +97,7 @@ const TopologyComponent = ({
     const { detailId } = useParams();
     const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
     const controller = useVisualizationController();
+    const [isLegendOpen, setIsLegendOpen] = useState(false);
 
     function rerenderGraph() {
         setNodes();
@@ -325,12 +326,15 @@ const TopologyComponent = ({
                             controller.getGraph().reset();
                             controller.getGraph().layout();
                         },
-                        legend: true,
+                        legendCallback: () => {
+                            setIsLegendOpen(!isLegendOpen);
+                        },
                     })}
                 />
             }
         >
             <VisualizationSurface state={{ selectedIds }} />
+            {isLegendOpen && <LegendContent />}
         </TopologyView>
     );
 };

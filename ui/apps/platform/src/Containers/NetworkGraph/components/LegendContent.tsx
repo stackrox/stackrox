@@ -2,6 +2,9 @@ import React from 'react';
 import { Flex, FlexItem, Title } from '@patternfly/react-core';
 import { PficonNetworkRangeIcon, BuilderImageIcon } from '@patternfly/react-icons';
 
+import DescriptionListItem from 'Components/DescriptionListItem';
+import DescriptionListCompact from 'Components/DescriptionListCompact';
+
 import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
 import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
 import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
@@ -9,40 +12,45 @@ import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-
 
 function LegendContent() {
     return (
-        <Flex>
+        <Flex direction={{ default: 'column' }}>
             <FlexItem>
-                <Title headingLevel="h4">Node types</Title>
-                <Flex>
-                    <FlexItem>
-                        <BuilderImageIcon />
-                        <div>Deployment</div>
-                    </FlexItem>
-                    <FlexItem>
-                        <PficonNetworkRangeIcon />
-                        <div>External CIDR block</div>
-                    </FlexItem>
-                </Flex>
+                <Title headingLevel="h4" className="pf-u-pb-sm">
+                    Node types
+                </Title>
+                <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
+                    <DescriptionListItem term={<BuilderImageIcon />} desc="Deployment" />
+                    <DescriptionListItem
+                        term={<PficonNetworkRangeIcon />}
+                        desc="External CIDR block"
+                    />
+                </DescriptionListCompact>
             </FlexItem>
             <FlexItem>
-                <Title headingLevel="h4">Deployment badges</Title>
-                <Flex>
-                    <FlexItem>
-                        <BothPolicyRules />
-                        <div>Isolated by network poilcy rules</div>
-                    </FlexItem>
-                    <FlexItem>
-                        <NoPolicyRules />
-                        <div>All traffic allowed (No network policies)</div>
-                    </FlexItem>
-                    <FlexItem>
-                        <EgressOnly />
-                        <div>Only has an egress network policy</div>
-                    </FlexItem>
-                    <FlexItem>
-                        <IngressOnly />
-                        <div>Only has an ingress network policy</div>
-                    </FlexItem>
-                </Flex>
+                <Title headingLevel="h4" className="pf-u-pb-sm">
+                    Deployment badges
+                </Title>
+                <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
+                    <DescriptionListItem
+                        term={<BothPolicyRules width="22px" height="22px" />}
+                        desc="Isolated by network poilcy rules"
+                        groupClassName="pf-u-align-items-center"
+                    />
+                    <DescriptionListItem
+                        term={<NoPolicyRules width="22px" height="22px" />}
+                        desc="All traffic allowed (No network policies)"
+                        groupClassName="pf-u-align-items-center"
+                    />
+                    <DescriptionListItem
+                        term={<EgressOnly width="22px" height="22px" />}
+                        desc="Only has an egress network policy"
+                        groupClassName="pf-u-align-items-center"
+                    />
+                    <DescriptionListItem
+                        term={<IngressOnly width="22px" height="22px" />}
+                        desc="Only has an ingress network policy"
+                        groupClassName="pf-u-align-items-center"
+                    />
+                </DescriptionListCompact>
             </FlexItem>
         </Flex>
     );
