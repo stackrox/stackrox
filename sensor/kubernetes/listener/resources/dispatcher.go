@@ -67,7 +67,7 @@ func NewDispatcherRegistry(
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
 	storeProvider *InMemoryStoreProvider,
-	k8sApi kubernetes.Interface,
+	k8sAPI kubernetes.Interface,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
@@ -85,7 +85,7 @@ func NewDispatcherRegistry(
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, namespaces, registryStore, credentialsManager),
 
-		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater, k8sApi),
+		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater, k8sAPI),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
 		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),

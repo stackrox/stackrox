@@ -11,11 +11,11 @@ import (
 )
 
 type bindingFetcher struct {
-	k8sApi kubernetes.Interface
+	k8sAPI kubernetes.Interface
 }
 
-func newBindingFetcher(k8sApi kubernetes.Interface) *bindingFetcher {
-	return &bindingFetcher{k8sApi}
+func newBindingFetcher(k8sAPI kubernetes.Interface) *bindingFetcher {
+	return &bindingFetcher{k8sAPI}
 }
 
 func (r *bindingFetcher) generateManyDependentEvents(bindings []namespacedBindingID, updateRoleID string, isClusterRole bool) ([]*central.SensorEvent, error) {
@@ -37,16 +37,15 @@ func (r *bindingFetcher) generateManyDependentEvents(bindings []namespacedBindin
 
 func (r *bindingFetcher) generateDependentEvent(relatedBinding namespacedBindingID, updateRoleID string, isClusterRole bool) (*central.SensorEvent, error) {
 	if relatedBinding.IsClusterBinding() {
-		clusterBinding, err := r.k8sApi.RbacV1().ClusterRoleBindings().Get(context.TODO(), relatedBinding.name, metav1.GetOptions{})
+		clusterBinding, err := r.k8sAPI.RbacV1().ClusterRoleBindings().Get(context.TODO(), relatedBinding.name, metav1.GetOptions{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching k8s API for ClusterRoleBinding %s", relatedBinding.name)
 		}
 		return toBindingEvent(toRoxClusterRoleBinding(clusterBinding, updateRoleID), central.ResourceAction_UPDATE_RESOURCE), nil
-	} else {
-		namespacedBinding, err := r.k8sApi.RbacV1().RoleBindings(relatedBinding.namespace).Get(context.TODO(), relatedBinding.name, metav1.GetOptions{})
-		if err != nil {
-			return nil, errors.Wrapf(err, "fetching k8s API for ClusterRoleBinding %s", relatedBinding.name)
-		}
-		return toBindingEvent(toRoxRoleBinding(namespacedBinding, updateRoleID, isClusterRole), central.ResourceAction_UPDATE_RESOURCE), nil
 	}
+	namespacedBinding, err := r.k8sAPI.RbacV1().RoleBindings(relatedBinding.namespace).Get(context.TODO(), relatedBinding.name, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "fetching k8s API for ClusterRoleBinding %s", relatedBinding.name)
+	}
+	return toBindingEvent(toRoxRoleBinding(namespacedBinding, updateRoleID, isClusterRole), central.ResourceAction_UPDATE_RESOURCE), nil
 }

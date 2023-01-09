@@ -24,10 +24,10 @@ type rbacUpdate struct {
 }
 
 // NewDispatcher creates new instance of Dispatcher
-func NewDispatcher(store Store, k8sApi kubernetes.Interface) *Dispatcher {
+func NewDispatcher(store Store, k8sAPI kubernetes.Interface) *Dispatcher {
 	return &Dispatcher{
 		store:   store,
-		fetcher: newBindingFetcher(k8sApi),
+		fetcher: newBindingFetcher(k8sAPI),
 	}
 }
 
@@ -42,7 +42,7 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 	switch obj := obj.(type) {
 	case *v1.Role:
 		update.events = append(update.events, toRoleEvent(toRoxRole(obj), action))
-		relatedBindings := r.store.FindBindingIDForRole(obj.GetNamespace(), obj.GetName(), false)
+		relatedBindings := r.store.FindBindingIDForRole(obj.GetNamespace(), obj.GetName())
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			r.store.RemoveRole(obj)
 			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, "", false)...)
@@ -62,7 +62,7 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 		update.events = append(update.events, toBindingEvent(roxBinding, action))
 	case *v1.ClusterRole:
 		update.events = append(update.events, toRoleEvent(toRoxClusterRole(obj), action))
-		relatedBindings := r.store.FindBindingIDForRole(obj.GetNamespace(), obj.GetName(), true)
+		relatedBindings := r.store.FindBindingIDForRole(obj.GetNamespace(), obj.GetName())
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			r.store.RemoveClusterRole(obj)
 			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, "", true)...)
