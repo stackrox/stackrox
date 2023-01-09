@@ -25,6 +25,20 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 		"nil-inComponents": {
 			inComponents: nil,
 		},
+		"one-component": {
+			inComponents: []*database.RHELv2Package{
+				{
+					Name:    "zlib",
+					Version: "1.2.11-16.el8_2",
+					Arch:    "x86_64",
+					ExecutableToDependencies: database.StringToStringsMap{
+						"/usr/lib64/libz.so.1":      {},
+						"/usr/lib64/libz.so.1.2.11": {},
+					},
+				},
+			},
+			expectedLen: 1,
+		},
 		"multi-component": {
 			inComponents: []*database.RHELv2Package{
 				{
