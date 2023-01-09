@@ -1,4 +1,3 @@
-import { url as basePath } from '../constants/DashboardPage';
 import navSelectors from '../selectors/navigation';
 
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
@@ -57,6 +56,8 @@ const routeMatcherMap = {
     ...routeMatcherMapForViolationsByPolicyCategory,
     ...routeMatcherMapForComplianceLevelsByStandard,
 };
+
+const basePath = '/main/dashboard';
 
 const title = 'Dashboard';
 
