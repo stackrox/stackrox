@@ -114,6 +114,11 @@ button.pf-c-toggle-group__button:disabled {
     filter: inherit; /* replace invert(0.3) */
 }
 
+/* override width of thead checkbox so that it's not cut off when table is empty */
+.pf-c-table thead tr > .pf-c-table__check {
+    min-width: 44px;
+}
+
 button.pf-c-tree-view__node {
     font-weight: inherit; /* override 600 from ui-components */
 }
