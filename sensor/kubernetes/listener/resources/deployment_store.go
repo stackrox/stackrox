@@ -145,6 +145,28 @@ func (ds *DeploymentStore) FindDeploymentIDsWithServiceAccount(namespace, sa str
 	return match
 }
 
+// FindDeploymentIDsByLabels returns a slice of deployments based on matching namespace and labels
+func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selector.Selector) (resIDs []string) {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+	ids, found := ds.deploymentIDs[namespace]
+	if !found || ids == nil {
+		return
+	}
+
+	for id := range ids {
+		wrap, found := ds.deployments[id]
+		if !found || wrap == nil {
+			continue
+		}
+
+		if sel.Matches(selector.CreateLabelsWithLen(wrap.GetPodLabels())) {
+			resIDs = append(resIDs, id)
+		}
+	}
+	return
+}
+
 func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()

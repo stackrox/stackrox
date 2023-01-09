@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -143,6 +144,88 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies_NoDeployment
 	})
 
 	s.ErrorContains(err, "some-uuid doesn't exist")
+}
+
+func withLabels(deployment *v1.Deployment, labels map[string]string) *v1.Deployment {
+	deployment.Spec.Template.Labels = labels
+	return deployment
+}
+
+func (s *deploymentStoreSuite) Test_FindDeploymentIDsByLabels() {
+	deployments := []*v1.Deployment{
+		withLabels(makeDeploymentObject("d-1", "test-ns", "uuid-1"), map[string]string{}),
+		withLabels(makeDeploymentObject("d-2", "test-ns", "uuid-2"), map[string]string{
+			"app": "nginx",
+		}),
+		withLabels(makeDeploymentObject("d-3", "test-ns", "uuid-3"), map[string]string{
+			"no": "match",
+		}),
+		withLabels(makeDeploymentObject("d-4", "test-ns-no-match", "uuid-4"), map[string]string{
+			"app": "nginx",
+		}),
+		withLabels(makeDeploymentObject("d-5", "test-ns", "uuid-5"), map[string]string{
+			"app":  "nginx-2",
+			"role": "backend",
+		}),
+	}
+	for _, d := range deployments {
+		s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(d))
+	}
+	cases := map[string]struct {
+		namespace   string
+		labels      map[string]string
+		expectedIDs []string
+	}{
+		"No labels": {
+			namespace:   "test-ns",
+			labels:      nil,
+			expectedIDs: nil,
+		},
+		"Match": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app": "nginx",
+			},
+			expectedIDs: []string{"uuid-2"},
+		},
+		"Labels do not match": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app": "no-match",
+			},
+			expectedIDs: nil,
+		},
+		"Namespaces do not match": {
+			namespace: "ns-no-match",
+			labels: map[string]string{
+				"app": "nginx",
+			},
+			expectedIDs: nil,
+		},
+		"Deployment with two labels vs a subset Selector": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app": "nginx-2",
+			},
+			expectedIDs: []string{"uuid-5"},
+		},
+		"Deployment with two labels vs a superset Selector": {
+			namespace: "test-ns",
+			labels: map[string]string{
+				"app":  "nginx-2",
+				"role": "backend",
+				"l3":   "val3",
+			},
+			expectedIDs: nil,
+		},
+	}
+	for testName, c := range cases {
+		s.Run(testName, func() {
+			ids := s.deploymentStore.FindDeploymentIDsByLabels(c.namespace, selector.CreateSelector(c.labels))
+			s.Equal(len(c.expectedIDs), len(ids))
+			s.ElementsMatch(c.expectedIDs, ids)
+		})
+	}
 }
 
 func makeDeploymentObject(name, namespace string, id types.UID) *v1.Deployment {
