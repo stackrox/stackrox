@@ -5,8 +5,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
 )
 
 // DeploymentStore stores deployments.
@@ -143,6 +143,28 @@ func (ds *DeploymentStore) FindDeploymentIDsWithServiceAccount(namespace, sa str
 		}
 	}
 	return match
+}
+
+// FindDeploymentIDsByLabels returns a slice of deployments based on matching namespace and labels
+func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selector.Selector) (resIDs []string) {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+	ids, found := ds.deploymentIDs[namespace]
+	if !found || ids == nil {
+		return
+	}
+
+	for id := range ids {
+		wrap, found := ds.deployments[id]
+		if !found || wrap == nil {
+			continue
+		}
+
+		if sel.Matches(selector.CreateLabelsWithLen(wrap.GetPodLabels())) {
+			resIDs = append(resIDs, id)
+		}
+	}
+	return
 }
 
 func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
