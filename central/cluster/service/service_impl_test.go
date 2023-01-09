@@ -39,7 +39,6 @@ func (suite *ClusterServiceTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.sysConfigDatastore = configDatastoreMocks.NewMockDataStore(suite.mockCtrl)
-	suite.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
@@ -60,7 +59,8 @@ func (suite *ClusterServiceTestSuite) TestGetClusterDefaults() {
 			kernelSupportAvailable: true,
 		},
 	}
-	flavor := defaults.GetImageFlavorFromEnv()
+	flavor := defaults.DevelopmentBuildImageFlavor()
+	suite.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 	for name, testCase := range cases {
 		suite.Run(name, func() {
 			ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)

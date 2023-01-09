@@ -3,7 +3,8 @@ package defaults
 import "github.com/stackrox/rox/pkg/env"
 
 const (
-	imageFlavorEnvName = "ROX_IMAGE_FLAVOR"
+	// ImageFlavorEnvName is env name used to indicate flavor of current run.
+	ImageFlavorEnvName = "ROX_IMAGE_FLAVOR"
 
 	// ImageFlavorNameDevelopmentBuild is a name for image flavor (image defaults) for images released to
 	// quay.io/rhacs-eng for internal use by the Red Hat development team.
@@ -20,7 +21,7 @@ const (
 )
 
 var (
-	imageFlavorSetting = env.RegisterSetting(imageFlavorEnvName)
+	imageFlavorSetting = env.RegisterSetting(ImageFlavorEnvName)
 )
 
 // imageFlavorEnv returns the environment variable ROX_IMAGE_FLAVOR value
