@@ -15,7 +15,7 @@ import (
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/postgres"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -63,7 +63,7 @@ type GarbageCollector interface {
 }
 
 func newGarbageCollector(alerts alertDatastore.DataStore,
-	nodes nodeGlobalDatastore.GlobalDataStore,
+	nodes nodeDatastore.DataStore,
 	images imageDatastore.DataStore,
 	clusters clusterDatastore.DataStore,
 	deployments deploymentDatastore.DataStore,
@@ -104,7 +104,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 type garbageCollectorImpl struct {
 	alerts          alertDatastore.DataStore
 	clusters        clusterDatastore.DataStore
-	nodes           nodeGlobalDatastore.GlobalDataStore
+	nodes           nodeDatastore.DataStore
 	images          imageDatastore.DataStore
 	imageComponents imageComponentDatastore.DataStore
 	deployments     deploymentDatastore.DataStore
