@@ -21,18 +21,19 @@ const (
 	OptUnEscape
 )
 
-// JSONUnmarshaler returns a jsonpb Unmarshaler configured to allow unknown fields
-func JSONUnmarshaler() jsonpb.Unmarshaler {
-	var unmarshaler = jsonpb.Unmarshaler{}
-	unmarshaler.AllowUnknownFields = true
-
-	return unmarshaler
+// JSONUnmarshaler returns a jsonpb Unmarshaler configured to allow unknown fields,
+// i.e. not error out unmarshaling JSON that contains attributes not defined in proto.
+// This Unmarshaler must be used everywhere instead of direct calls to jsonpb.Unmarshal
+// and jsonpb.UnmarshalString.
+func JSONUnmarshaler() *jsonpb.Unmarshaler {
+	return &jsonpb.Unmarshaler{
+		AllowUnknownFields: true,
+	}
 }
 
 // JSONToProto converts a string containing JSON into a proto message.
 func JSONToProto(json string, m proto.Message) error {
-	unmarshaler := JSONUnmarshaler()
-	return unmarshaler.Unmarshal(strings.NewReader(json), m)
+	return JSONUnmarshaler().Unmarshal(strings.NewReader(json), m)
 }
 
 // ProtoToJSON converts a proto message into a string containing JSON.
