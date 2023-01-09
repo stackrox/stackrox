@@ -350,16 +350,7 @@ func getLogFile(zipWriter *zip.Writer, targetPath string, sourcePath string) err
 }
 
 func getVersion(ctx context.Context, zipWriter *zip.Writer) error {
-	versions := version.GetAllVersionsDevelopment()
-	if buildinfo.ReleaseBuild {
-		versions = version.GetAllVersionsUnified()
-	}
-
-	// Add the database version if Postgres
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versions.Database = "PostgresDB"
-		versions.DatabaseVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
-	}
+	versions := buildVersions(ctx)
 
 	return addJSONToZip(zipWriter, "versions.json", versions)
 }
@@ -602,15 +593,8 @@ func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versions := version.GetAllVersionsDevelopment()
-	if buildinfo.ReleaseBuild {
-		versions = version.GetAllVersionsUnified()
-	}
-	// Add the database version if Postgres
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versions.Database = "PostgresDB"
-		versions.DatabaseVersion = globaldb.GetPostgresVersion(r.Context(), globaldb.GetPostgres())
-	}
+	versions := buildVersions(r.Context())
+
 	versionsJSON, err := json.Marshal(&versions)
 	if err != nil {
 		httputil.WriteErrorf(w, http.StatusInternalServerError, "could not marshal version info to JSON: %v", err)
@@ -710,4 +694,18 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 		opts.since = time.Now().Add(-logWindow)
 	}
 	return nil
+}
+
+func buildVersions(ctx context.Context) version.Versions {
+	versions := version.GetAllVersionsDevelopment()
+	if buildinfo.ReleaseBuild {
+		versions = version.GetAllVersionsUnified()
+	}
+	// Add the database version if Postgres
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		versions.Database = "PostgresDB"
+		versions.DatabaseVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
+	}
+
+	return versions
 }
