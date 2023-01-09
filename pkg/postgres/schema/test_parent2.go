@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -36,6 +37,7 @@ var (
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory(68), "testparent2", (*storage.TestParent2)(nil)))
 		RegisterTable(schema, CreateTableTestParent2Stmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory(68), schema)
 		return schema
 	}()
 )

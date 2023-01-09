@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceRunResults)(nil)), "compliance_run_results")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_RESULTS, "compliancerunresults", (*storage.ComplianceRunResults)(nil)))
 		RegisterTable(schema, CreateTableComplianceRunResultsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_RESULTS, schema)
 		return schema
 	}()
 )
