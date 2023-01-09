@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -53,11 +54,13 @@ func (r *bindingFetcher) generateDependentEvent(relatedBinding namespacedBinding
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching k8s API for ClusterRoleBinding %s", relatedBinding.name)
 		}
+		pkgKubernetes.TrimAnnotations(clusterBinding)
 		return toBindingEvent(toRoxClusterRoleBinding(clusterBinding, updateRoleID), central.ResourceAction_UPDATE_RESOURCE), nil
 	}
 	namespacedBinding, err := r.k8sAPI.RbacV1().RoleBindings(relatedBinding.namespace).Get(context.TODO(), relatedBinding.name, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching k8s API for ClusterRoleBinding %s", relatedBinding.name)
 	}
+	pkgKubernetes.TrimAnnotations(namespacedBinding)
 	return toBindingEvent(toRoxRoleBinding(namespacedBinding, updateRoleID, isClusterRole), central.ResourceAction_UPDATE_RESOURCE), nil
 }
