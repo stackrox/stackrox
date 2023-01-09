@@ -170,11 +170,11 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
-		d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
+		// d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
 	} else {
 		d.deploymentStore.removeDeployment(deploymentWrap)
 		d.podStore.onDeploymentRemove(deploymentWrap)
-		d.endpointManager.OnDeploymentRemove(deploymentWrap)
+		// d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		d.processFilter.Delete(deploymentWrap.GetId())
 	}
 
@@ -182,6 +182,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	if features.ResyncDisabled.Enabled() {
 		if action == central.ResourceAction_REMOVE_RESOURCE {
+			// We need to do this here since the resolver relies on the deploymentStore to have the wrap
+			d.endpointManager.OnDeploymentRemove(deploymentWrap)
 			// At the moment we need to also send this deployment to the compatibility module when it's being deleted.
 			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
 			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
@@ -198,7 +200,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 			// references up the chain, which will be used to trigger the actual deployment event and detection.
 			events = component.MergeResourceEvents(events,
-				component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action))
+				component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false))
 		}
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
@@ -207,6 +209,9 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
 			// right after deploymentWrap object creation.
 			deploymentWrap.updateServiceAccountPermissionLevel(d.rbac.GetPermissionLevelForDeployment(deploymentWrap.GetDeployment()))
+			d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
+		} else {
+			d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		}
 
 		if err := deploymentWrap.updateHash(); err != nil {

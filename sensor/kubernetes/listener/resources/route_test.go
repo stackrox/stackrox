@@ -5,6 +5,7 @@ import (
 
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stretchr/testify/suite"
@@ -134,6 +135,9 @@ func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
+	if features.ResyncDisabled.Enabled() {
+		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
+	}
 	testService := getTestService("test-svc", "test-ns")
 	suite.serviceDispatcher.ProcessEvent(testService, nil, central.ResourceAction_CREATE_RESOURCE)
 
@@ -146,6 +150,9 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistingRoute() {
+	if features.ResyncDisabled.Enabled() {
+		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
+	}
 	testRoute := getTestRoute("test-ns", "test-svc")
 	testService := getTestService("test-svc", "test-ns")
 	suite.routeDispatcher.ProcessEvent(testRoute, nil, central.ResourceAction_CREATE_RESOURCE)
@@ -160,6 +167,9 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistin
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestManyRoutesMatchingAndDeletions() {
+	if features.ResyncDisabled.Enabled() {
+		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
+	}
 	testRouteSvc1 := getTestRoute("test-ns", "test-svc")
 	testSvc1 := getTestService("test-svc", "test-ns")
 	testRoute1Svc2 := getTestRoute("test-ns", "test-svc-2")
