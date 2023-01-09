@@ -159,6 +159,7 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 	$(MAKE) docker-push-index
 
 ##@ Dependencies download
+include $(PROJECT_DIR)/../make/github.mk
 
 CONTROLLER_GEN_VERSION = 0.10.0
 CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen-$(CONTROLLER_GEN_VERSION)
@@ -177,7 +178,7 @@ OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
 .PHONY: operator-sdk
 operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
 # See https://sdk.operatorframework.io/docs/installation/#install-from-github-release
-	@ARCH=$$(case $$(uname -m) in (x86_64) echo -n amd64 ;; (aarch64) echo -n arm64 ;; (*) echo -n $$(uname -m) ;; esac) ;\
+	@ARCH=$$(case $$(uname -m) in (x86_64) echo amd64 ;; (aarch64) echo arm64 ;; (*) uname -m ;; esac) ;\
 	OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$(OPERATOR_SDK_VERSION)/operator-sdk_$(OS)_$${ARCH} ;\
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(OPERATOR_SDK) $${OPERATOR_SDK_URL}
@@ -187,7 +188,7 @@ KUTTL_UPSTREAM = porridge
 KUTTL ?= $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
 .PHONY: kuttl
 kuttl: ## Download kuttl.
-	@ARCH=$$(case $$(uname -m) in (aarch64) echo -n armv6 ;; (*) echo -n $$(uname -m) ;; esac) ;\
+	@ARCH=$$(case $$(uname -m) in (aarch64) echo armv6 ;; (*) uname -m ;; esac) ;\
 	KUTTL_URL=https://github.com/$(KUTTL_UPSTREAM)/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(OS)_$${ARCH} ;\
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(KUTTL) $${KUTTL_URL}
@@ -196,20 +197,6 @@ ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
-
-GET_GITHUB_RELEASE_FN = get_github_release() { \
-	[ -x $${1} ] || { \
-		set -euxo pipefail ;\
-		mkdir -p bin ;\
-		attempts=5 ;\
-		for i in $$(seq $$attempts); do \
-			curl --fail --location --output $${1} $${2} && break ;\
-			[ $$i -eq $$attempts ] && exit 1; \
-		done ;\
-		[[ "$$(uname -s)" != "Darwin" ]] || xattr -c $${1} ;\
-		chmod +x $${1} ;\
-	} \
-}
 
 # go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
 define go-get-tool
