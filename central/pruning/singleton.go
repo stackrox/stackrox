@@ -13,6 +13,7 @@ import (
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -36,6 +37,7 @@ func Singleton() GarbageCollector {
 			deploymentDatastore.Singleton(),
 			podDatastore.Singleton(),
 			processDatastore.Singleton(),
+			plopDatastore.Singleton(),
 			processBaselineDatastore.Singleton(),
 			networkFlowsDataStore.Singleton(),
 			configDatastore.Singleton(),
