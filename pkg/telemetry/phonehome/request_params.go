@@ -5,11 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
-
-var errBadType = errors.New("unexpected body type")
 
 // RequestParams holds intercepted call parameters.
 type RequestParams struct {
