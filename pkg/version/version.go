@@ -44,8 +44,8 @@ type Versions struct {
 	ScannerVersion string `json:"ScannerVersion"`
 	ChartVersion   string `json:"ChartVersion"`
 	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
-	Database        string `json:"Database,omitempty"`
-	DatabaseVersion string `json:"DatabaseVersion,omitempty"`
+	Database              string `json:"Database,omitempty"`
+	DatabaseServerVersion string `json:"DatabaseServerVersion,omitempty"`
 }
 
 // GetAllVersionsDevelopment returns all of the various pieces of version information for development builds of the product.

@@ -704,7 +704,7 @@ func buildVersions(ctx context.Context) version.Versions {
 	// Add the database version if Postgres
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		versions.Database = "PostgresDB"
-		versions.DatabaseVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
+		versions.DatabaseServerVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
 	}
 
 	return versions
