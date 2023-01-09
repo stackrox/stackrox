@@ -1,6 +1,8 @@
 package renderer
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"strings"
 	"testing"
@@ -17,7 +19,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestRenderCentralDBOnly(t *testing.T) {
@@ -55,7 +61,7 @@ func (suite *centralDBTestSuite) testWithHostPath(t *testing.T, c Config, m mode
 	}
 	files, err := render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
-	suite.verifyFiles(t, files, false)
+	suite.verifyFiles(t, files, &c, "hostpath")
 
 	c.HostPath = &HostPathPersistence{
 		DB: &HostPathPersistenceInstance{
@@ -66,10 +72,38 @@ func (suite *centralDBTestSuite) testWithHostPath(t *testing.T, c Config, m mode
 	}
 	files, err = render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
-	suite.verifyFiles(t, files, false)
+	suite.verifyFiles(t, files, &c, "hostpath")
+
+	obj := getObj(suite.T(), files, "central/01-central-12-central-db.yaml")
+	centralDepoyment := obj.(*appsv1.Deployment)
+	require.NotNil(t, centralDepoyment)
+	require.NotNil(t, centralDepoyment.Spec)
+	require.NotNil(t, centralDepoyment.Spec.Template)
+	require.NotNil(t, centralDepoyment.Spec.Template.Spec)
+	require.NotNil(t, centralDepoyment.Spec.Template.Spec.NodeSelector)
+	require.Equal(t, map[string]string{"key": "value"}, centralDepoyment.Spec.Template.Spec.NodeSelector)
 }
 
-func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, pvc bool) {
+func getObj(t *testing.T, files []*zip.File, filePath string) runtime.Object {
+	var f *zip.File
+	for _, f = range files {
+		if f.Name == filePath {
+			break
+		}
+	}
+	assert.Equal(t, filePath, f.Name)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	reader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBuffer(f.Content)))
+
+	yamlBytes, err := reader.Read()
+	assert.NoError(t, err)
+
+	obj, _, err := decode(yamlBytes, nil, nil)
+	assert.NoError(t, err)
+	return obj
+}
+
+func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, c *Config, storage string) {
 	fm := make(map[string][]unstructured.Unstructured, len(files))
 	for _, f := range files {
 		if f.Name == "README" || strings.HasSuffix(f.Name, ".sh") {
@@ -89,11 +123,16 @@ func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, pv
 	suite.verifyFile(t, fm, "01-central-08-db-configmap.yaml", "ConfigMap", "central-db-config", "metadata", "name")
 	suite.verifyFile(t, fm, "01-central-08-external-db-configmap.yaml", "ConfigMap", "central-external-db", "metadata", "name")
 	suite.verifyFile(t, fm, "01-central-12-central-db.yaml", "Deployment", "central-db", "metadata", "name")
-	// Verify Persistent Volume Claim
-	if pvc {
+
+	switch storage {
+	case "pvc":
+		// Verify Persistent Volume Claim
 		suite.verifyFile(t, fm, "01-central-11-db-pvc.yaml", "PersistentVolumeClaim", "name", "metadata", "name")
 		suite.verifyFile(t, fm, "01-central-11-db-pvc.yaml", "PersistentVolumeClaim", "name", "metadata", "name")
-	} else {
+	case "hostpath":
+		// Verify Hostpath
+		suite.verifyFile(t, fm, "01-central-12-central-db.yaml", "Deployment", "value", "spec", "name")
+	default:
 		assert.NotContains(t, files, "01-central-11-db-pvc.yaml")
 	}
 }
@@ -126,7 +165,7 @@ func (suite *centralDBTestSuite) testWithPV(t *testing.T, c Config, m mode) {
 	}
 	files, err := render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
-	suite.verifyFiles(t, files, true)
+	suite.verifyFiles(t, files, &c, "pvc")
 
 	c.External = &ExternalPersistence{
 		DB: &ExternalPersistenceInstance{
@@ -136,7 +175,7 @@ func (suite *centralDBTestSuite) testWithPV(t *testing.T, c Config, m mode) {
 	}
 	files, err = render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
-	suite.verifyFiles(t, files, true)
+	suite.verifyFiles(t, files, &c, "pvc")
 }
 
 func (suite *centralDBTestSuite) TestRenderCentralDBBundle() {
