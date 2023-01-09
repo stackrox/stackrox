@@ -24,6 +24,9 @@ const (
 	// Special operation currently used only for processes.
 	GetGrouped
 
+	// Special operation used for ProcessListeningOnPort
+	GetProcessListeningOnPort
+
 	List
 
 	Prune
