@@ -3,14 +3,12 @@ package replay
 import (
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"io"
 	"net"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
@@ -18,7 +16,6 @@ import (
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/assert"
@@ -116,23 +113,15 @@ func (tw *TraceWriterWithChannel) disable() {
 	tw.enabled = false
 }
 
-func (tw *TraceWriterWithChannel) Write(b []byte) (nb int, retErr error) {
+func (tw *TraceWriterWithChannel) Write(_ []byte) (nb int, retErr error) {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
 	if !tw.enabled {
 		return 0, nil
 	}
-	msg := resources.InformerK8sMsg{}
-	if err := json.Unmarshal(b, &msg); err != nil {
-		return 0, err
-	}
-	for _, e := range msg.EventsOutput {
-		event := &central.SensorEvent{}
-		if err := jsonpb.UnmarshalString(e, event); err != nil {
-			return 0, err
-		}
-		tw.destinationChannel <- event
-	}
+	// We just send an empty event to signal that the resource was processed
+	event := &central.SensorEvent{}
+	tw.destinationChannel <- event
 	return 0, nil
 }
 
