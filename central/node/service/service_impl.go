@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -65,11 +66,17 @@ func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesReques
 }
 
 func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (*storage.Node, error) {
-	// Nodes have non-composite unique node ID, hence, cluster ID is not required to retrieve a node.
-	// Note that whether we provide clusterID or not, the searcher will always perform SAC check in the graph.
+	// Previously, the cluster ID in the request was used to obtain global store. However, when the datastore interfaces
+	// were consolidated, the global store was dropped. Nodes have non-composite unique node ID across all clusters.
+	// Hence, Cluster ID is not required to retrieve a node.
+	//
+	// The GRPC endpoint (that includes the request format) was not changed to avoid any user-facing changes (/deprecation).
 	node, found, err := s.nodeDatastore.GetNode(ctx, req.GetNodeId())
-	if err != nil || !found {
+	if err != nil {
 		return nil, errors.Errorf("could not locate node %q for cluster %s: %v", req.GetNodeId(), req.GetClusterId(), err)
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
 	}
 	return node, nil
 }
