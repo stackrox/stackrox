@@ -45,11 +45,17 @@ func TestConversion(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonify(tc.str, tc.addUnknonwField), !tc.escaped, []ConversionOption{})
+			// Unknown fields will be excluded in the result so we need to build a target JSON
+			// that will exclude those to verify the proto conversion was good.
+			inputJSON := jsonify(tc.str, tc.addUnknonwField)
+			targetJSON := jsonify(tc.str, false)
+			verifyJSONToProtoToJSON(t, inputJSON, targetJSON, !tc.escaped, []ConversionOption{})
 		})
 
 		t.Run(tc.desc+" in compact JSON", func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str, tc.addUnknonwField), !tc.escaped, []ConversionOption{OptCompact})
+			inputJSON := jsonifyCompact(tc.str, tc.addUnknonwField)
+			targetJSON := jsonifyCompact(tc.str, false)
+			verifyJSONToProtoToJSON(t, inputJSON, targetJSON, !tc.escaped, []ConversionOption{OptCompact})
 		})
 	}
 }
@@ -81,29 +87,40 @@ func TestConversionWithUnEscape(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonify(tc.str, false), true, []ConversionOption{OptUnEscape})
+			jsonData := jsonify(tc.str, false)
+			verifyJSONToProtoToJSON(t, jsonData, jsonData, true, []ConversionOption{OptUnEscape})
 		})
 
 		t.Run(tc.desc+" in compact JSON", func(t *testing.T) {
 			// Prevent JSON conversion from escaping specific charters.
-			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str, false), true, []ConversionOption{OptUnEscape, OptCompact})
+			jsonData := jsonifyCompact(tc.str, false)
+			verifyJSONToProtoToJSON(t, jsonData, jsonData, true, []ConversionOption{OptUnEscape, OptCompact})
 		})
 	}
 }
 
 // Hand-made compact JSON representation of v1.ResourceByID.
 func jsonifyCompact(value string, unknownField bool) string {
+	if unknownField {
+		return fmt.Sprintf(`{"id":"%s","unknownfield":"junk"}`, value)
+	}
 	return fmt.Sprintf(`{"id":"%s"}`, value)
 }
 
 // Hand-made JSON representation of v1.ResourceByID.
 func jsonify(value string, unknownField bool) string {
+	if unknownField {
+		return fmt.Sprintf(`{
+  "id": "%s",
+  "unknownfield": "junk"
+}`, value)
+	}
 	return fmt.Sprintf(`{
   "id": "%s"
 }`, value)
 }
 
-func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, shouldPreserve bool, options []ConversionOption) {
+func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, targetJSON string, shouldPreserve bool, options []ConversionOption) {
 	// Use ResourceByID proto because it contains a single string field.
 	var proto v1.ResourceByID
 
@@ -114,5 +131,5 @@ func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, shouldPreserve bool
 	// Conversion to only JSON escapes characters if specified in options.
 	convertedJSON, err := ProtoToJSON(&proto, options...)
 	assert.NoError(t, err)
-	assert.Equalf(t, shouldPreserve, inputJSON == convertedJSON, "original JSON:\n%s\nconvertedJSON:\n%s", inputJSON, convertedJSON)
+	assert.Equalf(t, shouldPreserve, targetJSON == convertedJSON, "original JSON:\n%s\ntargetJSON:\n%s\nconvertedJSON:\n%s", inputJSON, targetJSON, convertedJSON)
 }
