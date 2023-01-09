@@ -2,8 +2,8 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
 )
 
 // portExposureReconciler reconciles the port exposures in the deployment store on receiving
