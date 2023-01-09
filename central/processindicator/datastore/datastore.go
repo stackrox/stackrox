@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/central/processindicator/store/postgres"
 	"github.com/stackrox/rox/central/processindicator/store/rocksdb"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -45,9 +46,10 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(store store.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
+func New(store store.Store, plopStore plopStore.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
 	d := &datastoreImpl{
 		storage:               store,
+		plopStorage:           plopStore,
 		indexer:               indexer,
 		searcher:              searcher,
 		prunerFactory:         prunerFactory,
@@ -65,9 +67,10 @@ func New(store store.Store, indexer index.Indexer, searcher search.Searcher, pru
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
 	dbstore := postgres.New(pool)
+	plopDBstore := plopStore.New(pool)
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher, nil)
+	return New(dbstore, plopDBstore, indexer, searcher, nil)
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
@@ -75,5 +78,5 @@ func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	dbstore := rocksdb.New(rocksengine)
 	indexer := index.New(bleveIndex)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher, nil)
+	return New(dbstore, nil, indexer, searcher, nil)
 }

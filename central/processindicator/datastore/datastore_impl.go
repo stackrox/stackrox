@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,9 +33,13 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage store.Store
+	// ProcessListeningOnPort storage is needed for correct pruning. It
+	// logically belongs to the datastore implementation of PLOP, but this way
+	// it would be an import cycle, so call the Store directly.
+	plopStorage plopStore.Store
+	indexer     index.Indexer
+	searcher    search.Searcher
 
 	prunerFactory         pruner.Factory
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
@@ -141,12 +146,28 @@ func (ds *datastoreImpl) removeMatchingIndicators(ctx context.Context, results [
 }
 
 func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) error {
+	log.Infof("Process Pruning")
 	if len(ids) == 0 {
 		return nil
 	}
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return err
 	}
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		// Clean up correlated ProcessListeningOnPort objects. Probably could be
+		// done using a proper FK and CASCADE, but it's usually a thing you would
+		// not like to do automatically. search.ProcessID is not a PID, but UUID of
+		// the record in the table
+		deleteQuery := pkgSearch.NewQueryBuilder().
+			AddStrings(pkgSearch.ProcessID, ids...).
+			ProtoQuery()
+
+		if err := ds.plopStorage.DeleteByQuery(ctx, deleteQuery); err != nil {
+			return err
+		}
+	}
+
 	if err := ds.indexer.DeleteProcessIndicators(ids); err != nil {
 		return err
 	}
