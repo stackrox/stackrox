@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -67,4 +68,32 @@ func (m *MockDataStore) GetProcessListeningOnPort(ctx context.Context, deploymen
 func (mr *MockDataStoreMockRecorder) GetProcessListeningOnPort(ctx, deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).GetProcessListeningOnPort), ctx, deployment)
+}
+
+// RemovePLOP mocks base method.
+func (m *MockDataStore) RemovePLOP(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemovePLOP", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemovePLOP indicates an expected call of RemovePLOP.
+func (mr *MockDataStoreMockRecorder) RemovePLOP(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePLOP", reflect.TypeOf((*MockDataStore)(nil).RemovePLOP), ctx, ids)
+}
+
+// WalkAll mocks base method.
+func (m *MockDataStore) WalkAll(ctx context.Context, fn datastore.WalkFn) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkAll", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkAll indicates an expected call of WalkAll.
+func (mr *MockDataStoreMockRecorder) WalkAll(ctx, fn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockDataStore)(nil).WalkAll), ctx, fn)
 }
