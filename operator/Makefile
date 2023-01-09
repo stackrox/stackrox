@@ -323,7 +323,7 @@ smuggled-status-sh:
 	)
 
 # Force re-building the file to make sure the current environment is correctly reflected.
-# Deprecated: This is used only by OSCI (aka prow) and should be removed soon.
+# TODO(ROX-14234): Deprecated: This is used only by OSCI (aka prow) and should be removed soon.
 .PHONY: build/Dockerfile.gen
 build/Dockerfile.gen: osci.Dockerfile
 	mkdir -p build/
