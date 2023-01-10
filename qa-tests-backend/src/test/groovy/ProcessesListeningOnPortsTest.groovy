@@ -107,7 +107,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
     }
 
-    @Tag([BAT])
+    @Tag("BAT")
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         "Two deployments that listen on ports are started up"
