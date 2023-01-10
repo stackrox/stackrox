@@ -23,7 +23,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(TRIGGER_MOST)
-                    .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most")
+                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
                     // For: "Emergency Deployment Annotation"
                     .addAnnotation("admission.stackrox.io/break-glass", "yay")
                     // For: "Secret Mounted as Environment Variable"
@@ -38,7 +38,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
             // For: "Alpine Linux Package Manager (apk) in Image"
             new Deployment()
                     .setName(TRIGGER_ALPINE)
-                    .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-alpine"),
+                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6"),
     ]
     static final private List<Deployment> NO_WAIT_DEPLOYMENTS = [
             new Deployment()
