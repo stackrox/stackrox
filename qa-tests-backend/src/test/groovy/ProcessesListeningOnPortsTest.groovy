@@ -1,7 +1,5 @@
 import static com.jayway.restassured.RestAssured.given
 
-import groups.BAT
-import groups.Integration
 import objects.Deployment
 import objects.K8sServiceAccount
 import objects.Service
@@ -110,7 +108,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT, Integration])
+    @Tag([BAT])
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         "Two deployments that listen on ports are started up"
