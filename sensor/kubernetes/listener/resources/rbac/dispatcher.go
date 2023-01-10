@@ -3,6 +3,7 @@ package rbac
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/rbac/v1"
@@ -86,13 +87,17 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 }
 
 func (r *Dispatcher) mustGenerateRelatedEvents(obj metav1.Object, roleID string, isClusterRole bool) []*central.SensorEvent {
-	relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
-	events, err := r.fetcher.generateManyDependentEvents(relatedBindings, roleID, isClusterRole)
-	if err != nil {
-		log.Warnf("failed to fetch related bindings: %s", err)
-		return nil
+	// Only generate related binding events if re-sync is not enabled. Otherwise, binding events will be reprocessed every minute.
+	if features.ResyncDisabled.Enabled() {
+		relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
+		events, err := r.fetcher.generateManyDependentEvents(relatedBindings, roleID, isClusterRole)
+		if err != nil {
+			log.Warnf("failed to fetch related bindings: %s", err)
+			return nil
+		}
+		return events
 	}
-	return events
+	return nil
 }
 
 func (r *Dispatcher) toRoxBinding(binding *v1.RoleBinding) *storage.K8SRoleBinding {
