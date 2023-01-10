@@ -18,6 +18,8 @@ import (
 )
 
 func TestStore(t *testing.T) {
+	// Run these tests only with feature flag enabled. Changes to the old path should be avoided whenever possible.
+	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	// Namespace: n1
 	// Role: r1
 	// Bindings:
