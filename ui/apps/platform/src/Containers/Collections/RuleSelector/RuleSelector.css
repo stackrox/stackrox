@@ -44,7 +44,7 @@
 }
 
 .rule-selector-add-value-button {
-  padding: var(--rule-selector-spacer) 0 0 calc(var(--rule-selector-spacer) * 2);
+  margin: var(--rule-selector-spacer) 0 0 var(--rule-selector-spacer);
 }
 
 .rule-selector-label-rule-separator {
