@@ -1,5 +1,3 @@
-import static com.jayway.restassured.RestAssured.given
-
 import objects.Deployment
 import objects.K8sServiceAccount
 import objects.Service
