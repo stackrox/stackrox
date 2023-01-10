@@ -179,6 +179,9 @@ var (
 	ProcessAncestor  = newFieldLabel("Process Ancestor")
 	ProcessUID       = newFieldLabel("Process UID")
 
+	// ProcessListeningOnPort Search fields
+	Closed = newFieldLabel("Closed")
+
 	// Secret search fields
 	SecretType       = newFieldLabel("Secret Type")
 	SecretExpiration = newFieldLabel("Cert Expiration")
