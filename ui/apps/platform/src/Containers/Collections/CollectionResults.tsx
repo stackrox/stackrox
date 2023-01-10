@@ -182,14 +182,14 @@ function CollectionResults({
                             <SelectOption value="Cluster">Cluster</SelectOption>
                         </Select>
                     </FlexItem>
-                    <FlexItem grow={{ default: 'grow' }}>
+                    <div className="pf-u-flex-grow-1 pf-u-flex-basis-0">
                         <SearchInput
                             aria-label="Filter by name"
                             placeholder="Filter by name"
                             value={filterText}
                             onChange={setFilterText}
                         />
-                    </FlexItem>
+                    </div>
                 </Flex>
                 <Flex
                     direction={{ default: 'column' }}

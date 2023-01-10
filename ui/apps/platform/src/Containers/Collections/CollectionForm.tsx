@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from 'react';
+import React, { CSSProperties, ReactElement, useEffect } from 'react';
 import {
     Alert,
     Badge,
@@ -299,7 +299,14 @@ function CollectionForm({
     const ruleCount = getRuleCount(values.resourceSelector);
 
     return (
-        <Form className="pf-u-background-color-200">
+        <Form
+            className="pf-u-background-color-200"
+            style={
+                {
+                    '--pf-c-form--GridGap': 0,
+                } as CSSProperties
+            }
+        >
             <Flex
                 className="pf-u-p-lg"
                 spaceItems={{ default: 'spaceItemsMd' }}
