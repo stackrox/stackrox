@@ -67,7 +67,7 @@ function AttachedCollectionTable({
             </Tbody>
         </TableComposable>
     ) : (
-        <EmptyState variant={EmptyStateVariant.xs}>
+        <EmptyState>
             <EmptyStateIcon icon={CubesIcon} />
             <p>There are no other collections attached to this collection</p>
         </EmptyState>
@@ -461,7 +461,6 @@ function CollectionForm({
                         isExpanded={isAttachmentSectionOpen}
                     >
                         <Flex
-                            className="pf-u-p-md"
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
@@ -483,7 +482,7 @@ function CollectionForm({
                                     collectionTableCells={collectionTableCells}
                                 />
                             ) : (
-                                <>
+                                <div className="pf-u-p-md">
                                     <CollectionAttacher
                                         excludedCollectionId={
                                             action.type === 'edit' ? action.collectionId : null
@@ -492,7 +491,7 @@ function CollectionForm({
                                         onSelectionChange={onEmbeddedCollectionsChange}
                                         collectionTableCells={collectionTableCells}
                                     />
-                                </>
+                                </div>
                             )}
                         </Flex>
                     </ExpandableSection>
