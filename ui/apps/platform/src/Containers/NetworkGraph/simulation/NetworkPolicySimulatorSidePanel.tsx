@@ -21,7 +21,11 @@ import {
 
 import useTabs from 'hooks/patternfly/useTabs';
 import ViewActiveYAMLs from './ViewActiveYAMLs';
-import useNetworkPolicySimulator from '../hooks/useNetworkPolicySimulator';
+import {
+    ApplyNetworkPolicyModification,
+    NetworkPolicySimulator,
+    SetNetworkPolicyModification,
+} from '../hooks/useNetworkPolicySimulator';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
 import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorUtils';
 import UploadYAMLButton from './UploadYAMLButton';
@@ -30,6 +34,9 @@ import NotifyYAMLModal from './NotifyYAMLModal';
 
 type NetworkPolicySimulatorSidePanelProps = {
     selectedClusterId: string;
+    simulator: NetworkPolicySimulator;
+    setNetworkPolicyModification: SetNetworkPolicyModification;
+    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
 };
 
 const tabs = {
@@ -39,6 +46,9 @@ const tabs = {
 
 function NetworkPolicySimulatorSidePanel({
     selectedClusterId,
+    simulator,
+    setNetworkPolicyModification,
+    applyNetworkPolicyModification,
 }: NetworkPolicySimulatorSidePanelProps) {
     const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
@@ -46,10 +56,6 @@ function NetworkPolicySimulatorSidePanel({
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
     const [isNotifyModalOpen, setIsNotifyModalOpen] = React.useState(false);
-    const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
-        useNetworkPolicySimulator({
-            clusterId: selectedClusterId,
-        });
 
     function handleFileInputChange(
         _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
