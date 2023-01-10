@@ -37,8 +37,8 @@ var (
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory(113), "testparent4", (*storage.TestParent4)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
-			v1.SearchCategory(61),
-			v1.SearchCategory(74),
+			v1.SearchCategory(109),
+			v1.SearchCategory(103),
 		}...)
 		RegisterTable(schema, CreateTableTestParent4Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(113), schema)
