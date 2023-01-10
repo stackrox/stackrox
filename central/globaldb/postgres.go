@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
-	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
@@ -194,13 +193,26 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 
 // CollectPostgresDatabaseStats -- collect database level stats for Postgres
 func CollectPostgresDatabaseStats(postgresConfig *pgxpool.Config) {
-	cloneSize, err := pgadmin.GetDatabaseSize(postgresConfig, migrations.CurrentDatabase)
-	if err != nil {
-		log.Errorf("error fetching clone size: %v", err)
-		return
+	log.Info("CollectPostgresDatabaseStats")
+	databases := pgadmin.GetAllDatabases(postgresConfig)
+
+	for _, database := range databases {
+		cloneSize, err := pgadmin.GetDatabaseSize(postgresConfig, database)
+		if err != nil {
+			log.Errorf("error fetching clone size: %v", err)
+			return
+		}
+
+		databaseLabel := prometheus.Labels{"Database": database}
+		metrics.PostgresDBSize.With(databaseLabel).Set(float64(cloneSize))
 	}
 
-	metrics.PostgresDBSize.Set(float64(cloneSize))
+	totalSize, err := pgadmin.GetTotalPostgresSize(postgresConfig)
+	if err != nil {
+		log.Errorf("error fetching total database size: %v", err)
+		return
+	}
+	metrics.PostgresTotalSize.Set(float64(totalSize))
 }
 
 func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool, postgresConfig *pgxpool.Config) {
