@@ -95,5 +95,5 @@ func makeComponentKey(component *scannerV1.RHELComponent) string {
 	if component == nil {
 		return ""
 	}
-	return component.Name +":"+  component.Version +":"+ component.Arch +":"+ component.Module
+	return component.Name + ":" + component.Version + ":" + component.Arch + ":" + component.Module
 }
