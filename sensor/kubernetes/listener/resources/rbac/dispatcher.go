@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -42,15 +43,15 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 	switch obj := obj.(type) {
 	case *v1.Role:
 		update.events = append(update.events, toRoleEvent(toRoxRole(obj), action))
-		relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			r.store.RemoveRole(obj)
-			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, "", false)...)
+			update.events = append(update.events, r.mustGenerateRelatedEvents(obj, "", false)...)
+		} else if action == central.ResourceAction_CREATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
+			r.store.UpsertRole(obj)
+			// In case the role is being created, or it's during sensor startup, dependent bindings should be processed.
+			update.events = append(update.events, r.mustGenerateRelatedEvents(obj, string(obj.GetUID()), false)...)
 		} else if action == central.ResourceAction_UPDATE_RESOURCE {
 			r.store.UpsertRole(obj)
-		} else { // Create or Sync
-			r.store.UpsertRole(obj)
-			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, string(obj.GetUID()), false)...)
 		}
 	case *v1.RoleBinding:
 		if action == central.ResourceAction_REMOVE_RESOURCE {
@@ -62,15 +63,15 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 		update.events = append(update.events, toBindingEvent(roxBinding, action))
 	case *v1.ClusterRole:
 		update.events = append(update.events, toRoleEvent(toRoxClusterRole(obj), action))
-		relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			r.store.RemoveClusterRole(obj)
-			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, "", true)...)
+			update.events = append(update.events, r.mustGenerateRelatedEvents(obj, "", true)...)
+		} else if action == central.ResourceAction_CREATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
+			r.store.UpsertClusterRole(obj)
+			// In case the role is being created, or it's during sensor startup, dependent bindings should be processed.
+			update.events = append(update.events, r.mustGenerateRelatedEvents(obj, string(obj.GetUID()), true)...)
 		} else if action == central.ResourceAction_UPDATE_RESOURCE {
 			r.store.UpsertClusterRole(obj)
-		} else { // Create or Sync
-			r.store.UpsertClusterRole(obj)
-			update.events = append(update.events, r.mustGenerateRelatedEvents(relatedBindings, string(obj.GetUID()), true)...)
 		}
 	case *v1.ClusterRoleBinding:
 		if action == central.ResourceAction_REMOVE_RESOURCE {
@@ -84,7 +85,8 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 	return update
 }
 
-func (r *Dispatcher) mustGenerateRelatedEvents(relatedBindings []namespacedBindingID, roleID string, isClusterRole bool) []*central.SensorEvent {
+func (r *Dispatcher) mustGenerateRelatedEvents(obj metav1.Object, roleID string, isClusterRole bool) []*central.SensorEvent {
+	relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
 	events, err := r.fetcher.generateManyDependentEvents(relatedBindings, roleID, isClusterRole)
 	if err != nil {
 		log.Warnf("failed to fetch related bindings: %s", err)
