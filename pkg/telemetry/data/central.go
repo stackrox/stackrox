@@ -98,7 +98,7 @@ func (l *LicenseJSON) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals license JSON bytes into a License object, following jsonpb rules.
 func (l *LicenseJSON) UnmarshalJSON(data []byte) error {
-	return jsonutil.JSONUnmarshaler().Unmarshal(bytes.NewReader(data), (*licenseproto.License)(l))
+	return jsonutil.JSONBytesToProto(data, (*licenseproto.License)(l))
 }
 
 // CentralInfo contains telemetry data specific to StackRox' Central deployment

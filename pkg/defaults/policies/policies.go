@@ -1,7 +1,6 @@
 package policies
 
 import (
-	"bytes"
 	"embed"
 	"path/filepath"
 
@@ -71,7 +70,7 @@ func ReadPolicyFile(path string) (*storage.Policy, error) {
 	utils.CrashOnError(err)
 
 	var policy storage.Policy
-	err = jsonutil.JSONUnmarshaler().Unmarshal(bytes.NewReader(contents), &policy)
+	err = jsonutil.JSONBytesToProto(contents, &policy)
 	if err != nil {
 		log.Errorf("Unable to unmarshal policy (%s) json: %s", path, err)
 		return nil, err

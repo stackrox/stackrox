@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -108,11 +107,10 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 	if err != nil {
 		return nil, errors.Wrap(err, "converting YAML to JSON")
 	}
-	buf := bytes.NewBuffer(clusterCfgJSON)
 
 	var clusterCfg storage.CompleteClusterConfig
 
-	err = jsonutil.JSONUnmarshaler().Unmarshal(buf, &clusterCfg)
+	err = jsonutil.JSONBytesToProto(clusterCfgJSON, &clusterCfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "JSON unmarshalling")
 	}

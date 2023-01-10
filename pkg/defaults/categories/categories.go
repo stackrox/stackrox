@@ -1,7 +1,6 @@
 package categories
 
 import (
-	"bytes"
 	"embed"
 	"path/filepath"
 
@@ -55,7 +54,7 @@ func readCategoryFile(path string) (*storage.PolicyCategory, error) {
 	utils.CrashOnError(err)
 
 	var category storage.PolicyCategory
-	err = jsonutil.JSONUnmarshaler().Unmarshal(bytes.NewReader(contents), &category)
+	err = jsonutil.JSONBytesToProto(contents, &category)
 	if err != nil {
 		log.Errorf("Unable to unmarshal category (%s) json: %s", path, err)
 		return nil, err
