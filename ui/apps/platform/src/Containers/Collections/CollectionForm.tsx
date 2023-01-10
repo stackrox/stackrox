@@ -5,7 +5,6 @@ import {
     Button,
     EmptyState,
     EmptyStateIcon,
-    EmptyStateVariant,
     ExpandableSection,
     ExpandableSectionToggle,
     Flex,
@@ -17,7 +16,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
-import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
+import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -53,7 +52,7 @@ function AttachedCollectionTable({
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }) {
     return collections.length > 0 ? (
-        <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
+        <TableComposable aria-label="Attached collections">
             <Tbody>
                 {collections.map((collection) => (
                     <Tr key={collection.name}>

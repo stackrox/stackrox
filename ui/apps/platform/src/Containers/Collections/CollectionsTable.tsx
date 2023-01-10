@@ -13,7 +13,7 @@ import {
     Truncate,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
-import { TableComposable, TableVariant, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import debounce from 'lodash/debounce';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -129,7 +129,7 @@ function CollectionsTable({
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
-            <TableComposable variant={TableVariant.compact}>
+            <TableComposable>
                 <Thead>
                     <Tr>
                         <Th modifier="wrap" sort={getEnabledSortParams('Collection Name')}>
