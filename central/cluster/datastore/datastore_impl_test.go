@@ -32,7 +32,6 @@ import (
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/env"
@@ -164,7 +163,6 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.networkBaselineMgr,
 	)
 	suite.NoError(err)
-	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
 

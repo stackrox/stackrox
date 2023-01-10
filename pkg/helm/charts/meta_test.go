@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -15,10 +14,6 @@ import (
 // are actually present.
 func TestRequiredMetaValuesArePresent(t *testing.T) {
 	testutils.SetExampleVersion(t)
-	restorer := testbuildinfo.SetForTest(t)
-	defer func() {
-		restorer.Restore()
-	}()
 
 	cases := []defaults.ImageFlavor{
 		defaults.DevelopmentBuildImageFlavor(),

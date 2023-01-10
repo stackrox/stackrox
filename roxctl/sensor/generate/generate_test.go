@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -129,7 +128,6 @@ func (s *sensorGenerateTestSuite) createMockedCommand(getDefaultsF getDefaultsFn
 }
 
 func (s *sensorGenerateTestSuite) SetupTest() {
-	testbuildinfo.SetForTest(s.T())
 	testutils.SetExampleVersion(s.T())
 }
 

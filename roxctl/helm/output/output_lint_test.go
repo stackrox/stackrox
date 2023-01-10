@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -36,7 +35,6 @@ type HelmChartTestSuite struct {
 
 func (s *HelmChartTestSuite) SetupTest() {
 	testutils.SetExampleVersion(s.T())
-	testbuildinfo.SetForTest(s.T())
 }
 
 func TestHelmLint(t *testing.T) {
