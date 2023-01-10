@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 
 	"github.com/heimdalr/dag"
@@ -507,7 +508,18 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 func ruleValuesToQueryList(fieldLabel pkgSearch.FieldLabel, ruleValues []*storage.RuleValue) []*v1.Query {
 	ret := make([]*v1.Query, 0, len(ruleValues))
 	for _, ruleValue := range ruleValues {
-		ret = append(ret, pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, ruleValue.GetValue()).ProtoQuery())
+		var query *v1.Query
+		switch ruleValue.GetMatchType() {
+		case storage.MatchType_EXACT:
+			query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel, ruleValue.GetValue()).ProtoQuery()
+		case storage.MatchType_REGEX:
+			query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, ruleValue.GetValue()).ProtoQuery()
+		case storage.MatchType_PREFIX:
+			query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, fmt.Sprintf("^%s", ruleValue.GetValue())).ProtoQuery()
+		case storage.MatchType_POSTFIX:
+			query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, fmt.Sprintf("%s$", ruleValue.GetValue())).ProtoQuery()
+		}
+		ret = append(ret, query)
 	}
 	return ret
 }
@@ -527,6 +539,7 @@ func embeddedCollectionsToIDList(embeddedList []*storage.ResourceCollection_Embe
 //   - all storage.SelectorRule "FieldName" values are valid
 //   - all storage.RuleValue fields compile as valid regex
 //   - storage.RuleValue fields supplied when "FieldName" values provided
+//   - storage.MatchType is EXACT when storage.SelectorRule is a label type
 func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 
 	// object not nil
@@ -554,6 +567,15 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 				return errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
 			}
 
+			// determine whether this is a label rule
+			var labelRule bool
+			switch selectorRule.GetFieldName() {
+			case pkgSearch.DeploymentLabel.String(), pkgSearch.NamespaceLabel.String(), pkgSearch.ClusterLabel.String():
+				labelRule = true
+			default:
+				labelRule = false
+			}
+
 			// we require at least one value if a field name is set
 			if len(selectorRule.GetValues()) == 0 {
 				return errors.Wrap(errox.InvalidArgs, "rule values required with a set field name")
@@ -563,6 +585,9 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 				// rule values must be valid regex
 				if _, err := regexp.Compile(ruleValue.GetValue()); err != nil {
 					return errors.Wrap(errors.Wrap(err, errox.InvalidArgs.Error()), "failed to compile rule value regex")
+				}
+				if labelRule && ruleValue.GetMatchType() != storage.MatchType_EXACT {
+					return errors.Wrap(errox.InvalidArgs, "label types should only use exact matching")
 				}
 			}
 		}
