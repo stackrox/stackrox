@@ -101,3 +101,13 @@ func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, shouldPreserve bool
 	assert.NoError(t, err)
 	assert.Equalf(t, shouldPreserve, inputJSON == convertedJSON, "original JSON:\n%s\nconvertedJSON:\n%s", inputJSON, convertedJSON)
 }
+
+func TestNoErrorOnUnknownAttribute(t *testing.T) {
+	const json = `{ "id": "6500", "unknownField": "junk" }`
+	var proto v1.ResourceByID
+
+	err := JSONToProto(json, &proto)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "6500", proto.GetId())
+}
