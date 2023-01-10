@@ -29,13 +29,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "TestGGrandChild1")
 
-	return postgres.RunCountRequest(ctx, v1.SearchCategory(65), q, b.db)
+	return postgres.RunCountRequest(ctx, v1.SearchCategory(107), q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestGGrandChild1")
 
-	return postgres.RunSearchRequest(ctx, v1.SearchCategory(65), q, b.db)
+	return postgres.RunSearchRequest(ctx, v1.SearchCategory(107), q, b.db)
 }
 
 //// Stubs for satisfying interfaces

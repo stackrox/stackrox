@@ -29,9 +29,9 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestSingleUUIDKeyStruct)(nil)), "test_single_uuid_key_structs")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testsingleuuidkeystruct", (*storage.TestSingleUUIDKeyStruct)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(115), "testsingleuuidkeystruct", (*storage.TestSingleUUIDKeyStruct)(nil)))
 		RegisterTable(schema, CreateTableTestSingleUuidKeyStructsStmt)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_SEARCH_UNSET, schema)
+		mapping.RegisterCategoryToTable(v1.SearchCategory(115), schema)
 		return schema
 	}()
 )

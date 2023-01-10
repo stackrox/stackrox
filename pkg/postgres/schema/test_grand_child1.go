@@ -36,9 +36,9 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(64), "testgrandchild1", (*storage.TestGrandChild1)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(108), "testgrandchild1", (*storage.TestGrandChild1)(nil)))
 		RegisterTable(schema, CreateTableTestGrandChild1Stmt)
-		mapping.RegisterCategoryToTable(v1.SearchCategory(64), schema)
+		mapping.RegisterCategoryToTable(v1.SearchCategory(108), schema)
 		return schema
 	}()
 )
