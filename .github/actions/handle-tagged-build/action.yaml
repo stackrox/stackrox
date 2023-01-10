@@ -1,0 +1,10 @@
+name: Handle tagged build
+description: Handle tagged build
+runs:
+  using: composite
+  steps:
+    - name: Handle tagged build
+      run: |
+        source ./scripts/ci/lib.sh
+        handle_gha_tagged_build
+      shell: bash

@@ -10,6 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
+	selector "github.com/stackrox/rox/sensor/common/selector"
 	service "github.com/stackrox/rox/sensor/common/service"
 	store "github.com/stackrox/rox/sensor/common/store"
 )
@@ -50,6 +51,20 @@ func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, depende
 func (mr *MockDeploymentStoreMockRecorder) BuildDeploymentWithDependencies(id, dependencies interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDeploymentWithDependencies", reflect.TypeOf((*MockDeploymentStore)(nil).BuildDeploymentWithDependencies), id, dependencies)
+}
+
+// FindDeploymentIDsByLabels mocks base method.
+func (m *MockDeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindDeploymentIDsByLabels", namespace, sel)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// FindDeploymentIDsByLabels indicates an expected call of FindDeploymentIDsByLabels.
+func (mr *MockDeploymentStoreMockRecorder) FindDeploymentIDsByLabels(namespace, sel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeploymentIDsByLabels", reflect.TypeOf((*MockDeploymentStore)(nil).FindDeploymentIDsByLabels), namespace, sel)
 }
 
 // FindDeploymentIDsWithServiceAccount mocks base method.

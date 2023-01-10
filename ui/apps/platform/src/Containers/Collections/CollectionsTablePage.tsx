@@ -29,6 +29,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import CollectionsTable from './CollectionsTable';
 
 type CollectionsTablePageProps = {
@@ -80,7 +81,8 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                 countRefetch();
             })
             .catch((err) => {
-                addToast(`Could not delete collection '${name}'`, 'danger', err.message);
+                const error = getAxiosErrorMessage(err);
+                addToast(`Could not delete collection '${name}'`, 'danger', error);
             });
     }
 

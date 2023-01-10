@@ -23,8 +23,7 @@ type commandHandlerImpl struct {
 
 	scrapeIDToState map[string]*scrapeState
 
-	stopC    concurrency.ErrorSignal
-	stoppedC concurrency.ErrorSignal
+	stopper concurrency.Stopper
 }
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -40,12 +39,12 @@ func (c *commandHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *commandHandlerImpl) Stop(err error) {
-	c.stopC.SignalWithError(err)
+func (c *commandHandlerImpl) Stop(_ error) {
+	c.stopper.Client().Stop()
 }
 
 func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &c.stoppedC
+	return c.stopper.Client().Stopped()
 }
 
 func (c *commandHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
@@ -56,22 +55,22 @@ func (c *commandHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	select {
 	case c.commands <- command:
 		return nil
-	case <-c.stoppedC.Done():
-		return errors.Errorf("unable to send command: %s", proto.MarshalTextString(command))
+	case <-c.stopper.Flow().StopRequested():
+		return errors.Errorf("component is shutting down, unable to send command: %s", proto.MarshalTextString(command))
 	}
 }
 
 func (c *commandHandlerImpl) run() {
-	defer c.stoppedC.Signal()
+	defer c.stopper.Flow().ReportStopped()
 
 	for {
 		select {
-		case <-c.stopC.Done():
-			c.stoppedC.SignalWithError(c.stopC.Err())
+		case <-c.stopper.Flow().StopRequested():
+			return
 
 		case command, ok := <-c.commands:
 			if !ok {
-				c.stoppedC.SignalWithError(errors.New("scrape command input closed"))
+				c.stopper.Flow().StopWithError(errors.New("scrape command input closed"))
 				return
 			}
 			if command.GetScrapeId() == "" {
@@ -84,7 +83,7 @@ func (c *commandHandlerImpl) run() {
 
 		case result, ok := <-c.service.Output():
 			if !ok {
-				c.stoppedC.SignalWithError(errors.New("compliance return input closed"))
+				c.stopper.Flow().StopWithError(errors.New("compliance return input closed"))
 				return
 			}
 			if updates := c.commitResult(result); len(updates) > 0 {
@@ -189,8 +188,8 @@ func (c *commandHandlerImpl) sendUpdates(updates []*central.ScrapeUpdate) {
 
 func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 	select {
-	case <-c.stoppedC.Done():
-		log.Errorf("failed to send update: %s", proto.MarshalTextString(update))
+	case <-c.stopper.Flow().StopRequested():
+		log.Errorf("component is shutting down, failed to send update: %s", proto.MarshalTextString(update))
 		return
 	case c.updates <- &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ScrapeUpdate{

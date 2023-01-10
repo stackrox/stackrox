@@ -115,6 +115,10 @@ spec:
           value: "false"
         - name: ROX_ENABLE_KERNEL_PACKAGE_UPLOAD
           value: "false"
+        - name: ROX_TENANT_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['rhacs.redhat.com/tenant']
         {{- end }}
         {{- if ._rox.central.db.enabled }}
         - name: ROX_POSTGRES_DATASTORE

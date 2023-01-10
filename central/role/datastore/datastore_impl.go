@@ -46,6 +46,14 @@ func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, erro
 	return ds.getAllRolesNoScopeCheck(ctx)
 }
 
+func (ds *dataStoreImpl) CountRoles(ctx context.Context) (int, error) {
+	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+		return 0, err
+	}
+
+	return ds.roleStorage.Count(ctx)
+}
+
 func (ds *dataStoreImpl) getAllRolesNoScopeCheck(ctx context.Context) ([]*storage.Role, error) {
 	var roles []*storage.Role
 	walkFn := func() error {
@@ -159,6 +167,14 @@ func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.P
 	}
 
 	return permissionSets, nil
+}
+
+func (ds *dataStoreImpl) CountPermissionSets(ctx context.Context) (int, error) {
+	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+		return 0, err
+	}
+
+	return ds.permissionSetStorage.Count(ctx)
 }
 
 func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
@@ -285,6 +301,14 @@ func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.Sim
 	}
 
 	return scopes, nil
+}
+
+func (ds *dataStoreImpl) CountAccessScopes(ctx context.Context) (int, error) {
+	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+		return 0, err
+	}
+
+	return ds.accessScopeStorage.Count(ctx)
 }
 
 func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {

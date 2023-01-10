@@ -68,6 +68,7 @@ type DackboxTestDataStore interface {
 	GetIndexQ() queue.WaitableQueue
 	// Internal accessor for test case generation
 	GetStoredClusterIDs() []string
+	GetStoredNodeIDs() []string
 	// Data injection
 	PushClusterToVulnerabilitiesGraph(waitForIndexing bool) error
 	PushImageToVulnerabilitiesGraph(waitForIndexing bool) error
@@ -163,6 +164,10 @@ func (s *dackboxTestDataStoreImpl) GetIndexQ() queue.WaitableQueue {
 
 func (s *dackboxTestDataStoreImpl) GetStoredClusterIDs() []string {
 	return s.storedClusters
+}
+
+func (s *dackboxTestDataStoreImpl) GetStoredNodeIDs() []string {
+	return s.storedNodes
 }
 
 // PushClusterToVulnerabilitiesGraph inserts the cluster -> CVE graph defined

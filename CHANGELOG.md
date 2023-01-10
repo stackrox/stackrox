@@ -10,10 +10,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 ### Removed Features
+- ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`. 
 
 ### Deprecated Features
 
 ### Technical Changes
+- ROX-12967: Re-introduce `rpm` to the main image in order to be able parse installed packages on RHCOS nodes (from Compliance container)
 
 ## [3.73.1]
 

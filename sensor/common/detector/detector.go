@@ -138,10 +138,10 @@ type outputResult struct {
 // of the messages. e.g. an alert update is not sent once the alert removal msg has been sent and alerts generated
 // from an older version of a deployment
 func (d *detectorImpl) serializeDeployTimeOutput() {
-	defer d.serializerStopper.Stopped()
+	defer d.serializerStopper.Flow().ReportStopped()
 	for {
 		select {
-		case <-d.serializerStopper.StopDone():
+		case <-d.serializerStopper.Flow().StopRequested():
 			return
 		case result := <-d.deploymentAlertOutputChan:
 			alertResults := result.results
@@ -184,7 +184,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 				}
 			}
 			select {
-			case <-d.serializerStopper.StopDone():
+			case <-d.serializerStopper.Flow().StopRequested():
 				return
 			case d.output <- createAlertResultsMsg(result.action, alertResults):
 			}
@@ -193,18 +193,18 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 }
 
 func (d *detectorImpl) Stop(err error) {
-	d.detectorStopper.Stop()
-	d.auditStopper.Stop()
-	d.serializerStopper.Stop()
+	d.detectorStopper.Client().Stop()
+	d.auditStopper.Client().Stop()
+	d.serializerStopper.Client().Stop()
 
 	// We don't need to wait for these to be stopped as they are simple select statements
 	// and not used within event loops
 	d.alertStopSig.Signal()
 	d.enricher.stop()
 
-	d.detectorStopper.WaitForStopped()
-	d.auditStopper.WaitForStopped()
-	d.serializerStopper.WaitForStopped()
+	_ = d.detectorStopper.Client().Stopped().Wait()
+	_ = d.auditStopper.Client().Stopped().Wait()
+	_ = d.serializerStopper.Client().Stopped().Wait()
 }
 
 func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
@@ -303,11 +303,11 @@ func (d *detectorImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 func (d *detectorImpl) runDetector() {
-	defer d.detectorStopper.Stopped()
+	defer d.detectorStopper.Flow().ReportStopped()
 
 	for {
 		select {
-		case <-d.detectorStopper.StopDone():
+		case <-d.detectorStopper.Flow().StopRequested():
 			return
 		case scanOutput := <-d.enricher.outputChan():
 			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
@@ -321,9 +321,9 @@ func (d *detectorImpl) runDetector() {
 			})
 
 			select {
-			case <-d.detectorStopper.StopDone():
+			case <-d.detectorStopper.Flow().StopRequested():
 				return
-			case <-d.serializerStopper.StopDone():
+			case <-d.serializerStopper.Flow().StopRequested():
 				return
 			case d.deploymentAlertOutputChan <- outputResult{
 				results: &central.AlertResults{
@@ -339,10 +339,10 @@ func (d *detectorImpl) runDetector() {
 }
 
 func (d *detectorImpl) runAuditLogEventDetector() {
-	defer d.auditStopper.Stopped()
+	defer d.auditStopper.Flow().ReportStopped()
 	for {
 		select {
-		case <-d.auditStopper.StopDone():
+		case <-d.auditStopper.Flow().StopRequested():
 			return
 		case auditEvents := <-d.auditEventsChan:
 			alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
@@ -362,9 +362,9 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})
 			select {
-			case <-d.auditStopper.StopDone():
+			case <-d.auditStopper.Flow().StopRequested():
 				return
-			case <-d.serializerStopper.StopDone():
+			case <-d.serializerStopper.Flow().StopRequested():
 				return
 			case d.output <- &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_Event{

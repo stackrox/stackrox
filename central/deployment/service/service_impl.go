@@ -17,6 +17,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -216,27 +218,42 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 		return nil, nil
 	}
 	labelFieldPath := labelField.GetFieldPath()
-	keyFieldPath := blevesearch.ToMapKeyPath(labelFieldPath)
-	valueFieldPath := blevesearch.ToMapValuePath(labelFieldPath)
-
 	tempSet := make(map[string]set.StringSet)
 	globalValueSet := set.NewStringSet()
 
-	for _, r := range results {
-		keyMatches, valueMatches := r.Matches[keyFieldPath], r.Matches[valueFieldPath]
-		if len(keyMatches) != len(valueMatches) {
-			utils.Should(errors.Errorf("mismatch between key and value matches: %d != %d", len(keyMatches), len(valueMatches)))
-			continue
+	setUpdater := func(key, value string) {
+		valSet, ok := tempSet[key]
+		if !ok {
+			valSet = set.NewStringSet()
+			tempSet[key] = valSet
 		}
-		for i, keyMatch := range keyMatches {
-			valueMatch := valueMatches[i]
-			valSet, ok := tempSet[keyMatch]
-			if !ok {
-				valSet = set.NewStringSet()
-				tempSet[keyMatch] = valSet
+		valSet.Add(value)
+		globalValueSet.Add(value)
+	}
+
+	for _, r := range results {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			// In postgres, map key and values are returned as one `k=v`.
+			for _, match := range r.Matches[labelFieldPath] {
+				key, value, hasEquals := pgsearch.ParseMapQuery(match)
+				if !hasEquals {
+					utils.Should(errors.Errorf("cannot handle label %s", match))
+					continue
+				}
+				setUpdater(key, value)
 			}
-			valSet.Add(valueMatch)
-			globalValueSet.Add(valueMatch)
+		} else {
+			keyFieldPath := blevesearch.ToMapKeyPath(labelFieldPath)
+			valueFieldPath := blevesearch.ToMapValuePath(labelFieldPath)
+			keyMatches, valueMatches := r.Matches[keyFieldPath], r.Matches[valueFieldPath]
+			if len(keyMatches) != len(valueMatches) {
+				utils.Should(errors.Errorf("mismatch between key and value matches: %d != %d", len(keyMatches), len(valueMatches)))
+				continue
+			}
+			for i, key := range keyMatches {
+				value := valueMatches[i]
+				setUpdater(key, value)
+			}
 		}
 	}
 

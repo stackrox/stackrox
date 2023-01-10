@@ -69,9 +69,9 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 }
 
 func (r *Dispatcher) toRoxBinding(binding *v1.RoleBinding) *storage.K8SRoleBinding {
-	namespacedBinding := roleBindingToNamespacedBinding(binding)
+	namespacedBinding, isClusterRole := roleBindingToNamespacedBinding(binding)
 	roleID := r.store.GetNamespacedRoleIDOrEmpty(namespacedBinding.roleRef)
-	roxRoleBinding := toRoxRoleBinding(binding, roleID)
+	roxRoleBinding := toRoxRoleBinding(binding, roleID, isClusterRole)
 	return roxRoleBinding
 }
 

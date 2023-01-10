@@ -18,8 +18,7 @@ func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory) NodeInventoryHand
 	return &nodeInventoryHandlerImpl{
 		inventories: ch,
 		toCentral:   nil,
-		stopC:       concurrency.NewErrorSignal(),
 		lock:        &sync.Mutex{},
-		stoppedC:    concurrency.NewErrorSignal(),
+		stopper:     concurrency.NewStopper(),
 	}
 }

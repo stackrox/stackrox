@@ -148,11 +148,9 @@ func (mr *MockDataStoreMockRecorder) SearchRawProcessIndicators(ctx, q interface
 }
 
 // Stop mocks base method.
-func (m *MockDataStore) Stop() bool {
+func (m *MockDataStore) Stop() {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stop")
-	ret0, _ := ret[0].(bool)
-	return ret0
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.

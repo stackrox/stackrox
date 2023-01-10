@@ -47,6 +47,8 @@ function NetworkBreadcrumbs({
                     <NamespaceSelector
                         namespaces={namespaces}
                         selectedNamespaces={selectedNamespaces}
+                        selectedDeployments={selectedDeployments}
+                        deploymentsByNamespace={deploymentsByNamespace}
                         searchFilter={searchFilter}
                         setSearchFilter={setSearchFilter}
                     />

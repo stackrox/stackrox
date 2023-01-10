@@ -34,6 +34,8 @@ INPUT_ROOT="$1"
 DATA_IMAGE="$2"
 BUILDER_IMAGE="$3"
 OUTPUT_DIR="$4"
+# Install the PG repo natively if true (versus using a container)
+NATIVE_PG_INSTALL="${5:-false}"
 
 [[ -n "$INPUT_ROOT" && -n "$DATA_IMAGE" && -n "$BUILDER_IMAGE" && -n "$OUTPUT_DIR" ]] \
     || die "Usage: $0 <input-root-directory> <enc-data-image> <builder-image> <output-directory>"
@@ -126,8 +128,26 @@ curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_
 # Get postgres RPMs directly
 postgres_major="13"
 pg_rhel_major="8"
+pg_rhel_minor="6"
+pg_rhel_version="${pg_rhel_major}.${pg_rhel_minor}"
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
-postgres_minor="13.8-1PGDG.rhel8.${arch}"
+postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
+
+# Determine the Postgres minor version
+if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
+    dnf install --disablerepo='*' -y "${postgres_repo_url}"
+    postgres_minor="$(dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y "postgresql${postgres_major}-devel.${arch}" | tail -n 1 | awk '{print $2}').${arch}"
+    echo "PG minor version: ${postgres_minor}"
+else
+    build_dir="$(mktemp -d)"
+    docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
+FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
+RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
+ENTRYPOINT dnf list ${dnf_list_args[@]+"${dnf_list_args[@]}"} --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
+EOF
+    postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
+    rm -rf "${build_dir}"
+fi
 
 curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"

@@ -19,7 +19,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -73,7 +73,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_POLICIES:           s.policies.SearchPolicies,
 		v1.SearchCategory_SECRETS:            s.secrets.SearchSecrets,
 		v1.SearchCategory_NAMESPACES:         s.namespaces.SearchResults,
-		v1.SearchCategory_NODES:              s.nodes.SearchResults,
+		v1.SearchCategory_NODES:              s.nodes.SearchNodes,
 		v1.SearchCategory_CLUSTERS:           s.clusters.SearchResults,
 		v1.SearchCategory_SERVICE_ACCOUNTS:   s.serviceaccounts.SearchServiceAccounts,
 		v1.SearchCategory_ROLES:              s.roles.SearchRoles,
@@ -133,7 +133,7 @@ type serviceImpl struct {
 	policies          policyDataStore.DataStore
 	secrets           secretDataStore.DataStore
 	serviceaccounts   serviceAccountDataStore.DataStore
-	nodes             nodeDataStore.GlobalDataStore
+	nodes             nodeDataStore.DataStore
 	namespaces        namespaceDataStore.DataStore
 	risks             riskDataStore.DataStore
 	roles             roleDataStore.DataStore
@@ -250,6 +250,9 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		}
 		for _, r := range results {
 			matches := trimMatches(r.Matches, fieldPaths)
+			// In postgres, we do not need to combine map key and values matches as `k=v` because it is already done by postgres searcher.
+			// With postgres, the following condition will not pass anyway.
+			//
 			// This implies that the object is a map because it has multiple values
 			if isMapMatch(matches) {
 				autocompleteResults = append(autocompleteResults, handleMapResults(matches, r.Score)...)
