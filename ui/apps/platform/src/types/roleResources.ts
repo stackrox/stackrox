@@ -40,7 +40,6 @@ export type ResourceName =
     // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs,
     // NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
     | 'AllComments'
-    | 'ClusterCVE'
     | 'ComplianceRuns'
     | 'Config'
     | 'DebugLogs'

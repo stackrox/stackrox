@@ -8,6 +8,7 @@ import (
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
@@ -114,12 +115,11 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
 		AddExactMatches(search.SubjectName, "subject").
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		AddBools(search.ClusterRole, false).ProtoQuery()
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).ProtoQuery()
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := sac.WithAllAccess(context.Background())
 
 			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, namespaceScopeQuery).Return(c.inputBindings, nil).AnyTimes()
 			mockRoleDatastore.EXPECT().GetRole(ctx, "role1").Return(c.inputRoles[0], true, nil).AnyTimes()

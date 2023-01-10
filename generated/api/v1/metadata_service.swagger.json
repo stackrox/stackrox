@@ -125,9 +125,6 @@
         "releaseBuild": {
           "type": "boolean"
         },
-        "dbAvailable": {
-          "type": "boolean"
-        },
         "licenseStatus": {
           "$ref": "#/definitions/MetadataLicenseStatus",
           "title": "Do not use this field. It will always contain \"VALID\""

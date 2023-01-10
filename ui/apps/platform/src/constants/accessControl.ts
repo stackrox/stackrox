@@ -92,6 +92,7 @@ export const defaultSelectedRole = {
 // TODO: ROX-12750 update with new list of replaced/deprecated resources
 export const resourceSubstitutions: Record<string, string[]> = {
     Access: ['AuthProvider', 'Group', 'Licenses', 'User'],
+    Cluster: ['ClusterCVE'],
     DeploymentExtension: ['Indicator', 'NetworkBaseline', 'ProcessWhitelist', 'Risk'],
     Integration: [
         'APIToken',
@@ -115,7 +116,6 @@ export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([
     ['ScannerDefinitions', '3.75'],
     ['SensorUpgradeConfig', '3.75'],
     ['ServiceIdentity', '3.75'],
-    ['ClusterCVE', '3.74'],
 ]);
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
@@ -132,7 +132,6 @@ export const replacedResourceMapping = new Map<ResourceName, string>([
     ['ScannerDefinitions', 'Administration'],
     ['SensorUpgradeConfig', 'Administration'],
     ['ServiceIdentity', 'Administration'],
-    ['ClusterCVE', 'Cluster'],
 ]);
 
 export const deprecatedResourceRowStyle = { backgroundColor: 'rgb(255,250,205)' };

@@ -1191,7 +1191,7 @@ store_test_results() {
     if ! is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.2/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.3/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira -junit-reports-dir "$from" -threshold 5
     } || true
@@ -1479,6 +1479,21 @@ is_system_test_without_images() {
             false
             ;;
     esac
+}
+
+handle_gha_tagged_build() {
+    if [[ -z "${GITHUB_REF:-}" ]]; then
+        echo "No GITHUB_REF in env"
+        exit 0
+    fi
+    echo "GITHUB_REF: ${GITHUB_REF}"
+    if [[ "${GITHUB_REF:-}" =~ ^refs/tags/ ]]; then
+        tag="${GITHUB_REF#refs/tags/*}"
+        echo "This is a tagged build: $tag"
+        echo "CIRCLE_TAG=$tag" >> "$GITHUB_ENV"
+    else
+        echo "This is not a tagged build"
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

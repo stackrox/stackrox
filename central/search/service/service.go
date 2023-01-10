@@ -10,7 +10,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	categoryDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -45,7 +45,7 @@ type Builder interface {
 	WithPolicyStore(store policyDataStore.DataStore) Builder
 	WithSecretStore(store secretDataStore.DataStore) Builder
 	WithServiceAccountStore(store serviceAccountDataStore.DataStore) Builder
-	WithNodeStore(store nodeDataStore.GlobalDataStore) Builder
+	WithNodeStore(store nodeDataStore.DataStore) Builder
 	WithNamespaceStore(store namespaceDataStore.DataStore) Builder
 	WithRiskStore(store riskDataStore.DataStore) Builder
 	WithRoleStore(store roleDataStore.DataStore) Builder
@@ -65,7 +65,7 @@ type serviceBuilder struct {
 	policies          policyDataStore.DataStore
 	secrets           secretDataStore.DataStore
 	serviceAccounts   serviceAccountDataStore.DataStore
-	nodes             nodeDataStore.GlobalDataStore
+	nodes             nodeDataStore.DataStore
 	namespaces        namespaceDataStore.DataStore
 	risks             riskDataStore.DataStore
 	roles             roleDataStore.DataStore
@@ -111,7 +111,7 @@ func (b *serviceBuilder) WithServiceAccountStore(store serviceAccountDataStore.D
 	return b
 }
 
-func (b *serviceBuilder) WithNodeStore(store nodeDataStore.GlobalDataStore) Builder {
+func (b *serviceBuilder) WithNodeStore(store nodeDataStore.DataStore) Builder {
 	b.nodes = store
 	return b
 }

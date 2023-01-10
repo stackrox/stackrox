@@ -39,7 +39,7 @@ type datastoreImpl struct {
 	prunerFactory         pruner.Factory
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
 
-	stopSig, stoppedSig concurrency.Signal
+	stopper concurrency.Stopper
 }
 
 func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error) {
@@ -170,7 +170,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
-	defer ds.stoppedSig.Signal()
+	defer ds.stopper.Flow().ReportStopped()
 
 	if ds.prunerFactory == nil {
 		return
@@ -178,11 +178,11 @@ func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
 
 	t := time.NewTicker(ds.prunerFactory.Period())
 	defer t.Stop()
-	for !ds.stopSig.IsDone() {
+	for {
 		select {
 		case <-t.C:
 			ds.prune(ctx)
-		case <-ds.stopSig.Done():
+		case <-ds.stopper.Flow().StopRequested():
 			return
 		}
 	}
@@ -248,12 +248,12 @@ func (ds *datastoreImpl) prune(ctx context.Context) {
 	}
 }
 
-func (ds *datastoreImpl) Stop() bool {
-	return ds.stopSig.Signal()
+func (ds *datastoreImpl) Stop() {
+	ds.stopper.Client().Stop()
 }
 
 func (ds *datastoreImpl) Wait(cancelWhen concurrency.Waitable) bool {
-	return concurrency.WaitInContext(&ds.stoppedSig, cancelWhen)
+	return concurrency.WaitInContext(ds.stopper.Client().Stopped(), cancelWhen)
 }
 
 func (ds *datastoreImpl) fullReindex(ctx context.Context) error {

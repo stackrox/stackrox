@@ -1,6 +1,7 @@
 package centralclient
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -13,8 +14,8 @@ var (
 	trackedPaths set.FrozenSet[string]
 	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/"}
 
-	uninitializedClusters = set.NewSet[string]()
-	mux                   = &sync.Mutex{}
+	uninitializedClusters     = set.NewSet[string]()
+	uninitializedClustersLock = &sync.Mutex{}
 
 	interceptors = map[string][]phonehome.Interceptor{
 		"API Call":            {apiCall},
@@ -24,10 +25,9 @@ var (
 	}
 )
 
-// Adds Path, Code, User-Agent and Method properties to API Call events for the
-// API paths specified in the ROX_TELEMETRY_API_WHITELIST central deployment
-// environment variable ("*" value enables all paths) and have no prefix from
-// the ignoredPaths list.
+// apiCall enables API Call events for the API paths specified in the
+// trackedPaths set ("*" value enables all paths) and have no prefix from the
+// ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
 	for _, ip := range ignoredPaths {
 		if strings.HasPrefix(rp.Path, ip) {
@@ -38,24 +38,32 @@ func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
 		props["Path"] = rp.Path
 		props["Code"] = rp.Code
 		props["User-Agent"] = rp.UserAgent
-		props["Method"] = rp.GetMethod()
+		props["Method"] = rp.Method
 		return true
 	}
 	return false
 }
 
-// Adds specific properties to the Cluster Registered event.
+var postCluster = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.ClustersService/PostCluster",
+	HTTPMethod: http.MethodPost,
+	HTTPPath:   "/v1/cluster",
+}
+
+// clusterRegistered enables the Cluster Registered event and adds specific
+// properties.
 func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
-	if rp.Path != "/v1.ClustersService/PostCluster" {
+	if !rp.Is(postCluster) {
 		return false
 	}
+
 	props["Code"] = rp.Code
 	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
 		props["Cluster Type"] = req.GetType().String()
 		props["Cluster ID"] = req.GetId()
 		props["Managed By"] = req.GetManagedBy().String()
-		mux.Lock()
-		defer mux.Unlock()
+		uninitializedClustersLock.Lock()
+		defer uninitializedClustersLock.Unlock()
 		if req.GetHealthStatus().GetSensorHealthStatus() == storage.ClusterHealthStatus_UNINITIALIZED {
 			uninitializedClusters.Add(req.GetId())
 		}
@@ -63,16 +71,22 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 	return true
 }
 
-// Adds specific properties to the Cluster Initialized event.
-// The event is triggered when a previously posted cluster changes state from
-// UNINITIALIZED to something else.
+var putCluster = &phonehome.ServiceMethod{
+	GRPCMethod: "/v1.ClustersService/PutCluster",
+	HTTPMethod: http.MethodPut,
+	HTTPPath:   "/v1/cluster",
+}
+
+// clusterInitialized enables the Cluster Initialized event and adds specific
+// properties.
 func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool {
-	if rp.Path != "/v1.ClustersService/PutCluster" {
+	if !rp.Is(putCluster) {
 		return false
 	}
+
 	if req, ok := rp.GRPCReq.(*storage.Cluster); ok {
-		mux.Lock()
-		defer mux.Unlock()
+		uninitializedClustersLock.Lock()
+		defer uninitializedClustersLock.Unlock()
 
 		newStatus := req.GetHealthStatus().GetSensorHealthStatus()
 		if newStatus == storage.ClusterHealthStatus_UNINITIALIZED {
@@ -94,7 +108,7 @@ func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool 
 	return false
 }
 
-// Adds properties to the roxctl event.
+// roxctl enables the roxctl event and adds specific properties.
 func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
 	if !strings.Contains(rp.UserAgent, "roxctl") {
 		return false
@@ -102,6 +116,6 @@ func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["Path"] = rp.Path
 	props["Code"] = rp.Code
 	props["User-Agent"] = rp.UserAgent
-	props["Method"] = rp.GetMethod()
+	props["Method"] = rp.Method
 	return true
 }

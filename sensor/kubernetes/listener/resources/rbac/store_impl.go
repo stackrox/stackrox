@@ -82,7 +82,7 @@ func (rs *storeImpl) UpsertBinding(binding *v1.RoleBinding) {
 	defer rs.lock.Unlock()
 
 	bindingID := roleBindingToNamespacedBindingID(binding)
-	namespacedBinding := roleBindingToNamespacedBinding(binding)
+	namespacedBinding, _ := roleBindingToNamespacedBinding(binding)
 	rs.upsertRoleBindingGenericNoLock(bindingID, namespacedBinding)
 }
 

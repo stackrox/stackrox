@@ -15,7 +15,7 @@ import (
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/postgres"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -63,7 +63,7 @@ type GarbageCollector interface {
 }
 
 func newGarbageCollector(alerts alertDatastore.DataStore,
-	nodes nodeGlobalDatastore.GlobalDataStore,
+	nodes nodeDatastore.DataStore,
 	images imageDatastore.DataStore,
 	clusters clusterDatastore.DataStore,
 	deployments deploymentDatastore.DataStore,
@@ -97,15 +97,14 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		k8sRoles:        k8sRoles,
 		k8sRoleBindings: k8sRoleBindings,
 		logimbueStore:   logimbueStore,
-		stopSig:         concurrency.NewSignal(),
-		stoppedSig:      concurrency.NewSignal(),
+		stopper:         concurrency.NewStopper(),
 	}
 }
 
 type garbageCollectorImpl struct {
 	alerts          alertDatastore.DataStore
 	clusters        clusterDatastore.DataStore
-	nodes           nodeGlobalDatastore.GlobalDataStore
+	nodes           nodeDatastore.DataStore
 	images          imageDatastore.DataStore
 	imageComponents imageComponentDatastore.DataStore
 	deployments     deploymentDatastore.DataStore
@@ -120,8 +119,7 @@ type garbageCollectorImpl struct {
 	k8sRoles        k8sRoleDataStore.DataStore
 	k8sRoleBindings roleBindingDataStore.DataStore
 	logimbueStore   logimbueDataStore.Store
-	stopSig         concurrency.Signal
-	stoppedSig      concurrency.Signal
+	stopper         concurrency.Stopper
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -159,6 +157,8 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 }
 
 func (g *garbageCollectorImpl) runGC() {
+	defer g.stopper.Flow().ReportStopped()
+
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
 	g.pruneBasedOnConfig()
@@ -168,8 +168,7 @@ func (g *garbageCollectorImpl) runGC() {
 		select {
 		case <-t.C:
 			g.pruneBasedOnConfig()
-		case <-g.stopSig.Done():
-			g.stoppedSig.Signal()
+		case <-g.stopper.Flow().StopRequested():
 			return
 		}
 	}
@@ -876,6 +875,6 @@ func (g *garbageCollectorImpl) pruneLogImbues() {
 }
 
 func (g *garbageCollectorImpl) Stop() {
-	g.stopSig.Signal()
-	<-g.stoppedSig.Done()
+	g.stopper.Client().Stop()
+	_ = g.stopper.Client().Stopped().Wait()
 }

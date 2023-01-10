@@ -51,7 +51,8 @@ type Config struct {
 
 	// Map of event name to the list of interceptors, that gather properties for
 	// the event.
-	interceptors map[string][]Interceptor
+	interceptors     map[string][]Interceptor
+	interceptorsLock sync.RWMutex
 }
 
 // Enabled tells whether telemetry data collection is enabled.
@@ -101,8 +102,8 @@ func (cfg *Config) Telemeter() Telemeter {
 // AddInterceptorFunc appends the custom list of telemetry interceptors with the
 // provided function.
 func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
-	mux.Lock()
-	defer mux.Unlock()
+	cfg.interceptorsLock.Lock()
+	defer cfg.interceptorsLock.Unlock()
 	if cfg.interceptors == nil {
 		cfg.interceptors = make(map[string][]Interceptor, 1)
 	}

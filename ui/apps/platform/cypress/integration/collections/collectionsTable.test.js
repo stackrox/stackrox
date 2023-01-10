@@ -46,7 +46,6 @@ describe('Collections table', () => {
 
         cy.get('th:contains("Collection")');
         cy.get('th:contains("Description")');
-        cy.get('th:contains("In use")');
     });
 
     it('should have button to create collection if role has READ_WRITE_ACCESS', () => {

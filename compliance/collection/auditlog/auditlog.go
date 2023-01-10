@@ -18,15 +18,15 @@ type Reader interface {
 	// StartReader will start the audit log reader process which will continuously read and send events until stopped.
 	// Returns true if the reader can be started (log exists and can be read). Log file missing is not considered an error.
 	StartReader(ctx context.Context) (bool, error)
-	// StopReader will stop the reader if it's started. Will return false if it was already stopped.
-	StopReader() bool
+	// StopReader will stop the reader if it's started.
+	StopReader()
 }
 
 // NewReader returns a new instance of Reader
 func NewReader(client sensor.ComplianceService_CommunicateClient, nodeName string, clusterID string, startState *storage.AuditLogFileState) Reader {
 	return &auditLogReaderImpl{
 		logPath:    defaultLogPath,
-		stopC:      concurrency.NewSignal(),
+		stopper:    concurrency.NewStopper(),
 		sender:     newAuditLogSender(client, nodeName, clusterID),
 		startState: startState,
 	}

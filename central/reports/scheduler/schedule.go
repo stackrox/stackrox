@@ -136,8 +136,7 @@ type scheduler struct {
 
 	reportsToRun chan *ReportRequest
 
-	stoppedSig concurrency.Signal
-	stopped    concurrency.Signal
+	stopper concurrency.Stopper
 
 	Schema *graphql.Schema
 }
@@ -178,8 +177,7 @@ func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.D
 		reportsToRun:           make(chan *ReportRequest, 100),
 		Schema:                 ourSchema,
 
-		stoppedSig: concurrency.NewSignal(),
-		stopped:    concurrency.NewSignal(),
+		stopper: concurrency.NewStopper(),
 	}
 	return s
 }
@@ -230,10 +228,10 @@ func (s *scheduler) SubmitReport(reportRequest *ReportRequest) {
 }
 
 func (s *scheduler) runReports() {
-	defer s.stopped.Signal()
-	for !s.stoppedSig.IsDone() {
+	defer s.stopper.Flow().ReportStopped()
+	for {
 		select {
-		case <-s.stoppedSig.Done():
+		case <-s.stopper.Flow().StopRequested():
 			return
 		case req := <-s.reportsToRun:
 			log.Infof("Executing report '%s' at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
@@ -416,6 +414,6 @@ func (s *scheduler) Start() {
 }
 
 func (s *scheduler) Stop() {
-	s.stoppedSig.Signal()
-	s.stopped.Wait()
+	s.stopper.Client().Stop()
+	_ = s.stopper.Client().Stopped().Wait()
 }

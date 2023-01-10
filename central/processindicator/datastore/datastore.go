@@ -36,7 +36,7 @@ type DataStore interface {
 	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
 
 	// Stop signals all goroutines associated with this object to terminate.
-	Stop() bool
+	Stop()
 	// Wait waits until all goroutines associated with this object have terminated, or cancelWhen gets triggered.
 	// A return value of false indicates that cancelWhen was triggered.
 	Wait(cancelWhen concurrency.Waitable) bool
@@ -50,8 +50,7 @@ func New(store store.Store, indexer index.Indexer, searcher search.Searcher, pru
 		searcher:              searcher,
 		prunerFactory:         prunerFactory,
 		prunedArgsLengthCache: make(map[processindicator.ProcessWithContainerInfo]int),
-		stopSig:               concurrency.NewSignal(),
-		stoppedSig:            concurrency.NewSignal(),
+		stopper:               concurrency.NewStopper(),
 	}
 	ctx := sac.WithAllAccess(context.Background())
 	if err := d.buildIndex(ctx); err != nil {

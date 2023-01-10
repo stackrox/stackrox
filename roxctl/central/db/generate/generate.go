@@ -46,8 +46,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cmd := &generateCommand{config: &cfg, env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:    "generate",
-		Hidden: true,
+		Use: "generate",
 	}
 
 	if !buildinfo.ReleaseBuild {

@@ -11,17 +11,23 @@ import {
 import { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
+import NetworkSimulatorActions from './NetworkSimulatorActions';
 
 type ViewActiveYamlsProps = {
     networkPolicies: NetworkPolicy[];
     generateNetworkPolicies: () => void;
     undoNetworkPolicies: () => void;
+    onFileInputChange: (
+        _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
+        file: File
+    ) => void;
 };
 
 function ViewActiveYamls({
     networkPolicies,
     generateNetworkPolicies,
     undoNetworkPolicies,
+    onFileInputChange,
 }: ViewActiveYamlsProps) {
     const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
         NetworkPolicy | undefined
@@ -79,10 +85,15 @@ function ViewActiveYamls({
                 </StackItem>
                 {selectedNetworkPolicy && (
                     <StackItem>
-                        <NetworkPoliciesYAML
-                            yaml={selectedNetworkPolicy.yaml}
+                        <NetworkPoliciesYAML yaml={selectedNetworkPolicy.yaml} />
+                    </StackItem>
+                )}
+                {selectedNetworkPolicy && (
+                    <StackItem>
+                        <NetworkSimulatorActions
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
+                            onFileInputChange={onFileInputChange}
                         />
                     </StackItem>
                 )}

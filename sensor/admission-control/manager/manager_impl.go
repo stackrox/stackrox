@@ -70,8 +70,7 @@ func (s *state) activeForOperation(op admission.Operation) bool {
 }
 
 type manager struct {
-	stopSig    concurrency.Signal
-	stoppedSig concurrency.ErrorSignal
+	stopper concurrency.Stopper
 
 	client     sensor.ImageServiceClient
 	imageCache sizeboundedcache.Cache[string, imageCacheEntry]
@@ -113,7 +112,7 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 	return &manager{
 		settingsStream: concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		settingsC:      make(chan *sensor.AdmissionControlSettings),
-		stoppedSig:     concurrency.NewErrorSignal(),
+		stopper:        concurrency.NewStopper(),
 		syncC:          make(chan *concurrency.Signal),
 
 		client:     imageServiceClient,
@@ -150,8 +149,8 @@ func (m *manager) Sync(ctx context.Context) error {
 	case m.syncC <- &syncSig:
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-m.stoppedSig.Done():
-		return m.stoppedSig.ErrorWithDefault(pkgErr.New("manager was stopped"))
+	case <-m.stopper.Client().Stopped().Done():
+		return m.stopper.Client().Stopped().ErrorWithDefault(pkgErr.New("manager was stopped"))
 	}
 
 	select {
@@ -159,26 +158,21 @@ func (m *manager) Sync(ctx context.Context) error {
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-m.stoppedSig.Done():
-		return m.stoppedSig.ErrorWithDefault(pkgErr.New("manager was stopped"))
+	case <-m.stopper.Client().Stopped().Done():
+		return m.stopper.Client().Stopped().ErrorWithDefault(pkgErr.New("manager was stopped"))
 	}
 }
 
-func (m *manager) Start() error {
-	if !m.stopSig.Reset() {
-		return pkgErr.New("admission control manager has already been started")
-	}
-
+func (m *manager) Start() {
 	go m.run()
-	return nil
 }
 
 func (m *manager) Stop() {
-	m.stopSig.Signal()
+	m.stopper.Client().Stop()
 }
 
 func (m *manager) Stopped() concurrency.ErrorWaitable {
-	return &m.stoppedSig
+	return m.stopper.Client().Stopped()
 }
 
 func (m *manager) SettingsUpdateC() chan<- *sensor.AdmissionControlSettings {
@@ -194,12 +188,12 @@ func (m *manager) InitialResourceSyncSig() *concurrency.Signal {
 }
 
 func (m *manager) run() {
-	defer m.stoppedSig.Signal()
+	defer m.stopper.Flow().ReportStopped()
 	defer log.Info("Stopping watcher")
 
-	for !m.stopSig.IsDone() {
+	for {
 		select {
-		case <-m.stopSig.Done():
+		case <-m.stopper.Flow().StopRequested():
 			m.ProcessNewSettings(nil)
 			return
 		case newSettings := <-m.settingsC:
@@ -211,7 +205,7 @@ func (m *manager) run() {
 			// channels. The duplication of select branches is a bit ugly, but inevitable
 			// without reflection.
 			select {
-			case <-m.stopSig.Done():
+			case <-m.stopper.Flow().StopRequested():
 				m.ProcessNewSettings(nil)
 				return
 			case newSettings := <-m.settingsC:
@@ -417,7 +411,7 @@ func (m *manager) filterAndPutAttemptedAlertsOnChan(op admission.Operation, aler
 
 func (m *manager) putAlertsOnChan(alerts []*storage.Alert) {
 	select {
-	case <-m.stopSig.Done():
+	case <-m.stopper.Flow().StopRequested():
 		return
 	case m.alertsC <- alerts:
 	}

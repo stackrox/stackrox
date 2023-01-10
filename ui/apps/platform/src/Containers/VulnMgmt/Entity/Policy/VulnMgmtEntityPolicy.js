@@ -7,18 +7,13 @@ import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
-import {
-    DEPLOYMENT_LIST_FRAGMENT,
-    DEPLOYMENT_LIST_FRAGMENT_UPDATED,
-} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
 import VulnMgmtPolicyOverview from './VulnMgmtPolicyOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
 import { getScopeQuery, vulMgmtPolicyQuery } from '../VulnMgmtPolicyQueryUtil';
 
-const VulmMgmtEntityPolicy = ({
+const VulnMgmtEntityPolicy = ({
     entityId,
     entityListType,
     search,
@@ -30,15 +25,8 @@ const VulmMgmtEntityPolicy = ({
     const queryVarParam = entityContext[entityTypes.POLICY] ? '' : '(query: $scopeQuery)';
     const workflowState = useContext(workflowStateContext);
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    const fragmentToUse = showVMUpdates
-        ? DEPLOYMENT_LIST_FRAGMENT_UPDATED
-        : DEPLOYMENT_LIST_FRAGMENT;
-
     const overviewQuery = gql`
-        query getPolicy($id: ID!, $policyQuery: String, $scopeQuery: String) {
+        query getPolicy($id: ID!, $scopeQuery: String) {
             result: policy(id: $id) {
                 id
                 name
@@ -82,13 +70,9 @@ const VulmMgmtEntityPolicy = ({
                     }
                 }
                 deploymentCount${queryVarParam}
-                deployments${queryVarParam} {
-                    ...deploymentFields
-                }
                 unusedVarSink(query: $scopeQuery)
             }
         }
-        ${fragmentToUse}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
@@ -143,10 +127,10 @@ const VulmMgmtEntityPolicy = ({
     );
 };
 
-VulmMgmtEntityPolicy.propTypes = {
+VulnMgmtEntityPolicy.propTypes = {
     ...workflowEntityPropTypes,
     setRefreshTrigger: PropTypes.func,
 };
-VulmMgmtEntityPolicy.defaultProps = workflowEntityDefaultProps;
+VulnMgmtEntityPolicy.defaultProps = workflowEntityDefaultProps;
 
-export default VulmMgmtEntityPolicy;
+export default VulnMgmtEntityPolicy;
