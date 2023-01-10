@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/store/mocks"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/rbac/v1"
@@ -18,14 +21,13 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestStore(t *testing.T) {
+func TestStore_DispatcherEvents(t *testing.T) {
 	// Run these tests only with feature flag enabled. Changes to the old path should be avoided whenever possible.
 	// TODO(ROX-14284): Re-enable this tests setting the custom env rather than the feature flag
 	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	if !features.ResyncDisabled.Enabled() {
 		t.Skipf("Tests will fail if the new resyncless pass is disabled. E.g. in release tests")
 	}
-
 	// Namespace: n1
 	// Role: r1
 	// Bindings:
@@ -425,7 +427,128 @@ func TestStore(t *testing.T) {
 		actual := dispatcher.ProcessEvent(event.k8sEvent, nil, event.action)
 		assert.ElementsMatch(t, event.unorderedMessages, actual.ForwardMessages)
 	}
+}
 
+func TestStore_DeploymentRelationship(t *testing.T) {
+	t.Setenv("ROX_RESYNC_DISABLED", "true")
+	roles := []*v1.Role{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       types.UID("r1"),
+				Name:      "r1",
+				Namespace: "n1",
+			},
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"get"},
+			}},
+		},
+	}
+	clusterRoles := []*v1.ClusterRole{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:  types.UID("r2"),
+				Name: "r2",
+			},
+		},
+	}
+	bindings := []*v1.RoleBinding{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       types.UID("b1"),
+				Name:      "b1",
+				Namespace: "n1",
+			},
+			RoleRef: v1.RoleRef{
+				Name:     "r1",
+				Kind:     "Role",
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+			Subjects: []v1.Subject{{
+				Kind:      "ServiceAccount",
+				Name:      "sa1",
+				Namespace: "n1",
+			}},
+		},
+	}
+	clusterBindings := []*v1.ClusterRoleBinding{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:  types.UID("b3"),
+				Name: "b3",
+			},
+			RoleRef: v1.RoleRef{
+				Name:     "r2",
+				Kind:     "ClusterRole",
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+			Subjects: []v1.Subject{{
+				Kind:      "ServiceAccount",
+				Name:      "sa2",
+				Namespace: "n1",
+			}},
+		},
+	}
+
+	testCases := map[string]struct {
+		orderedUpdates         []any
+		serviceAccountsUpdates []string
+	}{
+		"Update service account based on single binding": {
+			orderedUpdates:         []any{bindings[0]},
+			serviceAccountsUpdates: []string{"sa1"},
+		},
+		"No service account update if only a role is received": {
+			orderedUpdates:         []any{roles[0]},
+			serviceAccountsUpdates: []string{},
+		},
+		"Update service account both on binding and role update": {
+			orderedUpdates:         []any{bindings[0], roles[0]},
+			serviceAccountsUpdates: []string{"sa1", "sa1"},
+		},
+		"Update service account based on single cluster binding": {
+			orderedUpdates:         []any{clusterBindings[0]},
+			serviceAccountsUpdates: []string{"sa2"},
+		},
+		"No service account update if only a custer role is received": {
+			orderedUpdates:         []any{clusterRoles[0]},
+			serviceAccountsUpdates: []string{},
+		},
+		"Update service account both on cluster binding and cluster role update": {
+			orderedUpdates:         []any{clusterBindings[0], clusterRoles[0]},
+			serviceAccountsUpdates: []string{"sa2", "sa2"},
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			tested := NewStore().(*storeImpl)
+			fakeClient := fake.NewSimpleClientset()
+			dispatcher := NewDispatcher(tested, fakeClient)
+			var ref []resolver.DeploymentReference
+			for _, update := range testCase.orderedUpdates {
+				event := dispatcher.ProcessEvent(update, nil, central.ResourceAction_CREATE_RESOURCE)
+				ref = append(ref, event.DeploymentReference)
+			}
+
+			var orderedServiceAccounts []string
+			mockCtrl := gomock.NewController(t)
+			deploymentStore := mocks.NewMockDeploymentStore(mockCtrl)
+
+			deploymentStore.EXPECT().FindDeploymentIDsWithServiceAccount(gomock.Any(), gomock.Any()).
+				Times(len(testCase.serviceAccountsUpdates)).
+				Do(func(_, serviceAccount string) {
+					orderedServiceAccounts = append(orderedServiceAccounts, serviceAccount)
+				})
+
+			for _, r := range ref {
+				assert.NotNil(t, r)
+				r(deploymentStore)
+			}
+		})
+
+	}
 }
 
 type storeObjectCounts struct {
