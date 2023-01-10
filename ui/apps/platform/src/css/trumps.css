@@ -59,7 +59,7 @@ button.pf-c-toggle-group__button:disabled {
     opacity: inherit;
 }
 
-.pf-c-select__toggle::before {
+.pf-c-select__toggle:not(.pf-m-plain)::before {
     position: absolute;
     top: 0;
     right: 0;
@@ -91,6 +91,17 @@ button.pf-c-toggle-group__button:disabled {
     /* border-bottom-color: var(--pf-c-select__toggle--before--BorderBottomColor); */
     border-bottom-color: rgb(201, 25, 11) !important;
     border-bottom-width: 2px !important;
+}
+
+/* Fix default text in plain PF Select */
+.pf-c-select__toggle.pf-m-plain .pf-c-select__toggle-text {
+    overflow: visible !important;
+}
+
+/* Remove gray background from plain PF Select trigger button when disabled */
+.pf-c-select__toggle.pf-m-disabled,
+.pf-c-select__toggle:disabled {
+    --pf-c-select__toggle--disabled--BackgroundColor: none;
 }
 
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
