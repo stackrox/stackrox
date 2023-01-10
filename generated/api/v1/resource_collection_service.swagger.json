@@ -431,9 +431,7 @@
       "type": "string",
       "enum": [
         "EXACT",
-        "REGEX",
-        "PREFIX",
-        "POSTFIX"
+        "REGEX"
       ],
       "default": "EXACT"
     },

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
@@ -509,15 +510,19 @@ func ruleValuesToQueryList(fieldLabel pkgSearch.FieldLabel, ruleValues []*storag
 	ret := make([]*v1.Query, 0, len(ruleValues))
 	for _, ruleValue := range ruleValues {
 		var query *v1.Query
-		switch ruleValue.GetMatchType() {
-		case storage.MatchType_EXACT:
-			query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel, ruleValue.GetValue()).ProtoQuery()
-		case storage.MatchType_REGEX:
-			query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, ruleValue.GetValue()).ProtoQuery()
-		case storage.MatchType_PREFIX:
-			query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, fmt.Sprintf("^%s", ruleValue.GetValue())).ProtoQuery()
-		case storage.MatchType_POSTFIX:
-			query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, fmt.Sprintf("%s$", ruleValue.GetValue())).ProtoQuery()
+		switch fieldLabel {
+		case pkgSearch.ClusterLabel, pkgSearch.NamespaceLabel, pkgSearch.DeploymentLabel:
+			val := ruleValue.GetValue()
+			idx := strings.IndexRune(val, '=')
+			val = fmt.Sprintf("%s\"=\"%s", val[0:idx], val[idx+1:])
+			query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel, val).ProtoQuery()
+		default:
+			switch ruleValue.GetMatchType() {
+			case storage.MatchType_EXACT:
+				query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel, ruleValue.GetValue()).ProtoQuery()
+			case storage.MatchType_REGEX:
+				query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, ruleValue.GetValue()).ProtoQuery()
+			}
 		}
 		ret = append(ret, query)
 	}
@@ -586,8 +591,13 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 				if _, err := regexp.Compile(ruleValue.GetValue()); err != nil {
 					return errors.Wrap(errors.Wrap(err, errox.InvalidArgs.Error()), "failed to compile rule value regex")
 				}
-				if labelRule && ruleValue.GetMatchType() != storage.MatchType_EXACT {
-					return errors.Wrap(errox.InvalidArgs, "label types should only use exact matching")
+				if labelRule {
+					if ruleValue.GetMatchType() != storage.MatchType_EXACT {
+						return errors.Wrap(errox.InvalidArgs, "label types should only use exact matching")
+					}
+					if -1 == strings.IndexRune(ruleValue.GetValue(), '=') {
+						return errors.Wrap(errox.InvalidArgs, "label values should be of the form 'key=value'")
+					}
 				}
 			}
 		}

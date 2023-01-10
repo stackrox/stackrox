@@ -53,8 +53,6 @@ message SelectorRule {
 enum MatchType {
   EXACT = 0;
   REGEX = 1;
-  PREFIX = 2;
-  POSTFIX = 3;
 }
 
 message RuleValue {
