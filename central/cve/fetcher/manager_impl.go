@@ -33,7 +33,7 @@ func (m *orchestratorIstioCVEManagerImpl) initialize() {
 	m.orchestratorCVEMgr.initialize()
 }
 
-// Start periodically fetches new CVEs and reconciles them
+// Start begins the process to periodically scan orchestrator-level components.
 func (m *orchestratorIstioCVEManagerImpl) Start() {
 	ticker := time.NewTicker(env.OrchestratorVulnScanInterval.DurationSetting())
 	defer ticker.Stop()
