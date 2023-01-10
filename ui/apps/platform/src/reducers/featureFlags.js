@@ -22,7 +22,7 @@ export const fetchFeatureFlagsThunk = () => {
                 response: result.response,
             });
         } catch (error) {
-            dispatch({ type: types.FETCH_FEATURE_FLAGS.FAILURE, payload: error });
+            dispatch({ type: types.FETCH_FEATURE_FLAGS.FAILURE, error });
         }
     };
 };

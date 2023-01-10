@@ -23,7 +23,7 @@ export const fetchPublicConfigThunk = () => {
                 response: result.response,
             });
         } catch (error) {
-            dispatch({ type: types.FETCH_PUBLIC_CONFIG.FAILURE, payload: error });
+            dispatch({ type: types.FETCH_PUBLIC_CONFIG.FAILURE, error });
         }
     };
 };
