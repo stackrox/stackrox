@@ -26,6 +26,7 @@ COPY go.sum go.sum
 # packages are only used during build and later this docker layer is discarded (only resulting binary goes in the final
 # image).
 # Retry as the proxy can be unavailable at times.
+ENV GOPROXY=https://proxy.golang.org|https://goproxy.io|direct
 RUN go mod download || go mod download || go mod download
 
 # Copy operator source
