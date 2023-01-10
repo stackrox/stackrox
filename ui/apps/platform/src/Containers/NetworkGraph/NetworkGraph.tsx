@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
+import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
     TopologySideBar,
@@ -326,15 +327,17 @@ const TopologyComponent = ({
                             controller.getGraph().reset();
                             controller.getGraph().layout();
                         },
-                        legendCallback: () => {
-                            setIsLegendOpen(!isLegendOpen);
-                        },
                     })}
                 />
             }
         >
             <VisualizationSurface state={{ selectedIds }} />
-            {isLegendOpen && <LegendContent />}
+            <Popover
+                aria-label="Network graph legend"
+                bodyContent={<LegendContent />}
+                hasAutoWidth
+                reference={() => document.getElementById('legend') as HTMLButtonElement}
+            />
         </TopologyView>
     );
 };
