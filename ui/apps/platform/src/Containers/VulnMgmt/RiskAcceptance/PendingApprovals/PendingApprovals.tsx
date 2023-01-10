@@ -49,7 +49,7 @@ function PendingApprovals(): ReactElement {
     const rows = data?.vulnerabilityRequests || [];
     const itemCount = data?.vulnerabilityRequestsCount || 0;
 
-    if (!isLoading && rows && rows.length === 0) {
+    if (!isLoading && rows && rows.length === 0 && !Object.keys(searchFilter).length) {
         return (
             <PageSection variant={PageSectionVariants.light} isFilled>
                 <EmptyStateTemplate title="No pending requests to approve." headingLevel="h2" />
