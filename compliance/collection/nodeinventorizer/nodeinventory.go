@@ -83,7 +83,7 @@ func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*scannerV1.R
 				log.Debugf("Adding component %v to convertedComponents", comp.Name)
 				convertedComponents[compKey] = comp
 			} else {
-				log.Warnf("Detected package collision in Node Inventory scan. Skipping package %v at index %v", comp, i)
+				log.Warnf("Detected package collision in Node Inventory scan. Skipping package %s at index %d", compKey, i)
 			}
 		}
 
