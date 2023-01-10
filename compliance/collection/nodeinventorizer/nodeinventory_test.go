@@ -18,11 +18,13 @@ type NodeInventorizerTestSuite struct {
 
 func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 	testCases := map[string]struct {
-		inComponents []*database.RHELv2Package
-		expectedLen  int
+		inComponents  []*database.RHELv2Package
+		outComponents []*scannerV1.RHELComponent
+		expectedLen   int
 	}{
 		"nil-inComponents": {
-			inComponents: nil,
+			inComponents:  nil,
+			outComponents: make([]*scannerV1.RHELComponent, 0),
 		},
 		"one-component": {
 			inComponents: []*database.RHELv2Package{
@@ -34,6 +36,15 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 						"/usr/lib64/libz.so.1":      {},
 						"/usr/lib64/libz.so.1.2.11": {},
 					},
+				},
+			},
+			outComponents: []*scannerV1.RHELComponent{
+				{
+					Id:        0,
+					Name:      "zlib",
+					Namespace: "MockDist",
+					Version:   "1.2.11-16.el8_2",
+					Arch:      "x86_64",
 				},
 			},
 			expectedLen: 1,
@@ -55,6 +66,22 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 					Arch:    "x86_64",
 				},
 			},
+			outComponents: []*scannerV1.RHELComponent{
+				{
+					Id:        0,
+					Name:      "zlib",
+					Namespace: "MockDist",
+					Version:   "1.2.11-16.el8_2",
+					Arch:      "x86_64",
+				},
+				{
+					Id:        1,
+					Name:      "redhat-release",
+					Namespace: "MockDist",
+					Version:   "8.3-1.0.el8",
+					Arch:      "x86_64",
+				},
+			},
 			expectedLen: 2,
 		},
 		"collision-component": {
@@ -70,6 +97,15 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 					Arch:    "x86_64",
 				},
 			},
+			outComponents: []*scannerV1.RHELComponent{
+				{
+					Id:        0,
+					Name:      "redhat-release",
+					Namespace: "MockDist",
+					Version:   "8.3-1.0.el8",
+					Arch:      "x86_64",
+				},
+			},
 			expectedLen: 1,
 		},
 	}
@@ -83,6 +119,7 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 			convertedComponents := convertAndDedupRHELComponents(mockComponents)
 			if testCase.inComponents != nil {
 				s.Equal(testCase.expectedLen, len(convertedComponents))
+				s.ElementsMatch(testCase.outComponents, convertedComponents)
 			} else {
 				s.Nil(convertedComponents)
 			}
