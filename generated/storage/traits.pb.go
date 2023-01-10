@@ -90,10 +90,12 @@ func (Traits_Visibility) EnumDescriptor() ([]byte, []int) {
 // - DEFAULT: the object is a default object, such as default image integrations, access scopes etc.
 // - DECLARATIVE: the object is created via declarative configuration.
 // Based on the origin, different rules apply to the objects.
-// Objects with the DECLARATIVE origin are not allowed to be modified via API. Additionally, they may not reference
-// objects with the IMPERATIVE origin.
-// Objects with the DEFAULT origin are not allowed to be modified via API. They may be referenced by all other objects.
-// Objects with the IMPERATIVE origin are allowed to be modified via API. They may reference all other objects.
+// Objects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.
+// Additionally, they may not reference objects with the IMPERATIVE origin.
+// Objects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.
+// They may be referenced by all other objects.
+// Objects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.
+// They may reference all other objects.
 type Traits_Origin int32
 
 const (
