@@ -140,7 +140,7 @@ func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 				Arch:    "x42",
 				Module:  "Mod",
 			},
-			expected: "Name1.2.3x42Mod",
+			expected: "Name:1.2.3:x42:Mod",
 		},
 		"Missing part": {
 			component: &scannerV1.RHELComponent{
@@ -149,7 +149,7 @@ func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 				Arch:    "x42",
 				Module:  "Mod",
 			},
-			expected: "1.2.3x42Mod",
+			expected: ":1.2.3:x42:Mod",
 		},
 		"Internationalized": {
 			component: &scannerV1.RHELComponent{
@@ -159,7 +159,7 @@ func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 				Arch:    "x42",
 				Module:  "Mod",
 			},
-			expected: "日本語1.2.3x42Mod",
+			expected: "日本語:1.2.3:x42:Mod",
 		},
 		"Nil component": {
 			component: nil,
