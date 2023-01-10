@@ -18,9 +18,8 @@ type NodeInventorizerTestSuite struct {
 
 func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 	testCases := map[string]struct {
-		inComponents  []*database.RHELv2Package
-		outComponents []*scannerV1.RHELComponent
-		expectedLen   int
+		inComponents []*database.RHELv2Package
+		expectedLen  int
 	}{
 		"nil-inComponents": {
 			inComponents: nil,
@@ -81,12 +80,8 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 				CPEs:     nil,
 				Packages: testCase.inComponents,
 			}
-			convertedComponents := convertRHELComponents(mockComponents)
+			convertedComponents := convertAndDedupRHELComponents(mockComponents)
 			if testCase.inComponents != nil {
-				convertedIDs := make([]int64, 0, len(convertedComponents))
-				for _, entry := range convertedComponents {
-					convertedIDs = append(convertedIDs, entry.Id)
-				}
 				s.Equal(testCase.expectedLen, len(convertedComponents))
 			} else {
 				s.Nil(convertedComponents)
@@ -95,117 +90,49 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 	}
 }
 
-func (s *NodeInventorizerTestSuite) TestEqualRHELv2Packages() {
+func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 	testcases := map[string]struct {
-		a        *database.RHELv2Package
-		b        *database.RHELv2Package
-		expected bool
+		component *scannerV1.RHELComponent
+		expected  string
 	}{
-		"equal components": {
-			a: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-				Module:  "mod",
+		"Full component": {
+			component: &scannerV1.RHELComponent{
+				Id:      0,
+				Name:    "Name",
+				Version: "1.2.3",
+				Arch:    "x42",
+				Module:  "Mod",
 			},
-			b: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-				Module:  "mod",
-			},
-			expected: true,
+			expected: "Name1.2.3x42Mod",
 		},
-		"empty comparable": {
-			a: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-				Module:  "mod",
+		"Missing part": {
+			component: &scannerV1.RHELComponent{
+				Id:      0,
+				Version: "1.2.3",
+				Arch:    "x42",
+				Module:  "Mod",
 			},
-			b: &database.RHELv2Package{
-				Name:    "",
-				Version: "1.0",
-				Arch:    "x86",
-				Module:  "mod",
-			},
-			expected: false,
+			expected: "1.2.3x42Mod",
 		},
-		"missing comparable": {
-			a: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-				Module:  "mod",
+		"Internationalized": {
+			component: &scannerV1.RHELComponent{
+				Id:      0,
+				Name:    "日本語",
+				Version: "1.2.3",
+				Arch:    "x42",
+				Module:  "Mod",
 			},
-			b: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-			},
-			expected: false,
-		},
-		"missing comparables": {
-			a: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-			},
-			b: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-			},
-			expected: true,
-		},
-		"diff comparable": {
-			a: &database.RHELv2Package{
-				Name:   "tes",
-				Arch:   "x86",
-				Module: "mod",
-			},
-			b: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-			},
-			expected: false,
-		},
-		"capitalized components": {
-			a: &database.RHELv2Package{
-				Name:    "Tes",
-				Version: "1.0",
-				Arch:    "x86",
-				Module:  "mod",
-			},
-			b: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-				Module:  "moD",
-			},
-			expected: false,
+			expected: "日本語1.2.3x42Mod",
 		},
 		"Nil component": {
-			a: &database.RHELv2Package{
-				Name:    "tes",
-				Version: "1.0",
-				Arch:    "x86",
-				Module:  "mod",
-			},
-			b:        nil,
-			expected: false,
-		},
-		"Nil components": {
-			a:        nil,
-			b:        nil,
-			expected: false,
+			component: nil,
+			expected:  "",
 		},
 	}
 
 	for testName, testCase := range testcases {
 		s.Run(testName, func() {
-			s.Equal(testCase.expected, equalRHELv2Packages(testCase.a, testCase.b))
+			s.Equal(testCase.expected, makeComponentKey(testCase.component))
 		})
 	}
 }

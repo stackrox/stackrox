@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/analyzer/nodes"
+	"golang.org/x/exp/maps"
 )
 
 // NodeInventorizer is the interface that defines the interface a scanner must implement
@@ -46,7 +47,7 @@ func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Component
 	}
 
 	// For now, we only care about RHEL components, but this must be extended once we support non-RHCOS
-	rhelComponents := convertRHELComponents(c.CertifiedRHELComponents)
+	rhelComponents := convertAndDedupRHELComponents(c.CertifiedRHELComponents)
 
 	protoComponents := &scannerV1.Components{
 		Namespace:          c.OSNamespace.Name,
@@ -57,29 +58,16 @@ func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Component
 	return protoComponents
 }
 
-func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELComponent {
+func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELComponent {
 	if rc == nil || rc.Packages == nil {
 		log.Warn("No RHEL packages found in scan result")
 		return nil
 	}
 
-	seenEntries := make(map[int]*database.RHELv2Package)
-	v1rhelc := make([]*scannerV1.RHELComponent, 0, len(rc.Packages))
-
-	// referencing this label by the inner `continue` lets us skip the rest of the outer loop as well,
-	// resulting in the colliding component not being added to v1rhelc.
-COMPONENTS:
+	convertedComponents := make(map[string]*scannerV1.RHELComponent, 0)
 	for i, rhelc := range rc.Packages {
-		for _, candidate := range seenEntries {
-			if equalRHELv2Packages(candidate, rhelc) {
-				log.Warnf("Detected package collision in Node Inventory scan. Skipping package %v for id %v", candidate, i)
-				continue COMPONENTS
-			}
-		}
-		// If the entry didn't produce a collision, add it to seenEntries and result
-		seenEntries[i] = rhelc
-		log.Debugf("Adding component %v to v1rhelc", rhelc.Name)
-		v1rhelc = append(v1rhelc, &scannerV1.RHELComponent{
+		comp := &scannerV1.RHELComponent{
+			// The loop index is used as ID, as this field only needs to be unique for each NodeInventory result slice
 			Id:          int64(i),
 			Name:        rhelc.Name,
 			Namespace:   rc.Dist,
@@ -88,17 +76,24 @@ COMPONENTS:
 			Module:      rhelc.Module,
 			Cpes:        rc.CPEs,
 			Executables: rhelc.Executables,
-		})
+		}
+		compKey := makeComponentKey(comp)
+		if compKey != "" {
+			if _, contains := convertedComponents[compKey]; !contains {
+				log.Debugf("Adding component %v to convertedComponents", comp.Name)
+				convertedComponents[compKey] = comp
+			} else {
+				log.Warnf("Detected package collision in Node Inventory scan. Skipping package %v at index %v", comp, i)
+			}
+		}
+
 	}
-	return v1rhelc
+	return maps.Values(convertedComponents)
 }
 
-func equalRHELv2Packages(a *database.RHELv2Package, b *database.RHELv2Package) bool {
-	if a == nil || b == nil {
-		return false
+func makeComponentKey(component *scannerV1.RHELComponent) string {
+	if component == nil {
+		return ""
 	}
-	if a.Name == b.Name && a.Version == b.Version && a.Arch == b.Arch && a.Module == b.Module {
-		return true
-	}
-	return false
+	return component.Name + component.Version + component.Arch + component.Module
 }
