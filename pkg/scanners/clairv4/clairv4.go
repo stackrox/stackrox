@@ -114,12 +114,12 @@ func validate(cfg *storage.ClairV4Config) error {
 }
 
 func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
-	if image.GetMetadata() == nil {
-		return nil, errNoMetadata
-	}
-
 	// For logging/error message purposes.
 	imgName := image.GetName().GetFullName()
+
+	if image.GetMetadata() == nil {
+		return nil, errors.Errorf("Clair v4: Unable to complete scan of image %s because it is missing metadata", imgName)
+	}
 
 	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types/digest.go)
 	// to mirror clairctl (https://github.com/quay/clair/blob/v4.5.0/cmd/clairctl/report.go#L251).
@@ -129,10 +129,11 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	}
 	digest := ccDigest.String()
 
-	exists, err := c.getIndexReport(digest)
+	exists, err := c.indexReportExists(digest)
 	// Exit early if this is an unexpected status code error.
 	// If it's not an unexpected error, then continue as normal and ignore the error.
 	if isUnexpectedStatusCodeError(err) {
+		log.Debugf("Clair v4: Received unexpected status from Clair: %v", err)
 		return nil, errors.Wrapf(err, "Clair v4: checking if index report exists for %s", imgName)
 	}
 	if !exists {
@@ -149,7 +150,7 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 		log.Debugf("Manifest for %s: %+v", imgName, manifest)
 
-		if err := c.postIndex(manifest); err != nil {
+		if err := c.index(manifest); err != nil {
 			return nil, errors.Wrapf(err, "Clair v4: indexing manifest for %s", imgName)
 		}
 	}
@@ -163,7 +164,7 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	return imageScan(report), nil
 }
 
-func (c *clairv4) getIndexReport(digest string) (bool, error) {
+func (c *clairv4) indexReportExists(digest string) (bool, error) {
 	// FIXME: go1.19 adds https://pkg.go.dev/net/url#JoinPath, which seems more idiomatic.
 	url := strings.Join([]string{c.indexReportEndpoint, digest}, "/")
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -191,7 +192,7 @@ func (c *clairv4) getIndexReport(digest string) (bool, error) {
 	}
 }
 
-func (c *clairv4) postIndex(manifest *claircore.Manifest) error {
+func (c *clairv4) index(manifest *claircore.Manifest) error {
 	body, err := json.Marshal(manifest)
 	if err != nil {
 		return err
