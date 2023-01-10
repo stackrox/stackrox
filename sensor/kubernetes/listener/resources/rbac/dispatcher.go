@@ -118,17 +118,15 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 func (r *Dispatcher) findSubjectForBinding(binding metav1.Object) []namespacedSubject {
 	if features.ResyncDisabled.Enabled() {
 		return r.store.FindSubjectForBindingID(binding.GetNamespace(), binding.GetName(), string(binding.GetUID()))
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (r *Dispatcher) findSubjectForRole(role metav1.Object) []namespacedSubject {
 	if features.ResyncDisabled.Enabled() {
 		return r.store.FindSubjectForRole(role.GetNamespace(), role.GetName())
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (r *Dispatcher) mustGenerateRelatedEvents(obj metav1.Object, roleID string, isClusterRole bool) []*central.SensorEvent {
