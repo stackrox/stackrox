@@ -30,8 +30,6 @@ const (
 
 	// scannerDefsSubZipName represents the offline zip bundle for CVEs for Scanner.
 	scannerDefsSubZipName = "scanner-defs.zip"
-	// K8sIstioCveZipName represents the zip bundle for k8s/istio CVEs.
-	K8sIstioCveZipName = "k8s-istio.zip"
 
 	// offlineScannerDefsName represents the offline/fallback zip bundle for CVEs for Scanner.
 	offlineScannerDefsName = scannerDefsSubZipName
@@ -198,12 +196,6 @@ func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
 	return u
 }
 
-func (h *httpHandler) updateK8sIstioCVEs(zipPath string) {
-	if !h.online {
-		h.cveManager.Update(zipPath, false)
-	}
-}
-
 func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
 	r, err := zipF.Open()
 	if err != nil {
@@ -226,23 +218,21 @@ func (h *httpHandler) handleZipContentsFromVulnDump(zipPath string) error {
 	}
 	defer utils.IgnoreError(zipR.Close)
 
-	var scannerDefsFileFound bool
+	// It is expected a ZIP file be uploaded with a ZIP of Scanner's vulnerability definitions.
+	// Currently, this is the only desired file. In the future, we may decide to
+	// support other files (like we have in the past), which is why we
+	// expect this ZIP of a single ZIP.
 	for _, zipF := range zipR.File {
 		if zipF.Name == scannerDefsSubZipName {
 			if err := h.handleScannerDefsFile(zipF); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
-			scannerDefsFileFound = true
-			continue
-		} else if zipF.Name == K8sIstioCveZipName {
-			h.updateK8sIstioCVEs(zipPath)
+			return nil
 		}
+		// Ignore any other files which may be in the ZIP.
 	}
 
-	if !scannerDefsFileFound {
-		return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
-	}
-	return nil
+	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
 }
 
 func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {

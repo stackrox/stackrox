@@ -20,7 +20,6 @@ import (
 // OrchestratorIstioCVEManager is the interface for orchestrator (k8s or openshift) and istio CVEs
 type OrchestratorIstioCVEManager interface {
 	Start()
-	Update(zipPath string, forceUpdate bool)
 	HandleClusterConnection()
 	GetAffectedClusters(ctx context.Context, cveID string, ct utils.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error)
 	UpsertOrchestratorIntegration(integration *storage.OrchestratorIntegration) error
@@ -32,7 +31,6 @@ type orchestratorIstioCVEManagerImpl struct {
 	orchestratorCVEMgr *orchestratorCVEManager
 
 	updateSignal    concurrency.Signal
-	mgrMode         mode
 	lastUpdatedTime time.Time
 }
 

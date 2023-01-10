@@ -7,12 +7,10 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	cveFetcher "github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/deploymentenvs"
-	"github.com/stackrox/rox/central/scannerdefinitions/handler"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -62,11 +60,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		if err := s.clusters.UpdateClusterStatus(ctx, clusterID, m.Status); err != nil {
 			return err
 		}
-		if env.OfflineModeEnv.BooleanSetting() {
-			s.cveFetcher.Update(handler.K8sIstioCveZipName, true)
-		} else {
-			go s.cveFetcher.HandleClusterConnection()
-		}
+		go s.cveFetcher.HandleClusterConnection()
 		return nil
 	default:
 		return errors.Errorf("unknown cluster status update message type %T", m)
