@@ -410,7 +410,7 @@ function CollectionForm({
                                 validationErrors={errors.resourceSelector?.Deployment}
                                 isDisabled={isReadOnly}
                             />
-                            <Label variant="outline" isCompact className="pf-u-align-self-center">
+                            <Label className="pf-u-px-md pf-u-font-size-md pf-u-align-self-center">
                                 in
                             </Label>
                             <RuleSelector
@@ -421,7 +421,7 @@ function CollectionForm({
                                 validationErrors={errors.resourceSelector?.Namespace}
                                 isDisabled={isReadOnly}
                             />
-                            <Label variant="outline" isCompact className="pf-u-align-self-center">
+                            <Label className="pf-u-px-md pf-u-font-size-md pf-u-align-self-center">
                                 in
                             </Label>
                             <RuleSelector
