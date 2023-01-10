@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
+    Alert,
     Bullseye,
     Button,
     Divider,
@@ -19,11 +20,18 @@ import { Collection } from 'services/CollectionsService';
 import useCollection from './hooks/useCollection';
 import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import CollectionLoadError from './CollectionLoadError';
+import { CollectionPageAction } from './collections.utils';
 
 export type CollectionsFormModalProps = {
     hasWriteAccessForCollections: boolean;
-    collectionId: string;
+    modalAction: Extract<
+        { type: 'create' } | { type: 'view'; collectionId: string },
+        CollectionPageAction
+    >;
     onClose: () => void;
+    onSubmit?: CollectionFormDrawerProps['onSubmit'];
+    configError?: CollectionFormDrawerProps['configError'];
+    setConfigError?: CollectionFormDrawerProps['setConfigError'];
 };
 
 function getCollectionTableCells(): ReturnType<
@@ -56,8 +64,11 @@ function getCollectionTableCells(): ReturnType<
 
 function CollectionsFormModal({
     hasWriteAccessForCollections,
-    collectionId,
+    modalAction,
     onClose,
+    onSubmit = () => Promise.resolve(),
+    configError,
+    setConfigError,
 }: CollectionsFormModalProps) {
     const isLargeScreen = useMediaQuery({ query: '(min-width: 992px)' }); // --pf-global--breakpoint--lg
     const {
@@ -67,7 +78,9 @@ function CollectionsFormModal({
         openSelect: openDrawer,
     } = useSelectToggle(isLargeScreen);
 
-    const { data, loading, error } = useCollection(collectionId);
+    const { data, loading, error } = useCollection(
+        modalAction.type === 'view' ? modalAction.collectionId : undefined
+    );
 
     let content: ReactElement | null = null;
 
@@ -90,23 +103,20 @@ function CollectionsFormModal({
     } else if (data) {
         content = (
             <CollectionFormDrawer
-                // We do not want to present the user with options to change the collection when in this modal
-                hasWriteAccessForCollections={false}
-                action={{
-                    type: 'view',
-                    collectionId,
-                }}
+                hasWriteAccessForCollections={hasWriteAccessForCollections}
+                action={modalAction}
                 collectionData={data}
                 isInlineDrawer={isLargeScreen}
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
-                // Since the form cannot be submitted, stub this out with an empty promise
-                onSubmit={() => Promise.resolve()}
+                onSubmit={onSubmit}
                 onCancel={onClose}
+                configError={configError}
+                setConfigError={setConfigError}
                 getCollectionTableCells={getCollectionTableCells}
             />
         );
-        modalTitle = data.collection.name;
+        modalTitle = data.collection.name || 'Create collection';
     }
 
     const modalHeaderButtons =
@@ -114,11 +124,11 @@ function CollectionsFormModal({
             ''
         ) : (
             <>
-                {hasWriteAccessForCollections && (
+                {hasWriteAccessForCollections && modalAction.type === 'view' && (
                     <Button
                         variant="link"
                         component="a"
-                        href={`${collectionsBasePath}/${collectionId}?action=edit`}
+                        href={`${collectionsBasePath}/${modalAction.collectionId}?action=edit`}
                         target="_blank"
                         rel="noopener noreferrer"
                         icon={<ExternalLinkAltIcon />}
@@ -156,6 +166,16 @@ function CollectionsFormModal({
                 </Flex>
             }
         >
+            {configError && (
+                <Alert
+                    className="pf-u-mx-lg pf-u-mb-md"
+                    title={configError.message}
+                    variant="danger"
+                    isInline
+                >
+                    {configError.type === 'UnknownError' ? configError.details : ''}
+                </Alert>
+            )}
             <Divider component="div" />
             {content}
         </Modal>
