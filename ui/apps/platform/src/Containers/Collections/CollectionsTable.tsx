@@ -202,7 +202,7 @@ function CollectionsTable({
             {collectionToDelete && (
                 <ConfirmationModal
                     ariaLabel="Confirm delete"
-                    confirmText="Delete"
+                    confirmText="Delete collection"
                     isLoading={isDeleting}
                     isOpen
                     onConfirm={() => onConfirmDeleteCollection(collectionToDelete)}

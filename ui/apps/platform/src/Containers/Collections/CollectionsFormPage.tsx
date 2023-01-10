@@ -353,7 +353,7 @@ function CollectionsFormPage({
             </AlertGroup>
             <ConfirmationModal
                 ariaLabel="Confirm delete"
-                confirmText="Delete"
+                confirmText="Delete collection"
                 isLoading={isDeleting}
                 isOpen={deleteId !== null}
                 onConfirm={onConfirmDeleteCollection}
