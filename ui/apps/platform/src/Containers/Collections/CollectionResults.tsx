@@ -135,23 +135,18 @@ function CollectionResults({
 
     if (configError) {
         content = (
-            <Flex className="pf-u-h-100" alignContent={{ default: 'alignContentCenter' }}>
-                <EmptyState variant={EmptyStateVariant.xs}>
-                    <EmptyStateIcon
-                        style={{ color: 'var(--pf-global--danger-color--200)' }}
-                        icon={ExclamationCircleIcon}
-                    />
-                    <Flex
-                        spaceItems={{ default: 'spaceItemsMd' }}
-                        direction={{ default: 'column' }}
-                    >
-                        <Title headingLevel="h2" size="md">
-                            {configError.message}
-                        </Title>
-                        <p className="pf-u-text-align-left">{configError.details}</p>
-                    </Flex>
-                </EmptyState>
-            </Flex>
+            <EmptyState variant={EmptyStateVariant.xs}>
+                <EmptyStateIcon
+                    style={{ color: 'var(--pf-global--danger-color--200)' }}
+                    icon={ExclamationCircleIcon}
+                />
+                <Flex spaceItems={{ default: 'spaceItemsMd' }} direction={{ default: 'column' }}>
+                    <Title headingLevel="h2" size="md">
+                        {configError.message}
+                    </Title>
+                    <p>{configError.details}</p>
+                </Flex>
+            </EmptyState>
         );
     } else if (!selectorRulesExist) {
         content = (
