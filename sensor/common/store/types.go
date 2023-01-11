@@ -58,6 +58,13 @@ type RBACStore interface {
 
 // Provider is a wrapper for injecting in memory stores as a dependency.
 type Provider interface {
+	Deployments() DeploymentStore
 	Services() ServiceStore
 	RBAC() RBACStore
+	EndpointManager() EndpointManager
+}
+
+// EndpointManager provides functionality to map and store endpoints information
+type EndpointManager interface {
+	OnDeploymentCreateOrUpdateByID(id string)
 }

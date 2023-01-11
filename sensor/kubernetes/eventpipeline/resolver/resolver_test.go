@@ -52,9 +52,10 @@ func (s *resolverSuite) SetupTest() {
 	s.mockServiceStore = mocksStore.NewMockServiceStore(s.mockCtrl)
 	s.mockRBACStore = mocksStore.NewMockRBACStore(s.mockCtrl)
 
-	s.resolver = New(s.mockOutput, s.mockDeploymentStore, &fakeProvider{
-		serviceStore: s.mockServiceStore,
-		rbacStore:    s.mockRBACStore,
+	s.resolver = New(s.mockOutput, &fakeProvider{
+		deploymentStore: s.mockDeploymentStore,
+		serviceStore:    s.mockServiceStore,
+		rbacStore:       s.mockRBACStore,
 	})
 }
 
@@ -612,8 +613,13 @@ func (m *resourceActionMatcher) String() string {
 }
 
 type fakeProvider struct {
-	serviceStore *mocksStore.MockServiceStore
-	rbacStore    *mocksStore.MockRBACStore
+	deploymentStore *mocksStore.MockDeploymentStore
+	serviceStore    *mocksStore.MockServiceStore
+	rbacStore       *mocksStore.MockRBACStore
+}
+
+func (p *fakeProvider) Deployments() store.DeploymentStore {
+	return p.deploymentStore
 }
 
 func (p *fakeProvider) Services() store.ServiceStore {
@@ -622,4 +628,8 @@ func (p *fakeProvider) Services() store.ServiceStore {
 
 func (p *fakeProvider) RBAC() store.RBACStore {
 	return p.rbacStore
+}
+
+func (p *fakeProvider) EndpointManager() store.EndpointManager {
+	return nil
 }
