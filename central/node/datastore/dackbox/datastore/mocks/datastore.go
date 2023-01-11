@@ -67,6 +67,20 @@ func (mr *MockDataStoreMockRecorder) CountNodes(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountNodes", reflect.TypeOf((*MockDataStore)(nil).CountNodes), ctx)
 }
 
+// DeleteAllNodesForCluster mocks base method.
+func (m *MockDataStore) DeleteAllNodesForCluster(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAllNodesForCluster", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAllNodesForCluster indicates an expected call of DeleteAllNodesForCluster.
+func (mr *MockDataStoreMockRecorder) DeleteAllNodesForCluster(ctx, clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAllNodesForCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteAllNodesForCluster), ctx, clusterID)
+}
+
 // DeleteNodes mocks base method.
 func (m *MockDataStore) DeleteNodes(ctx context.Context, ids ...string) error {
 	m.ctrl.T.Helper()
