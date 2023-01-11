@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/analyzer/nodes"
+	"golang.org/x/exp/maps"
 )
 
 // NodeInventorizer is the interface that defines the interface a scanner must implement
@@ -50,7 +51,6 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 }
 
 func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Components {
-
 	if c == nil {
 		return nil
 	}
@@ -64,7 +64,7 @@ func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Component
 	}
 
 	// For now, we only care about RHEL components, but this must be extended once we support non-RHCOS
-	rhelComponents := convertRHELComponents(c.CertifiedRHELComponents)
+	rhelComponents := convertAndDedupRHELComponents(c.CertifiedRHELComponents)
 
 	protoComponents := &scannerV1.Components{
 		Namespace:          namespace,
@@ -75,15 +75,17 @@ func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Component
 	return protoComponents
 }
 
-func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELComponent {
+func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELComponent {
 	if rc == nil || rc.Packages == nil {
 		log.Warn("No RHEL packages found in scan result")
 		return nil
 	}
-	v1rhelc := make([]*scannerV1.RHELComponent, 0, len(rc.Packages))
-	for _, rhelc := range rc.Packages {
-		v1rhelc = append(v1rhelc, &scannerV1.RHELComponent{
-			// TODO(ROX-13936): Find out if ID field is needed here
+
+	convertedComponents := make(map[string]*scannerV1.RHELComponent, 0)
+	for i, rhelc := range rc.Packages {
+		comp := &scannerV1.RHELComponent{
+			// The loop index is used as ID, as this field only needs to be unique for each NodeInventory result slice
+			Id:          int64(i),
 			Name:        rhelc.Name,
 			Namespace:   rc.Dist,
 			Version:     rhelc.Version,
@@ -91,7 +93,21 @@ func convertRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELCompo
 			Module:      rhelc.Module,
 			Cpes:        rc.CPEs,
 			Executables: rhelc.Executables,
-		})
+		}
+		compKey := makeComponentKey(comp)
+		if compKey != "" {
+			if _, contains := convertedComponents[compKey]; !contains {
+				log.Debugf("Adding component %v to convertedComponents", comp.Name)
+				convertedComponents[compKey] = comp
+			} else {
+				log.Warnf("Detected package collision in Node Inventory scan. Skipping package %s at index %d", compKey, i)
+			}
+		}
+
 	}
-	return v1rhelc
+	return maps.Values(convertedComponents)
+}
+
+func makeComponentKey(component *scannerV1.RHELComponent) string {
+	return component.Name + ":" + component.Version + ":" + component.Arch + ":" + component.Module
 }
