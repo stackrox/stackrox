@@ -100,16 +100,17 @@ export type Node = {
     nonIsolatedIngress: boolean;
     nonIsolatedEgress: boolean;
     queryMatch: boolean;
-    outEdges: Edge[];
+    outEdges: OutEdges;
 };
 
-export type Edge = {
-    [key: string]: {
+export type OutEdges = Record<
+    string,
+    {
         properties: EdgeProperties[];
-    };
-};
+    }
+>;
 
-type EdgeProperties = {
+export type EdgeProperties = {
     port: number;
     protocol: L4Protocol;
     lastActiveTimestamp: string | null;

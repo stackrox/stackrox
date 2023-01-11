@@ -12,12 +12,12 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { EdgeModel } from '@patternfly/react-topology';
 
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { getEdgesByNodeId, getNodeById } from '../utils/networkGraphUtils';
 import {
     CIDRBlockNodeModel,
+    CustomEdgeModel,
     CustomNodeModel,
     ExternalEntitiesNodeModel,
     ExternalGroupNodeModel,
@@ -29,7 +29,7 @@ import EntityNameSearchInput from '../common/EntityNameSearchInput';
 type ExternalGroupSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
-    edges: EdgeModel[];
+    edges: CustomEdgeModel[];
 };
 
 const columnNames = {
