@@ -718,6 +718,16 @@ spec:
 
     ## Using the RHACS Operator
 
+    **RHACS Operator channels:**
+
+    RHACS Operator is provided through the following update Channels in the Red Hat Operator catalog:
+
+    * `stable` - provides the most recent version and patches to the most recent versions.
+      Using the `stable` channel and configuring Automatic operator upgrades will ensure that most recent RHACS version is deployed.
+    * `rhacs-x.yy` (e.g. `rhacs-3.74`) - channels follow a specific RHACS version and include all patches to that version (e.g. `3.74.0`, `3.74.1`, ...)
+
+    Note that the `latest` channel is deprecated and will not get updates after the version 3.73.
+
     **RHACS comes with two custom resources:**
 
     1. **Central Services** - Central is a deployment required on only one cluster in your environment. Users interact with RHACS via the user interface or APIs on Central. Central also sends notifications for violations and interacts with integrations. Users may select exposures for Central that best meet their environment.
@@ -729,6 +739,7 @@ spec:
     | Service                          | Deployment Type | Description     |
     | :------------------------------- | :-------------- | :-------------- |
     | Central                          | Deployment      | Users interact with Red Hat Advanced Cluster Security through the user interface or APIs on Central. Central also sends notifications for violations and interacts with integrations. |
+    | Central DB                       | Deployment      | Central DB is a PostgreSQL-based persistent storage for the data collected and managed by Central. RHACS can be configured to use external PostgreSQL database instead of the operator-managed Central DB deployment. |
     | Scanner                          | Deployment      | Scanner is a Red Hat developed and certified image scanner. Scanner analyzes and reports vulnerabilities for images. Scanner uses HPA to scale the number of replicas based on workload. |
     | Scanner DB                       | Deployment      | Scanner DB is a cache for vulnerability definitions to serve vulnerability scanning use cases throughout the software development life cycle. |
 

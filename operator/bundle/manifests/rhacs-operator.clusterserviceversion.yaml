@@ -727,24 +727,35 @@ spec:
     \ and remediation using the rich context Kubernetes provides.\n1. Increases scalability\
     \ and portability.\n1. Provides scalability and resiliency native to Kubernetes,\
     \ avoiding operational conflict and complexity that can result from out-of-band\
-    \ security controls.\n\n## Using the RHACS Operator\n\n**RHACS comes with two\
-    \ custom resources:**\n\n1. **Central Services** - Central is a deployment required\
-    \ on only one cluster in your environment. Users interact with RHACS via the user\
-    \ interface or APIs on Central. Central also sends notifications for violations\
-    \ and interacts with integrations. Users may select exposures for Central that\
-    \ best meet their environment.\n\n2. **Secured Cluster Services** - Secured cluster\
-    \ services are placed on each cluster you manage and report back to Central. These\
-    \ services allow users to enforce policies and monitor your OpenShift and Kubernetes\
-    \ clusters. Secured Cluster Services come as two Deployments (Sensor and Admission\
-    \ Controller) and one DaemonSet (Collector).\n\n### Central Services Explained\n\
-    \n| Service                          | Deployment Type | Description     |\n|\
-    \ :------------------------------- | :-------------- | :-------------- |\n| Central\
-    \                          | Deployment      | Users interact with Red Hat Advanced\
-    \ Cluster Security through the user interface or APIs on Central. Central also\
-    \ sends notifications for violations and interacts with integrations. |\n| Scanner\
-    \                          | Deployment      | Scanner is a Red Hat developed\
-    \ and certified image scanner. Scanner analyzes and reports vulnerabilities for\
-    \ images. Scanner uses HPA to scale the number of replicas based on workload.\
+    \ security controls.\n\n## Using the RHACS Operator\n\n**RHACS Operator channels:**\n\
+    \nRHACS Operator is provided through the following update Channels in the Red\
+    \ Hat Operator catalog:\n\n* `stable` - provides the most recent version and patches\
+    \ to the most recent versions.\n  Using the `stable` channel and configuring Automatic\
+    \ operator upgrades will ensure that most recent RHACS version is deployed.\n\
+    * `rhacs-x.yy` (e.g. `rhacs-3.74`) - channels follow a specific RHACS version\
+    \ and include all patches to that version (e.g. `3.74.0`, `3.74.1`, ...)\n\nNote\
+    \ that the `latest` channel is deprecated and will not get updates after the version\
+    \ 3.73.\n\n**RHACS comes with two custom resources:**\n\n1. **Central Services**\
+    \ - Central is a deployment required on only one cluster in your environment.\
+    \ Users interact with RHACS via the user interface or APIs on Central. Central\
+    \ also sends notifications for violations and interacts with integrations. Users\
+    \ may select exposures for Central that best meet their environment.\n\n2. **Secured\
+    \ Cluster Services** - Secured cluster services are placed on each cluster you\
+    \ manage and report back to Central. These services allow users to enforce policies\
+    \ and monitor your OpenShift and Kubernetes clusters. Secured Cluster Services\
+    \ come as two Deployments (Sensor and Admission Controller) and one DaemonSet\
+    \ (Collector).\n\n### Central Services Explained\n\n| Service                \
+    \          | Deployment Type | Description     |\n| :-------------------------------\
+    \ | :-------------- | :-------------- |\n| Central                          |\
+    \ Deployment      | Users interact with Red Hat Advanced Cluster Security through\
+    \ the user interface or APIs on Central. Central also sends notifications for\
+    \ violations and interacts with integrations. |\n| Central DB                \
+    \       | Deployment      | Central DB is a PostgreSQL-based persistent storage\
+    \ for the data collected and managed by Central. RHACS can be configured to use\
+    \ external PostgreSQL database instead of the operator-managed Central DB deployment.\
+    \ |\n| Scanner                          | Deployment      | Scanner is a Red Hat\
+    \ developed and certified image scanner. Scanner analyzes and reports vulnerabilities\
+    \ for images. Scanner uses HPA to scale the number of replicas based on workload.\
     \ |\n| Scanner DB                       | Deployment      | Scanner DB is a cache\
     \ for vulnerability definitions to serve vulnerability scanning use cases throughout\
     \ the software development life cycle. |\n\n### Secured Cluster Services Explained\n\
