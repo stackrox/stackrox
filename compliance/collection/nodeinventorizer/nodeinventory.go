@@ -92,8 +92,5 @@ func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*scannerV1.R
 }
 
 func makeComponentKey(component *scannerV1.RHELComponent) string {
-	if component == nil {
-		return ""
-	}
 	return component.Name + ":" + component.Version + ":" + component.Arch + ":" + component.Module
 }

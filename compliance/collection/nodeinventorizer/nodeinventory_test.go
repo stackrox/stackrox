@@ -161,10 +161,6 @@ func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 			},
 			expected: "日本語:1.2.3:x42:Mod",
 		},
-		"Nil component": {
-			component: nil,
-			expected:  "",
-		},
 	}
 
 	for testName, testCase := range testcases {
