@@ -18,8 +18,12 @@ import util.Timer
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Tag
+import spock.lang.IgnoreIf
+import util.Env
 
 @Retry(count = 1)
+// ROX-14228 skipping tests for 1st release on power & z
+@IgnoreIf({ Env.HW_ARCH == "ppc64le" || Env.HW_ARCH == "s390x" })
 class TLSChallengeTest extends BaseSpecification {
     @Shared
     private EnvVar originalCentralEndpoint = new EnvVar()
