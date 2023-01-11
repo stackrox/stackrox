@@ -301,7 +301,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                         />
                     )}
-                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL' && (
+                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_GROUP' && (
                         <ExternalGroupSideBar
                             id={selectedEntity.id}
                             nodes={model?.nodes || []}
