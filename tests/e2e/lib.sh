@@ -245,7 +245,7 @@ start_port_forwards_for_test() {
 
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
         log_file="$PORT_FORWARD_LOGS/central-${target_port}.log"
-        nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" > "${log_file}" 2>&1 &
+        nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" < /dev/null > "${log_file}" 2>&1 &
     done
     sleep 1
 }
