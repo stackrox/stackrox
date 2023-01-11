@@ -86,18 +86,19 @@ func getAccessScopeIncludeAllID() string {
 
 // IsDefaultRoleName checks if a given role corresponds to a default role.
 func IsDefaultRoleName(role *storage.Role) bool {
-	return role.GetTraits().GetOrigin() == storage.Traits_DEFAULT
+	return role.GetTraits().GetOrigin() == storage.Traits_DEFAULT || DefaultRoleNames.Contains(role.GetName())
 }
 
 // IsDefaultPermissionSet checks if a given permission set corresponds to a default role.
 func IsDefaultPermissionSet(permissionSet *storage.PermissionSet) bool {
-	return permissionSet.GetTraits().GetOrigin() == storage.Traits_DEFAULT
+	return permissionSet.GetTraits().GetOrigin() == storage.Traits_DEFAULT ||
+		DefaultRoleNames.Contains(permissionSet.GetName())
 }
 
 // IsDefaultAccessScope checks if a given access scope corresponds to a
 // default access scope.
 func IsDefaultAccessScope(scope *storage.SimpleAccessScope) bool {
-	return scope.GetTraits().GetOrigin() == storage.Traits_DEFAULT
+	return scope.GetTraits().GetOrigin() == storage.Traits_DEFAULT || defaultScopesIDs.Contains(scope.GetId())
 }
 
 // GetAnalystPermissions returns permissions for `Analyst` role.

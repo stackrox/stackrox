@@ -127,16 +127,8 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 		return err
 	}
 
-	// Verify storage constraints.
-	if err := ds.verifyRoleNameExists(ctx, name); err != nil {
-		return err
-	}
-
-	role, _, err := ds.roleStorage.Get(ctx, name)
-	if err != nil {
-		return err
-	}
-	if err := verifyNotDefaultRole(role); err != nil {
+	// Verify storage constraints
+	if err := ds.verifyRoleForDeletion(ctx, name); err != nil {
 		return err
 	}
 
@@ -556,6 +548,23 @@ func (ds *dataStoreImpl) verifyRoleNameExists(ctx context.Context, name string) 
 		return errors.Wrapf(errox.NotFound, "name = %q", name)
 	}
 	return nil
+}
+
+// verifyRoleForDeletion verifies the storage constraints for deleting a role.
+// It will:
+// - verify that the role is not a default role
+// - verify that the role exists
+func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string) error {
+	role, found, err := ds.roleStorage.Get(ctx, name)
+
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.Wrapf(errox.NotFound, "name = %q", name)
+	}
+
+	return verifyNotDefaultRole(role)
 }
 
 // Returns errox.InvalidArgs if the given scope is a default one.
