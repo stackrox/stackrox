@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { useMemo } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
+import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
     TopologySideBar,
@@ -31,8 +32,15 @@ import { getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel } from './types/topology.type';
 import { createExtraneousEdges } from './utils/modelUtils';
 import { Simulation } from './utils/getSimulation';
+import LegendContent from './components/LegendContent';
 
 import './Topology.css';
+import useNetworkPolicySimulator, {
+    ApplyNetworkPolicyModification,
+    NetworkPolicySimulator,
+    SetNetworkPolicyModification,
+} from './hooks/useNetworkPolicySimulator';
+import SimulationFrame from './simulation/SimulationFrame';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -64,6 +72,9 @@ export type TopologyComponentProps = {
     edgeState: EdgeState;
     simulation: Simulation;
     selectedClusterId: string;
+    simulator: NetworkPolicySimulator;
+    setNetworkPolicyModification: SetNetworkPolicyModification;
+    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
 };
 
 function getNodeEdges(selectedNode) {
@@ -91,6 +102,9 @@ const TopologyComponent = ({
     edgeState,
     simulation,
     selectedClusterId,
+    simulator,
+    setNetworkPolicyModification,
+    applyNetworkPolicyModification,
 }: TopologyComponentProps) => {
     const history = useHistory();
     const { detailId } = useParams();
@@ -266,7 +280,12 @@ const TopologyComponent = ({
             sideBar={
                 <TopologySideBar resizable onClose={closeSidebar}>
                     {simulation.isOn && simulation.type === 'networkPolicy' && (
-                        <NetworkPolicySimulatorSidePanel selectedClusterId={selectedClusterId} />
+                        <NetworkPolicySimulatorSidePanel
+                            selectedClusterId={selectedClusterId}
+                            simulator={simulator}
+                            setNetworkPolicyModification={setNetworkPolicyModification}
+                            applyNetworkPolicyModification={applyNetworkPolicyModification}
+                        />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
                         <NamespaceSideBar
@@ -282,7 +301,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                         />
                     )}
-                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL' && (
+                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_GROUP' && (
                         <ExternalGroupSideBar
                             id={selectedEntity.id}
                             nodes={model?.nodes || []}
@@ -324,14 +343,17 @@ const TopologyComponent = ({
                             controller.getGraph().reset();
                             controller.getGraph().layout();
                         },
-                        legendCallback: () => {
-                            // console.log('hi');
-                        },
                     })}
                 />
             }
         >
             <VisualizationSurface state={{ selectedIds }} />
+            <Popover
+                aria-label="Network graph legend"
+                bodyContent={<LegendContent />}
+                hasAutoWidth
+                reference={() => document.getElementById('legend') as HTMLButtonElement}
+            />
         </TopologyView>
     );
 };
@@ -343,17 +365,26 @@ const NetworkGraph = React.memo<NetworkGraphProps>(
         controller.registerComponentFactory(defaultComponentFactory);
         controller.registerComponentFactory(stylesComponentFactory);
 
+        const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
+            useNetworkPolicySimulator({
+                simulation,
+                clusterId: selectedClusterId,
+            });
+
         return (
-            <div className="pf-ri__topology-demo">
+            <SimulationFrame simulator={simulator}>
                 <VisualizationProvider controller={controller}>
                     <TopologyComponent
                         model={model}
                         edgeState={edgeState}
                         simulation={simulation}
                         selectedClusterId={selectedClusterId}
+                        simulator={simulator}
+                        setNetworkPolicyModification={setNetworkPolicyModification}
+                        applyNetworkPolicyModification={applyNetworkPolicyModification}
                     />
                 </VisualizationProvider>
-            </div>
+            </SimulationFrame>
         );
     }
 );

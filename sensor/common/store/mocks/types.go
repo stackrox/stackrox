@@ -10,6 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
+	selector "github.com/stackrox/rox/sensor/common/selector"
 	service "github.com/stackrox/rox/sensor/common/service"
 	store "github.com/stackrox/rox/sensor/common/store"
 )
@@ -50,6 +51,20 @@ func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, depende
 func (mr *MockDeploymentStoreMockRecorder) BuildDeploymentWithDependencies(id, dependencies interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDeploymentWithDependencies", reflect.TypeOf((*MockDeploymentStore)(nil).BuildDeploymentWithDependencies), id, dependencies)
+}
+
+// FindDeploymentIDsByLabels mocks base method.
+func (m *MockDeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindDeploymentIDsByLabels", namespace, sel)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// FindDeploymentIDsByLabels indicates an expected call of FindDeploymentIDsByLabels.
+func (mr *MockDeploymentStoreMockRecorder) FindDeploymentIDsByLabels(namespace, sel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeploymentIDsByLabels", reflect.TypeOf((*MockDeploymentStore)(nil).FindDeploymentIDsByLabels), namespace, sel)
 }
 
 // FindDeploymentIDsWithServiceAccount mocks base method.
@@ -406,6 +421,34 @@ func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 	return m.recorder
 }
 
+// Deployments mocks base method.
+func (m *MockProvider) Deployments() store.DeploymentStore {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Deployments")
+	ret0, _ := ret[0].(store.DeploymentStore)
+	return ret0
+}
+
+// Deployments indicates an expected call of Deployments.
+func (mr *MockProviderMockRecorder) Deployments() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deployments", reflect.TypeOf((*MockProvider)(nil).Deployments))
+}
+
+// EndpointManager mocks base method.
+func (m *MockProvider) EndpointManager() store.EndpointManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EndpointManager")
+	ret0, _ := ret[0].(store.EndpointManager)
+	return ret0
+}
+
+// EndpointManager indicates an expected call of EndpointManager.
+func (mr *MockProviderMockRecorder) EndpointManager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndpointManager", reflect.TypeOf((*MockProvider)(nil).EndpointManager))
+}
+
 // RBAC mocks base method.
 func (m *MockProvider) RBAC() store.RBACStore {
 	m.ctrl.T.Helper()
@@ -432,4 +475,39 @@ func (m *MockProvider) Services() store.ServiceStore {
 func (mr *MockProviderMockRecorder) Services() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Services", reflect.TypeOf((*MockProvider)(nil).Services))
+}
+
+// MockEndpointManager is a mock of EndpointManager interface.
+type MockEndpointManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockEndpointManagerMockRecorder
+}
+
+// MockEndpointManagerMockRecorder is the mock recorder for MockEndpointManager.
+type MockEndpointManagerMockRecorder struct {
+	mock *MockEndpointManager
+}
+
+// NewMockEndpointManager creates a new mock instance.
+func NewMockEndpointManager(ctrl *gomock.Controller) *MockEndpointManager {
+	mock := &MockEndpointManager{ctrl: ctrl}
+	mock.recorder = &MockEndpointManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEndpointManager) EXPECT() *MockEndpointManagerMockRecorder {
+	return m.recorder
+}
+
+// OnDeploymentCreateOrUpdateByID mocks base method.
+func (m *MockEndpointManager) OnDeploymentCreateOrUpdateByID(id string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnDeploymentCreateOrUpdateByID", id)
+}
+
+// OnDeploymentCreateOrUpdateByID indicates an expected call of OnDeploymentCreateOrUpdateByID.
+func (mr *MockEndpointManagerMockRecorder) OnDeploymentCreateOrUpdateByID(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnDeploymentCreateOrUpdateByID", reflect.TypeOf((*MockEndpointManager)(nil).OnDeploymentCreateOrUpdateByID), id)
 }

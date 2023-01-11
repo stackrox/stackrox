@@ -40,6 +40,13 @@ export type NamespaceData = {
 
 export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
 
+export type NodeDataType =
+    | 'DEPLOYMENT'
+    | 'EXTERNAL_GROUP'
+    | 'EXTERNAL_ENTITIES'
+    | 'CIDR_BLOCK'
+    | 'EXTRANEOUS';
+
 export type DeploymentData = {
     type: 'DEPLOYMENT';
     id: string;

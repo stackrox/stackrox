@@ -37,8 +37,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	errNoMetadata = errors.New("Clair v4: Unable to complete scan because the image is missing metadata")
-	errInternal   = errors.New("Clair v4: Clair internal server error")
+	errInternal = errors.New("Clair v4: Clair internal server error")
 )
 
 // Creator provides the type a scanners.Creator to add to the scanners Registry.
@@ -115,12 +114,12 @@ func validate(cfg *storage.ClairV4Config) error {
 }
 
 func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
-	if image.GetMetadata() == nil {
-		return nil, errNoMetadata
-	}
-
 	// For logging/error message purposes.
 	imgName := image.GetName().GetFullName()
+
+	if image.GetMetadata() == nil {
+		return nil, errors.Errorf("Clair v4: Unable to complete scan of image %s because it is missing metadata", imgName)
+	}
 
 	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types/digest.go)
 	// to mirror clairctl (https://github.com/quay/clair/blob/v4.5.0/cmd/clairctl/report.go#L251).
@@ -131,6 +130,9 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	digest := ccDigest.String()
 
 	exists, err := c.indexReportExists(digest)
+	if err != nil {
+		log.Debugf("Clair v4: Received error status from Clair: %v", err)
+	}
 	// Exit early if this is an unexpected status code error.
 	// If it's not an unexpected error, then continue as normal and ignore the error.
 	if isUnexpectedStatusCodeError(err) {

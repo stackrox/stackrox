@@ -196,7 +196,7 @@ class QuayImageIntegration implements ImageIntegration {
                 endpoint: "quay.io",
                 includeScanner: true,
                 insecure: false,
-                oauthToken: Env.mustGet("QUAY_BEARER_TOKEN"),
+                oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"),
         ]
         Map args = defaultArgs + customArgs
 

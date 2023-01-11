@@ -7,6 +7,7 @@ import (
 )
 
 type namespacedBindingID struct {
+	name      string
 	namespace string
 	uid       string
 }
@@ -43,11 +44,11 @@ func (b *namespacedBinding) Equal(other *namespacedBinding) bool {
 }
 
 func roleBindingToNamespacedBindingID(roleBinding *v1.RoleBinding) namespacedBindingID {
-	return namespacedBindingID{namespace: roleBinding.GetNamespace(), uid: string(roleBinding.GetUID())}
+	return namespacedBindingID{namespace: roleBinding.GetNamespace(), name: roleBinding.GetName(), uid: string(roleBinding.GetUID())}
 }
 
 func clusterRoleBindingToNamespacedBindingID(clusterRoleBinding *v1.ClusterRoleBinding) namespacedBindingID {
-	return namespacedBindingID{namespace: "", uid: string(clusterRoleBinding.GetUID())}
+	return namespacedBindingID{namespace: "", name: clusterRoleBinding.GetName(), uid: string(clusterRoleBinding.GetUID())}
 }
 
 // roleBindingToNamespacedBinding returns the namespaced binding from the role binding.

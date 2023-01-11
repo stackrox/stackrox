@@ -1,6 +1,9 @@
 package resolver
 
-import "github.com/stackrox/rox/sensor/common/store"
+import (
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/store"
+)
 
 // DeploymentReference generates a list of deployment IDs that need to be updated given the deployment store.
 type DeploymentReference func(store store.DeploymentStore) []string
@@ -25,5 +28,12 @@ func ResolveDeploymentsByMultipleServiceAccounts(serviceAccounts []NamespaceServ
 			allIds = append(allIds, store.FindDeploymentIDsWithServiceAccount(sa.Namespace, sa.ServiceAccount)...)
 		}
 		return allIds
+	}
+}
+
+// ResolveDeploymentLabels returns a function that returns a list of deployment ids based on namespace and labels
+func ResolveDeploymentLabels(namespace string, sel selector.Selector) DeploymentReference {
+	return func(store store.DeploymentStore) []string {
+		return store.FindDeploymentIDsByLabels(namespace, sel)
 	}
 }

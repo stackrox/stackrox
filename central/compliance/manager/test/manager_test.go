@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	deploymentDatastoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	nodeDatastoreMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	podDatastoreMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	scrapeMocks "github.com/stackrox/rox/central/scrape/factory/mocks"
@@ -33,7 +33,7 @@ type managerTestSuite struct {
 	mockCtrl            *gomock.Controller
 	standardRegistry    *standards.Registry
 	mockClusterStore    *clusterDatastoreMocks.MockDataStore
-	mockNodeStore       *nodeDatastoreMocks.MockGlobalDataStore
+	mockNodeStore       *nodeDatastoreMocks.MockDataStore
 	mockDeploymentStore *deploymentDatastoreMocks.MockDataStore
 	mockPodStore        *podDatastoreMocks.MockDataStore
 	mockDataRepoFactory *complianceDataMocks.MockRepositoryFactory
@@ -138,7 +138,7 @@ func (s *managerTestSuite) SetupTest() {
 	s.standardRegistry, err = standards.NewRegistry(nil, nil)
 	s.Require().NoError(err)
 	s.mockClusterStore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	s.mockNodeStore = nodeDatastoreMocks.NewMockGlobalDataStore(s.mockCtrl)
+	s.mockNodeStore = nodeDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.mockDeploymentStore = deploymentDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.mockPodStore = podDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.mockScrapeFactory = scrapeMocks.NewMockScrapeFactory(s.mockCtrl)
