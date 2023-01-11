@@ -12,7 +12,6 @@ import (
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -20,6 +19,7 @@ import (
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -59,23 +59,23 @@ func NewDispatcherRegistry(
 	clusterID string,
 	podLister v1Listers.PodLister,
 	profileLister cache.GenericLister,
-	entityStore *clusterentities.Store,
 	processFilter filter.Filter,
 	configHandler config.Handler,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
 	storeProvider *InMemoryStoreProvider,
+	k8sAPI kubernetes.Interface,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
 	serviceAccountStore := ServiceAccountStoreSingleton()
-	deploymentStore := DeploymentStoreSingleton()
-	podStore := PodStoreSingleton()
-	nodeStore := newNodeStore()
+	deploymentStore := storeProvider.deploymentStore
+	podStore := storeProvider.podStore
+	nodeStore := storeProvider.nodeStore
 	nsStore := newNamespaceStore()
 	netPolicyStore := NetworkPolicySingleton()
-	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
+	endpointManager := storeProvider.endpointManager
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())
 	registryStore := registry.Singleton()
 
@@ -83,7 +83,7 @@ func NewDispatcherRegistry(
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, namespaces, registryStore, credentialsManager),
 
-		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
+		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater, k8sAPI),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
 		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),

@@ -77,6 +77,9 @@ func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc serviceWi
 type mockEndpointManager struct {
 }
 
+func (m *mockEndpointManager) OnDeploymentCreateOrUpdateByID(string) {
+}
+
 func (m *mockEndpointManager) OnDeploymentCreateOrUpdate(*deploymentWrap) {
 }
 
