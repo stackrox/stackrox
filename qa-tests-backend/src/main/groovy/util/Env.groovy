@@ -25,7 +25,10 @@ class Env {
     static final CI_TAG = System.getenv("CIRCLE_TAG")
     static final GATHER_QA_TEST_DEBUG_LOGS = (System.getenv("GATHER_QA_TEST_DEBUG_LOGS") == "true")
     static final QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
-    static final HW_ARCH = System.getenv("CLUSTER_HW_ARCH")
+
+    // REMOTE_CLUSTER_ARCH specifies architecture of a remote cluster on which tests are to be executed
+    // the remote cluster arch can be ppc64le or s390x, default is x86_64
+    static final HW_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
 
     private static final Env INSTANCE = new Env()
 
