@@ -56,12 +56,12 @@ func (suite *centralDBTestSuite) testWithHostPath(t *testing.T, c Config, m mode
 	log.Info("Test host path")
 	c.HostPath = &HostPathPersistence{
 		DB: &HostPathPersistenceInstance{
-			HostPath: "/var/lib/stackrox",
+			HostPath: "/var/lib/stackrox-db",
 		},
 	}
 	files, err := render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
-	suite.verifyFiles(t, files, &c, "hostpath")
+	suite.verifyFiles(t, files, &c)
 
 	c.HostPath = &HostPathPersistence{
 		DB: &HostPathPersistenceInstance{
@@ -72,7 +72,7 @@ func (suite *centralDBTestSuite) testWithHostPath(t *testing.T, c Config, m mode
 	}
 	files, err = render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
-	suite.verifyFiles(t, files, &c, "hostpath")
+	suite.verifyFiles(t, files, &c)
 
 	obj := getObj(suite.T(), files, "central/01-central-12-central-db.yaml")
 	centralDepoyment := obj.(*appsv1.Deployment)
@@ -103,7 +103,7 @@ func getObj(t *testing.T, files []*zip.File, filePath string) runtime.Object {
 	return obj
 }
 
-func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, c *Config, storage string) {
+func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, c *Config) {
 	fm := make(map[string][]unstructured.Unstructured, len(files))
 	for _, f := range files {
 		if f.Name == "README" || strings.HasSuffix(f.Name, ".sh") {
@@ -115,29 +115,48 @@ func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, c 
 		fm[strings.TrimPrefix(f.Name, "central/")] = unstructuredObjs
 	}
 	// Verify secrets overwrite
-	suite.verifyFile(t, fm, "01-central-05-db-tls-secret.yaml", "Secret", string(suite.testCA.CertPEM()), "stringData", "ca.pem")
-	suite.verifyFile(t, fm, "01-central-05-db-tls-secret.yaml", "Secret", string(suite.centralDBCert.CertPEM), "stringData", "cert.pem")
-	suite.verifyFile(t, fm, "01-central-05-db-tls-secret.yaml", "Secret", string(suite.centralDBCert.KeyPEM), "stringData", "key.pem")
+	verifyNestedFieldInFile(t, fm, "01-central-05-db-tls-secret.yaml", "Secret", string(suite.testCA.CertPEM()), "stringData", "ca.pem")
+	verifyNestedFieldInFile(t, fm, "01-central-05-db-tls-secret.yaml", "Secret", string(suite.centralDBCert.CertPEM), "stringData", "cert.pem")
+	verifyNestedFieldInFile(t, fm, "01-central-05-db-tls-secret.yaml", "Secret", string(suite.centralDBCert.KeyPEM), "stringData", "key.pem")
 	// Verify top level resources
-	suite.verifyFile(t, fm, "01-central-00-db-serviceaccount.yaml", "ServiceAccount", "central-db", "metadata", "name")
-	suite.verifyFile(t, fm, "01-central-08-db-configmap.yaml", "ConfigMap", "central-db-config", "metadata", "name")
-	suite.verifyFile(t, fm, "01-central-08-external-db-configmap.yaml", "ConfigMap", "central-external-db", "metadata", "name")
-	suite.verifyFile(t, fm, "01-central-12-central-db.yaml", "Deployment", "central-db", "metadata", "name")
+	verifyNestedFieldInFile(t, fm, "01-central-00-db-serviceaccount.yaml", "ServiceAccount", "central-db", "metadata", "name")
+	verifyNestedFieldInFile(t, fm, "01-central-08-db-configmap.yaml", "ConfigMap", "central-db-config", "metadata", "name")
+	verifyNestedFieldInFile(t, fm, "01-central-08-external-db-configmap.yaml", "ConfigMap", "central-external-db", "metadata", "name")
+	verifyNestedFieldInFile(t, fm, "01-central-12-central-db.yaml", "Deployment", "central-db", "metadata", "name")
 
-	switch storage {
-	case "pvc":
+	if c.HasCentralDBExternal() {
 		// Verify Persistent Volume Claim
-		suite.verifyFile(t, fm, "01-central-11-db-pvc.yaml", "PersistentVolumeClaim", "name", "metadata", "name")
-		suite.verifyFile(t, fm, "01-central-11-db-pvc.yaml", "PersistentVolumeClaim", "name", "metadata", "name")
-	case "hostpath":
+		verifyNestedFieldInFile(t, fm, "01-central-11-db-pvc.yaml", "PersistentVolumeClaim", "name", "metadata", "name")
+		verifyNestedFieldInFile(t, fm, "01-central-11-db-pvc.yaml", "PersistentVolumeClaim", "name", "metadata", "name")
+	} else if c.HasCentralDBHostPath() {
 		// Verify Hostpath
-		suite.verifyFile(t, fm, "01-central-12-central-db.yaml", "Deployment", "value", "spec", "name")
-	default:
+		contents := getMatchedMapInFile(t, fm, "01-central-12-central-db.yaml", "Deployment")
+		vals, ok, err := unstructured.NestedSlice(contents, "spec", "template", "spec", "volumes")
+		assert.NoError(t, err)
+		assert.True(t, ok)
+		for _, val := range vals {
+			vol := val.(map[string]interface{})
+			if vol["name"] == "disk" {
+				verifyNestedString(t, vol, "/var/lib/stackrox-db", "hostPath", "path")
+				break
+			}
+		}
+		if c.HostPath.DB.NodeSelectorKey != "" {
+			verifyNestedFieldInFile(t, fm, "01-central-12-central-db.yaml", "Deployment", c.HostPath.DB.NodeSelectorValue, "spec", "template", "spec", "nodeSelector", c.HostPath.DB.NodeSelectorKey)
+		}
+	} else {
 		assert.NotContains(t, files, "01-central-11-db-pvc.yaml")
 	}
 }
 
-func (suite *centralDBTestSuite) verifyFile(t *testing.T, fileMap map[string][]unstructured.Unstructured, fileName string, kind string, value string, fields ...string) {
+func verifyNestedString(t *testing.T, objMap map[string]interface{}, value string, fields ...string) {
+	val, ok, err := unstructured.NestedString(objMap, fields...)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	assert.Equal(t, value, val)
+}
+
+func getMatchedMapInFile(t *testing.T, fileMap map[string][]unstructured.Unstructured, fileName string, kind string) map[string]interface{} {
 	objs, ok := fileMap[fileName]
 	require.True(t, ok, "%s not found", fileName)
 	require.GreaterOrEqual(t, len(objs), 1)
@@ -146,14 +165,16 @@ func (suite *centralDBTestSuite) verifyFile(t *testing.T, fileMap map[string][]u
 		require.NoError(t, err)
 		require.True(t, ok)
 		if val == kind {
-			val, ok, err := unstructured.NestedString(obj.UnstructuredContent(), fields...)
-			require.NoError(t, err)
-			require.True(t, ok)
-			assert.Equal(t, val, value)
-			return
+			return obj.UnstructuredContent()
 		}
 	}
 	assert.Failf(t, "Cannot find kind", kind)
+	return nil
+}
+
+func verifyNestedFieldInFile(t *testing.T, fileMap map[string][]unstructured.Unstructured, fileName string, kind string, value string, fields ...string) {
+	contents := getMatchedMapInFile(t, fileMap, fileName, kind)
+	verifyNestedString(t, contents, value, fields...)
 }
 
 func (suite *centralDBTestSuite) testWithPV(t *testing.T, c Config, m mode) {
@@ -165,7 +186,7 @@ func (suite *centralDBTestSuite) testWithPV(t *testing.T, c Config, m mode) {
 	}
 	files, err := render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
-	suite.verifyFiles(t, files, &c, "pvc")
+	suite.verifyFiles(t, files, &c)
 
 	c.External = &ExternalPersistence{
 		DB: &ExternalPersistenceInstance{
@@ -175,7 +196,7 @@ func (suite *centralDBTestSuite) testWithPV(t *testing.T, c Config, m mode) {
 	}
 	files, err = render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
-	suite.verifyFiles(t, files, &c, "pvc")
+	suite.verifyFiles(t, files, &c)
 }
 
 func (suite *centralDBTestSuite) TestRenderCentralDBBundle() {
