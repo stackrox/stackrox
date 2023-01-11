@@ -41,8 +41,7 @@ func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 	serviceAccountReferences := mapReference(update.deploymentReference)
 	component.MergeResourceEvents(componentMessage, component.NewDeploymentRefEvent(
 		resolver.ResolveDeploymentsByMultipleServiceAccounts(serviceAccountReferences),
-		central.ResourceAction_UPDATE_RESOURCE,
-	))
+		central.ResourceAction_UPDATE_RESOURCE, false))
 
 	return componentMessage
 }
