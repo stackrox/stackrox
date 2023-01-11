@@ -170,11 +170,9 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
-		// d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
 	} else {
 		d.deploymentStore.removeDeployment(deploymentWrap)
 		d.podStore.onDeploymentRemove(deploymentWrap)
-		// d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		d.processFilter.Delete(deploymentWrap.GetId())
 	}
 

@@ -39,8 +39,8 @@ type ResourceEvent struct {
 	ParentResourceAction central.ResourceAction
 
 	// ForceDetection is a flag that will force a detection even if the deployment has no changes.
-	// This is needed to trigger detection for resources like NetworkPolicies that are not part of the deployment object
-	// and therefore will not be triggered since the deduper won't see any changes in the deployment.
+	// This is needed to trigger detection of deployments associated with a NetworkPolicy, since they are not part of the deployment spec
+	// and therefore will not be triggered since the deduper won't recognize that a deployment was changed.
 	ForceDetection bool
 }
 
