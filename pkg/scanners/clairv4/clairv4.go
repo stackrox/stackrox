@@ -36,7 +36,6 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	errNoMetadata = errors.New("Clair v4: Unable to complete scan because the image is missing metadata")
 	errInternal   = errors.New("Clair v4: Clair internal server error")
 )
 
@@ -130,10 +129,12 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	digest := ccDigest.String()
 
 	exists, err := c.indexReportExists(digest)
+	if err != nil {
+		log.Debugf("Clair v4: Received error status from Clair: %v", err)
+	}
 	// Exit early if this is an unexpected status code error.
 	// If it's not an unexpected error, then continue as normal and ignore the error.
 	if isUnexpectedStatusCodeError(err) {
-		log.Debugf("Clair v4: Received unexpected status from Clair: %v", err)
 		return nil, errors.Wrapf(err, "Clair v4: checking if index report exists for %s", imgName)
 	}
 	if !exists {
