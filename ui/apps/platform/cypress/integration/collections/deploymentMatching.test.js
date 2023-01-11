@@ -93,6 +93,7 @@ describe('Collection deployment matching', () => {
         assertDeploymentsAreNotMatched(['kube-dns']);
 
         // View more and ensure the next page loads
+        cy.get(`${selectors.resultsPanel} > div:last-child`).scrollTo('bottom');
         cy.get(selectors.viewMoreResultsButton).click();
         assertDeploymentsAreMatched(['kube-dns']);
 
