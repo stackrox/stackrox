@@ -36,7 +36,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	errInternal   = errors.New("Clair v4: Clair internal server error")
+	errInternal = errors.New("Clair v4: Clair internal server error")
 )
 
 // Creator provides the type a scanners.Creator to add to the scanners Registry.
