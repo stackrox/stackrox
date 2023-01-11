@@ -51,22 +51,14 @@ export function isNameMatchValue(value: {
     value: string;
     matchType: string;
 }): value is NameSelectorRule['values'][number] {
-    /*
-     TODO - Requires BE
     return byNameMatchType.includes(value.matchType as ByNameMatchType);
-    */
-    return true;
 }
 
 export function isLabelMatchValue(value: {
     value: string;
     matchType: string;
 }): value is LabelSelectorRule['values'][number] {
-    /*
-     TODO - Requires BE
     return byLabelMatchTypes.includes(value.matchType as ByLabelMatchType);
-    */
-    return true;
 }
 
 /**

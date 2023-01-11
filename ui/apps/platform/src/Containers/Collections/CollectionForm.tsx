@@ -124,8 +124,7 @@ function yupLabelRuleObject({ field }: ByLabelResourceSelector) {
                                 ),
                             matchType: yup
                                 .string()
-                                // TODO - requires BE
-                                // .required()
+                                .required()
                                 .matches(new RegExp(byLabelMatchTypes.join('|'))),
                         })
                     )
@@ -147,8 +146,7 @@ function yupNameRuleObject({ field }: ByNameResourceSelector) {
                         value: yup.string().trim().required(),
                         matchType: yup
                             .string()
-                            // TODO - requires BE
-                            // .required()
+                            .required()
                             .matches(new RegExp(byNameMatchType.join('|'))),
                     })
                 )
