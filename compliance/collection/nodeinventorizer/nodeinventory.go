@@ -107,6 +107,9 @@ func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*storage.Nod
 }
 
 func convertExecutables(exe []*scannerV1.Executable) []*storage.NodeInventory_Components_RHELComponent_Executable {
+	if exe == nil {
+		return nil
+	}
 	arr := make([]*storage.NodeInventory_Components_RHELComponent_Executable, len(exe))
 	for i, executable := range exe {
 		arr[i] = &storage.NodeInventory_Components_RHELComponent_Executable{
