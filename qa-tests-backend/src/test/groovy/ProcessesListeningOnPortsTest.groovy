@@ -5,8 +5,8 @@ import services.ClusterService
 import util.Env
 import util.Helpers
 
-import org.junit.experimental.categories.Category
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Stepwise
 
 import services.ProcessesListeningOnPortsService
@@ -106,7 +106,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
     }
 
-    @Tag([BAT])
+    @Tag("BAT")
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         "Two deployments that listen on ports are started up"
