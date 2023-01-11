@@ -292,11 +292,6 @@ func main() {
 
 	go startGRPCServer()
 
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		// Issue an event so that the central become visible for analytics:
-		cfg.Telemeter().Track("Central is up", cfg.ClientID, nil)
-	}
-
 	waitForTerminationSignal()
 }
 

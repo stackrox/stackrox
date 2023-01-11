@@ -66,6 +66,12 @@ func (g *gatherer) collect() map[string]any {
 }
 
 func (g *gatherer) loop() {
+	// Send initial data on start:
+	go func() {
+		g.telemeter.Identify(g.clientID, g.collect())
+		// Issue an event so that the client become visible for analytics:
+		g.telemeter.Track("Initial Identity", g.clientID, nil)
+	}()
 	ticker := time.NewTicker(g.period)
 	for !g.stopSig.IsDone() {
 		select {
