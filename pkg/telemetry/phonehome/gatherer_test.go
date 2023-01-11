@@ -42,11 +42,12 @@ func (s *gathererTestSuite) TestGatherer() {
 	var in, gn int64
 
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
-	t.EXPECT().Identify("test", nil).Times(3).Do(func(string, map[string]any) {
+	t.EXPECT().Identify("test", gomock.Any()).Times(3).Do(func(string, any) {
 		if atomic.AddInt64(&in, 1) > 1 {
 			identifyStop.Signal()
 		}
 	})
+	t.EXPECT().Track("Updated Identity", "test", nil).Times(3)
 
 	stop := concurrency.NewSignal()
 	gptr := newGatherer("test", t, 10*time.Millisecond)
@@ -55,7 +56,9 @@ func (s *gathererTestSuite) TestGatherer() {
 		if atomic.AddInt64(&gn, 1) > 1 {
 			stop.Signal()
 		}
-		return nil, nil
+		// Return different properties every time so that the update is not
+		// ignored:
+		return map[string]any{"key": gn}, nil
 	})
 	go func() {
 		stop.Wait()
