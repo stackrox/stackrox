@@ -172,7 +172,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	case storage.Schedule_DAILY:
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must have a valid schedule type")
 	case storage.Schedule_WEEKLY:
-		if schedule.GetDaysOfWeek() == nil {
+		if schedule.GetDaysOfWeek() == nil || len(schedule.GetDaysOfWeek().GetDays()) == 0 {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for the schedule")
 		}
 		for _, day := range schedule.GetDaysOfWeek().GetDays() {
@@ -181,7 +181,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 			}
 		}
 	case storage.Schedule_MONTHLY:
-		if schedule.GetDaysOfMonth() == nil || schedule.GetDaysOfMonth().GetDays() == nil {
+		if schedule.GetDaysOfMonth() == nil || len(schedule.GetDaysOfMonth().GetDays()) == 0 {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of the month for the schedule")
 		}
 		for _, day := range schedule.GetDaysOfMonth().GetDays() {
