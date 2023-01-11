@@ -1,0 +1,36 @@
+name: Tests
+on:
+  push:
+    tags:
+    - '*'
+    branches:
+    - master
+    - release-*
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Create combined mono repo lock file
+      uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
+    - name: Cache UI dependencies
+      uses: ./.github/actions/cache-ui-dependencies
+
+    - name: UI Unit Tests
+      run: make ui-test
+
+    - name: Publish Test Report
+      uses: mikepenz/action-junit-report@v3
+      if: always()
+      with:
+        report_paths: 'ui/test-results/reports/*.xml'

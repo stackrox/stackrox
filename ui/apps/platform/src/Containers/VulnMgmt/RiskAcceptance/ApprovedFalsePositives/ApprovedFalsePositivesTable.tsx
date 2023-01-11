@@ -10,9 +10,11 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { SearchIcon } from '@patternfly/react-icons';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
@@ -223,6 +225,21 @@ function ApprovedFalsePositivesTable({
                                 </Tr>
                             );
                         })}
+                        {!rows.length && (
+                            <Tr>
+                                <Td colSpan={8}>
+                                    <Bullseye>
+                                        <EmptyStateTemplate
+                                            title="No approved false positives found"
+                                            headingLevel="h2"
+                                            icon={SearchIcon}
+                                        >
+                                            To continue, edit your filter settings and search again.
+                                        </EmptyStateTemplate>
+                                    </Bullseye>
+                                </Td>
+                            </Tr>
+                        )}
                     </Tbody>
                 </TableComposable>
             )}

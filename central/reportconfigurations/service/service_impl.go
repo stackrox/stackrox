@@ -9,12 +9,14 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
+	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -48,10 +50,11 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedReportConfigurationServiceServer
 
-	manager           manager.Manager
-	reportConfigStore datastore.DataStore
-	notifierStore     notifierDataStore.DataStore
-	accessScopeStore  accessScopeStore.DataStore
+	manager             manager.Manager
+	reportConfigStore   datastore.DataStore
+	notifierStore       notifierDataStore.DataStore
+	accessScopeStore    accessScopeStore.DataStore
+	collectionDatastore collectionDataStore.DataStore
 }
 
 func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.RawQuery) (*v1.GetReportConfigurationsResponse, error) {
@@ -203,12 +206,19 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 		}
 	}
 
-	_, found, err := s.accessScopeStore.GetAccessScope(ctx, config.GetScopeId())
-	if !found || err != nil {
-		return errors.Wrapf(errox.NotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
+	if features.ObjectCollections.Enabled() {
+		_, found, err := s.collectionDatastore.Get(ctx, config.GetScopeId())
+		if !found || err != nil {
+			return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", config.GetScopeId(), err)
+		}
+	} else {
+		_, found, err := s.accessScopeStore.GetAccessScope(ctx, config.GetScopeId())
+		if !found || err != nil {
+			return errors.Wrapf(errox.NotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
+		}
 	}
 
-	_, found, err = s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
+	_, found, err := s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
 	if err != nil {
 		return errors.Wrapf(errox.NotFound, "Failed to fetch notifier %s with error %s", config.GetEmailConfig().GetNotifierId(), err)
 	}

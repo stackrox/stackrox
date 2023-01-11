@@ -3,6 +3,7 @@ import {
     Alert,
     AlertGroup,
     AlertVariant,
+    Bullseye,
     Button,
     ButtonVariant,
     DropdownItem,
@@ -14,6 +15,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
@@ -21,6 +23,7 @@ import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterResults from 'Components/PatternFly/SearchFilterResults';
 import TableCell from 'Components/PatternFly/TableCell';
@@ -264,18 +267,19 @@ function ReportingTablePanel({
                                 }}
                             />
                             {columns.map(({ Header, sortField }, idx) => {
-                                const sortParams = sortField
-                                    ? {
-                                          sort: {
-                                              sortBy: {
-                                                  index: activeSortIndex,
-                                                  direction: activeSortDirection,
+                                const sortParams =
+                                    sortField && Boolean(reports.length)
+                                        ? {
+                                              sort: {
+                                                  sortBy: {
+                                                      index: activeSortIndex,
+                                                      direction: activeSortDirection,
+                                                  },
+                                                  onSort,
+                                                  columnIndex: idx,
                                               },
-                                              onSort,
-                                              columnIndex: idx,
-                                          },
-                                      }
-                                    : {};
+                                          }
+                                        : {};
                                 return (
                                     <Th key={Header} modifier="wrap" {...sortParams}>
                                         {Header}
@@ -346,6 +350,21 @@ function ReportingTablePanel({
                                 </Tr>
                             );
                         })}
+                        {!reports.length && (
+                            <Tr>
+                                <Td colSpan={8}>
+                                    <Bullseye>
+                                        <EmptyStateTemplate
+                                            title="No results found"
+                                            headingLevel="h2"
+                                            icon={SearchIcon}
+                                        >
+                                            Try clearing some of the filters
+                                        </EmptyStateTemplate>
+                                    </Bullseye>
+                                </Td>
+                            </Tr>
+                        )}
                     </Tbody>
                 </TableComposable>
             </PageSection>
