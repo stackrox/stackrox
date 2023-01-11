@@ -1039,6 +1039,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         def sec = client.secrets().inNamespace(secret.namespace).createOrReplace(k8sSecret)
+        log.debug secret.name + ": Secret created."
         return sec.metadata.uid
     }
 
@@ -1709,6 +1710,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         def config = client.configMaps().inNamespace(namespace).createOrReplace(configMap)
+        log.debug name + ": ConfigMap created."
         return config.metadata.uid
     }
 
