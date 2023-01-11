@@ -501,7 +501,7 @@ func TestStore_DeploymentRelationship(t *testing.T) {
 		},
 		"No service account update if only a role is received": {
 			orderedUpdates:         []any{roles[0]},
-			serviceAccountsUpdates: []string{},
+			serviceAccountsUpdates: nil,
 		},
 		"Update service account both on binding and role update": {
 			orderedUpdates:         []any{bindings[0], roles[0]},
@@ -513,7 +513,7 @@ func TestStore_DeploymentRelationship(t *testing.T) {
 		},
 		"No service account update if only a custer role is received": {
 			orderedUpdates:         []any{clusterRoles[0]},
-			serviceAccountsUpdates: []string{},
+			serviceAccountsUpdates: nil,
 		},
 		"Update service account both on cluster binding and cluster role update": {
 			orderedUpdates:         []any{clusterBindings[0], clusterRoles[0]},
@@ -546,6 +546,8 @@ func TestStore_DeploymentRelationship(t *testing.T) {
 				assert.NotNil(t, r)
 				r(deploymentStore)
 			}
+
+			assert.Equal(t, testCase.serviceAccountsUpdates, orderedServiceAccounts)
 		})
 
 	}
