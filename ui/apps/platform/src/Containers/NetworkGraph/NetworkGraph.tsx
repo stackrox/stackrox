@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { useMemo } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
+import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
     TopologySideBar,
@@ -31,6 +32,7 @@ import { getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel } from './types/topology.type';
 import { createExtraneousEdges } from './utils/modelUtils';
 import { Simulation } from './utils/getSimulation';
+import LegendContent from './components/LegendContent';
 
 import './Topology.css';
 import useNetworkPolicySimulator, {
@@ -341,14 +343,17 @@ const TopologyComponent = ({
                             controller.getGraph().reset();
                             controller.getGraph().layout();
                         },
-                        legendCallback: () => {
-                            // console.log('hi');
-                        },
                     })}
                 />
             }
         >
             <VisualizationSurface state={{ selectedIds }} />
+            <Popover
+                aria-label="Network graph legend"
+                bodyContent={<LegendContent />}
+                hasAutoWidth
+                reference={() => document.getElementById('legend') as HTMLButtonElement}
+            />
         </TopologyView>
     );
 };
