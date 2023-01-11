@@ -1,6 +1,6 @@
 import { CollectionRequest, Collection } from 'services/CollectionsService';
 import { generateRequest, isCollectionParseError, parseCollection } from './converter';
-import { ByLabelResourceSelector, ClientCollection, LabelSelectorRule } from './types';
+import { ClientCollection } from './types';
 
 describe('Collection parser', () => {
     it('should convert between BE CollectionResponse and FE Collection', () => {
