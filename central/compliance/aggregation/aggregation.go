@@ -13,7 +13,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -89,7 +89,7 @@ func New(compliance complianceDS.DataStore,
 	standards standards.Repository,
 	clusters clusterDatastore.DataStore,
 	namespaces namespaceStore.DataStore,
-	nodes nodeDatastore.GlobalDataStore,
+	nodes nodeDatastore.DataStore,
 	deployments deploymentStore.DataStore) Aggregator {
 	return &aggregatorImpl{
 		compliance:  compliance,
@@ -106,7 +106,7 @@ type aggregatorImpl struct {
 	standards   standards.Repository
 	clusters    clusterDatastore.DataStore
 	namespaces  namespaceStore.DataStore
-	nodes       nodeDatastore.GlobalDataStore
+	nodes       nodeDatastore.DataStore
 	deployments deploymentStore.DataStore
 }
 
