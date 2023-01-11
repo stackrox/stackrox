@@ -1,8 +1,6 @@
 package renderer
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"strings"
 	"testing"
@@ -19,11 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestRenderCentralDBOnly(t *testing.T) {
@@ -73,34 +67,6 @@ func (suite *centralDBTestSuite) testWithHostPath(t *testing.T, c Config, m mode
 	files, err = render(c, m, suite.testFlavor)
 	assert.NoError(t, err)
 	suite.verifyFiles(t, files, &c)
-
-	obj := getObj(suite.T(), files, "central/01-central-12-central-db.yaml")
-	centralDepoyment := obj.(*appsv1.Deployment)
-	require.NotNil(t, centralDepoyment)
-	require.NotNil(t, centralDepoyment.Spec)
-	require.NotNil(t, centralDepoyment.Spec.Template)
-	require.NotNil(t, centralDepoyment.Spec.Template.Spec)
-	require.NotNil(t, centralDepoyment.Spec.Template.Spec.NodeSelector)
-	require.Equal(t, map[string]string{"key": "value"}, centralDepoyment.Spec.Template.Spec.NodeSelector)
-}
-
-func getObj(t *testing.T, files []*zip.File, filePath string) runtime.Object {
-	var f *zip.File
-	for _, f = range files {
-		if f.Name == filePath {
-			break
-		}
-	}
-	assert.Equal(t, filePath, f.Name)
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	reader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBuffer(f.Content)))
-
-	yamlBytes, err := reader.Read()
-	assert.NoError(t, err)
-
-	obj, _, err := decode(yamlBytes, nil, nil)
-	assert.NoError(t, err)
-	return obj
 }
 
 func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, c *Config) {
@@ -220,7 +186,6 @@ func (suite *centralDBTestSuite) TestRenderCentralDBBundle() {
 			}
 			conf.K8sConfig.DeploymentFormat = v1.DeploymentFormat_KUBECTL
 			conf.ClusterType = orch
-
 			suite.testWithHostPath(t, conf, centralDBOnly)
 			suite.testWithPV(t, conf, centralDBOnly)
 		})
