@@ -25,7 +25,8 @@ import useURLParameter from 'hooks/useURLParameter';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
-import EdgeStateSelect, { EdgeState } from './EdgeStateSelect';
+import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
+import DisplayOptionsSelect from './components/DisplayOptionsSelect';
 import NetworkGraph from './NetworkGraph';
 import {
     transformPolicyData,
@@ -60,6 +61,7 @@ const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
 
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
+    const [displayOptions, setDisplayOptions] = useState([]);
     const [activeModel, setActiveModel] = useState<CustomModel>(emptyModel);
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
@@ -223,7 +225,12 @@ function NetworkGraphPage() {
                         </ToolbarGroup>
                         <ToolbarGroup>
                             <ToolbarItem>Add one or more deployment filters</ToolbarItem>
-                            <ToolbarItem>Display options</ToolbarItem>
+                            <ToolbarItem>
+                                <DisplayOptionsSelect
+                                    selectedOptions={displayOptions}
+                                    setSelectedOptions={setDisplayOptions}
+                                />
+                            </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup alignment={{ default: 'alignRight' }}>
                             <Divider component="div" isVertical />

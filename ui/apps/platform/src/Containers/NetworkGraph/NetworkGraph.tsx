@@ -26,7 +26,7 @@ import CidrBlockSideBar from './cidr/CidrBlockSideBar';
 import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel from './simulation/NetworkPolicySimulatorSidePanel';
-import { EdgeState } from './EdgeStateSelect';
+import { EdgeState } from './components/EdgeStateSelect';
 import { getNodeById } from './utils/networkGraphUtils';
 import { CustomEdgeModel, CustomModel, CustomNodeModel } from './types/topology.type';
 import { createExtraneousEdges } from './utils/modelUtils';
