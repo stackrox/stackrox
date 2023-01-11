@@ -2,6 +2,7 @@ package phonehome
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -33,6 +34,7 @@ type gatherer struct {
 	ctx         context.Context
 	mu          sync.Mutex
 	gatherFuncs []GatherFunc
+	lastData    map[string]any
 }
 
 func newGatherer(clientID string, t Telemeter, p time.Duration) *gatherer {
@@ -65,20 +67,24 @@ func (g *gatherer) collect() map[string]any {
 	return result
 }
 
+func (g *gatherer) identify() {
+	data := g.collect()
+	if !reflect.DeepEqual(g.lastData, data) {
+		g.telemeter.Identify(g.clientID, data)
+		// Issue an event so that the new data become visible on analytics:
+		g.telemeter.Track("Updated Identity", g.clientID, nil)
+	}
+	g.lastData = data
+}
+
 func (g *gatherer) loop() {
 	// Send initial data on start:
-	go func() {
-		g.telemeter.Identify(g.clientID, g.collect())
-		// Issue an event so that the client become visible for analytics:
-		g.telemeter.Track("Initial Identity", g.clientID, nil)
-	}()
+	g.identify()
 	ticker := time.NewTicker(g.period)
 	for !g.stopSig.IsDone() {
 		select {
 		case <-ticker.C:
-			go func() {
-				g.telemeter.Identify(g.clientID, g.collect())
-			}()
+			go g.identify()
 		case <-g.stopSig.Done():
 			ticker.Stop()
 			return
