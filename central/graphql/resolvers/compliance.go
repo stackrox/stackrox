@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
-	"github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -617,11 +616,8 @@ func (resolver *complianceControlResolver) ComplianceControlEntities(ctx context
 	if err != nil || !hasComplianceSuccessfullyRun {
 		return nil, err
 	}
-	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
-	if err != nil {
-		return nil, err
-	}
-	return resolver.root.wrapNodes(store.ListNodes())
+
+	return resolver.root.wrapNodes(resolver.root.NodeDataStore.SearchRawNodes(ctx, clusterQuery(clusterID)))
 }
 
 func (resolver *complianceControlResolver) ComplianceControlNodeCount(ctx context.Context, args RawQuery) (*complianceControlNodeCountResolver, error) {
@@ -668,11 +664,7 @@ func (resolver *complianceControlResolver) ComplianceControlNodes(ctx context.Co
 		if !ok || err != nil {
 			return nil, err
 		}
-		ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
-		if err != nil {
-			return nil, err
-		}
-		resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, all, ds))
+		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(rs, all))
 		if err != nil {
 			return nil, err
 		}
@@ -699,11 +691,7 @@ func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx con
 		if !ok || err != nil {
 			return nil, err
 		}
-		ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
-		if err != nil {
-			return nil, err
-		}
-		resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, failing, ds))
+		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(rs, failing))
 		if err != nil {
 			return nil, err
 		}
@@ -730,11 +718,7 @@ func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx con
 		if !ok || err != nil {
 			return nil, err
 		}
-		ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
-		if err != nil {
-			return nil, err
-		}
-		resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, passing, ds))
+		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(rs, passing))
 		if err != nil {
 			return nil, err
 		}
@@ -763,10 +747,7 @@ func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx 
 	return rs, true, nil
 }
 
-func getResultNodesFromAggregationResults(results []*storage.ComplianceAggregation_Result, nodeType resultType, ds datastore.DataStore) ([]*storage.Node, error) {
-	if ds == nil {
-		return nil, errors.Wrap(errors.New("empty node datastore encountered"), "argument ds is nil")
-	}
+func (resolver *complianceControlResolver) getResultNodesFromAggregationResults(results []*storage.ComplianceAggregation_Result, nodeType resultType) ([]*storage.Node, error) {
 	var nodes []*storage.Node
 	for _, r := range results {
 		if (nodeType == passing && r.GetNumPassing() == 0) || (nodeType == failing && r.GetNumFailing() == 0) {
@@ -776,8 +757,8 @@ func getResultNodesFromAggregationResults(results []*storage.ComplianceAggregati
 		if err != nil {
 			continue
 		}
-		node, err := ds.GetNode(nodeID)
-		if err != nil {
+		node, found, err := resolver.root.NodeDataStore.GetNode(nodeID)
+		if err != nil || !found {
 			continue
 		}
 		nodes = append(nodes, node)
@@ -843,4 +824,8 @@ func (c *ComplianceControlWithControlStatusResolver) ControlStatus() string {
 		return ""
 	}
 	return c.controlStatus
+}
+
+func clusterQuery(clusterID string) *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 }

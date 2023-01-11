@@ -343,44 +343,6 @@ func (s *nodeDatastoreSACSuite) TestGetAllClusterNodeStoresWriteAccess() {
 	}
 }
 
-func (s *nodeDatastoreSACSuite) TestGetClusterNodeStore() {
-	clusterID := testconsts.Cluster2
-
-	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
-	for name, c := range cases {
-		s.Run(name, func() {
-			ctx := c.Context
-			datastore, err := s.globalDatastore.GetClusterNodeStore(ctx, clusterID, false)
-			if c.ExpectedFound {
-				s.NoError(err)
-				s.NotNil(datastore)
-			} else {
-				s.ErrorIs(err, sac.ErrResourceAccessDenied)
-				s.Nil(datastore)
-			}
-		})
-	}
-}
-
-func (s *nodeDatastoreSACSuite) TestGetClusterNodeStoreWriteAccess() {
-	clusterID := testconsts.Cluster2
-
-	cases := testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), "write", clusterID, testconsts.WrongCluster, resources.Node)
-	for name, c := range cases {
-		s.Run(name, func() {
-			ctx := c.Context
-			datastore, err := s.globalDatastore.GetClusterNodeStore(ctx, clusterID, true)
-			if c.ExpectError {
-				s.ErrorIs(err, sac.ErrResourceAccessDenied)
-				s.Nil(datastore)
-			} else {
-				s.NoError(err)
-				s.NotNil(datastore)
-			}
-		})
-	}
-}
-
 func (s *nodeDatastoreSACSuite) TestRemoveClusterNodeStoresSingle() {
 	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
 	for name, c := range cases {

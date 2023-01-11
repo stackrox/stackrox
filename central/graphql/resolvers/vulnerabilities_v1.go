@@ -345,7 +345,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForImages(ctx co
 }
 
 func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForNodes(ctx context.Context) (numerator, denominator int, err error) {
-	allNodesCount, err := evr.root.NodeGlobalDataStore.CountAllNodes(ctx)
+	allNodesCount, err := evr.root.NodeDataStore.CountNodes(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
