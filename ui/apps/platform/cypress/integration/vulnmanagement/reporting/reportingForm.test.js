@@ -1,8 +1,10 @@
 import withAuth from '../../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../../helpers/features';
 import { getHelperElementByLabel, getInputByLabel } from '../../../helpers/formHelpers';
 
 import {
     accessScopesAlias,
+    collectionsAlias,
     interactAndVisitVulnerabilityReporting,
     interactAndWaitToCreateReport,
     notifiersAlias,
@@ -13,12 +15,18 @@ import {
 describe('Vulnerability Management Reporting form', () => {
     withAuth();
 
+    const isCollectionsEnabled = hasFeatureFlag('ROX_OBJECT_COLLECTIONS');
+
     it('should navigate from table by button', () => {
         visitVulnerabilityReporting();
 
-        interactAndWaitToCreateReport(() => {
-            cy.get('a:contains("Create report")').click();
-        });
+        interactAndWaitToCreateReport(
+            () => {
+                cy.get('a:contains("Create report")').click();
+            },
+            undefined,
+            isCollectionsEnabled
+        );
 
         cy.location('search').should('eq', '?action=create');
 
@@ -39,16 +47,26 @@ describe('Vulnerability Management Reporting form', () => {
     });
 
     it('should navigate by url', () => {
-        const staticResponseMap = {
-            [accessScopesAlias]: {
-                fixture: 'scopes/resourceScopes.json',
-            },
+        const notifiersAliasMap = {
             [notifiersAlias]: {
                 fixture: 'integrations/notifiers.json',
             },
         };
+        const accessScopeMap = {
+            [accessScopesAlias]: {
+                fixture: 'scopes/resourceScopes.json',
+            },
+        };
+        const collectionsMap = {
+            [collectionsAlias]: {
+                fixture: 'collections/collections.json',
+            },
+        };
+        const staticResponseMap = isCollectionsEnabled
+            ? { ...notifiersAliasMap, ...collectionsMap }
+            : { ...notifiersAliasMap, ...accessScopeMap };
 
-        visitVulnerabilityReportingToCreate(staticResponseMap);
+        visitVulnerabilityReportingToCreate(staticResponseMap, isCollectionsEnabled);
 
         cy.get('h1:contains("Create an image vulnerability report")');
 

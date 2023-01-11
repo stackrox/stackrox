@@ -97,8 +97,10 @@ export function visitVulnerabilityReportingWithFixture(fixturePath) {
 // action create
 
 export const accessScopesAlias = 'simpleaccessscopes';
+export const collectionsAlias = 'collections';
 export const notifiersAlias = 'notifiers';
 
+// TODO This object can be deleted once the ROX_OBJECT_COLLECTIONS feature flag is removed
 const routeMatcherMapToCreate = {
     [accessScopesAlias]: {
         method: 'GET',
@@ -110,10 +112,31 @@ const routeMatcherMapToCreate = {
     },
 };
 
-export function visitVulnerabilityReportingToCreate(staticResponseMap) {
-    visit(`${basePath}?action=create`, routeMatcherMapToCreate, staticResponseMap);
+const routeMatcherMapToCreateWithCollections = {
+    [collectionsAlias]: {
+        method: 'GET',
+        url: '/v1/collections*',
+    },
+    [notifiersAlias]: {
+        method: 'GET',
+        url: '/v1/notifiers',
+    },
+};
+
+export function visitVulnerabilityReportingToCreate(staticResponseMap, isCollectionsEnabled) {
+    const routeMatcherMap = isCollectionsEnabled
+        ? routeMatcherMapToCreateWithCollections
+        : routeMatcherMapToCreate;
+    visit(`${basePath}?action=create`, routeMatcherMap, staticResponseMap);
 }
 
-export function interactAndWaitToCreateReport(interactionCallback, staticResponseMap) {
-    interactAndWaitForResponses(interactionCallback, routeMatcherMapToCreate, staticResponseMap);
+export function interactAndWaitToCreateReport(
+    interactionCallback,
+    staticResponseMap,
+    isCollectionsEnabled
+) {
+    const routeMatcherMap = isCollectionsEnabled
+        ? routeMatcherMapToCreateWithCollections
+        : routeMatcherMapToCreate;
+    interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
 }

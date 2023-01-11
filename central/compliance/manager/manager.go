@@ -11,7 +11,7 @@ import (
 	complianceOperatorCheckDS "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/scrape/factory"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -42,7 +42,7 @@ func NewManager(standardsRegistry *standards.Registry,
 	complianceOperatorManager complianceOperatorManager.Manager,
 	complianceOperatorResults complianceOperatorCheckDS.DataStore,
 	clusterStore clusterDatastore.DataStore,
-	nodeStore nodeDatastore.GlobalDataStore,
+	nodeStore nodeDatastore.DataStore,
 	deploymentStore datastore.DataStore,
 	podStore podDatastore.DataStore,
 	dataRepoFactory data.RepositoryFactory,

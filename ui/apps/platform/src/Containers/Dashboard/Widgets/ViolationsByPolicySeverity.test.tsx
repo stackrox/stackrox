@@ -7,7 +7,10 @@ import '@testing-library/jest-dom/extend-expect';
 import renderWithRouter from 'test-utils/renderWithRouter';
 import { withTextContent } from 'test-utils/queryUtils';
 import { violationsBasePath } from 'routePaths';
-import ViolationsByPolicySeverity, { mostRecentAlertsQuery } from './ViolationsByPolicySeverity';
+import ViolationsByPolicySeverity, {
+    alertsBySeverityQuery,
+    mostRecentAlertsQuery,
+} from './ViolationsByPolicySeverity';
 
 const mockAlerts = [
     {
@@ -32,29 +35,28 @@ const mocks = [
             },
         },
     },
+    {
+        request: {
+            query: alertsBySeverityQuery,
+            variables: {
+                lowQuery: 'Severity:LOW_SEVERITY',
+                medQuery: 'Severity:MEDIUM_SEVERITY',
+                highQuery: 'Severity:HIGH_SEVERITY',
+                critQuery: 'Severity:CRITICAL_SEVERITY',
+            },
+        },
+        result: {
+            data: {
+                LOW_SEVERITY: 220,
+                MEDIUM_SEVERITY: 70,
+                HIGH_SEVERITY: 140,
+                CRITICAL_SEVERITY: 3,
+            },
+        },
+    },
 ];
 
 jest.mock('hooks/useResizeObserver');
-
-// Mock the hook that handles the data fetching of alert counts
-jest.mock('Containers/Dashboard/hooks/useAlertGroups', () => ({
-    __esModule: true,
-    default: () => ({
-        data: [
-            {
-                group: '',
-                counts: [
-                    { severity: 'LOW_SEVERITY', count: '220' },
-                    { severity: 'MEDIUM_SEVERITY', count: '70' },
-                    { severity: 'HIGH_SEVERITY', count: '140' },
-                    { severity: 'CRITICAL_SEVERITY', count: '3' },
-                ],
-            },
-        ],
-        loading: false,
-        error: undefined,
-    }),
-}));
 
 beforeEach(() => {
     jest.resetModules();

@@ -38,7 +38,9 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	v := &k8sVersion.Info{GitVersion: "unknown"}
 	if rc, err := rest.InClusterConfig(); err == nil {
 		if clientset, err := kubernetes.NewForConfig(rc); err == nil {
-			v, _ = clientset.ServerVersion()
+			if serverVersion, err := clientset.ServerVersion(); err == nil {
+				v = serverVersion
+			}
 		}
 	}
 

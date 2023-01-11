@@ -20,7 +20,7 @@ func manifest(registry registrytypes.Registry, image *storage.Image) (*claircore
 	// Ensure this exists before bothering to continue.
 	cfg := registry.Config()
 	if cfg == nil {
-		return nil, errors.New("registry configuration does not exist")
+		return nil, errors.Errorf("registry configuration does not exist for registry %s", registry.Name())
 	}
 
 	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types/digest.go)

@@ -15,7 +15,7 @@ import (
 	imageComponentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	nodeComponentMocks "github.com/stackrox/rox/central/nodecomponent/datastore/mocks"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
@@ -38,7 +38,7 @@ func TestSearchCategories(t *testing.T) {
 	violations := alertMocks.NewMockDataStore(ctrl)
 	images := imageMocks.NewMockDataStore(ctrl)
 	policies := policyMocks.NewMockDataStore(ctrl)
-	nodes := nodeMocks.NewMockGlobalDataStore(ctrl)
+	nodes := nodeMocks.NewMockDataStore(ctrl)
 	serviceAccounts := serviceAccountMocks.NewMockDataStore(ctrl)
 	roles := k8sroleMocks.NewMockDataStore(ctrl)
 	rolebindings := k8srolebindingMocks.NewMockDataStore(ctrl)
@@ -55,7 +55,7 @@ func TestSearchCategories(t *testing.T) {
 		ViolationsDataStore:      violations,
 		ImageDataStore:           images,
 		ServiceAccountsDataStore: serviceAccounts,
-		NodeGlobalDataStore:      nodes,
+		NodeDataStore:            nodes,
 		K8sRoleBindingStore:      rolebindings,
 		K8sRoleStore:             roles,
 		ImageComponentDataStore:  components,

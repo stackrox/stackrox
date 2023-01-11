@@ -21,9 +21,19 @@ const (
 	OptUnEscape
 )
 
+// JSONUnmarshaler returns a jsonpb Unmarshaler configured to allow unknown fields,
+// i.e. not error out unmarshaling JSON that contains attributes not defined in proto.
+// This Unmarshaler must be used everywhere instead of direct calls to jsonpb.Unmarshal
+// and jsonpb.UnmarshalString.
+func JSONUnmarshaler() *jsonpb.Unmarshaler {
+	return &jsonpb.Unmarshaler{
+		AllowUnknownFields: true,
+	}
+}
+
 // JSONToProto converts a string containing JSON into a proto message.
 func JSONToProto(json string, m proto.Message) error {
-	return jsonpb.UnmarshalString(json, m)
+	return JSONUnmarshaler().Unmarshal(strings.NewReader(json), m)
 }
 
 // ProtoToJSON converts a proto message into a string containing JSON.
@@ -59,11 +69,13 @@ func ProtoToJSON(m proto.Message, options ...ConversionOption) (string, error) {
 // unEscape restores characters escaped by JSON marshaller on behalf of the
 // jsonpb library. There is no option to disable escaping and a strong
 // opposition to add such functionality into jsonpb:
-//     https://github.com/golang/protobuf/pull/409#issuecomment-350385601
+//
+//	https://github.com/golang/protobuf/pull/409#issuecomment-350385601
 //
 // An alternative suggested by the jsonpb maintainers is to post process the
 // result JSON:
-//     https://github.com/golang/protobuf/issues/407
+//
+//	https://github.com/golang/protobuf/issues/407
 func unEscape(json string) string {
 	return re.ReplaceAllStringFunc(json, func(match string) string {
 		// If the match starts with "\\u...", the backwards slash is escaped,

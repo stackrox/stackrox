@@ -1,28 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
-import { visitCollections } from '../../helpers/collections';
 import { hasFeatureFlag } from '../../helpers/features';
-
-const baseUrl = '/v1/collections';
-const autocompleteUrl = `${baseUrl}/autocomplete`;
-
-// Cleanup an existing collection via API call
-function tryDeleteCollection(collectionName) {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
-
-    cy.request({
-        url: `${baseUrl}?query.query=Collection Name:"${collectionName}"`,
-        auth,
-    }).as('listCollections');
-
-    cy.get('@listCollections').then((res) => {
-        const collection = res.body.collections.find(({ name }) => name === collectionName);
-        if (collection) {
-            const { id } = collection;
-            const url = `${baseUrl}/${id}`;
-            cy.request({ url, auth, method: 'DELETE' });
-        }
-    });
-}
+import { tryDeleteCollection, visitCollections } from './Collections.helpers';
 
 /* 
     Each test in this spec builds upon the previous by executing another piece
@@ -37,7 +15,7 @@ describe('Create collection', () => {
         }
         // Ignore autocomplete requests
         // TODO Remove this once the feature is in
-        cy.intercept(autocompleteUrl, {});
+        cy.intercept('/v1/collections/autocomplete', {});
     });
 
     const collectionName = 'Financial deployments';
