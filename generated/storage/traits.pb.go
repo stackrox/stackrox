@@ -23,7 +23,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // EXPERIMENTAL.
-//
+// NOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).
 // MutabilityMode specifies whether and how an object can be modified. Default
 // is ALLOW_MUTATE and means there are no modification restrictions; this is equivalent
 // to the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all
@@ -87,7 +87,7 @@ func (Traits_Visibility) EnumDescriptor() ([]byte, []int) {
 // Origin specifies the origin of an object.
 // Objects can have three different origins:
 // - IMPERATIVE: the object was created via the API. This is assumed by default.
-// - DEFAULT: the object is a default object, such as default image integrations, access scopes etc.
+// - DEFAULT: the object is a default object, such as default roles, access scopes etc.
 // - DECLARATIVE: the object is created via declarative configuration.
 // Based on the origin, different rules apply to the objects.
 // Objects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.
