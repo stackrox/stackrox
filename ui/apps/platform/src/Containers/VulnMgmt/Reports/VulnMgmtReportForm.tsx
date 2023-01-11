@@ -202,9 +202,21 @@ function VulnMgmtReportForm({
         void setFieldValue(id, selection);
     }
 
+    // need a bespoke check that days are selected, because the way the PatternFly Select component is written,
+    // we cannot easily use the built-in Formik onBlur handler to update the Yup validation status
+    const areDaysSelected =
+        values.schedule.intervalType === 'WEEKLY'
+            ? Boolean(values.schedule?.daysOfWeek?.days?.length)
+            : Boolean(values.schedule?.daysOfMonth?.days?.length);
+
     return (
         <>
-            <PageSection variant={PageSectionVariants.light} isFilled hasOverflowScroll>
+            <PageSection
+                variant={PageSectionVariants.light}
+                isFilled
+                hasOverflowScroll
+                aria-label="Vulnerability Management Report Form"
+            >
                 <FormMessage message={message} />
                 <Form>
                     <Grid hasGutter>
@@ -410,7 +422,7 @@ function VulnMgmtReportForm({
                             variant={ButtonVariant.primary}
                             onClick={submitForm}
                             data-testid="create-btn"
-                            isDisabled={!dirty || !isValid || isSubmitting}
+                            isDisabled={!dirty || !isValid || isSubmitting || !areDaysSelected}
                             isLoading={isSubmitting}
                         >
                             {values.id ? 'Save' : 'Create'}
