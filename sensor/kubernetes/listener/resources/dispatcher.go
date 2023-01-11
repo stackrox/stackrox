@@ -12,7 +12,6 @@ import (
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -60,7 +59,6 @@ func NewDispatcherRegistry(
 	clusterID string,
 	podLister v1Listers.PodLister,
 	profileLister cache.GenericLister,
-	entityStore *clusterentities.Store,
 	processFilter filter.Filter,
 	configHandler config.Handler,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
@@ -72,12 +70,12 @@ func NewDispatcherRegistry(
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
 	serviceAccountStore := ServiceAccountStoreSingleton()
-	deploymentStore := DeploymentStoreSingleton()
-	podStore := PodStoreSingleton()
-	nodeStore := newNodeStore()
+	deploymentStore := storeProvider.deploymentStore
+	podStore := storeProvider.podStore
+	nodeStore := storeProvider.nodeStore
 	nsStore := newNamespaceStore()
 	netPolicyStore := NetworkPolicySingleton()
-	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
+	endpointManager := storeProvider.endpointManager
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())
 	registryStore := registry.Singleton()
 
