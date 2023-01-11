@@ -182,6 +182,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	if features.ResyncDisabled.Enabled() {
 		if action == central.ResourceAction_REMOVE_RESOURCE {
+			// TODO(ROX-14309): move this logic to the resolver
 			// We need to do this here since the resolver relies on the deploymentStore to have the wrap
 			d.endpointManager.OnDeploymentRemove(deploymentWrap)
 			// At the moment we need to also send this deployment to the compatibility module when it's being deleted.

@@ -136,6 +136,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
 	if features.ResyncDisabled.Enabled() {
+		// TODO(ROX-14310): remove the test
 		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
 	}
 	testService := getTestService("test-svc", "test-ns")
@@ -151,6 +152,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistingRoute() {
 	if features.ResyncDisabled.Enabled() {
+		// TODO(ROX-14310): remove the test
 		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
 	}
 	testRoute := getTestRoute("test-ns", "test-svc")
@@ -168,6 +170,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistin
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestManyRoutesMatchingAndDeletions() {
 	if features.ResyncDisabled.Enabled() {
+		// TODO(ROX-14310): remove the test
 		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
 	}
 	testRouteSvc1 := getTestRoute("test-ns", "test-svc")
