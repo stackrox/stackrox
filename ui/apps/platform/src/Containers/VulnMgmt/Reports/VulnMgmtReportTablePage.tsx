@@ -110,7 +110,6 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
             triggerRefresh();
         });
     }
-
     return (
         <>
             <PageSection variant={PageSectionVariants.light}>
@@ -157,7 +156,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                     </Bullseye>
                 </PageSection>
             )}
-            {!isLoading && reports && reports?.length > 0 && (
+            {!isLoading && (reports?.length || Boolean(Object.keys(filteredSearch).length)) && (
                 <VulnMgmtReportTablePanel
                     reports={reports || []}
                     reportCount={reportCount}
@@ -176,7 +175,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                     onDeleteReports={onDeleteReports}
                 />
             )}
-            {!isLoading && !reports?.length && (
+            {!isLoading && !reports?.length && !Object.keys(filteredSearch).length && (
                 <PageSection variant={PageSectionVariants.light} isFilled>
                     <EmptyStateTemplate
                         title="No reports are currently configured."

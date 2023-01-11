@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
     PageSection,
     Title,
-    Flex,
-    FlexItem,
     Bullseye,
     Spinner,
     Button,
@@ -176,24 +174,30 @@ function NetworkGraphPage() {
     return (
         <>
             <PageTitle title="Network Graph" />
-            <PageSection variant="light">
-                <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                    <FlexItem>
-                        <Title headingLevel="h1" className="pf-u-screen-reader">
-                            Network Graph
-                        </Title>
-                    </FlexItem>
-                    <FlexItem flex={{ default: 'flex_1' }}>
-                        <NetworkBreadcrumbs
-                            clusters={clusters}
-                            selectedCluster={selectedCluster}
-                            selectedNamespaces={namespacesFromUrl}
-                            selectedDeployments={deploymentsFromUrl}
-                        />
-                    </FlexItem>
-                    <Button variant="secondary">Manage CIDR blocks</Button>
-                    <SimulateNetworkPolicyButton simulation={simulation} />
-                </Flex>
+            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                <Toolbar data-testid="network-graph-selector-bar">
+                    <ToolbarContent>
+                        <ToolbarGroup variant="filter-group">
+                            <Title headingLevel="h1" className="pf-u-screen-reader">
+                                Network Graph
+                            </Title>
+                            <NetworkBreadcrumbs
+                                clusters={clusters}
+                                selectedCluster={selectedCluster}
+                                selectedNamespaces={namespacesFromUrl}
+                                selectedDeployments={deploymentsFromUrl}
+                            />
+                        </ToolbarGroup>
+                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem spacer={{ default: 'spacerMd' }}>
+                                <Button variant="secondary">Manage CIDR blocks</Button>
+                            </ToolbarItem>
+                            <ToolbarItem spacer={{ default: 'spacerNone' }}>
+                                <SimulateNetworkPolicyButton simulation={simulation} />
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
