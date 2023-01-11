@@ -24,12 +24,39 @@ func convertNodeToVulnRequest(node *storage.Node) *v1.GetNodeVulnerabilitiesRequ
 }
 
 func convertComponents(c *storage.NodeInventory_Components) *v1.Components {
-	return &v1.Components{
+	components := &v1.Components{
 		Namespace:          c.Namespace,
 		OsComponents:       nil,
 		LanguageComponents: nil,
-		RhelComponents:     c.RhelComponents,
+		RhelComponents:     make([]*v1.RHELComponent, len(c.GetRhelComponents())),
 	}
+	for i, comp := range c.GetRhelComponents() {
+		components.RhelComponents[i] = &v1.RHELComponent{
+			Id:          comp.GetId(),
+			Name:        comp.GetName(),
+			Namespace:   comp.GetNamespace(),
+			Version:     comp.GetVersion(),
+			Arch:        comp.GetArch(),
+			Module:      comp.GetModule(),
+			Cpes:        comp.GetCpes(),
+			AddedBy:     comp.GetAddedBy(),
+			Executables: make([]*v1.Executable, len(comp.GetExecutables())),
+		}
+		for i2, exe := range comp.GetExecutables() {
+			components.RhelComponents[i].Executables[i2] = &v1.Executable{
+				Path:             exe.GetPath(),
+				RequiredFeatures: make([]*v1.FeatureNameVersion, len(exe.GetRequiredFeatures())),
+			}
+			for i3, fnv := range exe.GetRequiredFeatures() {
+				components.RhelComponents[i].Executables[i2].RequiredFeatures[i3] = &v1.FeatureNameVersion{
+					Name:    fnv.GetName(),
+					Version: fnv.GetVersion(),
+				}
+			}
+		}
+
+	}
+	return components
 }
 
 func convertContainerRuntime(containerRuntime *storage.ContainerRuntimeInfo) *v1.GetNodeVulnerabilitiesRequest_ContainerRuntime {
