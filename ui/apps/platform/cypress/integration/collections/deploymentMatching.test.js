@@ -1,16 +1,13 @@
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import {
-    assertDeploymentResultCountEquals,
     assertDeploymentsAreMatched,
+    assertDeploymentsAreMatchedExactly,
     assertDeploymentsAreNotMatched,
     tryDeleteCollection,
     visitCollections,
 } from './Collections.helpers';
 import { collectionSelectors as selectors } from './Collections.selectors';
-
-const baseUrl = '/v1/collections';
-const autocompleteUrl = `${baseUrl}/autocomplete`;
 
 describe('Collection deployment matching', () => {
     withAuth();
@@ -24,7 +21,7 @@ describe('Collection deployment matching', () => {
         }
         // Ignore autocomplete requests
         // TODO Remove this once the feature is in
-        cy.intercept(autocompleteUrl, {});
+        cy.intercept('/v1/collections/autocomplete', {});
     });
 
     // Clean up when the test suite exits
@@ -52,7 +49,7 @@ describe('Collection deployment matching', () => {
         cy.get(`button:contains('stackrox')`).click();
 
         // Test that Stackrox deployments are matched
-        assertDeploymentsAreMatched('central', 'central-db', 'collector', 'scanner', 'sensor');
+        assertDeploymentsAreMatched(['central', 'central-db', 'collector', 'scanner', 'sensor']);
 
         // Restrict collection to two specific deployments
         cy.get('button:contains("All deployments")').click();
@@ -66,8 +63,7 @@ describe('Collection deployment matching', () => {
             'sensor'
         );
 
-        assertDeploymentResultCountEquals(2);
-        assertDeploymentsAreMatched('collector', 'sensor');
+        assertDeploymentsAreMatchedExactly(['collector', 'sensor']);
 
         cy.get('button:contains("Save")').click();
 
@@ -93,12 +89,12 @@ describe('Collection deployment matching', () => {
         cy.get(`button:contains('kube-system')`).click();
 
         // Assert that results have loaded, but deployments beyond the first page are not visible
-        assertDeploymentsAreMatched('calico-node');
-        assertDeploymentsAreNotMatched('kube-dns');
+        assertDeploymentsAreMatched(['calico-node']);
+        assertDeploymentsAreNotMatched(['kube-dns']);
 
         // View more and ensure the next page loads
         cy.get(selectors.viewMoreResultsButton).click();
-        assertDeploymentsAreMatched('kube-dns');
+        assertDeploymentsAreMatched(['kube-dns']);
 
         // Restrict collection to two specific deployments
         cy.get('button:contains("All deployments")').click();
@@ -113,12 +109,11 @@ describe('Collection deployment matching', () => {
             'kube-dns'
         );
 
-        assertDeploymentResultCountEquals(3);
-        assertDeploymentsAreMatched(
+        assertDeploymentsAreMatchedExactly([
             'kube-dns',
             'kube-dns-autoscaler',
-            'calico-node-vertical-autoscaler'
-        );
+            'calico-node-vertical-autoscaler',
+        ]);
 
         // View another collection via modal
         cy.get(selectors.viewEmbeddedCollectionButton('Available', sampleCollectionName)).click();
@@ -133,23 +128,21 @@ describe('Collection deployment matching', () => {
 
         // Attach the collection, assert that embedded collection deployments are resolved
         cy.get(selectors.attachCollectionButton(sampleCollectionName)).click();
-        assertDeploymentResultCountEquals(5);
-        assertDeploymentsAreMatched(
+        assertDeploymentsAreMatchedExactly([
             'kube-dns',
             'kube-dns-autoscaler',
             'calico-node-vertical-autoscaler',
             'collector',
-            'sensor'
-        );
+            'sensor',
+        ]);
 
         // Detach the collection, assert that embedded collection deployments are gone
         cy.get(selectors.detachCollectionButton(sampleCollectionName)).click();
-        assertDeploymentResultCountEquals(3);
-        assertDeploymentsAreMatched(
+        assertDeploymentsAreMatchedExactly([
             'kube-dns',
             'kube-dns-autoscaler',
-            'calico-node-vertical-autoscaler'
-        );
+            'calico-node-vertical-autoscaler',
+        ]);
 
         // Re-attach and save
         cy.get(selectors.attachCollectionButton(sampleCollectionName)).click();
@@ -162,14 +155,10 @@ describe('Collection deployment matching', () => {
         visitCollections();
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`).click();
 
-        assertDeploymentResultCountEquals(5);
-        assertDeploymentsAreMatched('kube-dns');
-
         // Filter to deployments with deployment name matching
         cy.get(selectors.resultsPanelFilterInput).type('kube-dns');
 
-        assertDeploymentResultCountEquals(2);
-        assertDeploymentsAreMatched('kube-dns', 'kube-dns-autoscaler');
+        assertDeploymentsAreMatchedExactly(['kube-dns', 'kube-dns-autoscaler']);
 
         // Filter to deployments in namespaces matching
         cy.get(selectors.resultsPanelFilterEntitySelect).click();
@@ -177,7 +166,6 @@ describe('Collection deployment matching', () => {
         cy.get(selectors.resultsPanelFilterInput).type('stackrox');
 
         // Test that only stackrox deployments are visible
-        assertDeploymentResultCountEquals(2);
-        assertDeploymentsAreMatched('collector', 'sensor');
+        assertDeploymentsAreMatchedExactly(['collector', 'sensor']);
     });
 });

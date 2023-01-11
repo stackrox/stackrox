@@ -2,9 +2,6 @@ import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { tryDeleteCollection, visitCollections } from './Collections.helpers';
 
-const baseUrl = '/v1/collections';
-const autocompleteUrl = `${baseUrl}/autocomplete`;
-
 /* 
     Each test in this spec builds upon the previous by executing another piece
     of the collection CRUD workflow.
@@ -18,7 +15,7 @@ describe('Create collection', () => {
         }
         // Ignore autocomplete requests
         // TODO Remove this once the feature is in
-        cy.intercept(autocompleteUrl, {});
+        cy.intercept('/v1/collections/autocomplete', {});
     });
 
     const collectionName = 'Financial deployments';

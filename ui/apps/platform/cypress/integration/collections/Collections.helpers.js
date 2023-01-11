@@ -66,15 +66,24 @@ export function tryDeleteCollection(collectionName) {
     });
 }
 
-export function assertDeploymentResultCountEquals(count) {
-    cy.get(`${collectionSelectors.deploymentResults}`).its('length').should('be.eq', count);
+/**
+ * This ensures that the deployments passed as an argument are matched in the results panel, and that
+ * no other deployments are matched. Note that this is limited to less than 10 deployments, as we
+ * also assert that the "View more" button does not exist. Otherwise it is possible deployments that
+ * do not exist in the passed argument array are in fact matched, leading to an incorrect assertion.
+ * @param {string[]} deployments
+ */
+export function assertDeploymentsAreMatchedExactly(deployments) {
+    cy.get(collectionSelectors.deploymentResults).its('length').should('be.eq', deployments.length);
+    cy.get(collectionSelectors.viewMoreResultsButton).should('not.exist');
+    assertDeploymentsAreMatched(deployments);
 }
 
-export function assertDeploymentsAreMatched(...deployments) {
+export function assertDeploymentsAreMatched(deployments) {
     deployments.forEach((deployment) => cy.get(collectionSelectors.deploymentResult(deployment)));
 }
 
-export function assertDeploymentsAreNotMatched(...deployments) {
+export function assertDeploymentsAreNotMatched(deployments) {
     deployments.forEach((deployment) =>
         cy.get(collectionSelectors.deploymentResult(deployment)).should('not.exist')
     );
