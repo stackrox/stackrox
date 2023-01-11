@@ -202,13 +202,13 @@ class ImageManagementTest extends BaseSpecification {
         when:
         "Scan an image and then grab the image data"
         ImageService.scanImage(
-          "registry.redhat.io/rhel8/mysql-80@sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
+          "mysql@sha256:de2913a0ec53d98ced6f6bd607f487b7ad8fe8d2a86e2128308ebf4be2f92667")
 
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
             def image = ImageService.getImage(
-                    "sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
+                    "sha256:de2913a0ec53d98ced6f6bd607f487b7ad8fe8d2a86e2128308ebf4be2f92667")
             assert image != null && image.riskScore != 0
         }
     }
@@ -221,8 +221,7 @@ class ImageManagementTest extends BaseSpecification {
         def deployment = new Deployment()
                 .setName("risk-image")
                 .setReplicas(1)
-                .setImage("registry.redhat.io/rhel8/mysql-80@" +
-                        "sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
+                .setImage("mysql@sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
                 .setCommand(["sleep", "60000"])
                 .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
 
@@ -232,7 +231,7 @@ class ImageManagementTest extends BaseSpecification {
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
             def image = ImageService.getImage(
-                    "sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
+                    "sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
             assert image != null && image.riskScore != 0
         }
 
