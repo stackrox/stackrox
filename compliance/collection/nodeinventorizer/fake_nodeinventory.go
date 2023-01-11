@@ -4,7 +4,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
@@ -23,7 +22,7 @@ func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, er
 		ScanTime: timestamp.TimestampNow(),
 		Components: &storage.NodeInventory_Components{
 			Namespace: "Testme OS",
-			RhelComponents: []*scannerV1.RHELComponent{
+			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
 				{
 					Name:      "vim-minimal",
 					Namespace: "rhel:8",
@@ -43,7 +42,7 @@ func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, er
 				},
 			},
 		},
-		Notes: []scannerV1.Note{scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE},
+		Notes: []storage.NodeInventory_Note{storage.NodeInventory_LANGUAGE_CVES_UNAVAILABLE},
 	}
 	return msg, nil
 }

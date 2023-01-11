@@ -3,8 +3,8 @@ package nodeinventorizer
 import (
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/scanner/database"
-	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,12 +19,12 @@ type NodeInventorizerTestSuite struct {
 func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 	testCases := map[string]struct {
 		inComponents  []*database.RHELv2Package
-		outComponents []*scannerV1.RHELComponent
+		outComponents []*storage.NodeInventory_Components_RHELComponent
 		expectedLen   int
 	}{
 		"nil-inComponents": {
 			inComponents:  nil,
-			outComponents: make([]*scannerV1.RHELComponent, 0),
+			outComponents: make([]*storage.NodeInventory_Components_RHELComponent, 0),
 		},
 		"one-component": {
 			inComponents: []*database.RHELv2Package{
@@ -38,7 +38,7 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 					},
 				},
 			},
-			outComponents: []*scannerV1.RHELComponent{
+			outComponents: []*storage.NodeInventory_Components_RHELComponent{
 				{
 					Id:        0,
 					Name:      "zlib",
@@ -66,7 +66,7 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 					Arch:    "x86_64",
 				},
 			},
-			outComponents: []*scannerV1.RHELComponent{
+			outComponents: []*storage.NodeInventory_Components_RHELComponent{
 				{
 					Id:        0,
 					Name:      "zlib",
@@ -97,7 +97,7 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 					Arch:    "x86_64",
 				},
 			},
-			outComponents: []*scannerV1.RHELComponent{
+			outComponents: []*storage.NodeInventory_Components_RHELComponent{
 				{
 					Id:        0,
 					Name:      "redhat-release",
@@ -129,11 +129,11 @@ func (s *NodeInventorizerTestSuite) TestConvertRHELComponentIDs() {
 
 func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 	testcases := map[string]struct {
-		component *scannerV1.RHELComponent
+		component *storage.NodeInventory_Components_RHELComponent
 		expected  string
 	}{
 		"Full component": {
-			component: &scannerV1.RHELComponent{
+			component: &storage.NodeInventory_Components_RHELComponent{
 				Id:      0,
 				Name:    "Name",
 				Version: "1.2.3",
@@ -143,7 +143,7 @@ func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 			expected: "Name:1.2.3:x42:Mod",
 		},
 		"Missing part": {
-			component: &scannerV1.RHELComponent{
+			component: &storage.NodeInventory_Components_RHELComponent{
 				Id:      0,
 				Version: "1.2.3",
 				Arch:    "x42",
@@ -152,7 +152,7 @@ func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 			expected: ":1.2.3:x42:Mod",
 		},
 		"Internationalized": {
-			component: &scannerV1.RHELComponent{
+			component: &storage.NodeInventory_Components_RHELComponent{
 				Id:      0,
 				Name:    "日本語",
 				Version: "1.2.3",

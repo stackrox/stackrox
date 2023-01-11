@@ -9,8 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/scanner/generated/scanner/api/v1" // end range imports
+	"github.com/stackrox/rox/generated/storage" // end range imports
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -598,20 +597,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
 	}))
-	utils.Must(builder.AddType("Executable", []string{
-		"path: String!",
-		"requiredFeatures: [FeatureNameVersion]!",
-	}))
 	utils.Must(builder.AddType("FalsePositiveRequest", []string{
 	}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
 		"cve: String",
 		"scope: VulnReqScope",
-	}))
-	utils.Must(builder.AddType("FeatureNameVersion", []string{
-		"name: String!",
-		"version: String!",
 	}))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
@@ -918,13 +909,33 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("NodeInventory", []string{
 		"components: NodeInventory_Components",
 		"nodeName: String!",
-		"notes: [Note!]!",
+		"notes: [NodeInventory_Note!]!",
 		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("NodeInventory_Components", []string{
 		"namespace: String!",
-		"rhelComponents: [RHELComponent]!",
+		"rhelComponents: [NodeInventory_Components_RHELComponent]!",
 	}))
+	utils.Must(builder.AddType("NodeInventory_Components_RHELComponent", []string{
+		"addedBy: String!",
+		"arch: String!",
+		"cpes: [String!]!",
+		"executables: [NodeInventory_Components_RHELComponent_Executable]!",
+		"id: Int!",
+		"module: String!",
+		"name: String!",
+		"namespace: String!",
+		"version: String!",
+	}))
+	utils.Must(builder.AddType("NodeInventory_Components_RHELComponent_Executable", []string{
+		"path: String!",
+		"requiredFeatures: [NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion]!",
+	}))
+	utils.Must(builder.AddType("NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion", []string{
+		"name: String!",
+		"version: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeInventory_Note(0)))
 	utils.Must(builder.AddType("NodeScan", []string{
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
@@ -932,7 +943,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(scannerV1.Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
 		"cscc: CSCC",
@@ -1121,17 +1131,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"GoogleProviderMetadata",
 		"AWSProviderMetadata",
 		"AzureProviderMetadata",
-	}))
-	utils.Must(builder.AddType("RHELComponent", []string{
-		"addedBy: String!",
-		"arch: String!",
-		"cpes: [String!]!",
-		"executables: [Executable]!",
-		"id: Int!",
-		"module: String!",
-		"name: String!",
-		"namespace: String!",
-		"version: String!",
 	}))
 	utils.Must(builder.AddType("ReadinessProbe", []string{
 		"defined: Boolean!",
@@ -7301,58 +7300,6 @@ func (resolver *exclusion_ImageResolver) Name(ctx context.Context) string {
 	return value
 }
 
-type executableResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *scannerV1.Executable
-}
-
-func (resolver *Resolver) wrapExecutable(value *scannerV1.Executable, ok bool, err error) (*executableResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &executableResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapExecutables(values []*scannerV1.Executable, err error) ([]*executableResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*executableResolver, len(values))
-	for i, v := range values {
-		output[i] = &executableResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapExecutableWithContext(ctx context.Context, value *scannerV1.Executable, ok bool, err error) (*executableResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &executableResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapExecutablesWithContext(ctx context.Context, values []*scannerV1.Executable, err error) ([]*executableResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*executableResolver, len(values))
-	for i, v := range values {
-		output[i] = &executableResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *executableResolver) Path(ctx context.Context) string {
-	value := resolver.data.GetPath()
-	return value
-}
-
-func (resolver *executableResolver) RequiredFeatures(ctx context.Context) ([]*featureNameVersionResolver, error) {
-	value := resolver.data.GetRequiredFeatures()
-	return resolver.root.wrapFeatureNameVersions(value, nil)
-}
-
 type falsePositiveRequestResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -7393,58 +7340,6 @@ func (resolver *Resolver) wrapFalsePositiveRequestsWithContext(ctx context.Conte
 		output[i] = &falsePositiveRequestResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
-}
-
-type featureNameVersionResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *scannerV1.FeatureNameVersion
-}
-
-func (resolver *Resolver) wrapFeatureNameVersion(value *scannerV1.FeatureNameVersion, ok bool, err error) (*featureNameVersionResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &featureNameVersionResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapFeatureNameVersions(values []*scannerV1.FeatureNameVersion, err error) ([]*featureNameVersionResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*featureNameVersionResolver, len(values))
-	for i, v := range values {
-		output[i] = &featureNameVersionResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapFeatureNameVersionWithContext(ctx context.Context, value *scannerV1.FeatureNameVersion, ok bool, err error) (*featureNameVersionResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &featureNameVersionResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapFeatureNameVersionsWithContext(ctx context.Context, values []*scannerV1.FeatureNameVersion, err error) ([]*featureNameVersionResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*featureNameVersionResolver, len(values))
-	for i, v := range values {
-		output[i] = &featureNameVersionResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *featureNameVersionResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *featureNameVersionResolver) Version(ctx context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
 }
 
 type generateTokenResponseResolver struct {
@@ -10611,9 +10506,218 @@ func (resolver *nodeInventory_ComponentsResolver) Namespace(ctx context.Context)
 	return value
 }
 
-func (resolver *nodeInventory_ComponentsResolver) RhelComponents(ctx context.Context) ([]*rHELComponentResolver, error) {
+func (resolver *nodeInventory_ComponentsResolver) RhelComponents(ctx context.Context) ([]*nodeInventory_Components_RHELComponentResolver, error) {
 	value := resolver.data.GetRhelComponents()
-	return resolver.root.wrapRHELComponents(value, nil)
+	return resolver.root.wrapNodeInventory_Components_RHELComponents(value, nil)
+}
+
+type nodeInventory_Components_RHELComponentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeInventory_Components_RHELComponent
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent(value *storage.NodeInventory_Components_RHELComponent, ok bool, err error) (*nodeInventory_Components_RHELComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_Components_RHELComponentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponents(values []*storage.NodeInventory_Components_RHELComponent, err error) ([]*nodeInventory_Components_RHELComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_Components_RHELComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_Components_RHELComponentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponentWithContext(ctx context.Context, value *storage.NodeInventory_Components_RHELComponent, ok bool, err error) (*nodeInventory_Components_RHELComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_Components_RHELComponentResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponentsWithContext(ctx context.Context, values []*storage.NodeInventory_Components_RHELComponent, err error) ([]*nodeInventory_Components_RHELComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_Components_RHELComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_Components_RHELComponentResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) AddedBy(ctx context.Context) string {
+	value := resolver.data.GetAddedBy()
+	return value
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) Arch(ctx context.Context) string {
+	value := resolver.data.GetArch()
+	return value
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) Cpes(ctx context.Context) []string {
+	value := resolver.data.GetCpes()
+	return value
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) Executables(ctx context.Context) ([]*nodeInventory_Components_RHELComponent_ExecutableResolver, error) {
+	value := resolver.data.GetExecutables()
+	return resolver.root.wrapNodeInventory_Components_RHELComponent_Executables(value, nil)
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) Id(ctx context.Context) int32 {
+	value := resolver.data.GetId()
+	return int32(value)
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) Module(ctx context.Context) string {
+	value := resolver.data.GetModule()
+	return value
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *nodeInventory_Components_RHELComponentResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
+}
+
+type nodeInventory_Components_RHELComponent_ExecutableResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeInventory_Components_RHELComponent_Executable
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent_Executable(value *storage.NodeInventory_Components_RHELComponent_Executable, ok bool, err error) (*nodeInventory_Components_RHELComponent_ExecutableResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_Components_RHELComponent_ExecutableResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent_Executables(values []*storage.NodeInventory_Components_RHELComponent_Executable, err error) ([]*nodeInventory_Components_RHELComponent_ExecutableResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_Components_RHELComponent_ExecutableResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_Components_RHELComponent_ExecutableResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent_ExecutableWithContext(ctx context.Context, value *storage.NodeInventory_Components_RHELComponent_Executable, ok bool, err error) (*nodeInventory_Components_RHELComponent_ExecutableResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_Components_RHELComponent_ExecutableResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent_ExecutablesWithContext(ctx context.Context, values []*storage.NodeInventory_Components_RHELComponent_Executable, err error) ([]*nodeInventory_Components_RHELComponent_ExecutableResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_Components_RHELComponent_ExecutableResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_Components_RHELComponent_ExecutableResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeInventory_Components_RHELComponent_ExecutableResolver) Path(ctx context.Context) string {
+	value := resolver.data.GetPath()
+	return value
+}
+
+func (resolver *nodeInventory_Components_RHELComponent_ExecutableResolver) RequiredFeatures(ctx context.Context) ([]*nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver, error) {
+	value := resolver.data.GetRequiredFeatures()
+	return resolver.root.wrapNodeInventory_Components_RHELComponent_Executable_FeatureNameVersions(value, nil)
+}
+
+type nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent_Executable_FeatureNameVersion(value *storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, ok bool, err error) (*nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent_Executable_FeatureNameVersions(values []*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, err error) ([]*nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent_Executable_FeatureNameVersionWithContext(ctx context.Context, value *storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, ok bool, err error) (*nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components_RHELComponent_Executable_FeatureNameVersionsWithContext(ctx context.Context, values []*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, err error) ([]*nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *nodeInventory_Components_RHELComponent_Executable_FeatureNameVersionResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
+}
+
+func toNodeInventory_Note(value *string) storage.NodeInventory_Note {
+	if value != nil {
+		return storage.NodeInventory_Note(storage.NodeInventory_Note_value[*value])
+	}
+	return storage.NodeInventory_Note(0)
+}
+
+func toNodeInventory_Notes(values *[]string) []storage.NodeInventory_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeInventory_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeInventory_Note(&v)
+	}
+	return output
 }
 
 type nodeScanResolver struct {
@@ -10705,24 +10809,6 @@ func toNode_Notes(values *[]string) []storage.Node_Note {
 	output := make([]storage.Node_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toNode_Note(&v)
-	}
-	return output
-}
-
-func toNote(value *string) scannerV1.Note {
-	if value != nil {
-		return scannerV1.Note(scannerV1.Note_value[*value])
-	}
-	return scannerV1.Note(0)
-}
-
-func toNotes(values *[]string) []scannerV1.Note {
-	if values == nil {
-		return nil
-	}
-	output := make([]scannerV1.Note, len(*values))
-	for i, v := range *values {
-		output[i] = toNote(&v)
 	}
 	return output
 }
@@ -12327,93 +12413,6 @@ func (resolver *providerMetadataProviderResolver) ToAWSProviderMetadata() (*aWSP
 func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*azureProviderMetadataResolver, bool) {
 	res, ok := resolver.resolver.(*azureProviderMetadataResolver)
 	return res, ok
-}
-
-type rHELComponentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *scannerV1.RHELComponent
-}
-
-func (resolver *Resolver) wrapRHELComponent(value *scannerV1.RHELComponent, ok bool, err error) (*rHELComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &rHELComponentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapRHELComponents(values []*scannerV1.RHELComponent, err error) ([]*rHELComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*rHELComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &rHELComponentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapRHELComponentWithContext(ctx context.Context, value *scannerV1.RHELComponent, ok bool, err error) (*rHELComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &rHELComponentResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapRHELComponentsWithContext(ctx context.Context, values []*scannerV1.RHELComponent, err error) ([]*rHELComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*rHELComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &rHELComponentResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *rHELComponentResolver) AddedBy(ctx context.Context) string {
-	value := resolver.data.GetAddedBy()
-	return value
-}
-
-func (resolver *rHELComponentResolver) Arch(ctx context.Context) string {
-	value := resolver.data.GetArch()
-	return value
-}
-
-func (resolver *rHELComponentResolver) Cpes(ctx context.Context) []string {
-	value := resolver.data.GetCpes()
-	return value
-}
-
-func (resolver *rHELComponentResolver) Executables(ctx context.Context) ([]*executableResolver, error) {
-	value := resolver.data.GetExecutables()
-	return resolver.root.wrapExecutables(value, nil)
-}
-
-func (resolver *rHELComponentResolver) Id(ctx context.Context) int32 {
-	value := resolver.data.GetId()
-	return int32(value)
-}
-
-func (resolver *rHELComponentResolver) Module(ctx context.Context) string {
-	value := resolver.data.GetModule()
-	return value
-}
-
-func (resolver *rHELComponentResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *rHELComponentResolver) Namespace(ctx context.Context) string {
-	value := resolver.data.GetNamespace()
-	return value
-}
-
-func (resolver *rHELComponentResolver) Version(ctx context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
 }
 
 type readinessProbeResolver struct {

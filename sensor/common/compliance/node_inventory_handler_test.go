@@ -8,7 +8,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 )
@@ -23,7 +22,7 @@ func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 		ScanTime: timestamp.TimestampNow(),
 		Components: &storage.NodeInventory_Components{
 			Namespace: "Testme OS",
-			RhelComponents: []*scannerV1.RHELComponent{
+			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
 				{
 					Id:        int64(1),
 					Name:      "vim-minimal",

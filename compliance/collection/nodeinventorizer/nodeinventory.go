@@ -44,7 +44,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
 		Components: protoComponents,
-		Notes:      []scannerV1.Note{scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE},
+		Notes:      []storage.NodeInventory_Note{storage.NodeInventory_LANGUAGE_CVES_UNAVAILABLE},
 	}
 
 	return m, nil
@@ -73,15 +73,15 @@ func protoComponentsFromScanComponents(c *nodes.Components) *storage.NodeInvento
 	return protoComponents
 }
 
-func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*scannerV1.RHELComponent {
+func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*storage.NodeInventory_Components_RHELComponent {
 	if rc == nil || rc.Packages == nil {
 		log.Warn("No RHEL packages found in scan result")
 		return nil
 	}
 
-	convertedComponents := make(map[string]*scannerV1.RHELComponent, 0)
+	convertedComponents := make(map[string]*storage.NodeInventory_Components_RHELComponent, 0)
 	for i, rhelc := range rc.Packages {
-		comp := &scannerV1.RHELComponent{
+		comp := &storage.NodeInventory_Components_RHELComponent{
 			// The loop index is used as ID, as this field only needs to be unique for each NodeInventory result slice
 			Id:          int64(i),
 			Name:        rhelc.Name,
@@ -90,7 +90,7 @@ func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*scannerV1.R
 			Arch:        rhelc.Arch,
 			Module:      rhelc.Module,
 			Cpes:        rc.CPEs,
-			Executables: rhelc.Executables,
+			Executables: convertExecutables(rhelc.Executables),
 		}
 		compKey := makeComponentKey(comp)
 		if compKey != "" {
@@ -106,6 +106,23 @@ func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*scannerV1.R
 	return maps.Values(convertedComponents)
 }
 
-func makeComponentKey(component *scannerV1.RHELComponent) string {
+func convertExecutables(exe []*scannerV1.Executable) []*storage.NodeInventory_Components_RHELComponent_Executable {
+	arr := make([]*storage.NodeInventory_Components_RHELComponent_Executable, len(exe))
+	for i, executable := range exe {
+		arr[i] = &storage.NodeInventory_Components_RHELComponent_Executable{
+			Path:             executable.Path,
+			RequiredFeatures: make([]*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, len(executable.GetRequiredFeatures())),
+		}
+		for i2, fnv := range executable.GetRequiredFeatures() {
+			arr[i].RequiredFeatures[i2] = &storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{
+				Name:    fnv.GetName(),
+				Version: fnv.GetVersion(),
+			}
+		}
+	}
+	return arr
+}
+
+func makeComponentKey(component *storage.NodeInventory_Components_RHELComponent) string {
 	return component.Name + ":" + component.Version + ":" + component.Arch + ":" + component.Module
 }
