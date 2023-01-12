@@ -16,7 +16,6 @@ import services.ServiceAccountService
 
 import spock.lang.Stepwise
 import spock.lang.Tag
-import spock.lang.Ignore
 
 @Stepwise
 class K8sRbacTest extends BaseSpecification {
@@ -232,7 +231,6 @@ class K8sRbacTest extends BaseSpecification {
         RbacService.waitForRoleRemoved(NEW_CLUSTER_ROLE)
     }
 
-    @Ignore("Just for testing")
     @Tag("BAT")
     def "Verify scraped bindings"() {
         expect:
