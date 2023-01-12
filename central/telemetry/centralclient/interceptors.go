@@ -43,7 +43,7 @@ func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
 var postCluster = &phonehome.ServiceMethod{
 	GRPCMethod: "/v1.ClustersService/PostCluster",
 	HTTPMethod: http.MethodPost,
-	HTTPPath:   "/v1/cluster",
+	HTTPPath:   "/v1/clusters",
 }
 
 // clusterRegistered enables the Cluster Registered event and adds specific
@@ -70,7 +70,7 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 var putCluster = &phonehome.ServiceMethod{
 	GRPCMethod: "/v1.ClustersService/PutCluster",
 	HTTPMethod: http.MethodPut,
-	HTTPPath:   "/v1/cluster/*",
+	HTTPPath:   "/v1/clusters/*",
 }
 
 // clusterInitialized enables the Cluster Initialized event and adds specific
