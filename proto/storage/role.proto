@@ -4,6 +4,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "storage/labels.proto";
+import "storage/traits.proto";
 import "gogoproto/gogo.proto";
 
 package storage;
@@ -31,6 +32,8 @@ message Role {
 
     // Deprecated 2021-04-20 in favor of `permission_set_id`.
     map<string, Access> resource_to_access = 3 [deprecated = true];
+
+    Traits traits = 8;
 }
 
 enum Access {
@@ -49,6 +52,8 @@ message PermissionSet {
     string description = 3;
 
     map<string, Access> resource_to_access = 4;
+
+    Traits traits = 5;
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.
@@ -79,6 +84,8 @@ message SimpleAccessScope {
     string description = 3;
 
     Rules  rules       = 4;
+
+    Traits traits      = 5;
 }
 
 // EffectiveAccessScope describes which clusters and namespaces are "in scope"
