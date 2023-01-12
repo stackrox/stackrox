@@ -145,10 +145,10 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 		DatabaseAvailable: true,
 	}
 
-	dbType := "RocksDB"
+	dbType := v1.DatabaseStatus_RocksDB
 	var dbVersion string
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		dbType = "PostgresDB"
+		dbType = v1.DatabaseStatus_PostgresDB
 		if err := s.db.Ping(ctx); err != nil {
 			dbStatus.DatabaseAvailable = false
 			log.Warn("central is unable to communicate with the database.")

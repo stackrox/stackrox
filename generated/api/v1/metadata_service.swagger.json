@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/database-status": {
+    "/v1/database/status": {
       "get": {
         "operationId": "MetadataService_GetDatabaseStatus",
         "responses": {
@@ -88,6 +88,15 @@
     }
   },
   "definitions": {
+    "DatabaseStatusDatabaseType": {
+      "type": "string",
+      "enum": [
+        "Hidden",
+        "RocksDB",
+        "PostgresDB"
+      ],
+      "default": "Hidden"
+    },
     "MetadataLicenseStatus": {
       "type": "string",
       "enum": [
@@ -143,7 +152,7 @@
           "title": "indicates whether or not central can communicate with the database"
         },
         "databaseType": {
-          "type": "string",
+          "$ref": "#/definitions/DatabaseStatusDatabaseType",
           "title": "type of database serving central"
         },
         "databaseVersion": {

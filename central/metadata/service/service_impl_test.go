@@ -139,20 +139,20 @@ func (s *serviceImplTestSuite) TestDatabaseStatus() {
 		dbStatus, err := service.GetDatabaseStatus(ctx, nil)
 		s.NoError(err)
 		s.True(dbStatus.DatabaseAvailable)
-		s.Equal("PostgresDB", dbStatus.DatabaseType)
+		s.Equal(v1.DatabaseStatus_PostgresDB, dbStatus.DatabaseType)
 		s.NotEqual("", dbStatus.DatabaseVersion)
 
 		dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
 		s.NoError(err)
 		s.True(dbStatus.DatabaseAvailable)
-		s.Equal("", dbStatus.DatabaseType)
+		s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
 		s.Equal("", dbStatus.DatabaseVersion)
 
 		tp.Pool.Close()
 		dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
 		s.NoError(err)
 		s.False(dbStatus.DatabaseAvailable)
-		s.Equal("", dbStatus.DatabaseType)
+		s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
 		s.Equal("", dbStatus.DatabaseVersion)
 	} else {
 		service := serviceImpl{}

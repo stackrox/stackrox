@@ -289,7 +289,7 @@ var (
 
 	pattern_MetadataService_TLSChallenge_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "tls-challenge"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_MetadataService_GetDatabaseStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "database-status"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_MetadataService_GetDatabaseStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "database", "status"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
