@@ -2,7 +2,7 @@ import { DatabaseStatus } from 'types/databaseService.proto';
 
 import axios from './instance';
 
-const databaseUrl = '/v1/database-status';
+const databaseUrl = '/v1/database/status';
 
 /**
  * Fetches database.
