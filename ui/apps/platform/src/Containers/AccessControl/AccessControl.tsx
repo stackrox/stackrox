@@ -71,7 +71,7 @@ function AccessControl(): ReactElement {
                         </List>
                         <p>
                             For additional information on deprecation and required actions, please
-                            consolidate the release notes.
+                            consult the release notes.
                         </p>
                     </>
                 }
