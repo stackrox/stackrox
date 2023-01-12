@@ -64,6 +64,7 @@ type TableStats struct {
 	ToastSize int64  `json:"toastSize"`
 }
 
+// DatabaseDetailsStats contains telemetry details about sizing of databases
 type DatabaseDetailsStats struct {
 	DatabaseName string `json:"databaseName"`
 	DatabaseSize int64  `json:"databaseSize"`
