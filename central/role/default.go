@@ -84,8 +84,8 @@ func getAccessScopeIncludeAllID() string {
 	return EnsureValidAccessScopeID("unrestricted")
 }
 
-// IsDefaultRoleName checks if a given role corresponds to a default role.
-func IsDefaultRoleName(role *storage.Role) bool {
+// IsDefaultRole checks if a given role corresponds to a default role.
+func IsDefaultRole(role *storage.Role) bool {
 	return role.GetTraits().GetOrigin() == storage.Traits_DEFAULT || DefaultRoleNames.Contains(role.GetName())
 }
 

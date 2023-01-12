@@ -127,7 +127,6 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 		return err
 	}
 
-	// Verify storage constraints
 	if err := ds.verifyRoleForDeletion(ctx, name); err != nil {
 		return err
 	}
@@ -456,7 +455,7 @@ func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *st
 
 // Returns errox.InvalidArgs if the given role is a default one.
 func verifyNotDefaultRole(role *storage.Role) error {
-	if rolePkg.IsDefaultRoleName(role) {
+	if rolePkg.IsDefaultRole(role) {
 		return errors.Wrapf(errox.InvalidArgs, "default role %q cannot be modified or deleted", role.GetName())
 	}
 	return nil
@@ -489,7 +488,7 @@ func (ds *dataStoreImpl) verifyPermissionSetIDDoesNotExist(ctx context.Context, 
 }
 
 // Returns errox.InvalidArgs if the given permission set is a default
-// one. Note that IsDefaultRoleName() is reused due to the name sameness.
+// one. Note that IsDefaultRole() is reused due to the name sameness.
 func verifyNotDefaultPermissionSet(permissionSet *storage.PermissionSet) error {
 	if rolePkg.IsDefaultPermissionSet(permissionSet) {
 		return errors.Wrapf(errox.InvalidArgs, "default permission set %q cannot be modified or deleted",
