@@ -11,14 +11,15 @@ import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
 
+export type DisplayOption = 'policyStatusBadge' | 'externalBadge' | 'edgeLabel';
+
 type DisplayOptionsSelectProps = {
-    selectedOptions: string[];
+    selectedOptions: DisplayOption[];
     setSelectedOptions: (options) => void;
 };
 
 function DisplayOptionsSelect({ selectedOptions, setSelectedOptions }: DisplayOptionsSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
-    console.log(selectedOptions);
 
     function onToggle() {
         setIsOpen(!isOpen);
