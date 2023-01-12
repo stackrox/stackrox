@@ -29,6 +29,14 @@ spec:
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
     spec:
+      {{- if ._rox.central.db._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.central.db._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.central.db.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.central.db.tolerations | nindent 8 }}
+      {{- end }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

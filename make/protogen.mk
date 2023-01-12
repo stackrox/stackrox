@@ -37,15 +37,16 @@ endif
 PROTOC_VERSION := 21.4
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-PROTOC_ARCH = linux
+PROTOC_OS = linux
 endif
 ifeq ($(UNAME_S),Darwin)
-PROTOC_ARCH = osx
+PROTOC_OS = osx
 endif
+PROTOC_ARCH=$(shell case $$(uname -m) in (arm64) echo aarch_64 ;; (*) uname -m ;; esac)
 
 PROTO_PRIVATE_DIR := $(BASE_PATH)/.proto
 
-PROTOC_DIR := $(PROTO_PRIVATE_DIR)/protoc-$(PROTOC_ARCH)-$(PROTOC_VERSION)
+PROTOC_DIR := $(PROTO_PRIVATE_DIR)/protoc-$(PROTOC_OS)-$(PROTOC_ARCH)-$(PROTOC_VERSION)
 
 PROTOC := $(PROTOC_DIR)/bin/protoc
 
@@ -61,12 +62,14 @@ $(PROTO_GOBIN):
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$@"
 
-PROTOC_ZIP := protoc-$(PROTOC_VERSION)-$(PROTOC_ARCH)-x86_64.zip
+PROTOC_ZIP := protoc-$(PROTOC_VERSION)-$(PROTOC_OS)-$(PROTOC_ARCH).zip
 PROTOC_FILE := $(PROTOC_DOWNLOADS_DIR)/$(PROTOC_ZIP)
 
+include $(BASE_PATH)/make/github.mk
+
 $(PROTOC_FILE): $(PROTOC_DOWNLOADS_DIR)
-	@echo "+ $@"
-	$(SILENT)wget -q "https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP)" -O "$@"
+	@$(GET_GITHUB_RELEASE_FN); \
+	get_github_release "$@" "https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP)"
 
 .PRECIOUS: $(PROTOC_FILE)
 
@@ -242,4 +245,4 @@ clean-proto-deps:
 	@echo "+ $@"
 	rm -f $(PROTOC_FILE)
 	rm -rf $(PROTOC_DIR)
-	rm -f $(PROTO_GOBIN)
+	rm -rf $(PROTO_GOBIN)

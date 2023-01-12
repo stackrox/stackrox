@@ -12,9 +12,12 @@ import (
 )
 
 func TestScoping(t *testing.T) {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema.ClustersSchema)
-	mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, schema.NamespacesSchema)
-
+	if mapping.GetTableFromCategory(v1.SearchCategory_CLUSTERS) == nil {
+		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema.ClustersSchema)
+	}
+	if mapping.GetTableFromCategory(v1.SearchCategory_NAMESPACES) == nil {
+		mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, schema.NamespacesSchema)
+	}
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "dep").ProtoQuery()
 	scopes := []scoped.Scope{
 		{

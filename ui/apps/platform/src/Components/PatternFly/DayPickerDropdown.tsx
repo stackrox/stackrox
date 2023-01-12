@@ -38,7 +38,7 @@ function DayPickerDropdown({
     const selectOptions =
         intervalType === 'WEEKLY'
             ? [
-                  <SelectOption key="sunday" value="1">
+                  <SelectOption key="monday" value="1">
                       Monday
                   </SelectOption>,
                   <SelectOption key="tuesday" value="2">

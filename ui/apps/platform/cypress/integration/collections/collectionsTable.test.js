@@ -1,12 +1,12 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     collectionsAlias,
     collectionsCountAlias,
     visitCollections,
     visitCollectionsFromLeftNav,
-} from '../../helpers/collections';
-import { hasFeatureFlag } from '../../helpers/features';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
+} from './Collections.helpers';
 
 // Mock responses until endpoints are implemented.
 

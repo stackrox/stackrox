@@ -530,3 +530,34 @@ export function testIntegrationInFormWithoutStoredCredentials(
         staticResponseForTest
     );
 }
+
+/**
+ * Attempts to delete an integration via the API given a source and name, if it exists.
+ * @param {'notifiers'} integrationSource The type of integration
+ * @param {string} integrationName The name of the integration
+ */
+export function tryDeleteIntegration(integrationSource, integrationName) {
+    // This list is not complete - add other integration sources as needed
+    const integrationResponseKeys = {
+        notifiers: 'notifiers',
+    };
+    if (!integrationResponseKeys[integrationSource]) {
+        throw new Error(
+            `A JSON response key for ${integrationSource} was not defined in Cypress test helper.`
+        );
+    }
+    const baseUrl = `/v1/${integrationSource}`;
+    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+
+    cy.request({ url: baseUrl, auth }).as('listIntegrations');
+
+    cy.get('@listIntegrations').then((res) => {
+        const jsonKey = integrationResponseKeys[integrationSource];
+        res.body[jsonKey].forEach(({ id, name }) => {
+            if (name === integrationName) {
+                const url = `${baseUrl}/${id}`;
+                cy.request({ url, auth, method: 'DELETE' });
+            }
+        });
+    });
+}

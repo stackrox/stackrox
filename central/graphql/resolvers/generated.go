@@ -959,6 +959,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"id: ID!",
 		"name: String!",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("Pod", []string{
 		"clusterId: String!",
@@ -1144,6 +1145,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"globalAccess: Access!",
 		"name: String!",
 		"permissionSetId: String!",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("ScannerHealthInfo", []string{
 		"statusErrors: [String!]!",
@@ -1266,6 +1268,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"name: String!",
 		"rules: SimpleAccessScope_Rules",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("SimpleAccessScope_Rules", []string{
 		"clusterLabelSelectors: [SetBasedLabelSelector]!",
@@ -1362,9 +1365,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Traits", []string{
 		"mutabilityMode: Traits_MutabilityMode!",
+		"origin: Traits_Origin!",
 		"visibility: Traits_Visibility!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_MutabilityMode(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_Origin(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_Visibility(0)))
 	utils.Must(builder.AddType("UpgradeProgress", []string{
 		"since: Time",
@@ -10848,6 +10853,11 @@ func (resolver *permissionSetResolver) Name(ctx context.Context) string {
 	return value
 }
 
+func (resolver *permissionSetResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 type podResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -12545,6 +12555,11 @@ func (resolver *roleResolver) PermissionSetId(ctx context.Context) string {
 	return value
 }
 
+func (resolver *roleResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 type scannerHealthInfoResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -13838,6 +13853,11 @@ func (resolver *simpleAccessScopeResolver) Rules(ctx context.Context) (*simpleAc
 	return resolver.root.wrapSimpleAccessScope_Rules(value, true, nil)
 }
 
+func (resolver *simpleAccessScopeResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 type simpleAccessScope_RulesResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -14809,6 +14829,11 @@ func (resolver *traitsResolver) MutabilityMode(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *traitsResolver) Origin(ctx context.Context) string {
+	value := resolver.data.GetOrigin()
+	return value.String()
+}
+
 func (resolver *traitsResolver) Visibility(ctx context.Context) string {
 	value := resolver.data.GetVisibility()
 	return value.String()
@@ -14828,6 +14853,24 @@ func toTraits_MutabilityModes(values *[]string) []storage.Traits_MutabilityMode 
 	output := make([]storage.Traits_MutabilityMode, len(*values))
 	for i, v := range *values {
 		output[i] = toTraits_MutabilityMode(&v)
+	}
+	return output
+}
+
+func toTraits_Origin(value *string) storage.Traits_Origin {
+	if value != nil {
+		return storage.Traits_Origin(storage.Traits_Origin_value[*value])
+	}
+	return storage.Traits_Origin(0)
+}
+
+func toTraits_Origins(values *[]string) []storage.Traits_Origin {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Traits_Origin, len(*values))
+	for i, v := range *values {
+		output[i] = toTraits_Origin(&v)
 	}
 	return output
 }

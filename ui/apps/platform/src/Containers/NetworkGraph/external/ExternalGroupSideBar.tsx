@@ -12,15 +12,15 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { EdgeModel } from '@patternfly/react-topology';
 
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { getEdgesByNodeId, getNodeById } from '../utils/networkGraphUtils';
 import {
     CIDRBlockNodeModel,
+    CustomEdgeModel,
     CustomNodeModel,
     ExternalEntitiesNodeModel,
-    ExternalNodeModel,
+    ExternalGroupNodeModel,
 } from '../types/topology.type';
 
 import { CidrBlockIcon, ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
@@ -29,7 +29,7 @@ import EntityNameSearchInput from '../common/EntityNameSearchInput';
 type ExternalGroupSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
-    edges: EdgeModel[];
+    edges: CustomEdgeModel[];
 };
 
 const columnNames = {
@@ -44,10 +44,19 @@ function ExternalGroupSideBar({ id, nodes, edges }: ExternalGroupSideBarProps): 
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
 
     // derived data
-    const externalGroupNode = getNodeById(nodes, id) as ExternalNodeModel;
+    const externalGroupNode = getNodeById(nodes, id) as ExternalGroupNodeModel;
     const externalNodes = nodes.filter(
         (node) => node.data.type === 'CIDR_BLOCK' || node.data.type === 'EXTERNAL_ENTITIES'
     ) as (ExternalEntitiesNodeModel | CIDRBlockNodeModel)[];
+
+    const filteredExternalNodes = entityNameFilter
+        ? externalNodes.filter((externalNode) => {
+              if (externalNode.label) {
+                  return externalNode.label.includes(entityNameFilter);
+              }
+              return false;
+          })
+        : externalNodes;
 
     return (
         <Stack>
@@ -89,7 +98,7 @@ function ExternalGroupSideBar({ id, nodes, edges }: ExternalGroupSideBarProps): 
                                 <ToolbarItem>
                                     <TextContent>
                                         <Text component={TextVariants.h3}>
-                                            {externalNodes.length} results found
+                                            {filteredExternalNodes.length} results found
                                         </Text>
                                     </TextContent>
                                 </ToolbarItem>
@@ -106,7 +115,7 @@ function ExternalGroupSideBar({ id, nodes, edges }: ExternalGroupSideBarProps): 
                                 </Tr>
                             </Thead>
                             <Tbody>
-                                {externalNodes.map((externalNode) => {
+                                {filteredExternalNodes.map((externalNode) => {
                                     const entityIcon =
                                         externalNode.data.type === 'CIDR_BLOCK' ? (
                                             <CidrBlockIcon />

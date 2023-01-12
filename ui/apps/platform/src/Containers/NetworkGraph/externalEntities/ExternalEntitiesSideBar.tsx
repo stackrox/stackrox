@@ -12,13 +12,12 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { EdgeModel } from '@patternfly/react-topology';
 
 import { getNodeById } from '../utils/networkGraphUtils';
 import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { Flow } from '../types/flow.type';
-import { CustomNodeModel } from '../types/topology.type';
+import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import AdvancedFlowsFilter, {
@@ -31,7 +30,7 @@ import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 type ExternalEntitiesSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
-    edges: EdgeModel[];
+    edges: CustomEdgeModel[];
 };
 
 const flows: Flow[] = [
