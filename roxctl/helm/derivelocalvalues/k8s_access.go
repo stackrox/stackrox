@@ -117,6 +117,17 @@ func (k *k8sObjectDescription) evaluateToString(ctx context.Context, kind string
 	return s
 }
 
+func (k *k8sObjectDescription) evaluateToStringSlice(ctx context.Context, kind string, name string,
+	jsonpath string, def []string) []string {
+	x := k.evaluateOrDefault(ctx, kind, name, jsonpath, def)
+	s, ok := x.([]string)
+	if !ok {
+		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s", x, jsonpath, kind, name)
+		return def
+	}
+	return s
+}
+
 func (k *k8sObjectDescription) evaluateToStringP(ctx context.Context, kind string, name string, jsonpath string) *string {
 	s := k.evaluateToString(ctx, kind, name, jsonpath, "")
 	if s == "" {

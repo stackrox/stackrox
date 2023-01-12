@@ -72,6 +72,12 @@ type TelemetryConfig struct {
 	StorageKey      string
 }
 
+// DeclarativeConfigMounts contains mounts to config maps holding configuration to create resources in a declarative
+// manner.
+type DeclarativeConfigMounts struct {
+	ConfigMaps []string
+}
+
 // PersistenceType describes the type of persistence
 type PersistenceType string
 
@@ -93,7 +99,11 @@ func (m PersistenceType) String() string {
 type K8sConfig struct {
 	CommonConfig
 
+	// Telemetry holds the configuration for telemetry.
 	Telemetry TelemetryConfig
+
+	// DeclarativeConfig holds the configuration for creating resources in a declarative manner.
+	DeclarativeConfig DeclarativeConfigMounts
 
 	// ImageFlavorName is the name of the flavor selected by the user with CLI parameters
 	ImageFlavorName string

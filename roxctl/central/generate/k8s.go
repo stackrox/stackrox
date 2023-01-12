@@ -43,6 +43,11 @@ func (w *flagsWrapper) StringVarP(p *string, name, shorthand, value, usage strin
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
+func (w *flagsWrapper) StringSliceVar(p *[]string, name string, value []string, usage string, groups ...string) {
+	w.FlagSet.StringSliceVar(p, name, value, usage)
+	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
+}
+
 func (w *flagsWrapper) Uint32VarP(p *uint32, name, shorthand string, value uint32, usage string, groups ...string) {
 	w.FlagSet.Uint32VarP(p, name, shorthand, value, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
@@ -104,6 +109,9 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
 
 	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", false, "whether to enable telemetry", "central")
+
+	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfig.ConfigMaps, "declarative-config-mounts", []string{},
+		"list of config maps to add as declarative configuration mounts in central", "central")
 
 	k8sConfig.EnableCentralDB = env.PostgresDatastoreEnabled.BooleanSetting()
 

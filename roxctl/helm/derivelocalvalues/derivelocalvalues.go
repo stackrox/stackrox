@@ -276,6 +276,10 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 						`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_TELEMETRY_STORAGE_KEY_V1")].value}`, ""),
 				},
 			},
+			"declarativeConfig": map[string]interface{}{
+				"mounts": k8s.evaluateToStringSlice(ctx, "deployment", "central",
+					`{.spec.template.spec.containers[?(@.name == "central")].volumeMounts[?(@.mountPath == "/run/secrets/stackrox.io/declarative-configuration/")].name}`, []string{}),
+			},
 			"config":          k8s.evaluateToStringP(ctx, "configmap", "central-config", `{.data['central-config\.yaml']}`),
 			"dbConfig":        k8s.evaluateToStringP(ctx, "configmap", "central-db-connection", `{.data['central-db-connection\.yaml']}`),
 			"endpointsConfig": k8s.evaluateToStringP(ctx, "configmap", "central-endpoints", `{.data['endpoints\.yaml']}`),
