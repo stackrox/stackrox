@@ -141,6 +141,16 @@ func TestTranslate(t *testing.T) {
 									Key:      &telemetryKey,
 								},
 							},
+							DeclarativeConfiguration: &platform.DeclarativeConfiguration{
+								ConfigMaps: []platform.LocalConfigMapReference{
+									{
+										Name: "config-map-1",
+									},
+									{
+										Name: "config-map-2",
+									},
+								},
+							},
 						},
 						Scanner: &platform.ScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
@@ -295,6 +305,12 @@ func TestTranslate(t *testing.T) {
 						"storage": map[string]interface{}{
 							"endpoint": "endpoint",
 							"key":      "key",
+						},
+					},
+					"declarativeConfiguration": map[string]interface{}{
+						"mounts": []string{
+							"config-map-1",
+							"config-map-2",
 						},
 					},
 				},

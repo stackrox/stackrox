@@ -199,6 +199,8 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 
 	cv.AddChild("telemetry", getTelemetryValues(c.Telemetry))
 
+	cv.AddChild("declarativeConfiguration", getDeclarativeConfigurationValues(c.DeclarativeConfiguration))
+
 	return &cv
 }
 
@@ -247,6 +249,20 @@ func getTelemetryValues(t *platform.Telemetry) *translation.ValuesBuilder {
 		tv.AddChild("storage", &storage)
 	}
 	return &tv
+}
+
+func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *translation.ValuesBuilder {
+	declarativeConfig := translation.NewValuesBuilder()
+	if c == nil {
+		return &declarativeConfig
+	}
+
+	mountNames := make([]string, 0, len(c.ConfigMaps))
+	for _, configMap := range c.ConfigMaps {
+		mountNames = append(mountNames, configMap.Name)
+	}
+	declarativeConfig.SetStringSlice("mounts", mountNames)
+	return &declarativeConfig
 }
 
 func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *translation.ValuesBuilder {

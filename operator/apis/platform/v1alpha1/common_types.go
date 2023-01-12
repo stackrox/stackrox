@@ -110,6 +110,13 @@ type LocalSecretReference struct {
 	Name string `json:"name"`
 }
 
+// LocalConfigMapReference is a reference to a config map within the same namespace.
+type LocalConfigMapReference struct {
+	// The name of the referenced config map.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:io.kubernetes:ConfigMap"}
+	Name string `json:"name"`
+}
+
 // ScannerAnalyzerComponent describes the analyzer component
 type ScannerAnalyzerComponent struct {
 	// Controls the number of analyzer replicas and autoscaling.
@@ -157,7 +164,7 @@ type ScannerAnalyzerScaling struct {
 }
 
 // AutoScalingPolicy is a type for values of spec.scanner.analyzer.replicas.autoScaling.
-//+kubebuilder:validation:Enum=Enabled;Disabled
+// +kubebuilder:validation:Enum=Enabled;Disabled
 type AutoScalingPolicy string
 
 const (
@@ -187,7 +194,7 @@ func (s *Monitoring) IsEnabled() bool {
 }
 
 // ExposeEndpoint is a type for monitoring sub-struct.
-//+kubebuilder:validation:Enum=Enabled;Disabled
+// +kubebuilder:validation:Enum=Enabled;Disabled
 type ExposeEndpoint string
 
 const (

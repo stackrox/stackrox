@@ -69,7 +69,7 @@ type Egress struct {
 }
 
 // ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.
-//+kubebuilder:validation:Enum=Online;Offline
+// +kubebuilder:validation:Enum=Online;Offline
 type ConnectivityPolicy string
 
 const (
@@ -125,6 +125,10 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Telemetry",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Telemetry *Telemetry `json:"telemetry,omitempty"`
 
+	// Configures resources within Central in a declarative manner.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
+
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
 }
@@ -163,6 +167,13 @@ func (c *CentralComponentSpec) CentralDBEnabled() bool {
 	return *c.DB.IsEnabled == CentralDBEnabledTrue
 }
 
+// DeclarativeConfiguration defines settings for adding resources in a declarative manner.
+type DeclarativeConfiguration struct {
+	// The references of objects containing declarative configuration
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Declarative configuration references"
+	ConfigMaps []LocalConfigMapReference `json:"objectReferences"`
+}
+
 // CentralDBSpec defines settings for the "central db" component.
 type CentralDBSpec struct {
 	// Specify whether central-db is enabled, Default configures central to use rocksdb.
@@ -194,7 +205,7 @@ type CentralDBSpec struct {
 }
 
 // CentralDBEnabled is a type for values of spec.central.db.enabled.
-//+kubebuilder:validation:Enum=Default;Enabled
+// +kubebuilder:validation:Enum=Default;Enabled
 type CentralDBEnabled string
 
 const (
@@ -482,7 +493,7 @@ func (s *ScannerComponentSpec) IsEnabled() bool {
 }
 
 // ScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
-//+kubebuilder:validation:Enum=Enabled;Disabled
+// +kubebuilder:validation:Enum=Enabled;Disabled
 type ScannerComponentPolicy string
 
 const (

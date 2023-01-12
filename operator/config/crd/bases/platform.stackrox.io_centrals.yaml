@@ -214,6 +214,27 @@ spec:
                           type: object
                         type: array
                     type: object
+                  declarativeConfiguration:
+                    description: Configures resources within Central in a declarative
+                      manner.
+                    properties:
+                      objectReferences:
+                        description: The references of objects containing declarative
+                          configuration
+                        items:
+                          description: LocalConfigMapReference is a reference to a
+                            config map within the same namespace.
+                          properties:
+                            name:
+                              description: The name of the referenced config map.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                    required:
+                    - objectReferences
+                    type: object
                   defaultTLSSecret:
                     description: By default, Central will only serve an internal TLS
                       certificate, which means that you will need to handle TLS termination
