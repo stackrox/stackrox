@@ -1,6 +1,7 @@
 package phonehome
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -50,11 +51,16 @@ func (rp *RequestParams) Is(s *ServiceMethod) bool {
 	return rp.Method == s.GRPCMethod || (rp.Method == s.HTTPMethod && rp.PathMatches(s.HTTPPath))
 }
 
-// GetGRPCRequestBody sets the output body argument. Returns io.EOF on empty body.
-func GetGRPCRequestBody[T any](rp *RequestParams, body **T) error {
-	var ok bool
-	if *body, ok = rp.GRPCReq.(*T); !ok || *body == nil {
-		return io.EOF
+// GetGRPCRequestBody returns the request body with the type inferred from the
+// API handler provided as the first argument. Returns io.EOF on nil body.
+func GetGRPCRequestBody[
+	F func(Service, context.Context, *Request) (*Response, error),
+	Service any,
+	Request any,
+	Response any,
+](_ F, rp *RequestParams) (*Request, error) {
+	if body, ok := rp.GRPCReq.(*Request); ok && body != nil {
+		return body, nil
 	}
-	return nil
+	return nil, io.EOF
 }

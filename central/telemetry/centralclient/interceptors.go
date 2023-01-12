@@ -1,7 +1,6 @@
 package centralclient
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -26,18 +25,6 @@ var (
 		"roxctl":              {roxctl},
 	}
 )
-
-// apiHandler represents a typical API handler type.
-// Example:
-//   (v1.ClustersServiceServer).PostCluster(context.Context, *storage.Cluster) (*storage.Cluster, error)
-type apiHandler[Service any, Request any, Response any] func(Service, context.Context, *Request) (*Response, error)
-
-// getRequestPtr returns a nil pointer of the API handler response type.
-// Example:
-//   getRequestPtr(v1.ClustersServiceServer.PostCluster) *storage.Cluster
-func getRequestPtr[Service any, Request any, Response any](apiHandler[Service, Request, Response]) *Request {
-	return nil
-}
 
 // apiCall enables API Call events for the API paths specified in the
 // trackedPaths ("*" value enables all paths) and have no match in the
@@ -67,8 +54,7 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 	}
 
 	props["Code"] = rp.Code
-	cluster := getRequestPtr(v1.ClustersServiceServer.PostCluster)
-	if phonehome.GetGRPCRequestBody(rp, &cluster) == nil {
+	if cluster, err := phonehome.GetGRPCRequestBody(v1.ClustersServiceServer.PostCluster, rp); err == nil {
 		props["Cluster Type"] = cluster.GetType().String()
 		props["Cluster ID"] = cluster.GetId()
 		props["Managed By"] = cluster.GetManagedBy().String()
@@ -94,8 +80,7 @@ func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool 
 		return false
 	}
 
-	cluster := getRequestPtr(v1.ClustersServiceServer.PutCluster)
-	if phonehome.GetGRPCRequestBody(rp, &cluster) == nil {
+	if cluster, err := phonehome.GetGRPCRequestBody(v1.ClustersServiceServer.PutCluster, rp); err == nil {
 		uninitializedClustersLock.Lock()
 		defer uninitializedClustersLock.Unlock()
 
