@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -35,8 +36,9 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(71), "testshortcircuit", (*storage.TestShortCircuit)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(114), "testshortcircuit", (*storage.TestShortCircuit)(nil)))
 		RegisterTable(schema, CreateTableTestShortCircuitsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory(114), schema)
 		return schema
 	}()
 )

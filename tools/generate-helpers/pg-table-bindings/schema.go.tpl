@@ -15,6 +15,7 @@ import (
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/postgres/walker"
     "github.com/stackrox/rox/pkg/search"
+    "github.com/stackrox/rox/pkg/search/postgres/mapping"
     "github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -70,6 +71,9 @@ var (
         {{- end }}
         {{- if .RegisterSchema }}
         RegisterTable(schema, {{template "createTableStmtVar" .Schema }})
+            {{- if .SearchCategory }}
+                mapping.RegisterCategoryToTable(v1.{{.SearchCategory}}, schema)
+            {{- end}}
         {{- end}}
         return schema
     }()
