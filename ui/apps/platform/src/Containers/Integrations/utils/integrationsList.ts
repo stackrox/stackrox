@@ -168,7 +168,7 @@ const integrationsList: IntegrationDescriptorMap = {
             image: quay,
         },
         {
-            label: 'DEPRECATED CoreOS Clair',
+            label: '[DEPRECATED] CoreOS Clair',
             type: 'clair',
             categories: 'Scanner',
             source: 'imageIntegrations',
@@ -180,6 +180,7 @@ const integrationsList: IntegrationDescriptorMap = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
+            featureFlagDependency: 'ROX_CLAIR_V4_SCANNING',
         },
         {
             label: 'Sonatype Nexus',
