@@ -739,7 +739,7 @@ spec:
     | Service                          | Deployment Type | Description     |
     | :------------------------------- | :-------------- | :-------------- |
     | Central                          | Deployment      | Users interact with Red Hat Advanced Cluster Security through the user interface or APIs on Central. Central also sends notifications for violations and interacts with integrations. |
-    | Central DB                       | Deployment      | Central DB is a PostgreSQL-based persistent storage for the data collected and managed by Central. RHACS can be configured to use external PostgreSQL database instead of the operator-managed Central DB deployment. |
+    | Central DB                       | Deployment      | Central DB is a PostgreSQL-based persistent storage for the data collected and managed by Central. |
     | Scanner                          | Deployment      | Scanner is a Red Hat developed and certified image scanner. Scanner analyzes and reports vulnerabilities for images. Scanner uses HPA to scale the number of replicas based on workload. |
     | Scanner DB                       | Deployment      | Scanner DB is a cache for vulnerability definitions to serve vulnerability scanning use cases throughout the software development life cycle. |
 
