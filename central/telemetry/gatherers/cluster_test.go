@@ -75,6 +75,7 @@ func (s *clusterGathererTestSuite) TearDownTest() {
 func (s *clusterGathererTestSuite) TestGather() {
 	s.mockClusterDatastore.EXPECT().GetClusters(gomock.Any()).Return(mockClusters, nil)
 	s.mockNamespaceDatastore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil)
+	s.mockNodeDatastore.EXPECT().SearchRawNodes(gomock.Any(), gomock.Any()).Return(nil, nil)
 	s.mockConnectionManager.EXPECT().GetActiveConnections().Return(nil)
 	clusters := s.gatherer.Gather(context.Background(), true)
 	s.Len(clusters, 1)

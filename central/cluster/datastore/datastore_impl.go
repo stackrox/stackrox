@@ -742,7 +742,6 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 }
 
 func (ds *datastoreImpl) cleanUpNodeStore() {
-	// TODO: Move this to pruner.
 	if err := ds.doCleanUpNodeStore(); err != nil {
 		log.Errorf("Error cleaning up cluster node stores: %v", err)
 	}
@@ -767,7 +766,6 @@ func (ds *datastoreImpl) doCleanUpNodeStore() error {
 	if len(nodeSearchResults) == 0 {
 		return nil
 	}
-
 	clusterResults, err := ds.Search(ctx, pkgSearch.EmptyQuery())
 	if err != nil {
 		return errors.Wrap(err, "retrieving clusters")
@@ -777,7 +775,7 @@ func (ds *datastoreImpl) doCleanUpNodeStore() error {
 	orphanedNodes := set.NewStringSet()
 	for _, nodeSearchResult := range nodeSearchResults {
 		for _, clusterIDMatch := range nodeSearchResult.Matches[clusterIDFieldPath] {
-			if existingClusters.Contains(clusterIDMatch) {
+			if !existingClusters.Contains(clusterIDMatch) {
 				orphanedNodes.Add(nodeSearchResult.ID)
 			}
 		}

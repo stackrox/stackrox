@@ -664,7 +664,7 @@ func (resolver *complianceControlResolver) ComplianceControlNodes(ctx context.Co
 		if !ok || err != nil {
 			return nil, err
 		}
-		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(rs, all))
+		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(ctx, rs, all))
 		if err != nil {
 			return nil, err
 		}
@@ -691,7 +691,7 @@ func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx con
 		if !ok || err != nil {
 			return nil, err
 		}
-		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(rs, failing))
+		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(ctx, rs, failing))
 		if err != nil {
 			return nil, err
 		}
@@ -718,7 +718,7 @@ func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx con
 		if !ok || err != nil {
 			return nil, err
 		}
-		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(rs, passing))
+		resolvers, err := resolver.root.wrapNodes(resolver.getResultNodesFromAggregationResults(ctx, rs, passing))
 		if err != nil {
 			return nil, err
 		}
@@ -747,7 +747,11 @@ func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx 
 	return rs, true, nil
 }
 
-func (resolver *complianceControlResolver) getResultNodesFromAggregationResults(results []*storage.ComplianceAggregation_Result, nodeType resultType) ([]*storage.Node, error) {
+func (resolver *complianceControlResolver) getResultNodesFromAggregationResults(
+	ctx context.Context,
+	results []*storage.ComplianceAggregation_Result,
+	nodeType resultType,
+) ([]*storage.Node, error) {
 	var nodes []*storage.Node
 	for _, r := range results {
 		if (nodeType == passing && r.GetNumPassing() == 0) || (nodeType == failing && r.GetNumFailing() == 0) {
@@ -757,7 +761,7 @@ func (resolver *complianceControlResolver) getResultNodesFromAggregationResults(
 		if err != nil {
 			continue
 		}
-		node, found, err := resolver.root.NodeDataStore.GetNode(nodeID)
+		node, found, err := resolver.root.NodeDataStore.GetNode(ctx, nodeID)
 		if err != nil || !found {
 			continue
 		}
