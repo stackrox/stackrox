@@ -417,7 +417,7 @@ func GetDatabaseSize(postgresConfig *pgxpool.Config, dbName string) (int64, erro
 		return 0, err
 	}
 
-	log.Infof("%q size = %d.", dbName, dbSize)
+	log.Debugf("%q size = %d.", dbName, dbSize)
 	return dbSize, nil
 }
 
@@ -467,8 +467,6 @@ func GetAllDatabases(postgresConfig *pgxpool.Config) []string {
 
 		clones = append(clones, cloneName)
 	}
-
-	log.Infof("database clones => %s", clones)
 
 	return clones
 }

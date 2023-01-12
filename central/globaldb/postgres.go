@@ -191,20 +191,39 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 	return dbStats
 }
 
-// CollectPostgresDatabaseStats -- collect database level stats for Postgres
-func CollectPostgresDatabaseStats(postgresConfig *pgxpool.Config) {
-	log.Info("CollectPostgresDatabaseStats")
+// CollectPostgresDatabaseSizes -- collect database sizing stats for Postgres
+func CollectPostgresDatabaseSizes(postgresConfig *pgxpool.Config) []*stats.DatabaseDetailsStats {
 	databases := pgadmin.GetAllDatabases(postgresConfig)
 
+	detailsSlice := make([]*stats.DatabaseDetailsStats, 0)
+
 	for _, database := range databases {
-		cloneSize, err := pgadmin.GetDatabaseSize(postgresConfig, database)
+		dbSize, err := pgadmin.GetDatabaseSize(postgresConfig, database)
 		if err != nil {
 			log.Errorf("error fetching clone size: %v", err)
-			return
+			return detailsSlice
 		}
 
 		databaseLabel := prometheus.Labels{"Database": database}
-		metrics.PostgresDBSize.With(databaseLabel).Set(float64(cloneSize))
+		metrics.PostgresDBSize.With(databaseLabel).Set(float64(dbSize))
+
+		dbDetails := &stats.DatabaseDetailsStats{
+			DatabaseName: database,
+			DatabaseSize: int64(dbSize),
+		}
+		detailsSlice = append(detailsSlice, dbDetails)
+	}
+
+	return detailsSlice
+}
+
+// CollectPostgresDatabaseStats -- collect database level stats for Postgres
+func CollectPostgresDatabaseStats(postgresConfig *pgxpool.Config) {
+	dbStats := CollectPostgresDatabaseSizes(postgresConfig)
+
+	for _, dbStat := range dbStats {
+		databaseLabel := prometheus.Labels{"Database": dbStat.DatabaseName}
+		metrics.PostgresDBSize.With(databaseLabel).Set(float64(dbStat.DatabaseSize))
 	}
 
 	totalSize, err := pgadmin.GetTotalPostgresSize(postgresConfig)
