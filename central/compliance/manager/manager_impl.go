@@ -15,7 +15,7 @@ import (
 	complianceOperatorCheckDS "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/scrape/factory"
@@ -57,7 +57,7 @@ type manager struct {
 	interruptC chan struct{}
 
 	clusterStore    clusterDatastore.DataStore
-	nodeStore       nodeDatastore.GlobalDataStore
+	nodeStore       nodeDatastore.DataStore
 	deploymentStore datastore.DataStore
 	podStore        podDatastore.DataStore
 
@@ -69,7 +69,7 @@ type manager struct {
 	resultsStore complianceDS.DataStore
 }
 
-func newManager(standardsRegistry *standards.Registry, complianceOperatorManager complianceOperatorManager.Manager, complianceOperatorResults complianceOperatorCheckDS.DataStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.GlobalDataStore, deploymentStore datastore.DataStore, podStore podDatastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceDS.DataStore) *manager {
+func newManager(standardsRegistry *standards.Registry, complianceOperatorManager complianceOperatorManager.Manager, complianceOperatorResults complianceOperatorCheckDS.DataStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.DataStore, deploymentStore datastore.DataStore, podStore podDatastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceDS.DataStore) *manager {
 	mgr := &manager{
 		standardsRegistry:         standardsRegistry,
 		complianceOperatorManager: complianceOperatorManager,
@@ -101,16 +101,11 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "could not get cluster with ID %q", clusterID)
 	}
 
-	clusterNodeStore, err := m.nodeStore.GetClusterNodeStore(ctx, clusterID, false)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not get node store for cluster %s", clusterID)
-	}
-	nodes, err := clusterNodeStore.ListNodes()
-
+	nodes, err := m.nodeStore.SearchRawNodes(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
 	if errors.Cause(err) == bolthelper.ErrBucketNotFound {
 		nodes = nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "listing nodes for cluster %s", clusterID)
+		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()

@@ -5,8 +5,9 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import * as networkService from 'services/NetworkService';
 import { ensureExhaustive } from 'utils/type.utils';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
+import { Simulation } from '../utils/getSimulation';
 
-type NetworkPolicySimulator =
+export type NetworkPolicySimulator =
     | {
           state: 'ACTIVE';
           networkPolicies: NetworkPolicy[];
@@ -19,6 +20,10 @@ type NetworkPolicySimulator =
           isLoading: boolean;
           error: string;
       };
+
+export type SetNetworkPolicyModification = (action: SetNetworkPolicyModificationAction) => void;
+
+export type ApplyNetworkPolicyModification = () => void;
 
 type SetNetworkPolicyModificationAction =
     | {
@@ -51,10 +56,15 @@ type SetNetworkPolicyModificationAction =
           };
       };
 
-function useNetworkPolicySimulator({ clusterId }): {
+type UseNetworkPolicySimulatorParams = {
+    simulation: Simulation;
+    clusterId: string;
+};
+
+function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySimulatorParams): {
     simulator: NetworkPolicySimulator;
-    setNetworkPolicyModification: (action: SetNetworkPolicyModificationAction) => void;
-    applyNetworkPolicyModification: () => void;
+    setNetworkPolicyModification: SetNetworkPolicyModification;
+    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
 } {
     const defaultResultState = {
         state: 'ACTIVE',
@@ -73,7 +83,7 @@ function useNetworkPolicySimulator({ clusterId }): {
                 searchQuery: '',
             },
         });
-    }, []);
+    }, [clusterId, simulation.isOn]);
 
     function setNetworkPolicyModification(action: SetNetworkPolicyModificationAction): void {
         const { state, options } = action;

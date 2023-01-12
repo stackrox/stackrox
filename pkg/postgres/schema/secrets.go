@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.Secret)(nil)), "secrets")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SECRETS, "secret", (*storage.Secret)(nil)))
 		RegisterTable(schema, CreateTableSecretsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_SECRETS, schema)
 		return schema
 	}()
 )

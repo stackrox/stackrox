@@ -47,6 +47,21 @@ message TLSChallengeRequest {
     string challenge_token = 1;
 }
 
+message DatabaseStatus {
+    enum DatabaseType {
+        Hidden = 0;
+        RocksDB = 1;
+        PostgresDB = 2;
+    }
+
+    // indicates whether or not central can communicate with the database
+    bool database_available = 1;
+    // type of database serving central
+    DatabaseType database_type = 2;
+    // version of the database
+    string database_version = 3;
+}
+
 service MetadataService {
 
     rpc GetMetadata(Empty) returns (Metadata) {
@@ -58,6 +73,12 @@ service MetadataService {
     rpc TLSChallenge(TLSChallengeRequest) returns (TLSChallengeResponse) {
         option(google.api.http) = {
             get: "/v1/tls-challenge"
+        };
+    }
+
+    rpc GetDatabaseStatus(Empty) returns (DatabaseStatus) {
+        option (google.api.http) = {
+            get: "/v1/database/status"
         };
     }
 }

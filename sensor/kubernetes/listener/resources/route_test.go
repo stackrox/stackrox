@@ -6,7 +6,7 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,6 +75,9 @@ func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc serviceWi
 }
 
 type mockEndpointManager struct {
+}
+
+func (m *mockEndpointManager) OnDeploymentCreateOrUpdateByID(string) {
 }
 
 func (m *mockEndpointManager) OnDeploymentCreateOrUpdate(*deploymentWrap) {

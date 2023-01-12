@@ -1,4 +1,3 @@
-import { url as basePath } from '../constants/DashboardPage';
 import navSelectors from '../selectors/navigation';
 
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
@@ -10,7 +9,7 @@ import { visit } from './visit';
  */
 export const summaryCountsOpname = 'summary_counts';
 export const getAllNamespacesByClusterOpname = 'getAllNamespacesByCluster';
-export const alertsSummaryCountsAlias = 'alerts/summary/counts';
+export const alertCountsBySeverityOpname = 'alertCountsBySeverity';
 export const mostRecentAlertsOpname = 'mostRecentAlerts';
 export const getImagesOpname = 'getImages';
 export const deploymentsWithProcessInfoAlias = 'deploymentswithprocessinfo';
@@ -23,10 +22,7 @@ const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
     getAllNamespacesByClusterOpname,
 ]);
 const routeMatcherMapForViolationsByPolicySeverity = {
-    [alertsSummaryCountsAlias]: {
-        method: 'GET',
-        url: '/v1/alerts/summary/counts?request.query=',
-    },
+    ...getRouteMatcherMapForGraphQL([alertCountsBySeverityOpname]),
     ...getRouteMatcherMapForGraphQL([mostRecentAlertsOpname]),
 };
 const routeMatcherMapForImagesAtMostRisk = getRouteMatcherMapForGraphQL([getImagesOpname]);
@@ -57,6 +53,8 @@ const routeMatcherMap = {
     ...routeMatcherMapForViolationsByPolicyCategory,
     ...routeMatcherMapForComplianceLevelsByStandard,
 };
+
+const basePath = '/main/dashboard';
 
 const title = 'Dashboard';
 

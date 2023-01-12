@@ -236,7 +236,7 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
-                                <DescriptionListTerm>Resource scope</DescriptionListTerm>
+                                <DescriptionListTerm>Report scope</DescriptionListTerm>
                                 <DescriptionListDescription>
                                     <ScopeName scopeId={report?.scopeId} />
                                 </DescriptionListDescription>

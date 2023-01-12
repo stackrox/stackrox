@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
@@ -38,11 +37,13 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	v := &k8sVersion.Info{GitVersion: "unknown"}
 	if rc, err := rest.InClusterConfig(); err == nil {
 		if clientset, err := kubernetes.NewForConfig(rc); err == nil {
-			v, _ = clientset.ServerVersion()
+			if serverVersion, err := clientset.ServerVersion(); err == nil {
+				v = serverVersion
+			}
 		}
 	}
 
-	trackedPaths = set.NewFrozenSet(strings.Split(apiWhiteList.Setting(), ",")...)
+	trackedPaths = strings.Split(apiWhiteList.Setting(), ",")
 
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.OpenshiftAPI.BooleanSetting() {

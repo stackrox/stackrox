@@ -34,8 +34,7 @@ import (
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	dackboxNodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
-	dackboxNodeGlobalDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/globaldatastore"
-	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	dackboxNodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -275,7 +274,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods, indexingQ
 }
 
-func (s *PruningTestSuite) generateNodeDataStructures() nodeGlobalDatastore.GlobalDataStore {
+func (s *PruningTestSuite) generateNodeDataStructures() dackboxNodeDatastore.DataStore {
 	db, bleveIndex := setupRocksDBAndBleve(s.T())
 
 	ctrl := gomock.NewController(s.T())
@@ -285,7 +284,7 @@ func (s *PruningTestSuite) generateNodeDataStructures() nodeGlobalDatastore.Glob
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(s.T(), err)
 
-	nodes := dackboxNodeGlobalDatastore.New(dackboxNodeDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker()))
+	nodes := dackboxNodeDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
 
 	return nodes
 }
@@ -1681,7 +1680,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNodeRisks() {
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			nodes := nodeDatastoreMocks.NewMockGlobalDataStore(ctrl)
+			nodes := dackboxNodeDatastoreMocks.NewMockDataStore(ctrl)
 			risks := riskDatastoreMocks.NewMockDataStore(ctrl)
 			gci := &garbageCollectorImpl{
 				nodes: nodes,

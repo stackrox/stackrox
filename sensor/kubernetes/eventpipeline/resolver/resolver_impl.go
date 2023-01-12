@@ -16,8 +16,7 @@ type resolverImpl struct {
 	outputQueue component.OutputQueue
 	innerQueue  chan *component.ResourceEvent
 
-	deploymentStore store.DeploymentStore
-	storeProvider   store.Provider
+	storeProvider store.Provider
 }
 
 // Start the resolverImpl component
@@ -50,10 +49,10 @@ func (r *resolverImpl) runResolver() {
 // processMessage resolves the dependencies and forwards the message to the outputQueue
 func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	if msg.DeploymentReference != nil {
-		referenceIds := msg.DeploymentReference(r.deploymentStore)
+		referenceIds := msg.DeploymentReference(r.storeProvider.Deployments())
 
 		for _, id := range referenceIds {
-			preBuiltDeployment := r.deploymentStore.Get(id)
+			preBuiltDeployment := r.storeProvider.Deployments().Get(id)
 			if preBuiltDeployment == nil {
 				log.Warnf("Deployment with id %s not found", id)
 				continue
@@ -63,7 +62,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 			exposureInfo := r.storeProvider.Services().
 				GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetLabels())
 
-			d, err := r.deploymentStore.BuildDeploymentWithDependencies(id, store.Dependencies{
+			d, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
 				PermissionLevel: permissionLevel,
 				Exposures:       exposureInfo,
 			})
