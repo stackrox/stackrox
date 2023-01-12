@@ -136,12 +136,12 @@ var putAuthProvider = &phonehome.ServiceMethod{
 func createAuthProvider(rp *phonehome.RequestParams, props map[string]any) bool {
 	switch {
 	case rp.Is(postAuthProvider):
-		if ap, err := phonehome.GetGRPCRequestBody(v1.AuthProviderServiceServer.PostAuthProvider, rp); err == nil {
+		if ap := phonehome.GetGRPCRequestBody(v1.AuthProviderServiceServer.PostAuthProvider, rp); ap != nil {
 			props["Type"] = ap.GetProvider().GetType()
 		}
 		return true
 	case rp.Is(putAuthProvider):
-		if ap, err := phonehome.GetGRPCRequestBody(v1.AuthProviderServiceServer.PutAuthProvider, rp); err == nil {
+		if ap := phonehome.GetGRPCRequestBody(v1.AuthProviderServiceServer.PutAuthProvider, rp); ap != nil {
 			props["Type"] = ap.GetType()
 		}
 		return true
