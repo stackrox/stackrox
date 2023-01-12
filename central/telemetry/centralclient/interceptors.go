@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	trackedPaths set.FrozenSet[string]
-	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/"}
+	trackedPaths []string
+	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/*"}
 
 	uninitializedClusters     = set.NewSet[string]()
 	uninitializedClustersLock = &sync.Mutex{}
@@ -29,12 +29,7 @@ var (
 // trackedPaths set ("*" value enables all paths) and have no prefix from the
 // ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
-	for _, ip := range ignoredPaths {
-		if strings.HasPrefix(rp.Path, ip) {
-			return false
-		}
-	}
-	if trackedPaths.Contains("*") || trackedPaths.Contains(rp.Path) {
+	if !rp.HasPathIn(ignoredPaths) && rp.HasPathIn(trackedPaths) {
 		props["Path"] = rp.Path
 		props["Code"] = rp.Code
 		props["User-Agent"] = rp.UserAgent
@@ -74,7 +69,7 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 var putCluster = &phonehome.ServiceMethod{
 	GRPCMethod: "/v1.ClustersService/PutCluster",
 	HTTPMethod: http.MethodPut,
-	HTTPPath:   "/v1/cluster",
+	HTTPPath:   "/v1/cluster/*",
 }
 
 // clusterInitialized enables the Cluster Initialized event and adds specific
