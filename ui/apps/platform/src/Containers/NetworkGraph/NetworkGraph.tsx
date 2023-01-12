@@ -13,7 +13,6 @@ import {
     Visualization,
     VisualizationSurface,
     VisualizationProvider,
-    EdgeModel,
 } from '@patternfly/react-topology';
 
 import { networkBasePathPF } from 'routePaths';
@@ -29,7 +28,7 @@ import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel from './simulation/NetworkPolicySimulatorSidePanel';
 import { EdgeState } from './EdgeStateSelect';
 import { getNodeById } from './utils/networkGraphUtils';
-import { CustomModel, CustomNodeModel } from './types/topology.type';
+import { CustomEdgeModel, CustomModel, CustomNodeModel } from './types/topology.type';
 import { createExtraneousEdges } from './utils/modelUtils';
 import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
@@ -154,7 +153,7 @@ const TopologyComponent = ({
     }
 
     function setExtraneousEdges() {
-        const currentModel = controller.toModel();
+        const currentModel = controller.toModel() as CustomModel;
         const extraneousIngressNode = controller.getElementById('extraneous-ingress');
         const extraneousEgressNode = controller.getElementById('extraneous-egress');
         const { extraneousEgressEdge, extraneousIngressEdge } = createExtraneousEdges(detailId);
@@ -166,7 +165,7 @@ const TopologyComponent = ({
         // TODO: figure out if/how to support namespaces
         if (data?.type === 'DEPLOYMENT') {
             const { networkPolicyState } = data || {};
-            const edges: EdgeModel[] = currentModel.edges || [];
+            const edges: CustomEdgeModel[] = currentModel.edges || [];
             if (networkPolicyState === 'ingress' && extraneousEgressNode) {
                 edges.push(extraneousEgressEdge);
             } else if (networkPolicyState === 'egress' && extraneousIngressNode) {

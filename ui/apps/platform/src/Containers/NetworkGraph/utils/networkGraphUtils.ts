@@ -1,7 +1,5 @@
-import { EdgeModel } from '@patternfly/react-topology';
-
 import { ListenPort } from 'types/networkFlow.proto';
-import { CustomNodeModel, DeploymentNodeModel } from '../types/topology.type';
+import { CustomEdgeModel, CustomNodeModel, DeploymentNodeModel } from '../types/topology.type';
 
 /* node helper functions */
 
@@ -41,7 +39,7 @@ export function getNodeById(
 
 export function getNumInternalFlows(
     nodes: CustomNodeModel[],
-    edges: EdgeModel[],
+    edges: CustomEdgeModel[],
     deploymentId: string
 ): number {
     const externalNodeIds = getExternalNodeIds(nodes);
@@ -60,7 +58,7 @@ export function getNumInternalFlows(
 
 export function getNumExternalFlows(
     nodes: CustomNodeModel[],
-    edges: EdgeModel[],
+    edges: CustomEdgeModel[],
     deploymentId: string
 ): number {
     const externalNodeIds = getExternalNodeIds(nodes);
@@ -77,13 +75,13 @@ export function getNumExternalFlows(
     return numExternalFlows;
 }
 
-export function getEdgesByNodeId(edges: EdgeModel[], id: string): EdgeModel[] {
+export function getEdgesByNodeId(edges: CustomEdgeModel[], id: string): CustomEdgeModel[] {
     return edges.filter((edge) => {
         return edge.source === id || edge.target === id;
     });
 }
 
-export function getNumDeploymentFlows(edges: EdgeModel[], deploymentId: string): number {
+export function getNumDeploymentFlows(edges: CustomEdgeModel[], deploymentId: string): number {
     const numFlows =
         edges?.reduce((acc, edge) => {
             if (edge.source === deploymentId || edge.target === deploymentId) {
