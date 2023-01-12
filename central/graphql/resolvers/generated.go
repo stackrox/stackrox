@@ -959,6 +959,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"id: ID!",
 		"name: String!",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("Pod", []string{
 		"clusterId: String!",
@@ -1144,6 +1145,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"globalAccess: Access!",
 		"name: String!",
 		"permissionSetId: String!",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("ScannerHealthInfo", []string{
 		"statusErrors: [String!]!",
@@ -1266,6 +1268,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"name: String!",
 		"rules: SimpleAccessScope_Rules",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("SimpleAccessScope_Rules", []string{
 		"clusterLabelSelectors: [SetBasedLabelSelector]!",
@@ -10850,6 +10853,11 @@ func (resolver *permissionSetResolver) Name(ctx context.Context) string {
 	return value
 }
 
+func (resolver *permissionSetResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 type podResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -12547,6 +12555,11 @@ func (resolver *roleResolver) PermissionSetId(ctx context.Context) string {
 	return value
 }
 
+func (resolver *roleResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 type scannerHealthInfoResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -13838,6 +13851,11 @@ func (resolver *simpleAccessScopeResolver) Name(ctx context.Context) string {
 func (resolver *simpleAccessScopeResolver) Rules(ctx context.Context) (*simpleAccessScope_RulesResolver, error) {
 	value := resolver.data.GetRules()
 	return resolver.root.wrapSimpleAccessScope_Rules(value, true, nil)
+}
+
+func (resolver *simpleAccessScopeResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
 }
 
 type simpleAccessScope_RulesResolver struct {
