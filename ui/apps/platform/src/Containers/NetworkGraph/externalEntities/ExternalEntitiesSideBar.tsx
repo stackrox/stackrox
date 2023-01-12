@@ -13,10 +13,15 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import { useVisualizationController } from '@patternfly/react-topology';
 import { getNodeById } from '../utils/networkGraphUtils';
-import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+import {
+    filterNetworkFlows,
+    getAllUniquePorts,
+    getNetworkFlows,
+    getNumFlows,
+} from '../utils/flowUtils';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types/flow.type';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
@@ -33,71 +38,17 @@ type ExternalEntitiesSideBarProps = {
     edges: CustomEdgeModel[];
 };
 
-const flows: Flow[] = [
-    {
-        id: 'Deployment 1-naples-Ingress-Many-TCP',
-        type: 'Deployment',
-        entity: 'Deployment 1',
-        namespace: 'naples',
-        direction: 'Bi-directional',
-        port: 'MANY',
-        protocol: 'TCP',
-        isAnomalous: true,
-        children: [
-            {
-                id: 'Deployment 1-naples-Ingress-Many-TCP',
-                type: 'Deployment',
-                entity: 'Deployment 1',
-                namespace: 'naples',
-                direction: 'Egress',
-                port: '9000',
-                protocol: 'TCP',
-                isAnomalous: true,
-            },
-            {
-                id: 'Deployment 1-naples-Ingress-Many-TCP',
-                type: 'Deployment',
-                entity: 'Deployment 1',
-                namespace: 'naples',
-                direction: 'Ingress',
-                port: '8000',
-                protocol: 'TCP',
-                isAnomalous: true,
-            },
-        ],
-    },
-    {
-        id: 'Deployment 2-naples-Ingress-Many-UDP',
-        type: 'Deployment',
-        entity: 'Deployment 2',
-        namespace: 'naples',
-        direction: 'Ingress',
-        port: '8080',
-        protocol: 'UDP',
-        isAnomalous: true,
-        children: [],
-    },
-    {
-        id: 'Deployment 3-naples-Egress-7777-UDP',
-        type: 'Deployment',
-        entity: 'Deployment 3',
-        namespace: 'naples',
-        direction: 'Egress',
-        port: '7777',
-        protocol: 'UDP',
-        isAnomalous: true,
-        children: [],
-    },
-];
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ExternalEntitiesSideBar({ id, nodes, edges }: ExternalEntitiesSideBarProps): ReactElement {
+    const controller = useVisualizationController();
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
-    const initialExpandedRows = flows
+    const flows = getNetworkFlows(edges, controller, id);
+    const filteredFlows = filterNetworkFlows(flows, entityNameFilter, advancedFilters);
+    const initialExpandedRows = filteredFlows
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
     const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
@@ -105,8 +56,8 @@ function ExternalEntitiesSideBar({ id, nodes, edges }: ExternalEntitiesSideBarPr
 
     // derived data
     const externalEntitiesNode = getNodeById(nodes, id);
-    const numFlows = getNumFlows(flows);
-    const allUniquePorts = getAllUniquePorts(flows);
+    const numFlows = getNumFlows(filteredFlows);
+    const allUniquePorts = getAllUniquePorts(filteredFlows);
 
     return (
         <Stack>
@@ -164,7 +115,7 @@ function ExternalEntitiesSideBar({ id, nodes, edges }: ExternalEntitiesSideBarPr
                     <StackItem>
                         <FlowsTable
                             label="External entities flows"
-                            flows={flows}
+                            flows={filteredFlows}
                             numFlows={numFlows}
                             expandedRows={expandedRows}
                             setExpandedRows={setExpandedRows}
