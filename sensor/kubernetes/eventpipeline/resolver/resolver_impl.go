@@ -81,7 +81,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				continue
 			}
 
-			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(msg.ParentResourceAction, d)},
+			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(msg.ParentResourceAction, d, msg.DeploymentTiming)},
 				[]component.CompatibilityDetectionMessage{{Object: d, Action: msg.ParentResourceAction}}, nil)
 
 			component.MergeResourceEvents(msg, event)
@@ -91,10 +91,11 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	r.outputQueue.Send(msg)
 }
 
-func toEvent(action central.ResourceAction, deployment *storage.Deployment) *central.SensorEvent {
+func toEvent(action central.ResourceAction, deployment *storage.Deployment, timing *central.Timing) *central.SensorEvent {
 	return &central.SensorEvent{
 		Id:     deployment.GetId(),
 		Action: action,
+		Timing: timing,
 		Resource: &central.SensorEvent_Deployment{
 			Deployment: deployment.Clone(),
 		},
