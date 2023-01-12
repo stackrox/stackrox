@@ -110,4 +110,9 @@ func TestNoErrorOnUnknownAttribute(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "6500", proto.GetId())
+
+	err = JSONBytesToProto([]byte(json), &proto)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "6500", proto.GetId())
 }
