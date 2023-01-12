@@ -2,7 +2,7 @@ type Flows = 'anomalous' | 'baseline';
 
 type Directionality = 'egress' | 'ingress';
 
-type Protocols = 'TCP' | 'UDP';
+type Protocols = 'L4_PROTOCOL_TCP' | 'L4_PROTOCOL_UDP';
 
 type Ports = string; // number format
 
