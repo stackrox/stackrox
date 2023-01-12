@@ -3,7 +3,6 @@ package phonehome
 import (
 	"bytes"
 	"context"
-	"io"
 	"net"
 	"net/http"
 	"testing"
@@ -149,31 +148,30 @@ type testBody struct {
 	N int `json:"n"`
 }
 
+type testBodyI interface {
+	getTestBody(context.Context, *testBody) (*any, error)
+}
+
 func (s *interceptorTestSuite) TestHttpWithBody() {
 	body := "{ \"n\": 42 }"
 	req, _ := http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
 	rp := getHTTPRequestDetails(context.Background(), req, 0)
 
-	var rb *testBody
-	err := GetGRPCRequestBody(rp, &rb)
-	s.ErrorIs(err, io.EOF, "body is not captured for HTTP requests")
-	s.Nil(rb)
+	rb := GetGRPCRequestBody(testBodyI.getTestBody, rp)
+	s.Nil(rb, "body is not captured for HTTP requests")
 }
 
 func (s *interceptorTestSuite) TestGrpcWithBody() {
 	rp := getGRPCRequestDetails(context.Background(), nil, "/grpc/body", &testBody{N: 42})
-	var rb *testBody
 
-	err := GetGRPCRequestBody(rp, &rb)
-	if s.NoError(err) {
-		s.NotNil(rb)
+	rb := GetGRPCRequestBody(testBodyI.getTestBody, rp)
+	if s.NotNil(rb) {
 		s.Equal(42, rb.N)
 	}
 
 	rp = getGRPCRequestDetails(context.Background(), nil, "/grpc/body", nil)
 
-	err = GetGRPCRequestBody(rp, &rb)
-	s.ErrorIs(err, io.EOF)
+	rb = GetGRPCRequestBody(testBodyI.getTestBody, rp)
 	s.Nil(rb)
 }
 
