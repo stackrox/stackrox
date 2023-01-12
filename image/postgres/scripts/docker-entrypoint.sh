@@ -293,8 +293,8 @@ _pg_want_help() {
 }
 
 _main() {
-	# if first arg looks like a flag, assume we want to run postgres server
-	if [ "${1:0:1}" = '-' ]; then
+	# if first arg looks like a flag or is unset/empty, assume we want to run postgres server
+	if [ "${1:0:1}" = '-' ] || [ -z "$1"]; then
 		set -- postgres "$@"
 	fi
 
