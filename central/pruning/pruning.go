@@ -294,7 +294,11 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 	g.removeOrphanedProcesses(deploymentSet, set.NewFrozenStringSet(podIDs...))
 	g.removeOrphanedProcessBaselines(deploymentSet)
-	g.removeOrphanedPLOP()
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		g.removeOrphanedPLOP()
+	}
+
 	g.markOrphanedAlertsAsResolved(deploymentSet)
 	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
 
