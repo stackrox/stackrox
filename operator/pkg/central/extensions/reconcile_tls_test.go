@@ -90,6 +90,7 @@ func TestCreateCentralTLS(t *testing.T) {
 	}
 
 	cases := map[string]secretReconciliationTestCase{
+		//TODO add "central-db-tls" test cases
 		"When no secrets exist and scanner is disabled, a managed central-tls secret should be created": {
 			Spec: basicSpecWithScanner(false),
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{

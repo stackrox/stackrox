@@ -70,16 +70,6 @@ spec:
                           set a password secret; automatically generating a password
                           will not be supported.
                         type: string
-                      isEnabled:
-                        default: Default
-                        description: Specify whether central-db is enabled, Default
-                          configures central to use rocksdb. If IsEnabled the operator
-                          will provision the Central DB or use an external DB if a
-                          connection string is provided.
-                        enum:
-                        - Default
-                        - Enabled
-                        type: string
                       nodeSelector:
                         additionalProperties:
                           type: string
