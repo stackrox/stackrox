@@ -78,6 +78,18 @@ func (suite *PLOPDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddEmpty() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+}
+
 // TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
 // with a correct process indicator reference and could be fetched later.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
