@@ -54,7 +54,7 @@ func clusterRegistered(rp *phonehome.RequestParams, props map[string]any) bool {
 	}
 
 	props["Code"] = rp.Code
-	if cluster, err := phonehome.GetGRPCRequestBody(v1.ClustersServiceServer.PostCluster, rp); err == nil {
+	if cluster := phonehome.GetGRPCRequestBody(v1.ClustersServiceServer.PostCluster, rp); cluster != nil {
 		props["Cluster Type"] = cluster.GetType().String()
 		props["Cluster ID"] = cluster.GetId()
 		props["Managed By"] = cluster.GetManagedBy().String()
@@ -80,7 +80,7 @@ func clusterInitialized(rp *phonehome.RequestParams, props map[string]any) bool 
 		return false
 	}
 
-	if cluster, err := phonehome.GetGRPCRequestBody(v1.ClustersServiceServer.PutCluster, rp); err == nil {
+	if cluster := phonehome.GetGRPCRequestBody(v1.ClustersServiceServer.PutCluster, rp); cluster != nil {
 		uninitializedClustersLock.Lock()
 		defer uninitializedClustersLock.Unlock()
 

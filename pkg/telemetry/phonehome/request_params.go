@@ -2,7 +2,6 @@ package phonehome
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"strings"
 
@@ -52,15 +51,15 @@ func (rp *RequestParams) Is(s *ServiceMethod) bool {
 }
 
 // GetGRPCRequestBody returns the request body with the type inferred from the
-// API handler provided as the first argument. Returns io.EOF on nil body.
+// API handler provided as the first argument.
 func GetGRPCRequestBody[
 	F func(Service, context.Context, *Request) (*Response, error),
 	Service any,
 	Request any,
 	Response any,
-](_ F, rp *RequestParams) (*Request, error) {
-	if body, ok := rp.GRPCReq.(*Request); ok && body != nil {
-		return body, nil
+](_ F, rp *RequestParams) *Request {
+	if body, ok := rp.GRPCReq.(*Request); ok {
+		return body
 	}
-	return nil, io.EOF
+	return nil
 }
