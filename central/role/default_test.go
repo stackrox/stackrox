@@ -18,9 +18,9 @@ func TestIsDefaultRole(t *testing.T) {
 }
 
 func TestIsDefaultAccessScope(t *testing.T) {
-	defaultAccessScopeWithTraits := &storage.SimpleAccessScope{Id: unrestrictedAccessScopeID,
+	defaultAccessScopeWithTraits := &storage.SimpleAccessScope{Id: AccessScopeIncludeAll.GetId(),
 		Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}
-	defaultAccessScopeWithoutTraits := &storage.SimpleAccessScope{Id: unrestrictedAccessScopeID}
+	defaultAccessScopeWithoutTraits := &storage.SimpleAccessScope{Id: AccessScopeIncludeAll.GetId()}
 	nonDefaultAccessScope := &storage.SimpleAccessScope{Id: "some-random-access-scope"}
 
 	assert.True(t, IsDefaultAccessScope(defaultAccessScopeWithTraits))
