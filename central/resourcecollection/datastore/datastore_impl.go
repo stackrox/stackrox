@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -506,22 +507,19 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 	return ret, nil
 }
 
-func ruleValuesToQueryList(fieldLabel pkgSearch.FieldLabel, ruleValues []*storage.RuleValue) []*v1.Query {
+func ruleValuesToQueryList(fieldLabel supportedFieldKey, ruleValues []*storage.RuleValue) []*v1.Query {
 	ret := make([]*v1.Query, 0, len(ruleValues))
 	for _, ruleValue := range ruleValues {
 		var query *v1.Query
-		switch fieldLabel {
-		case pkgSearch.ClusterLabel, pkgSearch.NamespaceLabel, pkgSearch.DeploymentLabel:
-			val := ruleValue.GetValue()
-			idx := strings.IndexRune(val, '=')
-			val = fmt.Sprintf("%s\"=\"%s", val[0:idx], val[idx+1:])
-			query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel, val).ProtoQuery()
-		default:
+		if fieldLabel.labelType {
+			key, value := stringutils.Split2(ruleValue.GetValue(), "=")
+			query = pkgSearch.NewQueryBuilder().AddMapQuery(fieldLabel.fieldLabel, fmt.Sprintf("%q", key), fmt.Sprintf("%q", value)).ProtoQuery()
+		} else {
 			switch ruleValue.GetMatchType() {
 			case storage.MatchType_EXACT:
-				query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel, ruleValue.GetValue()).ProtoQuery()
+				query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel.fieldLabel, ruleValue.GetValue()).ProtoQuery()
 			case storage.MatchType_REGEX:
-				query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, ruleValue.GetValue()).ProtoQuery()
+				query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel.fieldLabel, ruleValue.GetValue()).ProtoQuery()
 			}
 		}
 		ret = append(ret, query)
