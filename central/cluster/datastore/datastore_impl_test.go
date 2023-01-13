@@ -1,14 +1,12 @@
 package datastore
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
@@ -40,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -610,10 +609,10 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		LastContact:        ts,
 	}
 
-	err := jsonpb.Unmarshal(bytes.NewReader([]byte(someHelmConfigJSON)), &someHelmConfig)
+	err := jsonutil.JSONToProto(someHelmConfigJSON, &someHelmConfig)
 	suite.NoError(err)
 
-	err = jsonpb.Unmarshal(bytes.NewReader([]byte(differentConfigFPHelmConfigJSON)), &differentConfigFPHelmConfig)
+	err = jsonutil.JSONToProto(differentConfigFPHelmConfigJSON, &differentConfigFPHelmConfig)
 	suite.NoError(err)
 
 	someClusterWithManagerType := func(managerType storage.ManagerType, helmConfig *storage.CompleteClusterConfig) *storage.Cluster {

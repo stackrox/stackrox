@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imagesTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -198,5 +199,5 @@ func (a *marshalableAlert) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals alert JSON bytes into an Alert object, following jsonpb rules.
 func (a *marshalableAlert) UnmarshalJSON(data []byte) error {
-	return jsonpb.Unmarshal(bytes.NewReader(data), (*storage.Alert)(a))
+	return jsonutil.JSONBytesToProto(data, (*storage.Alert)(a))
 }
