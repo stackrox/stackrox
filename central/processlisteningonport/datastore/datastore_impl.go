@@ -72,7 +72,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
+	// There might be PLOPs with the same port, protocol, and process indicator.
+	// Such duplicates are squashed.
 	normalizedPlops := normalizePLOPs(portProcesses)
+	// This also counts the number of times PLOPs were opened and closed and we
+	// don't need those for getting the idicatorsMap and existingPLOPMap
 	portProcesses = getPlopsFromNormalizedResult(normalizedPlops)
 
 	// XXX: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
@@ -123,31 +127,35 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		if prevExists {
 			log.Debugf("Got existing PLOP: %+v", existingPLOP)
 
+
+			// If a PLOP was opened in a batch more times than it was closed it is open.
 			if val.nopen > val.nclosed {
 				existingPLOP.CloseTimestamp = nil
 				existingPLOP.Closed = false
 			}
 
+			// If a PLOP was closed in a batch more times than it was opened it is closed.
 			if val.nopen < val.nclosed {
 				existingPLOP.CloseTimestamp = val.plop.CloseTimestamp
 				existingPLOP.Closed = true
 			}
 
+			// If a PLOP was closed the same number of times as it was opened in a batch
+			// it has the same state as before, but the CloseTimestamp may need to be updated
 			if val.nopen == val.nclosed {
 				if existingPLOP.Closed == true {
 					existingPLOP.CloseTimestamp = val.plop.CloseTimestamp
 				}
 			}
 
-			//if existingPLOP.CloseTimestamp != val.CloseTimestamp {
-			//	existingPLOP.CloseTimestamp = val.CloseTimestamp
-			//	existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
-			//}
-
+			// If the PLOP already existed we want to use the same ID so upsert
+			// existingPLOP with modified Closed and CloseTimestamp but everything else
+			// the same
 			plopObjects[i] = existingPLOP
 		} else {
 			if val.plop.CloseTimestamp != nil {
 				// We try to close a not existing Endpoint, something is wrong
+				// It could happen if the open and close happen in the same batch
 				log.Warnf("Found no matching PLOP to close for %s", key)
 			}
 
@@ -351,7 +359,7 @@ type OpenClosedPLOPs struct {
 // same combination of port, protocol, process. Find and squash them into a
 // single event.
 //
-// Open/close state will be calculated from the totall number of open/close
+// Open/close state will be calculated from the total number of open/close
 // events in the batch, assuming every single open will eventually be followed
 // by close. In this way in the case of:
 // * Out-of-order events, we would be able to establish correct status
@@ -361,6 +369,10 @@ type OpenClosedPLOPs struct {
 // event, which will produce the same results for case 2 and 3. But such
 // approach will produce incorrect status in the case 1 as well, so counting
 // seems to be more preferrable.
+// If a PLOP was opened more times than it was closed in a batch than it is open.
+// If a PLOP was closed more times than it was opened in a batch than it is closed.
+// If a PLOP was opened and closed the same number of times than it depends upon its
+// previous state in the table.
 func normalizePLOPs(
 	plops []*storage.ProcessListeningOnPortFromSensor,
 ) []*OpenClosedPLOPs {
@@ -380,9 +392,14 @@ func normalizePLOPs(
 
 			if val.GetCloseTimestamp() == nil {
 				prev.nopen++
+				// Do not overwrite a closed plop with an open plop.
+				// Otherwise we lose information about when it was closed
+				// if it turns out to be closed.
 			} else {
 				prev.nclosed++
 				if val.CloseTimestamp.Compare(prev.plop.CloseTimestamp) == 1 {
+					// If we find a plop that was closed at a later time 
+					// we record it to get the latest CloseTimestamp
 					prev.plop = val
 				}
 			}
