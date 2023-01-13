@@ -133,7 +133,7 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 						FixedBy: "4",
 					},
 				},
-				Notes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED},
+				NodeNotes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED},
 			},
 			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED},
 			expectedComponents: []*storage.EmbeddedNodeScanComponent{
