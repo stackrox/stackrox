@@ -491,6 +491,7 @@ type debugDumpOptions struct {
 	withAccessControl bool
 	withNotifiers     bool
 	withCentral       bool
+	withCentralDB     bool
 	clusters          []string
 	since             time.Time
 }
@@ -617,6 +618,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withAccessControl: true,
 		withNotifiers:     true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
+		withCentralDB:     env.EnableCentralDatabaseDiagnostics.BooleanSetting(),
 		telemetryMode:     0,
 	}
 
@@ -662,6 +664,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withLogImbue:      true,
 		withAccessControl: true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
+		withCentralDB:     env.EnableCentralDatabaseDiagnostics.BooleanSetting(),
 		withNotifiers:     true,
 	}
 
