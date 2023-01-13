@@ -9870,6 +9870,26 @@
                 "integer": 2
               }
             ]
+          },
+          {
+            "name": "NodeInventory.Note",
+            "enum_fields": [
+              {
+                "name": "OS_CVES_UNAVAILABLE"
+              },
+              {
+                "name": "OS_CVES_STALE",
+                "integer": 1
+              },
+              {
+                "name": "LANGUAGE_CVES_UNAVAILABLE",
+                "integer": 2
+              },
+              {
+                "name": "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
+                "integer": 3
+              }
+            ]
           }
         ],
         "messages": [
@@ -10177,47 +10197,143 @@
             "fields": [
               {
                 "id": 1,
-                "name": "node_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Node ID,store\"sql:\"pk,type(uuid)\""
-                  }
-                ]
+                "name": "node_name",
+                "type": "string"
               },
               {
                 "id": 2,
-                "name": "node_name",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Node,store\""
-                  }
-                ]
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
               },
               {
                 "id": 3,
-                "name": "scan_time",
-                "type": "google.protobuf.Timestamp",
+                "name": "components",
+                "type": "Components",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Node Scan Time,store\""
+                    "value": "sql:\"-\""
                   }
                 ]
               },
               {
                 "id": 4,
-                "name": "components",
-                "type": "scannerV1.Components"
-              },
-              {
-                "id": 5,
                 "name": "notes",
-                "type": "scannerV1.Note",
+                "type": "Note",
                 "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Components",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "namespace",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "rhel_components",
+                    "type": "RHELComponent",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 3,
+                    "name": "rhel_content_sets",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "RHELComponent",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "id",
+                        "type": "int64"
+                      },
+                      {
+                        "id": 2,
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "id": 3,
+                        "name": "namespace",
+                        "type": "string"
+                      },
+                      {
+                        "id": 4,
+                        "name": "version",
+                        "type": "string"
+                      },
+                      {
+                        "id": 5,
+                        "name": "arch",
+                        "type": "string"
+                      },
+                      {
+                        "id": 6,
+                        "name": "module",
+                        "type": "string"
+                      },
+                      {
+                        "id": 7,
+                        "name": "cpes",
+                        "type": "string",
+                        "is_repeated": true
+                      },
+                      {
+                        "id": 8,
+                        "name": "added_by",
+                        "type": "string"
+                      },
+                      {
+                        "id": 9,
+                        "name": "executables",
+                        "type": "Executable",
+                        "is_repeated": true
+                      }
+                    ],
+                    "messages": [
+                      {
+                        "name": "Executable",
+                        "fields": [
+                          {
+                            "id": 1,
+                            "name": "path",
+                            "type": "string"
+                          },
+                          {
+                            "id": 2,
+                            "name": "required_features",
+                            "type": "FeatureNameVersion",
+                            "is_repeated": true
+                          }
+                        ],
+                        "messages": [
+                          {
+                            "name": "FeatureNameVersion",
+                            "fields": [
+                              {
+                                "id": 1,
+                                "name": "name",
+                                "type": "string"
+                              },
+                              {
+                                "id": 2,
+                                "name": "version",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           },
@@ -10279,12 +10395,6 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "scanner/api/v1/note.proto"
-          },
-          {
-            "path": "scanner/api/v1/component.proto"
           },
           {
             "path": "storage/container_runtime.proto"
