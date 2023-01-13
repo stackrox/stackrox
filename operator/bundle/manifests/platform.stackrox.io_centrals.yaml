@@ -69,6 +69,14 @@ spec:
                           set a password secret; automatically generating a password
                           will not be supported.
                         type: string
+                      isEnabled:
+                        default: Default
+                        description: Deprecated field. It is no longer necessary to
+                          specify it. This field will be removed in a future release.
+                          Central configures to use PostgreSQL by default.
+                        enum:
+                        - Default
+                        type: string
                       nodeSelector:
                         additionalProperties:
                           type: string
