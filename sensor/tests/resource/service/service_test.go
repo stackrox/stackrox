@@ -117,7 +117,7 @@ type DeploymentExposureSuite struct {
 }
 
 func Test_DeploymentExposure(t *testing.T) {
-	// TODO(ROX-13644): reenable the test
+	// TODO(ROX-12948): reenable the test
 	t.Skip("Disabling these tests until we refactor the helper.go to enable fake k8s clients (ROX-13644)")
 	suite.Run(t, new(DeploymentExposureSuite))
 }

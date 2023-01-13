@@ -2,6 +2,7 @@ package phonehome
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -32,7 +33,9 @@ type gatherer struct {
 	stopSig     concurrency.Signal
 	ctx         context.Context
 	mu          sync.Mutex
+	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
+	lastData    map[string]any
 }
 
 func newGatherer(clientID string, t Telemeter, p time.Duration) *gatherer {
@@ -48,7 +51,7 @@ func (g *gatherer) reset() {
 	g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 }
 
-func (g *gatherer) collect() map[string]any {
+func (g *gatherer) gather() map[string]any {
 	var result map[string]any
 	for i, f := range g.gatherFuncs {
 		props, err := f(g.ctx)
@@ -65,14 +68,27 @@ func (g *gatherer) collect() map[string]any {
 	return result
 }
 
+func (g *gatherer) identify() {
+	// TODO: might make sense to abort if !TryLock(), but that's harder to test.
+	g.gathering.Lock()
+	defer g.gathering.Unlock()
+	data := g.gather()
+	if !reflect.DeepEqual(g.lastData, data) {
+		g.telemeter.Identify(g.clientID, data)
+		// Issue an event so that the new data become visible on analytics:
+		g.telemeter.Track("Updated Identity", g.clientID, nil)
+	}
+	g.lastData = data
+}
+
 func (g *gatherer) loop() {
+	// Send initial data on start:
+	g.identify()
 	ticker := time.NewTicker(g.period)
 	for !g.stopSig.IsDone() {
 		select {
 		case <-ticker.C:
-			go func() {
-				g.telemeter.Identify(g.clientID, g.collect())
-			}()
+			go g.identify()
 		case <-g.stopSig.Done():
 			ticker.Stop()
 			return

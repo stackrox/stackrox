@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance"
-	. "github.com/stackrox/rox/central/compliance/datastore"
+	"github.com/stackrox/rox/central/compliance/datastore"
 	storeMocks "github.com/stackrox/rox/central/compliance/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/central/compliance/datastore/mocks"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
@@ -37,7 +37,7 @@ type complianceDataStoreTestSuite struct {
 	mockFilter  *mocks.MockSacFilter
 	mockStorage *storeMocks.MockStore
 
-	dataStore DataStore
+	dataStore datastore.DataStore
 }
 
 func (s *complianceDataStoreTestSuite) SetupTest() {
@@ -54,7 +54,7 @@ func (s *complianceDataStoreTestSuite) SetupTest() {
 	s.mockFilter = mocks.NewMockSacFilter(s.mockCtrl)
 	s.mockStorage = storeMocks.NewMockStore(s.mockCtrl)
 
-	s.dataStore = NewDataStore(s.mockStorage, s.mockFilter)
+	s.dataStore = datastore.NewDataStore(s.mockStorage, s.mockFilter)
 }
 
 func (s *complianceDataStoreTestSuite) TearDownTest() {
@@ -150,7 +150,7 @@ type complianceDataStoreWithSACTestSuite struct {
 	mockFilter  *mocks.MockSacFilter
 	mockStorage *storeMocks.MockStore
 
-	dataStore DataStore
+	dataStore datastore.DataStore
 }
 
 func (s *complianceDataStoreWithSACTestSuite) SetupTest() {
@@ -164,7 +164,7 @@ func (s *complianceDataStoreWithSACTestSuite) SetupTest() {
 	s.mockFilter = mocks.NewMockSacFilter(s.mockCtrl)
 	s.mockStorage = storeMocks.NewMockStore(s.mockCtrl)
 
-	s.dataStore = NewDataStore(s.mockStorage, s.mockFilter)
+	s.dataStore = datastore.NewDataStore(s.mockStorage, s.mockFilter)
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TearDownTest() {
@@ -204,7 +204,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestDoesNotUseStoredAggregationsWi
 	noop := func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
 		return nil, nil, nil, nil
 	}
-	aggArgs := &StoredAggregationArgs{
+	aggArgs := &datastore.StoredAggregationArgs{
 		QueryString:     "query",
 		GroupBy:         nil,
 		Unit:            storage.ComplianceAggregation_CLUSTER,
@@ -227,7 +227,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestUsesStoredAggregationsWithoutS
 		s.True(false, "The aggregation method should not be called when we find a stored result")
 		return nil, nil, nil, nil
 	}
-	aggArgs := &StoredAggregationArgs{
+	aggArgs := &datastore.StoredAggregationArgs{
 		QueryString:     queryString,
 		GroupBy:         nil,
 		Unit:            testUnit,

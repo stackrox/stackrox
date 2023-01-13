@@ -399,10 +399,14 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			events := suite.dispatcher.ProcessEvent(c.netpol, c.oldNetpol, c.action)
 			deps := set.NewStringSet()
 			require.NotNil(t, events)
-			deps.AddAll(events.CompatibilityReprocessDeployments...)
-			for _, d := range c.expectedDeployments {
-				_, ok := deps[d.GetId()]
-				assert.Truef(t, ok, "Expected Id %s not found in the CompatibilityReprocessDeployments slice", d.GetId())
+			if !features.ResyncDisabled.Enabled() {
+				// If re-sync is disabled we don't send the CompatibilityReprocess in the dispatcher
+				deps.AddAll(events.CompatibilityReprocessDeployments...)
+				for _, d := range c.expectedDeployments {
+					_, ok := deps[d.GetId()]
+					assert.Truef(t, ok, "Expected Id %s not found in the CompatibilityReprocessDeployments slice", d.GetId())
+				}
+
 			}
 			for _, e := range events.ForwardMessages {
 				_, ok := c.expectedEvents[e.Id]

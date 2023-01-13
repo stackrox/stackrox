@@ -26,18 +26,22 @@ function FlowsBulkActions({
 
     return (
         <BulkActionsDropdown isDisabled={selectedRows.length === 0}>
+            <DropdownItem
+                key="mark_as_anomalous"
+                component="button"
+                onClick={markSelectedAsAnomalous}
+            >
+                Mark as anomalous
+            </DropdownItem>
             {type !== 'baseline' && (
                 <DropdownItem
-                    key="mark_as_anomalous"
+                    key="add_to_baseline"
                     component="button"
-                    onClick={markSelectedAsAnomalous}
+                    onClick={addSelectedToBaseline}
                 >
-                    Mark as anomalous
+                    Add to baseline
                 </DropdownItem>
             )}
-            <DropdownItem key="add_to_baseline" component="button" onClick={addSelectedToBaseline}>
-                Add to baseline
-            </DropdownItem>
         </BulkActionsDropdown>
     );
 }

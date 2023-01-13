@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -42,6 +43,7 @@ var (
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ACTIVE_COMPONENT, "activecomponent", (*storage.ActiveComponent)(nil)))
 		RegisterTable(schema, CreateTableActiveComponentsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_ACTIVE_COMPONENT, schema)
 		return schema
 	}()
 )
