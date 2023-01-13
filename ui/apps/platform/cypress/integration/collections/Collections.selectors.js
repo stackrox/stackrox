@@ -27,6 +27,7 @@ const resultsPanelFilterEntitySelectOption = (entity) =>
 const resultsPanelFilterInput = `${resultsPanel} input[aria-label="Filter by name"]`;
 
 export const collectionSelectors = {
+    tableLinkByName: (name) => `td[data-label="Collection"] a:contains("${name}")`,
     modal: '*[role="dialog"]',
     modalClose: '*[role="dialog"] button[aria-label="Close"]',
     resultsPanel,

@@ -181,7 +181,10 @@ function NetworkGraphPage() {
         <>
             <PageTitle title="Network Graph" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Toolbar data-testid="network-graph-selector-bar">
+                <Toolbar
+                    className="network-graph-selector-bar"
+                    data-testid="network-graph-selector-bar"
+                >
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
                             <Title headingLevel="h1" className="pf-u-screen-reader">
