@@ -1,12 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"os"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -27,9 +26,8 @@ func loadComplianceReturn(path string) *compliance.ComplianceReturn {
 	complianceBytes, err := os.ReadFile(path)
 	utils.CrashOnError(err)
 
-	buf := bytes.NewBuffer(complianceBytes)
 	var complianceReturn compliance.ComplianceReturn
-	utils.Must(jsonpb.Unmarshal(buf, &complianceReturn))
+	utils.Must(jsonutil.JSONBytesToProto(complianceBytes, &complianceReturn))
 	return &complianceReturn
 }
 
