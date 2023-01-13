@@ -45,7 +45,7 @@ function FlowsTable({
 }: FlowsTableProps): ReactElement {
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
-    const areAllRowsSelected = selectedRows.length === numFlows;
+    const areAllRowsSelected = selectedRows.length !== 0 && selectedRows.length === numFlows;
     const isRowSelected = (row: Flow) => selectedRows.includes(row.id);
 
     // setter functions
