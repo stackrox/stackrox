@@ -38,6 +38,18 @@ func newDatastoreImpl(
 	}
 }
 
+func getPlopsFromNormalizedResult(
+	normalized []*OpenClosedPLOPs) []*storage.ProcessListeningOnPortFromSensor {
+
+	plops := []*storage.ProcessListeningOnPortFromSensor{}
+
+	for _, value := range normalized {
+		plops = append(plops, value.plop)
+	}
+
+	return plops
+}
+
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
@@ -60,7 +72,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	portProcesses = normalizePLOPs(portProcesses)
+	normalizedPlops := normalizePLOPs(portProcesses)
+	portProcesses = getPlopsFromNormalizedResult(normalizedPlops)
 
 	// XXX: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
 	// be done in a single join query fetching both ProcessIndicator and needed
@@ -76,11 +89,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	plopObjects := make([]*storage.ProcessListeningOnPortStorage, len(portProcesses))
-	for i, val := range portProcesses {
+	for i, val := range normalizedPlops {
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
-		key := getProcesUniqueKey(val)
+		key := getProcesUniqueKey(val.plop)
 
 		if indicator, ok := indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
@@ -88,12 +101,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		} else {
 			// XXX: Create a metric for this
 			log.Warnf("Found no matching indicators for %s", key)
-			processInfo = val.Process
+			processInfo = val.plop.Process
 		}
 
 		plopKey := fmt.Sprintf("%d %d %s",
-			val.GetProtocol(),
-			val.GetPort(),
+			val.plop.GetProtocol(),
+			val.plop.GetPort(),
 			indicatorID,
 		)
 
@@ -109,13 +122,31 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		//   timestamp we have received and fetched indicator ID.
 		if prevExists {
 			log.Debugf("Got existing PLOP: %+v", existingPLOP)
-			if existingPLOP.CloseTimestamp != val.CloseTimestamp {
-				existingPLOP.CloseTimestamp = val.CloseTimestamp
-				existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
+
+			if val.nopen > val.nclosed {
+				existingPLOP.CloseTimestamp = nil
+				existingPLOP.Closed = false
 			}
+
+			if val.nopen < val.nclosed {
+				existingPLOP.CloseTimestamp = val.plop.CloseTimestamp
+				existingPLOP.Closed = true
+			}
+
+			if val.nopen == val.nclosed {
+				if existingPLOP.Closed == true {
+					existingPLOP.CloseTimestamp = val.plop.CloseTimestamp
+				}
+			}
+
+			//if existingPLOP.CloseTimestamp != val.CloseTimestamp {
+			//	existingPLOP.CloseTimestamp = val.CloseTimestamp
+			//	existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
+			//}
+
 			plopObjects[i] = existingPLOP
 		} else {
-			if val.CloseTimestamp != nil {
+			if val.plop.CloseTimestamp != nil {
 				// We try to close a not existing Endpoint, something is wrong
 				log.Warnf("Found no matching PLOP to close for %s", key)
 			}
@@ -124,12 +155,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
 				// IDENTITY, which would require changes in store generator
 				Id:                 uuid.NewV4().String(),
-				Port:               val.Port,
-				Protocol:           val.Protocol,
+				Port:               val.plop.Port,
+				Protocol:           val.plop.Protocol,
 				ProcessIndicatorId: indicatorID,
 				Process:            processInfo,
-				Closed:             val.CloseTimestamp != nil,
-				CloseTimestamp:     val.CloseTimestamp,
+				Closed:             val.plop.CloseTimestamp != nil,
+				CloseTimestamp:     val.plop.CloseTimestamp,
 			}
 
 			plopObjects[i] = newPLOP
@@ -309,8 +340,9 @@ func (ds *datastoreImpl) fetchIndicators(
 
 // OpenClosedPLOPs is a convenient type alias to use in PLOP normalization
 type OpenClosedPLOPs struct {
-	open   []*storage.ProcessListeningOnPortFromSensor
-	closed []*storage.ProcessListeningOnPortFromSensor
+	plop   *storage.ProcessListeningOnPortFromSensor
+	nopen	int
+	nclosed	int
 }
 
 // normalizePLOPs
@@ -331,10 +363,11 @@ type OpenClosedPLOPs struct {
 // seems to be more preferrable.
 func normalizePLOPs(
 	plops []*storage.ProcessListeningOnPortFromSensor,
-) []*storage.ProcessListeningOnPortFromSensor {
+) []*OpenClosedPLOPs {
+
 
 	normalizedMap := map[string]OpenClosedPLOPs{}
-	normalizedResult := []*storage.ProcessListeningOnPortFromSensor{}
+	normalizedResult := []*OpenClosedPLOPs{}
 
 	for _, val := range plops {
 		key := fmt.Sprintf("%d %d %s",
@@ -346,41 +379,44 @@ func normalizePLOPs(
 		if prev, ok := normalizedMap[key]; ok {
 
 			if val.GetCloseTimestamp() == nil {
-				prev.open = append(prev.open, val)
+				prev.nopen++
 			} else {
-				prev.closed = append(prev.closed, val)
+				prev.nclosed++
+				//if *val.GetCloseTimestamp().ToMili() > types.Timestamp.ToMili(*prev.closed.GetCloseTimestamp()) {
+					prev.plop = val
+				//}
 			}
 
 			normalizedMap[key] = prev
 
 		} else {
 
-			newValue := OpenClosedPLOPs{
-				open:   []*storage.ProcessListeningOnPortFromSensor{},
-				closed: []*storage.ProcessListeningOnPortFromSensor{},
-			}
+			newValue := OpenClosedPLOPs{}
 
 			if val.GetCloseTimestamp() == nil {
-				newValue.open = append(newValue.open, val)
+				newValue.nclosed = 0
+				newValue.nopen = 1
 			} else {
-				newValue.closed = append(newValue.closed, val)
+				newValue.nclosed = 1
+				newValue.nopen = 0
 			}
 
+			newValue.plop = val
 			normalizedMap[key] = newValue
 		}
 	}
 
 	for _, value := range normalizedMap {
-		nOpen := len(value.open)
-		nClosed := len(value.closed)
-
 		// Take the last open PLOP if there are more open in total, otherwise
 		// the last closed PLOP
-		if nOpen > nClosed {
-			normalizedResult = append(normalizedResult, value.open[nOpen-1])
-		} else {
-			normalizedResult = append(normalizedResult, value.closed[nClosed-1])
-		}
+		normalizedResult = append(normalizedResult, &value)
+		//if value.nopen > value.nclosed {
+		//	normalizedResult = append(normalizedResult, value)
+		//	log.Infof("Returning open")
+		//} else {
+		//	normalizedResult = append(normalizedResult, value)
+		//	log.Infof("Returning closed")
+		//}
 	}
 
 	return normalizedResult
