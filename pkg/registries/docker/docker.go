@@ -43,6 +43,8 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Regis
 	}
 }
 
+var _ types.Registry = (*Registry)(nil)
+
 // Registry is the basic docker registry implementation
 type Registry struct {
 	cfg                   Config
@@ -233,4 +235,9 @@ func (r *Registry) Config() *types.Config {
 // Name returns the name of the registry
 func (r *Registry) Name() string {
 	return r.protoImageIntegration.GetName()
+}
+
+// HTTPClient returns the *http.Client used to contact the registry.
+func (r *Registry) HTTPClient() *http.Client {
+	return r.Client.Client
 }
