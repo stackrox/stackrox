@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
@@ -47,6 +48,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		"ProcessListeningOnPort",
 		"AddProcessListeningOnPort",
 	)
+	completedInBatch := []*storage.ProcessListeningOnPortFromSensor{}
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
@@ -60,7 +62,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	portProcesses = normalizePLOPs(portProcesses)
+	portProcesses, completedInBatch = normalizePLOPs(portProcesses)
 
 	// XXX: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
 	// be done in a single join query fetching both ProcessIndicator and needed
@@ -75,8 +77,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return err
 	}
 
-	plopObjects := make([]*storage.ProcessListeningOnPortStorage, len(portProcesses))
-	for i, val := range portProcesses {
+	plopObjects := []*storage.ProcessListeningOnPortStorage{}
+	for _, val := range portProcesses {
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
@@ -112,7 +114,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 			existingPLOP.CloseTimestamp = val.CloseTimestamp
 			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
-			plopObjects[i] = existingPLOP
+			plopObjects = append(plopObjects, existingPLOP)
 		}
 
 		if !prevExists {
@@ -121,19 +123,58 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Warnf("Found no matching PLOP to close for %s", key)
 			}
 
-			newPLOP := &storage.ProcessListeningOnPortStorage{
-				// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
-				// IDENTITY, which would require changes in store generator
-				Id:                 uuid.NewV4().String(),
-				Port:               val.Port,
-				Protocol:           val.Protocol,
-				ProcessIndicatorId: indicatorID,
-				Process:            processInfo,
-				Closed:             val.CloseTimestamp != nil,
-				CloseTimestamp:     val.CloseTimestamp,
+			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+		}
+	}
+
+	// Verify what to do about pairs of open/close events that close the
+	// lifecycle withih the batch. There are only few options:
+	// * If an existing open PLOP is present in the db, they will do nothing
+	// * If an existing closed PLOP is present in the db, they will update the
+	// timestamp
+	// * If no existing PLOP is present, they will create a new closed PLOP
+	for _, val := range completedInBatch {
+		indicatorID := ""
+
+		key := getProcesUniqueKey(val)
+
+		if indicator, ok := indicatorsMap[key]; ok {
+			indicatorID = indicator.GetId()
+			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
+		} else {
+			// XXX: Create a metric for this
+			log.Warnf("Found no matching indicators for %s", key)
+		}
+
+		plopKey := fmt.Sprintf("%d %d %s",
+			val.GetProtocol(),
+			val.GetPort(),
+			indicatorID,
+		)
+
+		existingPLOP, prevExists := existingPLOPMap[plopKey]
+
+		if prevExists {
+			log.Debugf("Got existing PLOP to update timestamp: %+v", existingPLOP)
+
+			if existingPLOP.CloseTimestamp != nil &&
+				existingPLOP.CloseTimestamp != val.CloseTimestamp {
+
+				// An existing closed PLOP, update timestamp
+				existingPLOP.CloseTimestamp = val.CloseTimestamp
+				plopObjects = append(plopObjects, existingPLOP)
 			}
 
-			plopObjects[i] = newPLOP
+			// Add nothing if the PLOP is active, i.e. CloseTimestamp == nil
+		}
+
+		if !prevExists {
+			if val.CloseTimestamp == nil {
+				// This events should always be closing by definition
+				log.Warnf("Found active PLOP completed in the batch %+v", val)
+			}
+
+			plopObjects = addNewPLOP(plopObjects, indicatorID, val.Process, val)
 		}
 	}
 
@@ -326,16 +367,30 @@ type OpenClosedPLOPs struct {
 // * Out-of-order events, we would be able to establish correct status
 // * Pairs split across two batches, the status will be correct after processing both batches
 // * Lost events, the status will be incorrect
+//
+// A special case is when the batch has equal number of open/close events. For
+// such cases the agreement is they do not contribute anything for already
+// existing PLOP events, and produce a closed PLOP event if nothing is found in
+// the db.
+//
 // Another alternative would be to set the status based on the final PLOP
 // event, which will produce the same results for case 2 and 3. But such
 // approach will produce incorrect status in the case 1 as well, so counting
 // seems to be more preferrable.
+//
+// The function returns two slices of PLOP events, the first one contains
+// events that have to change existing PLOP status, the second one contains
+// those events that have to be verified against existing PLOP events (i.e.
+// every open has matching close whithin the batch.
 func normalizePLOPs(
 	plops []*storage.ProcessListeningOnPortFromSensor,
-) []*storage.ProcessListeningOnPortFromSensor {
+) (normalizedResult []*storage.ProcessListeningOnPortFromSensor,
+	completedEvents []*storage.ProcessListeningOnPortFromSensor,
+) {
 
 	normalizedMap := map[string]OpenClosedPLOPs{}
-	normalizedResult := []*storage.ProcessListeningOnPortFromSensor{}
+	normalizedResult = []*storage.ProcessListeningOnPortFromSensor{}
+	completedEvents = []*storage.ProcessListeningOnPortFromSensor{}
 
 	for _, val := range plops {
 		key := fmt.Sprintf("%d %d %s",
@@ -372,8 +427,15 @@ func normalizePLOPs(
 	}
 
 	for _, value := range normalizedMap {
+		sortByCloseTimestamp(value.open)
+		sortByCloseTimestamp(value.closed)
 		nOpen := len(value.open)
 		nClosed := len(value.closed)
+
+		if nOpen == nClosed {
+			completedEvents = append(completedEvents, value.closed[nClosed-1])
+			continue
+		}
 
 		// Take the last open PLOP if there are more open in total, otherwise
 		// the last closed PLOP
@@ -384,7 +446,7 @@ func normalizePLOPs(
 		}
 	}
 
-	return normalizedResult
+	return normalizedResult, completedEvents
 }
 
 func getProcesUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
@@ -395,4 +457,30 @@ func getProcesUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
 		plop.Process.ProcessArgs,
 		plop.Process.ProcessExecFilePath,
 	)
+}
+
+func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
+	sort.Slice(values, func(i, j int) bool {
+		return values[i].CloseTimestamp.Compare(values[j].CloseTimestamp) == -1
+	})
+}
+
+func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
+	indicatorID string,
+	processInfo *storage.ProcessIndicatorUniqueKey,
+	value *storage.ProcessListeningOnPortFromSensor) []*storage.ProcessListeningOnPortStorage {
+
+	newPLOP := &storage.ProcessListeningOnPortStorage{
+		// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
+		// IDENTITY, which would require changes in store generator
+		Id:                 uuid.NewV4().String(),
+		Port:               value.Port,
+		Protocol:           value.Protocol,
+		ProcessIndicatorId: indicatorID,
+		Process:            processInfo,
+		Closed:             value.CloseTimestamp != nil,
+		CloseTimestamp:     value.CloseTimestamp,
+	}
+
+	return append(plopObjects, newPLOP)
 }
