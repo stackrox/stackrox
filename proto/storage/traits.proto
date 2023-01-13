@@ -5,10 +5,9 @@ option java_package = "io.stackrox.proto.storage";
 
 package storage;
 
-// EXPERIMENTAL.
 message Traits {
   // EXPERIMENTAL.
-  //
+  // NOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).
   // MutabilityMode specifies whether and how an object can be modified. Default
   // is ALLOW_MUTATE and means there are no modification restrictions; this is equivalent
   // to the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all
@@ -31,4 +30,23 @@ message Traits {
     HIDDEN  = 1;
   }
   Visibility visibility = 2;
+
+  // Origin specifies the origin of an object.
+  // Objects can have three different origins:
+  // - IMPERATIVE: the object was created via the API. This is assumed by default.
+  // - DEFAULT: the object is a default object, such as default roles, access scopes etc.
+  // - DECLARATIVE: the object is created via declarative configuration.
+  // Based on the origin, different rules apply to the objects.
+  // Objects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.
+  // Additionally, they may not reference objects with the IMPERATIVE origin.
+  // Objects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.
+  // They may be referenced by all other objects.
+  // Objects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.
+  // They may reference all other objects.
+  enum Origin {
+     IMPERATIVE  = 0;
+     DEFAULT     = 1;
+     DECLARATIVE = 2;
+  }
+  Origin origin = 3;
 }

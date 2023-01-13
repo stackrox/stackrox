@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
@@ -44,7 +43,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 		}
 	}
 
-	trackedPaths = set.NewFrozenSet(strings.Split(apiWhiteList.Setting(), ",")...)
+	trackedPaths = strings.Split(apiWhiteList.Setting(), ",")
 
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.OpenshiftAPI.BooleanSetting() {

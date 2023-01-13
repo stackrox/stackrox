@@ -7,6 +7,7 @@ import (
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	networkingV1 "k8s.io/api/networking/v1"
 )
@@ -31,6 +32,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 	roxNetpol := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
 
 	var reprocessingIds []string
+	var events *component.ResourceEvent
 	if features.NetworkPolicySystemPolicy.Enabled() {
 		var roxOldNetpol *storage.NetworkPolicy
 		if oldNp, ok := old.(*networkingV1.NetworkPolicy); ok && oldNp != nil {
@@ -43,19 +45,33 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 			h.netpolStore.Upsert(roxNetpol)
 		}
 
-		reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
+		if features.ResyncDisabled.Enabled() {
+			events = component.NewDeploymentRefEvent(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel), central.ResourceAction_UPDATE_RESOURCE, true)
+			events = component.MergeResourceEvents(events, component.NewResourceEvent(
+				[]*central.SensorEvent{
+					{
+						Id:     string(np.UID),
+						Action: action,
+						Resource: &central.SensorEvent_NetworkPolicy{
+							NetworkPolicy: roxNetpol,
+						},
+					},
+				}, nil, nil))
+		} else {
+			reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
+			events = component.NewResourceEvent(
+				[]*central.SensorEvent{
+					{
+						Id:     string(np.UID),
+						Action: action,
+						Resource: &central.SensorEvent_NetworkPolicy{
+							NetworkPolicy: roxNetpol,
+						},
+					},
+				}, nil, reprocessingIds)
+		}
 	}
-
-	return component.NewResourceEvent(
-		[]*central.SensorEvent{
-			{
-				Id:     string(np.UID),
-				Action: action,
-				Resource: &central.SensorEvent_NetworkPolicy{
-					NetworkPolicy: roxNetpol,
-				},
-			},
-		}, nil, reprocessingIds)
+	return events
 }
 
 func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector.Selector {

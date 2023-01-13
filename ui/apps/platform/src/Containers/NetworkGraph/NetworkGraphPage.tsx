@@ -11,7 +11,6 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { EdgeModel } from '@patternfly/react-topology';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import useFetchClusters from 'hooks/useFetchClusters';
@@ -36,12 +35,19 @@ import {
 } from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
 import getSimulation from './utils/getSimulation';
-import { CustomModel, CustomNodeModel, DeploymentNodeModel } from './types/topology.type';
+import {
+    CustomEdgeModel,
+    CustomModel,
+    CustomNodeModel,
+    DeploymentNodeModel,
+} from './types/topology.type';
 
 import './NetworkGraphPage.css';
 
 const emptyModel = {
     graph: graphModel,
+    nodes: [],
+    edges: [],
 };
 
 // TODO: get real time window from user input
@@ -107,7 +113,7 @@ function NetworkGraphPage() {
                 ])
                     .then((values) => {
                         const activeNodeMap: Record<string, CustomNodeModel> = {};
-                        const activeEdgeMap: Record<string, EdgeModel> = {};
+                        const activeEdgeMap: Record<string, CustomEdgeModel> = {};
                         const policyNodeMap: Record<string, DeploymentNodeModel> = {};
 
                         // get policy nodes from api response

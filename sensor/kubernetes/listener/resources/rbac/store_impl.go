@@ -129,6 +129,31 @@ func (rs *storeImpl) FindBindingForNamespacedRole(namespace, roleName string) []
 	return matched
 }
 
+func (rs *storeImpl) FindSubjectForBindingID(namespace, name, uuid string) []namespacedSubject {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	id := namespacedBindingID{namespace: namespace, name: name, uid: uuid}
+	if binding, ok := rs.bindings[id]; ok {
+		return binding.subjects
+	}
+	return nil
+}
+
+func (rs *storeImpl) FindSubjectForRole(namespace, roleName string) []namespacedSubject {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	var matched []namespacedSubject
+	for _, binding := range rs.bindings {
+		if binding.roleRef.name == roleName && binding.roleRef.namespace == namespace {
+			matched = append(matched, binding.subjects...)
+		}
+	}
+
+	return matched
+}
+
 func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() {
 	rs.bucketEvaluator = newBucketEvaluator(rs.roles, rs.bindings)
 	rs.dirty = false

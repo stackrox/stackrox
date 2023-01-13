@@ -7,12 +7,15 @@ import (
 	"github.com/golang/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -24,6 +27,8 @@ import (
 // Service is the struct that manages the Metadata API
 type serviceImpl struct {
 	v1.UnimplementedMetadataServiceServer
+
+	db *pgxpool.Pool
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -132,4 +137,32 @@ func (s *serviceImpl) TLSChallenge(ctx context.Context, req *v1.TLSChallengeRequ
 	}
 
 	return resp, nil
+}
+
+// GetDatabaseStatus returns the database status for Rox.
+func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.DatabaseStatus, error) {
+	dbStatus := &v1.DatabaseStatus{
+		DatabaseAvailable: true,
+	}
+
+	dbType := v1.DatabaseStatus_RocksDB
+	var dbVersion string
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		dbType = v1.DatabaseStatus_PostgresDB
+		if err := s.db.Ping(ctx); err != nil {
+			dbStatus.DatabaseAvailable = false
+			log.Warn("central is unable to communicate with the database.")
+			return dbStatus, nil
+		}
+
+		dbVersion = globaldb.GetPostgresVersion(ctx, s.db)
+	}
+
+	// Only return the database type and version to logged in users, not anonymous users.
+	if authn.IdentityFromContextOrNil(ctx) != nil {
+		dbStatus.DatabaseVersion = dbVersion
+		dbStatus.DatabaseType = dbType
+	}
+
+	return dbStatus, nil
 }

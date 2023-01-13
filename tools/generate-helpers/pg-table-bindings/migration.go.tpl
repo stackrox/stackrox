@@ -120,18 +120,18 @@ func walk(ctx context.Context, s legacy.Store, fn func(obj *{{.Type}}) error) er
 
 {{if $dackbox}}
 func store_walk(ctx context.Context, s legacy.Store, fn func(obj *{{.Type}}) error) error {
-	ids, err := s.GetIDs(ctx)
+	identifiers, err := s.GetIDs(ctx)
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < len(ids); i += batchSize {
+	for i := 0; i < len(identifiers); i += batchSize {
 		end := i + batchSize
 
-		if end > len(ids) {
-			end = len(ids)
+		if end > len(identifiers) {
+			end = len(identifiers)
 		}
-		objs, _, err := s.GetMany(ctx, ids[i:end])
+		objs, _, err := s.GetMany(ctx, identifiers[i:end])
 		if err != nil {
 			return err
 		}

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -28,6 +29,7 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageIntegration)(nil)), "image_integrations")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_INTEGRATIONS, "imageintegration", (*storage.ImageIntegration)(nil)))
 		RegisterTable(schema, CreateTableImageIntegrationsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_INTEGRATIONS, schema)
 		return schema
 	}()
 )
