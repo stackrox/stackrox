@@ -69,7 +69,7 @@ describe('Collection permission checks', () => {
         cy.get(`button:contains("Save")`).should('not.exist');
     });
 
-    it('should not provide the full UI to users with read-write access', () => {
+    it('should provide the full UI to users with read-write access', () => {
         // Mock a 'READ_WRITE_ACCESS' permission response
         visitWithStaticResponseForPermissions('/main', {
             body: { resourceToAccess: { WorkflowAdministration: 'READ_WRITE_ACCESS' } },
