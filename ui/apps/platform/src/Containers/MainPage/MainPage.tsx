@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import React, { ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
@@ -16,9 +16,7 @@ import AppWrapper from 'Containers/AppWrapper';
 import Body from 'Containers/MainPage/Body';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
-import useInterval from 'hooks/useInterval';
 import { clustersBasePath } from 'routePaths';
-import { fetchDatabaseStatus } from 'services/DatabaseService';
 
 import CredentialExpiryBanner from './CredentialExpiryBanner';
 import VersionOutOfDate from './VersionOutOfDate';
@@ -53,10 +51,6 @@ function MainPage(): ReactElement {
         serverState,
     } = useSelector(mainPageSelector);
 
-    // To handle database status refreshing.
-    const [pollEpoch, setPollEpoch] = useState(0);
-    const [databaseAvailable, setDatabaseAvailable] = useState(true);
-
     // Follow-up: Replace SearchModal with path like /main/search and component like GlobalSearchPage.
     const dispatch = useDispatch();
     const history = useHistory();
@@ -66,21 +60,6 @@ function MainPage(): ReactElement {
             history.push(toURL);
         }
     }
-
-    // We will update the poll epoch after 60 seconds to force a refresh of the database status
-    useInterval(() => {
-        setPollEpoch(pollEpoch + 1);
-    }, 60000);
-
-    useEffect(() => {
-        fetchDatabaseStatus()
-            .then((response) => {
-                setDatabaseAvailable(Boolean(response?.databaseAvailable));
-            })
-            .catch(() => {
-                setDatabaseAvailable(false);
-            });
-    }, [pollEpoch]);
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
@@ -120,7 +99,7 @@ function MainPage(): ReactElement {
                     hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
                 />
                 {metadata?.stale && <VersionOutOfDate />}
-                {!databaseAvailable && <DatabaseBanner />}
+                 <DatabaseBanner isApiReachable={serverState && serverState !== 'UNREACHABLE'} />
                 <Page
                     mainContainerId="main-page-container"
                     header={<Masthead />}
