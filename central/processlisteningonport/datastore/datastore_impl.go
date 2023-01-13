@@ -159,6 +159,10 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Warnf("Found no matching PLOP to close for %s", key)
 			}
 
+			if val.nopen > val.nclosed {
+				val.plop.CloseTimestamp = nil
+			}
+
 			newPLOP := &storage.ProcessListeningOnPortStorage{
 				// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
 				// IDENTITY, which would require changes in store generator
