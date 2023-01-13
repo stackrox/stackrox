@@ -4,7 +4,7 @@ import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { Flow } from '../types/flow.type';
 import { CustomEdgeModel, CustomNodeData } from '../types/topology.type';
 
-const protocolLabel = {
+export const protocolLabel = {
     L4_PROTOCOL_UNKNOWN: 'UNKNOWN',
     L4_PROTOCOL_TCP: 'TCP',
     L4_PROTOCOL_UDP: 'UDP',
