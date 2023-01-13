@@ -2,26 +2,8 @@ import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
-import { tryDeleteCollection, visitCollections } from './Collections.helpers';
+import { tryCreateCollection, tryDeleteCollection } from './Collections.helpers';
 import { collectionSelectors } from './Collections.selectors';
-
-// Quick utility to create a basic collection for permission testing
-function createCollection(name) {
-    // Ignore autocomplete requests
-    // TODO Remove this once the feature is in
-    cy.intercept('/v1/collections/autocomplete', {});
-    localStorage.setItem('access_token', Cypress.env('ROX_AUTH_TOKEN'));
-    tryDeleteCollection(name);
-    visitCollections();
-    cy.get('a:contains("Create collection")').click();
-    cy.get('input[name="name"]').type(name);
-    cy.get('input[name="description"]').type('A collection for permission testing purposes');
-    cy.get('button:contains("All namespaces")').click();
-    cy.get('button:contains("Namespaces with names matching")').click();
-    cy.get('input[aria-label="Select value 1 of 1 for the namespace name"]').type('stackrox');
-    cy.get(`button:contains('stackrox')`).click();
-    cy.get('button:contains("Save")').click();
-}
 
 describe('Collection permission checks', () => {
     withAuth();
@@ -36,7 +18,13 @@ describe('Collection permission checks', () => {
 
     // Ensure a collection exists in the system for permission tests
     if (hasFeatureFlag('ROX_OBJECT_COLLECTIONS')) {
-        before(() => createCollection(collectionName));
+        before(() => {
+            const rules = [
+                { fieldName: 'Namespace', values: [{ value: 'stackrox' }], operator: 'OR' },
+            ];
+
+            tryCreateCollection(collectionName, 'e2e test description', [], [{ rules }]);
+        });
         after(() => tryDeleteCollection(collectionName));
     }
 
