@@ -32,6 +32,9 @@ type ResourceEvent struct {
 	// that require processing
 	DeploymentReference resolver.DeploymentReference
 
+	// DeploymentTiming has the timing object that needs to be added to any deployments resolved by this event.
+	DeploymentTiming *central.Timing
+
 	// ParentResourceAction is the resource action that will be sent to central on the deployment event.
 	// If the ResourceEvent originated on a deployment event, this should be set to whatever action triggered
 	// the event. For related resources updates, like RBACs and services, this should always be set to
