@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	"github.com/stackrox/scanner/pkg/analyzer/detection"
 	"github.com/stackrox/scanner/pkg/analyzer/nodes"
 	"golang.org/x/exp/maps"
 )
@@ -23,12 +24,12 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	log.Info("Started node inventory")
 	// uncertifiedRHEL is set to false, as scans are only supported on RHCOS for now,
 	// which only exists in certified versions
-	componentsHost, err := nodes.Analyze(nodeName, "/host/", false)
-	log.Info("Finished node inventory")
+	componentsHost, err := nodes.Analyze(nodeName, "/host/", detection.DetectComponentOpts{UncertifiedRHEL: false, IsRHCOSRequired: true})
 	if err != nil {
 		log.Errorf("Error scanning node /host inventory: %v", err)
 		return nil, err
 	}
+	log.Info("Finished node inventory")
 	log.Debugf("Components found under /host: %v", componentsHost)
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
