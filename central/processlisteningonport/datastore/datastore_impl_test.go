@@ -78,7 +78,7 @@ func (suite *PLOPDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-func (suite *PLOPDataStoreTestSuite) TestPLOPAddEmpty() {
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddNothing() {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
@@ -489,6 +489,79 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	// It's being closed and excluded from the API response
 	suite.Len(newPlops, 0)
+}
+
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddTwoIdentical() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+
+	testNamespace := "test_namespace"
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container2",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process2",
+				Args:         "test_arguments2",
+				ExecFilePath: "test_path2",
+			},
+		},
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: nil,
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Add an identical PLOP
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 1)
 }
 
 // TestPLOPAddClosedWithoutActive: one PLOP object is added with a correct

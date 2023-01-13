@@ -107,15 +107,14 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		//   the upsert later on).
 		// * No existing PLOP object, create a new one with whatever close
 		//   timestamp we have received and fetched indicator ID.
-		if prevExists && existingPLOP.CloseTimestamp != val.CloseTimestamp {
+		if prevExists {
 			log.Debugf("Got existing PLOP: %+v", existingPLOP)
-
-			existingPLOP.CloseTimestamp = val.CloseTimestamp
-			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
+			if existingPLOP.CloseTimestamp != val.CloseTimestamp {
+				existingPLOP.CloseTimestamp = val.CloseTimestamp
+				existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
+			}
 			plopObjects[i] = existingPLOP
-		}
-
-		if !prevExists {
+		} else {
 			if val.CloseTimestamp != nil {
 				// We try to close a not existing Endpoint, something is wrong
 				log.Warnf("Found no matching PLOP to close for %s", key)
@@ -135,11 +134,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 			plopObjects[i] = newPLOP
 		}
-	}
-
-	for _, plopObject := range plopObjects {
-		log.Infof("")
-		log.Infof("Inserting plop %+v", plopObject)
 	}
 
 	// Now save actual PLOP objects
