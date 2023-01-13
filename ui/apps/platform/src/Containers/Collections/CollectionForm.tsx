@@ -170,7 +170,14 @@ function yupResourceSelectorObject() {
 }
 
 const validationSchema = yup.object({
-    name: yup.string().trim().required(),
+    name: yup
+        .string()
+        .trim()
+        .matches(
+            /^[a-zA-Z0-9 .-]*$/,
+            'Only letters, numbers, dot, dash, and space characters are allowed in collection names'
+        )
+        .required(),
     description: yup.string(),
     embeddedCollectionIds: yup.array(yup.string().trim().required()),
     resourceSelector: yup.object().shape({
