@@ -382,9 +382,9 @@ func normalizePLOPs(
 				prev.nopen++
 			} else {
 				prev.nclosed++
-				//if *val.GetCloseTimestamp().ToMili() > types.Timestamp.ToMili(*prev.closed.GetCloseTimestamp()) {
+				if val.CloseTimestamp.Compare(prev.plop.CloseTimestamp) == 1 {
 					prev.plop = val
-				//}
+				}
 			}
 
 			normalizedMap[key] = prev
@@ -407,16 +407,7 @@ func normalizePLOPs(
 	}
 
 	for _, value := range normalizedMap {
-		// Take the last open PLOP if there are more open in total, otherwise
-		// the last closed PLOP
 		normalizedResult = append(normalizedResult, &value)
-		//if value.nopen > value.nclosed {
-		//	normalizedResult = append(normalizedResult, value)
-		//	log.Infof("Returning open")
-		//} else {
-		//	normalizedResult = append(normalizedResult, value)
-		//	log.Infof("Returning closed")
-		//}
 	}
 
 	return normalizedResult

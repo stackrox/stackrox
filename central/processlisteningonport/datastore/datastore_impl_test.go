@@ -675,6 +675,139 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 	suite.Len(newPlops, 0)
 }
 
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrder() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+
+	testNamespace := "test_namespace"
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container2",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process2",
+				Args:         "test_arguments2",
+				ExecFilePath: "test_path2",
+			},
+		},
+	}
+
+	openPlopObject := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: nil,
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+	}
+
+	time1 := time.Now()
+	time2 := time.Now().Local().Add(time.Hour * time.Duration(1))
+	time3 := time.Now().Local().Add(time.Hour * time.Duration(2))
+
+	closedPlopObject1 := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time1),
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+	}
+
+	closedPlopObject2 := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time2),
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+	}
+
+	closedPlopObject3 := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time3),
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject1}
+
+	batchPlopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		&closedPlopObject3,
+		&openPlopObject,
+		&closedPlopObject2,
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Add the same PLOP in an open and closed state
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, batchPlopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	// It's being closed and excluded from the API response
+	suite.Len(newPlops, 0)
+
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	err = suite.datastore.WalkAll(suite.hasWriteCtx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			plopsFromDB = append(plopsFromDB, plop)
+			return nil
+		})
+	suite.NoError(err)
+	suite.Len(plopsFromDB, 1)
+	suite.Equal(plopsFromDB[0].CloseTimestamp, closedPlopObject3.CloseTimestamp)
+}
+
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddTwoIdentical() {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
