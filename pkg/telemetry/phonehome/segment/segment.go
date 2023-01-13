@@ -3,7 +3,7 @@ package segment
 import (
 	"time"
 
-	segment "github.com/segmentio/analytics-go"
+	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 )
