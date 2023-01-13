@@ -99,7 +99,7 @@ function MainPage(): ReactElement {
                     hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
                 />
                 {metadata?.stale && <VersionOutOfDate />}
-                 <DatabaseBanner isApiReachable={serverState && serverState !== 'UNREACHABLE'} />
+                <DatabaseBanner isApiReachable={serverState && serverState !== 'UNREACHABLE'} />
                 <Page
                     mainContainerId="main-page-container"
                     header={<Masthead />}
