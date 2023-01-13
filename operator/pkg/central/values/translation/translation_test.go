@@ -142,7 +142,7 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 							DeclarativeConfiguration: &platform.DeclarativeConfiguration{
-								ConfigMaps: []platform.LocalConfigMapReference{
+								Mounts: []platform.LocalConfigMapReference{
 									{
 										Name: "config-map-1",
 									},

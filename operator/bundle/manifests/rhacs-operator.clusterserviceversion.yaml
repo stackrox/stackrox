@@ -225,10 +225,10 @@ spec:
         - urn:alm:descriptor:io.kubernetes:StorageClass
       - description: The references of objects containing declarative configuration
         displayName: Declarative configuration references
-        path: central.declarativeConfiguration.objectReferences
+        path: central.declarativeConfiguration.mounts
       - description: The name of the referenced config map.
         displayName: Name
-        path: central.declarativeConfiguration.objectReferences[0].name
+        path: central.declarativeConfiguration.mounts[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
       - description: The name of the referenced secret.

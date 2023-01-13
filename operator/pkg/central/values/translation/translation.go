@@ -257,9 +257,9 @@ func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *tr
 		return &declarativeConfig
 	}
 
-	mountNames := make([]string, 0, len(c.ConfigMaps))
-	for _, configMap := range c.ConfigMaps {
-		mountNames = append(mountNames, configMap.Name)
+	mountNames := make([]string, 0, len(c.Mounts))
+	for _, mount := range c.Mounts {
+		mountNames = append(mountNames, mount.Name)
 	}
 	declarativeConfig.SetStringSlice("mounts", mountNames)
 	return &declarativeConfig

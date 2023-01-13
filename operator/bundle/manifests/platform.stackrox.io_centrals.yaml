@@ -217,7 +217,7 @@ spec:
                     description: Configures resources within Central in a declarative
                       manner.
                     properties:
-                      objectReferences:
+                      mounts:
                         description: The references of objects containing declarative
                           configuration
                         items:
@@ -232,7 +232,7 @@ spec:
                           type: object
                         type: array
                     required:
-                    - objectReferences
+                    - mounts
                     type: object
                   defaultTLSSecret:
                     description: By default, Central will only serve an internal TLS

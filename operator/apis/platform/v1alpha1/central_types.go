@@ -69,7 +69,7 @@ type Egress struct {
 }
 
 // ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.
-// +kubebuilder:validation:Enum=Online;Offline
+//+kubebuilder:validation:Enum=Online;Offline
 type ConnectivityPolicy string
 
 const (
@@ -171,7 +171,7 @@ func (c *CentralComponentSpec) CentralDBEnabled() bool {
 type DeclarativeConfiguration struct {
 	// The references of objects containing declarative configuration
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Declarative configuration references"
-	ConfigMaps []LocalConfigMapReference `json:"objectReferences"`
+	Mounts []LocalConfigMapReference `json:"mounts"`
 }
 
 // CentralDBSpec defines settings for the "central db" component.
@@ -205,7 +205,7 @@ type CentralDBSpec struct {
 }
 
 // CentralDBEnabled is a type for values of spec.central.db.enabled.
-// +kubebuilder:validation:Enum=Default;Enabled
+//+kubebuilder:validation:Enum=Default;Enabled
 type CentralDBEnabled string
 
 const (
@@ -493,7 +493,7 @@ func (s *ScannerComponentSpec) IsEnabled() bool {
 }
 
 // ScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
-// +kubebuilder:validation:Enum=Enabled;Disabled
+//+kubebuilder:validation:Enum=Enabled;Disabled
 type ScannerComponentPolicy string
 
 const (
