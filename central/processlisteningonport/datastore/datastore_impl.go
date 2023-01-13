@@ -48,7 +48,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		"ProcessListeningOnPort",
 		"AddProcessListeningOnPort",
 	)
-	completedInBatch := []*storage.ProcessListeningOnPortFromSensor{}
+	// completedInBatch := []*storage.ProcessListeningOnPortFromSensor{}
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
@@ -62,7 +62,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	portProcesses, completedInBatch = normalizePLOPs(portProcesses)
+	portProcesses, completedInBatch := normalizePLOPs(portProcesses)
 
 	// XXX: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
 	// be done in a single join query fetching both ProcessIndicator and needed
