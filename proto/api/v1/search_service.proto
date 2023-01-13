@@ -58,6 +58,7 @@ enum SearchCategory {
     POLICY_CATEGORIES         = 46;
     IMAGE_INTEGRATIONS        = 47;
     COLLECTIONS               = 48;
+    PROCESS_LISTENING_ON_PORT = 49;
 
     // tags 100-150 are used for test protos.
 }
