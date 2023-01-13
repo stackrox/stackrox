@@ -272,17 +272,23 @@ check_for_stackrox_OOMs() {
         die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
+    # TODO :: How much logging should we have here?
     local objects
     objects=$(ls "$dir"/stackrox/pods/*_object.json || true)
     if [[ -n "$objects" ]]; then
         for describe in $objects; do
-            echo "$describe"
-            if grep OOMKilled "$describe"; then
-                echo "OOM $describe"
-                save_junit_failure "OOMCheck/$container" "OOMed"
-            else
-                echo "NOT OOM $describe"
-                save_junit_success "OOMCheck/$container"
+            local pod_name
+            # This wack jq slurp flag with the if statement is due to https://github.com/stedolan/jq/issues/1142
+            if pod_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.name end' "$describe"); then
+                info "Checking $pod_name for OOMKilled"
+                if jq -e '. | select(.status.containerStatuses[].lastState.terminated.reason=="OOMKilled")' "$describe" >/dev/null 2>&1; then
+                    echo "OOM $describe"
+                    save_junit_failure "OOMCheck-$pod_name" "OOMCheck" "$pod_name was OOMKilled"
+                else
+                    # TODO :: Do we care about this?
+                    echo "NOT OOM $describe"
+                    save_junit_success "OOMCheck-$pod_name" "$pod_name was not OOMKilled"
+                fi
             fi
         done
     fi
