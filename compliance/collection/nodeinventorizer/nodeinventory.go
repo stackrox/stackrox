@@ -114,7 +114,10 @@ func convertExecutables(exe []*scannerV1.Executable) []*storage.NodeInventory_Co
 	for i, executable := range exe {
 		arr[i] = &storage.NodeInventory_Components_RHELComponent_Executable{
 			Path:             executable.Path,
-			RequiredFeatures: make([]*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, len(executable.GetRequiredFeatures())),
+			RequiredFeatures: nil,
+		}
+		if executable.GetRequiredFeatures() != nil {
+			arr[i].RequiredFeatures = make([]*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, len(executable.GetRequiredFeatures()))
 		}
 		for i2, fnv := range executable.GetRequiredFeatures() {
 			arr[i].RequiredFeatures[i2] = &storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{

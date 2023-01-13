@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/scanner/database"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -166,6 +167,75 @@ func (s *NodeInventorizerTestSuite) TestMakeComponentKey() {
 	for testName, testCase := range testcases {
 		s.Run(testName, func() {
 			s.Equal(testCase.expected, makeComponentKey(testCase.component))
+		})
+	}
+}
+
+func (s *NodeInventorizerTestSuite) TestConvertExecutable() {
+	testcases := map[string]struct {
+		exe      []*scannerV1.Executable
+		expected []*storage.NodeInventory_Components_RHELComponent_Executable
+	}{
+		"RequiredFeatures not empty": {
+			exe: []*scannerV1.Executable{
+				{
+					Path: "/root/1",
+					RequiredFeatures: []*scannerV1.FeatureNameVersion{
+						{
+							Name:    "name1",
+							Version: "version1",
+						},
+					},
+				},
+			},
+			expected: []*storage.NodeInventory_Components_RHELComponent_Executable{
+				{
+					Path: "/root/1",
+					RequiredFeatures: []*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{
+						{
+							Name:    "name1",
+							Version: "version1",
+						},
+					},
+				},
+			},
+		},
+		"RequiredFeatures empty": {
+			exe: []*scannerV1.Executable{
+				{
+					Path:             "/root/1",
+					RequiredFeatures: []*scannerV1.FeatureNameVersion{},
+				},
+			},
+			expected: []*storage.NodeInventory_Components_RHELComponent_Executable{
+				{
+					Path:             "/root/1",
+					RequiredFeatures: []*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{},
+				},
+			},
+		},
+		"RequiredFeatures nil": {
+			exe: []*scannerV1.Executable{
+				{
+					Path:             "/root/1",
+					RequiredFeatures: nil,
+				},
+			},
+			expected: []*storage.NodeInventory_Components_RHELComponent_Executable{
+				{
+					Path:             "/root/1",
+					RequiredFeatures: nil,
+				},
+			},
+		},
+	}
+
+	for testName, testCase := range testcases {
+		s.Run(testName, func() {
+			for i, got := range convertExecutables(testCase.exe) {
+				s.Equal(testCase.expected[i].GetPath(), got.GetPath())
+				s.Equal(testCase.expected[i].GetRequiredFeatures(), got.GetRequiredFeatures())
+			}
 		})
 	}
 }
