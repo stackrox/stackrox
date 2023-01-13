@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodescansv2"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/podevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/processlisteningonport"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reprocessing"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/rolebindings"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
@@ -49,6 +50,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		deploymentevents.GetPipeline(),
 		podevents.GetPipeline(),
 		processindicators.GetPipeline(),
+		processlisteningonport.GetPipeline(),
 		networkpolicies.GetPipeline(),
 		namespaces.GetPipeline(),
 		secrets.GetPipeline(),

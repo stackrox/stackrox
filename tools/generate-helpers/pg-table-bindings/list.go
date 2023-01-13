@@ -62,17 +62,17 @@ func init() {
 		&storage.Notifier{}:                                     resources.Integration,
 		&storage.PermissionSet{}:                                resources.Role,
 		&storage.Pod{}:                                          resources.Deployment,
-		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-		&storage.Policy{}:                 resources.Policy,
-		&storage.PolicyCategory{}:         resources.Policy,
-		&storage.ProcessBaselineResults{}: resources.DeploymentExtension,
-		&storage.ProcessBaseline{}:        resources.DeploymentExtension,
-		&storage.ProcessIndicator{}:       resources.DeploymentExtension,
-		&storage.ResourceCollection{}:     resources.WorkflowAdministration,
+		&storage.Policy{}:			                 resources.Policy,
+		&storage.PolicyCategory{}:                               resources.Policy,
+		&storage.ProcessBaselineResults{}:                       resources.DeploymentExtension,
+		&storage.ProcessBaseline{}:                              resources.DeploymentExtension,
+		&storage.ProcessIndicator{}:                             resources.DeploymentExtension,
+		&storage.ProcessListeningOnPortStorage{}:                resources.ProcessWhitelist,
+		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		&storage.ReportConfiguration{}: resources.VulnerabilityReports,
-		&storage.Risk{}:                resources.DeploymentExtension,
-		&storage.Role{}:                resources.Role,
+		&storage.ReportConfiguration{}:                          resources.VulnerabilityReports,
+		&storage.Risk{}:                                         resources.DeploymentExtension,
+		&storage.Role{}:                                         resources.Role,
 		// TODO: ROX-12750 Replace SensorUpgradeConfig with Administration.
 		&storage.SensorUpgradeConfig{}: resources.SensorUpgradeConfig,
 		// TODO: ROX-12750 Replace ServiceIdentity with Administration.
