@@ -6,6 +6,7 @@ import {
     ButtonVariant,
     Pagination,
     SearchInput,
+    Spinner,
     Text,
     Toolbar,
     ToolbarContent,
@@ -24,8 +25,11 @@ import { GetSortParams } from 'hooks/useURLSort';
 import { Collection } from 'services/CollectionsService';
 import { SearchFilter } from 'types/search';
 import { collectionsBasePath } from 'routePaths';
+import CollectionLoadError from './CollectionLoadError';
 
 export type CollectionsTableProps = {
+    isLoading: boolean;
+    error: Error | undefined;
     collections: Collection[];
     collectionsCount: number;
     pagination: UseURLPaginationResult;
@@ -39,6 +43,8 @@ export type CollectionsTableProps = {
 const SEARCH_INPUT_REQUEST_DELAY = 800;
 
 function CollectionsTable({
+    isLoading,
+    error,
     collections,
     collectionsCount,
     pagination,
@@ -100,6 +106,95 @@ function CollectionsTable({
         ? searchFilter.Collection.join('+')
         : searchFilter.Collection;
 
+    let tableContent = (
+        <Tr>
+            <Td colSpan={8}>
+                <Bullseye>
+                    <Spinner isSVG />
+                </Bullseye>
+            </Td>
+        </Tr>
+    );
+
+    if (error) {
+        tableContent = (
+            <Tr>
+                <Td colSpan={8}>
+                    <Bullseye>
+                        <CollectionLoadError
+                            title="There was an error loading the collections"
+                            error={error}
+                        />
+                    </Bullseye>
+                </Td>
+            </Tr>
+        );
+    }
+
+    if (!isLoading && typeof error === 'undefined') {
+        tableContent = (
+            <>
+                {hasCollections || (
+                    <Tr>
+                        <Td colSpan={hasWriteAccess ? 5 : 3}>
+                            <Bullseye>
+                                <EmptyStateTemplate
+                                    title="No collections found"
+                                    headingLevel="h2"
+                                    icon={SearchIcon}
+                                >
+                                    <Text>Clear all filters and try again.</Text>
+                                    <Button variant="link" onClick={() => setSearchFilter({})}>
+                                        Clear all filters
+                                    </Button>
+                                </EmptyStateTemplate>
+                            </Bullseye>
+                        </Td>
+                    </Tr>
+                )}
+                {collections.map((collection) => {
+                    const { id, name, description } = collection;
+                    const actionItems = [
+                        {
+                            title: 'Edit collection',
+                            onClick: () => onEditCollection(id),
+                        },
+                        {
+                            title: 'Clone collection',
+                            onClick: () => onCloneCollection(id),
+                        },
+                        {
+                            isSeparator: true,
+                        },
+                        {
+                            title: 'Delete collection',
+                            onClick: () => setCollectionToDelete(collection),
+                        },
+                    ];
+
+                    return (
+                        <Tr key={id}>
+                            <Td dataLabel="Collection">
+                                <Button
+                                    variant={ButtonVariant.link}
+                                    isInline
+                                    component={LinkShim}
+                                    href={`${collectionsBasePath}/${id}`}
+                                >
+                                    {name}
+                                </Button>
+                            </Td>
+                            <Td dataLabel="Description">
+                                <Truncate content={description || '-'} tooltipPosition="top" />
+                            </Td>
+                            {hasWriteAccess && <Td actions={{ items: actionItems }} />}
+                        </Tr>
+                    );
+                })}
+            </>
+        );
+    }
+
     return (
         <>
             <Toolbar>
@@ -139,65 +234,7 @@ function CollectionsTable({
                         <Th aria-label="Row actions" />
                     </Tr>
                 </Thead>
-                <Tbody>
-                    {hasCollections || (
-                        <Tr>
-                            <Td colSpan={hasWriteAccess ? 5 : 3}>
-                                <Bullseye>
-                                    <EmptyStateTemplate
-                                        title="No collections found"
-                                        headingLevel="h2"
-                                        icon={SearchIcon}
-                                    >
-                                        <Text>Clear all filters and try again.</Text>
-                                        <Button variant="link" onClick={() => setSearchFilter({})}>
-                                            Clear all filters
-                                        </Button>
-                                    </EmptyStateTemplate>
-                                </Bullseye>
-                            </Td>
-                        </Tr>
-                    )}
-                    {collections.map((collection) => {
-                        const { id, name, description } = collection;
-                        const actionItems = [
-                            {
-                                title: 'Edit collection',
-                                onClick: () => onEditCollection(id),
-                            },
-                            {
-                                title: 'Clone collection',
-                                onClick: () => onCloneCollection(id),
-                            },
-                            {
-                                isSeparator: true,
-                            },
-                            {
-                                title: 'Delete collection',
-                                onClick: () => setCollectionToDelete(collection),
-                            },
-                        ];
-
-                        return (
-                            <Tr key={id}>
-                                <Td dataLabel="Collection">
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={`${collectionsBasePath}/${id}`}
-                                    >
-                                        {name}
-                                    </Button>
-                                </Td>
-                                <Td dataLabel="Description">
-                                    <Truncate content={description || '-'} tooltipPosition="top" />
-                                </Td>
-                                {hasWriteAccess && <Td actions={{ items: actionItems }} />}
-                            </Tr>
-                        );
-                    })}
-                </Tbody>
+                <Tbody>{tableContent}</Tbody>
             </TableComposable>
             {collectionToDelete && (
                 <ConfirmationModal

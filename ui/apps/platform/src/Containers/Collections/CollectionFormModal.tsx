@@ -89,7 +89,10 @@ function CollectionsFormModal({
     if (error) {
         content = (
             <Bullseye className="pf-u-p-2xl">
-                <CollectionLoadError error={error} />
+                <CollectionLoadError
+                    title="There was an error loading this collection"
+                    error={error}
+                />
             </Bullseye>
         );
         modalTitle = 'Collection error';

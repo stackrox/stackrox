@@ -180,7 +180,10 @@ function CollectionsFormPage({
                     <BreadcrumbItemLink to={collectionsBasePath}>Collections</BreadcrumbItemLink>
                 </Breadcrumb>
                 <Divider component="div" />
-                <CollectionLoadError error={error} />
+                <CollectionLoadError
+                    title="There was an error loading this collection"
+                    error={error}
+                />
             </>
         );
     } else if (loading) {
