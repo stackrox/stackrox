@@ -138,3 +138,8 @@ teardown() {
   assert_failure
   assert_output --partial "no such file or directory"
 }
+
+@test "roxctl-development central generate k8s --declarative-config-mounts should contain correct mounts" {
+  run_image_defaults_registry_test roxctl-development k8s 'quay.io/rhacs-eng' 'quay.io/rhacs-eng' '--declarative-config-mounts' 'config-map-1' 'config-map-2'
+  assert_declarative_config_mount_exist "$out_dir" 'config-map-1' 'config-map-2'
+}
