@@ -1,6 +1,7 @@
 package jsonutil
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -111,7 +112,13 @@ func TestNoErrorOnUnknownAttribute(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "6500", proto.GetId())
 
-	err = JSONBytesToProto([]byte(json), &proto)
+	jsonBytes := []byte(json)
+	err = JSONBytesToProto(jsonBytes, &proto)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "6500", proto.GetId())
+
+	err = JSONReaderToProto(bytes.NewReader(jsonBytes), &proto)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "6500", proto.GetId())

@@ -1,14 +1,13 @@
 package helmconfig
 
 import (
-	"bytes"
 	"os"
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/jsonutil"
 )
 
 const (
@@ -32,7 +31,7 @@ func load(data []byte) (*central.HelmManagedConfigInit, error) {
 	}
 
 	var config central.HelmManagedConfigInit
-	if err := jsonpb.Unmarshal(bytes.NewReader(contentsJSON), &config); err != nil {
+	if err := jsonutil.JSONBytesToProto(contentsJSON, &config); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling config proto")
 	}
 

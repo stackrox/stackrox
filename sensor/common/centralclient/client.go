@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
@@ -104,7 +104,7 @@ func (c *Client) GetMetadata(ctx context.Context) (*v1.Metadata, error) {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	var metadata v1.Metadata
-	err = jsonpb.Unmarshal(resp.Body, &metadata)
+	err = jsonutil.JSONReaderToProto(resp.Body, &metadata)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", metadataRoute, resp.StatusCode)
 	}
@@ -222,7 +222,7 @@ func (c *Client) doTLSChallengeRequest(ctx context.Context, req *v1.TLSChallenge
 	defer utils.IgnoreError(resp.Body.Close)
 
 	tlsChallengeResp := &v1.TLSChallengeResponse{}
-	err = jsonpb.Unmarshal(resp.Body, tlsChallengeResp)
+	err = jsonutil.JSONReaderToProto(resp.Body, tlsChallengeResp)
 	if err != nil {
 		return nil, peerCertificates, errors.Wrap(err, "parsing Central response")
 	}
