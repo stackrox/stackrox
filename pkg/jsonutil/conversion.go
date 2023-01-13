@@ -2,6 +2,7 @@ package jsonutil
 
 import (
 	"bytes"
+	"io"
 	"regexp"
 	"strings"
 
@@ -34,12 +35,17 @@ func JSONUnmarshaler() *jsonpb.Unmarshaler {
 
 // JSONToProto converts a string containing JSON into a proto message.
 func JSONToProto(json string, m proto.Message) error {
-	return JSONUnmarshaler().Unmarshal(strings.NewReader(json), m)
+	return JSONReaderToProto(strings.NewReader(json), m)
 }
 
 // JSONBytesToProto converts bytes containing JSON into a proto message.
 func JSONBytesToProto(contents []byte, m proto.Message) error {
-	return JSONUnmarshaler().Unmarshal(bytes.NewReader(contents), m)
+	return JSONReaderToProto(bytes.NewReader(contents), m)
+}
+
+// JSONReaderToProto converts bytes from a reader containing JSON into a proto message.
+func JSONReaderToProto(reader io.Reader, m proto.Message) error {
+	return JSONUnmarshaler().Unmarshal(reader, m)
 }
 
 // ProtoToJSON converts a proto message into a string containing JSON.
