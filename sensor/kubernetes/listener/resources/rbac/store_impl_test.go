@@ -430,7 +430,12 @@ func TestStore_DispatcherEvents(t *testing.T) {
 }
 
 func TestStore_DeploymentRelationship(t *testing.T) {
+	// Run these tests only with feature flag enabled. Changes to the old path should be avoided whenever possible.
+	// TODO(ROX-14284): Re-enable this tests setting the custom env rather than the feature flag
 	t.Setenv("ROX_RESYNC_DISABLED", "true")
+	if !features.ResyncDisabled.Enabled() {
+		t.Skipf("Tests will fail if the new resyncless pass is disabled. E.g. in release tests")
+	}
 	roles := []*v1.Role{
 		{
 			ObjectMeta: metav1.ObjectMeta{
