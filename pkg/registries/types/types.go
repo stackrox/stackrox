@@ -1,6 +1,8 @@
 package types
 
 import (
+	"net/http"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -21,6 +23,7 @@ type Registry interface {
 	Test() error
 	Config() *Config
 	Name() string
+	HTTPClient() *http.Client
 }
 
 // ImageRegistry adds a DataSource function to Registry that describes which

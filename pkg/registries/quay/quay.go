@@ -30,6 +30,8 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Regis
 	}
 }
 
+var _ types.Registry = (*Quay)(nil)
+
 // Quay is the implementation of the Docker Registry for Quay
 type Quay struct {
 	*docker.Registry

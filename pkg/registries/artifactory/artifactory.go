@@ -16,6 +16,8 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Regis
 	return "artifactory", newRegistry
 }
 
+var _ types.Registry = (*registry)(nil)
+
 type registry struct {
 	*docker.Registry
 }
