@@ -230,8 +230,8 @@ class Kubernetes implements OrchestratorMain {
     }
 
     boolean podReady(Pod pod) {
-        return !(pod.metadata.deletionTimestamp as boolean)
-            && pod.status?.containerStatuses?.every { it.ready }
+        def deleted = pod.metadata.deletionTimestamp as boolean
+        return !deleted && pod.status?.containerStatuses?.every { it.ready }
     }
 
     def waitForPodsReady(String ns, Map<String, String> labels, int minReady = 1, int retries = 30,
