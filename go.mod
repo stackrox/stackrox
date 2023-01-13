@@ -113,8 +113,8 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/postgres v1.4.5
-	gorm.io/gorm v1.24.1-0.20221019064659-5dd2bb482755
+	gorm.io/driver/postgres v1.4.6
+	gorm.io/gorm v1.24.2
 	helm.sh/helm/v3 v3.9.4
 	k8s.io/api v0.24.9
 	k8s.io/apimachinery v0.24.9
@@ -130,6 +130,8 @@ require (
 )
 
 require github.com/hashicorp/golang-lru v0.5.4
+
+require github.com/jackc/pgx/v5 v5.2.0 // indirect
 
 require (
 	cloud.google.com/go v0.105.0 // indirect
@@ -237,7 +239,7 @@ require (
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.1 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
