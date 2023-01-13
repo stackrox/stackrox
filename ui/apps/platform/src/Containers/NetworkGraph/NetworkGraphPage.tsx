@@ -24,6 +24,7 @@ import PageTitle from 'Components/PageTitle';
 import useURLParameter from 'hooks/useURLParameter';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
+import NetworkSearch from './components/NetworkSearch';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
 import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
@@ -253,8 +254,10 @@ function NetworkGraphPage() {
                             </ToolbarItem>
                             <ToolbarItem>in the past hour</ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarGroup>
-                            <ToolbarItem>Add one or more deployment filters</ToolbarItem>
+                        <ToolbarGroup className="pf-u-flex-grow-1">
+                            <ToolbarItem className="pf-u-flex-grow-1">
+                                <NetworkSearch />
+                            </ToolbarItem>
                             <ToolbarItem>
                                 <DisplayOptionsSelect
                                     selectedOptions={displayOptions}
