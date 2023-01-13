@@ -730,7 +730,7 @@ spec:
     \ security controls.\n\n## Using the RHACS Operator\n\n**RHACS Operator channels:**\n\
     \nThe RHACS Operator is provided through the following update channels in the\
     \ Red Hat Operator catalog:\n\n* `stable`: Provides the most recent version and\
-    \ patches to the most recent versions.\n  Using the `stable` channel and configuring\
+    \ patches to the most recent version.\n  Using the `stable` channel and configuring\
     \ automatic operator upgrades ensures that the most recent RHACS version is deployed.\n\
     * `rhacs-x.yy` (for example, `rhacs-3.73`): Channels follow a specific RHACS version\
     \ and include all patches to that version (e.g. `3.73.0`, `3.73.1`, ...).\n\n\

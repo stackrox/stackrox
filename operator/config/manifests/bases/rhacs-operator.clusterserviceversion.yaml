@@ -722,7 +722,7 @@ spec:
 
     The RHACS Operator is provided through the following update channels in the Red Hat Operator catalog:
 
-    * `stable`: Provides the most recent version and patches to the most recent versions.
+    * `stable`: Provides the most recent version and patches to the most recent version.
       Using the `stable` channel and configuring automatic operator upgrades ensures that the most recent RHACS version is deployed.
     * `rhacs-x.yy` (for example, `rhacs-3.73`): Channels follow a specific RHACS version and include all patches to that version (e.g. `3.73.0`, `3.73.1`, ...).
 
