@@ -51,6 +51,11 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	if msg.DeploymentReference != nil {
 		referenceIds := msg.DeploymentReference(r.storeProvider.Deployments())
 
+		if msg.ForceDetection && len(referenceIds) > 0 {
+			// We append the referenceIds to the msg to be reprocessed
+			msg = component.MergeResourceEvents(msg, component.NewResourceEvent(nil, nil, referenceIds))
+		}
+
 		for _, id := range referenceIds {
 			preBuiltDeployment := r.storeProvider.Deployments().Get(id)
 			if preBuiltDeployment == nil {
@@ -58,9 +63,13 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				continue
 			}
 
+			// Remove actions are done at the handler level. This is not ideal but for now it allows us to be able to fetch deployments from the store
+			// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdate here.
+			r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(id)
+
 			permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
 			exposureInfo := r.storeProvider.Services().
-				GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetLabels())
+				GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
 
 			d, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
 				PermissionLevel: permissionLevel,
