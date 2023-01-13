@@ -47,6 +47,38 @@ export function visitCollectionsFromLeftNav(staticResponseMap) {
 
 const baseApiUrl = '/v1/collections';
 
+export function tryCreateCollection(
+    name,
+    description,
+    embeddedCollectionIds = [],
+    resourceSelectors = []
+) {
+    // Ignore autocomplete requests
+    // TODO Remove this once the feature is in
+    cy.intercept('/v1/collections/autocomplete', {});
+
+    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+
+    cy.request({
+        url: `${baseApiUrl}?query.query=Collection Name:"${name}"`,
+        auth,
+    }).as('listCollections');
+
+    cy.get('@listCollections').then((res) => {
+        if (res.body.collections.some((c) => c.name === name)) {
+            // Collection already exists
+            return;
+        }
+        const body = {
+            name,
+            description,
+            embeddedCollectionIds,
+            resourceSelectors,
+        };
+        cy.request({ url: baseApiUrl, body, auth, method: 'POST' });
+    });
+}
+
 // Cleanup an existing collection via API call
 export function tryDeleteCollection(collectionName) {
     const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
