@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"google.golang.org/grpc/codes"
 )
 
@@ -97,7 +98,7 @@ func (l *LicenseJSON) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals license JSON bytes into a License object, following jsonpb rules.
 func (l *LicenseJSON) UnmarshalJSON(data []byte) error {
-	return jsonpb.Unmarshal(bytes.NewReader(data), (*licenseproto.License)(l))
+	return jsonutil.JSONBytesToProto(data, (*licenseproto.License)(l))
 }
 
 // CentralInfo contains telemetry data specific to StackRox' Central deployment

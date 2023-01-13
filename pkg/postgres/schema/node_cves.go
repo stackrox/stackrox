@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -37,6 +38,7 @@ var (
 			v1.SearchCategory_CLUSTERS,
 		}...)
 		RegisterTable(schema, CreateTableNodeCvesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_VULNERABILITIES, schema)
 		return schema
 	}()
 )

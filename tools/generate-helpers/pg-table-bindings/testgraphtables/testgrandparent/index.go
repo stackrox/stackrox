@@ -13,12 +13,7 @@ import (
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
-
-func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory(61), schema)
-}
 
 // NewIndexer returns new indexer for `storage.TestGrandparent`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
@@ -34,13 +29,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "TestGrandparent")
 
-	return postgres.RunCountRequest(ctx, v1.SearchCategory(61), q, b.db)
+	return postgres.RunCountRequest(ctx, v1.SearchCategory(109), q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestGrandparent")
 
-	return postgres.RunSearchRequest(ctx, v1.SearchCategory(61), q, b.db)
+	return postgres.RunSearchRequest(ctx, v1.SearchCategory(109), q, b.db)
 }
 
 //// Stubs for satisfying interfaces

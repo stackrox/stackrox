@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	localSensor "github.com/stackrox/rox/generated/tools/local-sensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/jsonutil"
 )
 
 // GetPoliciesFromFile reads a file containing storage.Policy. Return a slice of storage.Policy with the content of the file
@@ -25,7 +25,7 @@ func GetPoliciesFromFile(fileName string) (policies []*storage.Policy, retError 
 		retError = errorList.ToError()
 	}()
 	var policiesMsg localSensor.LocalSensorPolicies
-	if err := jsonpb.Unmarshal(file, &policiesMsg); err != nil {
+	if err := jsonutil.JSONReaderToProto(file, &policiesMsg); err != nil {
 		errorList.AddStringf("error unmarshaling %s: %s\n", fileName, err)
 		return
 	}

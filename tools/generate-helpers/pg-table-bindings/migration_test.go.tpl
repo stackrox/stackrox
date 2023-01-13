@@ -2,7 +2,7 @@
 
 //go:build sql_integration
 {{- $name := .TrimmedType|lowerCamelCase }}
-{{define "getterParamList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.PrimaryKeys}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
+{{define "getterParamList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $index, $pk := .Schema.PrimaryKeys}}{{if $index}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
 {{ $boltDB := eq .Migration.MigrateFromDB "boltdb" }}
 {{ $dackbox := eq .Migration.MigrateFromDB "dackbox" }}
 {{ $rocksDB := or $dackbox (eq .Migration.MigrateFromDB "rocksdb") }}

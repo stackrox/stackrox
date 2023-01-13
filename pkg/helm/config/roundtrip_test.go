@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,13 +9,13 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stretchr/testify/suite"
@@ -108,11 +107,10 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 	if err != nil {
 		return nil, errors.Wrap(err, "converting YAML to JSON")
 	}
-	buf := bytes.NewBuffer(clusterCfgJSON)
 
 	var clusterCfg storage.CompleteClusterConfig
 
-	err = jsonpb.Unmarshal(buf, &clusterCfg)
+	err = jsonutil.JSONBytesToProto(clusterCfgJSON, &clusterCfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "JSON unmarshalling")
 	}

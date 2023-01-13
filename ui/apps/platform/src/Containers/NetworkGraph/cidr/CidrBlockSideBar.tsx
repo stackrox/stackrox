@@ -12,13 +12,17 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { EdgeModel } from '@patternfly/react-topology';
+import { useVisualizationController } from '@patternfly/react-topology';
 
 import { getNodeById } from '../utils/networkGraphUtils';
-import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+import {
+    filterNetworkFlows,
+    getAllUniquePorts,
+    getNetworkFlows,
+    getNumFlows,
+} from '../utils/flowUtils';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types/flow.type';
-import { CIDRBlockNodeModel, CustomNodeModel } from '../types/topology.type';
+import { CIDRBlockNodeModel, CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { CidrBlockIcon } from '../common/NetworkGraphIcons';
 import AdvancedFlowsFilter, {
@@ -27,58 +31,24 @@ import AdvancedFlowsFilter, {
 import EntityNameSearchInput from '../common/EntityNameSearchInput';
 import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
-import FlowsBulkActions from '../common/FlowsBulkActions';
 
 type CidrBlockSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
-    edges: EdgeModel[];
+    edges: CustomEdgeModel[];
 };
-
-const flows: Flow[] = [
-    {
-        id: 'Deployment 1-naples-Ingress-Many-TCP',
-        type: 'Deployment',
-        entity: 'Deployment 1',
-        namespace: 'naples',
-        direction: 'Ingress',
-        port: '9000',
-        protocol: 'TCP',
-        isAnomalous: true,
-        children: [],
-    },
-    {
-        id: 'Deployment 2-naples-Ingress-Many-UDP',
-        type: 'Deployment',
-        entity: 'Deployment 2',
-        namespace: 'naples',
-        direction: 'Ingress',
-        port: '8080',
-        protocol: 'UDP',
-        isAnomalous: false,
-        children: [],
-    },
-    {
-        id: 'Deployment 3-naples-Egress-7777-UDP',
-        type: 'Deployment',
-        entity: 'Deployment 3',
-        namespace: 'naples',
-        direction: 'Egress',
-        port: '7777',
-        protocol: 'UDP',
-        isAnomalous: false,
-        children: [],
-    },
-];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactElement {
+    const controller = useVisualizationController();
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
-    const initialExpandedRows = flows
+    const flows = getNetworkFlows(edges, controller, id);
+    const filteredFlows = filterNetworkFlows(flows, entityNameFilter, advancedFilters);
+    const initialExpandedRows = filteredFlows
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
     const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
@@ -86,8 +56,8 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
 
     // derived data
     const cidrBlockNode = getNodeById(nodes, id) as CIDRBlockNodeModel;
-    const numFlows = getNumFlows(flows);
-    const allUniquePorts = getAllUniquePorts(flows);
+    const numFlows = getNumFlows(filteredFlows);
+    const allUniquePorts = getAllUniquePorts(filteredFlows);
 
     return (
         <Stack>
@@ -139,26 +109,18 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
                                 <ToolbarItem>
                                     <FlowsTableHeaderText type="active" numFlows={numFlows} />
                                 </ToolbarItem>
-                                <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                    <FlowsBulkActions
-                                        type="active"
-                                        selectedRows={selectedRows}
-                                        onClearSelectedRows={() => setSelectedRows([])}
-                                    />
-                                </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
                     </StackItem>
                     <StackItem>
                         <FlowsTable
                             label="Cidr block flows"
-                            flows={flows}
+                            flows={filteredFlows}
                             numFlows={numFlows}
                             expandedRows={expandedRows}
                             setExpandedRows={setExpandedRows}
                             selectedRows={selectedRows}
                             setSelectedRows={setSelectedRows}
-                            isEditable
                         />
                     </StackItem>
                 </Stack>
