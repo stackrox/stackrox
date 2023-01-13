@@ -143,9 +143,9 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Deprecated field. It is no longer necessary to
-          specify it. This field will be removed in a future release.
-          Central configures to use PostgreSQL by default.
+      - description: Deprecated field. It is no longer necessary to specify it. This
+          field will be removed in a future release. Central configures to use PostgreSQL
+          by default.
         displayName: Is Enabled
         path: central.db.isEnabled
       - description: Specify a secret that contains the password in the "password"
