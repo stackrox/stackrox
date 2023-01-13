@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -16,7 +17,15 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
-var log = logging.LoggerForModule()
+const (
+	cacheSize          = 500
+	rateLimitFrequency = 5 * time.Minute
+	logBurstSize       = 5
+)
+
+var (
+	log = logging.NewRateLimitLogger(logging.LoggerForModule(), cacheSize, 1, rateLimitFrequency, logBurstSize)
+)
 
 // NewExtractor returns a new token-based identity extractor.
 func NewExtractor(roleStore permissions.RoleStore, tokenValidator tokens.Validator) authn.IdentityExtractor {
@@ -36,10 +45,9 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	if rawToken == "" {
 		return nil, nil
 	}
-
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		log.Warnf("Token validation failed: %v", err)
+		log.WarnL(ri.Hostname, "Token validation failed for hostname %v: %v", ri.Hostname, err)
 		return nil, errors.New("token validation failed")
 	}
 

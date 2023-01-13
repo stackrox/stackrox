@@ -10,3 +10,10 @@
     /* @TODO: Consider a more future-proof way of doing this. See https://github.com/stackrox/stackrox/pull/3703#discussion_r1014292340 */
     height: calc(100vh - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight));
 }
+
+
+/* Remove gray background from plain PF Select trigger button when disabled */
+.network-graph-selector-bar .pf-c-select__toggle.pf-m-disabled,
+.network-graph-selector-bar .pf-c-select__toggle:disabled {
+    --pf-c-select__toggle--disabled--BackgroundColor: none;
+}
