@@ -33,6 +33,7 @@ func trackClusterInitialized(cluster *storage.Cluster) {
 	}
 }
 
+// Gather the number of clusters.
 var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, error) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
