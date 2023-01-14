@@ -256,8 +256,6 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 
-	//mockPlopDataStore := plopIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
@@ -1311,31 +1309,30 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 }
 
 func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
-	plopId1 := "asdf"
+	plopID1 := "asdf"
 
 	cases := []struct {
-		name			string
-		initialPlops		[]*storage.ProcessListeningOnPortStorage
-		expectedDeletions	[]string
+		name              string
+		initialPlops      []*storage.ProcessListeningOnPortStorage
+		expectedDeletions []string
 	}{
 		{
 			name: "Plop is active so it should not be removed",
 			initialPlops: []*storage.ProcessListeningOnPortStorage{
 				{
-					Id:			plopId1,
-					Port:			1234,
-					Protocol:		storage.L4Protocol_L4_PROTOCOL_TCP,
-					CloseTimestamp:		nil,
-					ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
-					Closed:			false,
+					Id:                 plopID1,
+					Port:               1234,
+					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp:     nil,
+					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+					Closed:             false,
 					Process: &storage.ProcessIndicatorUniqueKey{
 						PodId:               fixtureconsts.PodUID1,
 						ContainerName:       "test_container1",
 						ProcessName:         "test_process1",
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
-			                 },
-
+					},
 				},
 			},
 			expectedDeletions: []string{},
@@ -1344,20 +1341,19 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			name: "Plop is closed but not expried so it is not removed",
 			initialPlops: []*storage.ProcessListeningOnPortStorage{
 				{
-					Id:			plopId1,
-					Port:			1234,
-					Protocol:		storage.L4Protocol_L4_PROTOCOL_TCP,
-					CloseTimestamp:		timestampNowMinus(1 * time.Second),
-					ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
-					Closed:			true,
+					Id:                 plopID1,
+					Port:               1234,
+					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp:     timestampNowMinus(1 * time.Second),
+					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+					Closed:             true,
 					Process: &storage.ProcessIndicatorUniqueKey{
 						PodId:               fixtureconsts.PodUID1,
 						ContainerName:       "test_container1",
 						ProcessName:         "test_process1",
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
-			                 },
-
+					},
 				},
 			},
 			expectedDeletions: []string{},
@@ -1366,23 +1362,22 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			name: "Plop is expired so it should be removed",
 			initialPlops: []*storage.ProcessListeningOnPortStorage{
 				{
-					Id:			plopId1,
-					Port:			1234,
-					Protocol:		storage.L4Protocol_L4_PROTOCOL_TCP,
-					CloseTimestamp:		timestampNowMinus(1 * time.Hour),
-					ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
-					Closed:			true,
+					Id:                 plopID1,
+					Port:               1234,
+					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp:     timestampNowMinus(1 * time.Hour),
+					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+					Closed:             true,
 					Process: &storage.ProcessIndicatorUniqueKey{
 						PodId:               fixtureconsts.PodUID1,
 						ContainerName:       "test_container1",
 						ProcessName:         "test_process1",
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
-			                 },
-
+					},
 				},
 			},
-			expectedDeletions: []string{plopId1},
+			expectedDeletions: []string{plopID1},
 		},
 	}
 
