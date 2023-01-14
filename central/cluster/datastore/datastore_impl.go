@@ -329,6 +329,8 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 		return "", err
 	}
 
+	trackClusterRegistered(cluster)
+
 	// Temporarily elevate permissions to create network flow store for the cluster.
 	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -420,10 +422,17 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 	if err != nil {
 		return err
 	}
+
 	if !exists {
 		return nil
 	}
 	cluster.HealthStatus = clusterHealthStatus
+
+	if oldHealth.GetSensorHealthStatus() == storage.ClusterHealthStatus_UNINITIALIZED &&
+		clusterHealthStatus.GetSensorHealthStatus() != storage.ClusterHealthStatus_UNINITIALIZED {
+		trackClusterInitialized(cluster)
+	}
+
 	return ds.indexer.AddCluster(cluster)
 }
 
