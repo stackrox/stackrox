@@ -67,7 +67,7 @@ type ActiveVulnerability struct {
 
 func TestActiveVulnerability(t *testing.T) {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// t.Skip("Skip for legacy databases")
+		t.Skip("Skip for legacy databases")
 	}
 	waitForImageScanned(t)
 	for idx, tc := range nginxImages {
