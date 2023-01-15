@@ -66,6 +66,7 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
+// Store is the interface to interact with the storage for storage.ProcessListeningOnPortStorage
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
@@ -284,9 +285,11 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessListe
 
 		if len(objs) < batchAfter {
 			return s.upsert(ctx, objs...)
-		} else {
-			return s.copyFrom(ctx, objs...)
 		}
+		//  } else {
+		//  	return s.copyFrom(ctx, objs...)
+		//  }
+		return s.copyFrom(ctx, objs...)
 	})
 }
 
@@ -612,9 +615,9 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessListen
 
 func dropTableProcessListeningOnPorts(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_listening_on_ports CASCADE")
-
 }
 
+// Destroy drops the ProcessListeningOnPorts table
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableProcessListeningOnPorts(ctx, db)
 }
@@ -681,23 +684,23 @@ func (s *storeImpl) readRows(
 	for rows.Next() {
 		var id string
 		var serialized []byte
-		var podId string
+		var podID string
 		var containerName string
-		var signalContainerId string
+		var signalContainerID string
 		var signalName string
 		var signalArgs string
 		var signalExecFilePath string
-		var clusterId string
-		var proc_serialized []byte
+		var clusterID string
+		var procSerialized []byte
 
 		// We're getting ProcessIndicator directly from the SQL query, PLOP
 		// parts have to be extra deserialized.
 		if err := rows.Scan(
 			&id, &serialized,
-			&podId, &containerName,
-			&signalContainerId,
+			&podID, &containerName,
+			&signalContainerID,
 			&signalName, &signalArgs, &signalExecFilePath,
-			&clusterId, &proc_serialized); err != nil {
+			&clusterID, &procSerialized); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
@@ -706,8 +709,8 @@ func (s *storeImpl) readRows(
 			return nil, err
 		}
 
-		var proc_msg storage.ProcessIndicator
-		if err := proto.Unmarshal(proc_serialized, &proc_msg); err != nil {
+		var procMsg storage.ProcessIndicator
+		if err := proto.Unmarshal(procSerialized, &procMsg); err != nil {
 			return nil, err
 		}
 
@@ -716,28 +719,28 @@ func (s *storeImpl) readRows(
 				Port:     msg.Port,
 				Protocol: msg.Protocol,
 			},
-			DeploymentId:  proc_msg.DeploymentId,
-			PodId:         podId,
-			PodUid:        proc_msg.PodUid,
+			DeploymentId:  procMsg.DeploymentId,
+			PodId:         podID,
+			PodUid:        procMsg.PodUid,
 			ContainerName: containerName,
 			Signal: &storage.ProcessSignal{
-				Id:           proc_msg.Signal.Id,
-				ContainerId:  signalContainerId,
-				Time:         proc_msg.Signal.Time,
+				Id:           procMsg.Signal.Id,
+				ContainerId:  signalContainerID,
+				Time:         procMsg.Signal.Time,
 				Name:         signalName,
 				Args:         signalArgs,
 				ExecFilePath: signalExecFilePath,
-				Pid:          proc_msg.Signal.Pid,
-				Uid:          proc_msg.Signal.Uid,
-				Gid:          proc_msg.Signal.Gid,
-				Lineage:      proc_msg.Signal.Lineage,
-				Scraped:      proc_msg.Signal.Scraped,
-				LineageInfo:  proc_msg.Signal.LineageInfo,
+				Pid:          procMsg.Signal.Pid,
+				Uid:          procMsg.Signal.Uid,
+				Gid:          procMsg.Signal.Gid,
+				Lineage:      procMsg.Signal.Lineage,
+				Scraped:      procMsg.Signal.Scraped,
+				LineageInfo:  procMsg.Signal.LineageInfo,
 			},
-			ClusterId:          clusterId,
-			Namespace:          proc_msg.Namespace,
-			ContainerStartTime: proc_msg.ContainerStartTime,
-			ImageId:            proc_msg.ImageId,
+			ClusterId:          clusterID,
+			Namespace:          procMsg.Namespace,
+			ContainerStartTime: procMsg.ContainerStartTime,
+			ImageId:            procMsg.ImageId,
 		}
 
 		plops = append(plops, plop)
