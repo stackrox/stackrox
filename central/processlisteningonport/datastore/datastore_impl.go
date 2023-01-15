@@ -431,14 +431,14 @@ func normalizePLOPs(
 }
 
 func getProcessUniqueKeyFromParts(containerName string,
-	podId string,
+	podID string,
 	processName string,
 	processArgs string,
 	processExecFilePath string,
 ) string {
 	return fmt.Sprintf("%s_%s_%s_%s_%s",
 		containerName,
-		podId,
+		podID,
 		processName,
 		processArgs,
 		processExecFilePath,
