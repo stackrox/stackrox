@@ -229,6 +229,7 @@ function CollectionForm({
         setFieldValue,
         submitForm,
         isSubmitting,
+        isValid,
     } = useFormik({
         initialValues: initialData,
         onSubmit: (collection, { setSubmitting }) => {
@@ -508,7 +509,7 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting || !!configError}
+                        isDisabled={isSubmitting || !!configError || !isValid}
                         isLoading={isSubmitting}
                     >
                         Save
