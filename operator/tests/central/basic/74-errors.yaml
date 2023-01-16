@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: central-db
+  name: stackrox-db
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: central-db
+  name: stackrox-db

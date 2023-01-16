@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: stackrox-db
+  name: central-db
 spec:
   accessModes:
   - ReadWriteOnce
