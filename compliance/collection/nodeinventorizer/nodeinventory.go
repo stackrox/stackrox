@@ -81,6 +81,9 @@ func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*storage.Nod
 
 	convertedComponents := make(map[string]*storage.NodeInventory_Components_RHELComponent, 0)
 	for i, rhelc := range rc.Packages {
+		if rhelc == nil {
+			continue
+		}
 		comp := &storage.NodeInventory_Components_RHELComponent{
 			// The loop index is used as ID, as this field only needs to be unique for each NodeInventory result slice
 			Id:          int64(i),
@@ -112,16 +115,16 @@ func convertExecutables(exe []*scannerV1.Executable) []*storage.NodeInventory_Co
 	arr := make([]*storage.NodeInventory_Components_RHELComponent_Executable, len(exe))
 	for i, executable := range exe {
 		arr[i] = &storage.NodeInventory_Components_RHELComponent_Executable{
-			Path:             executable.Path,
+			Path:             executable.GetPath(),
 			RequiredFeatures: nil,
 		}
 		if executable.GetRequiredFeatures() != nil {
 			arr[i].RequiredFeatures = make([]*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, len(executable.GetRequiredFeatures()))
-		}
-		for i2, fnv := range executable.GetRequiredFeatures() {
-			arr[i].RequiredFeatures[i2] = &storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{
-				Name:    fnv.GetName(),
-				Version: fnv.GetVersion(),
+			for i2, fnv := range executable.GetRequiredFeatures() {
+				arr[i].RequiredFeatures[i2] = &storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{
+					Name:    fnv.GetName(),
+					Version: fnv.GetVersion(),
+				}
 			}
 		}
 	}
