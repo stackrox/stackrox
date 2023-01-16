@@ -9,10 +9,16 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-13814: A new "Public Kubernetes Registry" image integration is now available as a replacement
+  for the (now deprecated) "Public Kubernetes GCR" image integration.
+
 ### Removed Features
 - ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`. 
 
 ### Deprecated Features
+
+- ROX-13814: The "Public Kubernetes GCR" image integration is now deprecated in line with
+  [upstream](https://kubernetes.io/blog/2022/11/28/registry-k8s-io-faster-cheaper-ga/).
 
 ### Technical Changes
 - ROX-12967: Re-introduce `rpm` to the main image in order to be able parse installed packages on RHCOS nodes (from Compliance container)
