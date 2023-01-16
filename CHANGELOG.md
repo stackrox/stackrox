@@ -12,6 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Removed Features
 - ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`.
 - ROX-13535: Built-in documentation link redirects now to the online version.
+- The `docs` image and the embedded documentation have been removed from the product.
 
 ### Deprecated Features
 
