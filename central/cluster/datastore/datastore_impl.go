@@ -20,7 +20,8 @@ import (
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	"github.com/stackrox/rox/central/node/index/mappings"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -75,7 +76,7 @@ type datastoreImpl struct {
 	imageIntegrationDataStore imageIntegrationDataStore.DataStore
 	namespaceDataStore        namespaceDataStore.DataStore
 	deploymentDataStore       deploymentDataStore.DataStore
-	nodeDataStore             nodeDataStore.GlobalDataStore
+	nodeDataStore             nodeDataStore.DataStore
 	podDataStore              podDataStore.DataStore
 	secretsDataStore          secretDataStore.DataStore
 	netFlowsDataStore         netFlowDataStore.ClusterDataStore
@@ -527,7 +528,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeClusterPods(ctx, cluster)
 
 	// Remove nodes associated with this cluster
-	if err := ds.nodeDataStore.RemoveClusterNodeStores(ctx, cluster.GetId()); err != nil {
+	if err := ds.nodeDataStore.DeleteAllNodesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
 	}
 
@@ -740,36 +741,46 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 	return nil
 }
 
-func (ds *datastoreImpl) cleanUpNodeStore(ctx context.Context) {
-	if err := ds.doCleanUpNodeStore(ctx); err != nil {
+func (ds *datastoreImpl) cleanUpNodeStore() {
+	if err := ds.doCleanUpNodeStore(); err != nil {
 		log.Errorf("Error cleaning up cluster node stores: %v", err)
 	}
 }
 
-func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
-	clusterNodeStores, err := ds.nodeDataStore.GetAllClusterNodeStores(ctx, false)
+func (ds *datastoreImpl) doCleanUpNodeStore() error {
+	ctx := sac.WithAllAccess(context.Background())
+
+	clusterIDLabelField, ok := mappings.OptionsMap.Get(pkgSearch.ClusterID.String())
+	if !ok {
+		utils.Should(errors.Errorf("could not find label %q in options map", pkgSearch.ClusterID.String()))
+		return nil
+	}
+	clusterIDFieldPath := clusterIDLabelField.GetFieldPath()
+
+	query := pkgSearch.NewQueryBuilder().AddStringsHighlighted(pkgSearch.ClusterID, pkgSearch.WildcardString).ProtoQuery()
+	nodeSearchResults, err := ds.nodeDataStore.Search(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "retrieving per-cluster node stores")
 	}
 
-	if len(clusterNodeStores) == 0 {
+	if len(nodeSearchResults) == 0 {
 		return nil
 	}
-
-	orphanedClusterIDsInNodeStore := set.NewStringSet()
-	for clusterID := range clusterNodeStores {
-		orphanedClusterIDsInNodeStore.Add(clusterID)
-	}
-
-	results, err := ds.Search(ctx, pkgSearch.EmptyQuery())
+	clusterResults, err := ds.Search(ctx, pkgSearch.EmptyQuery())
 	if err != nil {
 		return errors.Wrap(err, "retrieving clusters")
 	}
-	for _, id := range pkgSearch.ResultsToIDs(results) {
-		orphanedClusterIDsInNodeStore.Remove(id)
-	}
+	existingClusters := pkgSearch.ResultsToIDSet(clusterResults)
 
-	return ds.nodeDataStore.RemoveClusterNodeStores(ctx, orphanedClusterIDsInNodeStore.AsSlice()...)
+	orphanedNodes := set.NewStringSet()
+	for _, nodeSearchResult := range nodeSearchResults {
+		for _, clusterIDMatch := range nodeSearchResult.Matches[clusterIDFieldPath] {
+			if !existingClusters.Contains(clusterIDMatch) {
+				orphanedNodes.Add(nodeSearchResult.ID)
+			}
+		}
+	}
+	return ds.nodeDataStore.DeleteNodes(ctx, orphanedNodes.AsSlice()...)
 }
 
 func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {

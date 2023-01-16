@@ -59,13 +59,13 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 	s.db, s.gormDB = setupPostgresConn(s.T())
 
 	clusterCVEDS := createClusterCVEDatastore(s.T(), s.db, s.gormDB)
-	_, nodeGlobalDS := createNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	nodeDS := createNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
 	namespaceDS := createNamespaceDatastore(s.T(), s.db, s.gormDB)
 	resolver, _ := setupResolver(s.T(),
 		clusterCVEDS,
 		createClusterCVEEdgeDatastore(s.T(), s.db, s.gormDB),
 		namespaceDS,
-		createClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, clusterCVEDS, namespaceDS, nodeGlobalDS),
+		createClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, clusterCVEDS, namespaceDS, nodeDS),
 	)
 	s.resolver = resolver
 

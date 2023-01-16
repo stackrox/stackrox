@@ -34,8 +34,7 @@ import (
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	dackboxNodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
-	dackboxNodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
-	nodeDatastoreMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
@@ -331,7 +330,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 	alertDataStore := alertDatastoreMocks.NewMockDataStore(mockCtrl)
 	namespaceDataStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	nodeDataStore := nodeDatastoreMocks.NewMockGlobalDataStore(mockCtrl)
+	nodeDataStore := nodeDatastoreMocks.NewMockDataStore(mockCtrl)
 	podDataStore := podMocks.NewMockDataStore(mockCtrl)
 	imageIntegrationDataStore := imageIntegrationDatastoreMocks.NewMockDataStore(mockCtrl)
 	secretDataStore := secretMocks.NewMockDataStore(mockCtrl)
@@ -359,7 +358,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	clusterHealthStorage, err := clusterHealthRocksDB.New(db)
 	require.NoError(s.T(), err)
 
-	nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	clusterDataStore, err := clusterDatastore.New(
 		clusterStorage,
 		clusterHealthStorage,
@@ -395,8 +394,8 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).AnyTimes().Return()
 	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	imageIntegrationDataStore.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-	nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	nodeDataStore.EXPECT().DeleteAllNodesForCluster(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	serviceAccountMockDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
@@ -1680,7 +1679,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNodeRisks() {
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			nodes := dackboxNodeDatastoreMocks.NewMockDataStore(ctrl)
+			nodes := nodeDatastoreMocks.NewMockDataStore(ctrl)
 			risks := riskDatastoreMocks.NewMockDataStore(ctrl)
 			gci := &garbageCollectorImpl{
 				nodes: nodes,

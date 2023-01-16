@@ -31,7 +31,7 @@ import (
 	mockNSDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
@@ -466,7 +466,7 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 	clusterCVEDatastore clusterCVEDataStore.DataStore
 	mockNamespaces      *mockNSDataStore.MockDataStore
 	netEntities         *netEntitiesMocks.MockEntityDataStore
-	nodeDataStore       *nodeMocks.MockGlobalDataStore
+	nodeDataStore       *nodeMocks.MockDataStore
 	netFlows            *netFlowsMocks.MockClusterDataStore
 	mockImages          *mockImageDataStore.MockDataStore
 	cveManager          *orchestratorCVEManager
@@ -498,7 +498,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	// Create cluster datastore
 	s.mockNamespaces = mockNSDataStore.NewMockDataStore(s.mockCtrl)
 	s.netEntities = netEntitiesMocks.NewMockEntityDataStore(s.mockCtrl)
-	s.nodeDataStore = nodeMocks.NewMockGlobalDataStore(s.mockCtrl)
+	s.nodeDataStore = nodeMocks.NewMockDataStore(s.mockCtrl)
 	s.netFlows = netFlowsMocks.NewMockClusterDataStore(s.mockCtrl)
 	s.mockImages = mockImageDataStore.NewMockDataStore(s.mockCtrl)
 
@@ -511,7 +511,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	s.NoError(err)
 	s.clusterCVEDatastore = clusterCVEDS
 
-	s.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	s.nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
 	clusterPostgres.Destroy(s.ctx, db)
 	clusterDataStore, err := clusterDS.New(
