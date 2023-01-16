@@ -30,7 +30,6 @@ func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 					Version:   "2:7.4.629-6.el8",
 					Arch:      "x86_64",
 					Module:    "",
-					Cpes:      []string{"cpe:/a:redhat:enterprise_linux:8::baseos"},
 					AddedBy:   "hardcoded",
 				},
 			},

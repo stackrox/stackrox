@@ -30,7 +30,6 @@ func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, er
 					Version:   "2:7.4.629-6.el8",
 					Arch:      "x86_64",
 					Module:    "",
-					Cpes:      []string{"cpe:/a:redhat:enterprise_linux:8::baseos", "cpe:/o:redhat:enterprise_linux:8::coreos"},
 					AddedBy:   "FakeNodeScanner",
 				},
 				{
@@ -40,11 +39,7 @@ func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, er
 					Version:   "1.27.1.el8",
 					Arch:      "x86_64",
 					Module:    "",
-					Cpes: []string{
-						"cpe:/a:redhat:enterprise_linux:8::appstream", "cpe:/a:redhat:rhel:8.3::appstream",
-						"cpe:/a:redhat:enterprise_linux:8::baseos", "cpe:/a:redhat:rhel:8.3::baseos",
-					},
-					AddedBy: "FakeNodeScanner",
+					AddedBy:   "FakeNodeScanner",
 				},
 				{
 					Id:        int64(2),
@@ -53,11 +48,7 @@ func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, er
 					Version:   "1.8.3-3.el8_4",
 					Arch:      "x86_64",
 					Module:    "",
-					Cpes: []string{
-						"cpe:/a:redhat:enterprise_linux:8::appstream", "cpe:/a:redhat:rhel:8.3::appstream",
-						"cpe:/a:redhat:enterprise_linux:8::baseos", "cpe:/a:redhat:rhel:8.3::baseos",
-					},
-					AddedBy: "FakeNodeScanner",
+					AddedBy:   "FakeNodeScanner",
 				},
 				{
 					Id:        int64(3),
@@ -66,11 +57,7 @@ func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, er
 					Version:   "1.3.5-7.el8",
 					Arch:      "x86_64",
 					Module:    "",
-					Cpes: []string{
-						"cpe:/a:redhat:enterprise_linux:8::appstream", "cpe:/a:redhat:rhel:8.3::appstream",
-						"cpe:/a:redhat:enterprise_linux:8::baseos", "cpe:/a:redhat:rhel:8.3::baseos",
-					},
-					AddedBy: "FakeNodeScanner",
+					AddedBy:   "FakeNodeScanner",
 				},
 			},
 			RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},

@@ -102,9 +102,8 @@ message NodeInventory {
             string              version = 4;
             string              arch = 5;
             string              module = 6;
-            repeated string     cpes = 7;
-            string              added_by = 8;
-            repeated Executable executables = 9;
+            string              added_by = 7;
+            repeated Executable executables = 8;
             message Executable {
                 string                      path = 1;
                 repeated FeatureNameVersion required_features = 2;

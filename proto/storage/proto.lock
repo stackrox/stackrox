@@ -10281,17 +10281,11 @@
                       },
                       {
                         "id": 7,
-                        "name": "cpes",
-                        "type": "string",
-                        "is_repeated": true
-                      },
-                      {
-                        "id": 8,
                         "name": "added_by",
                         "type": "string"
                       },
                       {
-                        "id": 9,
+                        "id": 8,
                         "name": "executables",
                         "type": "Executable",
                         "is_repeated": true

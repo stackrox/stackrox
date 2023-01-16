@@ -89,7 +89,6 @@ func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*storage.Nod
 			Version:     rhelc.Version,
 			Arch:        rhelc.Arch,
 			Module:      rhelc.Module,
-			Cpes:        rc.CPEs,
 			Executables: nil,
 		}
 		if rhelc.Executables != nil {
