@@ -561,8 +561,17 @@ function launch_sensor {
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
-        [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
+        auth=()
+        if [[ -n $ROX_API_TOKEN ]]; then
+          echo "Using ROX_API_TOKEN"
+          # Do nothing, roxctl will pick it up automatically
+        elif [[ -z "${ROX_ADMIN_PASSWORD}" ]]; then
+          auth+=(-p "${ROX_ADMIN_PASSWORD}")
+        else
+          echo >&2 "ROX_ADMIN_PASSWORD nor ROX_API_TOKEN found! Cannot launch sensor."
+          return 1
+        fi
+        roxctl "${auth[@]}" --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
