@@ -96,7 +96,7 @@ func (suite *ReportConfigurationDatastoreTestSuite) TestReportsConfigDataStore()
 
 	// Test search by name
 	query := search.NewQueryBuilder().AddStrings(search.ReportName, reportConfig.Name).ProtoQuery()
-	searchResults, err := suite.datastore.Search(suite.ctx, query)
+	searchResults, err := suite.datastore.Search(suite.hasReadWriteVulnReportAccess, query)
 	suite.NoError(err)
 	suite.Len(searchResults, 1)
 	suite.Equal(searchResults[0].ID, foundReportConfig.Id)
@@ -109,7 +109,7 @@ func (suite *ReportConfigurationDatastoreTestSuite) TestReportsConfigDataStore()
 	suite.True(found)
 	suite.Equal(reportConfig, foundReportConfig)
 
-	// Test search all
+	// Test not found
 	_, found, err = suite.datastore.GetReportConfiguration(suite.hasReadWriteVulnReportAccess, "NONEXISTENT")
 	suite.NoError(err)
 	suite.False(found)
