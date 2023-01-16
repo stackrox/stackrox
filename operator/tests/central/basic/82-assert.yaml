@@ -51,7 +51,16 @@ spec:
          - mountPath: /etc/pki/injected-ca-trust/
            name: trusted-ca-volume
            readOnly: true
-         - name: non-existent-config-map
+         - name: config-map-1
+           mountPath: /run/secrets/stackrox.io/declarative-configuration/
+           readOnly: true
+         - name: config-map-2
+           mountPath: /run/secrets/stackrox.io/declarative-configuration/
+           readOnly: true
+         - name: secret-1
+           mountPath: /run/secrets/stackrox.io/declarative-configuration/
+           readOnly: true
+         - name: secret-2
            mountPath: /run/secrets/stackrox.io/declarative-configuration/
            readOnly: true
       volumes:
@@ -128,9 +137,21 @@ spec:
           name: injected-cabundle-stackrox-central-services
           optional: true
         name: trusted-ca-volume
-      - name: non-existent-config-map
+      - name: config-map-1
         configMap:
-          name: non-existent-config-map
+          name: config-map-1
+          optional: true
+      - name: config-map-2
+        configMap:
+          name: config-map-2
+          optional: true
+      - name: secret-1
+        secret:
+          secretName: secret-1
+          optional: true
+      - name: secret-2
+        secret:
+          secretName: secret-2
           optional: true
 status:
   availableReplicas: 1

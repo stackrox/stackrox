@@ -401,14 +401,22 @@ spec:
         path: central.db.passwordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: The references of objects containing declarative configuration
-        displayName: Declarative configuration references
-        path: central.declarativeConfiguration.mounts
+      - description: List of config maps containing declarative configuration.
+        displayName: Config maps containing declarative configuration
+        path: central.declarativeConfiguration.configMaps
       - description: The name of the referenced config map.
         displayName: Name
-        path: central.declarativeConfiguration.mounts[0].name
+        path: central.declarativeConfiguration.configMaps[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: List of secrets containing declarative configuration.
+        displayName: Secrets containing declarative configuration
+        path: central.declarativeConfiguration.secrets
+      - description: The name of the referenced secret.
+        displayName: Name
+        path: central.declarativeConfiguration.secrets[0].name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
       - description: The name of the referenced secret.
         displayName: Name
         path: central.defaultTLSSecret.name

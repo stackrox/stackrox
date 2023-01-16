@@ -169,9 +169,13 @@ func (c *CentralComponentSpec) CentralDBEnabled() bool {
 
 // DeclarativeConfiguration defines settings for adding resources in a declarative manner.
 type DeclarativeConfiguration struct {
-	// The references of objects containing declarative configuration
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Declarative configuration references"
-	Mounts []LocalConfigMapReference `json:"mounts"`
+	// List of config maps containing declarative configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Config maps containing declarative configuration"
+	ConfigMaps []LocalConfigMapReference `json:"configMaps"`
+
+	// List of secrets containing declarative configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Secrets containing declarative configuration"
+	Secrets []LocalSecretReference `json:"secrets"`
 }
 
 // CentralDBSpec defines settings for the "central db" component.

@@ -5,5 +5,9 @@ metadata:
 spec:
   central:
     declarativeConfiguration:
-      mounts:
-      - "non-existent-config-map"
+      configMaps:
+      - name: "config-map-1"
+      - name: "config-map-2"
+      secrets:
+      - name: "secret-1"
+      - name: "secret-2"

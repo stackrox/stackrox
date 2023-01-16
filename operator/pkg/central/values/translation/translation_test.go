@@ -142,12 +142,20 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 							DeclarativeConfiguration: &platform.DeclarativeConfiguration{
-								Mounts: []platform.LocalConfigMapReference{
+								ConfigMaps: []platform.LocalConfigMapReference{
 									{
 										Name: "config-map-1",
 									},
 									{
 										Name: "config-map-2",
+									},
+								},
+								Secrets: []platform.LocalSecretReference{
+									{
+										Name: "secret-1",
+									},
+									{
+										Name: "secret-2",
 									},
 								},
 							},
@@ -308,9 +316,13 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"declarativeConfiguration": map[string]interface{}{
-						"mounts": []string{
+						"configMaps": []string{
 							"config-map-1",
 							"config-map-2",
+						},
+						"secrets": []string{
+							"secret-1",
+							"secret-2",
 						},
 					},
 				},

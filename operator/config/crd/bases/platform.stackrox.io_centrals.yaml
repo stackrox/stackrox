@@ -218,9 +218,8 @@ spec:
                     description: Configures resources within Central in a declarative
                       manner.
                     properties:
-                      mounts:
-                        description: The references of objects containing declarative
-                          configuration
+                      configMaps:
+                        description: List of config maps containing declarative configuration.
                         items:
                           description: LocalConfigMapReference is a reference to a
                             config map within the same namespace.
@@ -232,8 +231,22 @@ spec:
                           - name
                           type: object
                         type: array
+                      secrets:
+                        description: List of secrets containing declarative configuration.
+                        items:
+                          description: LocalSecretReference is a reference to a secret
+                            within the same namespace.
+                          properties:
+                            name:
+                              description: The name of the referenced secret.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
                     required:
-                    - mounts
+                    - configMaps
+                    - secrets
                     type: object
                   defaultTLSSecret:
                     description: By default, Central will only serve an internal TLS
