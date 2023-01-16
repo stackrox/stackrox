@@ -28,3 +28,6 @@ pkg/images/defaults/**/* @stackrox/maple
 migrator/**/*       @stackrox/data-shepherds
 pkg/postgres/**/*   @stackrox/data-shepherds
 tests/upgrade/*     @stackrox/data-shepherds
+
+.github/**/* @stackrox/circleci
+.openshift-ci/**/* @stackrox/circleci
