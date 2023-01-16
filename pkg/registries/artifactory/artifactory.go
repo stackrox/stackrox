@@ -34,7 +34,7 @@ func newRegistry(integration *storage.ImageIntegration) (types.Registry, error) 
 
 // Test implements a valid Test function for Artifactory
 func (r *registry) Test() error {
-	_, err := r.Client.Repositories()
+	err := r.Client.Ping()
 	if err != nil {
 		logger.Errorf("error testing Artifactory integration: %v", err)
 	}
