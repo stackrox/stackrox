@@ -48,12 +48,21 @@ central:
     storage:
       endpoint: {{ .K8sConfig.Telemetry.StorageEndpoint }}
       key: {{ .K8sConfig.Telemetry.StorageKey }}
-  {{- if .K8sConfig.DeclarativeConfig.ConfigMaps }}
+  {{- if or .K8sConfig.DeclarativeConfig.ConfigMaps .K8sConfig.DeclarativeConfig.Secrets }}
   declarativeConfiguration:
     mounts:
-    {{- range .K8sConfig.DeclarativeConfig.ConfigMaps }}
-    - {{ . | quote }}
-    {{- end }}
+      {{- if .K8sConfig.DeclarativeConfig.ConfigMaps }}
+      configMaps:
+      {{- range .K8sConfig.DeclarativeConfig.ConfigMaps }}
+      - {{ . | quote }}
+      {{- end }}
+      {{- end }}
+      {{- if .K8sConfig.DeclarativeConfig.Secrets }}
+      secrets:
+      {{- range .K8sConfig.DeclarativeConfig.Secrets }}
+      - {{ . | quote }}
+      {{- end }}
+      {{- end }}
   {{- end }}
 
   {{- if ne (.GetConfigOverride "endpoints.yaml") "" }}

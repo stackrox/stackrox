@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
@@ -277,8 +278,12 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 				},
 			},
 			"declarativeConfig": map[string]interface{}{
-				"mounts": k8s.evaluateToStringSlice(ctx, "deployment", "central",
-					`{.spec.template.spec.containers[?(@.name == "central")].volumeMounts[?(@.mountPath == "/run/secrets/stackrox.io/declarative-configuration/")].name}`, []string{}),
+				"mounts": map[string]interface{}{
+					"configMaps": retrieveDeclarativeConfigConfigMaps(ctx, k8s, k8s.evaluateToStringSlice(ctx, "deployment", "central",
+						`{.spec.template.spec.containers[?(@.name == "central")].volumeMounts[?(@.mountPath == "/run/secrets/stackrox.io/declarative-configuration/")].name}`, []string{})),
+					"secrets": retrieveDeclarativeConfigSecrets(ctx, k8s, k8s.evaluateToStringSlice(ctx, "deployment", "central",
+						`{.spec.template.spec.containers[?(@.name == "central")].volumeMounts[?(@.mountPath == "/run/secrets/stackrox.io/declarative-configuration/")].name}`, []string{})),
+				},
 			},
 			"config":          k8s.evaluateToStringP(ctx, "configmap", "central-config", `{.data['central-config\.yaml']}`),
 			"dbConfig":        k8s.evaluateToStringP(ctx, "configmap", "central-db-connection", `{.data['central-db-connection\.yaml']}`),
@@ -329,6 +334,22 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 		},
 	}
 	return m, nil
+}
+
+func retrieveDeclarativeConfigConfigMaps(ctx context.Context, k8s k8sObjectDescription, names []string) []string {
+	configMaps := k8s.evaluateToStringSlice(ctx, "deployment", "central",
+		`{.spec.template.spec.volumes[?(@.configMap].name}`, []string{})
+	configMapSet := set.NewStringSet(configMaps...)
+	namesSet := set.NewStringSet(names...)
+	return namesSet.Intersect(configMapSet).AsSlice()
+}
+
+func retrieveDeclarativeConfigSecrets(ctx context.Context, k8s k8sObjectDescription, names []string) []string {
+	secrets := k8s.evaluateToStringSlice(ctx, "deployment", "central",
+		`{.spec.template.spec.volumes[?(@.secret].name}`, []string{})
+	secretsSet := set.NewStringSet(secrets...)
+	namesSet := set.NewStringSet(names...)
+	return namesSet.Intersect(secretsSet).AsSlice()
 }
 
 func retrieveCustomAnnotations(annotations map[string]interface{}) map[string]interface{} {

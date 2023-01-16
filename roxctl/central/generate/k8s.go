@@ -110,8 +110,10 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 
 	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", false, "whether to enable telemetry", "central")
 
-	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfig.ConfigMaps, "declarative-config-mounts", []string{},
+	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfig.ConfigMaps, "declarative-config-config-maps", []string{},
 		"list of config maps to add as declarative configuration mounts in central", "central")
+	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfig.ConfigMaps, "declarative-config-secrets", []string{},
+		"list of secrets to add as declarative configuration mounts in central", "central")
 
 	k8sConfig.EnableCentralDB = env.PostgresDatastoreEnabled.BooleanSetting()
 

@@ -70,6 +70,7 @@ if {[info exists ::env(ROX_POSTGRES_DATASTORE)] && [string equal "$env(ROX_POSTG
 }
 
 expect "Enter list of config maps to add as declarative configuration mounts in central*" { send "\n" }
+expect "Enter list of secrets to add as declarative configuration mounts in central*" { send "\n" }
 
 expect "Enter the method of exposing Central*" { send "none\n" }
 

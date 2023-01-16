@@ -76,6 +76,7 @@ type TelemetryConfig struct {
 // manner.
 type DeclarativeConfigMounts struct {
 	ConfigMaps []string
+	Secrets    []string
 }
 
 // PersistenceType describes the type of persistence

@@ -98,8 +98,11 @@ func TestRenderWithDeclarativeConfig(t *testing.T) {
 				ScannerImage:   flavor.ScannerImage(),
 				ScannerDBImage: flavor.ScannerDBImage(),
 			},
-			DeploymentFormat:  v1.DeploymentFormat_KUBECTL,
-			DeclarativeConfig: DeclarativeConfigMounts{ConfigMaps: []string{"config-map-1", "config-map-2"}},
+			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
+			DeclarativeConfig: DeclarativeConfigMounts{
+				ConfigMaps: []string{"config-map-1", "config-map-2"},
+				Secrets:    []string{"secret-1", "secret-2"},
+			},
 		},
 	}
 
@@ -120,17 +123,26 @@ func TestRenderWithDeclarativeConfig(t *testing.T) {
 
 	volumes := deployment.Spec.Template.Spec.Volumes
 
-	volumeNames := make([]string, 0, len(volumes))
-	for _, volume := range volumes {
-		volumeNames = append(volumeNames, volume.Name)
+	volumeNames := make(map[string]int, len(volumes))
+	for i, volume := range volumes {
+		volumeNames[volume.Name] = i
 	}
-	mountNames := make([]string, 0, len(volumeMounts))
-	for _, mount := range volumeMounts {
-		mountNames = append(mountNames, mount.Name)
+	mountNames := make(map[string]int, len(volumeMounts))
+	for i, mount := range volumeMounts {
+		mountNames[mount.Name] = i
 	}
 
-	assert.Contains(t, volumeNames, "config-map-1")
-	assert.Contains(t, mountNames, "config-map-2")
+	for _, cm := range config.K8sConfig.DeclarativeConfig.ConfigMaps {
+		assert.Contains(t, volumeNames, cm)
+		assert.Contains(t, mountNames, cm)
+		assert.NotNil(t, volumes[volumeNames[cm]].ConfigMap)
+	}
+
+	for _, secret := range config.K8sConfig.DeclarativeConfig.Secrets {
+		assert.Contains(t, volumeNames, secret)
+		assert.Contains(t, mountNames, secret)
+		assert.NotNil(t, volumes[volumeNames[secret]].Secret)
+	}
 }
 
 func filterCentralFile(files []*zip.File) *zip.File {
