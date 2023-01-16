@@ -54,7 +54,7 @@ function NetworkSearch() {
     function onSearch(options) {
         setSearchFilter(options);
         if (isCompleteSearchFilter(options)) {
-            history.push(`/main/network${history.location.search as string}`);
+            history.push(`/main/network-graph${history.location.search as string}`);
         }
     }
 
