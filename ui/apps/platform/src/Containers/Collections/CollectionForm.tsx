@@ -250,7 +250,7 @@ function CollectionForm({
             create: '',
             view: initialData.name,
             edit: initialData.name,
-            clone: `${initialData.name} (COPY)`,
+            clone: `${initialData.name} -COPY-`,
         }[action.type];
 
         setFieldValue('name', nameValue).catch(() => {

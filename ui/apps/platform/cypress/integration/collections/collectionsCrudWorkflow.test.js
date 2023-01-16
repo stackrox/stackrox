@@ -19,7 +19,7 @@ describe('Create collection', () => {
     });
 
     const collectionName = 'Financial deployments';
-    const clonedName = `${collectionName} (COPY)`;
+    const clonedName = `${collectionName} -COPY-`;
 
     it('should allow creation of a new collection', () => {
         // Cleanup from potential previous test runs
