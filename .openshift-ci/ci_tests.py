@@ -141,6 +141,7 @@ class OperatorE2eTest(BaseTest):
                 "-C",
                 "operator",
                 "bundle-test-image",
+                "non-existent-target",
             ],
             OperatorE2eTest.SCORECARD_TEST_TIMEOUT_SEC,
         )
