@@ -15,7 +15,7 @@ import (
 	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sac"
@@ -37,7 +37,7 @@ type CVEScopingTestSuite struct {
 	nsDataStore         *nsMocks.MockDataStore
 	deploymentDataStore *deploymentMocks.MockDataStore
 	imageDataStore      *imageMocks.MockDataStore
-	nodeDataStore       *nodeMocks.MockGlobalDataStore
+	nodeDataStore       *nodeMocks.MockDataStore
 	componentDataStore  *componentMocks.MockDataStore
 	cveDataStore        *cveMocks.MockDataStore
 	resolver            *resolvers.Resolver
@@ -50,7 +50,7 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 	suite.nsDataStore = nsMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.imageDataStore = imageMocks.NewMockDataStore(suite.mockCtrl)
-	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
+	suite.nodeDataStore = nodeMocks.NewMockDataStore(suite.mockCtrl)
 	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.cveDataStore = cveMocks.NewMockDataStore(suite.mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(suite.mockCtrl)
@@ -62,7 +62,7 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 		NamespaceDataStore:      suite.nsDataStore,
 		DeploymentDataStore:     suite.deploymentDataStore,
 		ImageDataStore:          suite.imageDataStore,
-		NodeGlobalDataStore:     suite.nodeDataStore,
+		NodeDataStore:           suite.nodeDataStore,
 		ImageComponentDataStore: suite.componentDataStore,
 		CVEDataStore:            suite.cveDataStore,
 		AuditLogger:             audit.New(notifierMock),

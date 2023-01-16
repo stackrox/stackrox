@@ -10,7 +10,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics"
-	nodeDS "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDS "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	componentScorer "github.com/stackrox/rox/central/risk/scorer/component"
@@ -36,6 +36,7 @@ var (
 )
 
 // Manager manages changes to the risk of deployments and nodes
+//
 //go:generate mockgen-wrapper
 type Manager interface {
 	ReprocessDeploymentRisk(deployment *storage.Deployment)
@@ -45,7 +46,7 @@ type Manager interface {
 
 type managerImpl struct {
 	deploymentStorage deploymentDS.DataStore
-	nodeStorage       nodeDS.GlobalDataStore
+	nodeStorage       nodeDS.DataStore
 	imageStorage      imageDS.DataStore
 	riskStorage       riskDS.DataStore
 
@@ -64,7 +65,7 @@ type managerImpl struct {
 }
 
 // New returns a new manager
-func New(nodeStorage nodeDS.GlobalDataStore,
+func New(nodeStorage nodeDS.DataStore,
 	deploymentStorage deploymentDS.DataStore,
 	imageStorage imageDS.DataStore,
 	riskStorage riskDS.DataStore,
@@ -185,11 +186,7 @@ func (e *managerImpl) CalculateRiskAndUpsertNode(node *storage.Node) error {
 
 	// TODO: ROX-6235: Evaluate cluster risk.
 
-	nodeStorage, err := e.nodeStorage.GetClusterNodeStore(riskReprocessorCtx, node.GetClusterId(), true)
-	if err != nil {
-		return errors.Wrapf(err, "retrieving cluster node store for node %s in cluster %s", node.GetName(), node.GetClusterName())
-	}
-	if err := nodeStorage.UpsertNode(node); err != nil {
+	if err := e.nodeStorage.UpsertNode(riskReprocessorCtx, node); err != nil {
 		return errors.Wrapf(err, "upserting node %s", node.GetName())
 	}
 	return nil
