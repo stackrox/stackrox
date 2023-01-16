@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -47,6 +48,7 @@ var (
 			v1.SearchCategory_CLUSTERS,
 		}...)
 		RegisterTable(schema, CreateTableNamespacesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, schema)
 		return schema
 	}()
 )

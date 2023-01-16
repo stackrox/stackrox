@@ -15,20 +15,18 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 		user.With(permissions.View(resources.Policy)): {
 			"/v1.PolicyCategoryService/GetPolicyCategory",
 			"/v1.PolicyCategoryService/GetPolicyCategories",
 		},
+		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 		user.With(permissions.Modify(resources.Policy)): {
 			"/v1.PolicyCategoryService/PostPolicyCategory",
 			"/v1.PolicyCategoryService/RenamePolicyCategory",
@@ -38,12 +36,6 @@ var (
 
 	validateName         = regexp.MustCompile(`^[^\n\r\$]{5,128}$`)
 	invalidNameErrString = "policy category must have a name between 5 and 128 characters long with no new lines or dollar signs"
-)
-
-var (
-	policySyncReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
 )
 
 // serviceImpl provides APIs for alerts.

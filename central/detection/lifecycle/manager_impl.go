@@ -41,7 +41,9 @@ import (
 var (
 	lifecycleMgrCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.DeploymentExtension, resources.Policy, resources.Namespace)))
+			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image,
+				// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
+				resources.DeploymentExtension, resources.Policy, resources.Namespace)))
 
 	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )

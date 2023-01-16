@@ -215,6 +215,13 @@ func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.R
 		metrics.SetResourceProcessingDurationForResource(e)
 	}
 	metrics.IncK8sEventCount(action.String(), dispatcher)
+
+	events.DeploymentTiming = &central.Timing{
+		Dispatcher: dispatcher,
+		Resource:   "Deployment",
+		Nanos:      start,
+	}
+
 	return events
 }
 

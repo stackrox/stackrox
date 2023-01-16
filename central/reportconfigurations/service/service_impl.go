@@ -28,15 +28,18 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		user.With(permissions.View(resources.VulnerabilityReports)): {
 			"/v1.ReportConfigurationService/GetReportConfigurations",
 			"/v1.ReportConfigurationService/GetReportConfiguration",
 			"/v1.ReportConfigurationService/CountReportConfigurations",
 		},
+		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role)): {
 			"/v1.ReportConfigurationService/PostReportConfiguration",
 			"/v1.ReportConfigurationService/UpdateReportConfiguration",
 		},
+		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		user.With(permissions.Modify(resources.VulnerabilityReports)): {
 			"/v1.ReportConfigurationService/DeleteReportConfiguration",
 		},
