@@ -14,7 +14,7 @@ func TestGetMetadataIntegration(t *testing.T) {
 	dockerHubClient, err := NewDockerRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
-				Endpoint: "https://k8s.gcr.io",
+				Endpoint: "https://registry.k8s.io",
 			},
 		},
 	})
@@ -23,7 +23,7 @@ func TestGetMetadataIntegration(t *testing.T) {
 	image := storage.Image{
 		Id: "sha256:93c827f018cf3322f1ff2aa80324a0306048b0a69bc274e423071fb0d2d29d8b",
 		Name: &storage.ImageName{
-			Registry: "k8s.gcr.io",
+			Registry: "registry.k8s.io",
 			Remote:   "k8s-dns-dnsmasq-nanny-amd64",
 			Tag:      "1.14.8",
 		},
