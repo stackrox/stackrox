@@ -279,10 +279,8 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 			},
 			"declarativeConfig": map[string]interface{}{
 				"mounts": map[string]interface{}{
-					"configMaps": retrieveDeclarativeConfigConfigMaps(ctx, k8s, k8s.evaluateToStringSlice(ctx, "deployment", "central",
-						`{.spec.template.spec.containers[?(@.name == "central")].volumeMounts[?(@.mountPath == "/run/secrets/stackrox.io/declarative-configuration/")].name}`, []string{})),
-					"secrets": retrieveDeclarativeConfigSecrets(ctx, k8s, k8s.evaluateToStringSlice(ctx, "deployment", "central",
-						`{.spec.template.spec.containers[?(@.name == "central")].volumeMounts[?(@.mountPath == "/run/secrets/stackrox.io/declarative-configuration/")].name}`, []string{})),
+					"configMaps": retrieveDeclarativeConfigConfigMaps(ctx, k8s, retrieveDeclarativeConfigMounts(ctx, k8s)),
+					"secrets":    retrieveDeclarativeConfigSecrets(ctx, k8s, retrieveDeclarativeConfigMounts(ctx, k8s)),
 				},
 			},
 			"config":          k8s.evaluateToStringP(ctx, "configmap", "central-config", `{.data['central-config\.yaml']}`),
@@ -350,6 +348,21 @@ func retrieveDeclarativeConfigSecrets(ctx context.Context, k8s k8sObjectDescript
 	secretsSet := set.NewStringSet(secrets...)
 	namesSet := set.NewStringSet(names...)
 	return namesSet.Intersect(secretsSet).AsSlice()
+}
+
+func retrieveDeclarativeConfigMounts(ctx context.Context, k8s k8sObjectDescription) []string {
+	mounts := k8s.evaluateToStringSlice(ctx, "deployment", "central",
+		`{.spec.template.spec.containers[?(@.name == "central")].volumeMounts[*].name}`, []string{})
+
+	var declarativeConfigMounts []string
+
+	for _, mount := range mounts {
+		if strings.HasPrefix(mount, "/run/secrets/stackrox.io/declarative-configuration/") {
+			declarativeConfigMounts = append(declarativeConfigMounts, mount)
+		}
+	}
+
+	return declarativeConfigMounts
 }
 
 func retrieveCustomAnnotations(annotations map[string]interface{}) map[string]interface{} {

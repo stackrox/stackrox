@@ -112,7 +112,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 
 	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfig.ConfigMaps, "declarative-config-config-maps", []string{},
 		"list of config maps to add as declarative configuration mounts in central", "central")
-	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfig.ConfigMaps, "declarative-config-secrets", []string{},
+	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfig.Secrets, "declarative-config-secrets", []string{},
 		"list of secrets to add as declarative configuration mounts in central", "central")
 
 	k8sConfig.EnableCentralDB = env.PostgresDatastoreEnabled.BooleanSetting()
