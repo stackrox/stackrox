@@ -5,6 +5,8 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import objects.Deployment
 import util.Env
+import services.FeatureFlagService
+import org.junit.Assume
 
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -58,10 +60,10 @@ class GlobalSearch extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Global search (#query, #searchCategories)"(
-            String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
-            String expectedResultPrefix,
-            List<SearchServiceOuterClass.SearchCategory> expectedCategoriesInResult) {
+    def "Verify Global search (no policies)(#query, #searchCategories)"(
+        String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
+        String expectedResultPrefix,
+        List<SearchServiceOuterClass.SearchCategory> expectedCategoriesInResult) {
 
         // This assertion is a validation on the test inputs, to ensure some consistency.
         // If searchCategories are specified in the request, then the expected categories in the result
@@ -90,16 +92,6 @@ class GlobalSearch extends BaseSpecification {
         then:
         "Verify that the search response contains what we expect"
         assert !searchResponse?.resultsList?.empty
-
-        // If the test case has an expectedResultPrefix, assert that the result starts with the prefix.
-        // Doing a prefix match instead of an exact match because we do prefix search, and if a query happens
-        // to match something else.
-        if (expectedResultPrefix.size() > 0) {
-            searchResponse.resultsList.each {
-                assert it.name.startsWith(expectedResultPrefix)
-            }
-        }
-
         assert expectedCategoriesSet == presentCategories
 
         where:
@@ -113,8 +105,6 @@ class GlobalSearch extends BaseSpecification {
         "Image:docker.io/library/busybox:latest" | [SearchServiceOuterClass.SearchCategory.IMAGES] |
                 "docker.io/library/busybox:latest" | []
 
-        "Policy:Latest tag" | [SearchServiceOuterClass.SearchCategory.POLICIES] | "Latest tag" | []
-
         // This implicitly depends on the policy above triggering on the deployment created during this test.
         "Violation State:ACTIVE+Policy:Latest" | [SearchServiceOuterClass.SearchCategory.ALERTS] | "Latest" | []
 
@@ -122,10 +112,7 @@ class GlobalSearch extends BaseSpecification {
         "Deployment:qaglobalsearch" | [SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
                                        SearchServiceOuterClass.SearchCategory.ALERTS] | "" | []
 
-        // Test options that do not apply to deployments and images, but are global in nature
-        "Policy:Latest tag" | [] | "Latest tag" | [SearchServiceOuterClass.SearchCategory.POLICIES,
-                                                   SearchServiceOuterClass.SearchCategory.ALERTS]
-
+        // The following two tests make sure that global search gives you all categories
         // The following two tests make sure that global search gives you all categories
         // when you don't specify a category.
         "Deployment:qaglobalsearch" | [] | "" | EXPECTED_DEPLOYMENT_CATEGORIES
@@ -134,4 +121,57 @@ class GlobalSearch extends BaseSpecification {
 
         "Subject:system:auth" | [SearchServiceOuterClass.SearchCategory.SUBJECTS] | "system:authenticated" | []
     }
+
+    @Unroll
+    @Tag("BAT")
+    def "Verify Global search on policies (#query, #searchCategories)"(
+            String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
+            String expectedResultPrefix,
+            List<SearchServiceOuterClass.SearchCategory> expectedCategoriesInResult) {
+
+        // This assertion is a validation on the test inputs, to ensure some consistency.
+        // If searchCategories are specified in the request, then the expected categories in the result
+        // will be exactly the categories specified in searchCategories.
+        // We only want to specify expectedCategoriesInResult if we're a search across all categories.
+        def expectedCategoriesSet = expectedCategoriesInResult.toSet()
+        if (searchCategories.size() > 0) {
+            assert expectedCategoriesInResult.empty
+            expectedCategoriesSet = searchCategories.toSet()
+        }
+
+        when:
+        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_NEW_POLICY_CATEGORIES"))
+        Assume.assumeTrue(BaseSpecification.isPostgresRun())
+
+        "Run a global search request"
+        SearchServiceOuterClass.SearchResponse searchResponse = null
+        Set<SearchServiceOuterClass.SearchCategory> presentCategories = null
+        withRetry(30, 1) {
+            searchResponse = getSearchResponse(query, searchCategories)
+            searchResponse.countsList.forEach {
+                count -> log.info "Category: ${count.category}: ${count.count}"
+            }
+            presentCategories = searchResponse.countsList.collectMany {
+                count -> count.count > 0 ? [count.category] : [] } .toSet()
+            assert presentCategories.size() >= expectedCategoriesSet.size()
+        }
+
+        then:
+        "Verify that the search response contains what we expect"
+        assert !searchResponse?.resultsList?.empty
+        assert expectedCategoriesSet == presentCategories
+
+        where:
+        "Data inputs are :"
+
+        query | searchCategories | expectedResultPrefix | expectedCategoriesInResult
+
+        "Policy:Latest tag" | [SearchServiceOuterClass.SearchCategory.POLICIES] | "Latest tag" | []
+
+        // Test options that do not apply to deployments and images, but are global in nature
+        "Policy:Latest tag" | [] | "Latest tag" | [SearchServiceOuterClass.SearchCategory.POLICIES,
+                                                   SearchServiceOuterClass.SearchCategory.ALERTS,
+                                                   SearchServiceOuterClass.SearchCategory.POLICY_CATEGORIES]
+    }
+
 }

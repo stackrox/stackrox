@@ -10,6 +10,6 @@ package storage;
 
 message PolicyCategory {
     string id       = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string name     = 2 [(gogoproto.moretags) = 'search:"Policy Category,store" sql:"unique"'];
+    string name     = 2 [(gogoproto.moretags) = 'search:"Policy Category,store,hidden" sql:"unique"'];
     bool isDefault  = 3 ;
 }

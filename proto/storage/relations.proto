@@ -84,3 +84,11 @@ message ClusterCVEEdge {
   string      cluster_id    = 4 [(gogoproto.moretags) = 'sql:"fk(Cluster:id),type(uuid)"'];
   string      cve_id        = 5 [(gogoproto.moretags) = 'sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"'];
 }
+
+// Policy relations
+
+message PolicyCategoryEdge {
+    string        id                 = 1[(gogoproto.moretags) = 'sql:"pk,id"'];
+    string        policy_id          = 2[(gogoproto.moretags) = 'sql:"fk(Policy:id)" search:"Policy ID,store,hidden"'];
+    string        category_id        = 3[(gogoproto.moretags) = 'sql:"fk(PolicyCategory:id)"'];
+}
