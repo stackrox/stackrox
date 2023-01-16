@@ -171,11 +171,11 @@ func (c *CentralComponentSpec) CentralDBEnabled() bool {
 type DeclarativeConfiguration struct {
 	// List of config maps containing declarative configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Config maps containing declarative configuration"
-	ConfigMaps []LocalConfigMapReference `json:"configMaps"`
+	ConfigMaps []LocalConfigMapReference `json:"configMaps,omitempty"`
 
 	// List of secrets containing declarative configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Secrets containing declarative configuration"
-	Secrets []LocalSecretReference `json:"secrets"`
+	Secrets []LocalSecretReference `json:"secrets,omitempty"`
 }
 
 // CentralDBSpec defines settings for the "central db" component.
