@@ -1395,7 +1395,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					}
 					return nil
 				})
-			plops.EXPECT().RemovePLOP(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
+			plops.EXPECT().RemoveProcessListeningOnPort(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
 			gci.removeOrphanedPLOP()
 		})
 	}
