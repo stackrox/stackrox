@@ -21,6 +21,7 @@ var (
 		Field: search.SORTPolicyName.String(),
 	}
 
+	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 	policySAC = sac.ForResource(resources.Policy)
 )
 
