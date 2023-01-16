@@ -8,7 +8,7 @@ const apiReferencePath = '/main/apidocs';
 
 const apiReferenceAlias = 'docs/swagger';
 
-const routeMatcherMap = {
+const routeMatcherMapForReference = {
     [apiReferenceAlias]: '/api/docs/swagger',
 };
 
@@ -29,14 +29,14 @@ describe('Help menu API Reference', () => {
         interactAndWaitForResponses(() => {
             cy.get('button[aria-label="Help menu"').click();
             cy.get(`a:contains("${title}")`).click();
-        }, routeMatcherMap);
+        }, routeMatcherMapForReference);
 
         cy.location('pathname').should('eq', apiReferencePath);
         cy.get(`h1:contains("${title}")`);
     });
 
     it('should visit via path', () => {
-        visit(apiReferencePath, routeMatcherMap);
+        visit(apiReferencePath, routeMatcherMapForReference);
 
         cy.get(`h1:contains("${title}")`);
 
