@@ -28,7 +28,7 @@ function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): Re
     const bodyContent = (
         <Button
             component="a"
-            href="https://docs.openshift.com/acs/3.73/installing/installing_cloud_ocp/prerequisites-cloud-ocp.html#collector-prerequisites_prerequisites-cloud-ocp"
+            href="https://docs.openshift.com/acs/installing/installing_cloud_ocp/prerequisites-cloud-ocp.html#collector-prerequisites_prerequisites-cloud-ocp"
             variant="link"
             target="_blank"
             rel="noopener noreferrer"
