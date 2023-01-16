@@ -363,7 +363,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	// It's being closed and excluded from the API response
+	// The PLOP is reported since it is in the open state
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
