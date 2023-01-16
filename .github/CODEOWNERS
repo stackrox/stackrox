@@ -31,3 +31,4 @@ tests/upgrade/*     @stackrox/data-shepherds
 
 .github/**/* @stackrox/circleci
 .openshift-ci/**/* @stackrox/circleci
+scripts/ci/** @stackrox/circleci
