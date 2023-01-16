@@ -61,42 +61,38 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	portProcesses, completedInBatch := normalizePLOPs(portProcesses)
+	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 
-	// XXX: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
+	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
 	// be done in a single join query fetching both ProcessIndicator and needed
 	// bits from PLOP.
-	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, portProcesses...)
+	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, normalizedPLOPs...)
 	if err != nil {
 		return err
 	}
 
-	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds, portProcesses...)
+	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
 		return err
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
-	for _, val := range portProcesses {
+	for _, val := range normalizedPLOPs {
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
-		key := getProcesUniqueKey(val)
+		key := getPlopProcessUniqueKey(val)
 
 		if indicator, ok := indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
-			// XXX: Create a metric for this
+			// TODO ROX-14377: Create a metric for this
 			log.Warnf("Found no matching indicators for %s", key)
 			processInfo = val.Process
 		}
 
-		plopKey := fmt.Sprintf("%d %d %s",
-			val.GetProtocol(),
-			val.GetPort(),
-			indicatorID,
-		)
+		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]
 
@@ -127,7 +123,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	// Verify what to do about pairs of open/close events that close the
-	// lifecycle withih the batch. There are only few options:
+	// lifecycle within the batch. There are only few options:
 	// * If an existing open PLOP is present in the db, they will do nothing
 	// * If an existing closed PLOP is present in the db, they will update the
 	// timestamp
@@ -136,22 +132,18 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
-		key := getProcesUniqueKey(val)
+		key := getPlopProcessUniqueKey(val)
 
 		if indicator, ok := indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
-			// XXX: Create a metric for this
+			// TODO ROX-14377: Create a metric for this
 			log.Warnf("Found no matching indicators for %s", key)
 			processInfo = val.Process
 		}
 
-		plopKey := fmt.Sprintf("%d %d %s",
-			val.GetProtocol(),
-			val.GetPort(),
-			indicatorID,
-		)
+		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]
 
@@ -180,12 +172,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	// Now save actual PLOP objects
-	err = ds.storage.UpsertMany(ctx, plopObjects)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ds.storage.UpsertMany(ctx, plopObjects)
 }
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
@@ -219,7 +206,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
 	return ds.storage.Walk(ctx, fn)
 }
 
-func (ds *datastoreImpl) RemovePLOP(ctx context.Context, ids []string) error {
+func (ds *datastoreImpl) RemoveProcessListeningOnPort(ctx context.Context, ids []string) error {
 	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -230,16 +217,12 @@ func (ds *datastoreImpl) RemovePLOP(ctx context.Context, ids []string) error {
 }
 
 func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
-	log.Infof("Deleting PLOP records")
 
 	if len(ids) == 0 {
 		return nil
 	}
-	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
-		return err
-	}
 
-	return nil
+	return ds.storage.DeleteMany(ctx, ids)
 }
 
 // fetchExistingPLOPs: Query already existing PLOP objects belonging to the
@@ -247,37 +230,32 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 //
 // XXX: This function queries all PLOP, no matter if they are matching port +
 // protocol we've got or not. This means potentially dangerous corner cases
-// when one process listenst to a huge number of ports. To address it we could
+// when one process listens to a huge number of ports. To address it we could
 // introduce filtering by port and protocol to the query, and even without
 // extra indices PostgreSQL will be able to do it relatively efficiently using
 // bitmap scan.
 func (ds *datastoreImpl) fetchExistingPLOPs(
 	ctx context.Context,
 	indicatorIds []string,
-	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
 ) (map[string]*storage.ProcessListeningOnPortStorage, error) {
 
 	var existingPLOPMap = map[string]*storage.ProcessListeningOnPortStorage{}
 
 	if len(indicatorIds) == 0 {
-		return nil, nil
+		return existingPLOPMap, nil
 	}
 
 	// If no corresponding processes found, we can't verify if the PLOP
 	// object is opening/closing an existing one. Collect existingPLOPMap
 	// only if there are some matching indicators.
-	existingPLOP, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
+	existingPLOPs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddStrings(search.ProcessID, indicatorIds...).ProtoQuery())
 	if err != nil {
 		return nil, err
 	}
 
-	for _, val := range existingPLOP {
-		key := fmt.Sprintf("%d %d %s",
-			val.GetProtocol(),
-			val.GetPort(),
-			val.GetProcessIndicatorId(),
-		)
+	for _, val := range existingPLOPs {
+		key := getPlopKey(val)
 
 		// A bit of paranoia is always good
 		if old, ok := existingPLOPMap[key]; ok {
@@ -329,13 +307,7 @@ func (ds *datastoreImpl) fetchIndicators(
 	}
 
 	for _, val := range indicators {
-		key := fmt.Sprintf("%s %s %s %s %s",
-			val.GetContainerName(),
-			val.GetPodId(),
-			val.GetSignal().GetName(),
-			val.GetSignal().GetArgs(),
-			val.GetSignal().GetExecFilePath(),
-		)
+		key := getProcessUniqueKey(val)
 
 		// A bit of paranoia is always good
 		if old, ok := indicatorsMap[key]; ok {
@@ -362,7 +334,7 @@ type OpenClosedPLOPs struct {
 // same combination of port, protocol, process. Find and squash them into a
 // single event.
 //
-// Open/close state will be calculated from the totall number of open/close
+// Open/close state will be calculated from the total number of open/close
 // events in the batch, assuming every single open will eventually be followed
 // by close. In this way in the case of:
 // * Out-of-order events, we would be able to establish correct status
@@ -394,10 +366,10 @@ func normalizePLOPs(
 	completedEvents = []*storage.ProcessListeningOnPortFromSensor{}
 
 	for _, val := range plops {
-		key := fmt.Sprintf("%d %d %s",
+		key := getPlopKeyFromParts(
 			val.GetProtocol(),
 			val.GetPort(),
-			getProcesUniqueKey(val),
+			getPlopProcessUniqueKey(val),
 		)
 
 		if prev, ok := normalizedMap[key]; ok {
@@ -450,14 +422,51 @@ func normalizePLOPs(
 	return normalizedResult, completedEvents
 }
 
-func getProcesUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
-	return fmt.Sprintf("%s %s %s %s %s",
+func getProcessUniqueKeyFromParts(containerName string,
+	podID string,
+	processName string,
+	processArgs string,
+	processExecFilePath string,
+) string {
+	return fmt.Sprintf("%s_%s_%s_%s_%s",
+		containerName,
+		podID,
+		processName,
+		processArgs,
+		processExecFilePath,
+	)
+}
+
+func getPlopProcessUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
+	return getProcessUniqueKeyFromParts(
 		plop.Process.ContainerName,
 		plop.Process.PodId,
 		plop.Process.ProcessName,
 		plop.Process.ProcessArgs,
 		plop.Process.ProcessExecFilePath,
 	)
+}
+
+func getProcessUniqueKey(process *storage.ProcessIndicator) string {
+	return getProcessUniqueKeyFromParts(
+		process.GetContainerName(),
+		process.GetPodId(),
+		process.GetSignal().GetName(),
+		process.GetSignal().GetArgs(),
+		process.GetSignal().GetExecFilePath(),
+	)
+}
+
+func getPlopKeyFromParts(protocol storage.L4Protocol, port uint32, indicatorID string) string {
+	return fmt.Sprintf("%d_%d_%s",
+		protocol,
+		port,
+		indicatorID,
+	)
+}
+
+func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
+	return getPlopKeyFromParts(plop.GetProtocol(), plop.GetPort(), plop.GetProcessIndicatorId())
 }
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
@@ -470,6 +479,10 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 	indicatorID string,
 	processInfo *storage.ProcessIndicatorUniqueKey,
 	value *storage.ProcessListeningOnPortFromSensor) []*storage.ProcessListeningOnPortStorage {
+
+	if value == nil {
+		return plopObjects
+	}
 
 	newPLOP := &storage.ProcessListeningOnPortStorage{
 		// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS

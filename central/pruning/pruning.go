@@ -437,7 +437,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 	// This walk seems unnecessary, but ClosedTimestamp is a part of serialized
 	// column, not visible to Postgres. So if we would like to keep using
 	// orphanWindow, unfortunately it has to be this way, at least for now.
-	walkFn := func() error {
+	walkRun := func() error {
 		plopToPrune = plopToPrune[:0]
 		return g.plops.WalkAll(pruningCtx, func(plop *storage.ProcessListeningOnPortStorage) error {
 			if protoutils.Sub(now, plop.GetCloseTimestamp()) < orphanWindow {
@@ -448,7 +448,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 		})
 	}
 
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(walkRun); err != nil {
 		log.Error(errors.Wrap(err, "unable to walk processes and mark for pruning"))
 		return
 	}
@@ -456,7 +456,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 	log.Infof("[PLOP pruning] Found %d orphaned process listening on port objects",
 		len(plopToPrune))
 
-	if err := g.plops.RemovePLOP(pruningCtx, plopToPrune); err != nil {
+	if err := g.plops.RemoveProcessListeningOnPort(pruningCtx, plopToPrune); err != nil {
 		log.Error(errors.Wrap(err, "error removing PLOP"))
 	}
 }

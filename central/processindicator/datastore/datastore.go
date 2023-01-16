@@ -46,10 +46,10 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(store store.Store, plopStore plopStore.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
+func New(store store.Store, plopStorage plopStore.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
 	d := &datastoreImpl{
 		storage:               store,
-		plopStorage:           plopStore,
+		plopStorage:           plopStorage,
 		indexer:               indexer,
 		searcher:              searcher,
 		prunerFactory:         prunerFactory,
