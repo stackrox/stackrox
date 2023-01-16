@@ -71,7 +71,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return err
 	}
 
-	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds, portProcesses...)
+	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
 		return err
 	}
@@ -220,14 +220,12 @@ func (ds *datastoreImpl) RemoveProcessListeningOnPort(ctx context.Context, ids [
 }
 
 func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
-	log.Infof("Deleting PLOP records")
 
 	if len(ids) == 0 {
 		return nil
 	}
-	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
-		return err
-	}
+
+	return ds.storage.DeleteMany(ctx, ids)
 
 	return nil
 }
@@ -244,7 +242,6 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 func (ds *datastoreImpl) fetchExistingPLOPs(
 	ctx context.Context,
 	indicatorIds []string,
-	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
 ) (map[string]*storage.ProcessListeningOnPortStorage, error) {
 
 	var existingPLOPMap = map[string]*storage.ProcessListeningOnPortStorage{}
@@ -487,6 +484,10 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 	indicatorID string,
 	processInfo *storage.ProcessIndicatorUniqueKey,
 	value *storage.ProcessListeningOnPortFromSensor) []*storage.ProcessListeningOnPortStorage {
+
+	if value == nil {
+		return plopObjects
+	}
 
 	newPLOP := &storage.ProcessListeningOnPortStorage{
 		// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
