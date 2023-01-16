@@ -162,7 +162,7 @@ func getImageVulnerabilities(t *testing.T, query string, scopeQuery string) []Ac
 	}
 	makeGraphQLRequest(t, `
 		query getImageVulnerabilities($query: String, $scopeQuery: String) {
-            imageVulnerabilities(query: $query, scopeQuery: $query) {
+            imageVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
 				id
 				activeState(query: $scopeQuery) {
 					state
@@ -185,7 +185,7 @@ func getImageComponents(t *testing.T, query string, scopeQuery string) []ActiveC
 	}
 	makeGraphQLRequest(t, `
 		query getImageComponents($query: String, $scopeQuery: String) {
-            imageComponents(query: $query, scopeQuery: $query) {
+            imageComponents(query: $query, scopeQuery: $scopeQuery) {
 				id
 				activeState(query: $scopeQuery) {
 					state
