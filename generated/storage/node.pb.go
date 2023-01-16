@@ -655,7 +655,9 @@ func (m *NodeScan) Clone() *NodeScan {
 type NodeInventory struct {
 	NodeName string           `protobuf:"bytes,1,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
 	ScanTime *types.Timestamp `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
-	// Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning
+	// Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.
+	// Keep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:
+	// func convertAndDedupRHELComponents (in pkg 'nodeinventorizer'), and the respective reverse convertion in pkg 'clairify'.
 	// We are not using scannerV1.Components here for the following reasons:
 	// - to avoid conflicts between v1 and scannerV1 APIs when generating the code in central/graphql/resolvers/generated.go
 	// - to not expose scanner v1 API over stackrox graphql API
