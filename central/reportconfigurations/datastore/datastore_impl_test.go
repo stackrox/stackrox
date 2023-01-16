@@ -11,6 +11,7 @@ import (
 	store "github.com/stackrox/rox/central/reportconfigurations/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -40,6 +41,11 @@ type ReportConfigurationDatastoreTestSuite struct {
 }
 
 func (suite *ReportConfigurationDatastoreTestSuite) SetupSuite() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.T().Skip("Skip non-postgres store test")
+		suite.T().SkipNow()
+	}
+
 	var err error
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
@@ -77,14 +83,23 @@ func (suite *ReportConfigurationDatastoreTestSuite) TearDownSuite() {
 }
 
 func (suite *ReportConfigurationDatastoreTestSuite) TestReportsConfigDataStore() {
+	// Test add
 	reportConfig := fixtures.GetValidReportConfiguration()
 	_, err := suite.datastore.AddReportConfiguration(suite.hasReadWriteVulnReportAccess, reportConfig)
 	suite.Require().NoError(err)
 
+	// Test get
 	foundReportConfig, found, err := suite.datastore.GetReportConfiguration(suite.hasReadWriteVulnReportAccess, reportConfig.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
 	suite.Equal(reportConfig, foundReportConfig)
+
+	// Test search by name
+	query := search.NewQueryBuilder().AddStrings(search.ReportName, reportConfig.Name).ProtoQuery()
+	searchResults, err := suite.datastore.Search(suite.ctx, query)
+	suite.NoError(err)
+	suite.Len(searchResults, 1)
+	suite.Equal(searchResults[0].ID, foundReportConfig.Id)
 
 	// TODO: ROX-13888 Remove this duplicated test.
 	// Expect no error when trying to retrieve the report with the replacing resource WorkflowAdministration.
@@ -94,46 +109,52 @@ func (suite *ReportConfigurationDatastoreTestSuite) TestReportsConfigDataStore()
 	suite.True(found)
 	suite.Equal(reportConfig, foundReportConfig)
 
+	// Test search all
 	_, found, err = suite.datastore.GetReportConfiguration(suite.hasReadWriteVulnReportAccess, "NONEXISTENT")
-	suite.Require().NoError(err)
+	suite.NoError(err)
 	suite.False(found)
 
-	query := search.NewQueryBuilder().AddStrings(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
+	// Test search by type
+	query = search.NewQueryBuilder().AddStrings(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
 	results, err := suite.datastore.GetReportConfigurations(suite.hasReadWriteVulnReportAccess, query)
-	suite.Require().NoError(err)
-	suite.Assert().Len(results, 1)
+	suite.NoError(err)
+	suite.Len(results, 1)
 
 	// TODO: ROX-13888 Remove this duplicated section.
 	// Expect no error when trying to retrieve the report with the replacing resource WorkflowAdministration.
 	query = search.NewQueryBuilder().AddStrings(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
 	results, err = suite.datastore.GetReportConfigurations(suite.hasReadWriteWorkflowAdministrationAccess, query)
-	suite.Require().NoError(err)
-	suite.Assert().Len(results, 1)
+	suite.NoError(err)
+	suite.Len(results, 1)
 
+	// Test search all
 	query = search.NewQueryBuilder().AddStrings(search.ReportType, search.EmptyQuery().String()).ProtoQuery()
 	parsedQuery, err := search.ParseQuery(query.String(), search.MatchAllIfEmpty())
-	suite.Require().NoError(err)
+	suite.NoError(err)
 	results, err = suite.datastore.GetReportConfigurations(suite.hasReadWriteVulnReportAccess, parsedQuery)
-	suite.Require().NoError(err)
-	suite.Assert().Len(results, 1)
+	suite.NoError(err)
+	suite.Len(results, 1)
 
 	err = suite.datastore.RemoveReportConfiguration(suite.hasReadWriteVulnReportAccess, reportConfig.GetId())
-	suite.Require().NoError(err)
+	suite.NoError(err)
 
 	_, found, err = suite.datastore.GetReportConfiguration(suite.hasReadWriteVulnReportAccess, reportConfig.GetId())
-	suite.Require().NoError(err)
+	suite.NoError(err)
 	suite.False(found)
 
+	// Test search all
 	// TODO: ROX-13888 Remove this duplicated section.
 	// Expect no error when upserting and deleting a report configuration with the replacing resource WorkflowAdministration.
 	reportConfig = fixtures.GetValidReportConfiguration()
 	_, err = suite.datastore.AddReportConfiguration(suite.hasReadWriteWorkflowAdministrationAccess, reportConfig)
-	suite.Require().NoError(err)
+	suite.NoError(err)
 
+	// Test remove
 	err = suite.datastore.RemoveReportConfiguration(suite.hasReadWriteWorkflowAdministrationAccess, reportConfig.GetId())
-	suite.Require().NoError(err)
+	suite.NoError(err)
 
+	// Verify empty store
 	_, found, err = suite.datastore.GetReportConfiguration(suite.hasReadWriteWorkflowAdministrationAccess, reportConfig.GetId())
-	suite.Require().NoError(err)
+	suite.NoError(err)
 	suite.False(found)
 }
