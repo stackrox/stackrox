@@ -112,11 +112,7 @@ describe('Collection deployment matching', () => {
         );
         cy.get(`button:contains('k8s-app=kube-dns')`).click();
 
-        assertDeploymentsAreMatchedExactly([
-            'kube-dns',
-            'kube-dns-autoscaler',
-            'calico-node-vertical-autoscaler',
-        ]);
+        assertDeploymentsAreMatchedExactly(['kube-dns', 'calico-node-vertical-autoscaler']);
 
         // View another collection via modal
         cy.get(selectors.viewEmbeddedCollectionButton('Available', sampleCollectionName)).click();
@@ -133,7 +129,6 @@ describe('Collection deployment matching', () => {
         cy.get(selectors.attachCollectionButton(sampleCollectionName)).click();
         assertDeploymentsAreMatchedExactly([
             'kube-dns',
-            'kube-dns-autoscaler',
             'calico-node-vertical-autoscaler',
             'collector',
             'sensor',
@@ -141,11 +136,7 @@ describe('Collection deployment matching', () => {
 
         // Detach the collection, assert that embedded collection deployments are gone
         cy.get(selectors.detachCollectionButton(sampleCollectionName)).click();
-        assertDeploymentsAreMatchedExactly([
-            'kube-dns',
-            'kube-dns-autoscaler',
-            'calico-node-vertical-autoscaler',
-        ]);
+        assertDeploymentsAreMatchedExactly(['kube-dns', 'calico-node-vertical-autoscaler']);
 
         // Re-attach and save
         cy.get(selectors.attachCollectionButton(sampleCollectionName)).click();
@@ -159,9 +150,9 @@ describe('Collection deployment matching', () => {
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`).click();
 
         // Filter to deployments with deployment name matching
-        cy.get(selectors.resultsPanelFilterInput).type('kube-dns');
+        cy.get(selectors.resultsPanelFilterInput).type('c');
 
-        assertDeploymentsAreMatchedExactly(['kube-dns', 'kube-dns-autoscaler']);
+        assertDeploymentsAreMatchedExactly(['calico-node-vertical-autoscaler', 'collector']);
 
         // Filter to deployments in namespaces matching
         cy.get(selectors.resultsPanelFilterEntitySelect).click();
