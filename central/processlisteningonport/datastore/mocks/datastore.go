@@ -70,18 +70,18 @@ func (mr *MockDataStoreMockRecorder) GetProcessListeningOnPort(ctx, deployment i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).GetProcessListeningOnPort), ctx, deployment)
 }
 
-// RemovePLOP mocks base method.
-func (m *MockDataStore) RemovePLOP(ctx context.Context, ids []string) error {
+// RemoveProcessListeningOnPort mocks base method.
+func (m *MockDataStore) RemoveProcessListeningOnPort(ctx context.Context, ids []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemovePLOP", ctx, ids)
+	ret := m.ctrl.Call(m, "RemoveProcessListeningOnPort", ctx, ids)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemovePLOP indicates an expected call of RemovePLOP.
-func (mr *MockDataStoreMockRecorder) RemovePLOP(ctx, ids interface{}) *gomock.Call {
+// RemoveProcessListeningOnPort indicates an expected call of RemoveProcessListeningOnPort.
+func (mr *MockDataStoreMockRecorder) RemoveProcessListeningOnPort(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePLOP", reflect.TypeOf((*MockDataStore)(nil).RemovePLOP), ctx, ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessListeningOnPort), ctx, ids)
 }
 
 // WalkAll mocks base method.

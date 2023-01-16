@@ -1338,7 +1338,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			expectedDeletions: []string{},
 		},
 		{
-			name: "Plop is closed but not expried so it is not removed",
+			name: "Plop is closed but not expired so it is not removed",
 			initialPlops: []*storage.ProcessListeningOnPortStorage{
 				{
 					Id:                 plopID1,
@@ -1396,7 +1396,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					}
 					return nil
 				})
-			plops.EXPECT().RemovePLOP(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
+			plops.EXPECT().RemoveProcessListeningOnPort(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
 			gci.removeOrphanedPLOP()
 		})
 	}

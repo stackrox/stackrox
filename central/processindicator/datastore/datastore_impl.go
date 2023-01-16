@@ -142,7 +142,6 @@ func (ds *datastoreImpl) removeMatchingIndicators(ctx context.Context, results [
 }
 
 func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) error {
-	log.Infof("Process Pruning")
 	if len(ids) == 0 {
 		return nil
 	}
