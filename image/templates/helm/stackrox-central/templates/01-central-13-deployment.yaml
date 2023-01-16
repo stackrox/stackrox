@@ -172,7 +172,13 @@ spec:
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
         {{- end }}
-        {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts) }}
+        {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.configMaps) }}
+        - name: {{ $mount }}
+          mountPath: /run/secrets/stackrox.io/declarative-configuration/
+          subPath: {{ $mount }}
+          readOnly: true
+        {{- end }}
+        {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.secrets) }}
         - name: {{ $mount }}
           mountPath: /run/secrets/stackrox.io/declarative-configuration/
           subPath: {{ $mount }}
@@ -239,10 +245,16 @@ spec:
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}
       {{- end }}
-      {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts) }}
+      {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.configMaps) }}
       - name: {{ $mount }}
         configMap:
           name: {{ $mount }}
+          optional: true
+      {{- end }}
+      {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.secrets) }}
+      - name: {{ $mount }}
+        secret:
+          secretName: {{ $mount }}
           optional: true
       {{- end }}
       {{- include "srox.injectedCABundleVolume" . | nindent 6 }}

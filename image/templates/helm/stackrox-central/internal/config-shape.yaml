@@ -73,7 +73,9 @@ central:
       enabled: null # bool
       host: null # string
   declarativeConfiguration:
-    mounts: null # [string]
+    mounts:
+      configMaps: null # [string]
+      secrets: null # [string]
   extraMounts: null # [dict]
   db:
     enabled: false # bool
