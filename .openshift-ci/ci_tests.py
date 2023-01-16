@@ -77,6 +77,7 @@ class PostgresUpgradeTest(BaseTest):
 
 class OperatorE2eTest(BaseTest):
     # TODO(ROX-12348): adjust these timeouts once we know average run times
+    FETCH_KUTTL_TIMEOUT_SEC = 5 * 60
     DEPLOY_TIMEOUT_SEC = 40 * 60
     UPGRADE_TEST_TIMEOUT_SEC = 50 * 60
     E2E_TEST_TIMEOUT_SEC = 50 * 60
@@ -93,27 +94,46 @@ class OperatorE2eTest(BaseTest):
         }
 
     def run(self):
+        print("Fetching kuttl binary")
+        self.run_with_graceful_kill(
+            ["operator/hack/junit_wrap.sh", "fetch-kuttl",
+             "Download kuttl binary.", "See log for error details.",
+             "make", "-C", "operator", "kuttl"],
+            OperatorE2eTest.FETCH_KUTTL_TIMEOUT_SEC,
+        )
         print("Deploying operator")
         self.run_with_graceful_kill(
-            ["make", "-C", "operator", "kuttl", "deploy-previous-via-olm"],
+            ["operator/hack/junit_wrap.sh", "deploy-previous-operator",
+             "Deploy previously released version of the operator.",
+             "See log for error details.",
+             "make", "-C", "operator", "deploy-previous-via-olm"],
             OperatorE2eTest.DEPLOY_TIMEOUT_SEC,
         )
 
         print("Executing operator upgrade test")
         self.run_with_graceful_kill(
-            ["make", "-C", "operator", "test-upgrade"],
+            ["operator/hack/junit_wrap.sh", "test-upgrade",
+             "Test operator upgrade from previously released version to the current one.",
+             "See log and/or kuttl JUnit output for error details.",
+             "make", "-C", "operator", "test-upgrade"],
             OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
         )
 
         print("Executing operator e2e tests")
         self.run_with_graceful_kill(
-            ["make", "-C", "operator", "test-e2e-deployed"],
+            ["operator/hack/junit_wrap.sh", "test-e2e",
+             "Run operator E2E tests.",
+             "See log and/or kuttl JUnit output for error details.",
+             "make", "-C", "operator", "test-e2e-deployed"],
             OperatorE2eTest.E2E_TEST_TIMEOUT_SEC,
         )
 
         print("Executing Operator Bundle Scorecard tests")
         self.run_with_graceful_kill(
             [
+                "operator/hack/junit_wrap.sh", "bundle-test-image",
+                "Run scorecard tests.",
+                "See log for error details.",
                 "./operator/scripts/retry.sh",
                 "4",
                 "2",
