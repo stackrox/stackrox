@@ -6,10 +6,10 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import useIndexKey from 'hooks/useIndexKey';
 import {
-    SelectorEntityType,
-    ScopedResourceSelector,
     ByLabelResourceSelector,
     ClientCollection,
+    ScopedResourceSelector,
+    SelectorEntityType,
 } from '../types';
 import { AutoCompleteSelect, AutoCompleteSelectProps } from './AutoCompleteSelect';
 
