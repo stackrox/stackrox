@@ -43,7 +43,6 @@ func initialize() {
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 		// PLOP storage is only supported for PostgreSQL
-		// plopStorage = rocksdb.New(globaldb.GetRocksDB())
 		indexer = index.New(globalindex.GetProcessIndex())
 	}
 	searcher := search.New(storage, indexer)

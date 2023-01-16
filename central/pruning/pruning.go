@@ -456,7 +456,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 	log.Infof("[PLOP pruning] Found %d orphaned process listening on port objects",
 		len(plopToPrune))
 
-	if err := g.plops.RemovePLOP(pruningCtx, plopToPrune); err != nil {
+	if err := g.plops.RemoveProcessListeningOnPort(pruningCtx, plopToPrune); err != nil {
 		log.Error(errors.Wrap(err, "error removing PLOP"))
 	}
 }
