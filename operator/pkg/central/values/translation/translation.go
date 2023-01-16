@@ -257,6 +257,7 @@ func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *tr
 		return &declarativeConfig
 	}
 
+	mounts := translation.NewValuesBuilder()
 	configMaps := make([]string, 0, len(c.ConfigMaps))
 	secrets := make([]string, 0, len(c.Secrets))
 
@@ -268,9 +269,9 @@ func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *tr
 		secrets = append(secrets, secret.Name)
 	}
 
-	declarativeConfig.SetStringSlice("configMaps", configMaps)
-	declarativeConfig.SetStringSlice("secrets", secrets)
-
+	mounts.SetStringSlice("configMaps", configMaps)
+	mounts.SetStringSlice("secrets", secrets)
+	declarativeConfig.AddChild("mounts", &mounts)
 	return &declarativeConfig
 }
 

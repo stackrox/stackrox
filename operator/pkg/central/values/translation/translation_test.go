@@ -316,13 +316,15 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"declarativeConfiguration": map[string]interface{}{
-						"configMaps": []string{
-							"config-map-1",
-							"config-map-2",
-						},
-						"secrets": []string{
-							"secret-1",
-							"secret-2",
+						"mounts": map[string]interface{}{
+							"configMaps": []string{
+								"config-map-1",
+								"config-map-2",
+							},
+							"secrets": []string{
+								"secret-1",
+								"secret-2",
+							},
 						},
 					},
 				},
