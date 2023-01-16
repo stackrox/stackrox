@@ -40,6 +40,9 @@ function AccessControl(): ReactElement {
                             <ListItem>
                                 <b>Image</b> now also covers <b>ImageComponent</b>
                             </ListItem>
+                            <ListItem>
+                                <b>Cluster</b> now also covers <b>ClusterCVE</b>
+                            </ListItem>
                         </List>
 
                         <p>
@@ -61,7 +64,15 @@ function AccessControl(): ReactElement {
                             <ListItem>
                                 <b>Cluster</b> will cover <b>ClusterCVE</b>
                             </ListItem>
+                            <ListItem>
+                                <b>WorkflowAdministration</b> will replace{' '}
+                                <b>Policy, VulnerabilityReports</b>
+                            </ListItem>
                         </List>
+                        <p>
+                            For additional information on deprecation and required actions, please
+                            consult the release notes.
+                        </p>
                     </>
                 }
             />

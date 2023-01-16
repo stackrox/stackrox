@@ -155,19 +155,6 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has link from Deployments With Most Severe Policy Violations widget to deployment page', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'deployments';
-        const widgetHeading = 'Deployments With Most Severe Policy Violations';
-
-        verifyItemLinkToEntityPage(
-            entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForNumberedList),
-            getHeaderTextFromItemTextWithoutSeparators
-        );
-    });
-
     it('has link from Clusters With Most Orchestrator & Istio Vulnerabilities to cluster page', () => {
         visitVulnerabilityManagementDashboard();
 

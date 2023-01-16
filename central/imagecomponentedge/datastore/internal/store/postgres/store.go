@@ -44,13 +44,15 @@ var (
 	targetResource = resources.Image
 )
 
+// Store is the interface to interact with the storage for storage.ImageComponentEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
+
 	Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageComponentEdge, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storage.ImageComponentEdge, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponentEdge, []int, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ImageComponentEdge) error) error
 
@@ -70,7 +72,22 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-// Count returns the number of objects in the store
+//// Helper functions
+
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, conn.Release, nil
+}
+
+//// Helper functions - END
+
+//// Interface functions
+
+// Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ImageComponentEdge")
 
@@ -90,7 +107,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the id exists in the store
+// Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponentEdge")
 
@@ -116,7 +133,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return count > 0, err
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
 
@@ -145,99 +162,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageComponent
 	return data, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ImageComponentEdgeIDs")
-	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
-	}
-	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]string, 0, len(result))
-	for _, entry := range result {
-		ids = append(ids, entry.ID)
-	}
-
-	return ids, nil
-}
-
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponentEdge, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentEdge")
-
-	if len(ids) == 0 {
-		return nil, nil, nil
-	}
-
-	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, nil, err
-	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-	)
-
-	rows, err := postgres.RunGetManyQueryForSchema[storage.ImageComponentEdge](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.ImageComponentEdge, len(rows))
-	for _, msg := range rows {
-		resultsByID[msg.GetId()] = msg
-	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.ImageComponentEdge, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
-}
-
-// GetByQuery returns the objects matching the query
+// GetByQuery returns the objects from the store matching the query.
 func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageComponentEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "ImageComponentEdge")
 
@@ -270,7 +195,90 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	return rows, nil
 }
 
-// Walk iterates over all of the objects in the store and applies the closure
+// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
+func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.ImageComponentEdge, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentEdge")
+
+	if len(identifiers) == 0 {
+		return nil, nil, nil
+	}
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema[storage.ImageComponentEdge](ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			missingIndices := make([]int, 0, len(identifiers))
+			for i := range identifiers {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	resultsByID := make(map[string]*storage.ImageComponentEdge, len(rows))
+	for _, msg := range rows {
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input identifiers
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.ImageComponentEdge, 0, len(resultsByID))
+	for i, identifier := range identifiers {
+		if result, ok := resultsByID[identifier]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
+
+// GetIDs returns all the IDs for the store.
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ImageComponentEdgeIDs")
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	identifiers := make([]string, 0, len(result))
+	for _, entry := range result {
+		identifiers = append(identifiers, entry.ID)
+	}
+
+	return identifiers, nil
+}
+
+// Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ImageComponentEdge) error) error {
 	var sacQueryFilter *v1.Query
 	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.ImageComponentEdge](ctx, schema, sacQueryFilter, s.db)
@@ -295,31 +303,36 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ImageComponen
 	return nil
 }
 
+//// Stubs for satisfying legacy interfaces
+
+// AckKeysIndexed acknowledges the passed keys were indexed.
+func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+	return nil
+}
+
+// GetKeysToIndex returns the keys that need to be indexed.
+func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+	return nil, nil
+}
+
+//// Interface functions - END
+
 //// Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing.
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableImageComponentEdges(ctx, db)
+}
 
 func dropTableImageComponentEdges(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_edges CASCADE")
 
 }
 
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableImageComponentEdges(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-//// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
+//// Used for testing - END

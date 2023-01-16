@@ -35,7 +35,8 @@ type ReportConfigurationDatastoreTestSuite struct {
 	reportConfigStore store.Store
 	datastore         DataStore
 
-	ctx context.Context
+	hasReadWriteVulnReportAccess             context.Context
+	hasReadWriteWorkflowAdministrationAccess context.Context
 }
 
 func (suite *ReportConfigurationDatastoreTestSuite) SetupSuite() {
@@ -57,10 +58,17 @@ func (suite *ReportConfigurationDatastoreTestSuite) SetupSuite() {
 	suite.datastore, err = New(suite.reportConfigStore, suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
 
-	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	suite.hasReadWriteVulnReportAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
+
+	suite.hasReadWriteWorkflowAdministrationAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			// TODO: ROX-13888 Remove this duplicated context.
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 }
 
 func (suite *ReportConfigurationDatastoreTestSuite) TearDownSuite() {
@@ -70,34 +78,62 @@ func (suite *ReportConfigurationDatastoreTestSuite) TearDownSuite() {
 
 func (suite *ReportConfigurationDatastoreTestSuite) TestReportsConfigDataStore() {
 	reportConfig := fixtures.GetValidReportConfiguration()
-	_, err := suite.datastore.AddReportConfiguration(suite.ctx, reportConfig)
+	_, err := suite.datastore.AddReportConfiguration(suite.hasReadWriteVulnReportAccess, reportConfig)
 	suite.Require().NoError(err)
 
-	foundReportConfig, found, err := suite.datastore.GetReportConfiguration(suite.ctx, reportConfig.GetId())
+	foundReportConfig, found, err := suite.datastore.GetReportConfiguration(suite.hasReadWriteVulnReportAccess, reportConfig.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
 	suite.Equal(reportConfig, foundReportConfig)
 
-	_, found, err = suite.datastore.GetReportConfiguration(suite.ctx, "NONEXISTENT")
+	// TODO: ROX-13888 Remove this duplicated test.
+	// Expect no error when trying to retrieve the report with the replacing resource WorkflowAdministration.
+	foundReportConfig, found, err = suite.datastore.GetReportConfiguration(
+		suite.hasReadWriteWorkflowAdministrationAccess, reportConfig.GetId())
+	suite.Require().NoError(err)
+	suite.True(found)
+	suite.Equal(reportConfig, foundReportConfig)
+
+	_, found, err = suite.datastore.GetReportConfiguration(suite.hasReadWriteVulnReportAccess, "NONEXISTENT")
 	suite.Require().NoError(err)
 	suite.False(found)
 
 	query := search.NewQueryBuilder().AddStrings(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
-	results, err := suite.datastore.GetReportConfigurations(suite.ctx, query)
+	results, err := suite.datastore.GetReportConfigurations(suite.hasReadWriteVulnReportAccess, query)
+	suite.Require().NoError(err)
+	suite.Assert().Len(results, 1)
+
+	// TODO: ROX-13888 Remove this duplicated section.
+	// Expect no error when trying to retrieve the report with the replacing resource WorkflowAdministration.
+	query = search.NewQueryBuilder().AddStrings(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
+	results, err = suite.datastore.GetReportConfigurations(suite.hasReadWriteWorkflowAdministrationAccess, query)
 	suite.Require().NoError(err)
 	suite.Assert().Len(results, 1)
 
 	query = search.NewQueryBuilder().AddStrings(search.ReportType, search.EmptyQuery().String()).ProtoQuery()
 	parsedQuery, err := search.ParseQuery(query.String(), search.MatchAllIfEmpty())
 	suite.Require().NoError(err)
-	results, err = suite.datastore.GetReportConfigurations(suite.ctx, parsedQuery)
+	results, err = suite.datastore.GetReportConfigurations(suite.hasReadWriteVulnReportAccess, parsedQuery)
 	suite.Require().NoError(err)
 	suite.Assert().Len(results, 1)
 
-	err = suite.datastore.RemoveReportConfiguration(suite.ctx, reportConfig.GetId())
+	err = suite.datastore.RemoveReportConfiguration(suite.hasReadWriteVulnReportAccess, reportConfig.GetId())
 	suite.Require().NoError(err)
 
-	_, found, err = suite.datastore.GetReportConfiguration(suite.ctx, reportConfig.GetId())
+	_, found, err = suite.datastore.GetReportConfiguration(suite.hasReadWriteVulnReportAccess, reportConfig.GetId())
+	suite.Require().NoError(err)
+	suite.False(found)
+
+	// TODO: ROX-13888 Remove this duplicated section.
+	// Expect no error when upserting and deleting a report configuration with the replacing resource WorkflowAdministration.
+	reportConfig = fixtures.GetValidReportConfiguration()
+	_, err = suite.datastore.AddReportConfiguration(suite.hasReadWriteWorkflowAdministrationAccess, reportConfig)
+	suite.Require().NoError(err)
+
+	err = suite.datastore.RemoveReportConfiguration(suite.hasReadWriteWorkflowAdministrationAccess, reportConfig.GetId())
+	suite.Require().NoError(err)
+
+	_, found, err = suite.datastore.GetReportConfiguration(suite.hasReadWriteWorkflowAdministrationAccess, reportConfig.GetId())
 	suite.Require().NoError(err)
 	suite.False(found)
 }

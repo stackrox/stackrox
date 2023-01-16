@@ -1,6 +1,7 @@
 package phonehome
 
 import (
+	"bytes"
 	"context"
 	"net"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/mocks"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 )
@@ -117,14 +117,62 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
 
-	rp := getGRPCRequestDetails(ctx, err, &grpc.UnaryServerInfo{
-		FullMethod: testRP.Path,
-	}, "request")
+	rp := getGRPCRequestDetails(ctx, err, testRP.Path, "request")
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
+}
+
+func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
+	req, _ := http.NewRequest("PATCH", "/wrapped/http", nil)
+	rih := requestinfo.NewRequestInfoHandler()
+	ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
+	md := rih.AnnotateMD(ctx, req)
+	md.Set("User-Agent", "test")
+
+	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
+	s.NoError(err)
+
+	rp := getGRPCRequestDetails(ctx, err, "ignored grpc method", "request")
+	s.Equal(http.StatusOK, rp.Code)
+	s.Equal("test", rp.UserAgent)
+	s.Nil(rp.UserID)
+	s.Equal("request", rp.GRPCReq)
+	s.Equal("/wrapped/http", rp.Path)
+	s.Equal(http.MethodPatch, rp.Method)
+}
+
+type testBody struct {
+	N int `json:"n"`
+}
+
+type testBodyI interface {
+	getTestBody(context.Context, *testBody) (*any, error)
+}
+
+func (s *interceptorTestSuite) TestHttpWithBody() {
+	body := "{ \"n\": 42 }"
+	req, _ := http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
+	rp := getHTTPRequestDetails(context.Background(), req, 0)
+
+	rb := GetGRPCRequestBody(testBodyI.getTestBody, rp)
+	s.Nil(rb, "body is not captured for HTTP requests")
+}
+
+func (s *interceptorTestSuite) TestGrpcWithBody() {
+	rp := getGRPCRequestDetails(context.Background(), nil, "/grpc/body", &testBody{N: 42})
+
+	rb := GetGRPCRequestBody(testBodyI.getTestBody, rp)
+	if s.NotNil(rb) {
+		s.Equal(42, rb.N)
+	}
+
+	rp = getGRPCRequestDetails(context.Background(), nil, "/grpc/body", nil)
+
+	rb = GetGRPCRequestBody(testBodyI.getTestBody, rp)
+	s.Nil(rb)
 }
 
 func (s *interceptorTestSuite) TestHttpRequestInfo() {
@@ -141,7 +189,7 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 	req.Header.Add("User-Agent", testRP.UserAgent)
 
 	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID, nil)
-	rp := getHTTPRequestDetails(ctx, req, err)
+	rp := getHTTPRequestDetails(ctx, req, 200)
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)

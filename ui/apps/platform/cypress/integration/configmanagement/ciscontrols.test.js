@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { triggerScan } from '../../helpers/compliance';
+import { triggerScan } from '../compliance/Compliance.helpers';
 
 import {
     visitConfigurationManagementEntityInSidePanel,

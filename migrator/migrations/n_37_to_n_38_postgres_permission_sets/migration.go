@@ -11,9 +11,11 @@ import (
 )
 
 var (
+	startingSeqNum = pkgMigrations.BasePostgresDBVersionSeqNum() + 37 // 148
+
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.BasePostgresDBVersionSeqNum() + 37,
-		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.BasePostgresDBVersionSeqNum()) + 38},
+		StartingSeqNum: startingSeqNum,
+		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 149
 		Run: func(databases *types.Databases) error {
 			// The data migration code was moved to the simpleaccessscope migrator.
 			// The goal is to be able to convert the IDs that do not parse as UUIDs to proper UUID values,

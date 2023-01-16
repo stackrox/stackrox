@@ -36,8 +36,7 @@ func TestExecIntoPodNameEventPolicy(t *testing.T) {
 		managerTesting.TestManagerOptions{Policy: policy},
 	)
 
-	err = mgr.Start()
-	require.NoError(t, err)
+	mgr.Start()
 	defer mgr.Stop()
 
 	const deploymentID = "f3237faf-8350-4c39-b045-ff4c493ddb71"
@@ -108,8 +107,7 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 		},
 	})
 
-	err = mgr.Start()
-	require.NoError(t, err)
+	mgr.Start()
 	defer mgr.Stop()
 
 	runv1 := serviceTestRun{

@@ -3,6 +3,7 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -164,6 +165,10 @@ func (*fakeRegistryScanner) Type() string {
 
 func (*fakeRegistryScanner) Name() string {
 	return "name"
+}
+
+func (*fakeRegistryScanner) HTTPClient() *http.Client {
+	return nil
 }
 
 func (f *fakeRegistryScanner) GetScanner() scannertypes.Scanner {

@@ -1,12 +1,12 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     collectionsAlias,
     collectionsCountAlias,
     visitCollections,
     visitCollectionsFromLeftNav,
-} from '../../helpers/collections';
-import { hasFeatureFlag } from '../../helpers/features';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
+} from './Collections.helpers';
 
 // Mock responses until endpoints are implemented.
 
@@ -46,7 +46,6 @@ describe('Collections table', () => {
 
         cy.get('th:contains("Collection")');
         cy.get('th:contains("Description")');
-        cy.get('th:contains("In use")');
     });
 
     it('should have button to create collection if role has READ_WRITE_ACCESS', () => {

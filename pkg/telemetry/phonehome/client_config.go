@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -51,7 +50,8 @@ type Config struct {
 
 	// Map of event name to the list of interceptors, that gather properties for
 	// the event.
-	interceptors map[string][]Interceptor
+	interceptors     map[string][]Interceptor
+	interceptorsLock sync.RWMutex
 }
 
 // Enabled tells whether telemetry data collection is enabled.
@@ -101,8 +101,8 @@ func (cfg *Config) Telemeter() Telemeter {
 // AddInterceptorFunc appends the custom list of telemetry interceptors with the
 // provided function.
 func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
-	mux.Lock()
-	defer mux.Unlock()
+	cfg.interceptorsLock.Lock()
+	defer cfg.interceptorsLock.Unlock()
 	if cfg.interceptors == nil {
 		cfg.interceptors = make(map[string][]Interceptor, 1)
 	}
@@ -113,7 +113,7 @@ func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
 func (cfg *Config) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
-		rp := getGRPCRequestDetails(ctx, err, info, req)
+		rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
 		go cfg.track(rp)
 		return resp, err
 	}
@@ -125,15 +125,12 @@ func (cfg *Config) GetHTTPInterceptor() httputil.HTTPInterceptor {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
 			handler.ServeHTTP(statusTrackingWriter, r)
-			rp := getHTTPRequestDetails(r.Context(), r, statusCodeToError(statusTrackingWriter.GetStatusCode()))
+			status := 0
+			if sptr := statusTrackingWriter.GetStatusCode(); sptr != nil {
+				status = *sptr
+			}
+			rp := getHTTPRequestDetails(r.Context(), r, status)
 			go cfg.track(rp)
 		})
 	}
-}
-
-func statusCodeToError(code *int) error {
-	if code == nil || *code == http.StatusOK {
-		return nil
-	}
-	return errors.Errorf("%d %s", *code, http.StatusText(*code))
 }

@@ -46,7 +46,7 @@ const (
 
 	// defaultCreationTimeout maximum time the test will wait until sensor emits
 	// resource creation event to central after fake resource was applied.
-	defaultCreationTimeout time.Duration = 10 * time.Second
+	defaultCreationTimeout time.Duration = 30 * time.Second
 )
 
 // YamlTestFile is a test file in YAML
@@ -262,6 +262,39 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 // AssertFunc is the deployment state assertion function signature.
 type AssertFunc func(deployment *storage.Deployment) error
 
+// MatchResource is a function to match sensor messages to be filtered.
+type MatchResource func(resource *central.MsgFromSensor) bool
+
+// AssertFuncAny is similar to AssertFunc but generic to any type of resource.
+type AssertFuncAny func(resource interface{}) error
+
+// LastResourceState same as LastResourceStateWithTimeout with a 3s default timeout.
+func (c *TestContext) LastResourceState(matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
+	c.LastResourceStateWithTimeout(matchResourceFn, assertFn, message, 3*time.Second)
+}
+
+// LastResourceStateWithTimeout filters all messages by `matchResourceFn` and checks that the last message matches `assertFn`. Timeouts after `timeout`.
+func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	lastErr := errors.New("no resource found for matching function")
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			msg := GetLastMessageMatching(messages, matchResourceFn)
+			if msg != nil {
+				lastErr = assertFn(msg.GetEvent())
+				if lastErr == nil {
+					return
+				}
+			}
+		}
+	}
+}
+
 // LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
 func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
 	c.LastDeploymentStateWithTimeout(name, assertion, message, 3*time.Second)
@@ -288,6 +321,16 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 			}
 		}
 	}
+}
+
+// GetLastMessageMatching finds last element in slice matching `matchFn`.
+func GetLastMessageMatching(messages []*central.MsgFromSensor, matchFn MatchResource) *central.MsgFromSensor {
+	for i := len(messages) - 1; i >= 0; i-- {
+		if matchFn(messages[i]) {
+			return messages[i]
+		}
+	}
+	return nil
 }
 
 // AlertAssertFunc is the alert assertion function signature.

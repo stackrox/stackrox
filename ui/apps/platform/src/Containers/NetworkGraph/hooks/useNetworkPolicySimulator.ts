@@ -2,15 +2,12 @@ import { useEffect, useState } from 'react';
 
 import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import {
-    fetchNetworkPoliciesByClusterId,
-    generateNetworkModification,
-    getUndoNetworkModification,
-} from 'services/NetworkService';
+import * as networkService from 'services/NetworkService';
 import { ensureExhaustive } from 'utils/type.utils';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
+import { Simulation } from '../utils/getSimulation';
 
-type NetworkPolicySimulator =
+export type NetworkPolicySimulator =
     | {
           state: 'ACTIVE';
           networkPolicies: NetworkPolicy[];
@@ -23,6 +20,10 @@ type NetworkPolicySimulator =
           isLoading: boolean;
           error: string;
       };
+
+export type SetNetworkPolicyModification = (action: SetNetworkPolicyModificationAction) => void;
+
+export type ApplyNetworkPolicyModification = () => void;
 
 type SetNetworkPolicyModificationAction =
     | {
@@ -50,13 +51,20 @@ type SetNetworkPolicyModificationAction =
     | {
           state: 'UPLOAD';
           options: {
-              modification: NetworkPolicyModification;
+              modification: NetworkPolicyModification | null;
+              error: string;
           };
       };
 
-function useNetworkPolicySimulator({ clusterId }): {
+type UseNetworkPolicySimulatorParams = {
+    simulation: Simulation;
+    clusterId: string;
+};
+
+function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySimulatorParams): {
     simulator: NetworkPolicySimulator;
-    setNetworkPolicyModification: (action: SetNetworkPolicyModificationAction) => void;
+    setNetworkPolicyModification: SetNetworkPolicyModification;
+    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
 } {
     const defaultResultState = {
         state: 'ACTIVE',
@@ -75,7 +83,7 @@ function useNetworkPolicySimulator({ clusterId }): {
                 searchQuery: '',
             },
         });
-    }, []);
+    }, [clusterId, simulation.isOn]);
 
     function setNetworkPolicyModification(action: SetNetworkPolicyModificationAction): void {
         const { state, options } = action;
@@ -98,7 +106,8 @@ function useNetworkPolicySimulator({ clusterId }): {
         switch (state) {
             case 'ACTIVE':
                 // @TODO: Add the network search query as a second argument
-                fetchNetworkPoliciesByClusterId(options.clusterId)
+                networkService
+                    .fetchNetworkPoliciesByClusterId(options.clusterId)
                     .then((data: NetworkPolicy[]) => {
                         setSimulator({
                             state,
@@ -122,12 +131,13 @@ function useNetworkPolicySimulator({ clusterId }): {
                     });
                 break;
             case 'GENERATED':
-                generateNetworkModification(
-                    options.clusterId,
-                    options.searchQuery,
-                    options.networkDataSince,
-                    options.excludePortsAndProtocols
-                )
+                networkService
+                    .generateNetworkModification(
+                        options.clusterId,
+                        options.searchQuery,
+                        options.networkDataSince,
+                        options.excludePortsAndProtocols
+                    )
                     .then((data: NetworkPolicyModification) => {
                         setSimulator({
                             state,
@@ -151,7 +161,8 @@ function useNetworkPolicySimulator({ clusterId }): {
                     });
                 break;
             case 'UNDO':
-                getUndoNetworkModification(options.clusterId)
+                networkService
+                    .getUndoNetworkModification(options.clusterId)
                     .then((data: NetworkPolicyModification) => {
                         setSimulator({
                             state,
@@ -178,7 +189,7 @@ function useNetworkPolicySimulator({ clusterId }): {
                 setSimulator({
                     state,
                     modification: options.modification,
-                    error: '',
+                    error: options.error,
                     isLoading: false,
                 });
                 break;
@@ -187,7 +198,42 @@ function useNetworkPolicySimulator({ clusterId }): {
         }
     }
 
-    return { simulator, setNetworkPolicyModification };
+    function applyNetworkPolicyModification() {
+        if (simulator.state === 'ACTIVE') {
+            return;
+        }
+        setSimulator({
+            state: simulator.state,
+            modification: simulator.modification,
+            error: '',
+            isLoading: true,
+        });
+        networkService
+            .applyNetworkPolicyModification(clusterId, simulator.modification)
+            .then(() => {
+                setNetworkPolicyModification({
+                    state: 'ACTIVE',
+                    options: {
+                        clusterId,
+                        searchQuery: '',
+                    },
+                });
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                const errorMessage =
+                    message || 'An unknown error occurred while applying the network policies';
+
+                setSimulator({
+                    state: simulator.state,
+                    modification: simulator.modification,
+                    error: errorMessage,
+                    isLoading: false,
+                });
+            });
+    }
+
+    return { simulator, setNetworkPolicyModification, applyNetworkPolicyModification };
 }
 
 export default useNetworkPolicySimulator;

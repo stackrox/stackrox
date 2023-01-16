@@ -73,7 +73,7 @@ type ComponentsAndVulnsWithActiveState struct {
 
 func TestActiveVulnerability(t *testing.T) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("ROX-13420")
+		t.Skip("ROX-14074")
 	}
 	waitForImageScanned(t)
 	for idx, tc := range nginxImages {
@@ -95,7 +95,7 @@ func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 
 func TestActiveVulnerability_SetImage(t *testing.T) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("ROX-13420")
+		t.Skip("ROX-14074")
 	}
 	waitForImageScanned(t)
 	setupDeploymentWithReplicas(t, nginxImages[0].getImage(), avmDeploymentName, 3)

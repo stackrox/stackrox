@@ -155,6 +155,7 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 		postgresID:  vulnReporterPermissionSetID,
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: []permissions.ResourceWithAccess{
+			// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 			permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
 			permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
 			permissions.View(resources.Role),                   // required for scopes
@@ -175,6 +176,9 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 			Name:          roleName,
 			Description:   attributes.description,
 			AccessScopeId: rolePkg.AccessScopeIncludeAll.GetId(),
+			Traits: &storage.Traits{
+				Origin: storage.Traits_DEFAULT,
+			},
 		}
 
 		permissionSet := &storage.PermissionSet{
@@ -182,6 +186,9 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 			Name:             role.Name,
 			Description:      role.Description,
 			ResourceToAccess: resourceToAccess,
+			Traits: &storage.Traits{
+				Origin: storage.Traits_DEFAULT,
+			},
 		}
 		role.PermissionSetId = permissionSet.Id
 		permissionSets = append(permissionSets, permissionSet)

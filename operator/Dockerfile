@@ -25,7 +25,9 @@ COPY go.sum go.sum
 # However it does _not_ seem to resolve packages _incorrectly_ and so should be safe especially given that downloaded
 # packages are only used during build and later this docker layer is discarded (only resulting binary goes in the final
 # image).
-RUN go mod download
+# Retry as the proxy can be unavailable at times.
+ENV GOPROXY=https://proxy.golang.org|https://goproxy.io|direct
+RUN go mod download || go mod download || go mod download
 
 # Copy operator source
 COPY operator/ operator/

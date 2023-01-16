@@ -3,6 +3,7 @@ import { Badge, Select, SelectOption, SelectVariant } from '@patternfly/react-co
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Namespace } from 'hooks/useFetchClusterNamespaces';
+import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 
 function filterElementsWithValueProp(
@@ -21,6 +22,8 @@ function filterElementsWithValueProp(
 type NamespaceSelectorProps = {
     namespaces?: Namespace[];
     selectedNamespaces?: string[];
+    selectedDeployments?: string[];
+    deploymentsByNamespace?: NamespaceWithDeployments[];
     searchFilter: Partial<Record<string, string | string[]>>;
     setSearchFilter: (newFilter: Partial<Record<string, string | string[]>>) => void;
 };
@@ -28,6 +31,8 @@ type NamespaceSelectorProps = {
 function NamespaceSelector({
     namespaces = [],
     selectedNamespaces = [],
+    selectedDeployments = [],
+    deploymentsByNamespace = [],
     searchFilter,
     setSearchFilter,
 }: NamespaceSelectorProps) {
@@ -57,6 +62,11 @@ function NamespaceSelector({
         [namespaces]
     );
 
+    const deploymentLookup: Record<string, string[]> = deploymentsByNamespace.reduce((acc, ns) => {
+        const deployments = ns.deployments.map((deployment) => deployment.name);
+        return { ...acc, [ns.metadata.name]: deployments };
+    }, {});
+
     const onNamespaceSelect = (_, selected) => {
         closeNamespaceSelect();
 
@@ -64,8 +74,18 @@ function NamespaceSelector({
             ? selectedNamespaces.filter((nsFilter) => nsFilter !== selected)
             : selectedNamespaces.concat(selected);
 
+        const newDeploymentLookup = Object.fromEntries(
+            Object.entries(deploymentLookup).filter(([key]) => newSelection.includes(key))
+        );
+        const allowedDeployments = Object.values(newDeploymentLookup).flat(1);
+
+        const filteredSelectedDeployments = selectedDeployments.filter((deployment) =>
+            allowedDeployments.includes(deployment)
+        );
+
         const modifiedSearchObject = { ...searchFilter };
         modifiedSearchObject.Namespace = newSelection;
+        modifiedSearchObject.Deployment = filteredSelectedDeployments;
         setSearchFilter(modifiedSearchObject);
     };
 
@@ -91,12 +111,18 @@ function NamespaceSelector({
             onSelect={onNamespaceSelect}
             onFilter={onFilterNamespaces}
             className="namespace-select"
-            placeholderText="Namespaces"
+            placeholderText={
+                <span>
+                    <NamespaceIcon className="pf-u-mr-xs" />{' '}
+                    <span style={{ position: 'relative', top: '1px' }}>Namespaces</span>
+                </span>
+            }
             isDisabled={namespaceSelectOptions.length === 0}
             selections={selectedNamespaces}
             variant={SelectVariant.checkbox}
             maxHeight="275px"
             hasInlineFilter
+            isPlain
         >
             {namespaceSelectOptions}
         </Select>

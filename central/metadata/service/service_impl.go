@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -47,19 +48,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadata, error) {
-	dbAvailable := true
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := s.db.Ping(ctx); err != nil {
-			dbAvailable = false
-			log.Warn("central is unable to communicate with the database.")
-		}
-	}
-
 	metadata := &v1.Metadata{
 		BuildFlavor:   buildinfo.BuildFlavor,
 		ReleaseBuild:  buildinfo.ReleaseBuild,
 		LicenseStatus: v1.Metadata_VALID,
-		DbAvailable:   dbAvailable,
 	}
 	// Only return the version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
@@ -145,4 +137,32 @@ func (s *serviceImpl) TLSChallenge(ctx context.Context, req *v1.TLSChallengeRequ
 	}
 
 	return resp, nil
+}
+
+// GetDatabaseStatus returns the database status for Rox.
+func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.DatabaseStatus, error) {
+	dbStatus := &v1.DatabaseStatus{
+		DatabaseAvailable: true,
+	}
+
+	dbType := v1.DatabaseStatus_RocksDB
+	var dbVersion string
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		dbType = v1.DatabaseStatus_PostgresDB
+		if err := s.db.Ping(ctx); err != nil {
+			dbStatus.DatabaseAvailable = false
+			log.Warn("central is unable to communicate with the database.")
+			return dbStatus, nil
+		}
+
+		dbVersion = globaldb.GetPostgresVersion(ctx, s.db)
+	}
+
+	// Only return the database type and version to logged in users, not anonymous users.
+	if authn.IdentityFromContextOrNil(ctx) != nil {
+		dbStatus.DatabaseVersion = dbVersion
+		dbStatus.DatabaseType = dbType
+	}
+
+	return dbStatus, nil
 }

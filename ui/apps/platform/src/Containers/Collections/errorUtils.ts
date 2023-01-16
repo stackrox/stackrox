@@ -50,7 +50,7 @@ export function parseConfigError(err: Error): CollectionConfigError {
         // Error for collection update
         /name already in use/.test(rawMessage)
     ) {
-        return { type: 'DuplicateName', message: 'Name must be unique' };
+        return { type: 'DuplicateName', message: 'The collection name must be unique' };
     }
 
     if (/name should not be empty/.test(rawMessage)) {

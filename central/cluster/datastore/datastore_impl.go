@@ -761,12 +761,12 @@ func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
 		orphanedClusterIDsInNodeStore.Add(clusterID)
 	}
 
-	clusters, err := ds.GetClusters(ctx)
+	results, err := ds.Search(ctx, pkgSearch.EmptyQuery())
 	if err != nil {
 		return errors.Wrap(err, "retrieving clusters")
 	}
-	for _, cluster := range clusters {
-		orphanedClusterIDsInNodeStore.Remove(cluster.GetId())
+	for _, id := range pkgSearch.ResultsToIDs(results) {
+		orphanedClusterIDsInNodeStore.Remove(id)
 	}
 
 	return ds.nodeDataStore.RemoveClusterNodeStores(ctx, orphanedClusterIDsInNodeStore.AsSlice()...)

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -28,6 +29,7 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.Risk)(nil)), "risks")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_RISKS, "risk", (*storage.Risk)(nil)))
 		RegisterTable(schema, CreateTableRisksStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_RISKS, schema)
 		return schema
 	}()
 )

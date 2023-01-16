@@ -89,9 +89,11 @@ export const defaultSelectedRole = {
     resourceToAccess: defaultNewRolePermissions,
 };
 
-// TODO: ROX-12750 update with new list of replaced/deprecated resources
+// TODO: ROX-12750 update with new list of replaced/deprecated resources.
+// TODO: ROX-13888 Remove WorkflowAdministration.
 export const resourceSubstitutions: Record<string, string[]> = {
     Access: ['AuthProvider', 'Group', 'Licenses', 'User'],
+    Cluster: ['ClusterCVE'],
     DeploymentExtension: ['Indicator', 'NetworkBaseline', 'ProcessWhitelist', 'Risk'],
     Integration: [
         'APIToken',
@@ -101,8 +103,11 @@ export const resourceSubstitutions: Record<string, string[]> = {
         'SignatureIntegration',
     ],
     Image: ['ImageComponent'],
+    WorkflowAdministration: ['Policy', 'VulnerabilityReports'],
 };
 
+// TODO: ROX-12750 update with new list of replaced/deprecated resources.
+// TODO: ROX-13888 Remove Policy, VulnerabilityReports.
 // TODO: ROX-12750 update with new list of replaced/deprecated resources
 export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([
     ['AllComments', '3.75'],
@@ -115,13 +120,14 @@ export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([
     ['ScannerDefinitions', '3.75'],
     ['SensorUpgradeConfig', '3.75'],
     ['ServiceIdentity', '3.75'],
-    ['ClusterCVE', '3.74'],
+    ['VulnerabilityReports', '3.76'],
 ]);
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
 export const replacedResourceMapping = new Map<ResourceName, string>([
     // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs,
     // NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
+    // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
     ['AllComments', 'Administration'],
     ['ComplianceRuns', 'Compliance'],
     ['Config', 'Administration'],
@@ -132,7 +138,7 @@ export const replacedResourceMapping = new Map<ResourceName, string>([
     ['ScannerDefinitions', 'Administration'],
     ['SensorUpgradeConfig', 'Administration'],
     ['ServiceIdentity', 'Administration'],
-    ['ClusterCVE', 'Cluster'],
+    ['VulnerabilityReports', 'WorkflowAdministration'],
 ]);
 
 export const deprecatedResourceRowStyle = { backgroundColor: 'rgb(255,250,205)' };

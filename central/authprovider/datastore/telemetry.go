@@ -5,6 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -12,9 +14,10 @@ import (
 
 // Gather auth provider names and number of groups per auth provider.
 var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, error) {
-	// WithAllAccess is required only to fetch and calculate the number of
-	// auth providers and groups. It is not propagated anywhere else.
-	ctx = sac.WithAllAccess(ctx)
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Access)))
 	props := make(map[string]any)
 
 	providers, err := Singleton().GetAllAuthProviders(ctx)

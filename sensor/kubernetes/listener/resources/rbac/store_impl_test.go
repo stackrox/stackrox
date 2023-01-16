@@ -1,21 +1,33 @@
 package rbac
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/common/store/mocks"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestStore(t *testing.T) {
+func TestStore_DispatcherEvents(t *testing.T) {
+	// Run these tests only with feature flag enabled. Changes to the old path should be avoided whenever possible.
+	// TODO(ROX-14284): Re-enable this tests setting the custom env rather than the feature flag
+	t.Setenv("ROX_RESYNC_DISABLED", "true")
+	if !features.ResyncDisabled.Enabled() {
+		t.Skipf("Tests will fail if the new resyncless pass is disabled. E.g. in release tests")
+	}
 	// Namespace: n1
 	// Role: r1
 	// Bindings:
@@ -46,9 +58,8 @@ func TestStore(t *testing.T) {
 	clusterRoles := []*v1.ClusterRole{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				UID:       types.UID("r2"),
-				Name:      "r2",
-				Namespace: "n1",
+				UID:  types.UID("r2"),
+				Name: "r2",
 			},
 		},
 	}
@@ -93,9 +104,8 @@ func TestStore(t *testing.T) {
 	clusterBindings := []*v1.ClusterRoleBinding{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				UID:       types.UID("b3"),
-				Name:      "b3",
-				Namespace: "n1",
+				UID:  types.UID("b3"),
+				Name: "b3",
 			},
 			RoleRef: v1.RoleRef{
 				Name:     "r2",
@@ -105,9 +115,8 @@ func TestStore(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				UID:       types.UID("b4"),
-				Name:      "b4",
-				Namespace: "n1",
+				UID:  types.UID("b4"),
+				Name: "b4",
 			},
 			RoleRef: v1.RoleRef{
 				Name:     "r2",
@@ -118,15 +127,26 @@ func TestStore(t *testing.T) {
 	}
 
 	tested := NewStore().(*storeImpl)
-	dispatcher := NewDispatcher(tested)
+	fakeClient := fake.NewSimpleClientset()
+	dispatcher := NewDispatcher(tested, fakeClient)
 
-	// Add a binding with no role, should get a binding update with no role id.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{
+	eventsInOrder := []struct {
+		k8sEvent          any
+		action            central.ResourceAction
+		unorderedMessages []*central.SensorEvent
+		createK8sResource func() error
+	}{
+		{
+			k8sEvent: bindings[0],
+			action:   central.ResourceAction_CREATE_RESOURCE,
+			createK8sResource: func() error {
+				_, err := fakeClient.RbacV1().RoleBindings(bindings[0].Namespace).Create(context.TODO(), bindings[0], metav1.CreateOptions{})
+				return err
+			},
+			unorderedMessages: []*central.SensorEvent{
 				{
 					Id:     "b1",
-					Action: central.ResourceAction_UPDATE_RESOURCE,
+					Action: central.ResourceAction_CREATE_RESOURCE,
 					Resource: &central.SensorEvent_Binding{
 						Binding: &storage.K8SRoleBinding{
 							Id:        "b1",
@@ -139,12 +159,14 @@ func TestStore(t *testing.T) {
 					},
 				}},
 		},
-		dispatcher.ProcessEvent(bindings[0], nil, central.ResourceAction_UPDATE_RESOURCE))
-
-	// Upsert the role for the previous binding. The next binding update will get its ID.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{
+		{
+			k8sEvent: roles[0],
+			action:   central.ResourceAction_CREATE_RESOURCE,
+			createK8sResource: func() error {
+				_, err := fakeClient.RbacV1().Roles(roles[0].Namespace).Create(context.TODO(), roles[0], metav1.CreateOptions{})
+				return err
+			},
+			unorderedMessages: []*central.SensorEvent{
 				{
 					Id:     "r1",
 					Action: central.ResourceAction_CREATE_RESOURCE,
@@ -165,61 +187,85 @@ func TestStore(t *testing.T) {
 							}},
 						},
 					},
+				},
+				{
+					Id:     "b1",
+					Action: central.ResourceAction_UPDATE_RESOURCE,
+					Resource: &central.SensorEvent_Binding{
+						Binding: &storage.K8SRoleBinding{
+							Id:        "b1",
+							Name:      "b1",
+							Namespace: "n1",
+							CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
+							RoleId:    "r1",
+							Subjects:  []*storage.Subject{},
+						},
+					},
 				}},
 		},
-		dispatcher.ProcessEvent(roles[0], nil, central.ResourceAction_CREATE_RESOURCE))
-
-	// Add another binding for the first role. The binding update should contain the role ID.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{{
-				Id:     "b2",
-				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_Binding{
-					Binding: &storage.K8SRoleBinding{
-						Id:        "b2",
-						Name:      "b2",
-						Namespace: "n1",
-						RoleId:    "r1", // Note that the role ID is now filled in.
-						CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[1].GetCreationTimestamp().Time),
-						Subjects:  []*storage.Subject{},
+		{
+			k8sEvent: bindings[1],
+			action:   central.ResourceAction_CREATE_RESOURCE,
+			createK8sResource: func() error {
+				_, err := fakeClient.RbacV1().RoleBindings(bindings[1].Namespace).Create(context.TODO(), bindings[1], metav1.CreateOptions{})
+				return err
+			},
+			unorderedMessages: []*central.SensorEvent{
+				{
+					Id:     "b2",
+					Action: central.ResourceAction_CREATE_RESOURCE,
+					Resource: &central.SensorEvent_Binding{
+						Binding: &storage.K8SRoleBinding{
+							Id:        "b2",
+							Name:      "b2",
+							Namespace: "n1",
+							RoleId:    "r1", // Note that the role ID is now filled in.
+							CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[1].GetCreationTimestamp().Time),
+							Subjects:  []*storage.Subject{},
+						},
 					},
 				},
-			}},
+			},
 		},
-		dispatcher.ProcessEvent(bindings[1], nil, central.ResourceAction_UPDATE_RESOURCE))
-
-	// Add binding for the second role. The binding update should NOT contain the role ID.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{{
-				Id:     "b5",
-				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_Binding{
-					Binding: &storage.K8SRoleBinding{
-						Id:        "b5",
-						Name:      "b5",
-						Namespace: "n1",
-						RoleId:    "",
-						CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
-						Subjects:  []*storage.Subject{},
+		{
+			k8sEvent: bindings[2],
+			action:   central.ResourceAction_CREATE_RESOURCE,
+			createK8sResource: func() error {
+				_, err := fakeClient.RbacV1().RoleBindings(bindings[2].Namespace).Create(context.TODO(), bindings[2], metav1.CreateOptions{})
+				return err
+			},
+			unorderedMessages: []*central.SensorEvent{
+				{
+					Id:     "b5",
+					Action: central.ResourceAction_CREATE_RESOURCE,
+					Resource: &central.SensorEvent_Binding{
+						Binding: &storage.K8SRoleBinding{
+							Id:          "b5",
+							Name:        "b5",
+							Namespace:   "n1",
+							RoleId:      "",
+							ClusterRole: true,
+							CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
+							Subjects:    []*storage.Subject{},
+						},
 					},
 				},
-			}},
+			},
 		},
-		dispatcher.ProcessEvent(bindings[2], nil, central.ResourceAction_UPDATE_RESOURCE))
-
-	// Add a cluster binding with no role, should get a cluster binding update with no role id.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{{
+		{
+			k8sEvent: clusterBindings[0],
+			action:   central.ResourceAction_CREATE_RESOURCE,
+			createK8sResource: func() error {
+				_, err := fakeClient.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterBindings[0], metav1.CreateOptions{})
+				return err
+			},
+			unorderedMessages: []*central.SensorEvent{{
 				Id:     "b3",
 				Action: central.ResourceAction_CREATE_RESOURCE,
 				Resource: &central.SensorEvent_Binding{
 					Binding: &storage.K8SRoleBinding{
-						Id:        "b3",
-						Name:      "b3",
-						Namespace: "n1",
+						Id:   "b3",
+						Name: "b3",
 						// No role ID since the role does not yet exist.
 						ClusterRole: true,
 						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
@@ -228,59 +274,94 @@ func TestStore(t *testing.T) {
 				},
 			}},
 		},
-		dispatcher.ProcessEvent(clusterBindings[0], nil, central.ResourceAction_CREATE_RESOURCE))
-
-	// Upsert the role for the previous binding. The next binding update will get its ID.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{{
-				Id:     "r2",
-				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_Role{
-					Role: &storage.K8SRole{
-						Id:          "r2",
-						Name:        "r2",
-						Namespace:   "n1",
-						ClusterRole: true,
-						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
-						Rules:       []*storage.PolicyRule{},
+		{
+			k8sEvent: clusterRoles[0],
+			action:   central.ResourceAction_CREATE_RESOURCE,
+			createK8sResource: func() error {
+				_, err := fakeClient.RbacV1().ClusterRoles().Create(context.TODO(), clusterRoles[0], metav1.CreateOptions{})
+				return err
+			},
+			unorderedMessages: []*central.SensorEvent{
+				{
+					Id:     "r2",
+					Action: central.ResourceAction_CREATE_RESOURCE,
+					Resource: &central.SensorEvent_Role{
+						Role: &storage.K8SRole{
+							Id:          "r2",
+							Name:        "r2",
+							ClusterRole: true,
+							CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
+							Rules:       []*storage.PolicyRule{},
+						},
 					},
 				},
-			}},
+				{
+					Id:     "b5",
+					Action: central.ResourceAction_UPDATE_RESOURCE,
+					Resource: &central.SensorEvent_Binding{
+						Binding: &storage.K8SRoleBinding{
+							Id:          "b5",
+							Name:        "b5",
+							Namespace:   "n1",
+							RoleId:      "r2",
+							ClusterRole: true,
+							CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
+							Subjects:    []*storage.Subject{},
+						},
+					},
+				},
+				{
+					Id:     "b3",
+					Action: central.ResourceAction_UPDATE_RESOURCE,
+					Resource: &central.SensorEvent_Binding{
+						Binding: &storage.K8SRoleBinding{
+							Id:          "b3",
+							Name:        "b3",
+							ClusterRole: true,
+							RoleId:      "r2",
+							CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
+							Subjects:    []*storage.Subject{},
+						},
+					},
+				}},
 		},
-		dispatcher.ProcessEvent(clusterRoles[0], nil, central.ResourceAction_UPDATE_RESOURCE))
-
-	// Upsert binding for the second role. The binding update should contain the role ID.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{{
+		{
+			k8sEvent: bindings[2],
+			action:   central.ResourceAction_UPDATE_RESOURCE,
+			createK8sResource: func() error {
+				_, err := fakeClient.RbacV1().RoleBindings(bindings[2].Namespace).Update(context.TODO(), bindings[2], metav1.UpdateOptions{})
+				return err
+			},
+			unorderedMessages: []*central.SensorEvent{{
 				Id:     "b5",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
 				Resource: &central.SensorEvent_Binding{
 					Binding: &storage.K8SRoleBinding{
-						Id:        "b5",
-						Name:      "b5",
-						Namespace: "n1",
-						RoleId:    "r2",
-						CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
-						Subjects:  []*storage.Subject{},
+						Id:          "b5",
+						Name:        "b5",
+						Namespace:   "n1",
+						RoleId:      "r2",
+						ClusterRole: true,
+						CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
+						Subjects:    []*storage.Subject{},
 					},
 				},
 			}},
 		},
-		dispatcher.ProcessEvent(bindings[2], nil, central.ResourceAction_UPDATE_RESOURCE))
-
-	// Update the cluster binding to add a new Subject, should get a cluster binding update with the new role ID.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{{
+		{
+			k8sEvent: clusterBindings[0],
+			action:   central.ResourceAction_UPDATE_RESOURCE,
+			createK8sResource: func() error {
+				_, err := fakeClient.RbacV1().ClusterRoleBindings().Update(context.TODO(), clusterBindings[0], metav1.UpdateOptions{})
+				return err
+			},
+			unorderedMessages: []*central.SensorEvent{{
 				Id:     "b3",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
 				Resource: &central.SensorEvent_Binding{
 					Binding: &storage.K8SRoleBinding{
 						Id:          "b3",
 						Name:        "b3",
-						Namespace:   "n1",
 						RoleId:      "r2", // Note that the role ID is now filled in.
 						ClusterRole: true,
 						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
@@ -289,48 +370,192 @@ func TestStore(t *testing.T) {
 				},
 			}},
 		},
-		dispatcher.ProcessEvent(clusterBindings[0], nil, central.ResourceAction_UPDATE_RESOURCE))
-
-	// Remove the role. The role should get removed and the binding should get updated with an empty role id.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{{
+		{
+			k8sEvent: clusterRoles[0],
+			action:   central.ResourceAction_REMOVE_RESOURCE,
+			createK8sResource: func() error {
+				return fakeClient.RbacV1().ClusterRoles().Delete(context.TODO(), clusterRoles[0].Name, metav1.DeleteOptions{})
+			},
+			unorderedMessages: []*central.SensorEvent{{
 				Id:     "r2",
 				Action: central.ResourceAction_REMOVE_RESOURCE,
 				Resource: &central.SensorEvent_Role{
 					Role: &storage.K8SRole{
 						Id:          "r2",
 						Name:        "r2",
-						Namespace:   "n1",
 						ClusterRole: true,
 						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
 						Rules:       []*storage.PolicyRule{},
 					},
 				},
-			}},
-		},
-		dispatcher.ProcessEvent(clusterRoles[0], nil, central.ResourceAction_REMOVE_RESOURCE))
-
-	// Update the cluster binding to add another Subject, should get a cluster binding update *without* role ID.
-	assert.Equal(t,
-		&component.ResourceEvent{
-			ForwardMessages: []*central.SensorEvent{{
-				Id:     "b3",
-				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_Binding{
-					Binding: &storage.K8SRoleBinding{
-						Id:        "b3",
-						Name:      "b3",
-						Namespace: "n1",
-						// Note that the role ID is now absent.
-						ClusterRole: true,
-						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-						Subjects:    []*storage.Subject{},
+			},
+				{
+					Id:     "b5",
+					Action: central.ResourceAction_UPDATE_RESOURCE,
+					Resource: &central.SensorEvent_Binding{
+						Binding: &storage.K8SRoleBinding{
+							Id:        "b5",
+							Name:      "b5",
+							Namespace: "n1",
+							// Note that the role ID is now absent.
+							ClusterRole: true,
+							CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
+							Subjects:    []*storage.Subject{},
+						},
 					},
 				},
+				{
+					Id:     "b3",
+					Action: central.ResourceAction_UPDATE_RESOURCE,
+					Resource: &central.SensorEvent_Binding{
+						Binding: &storage.K8SRoleBinding{
+							Id:   "b3",
+							Name: "b3",
+							// Note that the role ID is now absent.
+							ClusterRole: true,
+							CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
+							Subjects:    []*storage.Subject{},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, event := range eventsInOrder {
+		require.NoError(t, event.createK8sResource())
+		actual := dispatcher.ProcessEvent(event.k8sEvent, nil, event.action)
+		assert.ElementsMatch(t, event.unorderedMessages, actual.ForwardMessages)
+	}
+}
+
+func TestStore_DeploymentRelationship(t *testing.T) {
+	// Run these tests only with feature flag enabled. Changes to the old path should be avoided whenever possible.
+	// TODO(ROX-14284): Re-enable this tests setting the custom env rather than the feature flag
+	t.Setenv("ROX_RESYNC_DISABLED", "true")
+	if !features.ResyncDisabled.Enabled() {
+		t.Skipf("Tests will fail if the new resyncless pass is disabled. E.g. in release tests")
+	}
+	roles := []*v1.Role{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       types.UID("r1"),
+				Name:      "r1",
+				Namespace: "n1",
+			},
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"get"},
 			}},
 		},
-		dispatcher.ProcessEvent(clusterBindings[0], nil, central.ResourceAction_UPDATE_RESOURCE))
+	}
+	clusterRoles := []*v1.ClusterRole{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:  types.UID("r2"),
+				Name: "r2",
+			},
+		},
+	}
+	bindings := []*v1.RoleBinding{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       types.UID("b1"),
+				Name:      "b1",
+				Namespace: "n1",
+			},
+			RoleRef: v1.RoleRef{
+				Name:     "r1",
+				Kind:     "Role",
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+			Subjects: []v1.Subject{{
+				Kind:      "ServiceAccount",
+				Name:      "sa1",
+				Namespace: "n1",
+			}},
+		},
+	}
+	clusterBindings := []*v1.ClusterRoleBinding{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:  types.UID("b3"),
+				Name: "b3",
+			},
+			RoleRef: v1.RoleRef{
+				Name:     "r2",
+				Kind:     "ClusterRole",
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+			Subjects: []v1.Subject{{
+				Kind:      "ServiceAccount",
+				Name:      "sa2",
+				Namespace: "n1",
+			}},
+		},
+	}
+
+	testCases := map[string]struct {
+		orderedUpdates         []any
+		serviceAccountsUpdates []string
+	}{
+		"Update service account based on single binding": {
+			orderedUpdates:         []any{bindings[0]},
+			serviceAccountsUpdates: []string{"sa1"},
+		},
+		"No service account update if only a role is received": {
+			orderedUpdates:         []any{roles[0]},
+			serviceAccountsUpdates: nil,
+		},
+		"Update service account both on binding and role update": {
+			orderedUpdates:         []any{bindings[0], roles[0]},
+			serviceAccountsUpdates: []string{"sa1", "sa1"},
+		},
+		"Update service account based on single cluster binding": {
+			orderedUpdates:         []any{clusterBindings[0]},
+			serviceAccountsUpdates: []string{"sa2"},
+		},
+		"No service account update if only a custer role is received": {
+			orderedUpdates:         []any{clusterRoles[0]},
+			serviceAccountsUpdates: nil,
+		},
+		"Update service account both on cluster binding and cluster role update": {
+			orderedUpdates:         []any{clusterBindings[0], clusterRoles[0]},
+			serviceAccountsUpdates: []string{"sa2", "sa2"},
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			tested := NewStore().(*storeImpl)
+			fakeClient := fake.NewSimpleClientset()
+			dispatcher := NewDispatcher(tested, fakeClient)
+			var ref []resolver.DeploymentReference
+			for _, update := range testCase.orderedUpdates {
+				event := dispatcher.ProcessEvent(update, nil, central.ResourceAction_CREATE_RESOURCE)
+				ref = append(ref, event.DeploymentReference)
+			}
+
+			var orderedServiceAccounts []string
+			mockCtrl := gomock.NewController(t)
+			deploymentStore := mocks.NewMockDeploymentStore(mockCtrl)
+
+			deploymentStore.EXPECT().FindDeploymentIDsWithServiceAccount(gomock.Any(), gomock.Any()).
+				Times(len(testCase.serviceAccountsUpdates)).
+				Do(func(_, serviceAccount string) {
+					orderedServiceAccounts = append(orderedServiceAccounts, serviceAccount)
+				})
+
+			for _, r := range ref {
+				assert.NotNil(t, r)
+				r(deploymentStore)
+			}
+
+			assert.Equal(t, testCase.serviceAccountsUpdates, orderedServiceAccounts)
+		})
+
+	}
 }
 
 type storeObjectCounts struct {

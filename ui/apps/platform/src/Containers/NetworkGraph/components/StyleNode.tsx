@@ -4,13 +4,13 @@ import * as React from 'react';
 import {
     Decorator,
     DEFAULT_DECORATOR_RADIUS,
+    DEFAULT_DECORATOR_PADDING,
     DEFAULT_LAYER,
     DefaultNode,
     getDefaultShapeDecoratorCenter,
     Layer,
     Node,
     NodeShape,
-    NodeStatus,
     observer,
     ScaleDetailsLevel,
     ShapeProps,
@@ -23,18 +23,19 @@ import {
     WithSelectionProps,
 } from '@patternfly/react-topology';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
-import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
-import FolderOpenIcon from '@patternfly/react-icons/dist/esm/icons/folder-open-icon';
-import BlueprintIcon from '@patternfly/react-icons/dist/esm/icons/blueprint-icon';
-import PauseCircle from '@patternfly/react-icons/dist/esm/icons/pause-circle-icon';
+import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
-export enum DataTypes {
-    Default,
-    Alternate,
-}
+import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
+import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
+import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
+import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
+import { ensureExhaustive } from 'utils/type.utils';
+import { NetworkPolicyState, DeploymentData, NodeDataType } from '../types/topology.type';
+
 const ICON_PADDING = 20;
+const CUSTOM_DECORATOR_PADDING = 2.5;
 
 type StyleNodeProps = {
     element: Node;
@@ -50,22 +51,24 @@ type StyleNodeProps = {
     WithDragNodeProps &
     WithSelectionProps;
 
-const getTypeIcon = (dataType?: DataTypes): any => {
-    switch (dataType) {
-        case DataTypes.Alternate:
-            return AlternateIcon;
+const getTypeIcon = (type?: NodeDataType): any => {
+    switch (type) {
+        case 'EXTERNAL_ENTITIES':
+        case 'CIDR_BLOCK':
+            return PficonNetworkRangeIcon;
+
         default:
             return DefaultIcon;
     }
 };
 
-const renderIcon = (data: { dataType?: DataTypes }, element: Node): React.ReactNode => {
+const renderIcon = (data: { type?: NodeDataType }, element: Node): React.ReactNode => {
     const { width, height } = element.getDimensions();
     const shape = element.getNodeShape();
     const iconSize =
         (shape === NodeShape.trapezoid ? width : Math.min(width, height)) -
         (shape === NodeShape.stadium ? 5 : ICON_PADDING) * 2;
-    const Component = getTypeIcon(data.dataType);
+    const Component = getTypeIcon(data.type);
 
     return (
         <g transform={`translate(${(width - iconSize) / 2}, ${(height - iconSize) / 2})`}>
@@ -73,6 +76,21 @@ const renderIcon = (data: { dataType?: DataTypes }, element: Node): React.ReactN
         </g>
     );
 };
+
+function getPolicyStateIcon(policyState: NetworkPolicyState) {
+    switch (policyState) {
+        case 'both':
+            return <BothPolicyRules width="22px" height="22px" />;
+        case 'egress':
+            return <EgressOnly width="22px" height="22px" />;
+        case 'ingress':
+            return <IngressOnly width="22px" height="22px" />;
+        case 'none':
+            return <NoPolicyRules width="22px" height="22px" />;
+        default:
+            return ensureExhaustive(policyState);
+    }
+}
 
 const renderDecorator = (
     element: Node,
@@ -90,13 +108,26 @@ const renderDecorator = (
     const { x, y } = getShapeDecoratorCenter
         ? getShapeDecoratorCenter(quadrant, element)
         : getDefaultShapeDecoratorCenter(quadrant, element);
+    const padding =
+        quadrant === TopologyQuadrant.lowerLeft
+            ? DEFAULT_DECORATOR_PADDING - CUSTOM_DECORATOR_PADDING
+            : DEFAULT_DECORATOR_PADDING;
 
-    return <Decorator x={x} y={y} radius={DEFAULT_DECORATOR_RADIUS} showBackground icon={icon} />;
+    return (
+        <Decorator
+            x={x}
+            y={y}
+            radius={DEFAULT_DECORATOR_RADIUS}
+            showBackground
+            icon={icon}
+            padding={padding}
+        />
+    );
 };
 
 const renderDecorators = (
     element: Node,
-    data: { showDecorators?: boolean },
+    data: DeploymentData,
     getShapeDecoratorCenter?: (
         quadrant: TopologyQuadrant,
         node: Node
@@ -105,32 +136,24 @@ const renderDecorators = (
         y: number;
     }
 ): React.ReactNode => {
-    if (!data.showDecorators) {
-        return null;
-    }
-    const nodeStatus = element.getNodeStatus();
+    const { showPolicyState, networkPolicyState, showExternalState, isExternallyConnected } = data;
     return (
         <>
-            {!nodeStatus || nodeStatus === NodeStatus.default
-                ? renderDecorator(
-                      element,
-                      TopologyQuadrant.upperLeft,
-                      <FolderOpenIcon />,
-                      getShapeDecoratorCenter
-                  )
-                : null}
-            {renderDecorator(
-                element,
-                TopologyQuadrant.upperRight,
-                <BlueprintIcon />,
-                getShapeDecoratorCenter
-            )}
-            {renderDecorator(
-                element,
-                TopologyQuadrant.lowerLeft,
-                <PauseCircle />,
-                getShapeDecoratorCenter
-            )}
+            {showExternalState &&
+                isExternallyConnected &&
+                renderDecorator(
+                    element,
+                    TopologyQuadrant.upperRight,
+                    <PficonNetworkRangeIcon />,
+                    getShapeDecoratorCenter
+                )}
+            {showPolicyState &&
+                renderDecorator(
+                    element,
+                    TopologyQuadrant.lowerLeft,
+                    getPolicyStateIcon(networkPolicyState),
+                    getShapeDecoratorCenter
+                )}
         </>
     );
 };

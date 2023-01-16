@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
 	"text/template"
 	"time"
 
@@ -11,24 +13,30 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifiers"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/common"
+	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -36,7 +44,7 @@ import (
 )
 
 const (
-	numDeploymentsLimit = 50
+	deploymentsPaginationLimit = 50
 
 	reportDataQuery = `query getVulnReportData($scopequery: String, 
 							$cvequery: String, $pagination: Pagination) {
@@ -71,9 +79,7 @@ const (
 	reportQueryPostgres = `query getVulnReportData($scopequery: String, 
 							$cvequery: String, $pagination: Pagination) {
 							deployments: deployments(query: $scopequery, pagination: $pagination) {
-								cluster {
-									name
-								}
+								clusterName
 								namespace
 								name
 								images {
@@ -105,6 +111,8 @@ const (
 
 	noVulnsFoundEmailTemplate = `
 	{{.BrandedProductName}} has found zero vulnerabilities associated with the running container images owned by your organization.`
+
+	paginatedQueryStartOffset = 0
 )
 
 var (
@@ -127,17 +135,19 @@ type scheduler struct {
 	cron                   *cron.Cron
 	reportConfigToEntryIDs map[string]cron.EntryID
 
-	reportConfigDatastore reportConfigDS.DataStore
-	notifierDatastore     notifierDataStore.DataStore
-	clusterDatastore      clusterDataStore.DataStore
-	namespaceDatastore    namespaceDatastore.DataStore
-	roleDatastore         roleDataStore.DataStore
-	notificationProcessor processor.Processor
+	reportConfigDatastore   reportConfigDS.DataStore
+	notifierDatastore       notifierDataStore.DataStore
+	clusterDatastore        clusterDataStore.DataStore
+	namespaceDatastore      namespaceDataStore.DataStore
+	deploymentDatastore     deploymentDataStore.DataStore
+	roleDatastore           roleDataStore.DataStore
+	collectionDatastore     collectionDataStore.DataStore
+	collectionQueryResolver collectionDataStore.QueryResolver
+	notificationProcessor   processor.Processor
 
 	reportsToRun chan *ReportRequest
 
-	stoppedSig concurrency.Signal
-	stopped    concurrency.Signal
+	stopper concurrency.Stopper
 
 	Schema *graphql.Schema
 }
@@ -157,8 +167,9 @@ type reportEmailFormat struct {
 
 // New instantiates a new cron scheduler and supports adding and removing report configurations
 func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
-	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDatastore.DataStore, roleDS roleDataStore.DataStore,
-	notificationProcessor processor.Processor) Scheduler {
+	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore,
+	deploymentDS deploymentDataStore.DataStore, collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
+	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor processor.Processor) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 
@@ -167,19 +178,21 @@ func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.D
 		panic(err)
 	}
 	s := &scheduler{
-		reportConfigToEntryIDs: make(map[string]cron.EntryID),
-		cron:                   cronScheduler,
-		reportConfigDatastore:  reportConfigDS,
-		notifierDatastore:      notifierDS,
-		clusterDatastore:       clusterDS,
-		namespaceDatastore:     namespaceDS,
-		roleDatastore:          roleDS,
-		notificationProcessor:  notificationProcessor,
-		reportsToRun:           make(chan *ReportRequest, 100),
-		Schema:                 ourSchema,
+		reportConfigToEntryIDs:  make(map[string]cron.EntryID),
+		cron:                    cronScheduler,
+		reportConfigDatastore:   reportConfigDS,
+		notifierDatastore:       notifierDS,
+		clusterDatastore:        clusterDS,
+		namespaceDatastore:      namespaceDS,
+		deploymentDatastore:     deploymentDS,
+		collectionDatastore:     collectionDS,
+		roleDatastore:           roleDS,
+		collectionQueryResolver: collectionQueryRes,
+		notificationProcessor:   notificationProcessor,
+		reportsToRun:            make(chan *ReportRequest, 100),
+		Schema:                  ourSchema,
 
-		stoppedSig: concurrency.NewSignal(),
-		stopped:    concurrency.NewSignal(),
+		stopper: concurrency.NewStopper(),
 	}
 	return s
 }
@@ -230,10 +243,10 @@ func (s *scheduler) SubmitReport(reportRequest *ReportRequest) {
 }
 
 func (s *scheduler) runReports() {
-	defer s.stopped.Signal()
-	for !s.stoppedSig.IsDone() {
+	defer s.stopper.Flow().ReportStopped()
+	for {
 		select {
-		case <-s.stoppedSig.Done():
+		case <-s.stopper.Flow().StopRequested():
 			return
 		case req := <-s.reportsToRun:
 			log.Infof("Executing report '%s' at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
@@ -285,7 +298,15 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return errors.Wrap(err, "error building report query: unable to get namespaces")
 	}
 
-	scope, found, err := s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
+	var found bool
+	var scope *storage.SimpleAccessScope
+	var collection *storage.ResourceCollection
+	if features.ObjectCollections.Enabled() {
+		collection, found, err = s.collectionDatastore.Get(req.Ctx, rc.GetScopeId())
+	} else {
+		scope, found, err = s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
+	}
+
 	if err != nil {
 		return errors.Wrap(err, "error building report query: unable to get the resource scope")
 	}
@@ -293,9 +314,9 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
 	}
 
-	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, rc.GetVulnReportFilters(),
-		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
-	reportQuery, err := qb.BuildQuery()
+	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, collection, rc.GetVulnReportFilters(),
+		s.collectionQueryResolver, timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
+	reportQuery, err := qb.BuildQuery(req.Ctx)
 	if err != nil {
 		return errors.Wrap(err, "error building report query")
 	}
@@ -364,6 +385,18 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 }
 
 func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
+	if features.ObjectCollections.Enabled() {
+		deploymentIds, err := s.getDeploymentIDs(ctx, rQuery.DeploymentsQuery)
+		if err != nil {
+			return nil, err
+		}
+		result, err := s.runPaginatedDeploymentsQuery(ctx, rQuery.CveFieldsQuery, deploymentIds)
+		if err != nil {
+			return nil, err
+		}
+		result.Deployments = orderByClusterAndNamespace(result.Deployments)
+		return []common.Result{result}, nil
+	}
 	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
 	for _, sq := range rQuery.ScopeQueries {
 		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery)
@@ -376,7 +409,7 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 }
 
 func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string) (common.Result, error) {
-	offset := 0
+	offset := paginatedQueryStartOffset
 	var resultData common.Result
 	for {
 		var gqlQuery string
@@ -385,25 +418,12 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 		} else {
 			gqlQuery = reportDataQuery
 		}
-		response := s.Schema.Exec(ctx,
-			gqlQuery, "getVulnReportData", map[string]interface{}{
-				"scopequery": scopeQuery,
-				"cvequery":   cveQuery,
-				"pagination": map[string]interface{}{
-					"offset": offset,
-					"limit":  numDeploymentsLimit,
-				},
-			})
-		if len(response.Errors) > 0 {
-			log.Errorf("error running graphql query: %s", response.Errors[0].Message)
-			return common.Result{}, response.Errors[0].Err
-		}
-		var r common.Result
-		if err := json.Unmarshal(response.Data, &r); err != nil {
-			return common.Result{}, err
+		r, err := s.execReportDataQuery(ctx, gqlQuery, scopeQuery, cveQuery, offset)
+		if err != nil {
+			return r, err
 		}
 		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
-		if len(r.Deployments) < numDeploymentsLimit {
+		if len(r.Deployments) < deploymentsPaginationLimit {
 			break
 		}
 		offset += len(r.Deployments)
@@ -411,11 +431,76 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 	return resultData, nil
 }
 
+// Returns vuln report data from deployments matched by embedded resource collection.
+func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery string, deploymentIds []string) (common.Result, error) {
+	offset := paginatedQueryStartOffset
+	var resultData common.Result
+	for {
+		if offset >= len(deploymentIds) {
+			break
+		}
+		// deploymentsQuery is a *v1.Query and graphQL resolvers accept a string queries.
+		// With nested collections, deploymentsQuery could be a disjunction of conjunctions like the example below.
+		// [(Cluster: c1 AND Namespace: n1 AND Deployment: d1) OR (Cluster: c2 AND Namespace: n2 AND Deployment: d2)]
+		// Current string query language doesn't support disjunction of multiple conjunctions, so we cannot build a
+		// string equivalent of deploymentsQuery for graphQL. Because of this, we first fetch deploymentIDs from
+		// deploymentDatastore using deploymentsQuery and then build string query for graphQL using those deploymentIDs.
+		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
+			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+deploymentsPaginationLimit, len(deploymentIds))], ","))
+		r, err := s.execReportDataQuery(ctx, reportQueryPostgres, scopeQuery, cveQuery, paginatedQueryStartOffset)
+		if err != nil {
+			return r, err
+		}
+		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
+		offset += deploymentsPaginationLimit
+	}
+	return resultData, nil
+}
+
+func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuery, cveQuery string, offset int) (common.Result, error) {
+	response := s.Schema.Exec(ctx,
+		gqlQuery, "getVulnReportData", map[string]interface{}{
+			"scopequery": scopeQuery,
+			"cvequery":   cveQuery,
+			"pagination": map[string]interface{}{
+				"offset": offset,
+				"limit":  deploymentsPaginationLimit,
+			},
+		})
+	if len(response.Errors) > 0 {
+		log.Errorf("error running graphql query: %s", response.Errors[0].Message)
+		return common.Result{}, response.Errors[0].Err
+	}
+	var res common.Result
+	if err := json.Unmarshal(response.Data, &res); err != nil {
+		return common.Result{}, err
+	}
+	return res, nil
+}
+
+func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query) ([]string, error) {
+	results, err := s.deploymentDatastore.Search(ctx, deploymentsQuery)
+	if err != nil {
+		return nil, err
+	}
+	return search.ResultsToIDs(results), nil
+}
+
+func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {
+	sort.SliceStable(deployments, func(i, j int) bool {
+		if deployments[i].Cluster.GetName() == deployments[j].Cluster.GetName() {
+			return deployments[i].Namespace < deployments[j].Namespace
+		}
+		return deployments[i].Cluster.GetName() < deployments[j].Cluster.GetName()
+	})
+	return deployments
+}
+
 func (s *scheduler) Start() {
 	go s.runReports()
 }
 
 func (s *scheduler) Stop() {
-	s.stoppedSig.Signal()
-	s.stopped.Wait()
+	s.stopper.Client().Stop()
+	_ = s.stopper.Client().Stopped().Wait()
 }

@@ -11,6 +11,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/database/status": {
+      "get": {
+        "operationId": "MetadataService_GetDatabaseStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
     "/v1/metadata": {
       "get": {
         "operationId": "MetadataService_GetMetadata",
@@ -66,6 +88,15 @@
     }
   },
   "definitions": {
+    "DatabaseStatusDatabaseType": {
+      "type": "string",
+      "enum": [
+        "Hidden",
+        "RocksDB",
+        "PostgresDB"
+      ],
+      "default": "Hidden"
+    },
     "MetadataLicenseStatus": {
       "type": "string",
       "enum": [
@@ -113,6 +144,23 @@
         }
       }
     },
+    "v1DatabaseStatus": {
+      "type": "object",
+      "properties": {
+        "databaseAvailable": {
+          "type": "boolean",
+          "title": "indicates whether or not central can communicate with the database"
+        },
+        "databaseType": {
+          "$ref": "#/definitions/DatabaseStatusDatabaseType",
+          "title": "type of database serving central"
+        },
+        "databaseVersion": {
+          "type": "string",
+          "title": "version of the database"
+        }
+      }
+    },
     "v1Metadata": {
       "type": "object",
       "properties": {
@@ -123,9 +171,6 @@
           "type": "string"
         },
         "releaseBuild": {
-          "type": "boolean"
-        },
-        "dbAvailable": {
           "type": "boolean"
         },
         "licenseStatus": {

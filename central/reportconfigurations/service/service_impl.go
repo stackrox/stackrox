@@ -9,12 +9,14 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
+	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -26,15 +28,18 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		user.With(permissions.View(resources.VulnerabilityReports)): {
 			"/v1.ReportConfigurationService/GetReportConfigurations",
 			"/v1.ReportConfigurationService/GetReportConfiguration",
 			"/v1.ReportConfigurationService/CountReportConfigurations",
 		},
+		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role)): {
 			"/v1.ReportConfigurationService/PostReportConfiguration",
 			"/v1.ReportConfigurationService/UpdateReportConfiguration",
 		},
+		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		user.With(permissions.Modify(resources.VulnerabilityReports)): {
 			"/v1.ReportConfigurationService/DeleteReportConfiguration",
 		},
@@ -48,10 +53,11 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedReportConfigurationServiceServer
 
-	manager           manager.Manager
-	reportConfigStore datastore.DataStore
-	notifierStore     notifierDataStore.DataStore
-	accessScopeStore  accessScopeStore.DataStore
+	manager             manager.Manager
+	reportConfigStore   datastore.DataStore
+	notifierStore       notifierDataStore.DataStore
+	accessScopeStore    accessScopeStore.DataStore
+	collectionDatastore collectionDataStore.DataStore
 }
 
 func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.RawQuery) (*v1.GetReportConfigurationsResponse, error) {
@@ -169,7 +175,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	case storage.Schedule_DAILY:
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must have a valid schedule type")
 	case storage.Schedule_WEEKLY:
-		if schedule.GetDaysOfWeek() == nil {
+		if schedule.GetDaysOfWeek() == nil || len(schedule.GetDaysOfWeek().GetDays()) == 0 {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for the schedule")
 		}
 		for _, day := range schedule.GetDaysOfWeek().GetDays() {
@@ -178,7 +184,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 			}
 		}
 	case storage.Schedule_MONTHLY:
-		if schedule.GetDaysOfMonth() == nil || schedule.GetDaysOfMonth().GetDays() == nil {
+		if schedule.GetDaysOfMonth() == nil || len(schedule.GetDaysOfMonth().GetDays()) == 0 {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of the month for the schedule")
 		}
 		for _, day := range schedule.GetDaysOfMonth().GetDays() {
@@ -203,12 +209,19 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 		}
 	}
 
-	_, found, err := s.accessScopeStore.GetAccessScope(ctx, config.GetScopeId())
-	if !found || err != nil {
-		return errors.Wrapf(errox.NotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
+	if features.ObjectCollections.Enabled() {
+		_, found, err := s.collectionDatastore.Get(ctx, config.GetScopeId())
+		if !found || err != nil {
+			return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", config.GetScopeId(), err)
+		}
+	} else {
+		_, found, err := s.accessScopeStore.GetAccessScope(ctx, config.GetScopeId())
+		if !found || err != nil {
+			return errors.Wrapf(errox.NotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
+		}
 	}
 
-	_, found, err = s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
+	_, found, err := s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
 	if err != nil {
 		return errors.Wrapf(errox.NotFound, "Failed to fetch notifier %s with error %s", config.GetEmailConfig().GetNotifierId(), err)
 	}

@@ -9,11 +9,15 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/golang/mock/gomock"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,6 +33,8 @@ func TestServiceImpl(t *testing.T) {
 
 type serviceImplTestSuite struct {
 	suite.Suite
+
+	mockCtrl *gomock.Controller
 }
 
 func (s *serviceImplTestSuite) SetupTest() {
@@ -119,24 +125,40 @@ func verifySignature(cert *x509.Certificate, resp *v1.TLSChallengeResponse) erro
 	})
 }
 
-func (s *serviceImplTestSuite) TestMetadata() {
+func (s *serviceImplTestSuite) TestDatabaseStatus() {
+	s.mockCtrl = gomock.NewController(s.T())
+
+	// Need to fake being logged in
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), mockID, s.T())
+
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		tp := pgtest.ForT(s.T())
 		service := serviceImpl{db: tp.Pool}
 
-		metadata, err := service.GetMetadata(context.Background(), nil)
+		dbStatus, err := service.GetDatabaseStatus(ctx, nil)
 		s.NoError(err)
-		s.True(metadata.DbAvailable)
+		s.True(dbStatus.DatabaseAvailable)
+		s.Equal(v1.DatabaseStatus_PostgresDB, dbStatus.DatabaseType)
+		s.NotEqual("", dbStatus.DatabaseVersion)
+
+		dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
+		s.NoError(err)
+		s.True(dbStatus.DatabaseAvailable)
+		s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
+		s.Equal("", dbStatus.DatabaseVersion)
 
 		tp.Pool.Close()
-		metadata, err = service.GetMetadata(context.Background(), nil)
+		dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
 		s.NoError(err)
-		s.False(metadata.DbAvailable)
+		s.False(dbStatus.DatabaseAvailable)
+		s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
+		s.Equal("", dbStatus.DatabaseVersion)
 	} else {
 		service := serviceImpl{}
 
-		metadata, err := service.GetMetadata(context.Background(), nil)
+		dbStatus, err := service.GetDatabaseStatus(context.Background(), nil)
 		s.NoError(err)
-		s.True(metadata.DbAvailable)
+		s.True(dbStatus.DatabaseAvailable)
 	}
 }

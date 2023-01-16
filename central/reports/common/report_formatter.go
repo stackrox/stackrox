@@ -57,8 +57,10 @@ type image struct {
 	Components      []*imageComponent  `json:"components,omitempty"`
 }
 
-type deployment struct {
+// Deployment data used for generating vuln reports
+type Deployment struct {
 	Cluster        *storage.Cluster `json:"cluster,omitempty"`
+	ClusterName    string           `json:"clusterName,omitempty"`
 	Namespace      string           `json:"namespace,omitempty"`
 	DeploymentName string           `json:"name,omitempty"`
 	Images         []*image         `json:"images,omitempty"`
@@ -66,7 +68,7 @@ type deployment struct {
 
 // Result is the query results of running a single cvefields query and scope query combination
 type Result struct {
-	Deployments []*deployment `json:"deployments,omitempty"`
+	Deployments []*Deployment `json:"deployments,omitempty"`
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
@@ -83,7 +85,7 @@ func Format(results []Result) (*bytes.Buffer, error) {
 							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
 						}
 						csvWriter.AddValue(csv.Value{
-							d.Cluster.Name,
+							d.GetClusterName(),
 							d.Namespace,
 							d.DeploymentName,
 							i.Name.FullName,
@@ -127,6 +129,14 @@ func Format(results []Result) (*bytes.Buffer, error) {
 		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
 	return &zipBuf, nil
+}
+
+// GetClusterName returns name of cluster containing the Deployment
+func (dep *Deployment) GetClusterName() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return dep.ClusterName
+	}
+	return dep.Cluster.GetName()
 }
 
 func (img *image) getComponents() []*imageComponent {

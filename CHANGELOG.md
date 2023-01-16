@@ -9,11 +9,29 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-13814: A new "Public Kubernetes Registry" image integration is now available as a replacement
+  for the (now deprecated) "Public Kubernetes GCR" image integration.
+
 ### Removed Features
+- ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`. 
 
 ### Deprecated Features
+- ROX-12620: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
+  - The permission `WorkflowAdministration` will deprecate the permissions `Policy, VulnerabilityReports`.
+
+### Required Actions
+- The permission `WorkflowAdministration` will replace `Policy, VulnerabilityReports` in permission sets starting with the 3.76 release.
+  You should preemptively start replacing the `Policy` and `VulnerabilityReports` resources within your permission sets in favor of `WorkflowAdministration`.
+  During the migration of the permission sets within the 3.76, the `WorfklowAdministration` permission will have the lowest access permission granted for either `Policy` or `VulnerabilityReports`.
+  As an example, a permission set with `WRITE Policy` and `READ VulnerabilityReports` access will have `READ WorkflowAdministration` access after the migration within the 3.76 release, leading to
+  potentially unwanted side-effects and missing access if you did not update your permission sets beforehand.
+
+- ROX-13814: The "Public Kubernetes GCR" image integration is now deprecated in line with
+  [upstream](https://kubernetes.io/blog/2022/11/28/registry-k8s-io-faster-cheaper-ga/).
 
 ### Technical Changes
+- ROX-12967: Re-introduce `rpm` to the main image in order to be able parse installed packages on RHCOS nodes (from Compliance container)
+- ROX-14280: ACS operator default channel changes from `latest` to `stable`. Users of older versions must follow the upgrade procedure in order to preserve ACS data in case of issues with the upgrade.
 
 ## [3.73.1]
 

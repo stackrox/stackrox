@@ -493,9 +493,6 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify image scan exceptions - #scanner.name() - #testAspect"() {
         Assume.assumeTrue(scanner.isTestable())
-        // TODO(ROX-13345): Remove the following call to re-enable the test when the cause is fixed.
-        Assume.assumeFalse(
-            testAspect == "missing required registry" && Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         cleanupSetupForRetry()
 
         when:
@@ -657,7 +654,7 @@ class ImageScanningTest extends BaseSpecification {
 
         where:
         image                                              | registry
-        "k8s.gcr.io/ip-masq-agent-amd64:v2.4.1"            | "gcr registry"
+        "registry.k8s.io/ip-masq-agent-amd64:v2.4.1"       | "gcr registry"
         "docker.io/jenkins/jenkins:lts"                    | "docker registry"
         "docker.io/jenkins/jenkins:2.220-alpine"           | "docker registry"
         "gke.gcr.io/heapster:v1.7.2"                       | "one from gke"

@@ -29,18 +29,36 @@ func (s *gathererTestSuite) TestNilGatherer() {
 }
 
 func (s *gathererTestSuite) TestGatherer() {
-	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
-	t.EXPECT().Identify("test", nil).Times(3)
+	/*
+		The test starts a gatherer and stops gathering after 2 executions.
+		Verifies that the gatherer function and Identify() have been called 2 times.
+		Then it restarts the gathering and stops after 1 execution, and ensures that
+		the gatherer function and Identify() have been called once.
+	*/
 
-	var i int64
+	identifyStop := concurrency.NewSignal()
+
+	// Counters of the calls to Identify() and gatherer function:
+	var in, gn int64
+
+	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
+	t.EXPECT().Identify("test", gomock.Any()).Times(3).Do(func(string, any) {
+		if atomic.AddInt64(&in, 1) > 1 {
+			identifyStop.Signal()
+		}
+	})
+	t.EXPECT().Track("Updated Identity", "test", nil).Times(3)
+
 	stop := concurrency.NewSignal()
 	gptr := newGatherer("test", t, 10*time.Millisecond)
 	s.Require().NotNil(gptr)
 	gptr.AddGatherer(func(context.Context) (map[string]any, error) {
-		if atomic.AddInt64(&i, 1) > 1 {
+		if atomic.AddInt64(&gn, 1) > 1 {
 			stop.Signal()
 		}
-		return nil, nil
+		// Return different properties every time so that the update is not
+		// ignored:
+		return map[string]any{"key": gn}, nil
 	})
 	go func() {
 		stop.Wait()
@@ -49,9 +67,14 @@ func (s *gathererTestSuite) TestGatherer() {
 	gptr.Start()
 
 	<-gptr.ctx.Done()
-	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
-	s.Equal(int64(2), i)
+	// Wait until Idenfity() is called after gathering:
+	identifyStop.Wait()
 
+	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
+	s.Equal(int64(2), in)
+	s.Equal(int64(2), gn)
+
+	identifyStop.Reset()
 	stop.Reset()
 	go func() {
 		stop.Wait()
@@ -61,6 +84,9 @@ func (s *gathererTestSuite) TestGatherer() {
 	// Should start again.
 	gptr.Start()
 	<-gptr.ctx.Done()
+	// Wait until Idenfity() is called after gathering:
+	identifyStop.Wait()
 	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
-	s.Equal(int64(3), i)
+	s.Equal(int64(3), in)
+	s.Equal(int64(3), gn)
 }

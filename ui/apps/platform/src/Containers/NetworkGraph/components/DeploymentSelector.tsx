@@ -78,13 +78,19 @@ function DeploymentSelector({
             onSelect={onDeploymentSelect}
             onFilter={onFilterDeployments}
             className="deployment-select"
-            placeholderText="Deployments"
+            placeholderText={
+                <span>
+                    <DeploymentIcon className="pf-u-mr-xs" />{' '}
+                    <span style={{ position: 'relative', top: '1px' }}>Deployments</span>
+                </span>
+            }
             isDisabled={deploymentsByNamespace.length === 0}
             selections={selectedDeployments}
             variant={SelectVariant.checkbox}
             maxHeight="275px"
             hasInlineFilter
             isGrouped
+            isPlain
         >
             {deploymentSelectOptions}
         </Select>

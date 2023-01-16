@@ -34,6 +34,8 @@ import usePermissions from 'hooks/usePermissions';
 import { saveReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import CollectionSelection from './Form/CollectionSelection';
 import NotifierSelection from './Form/NotifierSelection';
 import ResourceScopeSelection from './Form/ResourceScopeSelection';
 import { getMappedFixability, getFixabilityConstantFromMap } from './VulnMgmtReport.utils';
@@ -103,13 +105,16 @@ function VulnMgmtReportForm({
     const history = useHistory();
     const [message, setMessage] = useState<FormResponseMessage>(null);
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasRoleWriteAccess = hasReadWriteAccess('Role');
     const hasClusterReadAccess = hasReadAccess('Cluster');
     const hasNamespaceReadAccess = hasReadAccess('Namespace');
     const hasNotifierWriteAccess = hasReadWriteAccess('Integration');
-
     const canWriteScopes = hasRoleWriteAccess && hasClusterReadAccess && hasNamespaceReadAccess;
+    const canWriteCollections = hasReadWriteAccess('WorkflowAdministration');
 
     const formik = useFormik<ReportConfiguration>({
         initialValues,
@@ -197,9 +202,21 @@ function VulnMgmtReportForm({
         void setFieldValue(id, selection);
     }
 
+    // need a bespoke check that days are selected, because the way the PatternFly Select component is written,
+    // we cannot easily use the built-in Formik onBlur handler to update the Yup validation status
+    const areDaysSelected =
+        values.schedule.intervalType === 'WEEKLY'
+            ? Boolean(values.schedule?.daysOfWeek?.days?.length)
+            : Boolean(values.schedule?.daysOfMonth?.days?.length);
+
     return (
         <>
-            <PageSection variant={PageSectionVariants.light} isFilled hasOverflowScroll>
+            <PageSection
+                variant={PageSectionVariants.light}
+                isFilled
+                hasOverflowScroll
+                aria-label="Vulnerability Management Report Form"
+            >
                 <FormMessage message={message} />
                 <Form>
                     <Grid hasGutter>
@@ -358,11 +375,19 @@ function VulnMgmtReportForm({
                                     </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={12}>
-                                    <ResourceScopeSelection
-                                        scopeId={values.scopeId}
-                                        setFieldValue={setFieldValue}
-                                        allowCreate={canWriteScopes}
-                                    />
+                                    {isCollectionsEnabled ? (
+                                        <CollectionSelection
+                                            scopeId={values.scopeId}
+                                            setFieldValue={setFieldValue}
+                                            allowCreate={canWriteCollections}
+                                        />
+                                    ) : (
+                                        <ResourceScopeSelection
+                                            scopeId={values.scopeId}
+                                            setFieldValue={setFieldValue}
+                                            allowCreate={canWriteScopes}
+                                        />
+                                    )}
                                 </GridItem>
                             </Grid>
                         </GridItem>
@@ -397,7 +422,7 @@ function VulnMgmtReportForm({
                             variant={ButtonVariant.primary}
                             onClick={submitForm}
                             data-testid="create-btn"
-                            isDisabled={!dirty || !isValid || isSubmitting}
+                            isDisabled={!dirty || !isValid || isSubmitting || !areDaysSelected}
                             isLoading={isSubmitting}
                         >
                             {values.id ? 'Save' : 'Create'}
