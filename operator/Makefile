@@ -167,11 +167,11 @@ CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen-$(CONTROLLER_GEN_VERSION)
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_GEN_VERSION))
 
-KUSTOMIZE_VERSION = 3.8.7
+KUSTOMIZE_VERSION = 4.5.7
 KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize-$(KUSTOMIZE_VERSION)
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v$(KUSTOMIZE_VERSION))
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v$(KUSTOMIZE_VERSION))
 
 OPERATOR_SDK_VERSION = 1.20.1
 OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
