@@ -155,6 +155,7 @@ describe('Collection deployment matching', () => {
 
         // Filter to deployments with deployment name matching
         cy.get(selectors.resultsPanelFilterInput).type('c');
+        cy.get(selectors.resultsPanelFilterSearch).click();
 
         assertDeploymentsAreMatchedExactly(['calico-node-vertical-autoscaler', 'collector']);
 
@@ -162,6 +163,7 @@ describe('Collection deployment matching', () => {
         cy.get(selectors.resultsPanelFilterEntitySelect).click();
         cy.get(selectors.resultsPanelFilterEntitySelectOption('Namespace')).click();
         cy.get(selectors.resultsPanelFilterInput).type('stackrox');
+        cy.get(selectors.resultsPanelFilterSearch).click();
 
         // Test that only stackrox deployments are visible
         assertDeploymentsAreMatchedExactly(['collector', 'sensor']);
