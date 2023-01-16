@@ -155,6 +155,7 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 		postgresID:  vulnReporterPermissionSetID,
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: []permissions.ResourceWithAccess{
+			// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 			permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
 			permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
 			permissions.View(resources.Role),                   // required for scopes

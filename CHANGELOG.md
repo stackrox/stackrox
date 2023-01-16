@@ -16,6 +16,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`. 
 
 ### Deprecated Features
+- ROX-12620: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
+  - The permission `WorkflowAdministration` will deprecate the permissions `Policy, VulnerabilityReports`.
+
+### Required Actions
+- The permission `WorkflowAdministration` will replace `Policy, VulnerabilityReports` in permission sets starting with the 3.76 release.
+  You should preemptively start replacing the `Policy` and `VulnerabilityReports` resources within your permission sets in favor of `WorkflowAdministration`.
+  During the migration of the permission sets within the 3.76, the `WorfklowAdministration` permission will have the lowest access permission granted for either `Policy` or `VulnerabilityReports`.
+  As an example, a permission set with `WRITE Policy` and `READ VulnerabilityReports` access will have `READ WorkflowAdministration` access after the migration within the 3.76 release, leading to
+  potentially unwanted side-effects and missing access if you did not update your permission sets beforehand.
 
 - ROX-13814: The "Public Kubernetes GCR" image integration is now deprecated in line with
   [upstream](https://kubernetes.io/blog/2022/11/28/registry-k8s-io-faster-cheaper-ga/).
