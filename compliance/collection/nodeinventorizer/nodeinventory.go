@@ -3,6 +3,7 @@ package nodeinventorizer
 import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/analyzer/nodes"
@@ -41,6 +42,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	// which only exists in certified versions. Therefore, no specific notes needed
 	// if uncertifiedRHEL can be true in the future, we can add Note_CERTIFIED_RHEL_SCAN_UNAVAILABLE
 	m := &storage.NodeInventory{
+		NodeId:     uuid.Nil.String(),
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
 		Components: protoComponents,
