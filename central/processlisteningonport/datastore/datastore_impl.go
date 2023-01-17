@@ -226,8 +226,6 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 	}
 
 	return ds.storage.DeleteMany(ctx, ids)
-
-	return nil
 }
 
 // fetchExistingPLOPs: Query already existing PLOP objects belonging to the
