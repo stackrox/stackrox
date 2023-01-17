@@ -19,7 +19,7 @@ import (
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIntegrationDataStoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"

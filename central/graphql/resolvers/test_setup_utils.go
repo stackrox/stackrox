@@ -41,7 +41,7 @@ import (
 	namespacePostgres "github.com/stackrox/rox/central/namespace/store/postgres"
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	nodeDS "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"

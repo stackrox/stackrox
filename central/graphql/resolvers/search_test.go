@@ -15,7 +15,7 @@ import (
 	imageComponentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	nodeComponentMocks "github.com/stackrox/rox/central/nodecomponent/datastore/mocks"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"

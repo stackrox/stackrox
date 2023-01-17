@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	deploymentDatastoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
+	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	podDatastoreMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	scrapeMocks "github.com/stackrox/rox/central/scrape/factory/mocks"
