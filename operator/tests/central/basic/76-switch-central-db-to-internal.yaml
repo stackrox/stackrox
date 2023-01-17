@@ -5,5 +5,6 @@ metadata:
 spec:
   central:
     db:
+      isEnabled: Default
       connectionString: null
       passwordSecret: null
