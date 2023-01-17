@@ -19,18 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
-#    services:
-#      postgres:
-#        image: quay.io/stackrox-io/central-db:3.73.x-369-gee573ecd8d #TODO: Change to latest or current tag
-#        env:
-#          PGDATA: /tmp/data
-#          POSTGRES_PASSWORD: postgres
-#        options: >-
-#          --entrypoint docker-entrypoint.sh
-#          --health-cmd pg_isready
-#          --health-interval 10s
-#          --health-timeout 5s
-#          --health-retries 5
     steps:
     - name: Checkout
       uses: actions/checkout@v3
