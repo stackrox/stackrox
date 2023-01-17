@@ -111,8 +111,8 @@ jobs:
           SLACK_ENG_RELEASE_WEBHOOK: ${{ secrets.SLACK_ENG_RELEASE_WEBHOOK }}
         run: |
           tar xzf cli-build.tgz
-          mkdir -p ${HOME}/.local/bin
-          mv bin/linux_amd64/roxctl ${HOME}/.local/bin/roxctl
+          mkdir -p "${HOME}/.local/bin"
+          mv bin/linux_amd64/roxctl "${HOME}/.local/bin/roxctl"
           scripts/ci/lib.sh \
             push_helm_charts "${STACKROX_TAG}"
 
