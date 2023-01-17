@@ -302,7 +302,7 @@ check_for_errors_in_stackrox_logs() {
     logs=$(ls "$dir"/stackrox/pods/*.log)
     local filtered
     # shellcheck disable=SC2010,SC2086
-    filtered=$(ls $logs | grep -v "previous.log" || true)
+    filtered=$(ls $logs | grep -Ev "(previous|_describe).log$" || true)
     if [[ -n "$filtered" ]]; then
         # shellcheck disable=SC2086
         if ! scripts/ci/logcheck/check.sh $filtered; then
