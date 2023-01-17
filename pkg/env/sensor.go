@@ -22,4 +22,7 @@ var (
 
 	// EventPipelineOutputQueueSize is used to specify the size of the eventPipeline's output queue
 	EventPipelineOutputQueueSize = RegisterIntegerSetting("ROX_EVENT_PIPELINE_OUTPUT_QUEUE_SIZE", 100)
+
+	// ResyncDisabled is used to specify if Sensor should have re-sync disabled or not
+	ResyncDisabled = RegisterBooleanSetting("ROX_RESYNC_DISABLED", false)
 )
