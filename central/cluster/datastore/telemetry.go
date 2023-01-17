@@ -75,6 +75,6 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props := makeClusterProperties(cluster)
 		props["Total Nodes"] = metrics.NodeCount
 		props["CPU Capacity"] = metrics.CpuCapacity
-		cfg.Telemeter().Identify(cluster.GetId(), makeClusterProperties(cluster))
+		cfg.Telemeter().Identify(cluster.GetId(), props)
 	}
 }
