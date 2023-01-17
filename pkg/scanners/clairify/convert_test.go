@@ -72,7 +72,7 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 			KubeletVersion:   testCase.kubeletVersion,
 			KubeProxyVersion: testCase.kubeProxyVersion,
 		}
-		assert.Equal(t, testCase.expected, convertNodeToVulnRequest(node))
+		assert.Equal(t, testCase.expected, convertNodeToVulnRequest(node, nil))
 	}
 }
 

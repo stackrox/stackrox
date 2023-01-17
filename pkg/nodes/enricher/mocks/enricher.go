@@ -9,13 +9,21 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/nodes/enricher"
 	types "github.com/stackrox/rox/pkg/scanners/types"
 )
+
+var _ enricher.NodeEnricher = (*MockNodeEnricher)(nil)
 
 // MockNodeEnricher is a mock of NodeEnricher interface.
 type MockNodeEnricher struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeEnricherMockRecorder
+}
+
+func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 // MockNodeEnricherMockRecorder is the mock recorder for MockNodeEnricher.
