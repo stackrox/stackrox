@@ -210,6 +210,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/fsutils",
 			"pkg/grpc/routes",
 			"pkg/images/types",
+			"pkg/jsonutil",
 			"pkg/logging",
 			"pkg/metrics",
 			"pkg/migrations",

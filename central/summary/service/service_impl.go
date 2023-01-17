@@ -8,7 +8,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -45,7 +45,7 @@ type serviceImpl struct {
 	deployments deploymentDataStore.DataStore
 	images      imageDataStore.DataStore
 	secrets     secretDataStore.DataStore
-	nodes       nodeDataStore.GlobalDataStore
+	nodes       nodeDataStore.DataStore
 
 	authorizer authz.Authorizer
 }
@@ -93,7 +93,7 @@ func (s *serviceImpl) GetSummaryCounts(ctx context.Context, _ *v1.Empty) (*v1.Su
 		return nil, err
 	}
 
-	numNodes, err := s.nodes.CountAllNodes(ctx)
+	numNodes, err := s.nodes.CountNodes(ctx)
 	if err != nil {
 		log.Error(err)
 		return nil, err

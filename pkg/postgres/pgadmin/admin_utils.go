@@ -381,13 +381,7 @@ func GetRemainingCapacity(postgresConfig *pgxpool.Config) (int64, error) {
 	// Close the admin connection pool
 	defer connectPool.Close()
 
-	// Create a context with a timeout
-	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
-	defer cancel()
-
-	row := connectPool.QueryRow(ctx, totalSizeStmt)
-	var sizeUsed int64
-	err := row.Scan(&sizeUsed)
+	sizeUsed, err := GetTotalPostgresSize(postgresConfig)
 	if err != nil {
 		return 0, err
 	}
@@ -423,6 +417,56 @@ func GetDatabaseSize(postgresConfig *pgxpool.Config, dbName string) (int64, erro
 		return 0, err
 	}
 
-	log.Infof("%q size = %d.", dbName, dbSize)
+	log.Debugf("%q size = %d.", dbName, dbSize)
 	return dbSize, nil
+}
+
+// GetTotalPostgresSize - retrieves the total size of all Postgres databases
+func GetTotalPostgresSize(postgresConfig *pgxpool.Config) (int64, error) {
+	// Connect to database for admin functions
+	connectPool := GetAdminPool(postgresConfig)
+	// Close the admin connection pool
+	defer connectPool.Close()
+
+	// Create a context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
+	defer cancel()
+
+	row := connectPool.QueryRow(ctx, totalSizeStmt)
+	var sizeUsed int64
+	err := row.Scan(&sizeUsed)
+	if err != nil {
+		return 0, err
+	}
+
+	return sizeUsed, nil
+}
+
+// GetAllDatabases - returns list of databases in Postgres
+func GetAllDatabases(postgresConfig *pgxpool.Config) []string {
+	// Connect to different database for admin functions
+	connectPool := GetAdminPool(postgresConfig)
+	// Close the admin connection pool
+	defer connectPool.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
+	defer cancel()
+
+	rows, err := connectPool.Query(ctx, "SELECT datname FROM pg_catalog.pg_database")
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	var clones []string
+	for rows.Next() {
+		var cloneName string
+		if err := rows.Scan(&cloneName); err != nil {
+			return nil
+		}
+
+		clones = append(clones, cloneName)
+	}
+
+	return clones
 }

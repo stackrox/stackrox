@@ -27,7 +27,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     static final private Deployment DEP_EXTERNALCONNECTION =
             createAndRegisterDeployment()
                     .setName(EXT_CONN_DEPLOYMENT_NAME)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1.19-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine")
                     .addLabel("app", EXT_CONN_DEPLOYMENT_NAME)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS / 10}; " +

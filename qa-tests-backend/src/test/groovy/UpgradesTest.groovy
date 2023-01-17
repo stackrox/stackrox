@@ -15,7 +15,10 @@ import util.Env
 
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
 
+// ROX-14228 skipping tests for 1st release on power & z
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class UpgradesTest extends BaseSpecification {
     private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
     private final static String POLICIES_JSON_PATH =
