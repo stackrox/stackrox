@@ -415,10 +415,12 @@ func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInv
 	req := convertNodeToVulnRequest(node, inv)
 	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
 	defer cancel()
+	log.Debugf("Calling GetNodeVulnerabilities with node inventory: %v", req.GetComponents())
 	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("Got reply GetNodeVulnerabilities with features: %v", resp.GetFeatures())
 
 	scan := convertVulnResponseToNodeScan(req, resp)
 	if scan == nil {
