@@ -29,6 +29,6 @@ migrator/**/*       @stackrox/data-shepherds
 pkg/postgres/**/*   @stackrox/data-shepherds
 tests/upgrade/*     @stackrox/data-shepherds
 
-.github/**/* @stackrox/circleci
-.openshift-ci/**/* @stackrox/circleci
-scripts/ci/** @stackrox/circleci
+.github/**/* @stackrox/ci
+.openshift-ci/**/* @stackrox/ci
+scripts/ci/** @stackrox/ci
