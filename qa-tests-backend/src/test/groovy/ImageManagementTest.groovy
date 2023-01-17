@@ -54,11 +54,11 @@ class ImageManagementTest extends BaseSpecification {
         "90-Day Image Age"                | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
         // verify Azure registry
         // "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
-        "Ubuntu Package Manager in Image" | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
-        "Curl in Image"                   | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
-        "Fixable CVSS >= 7"               | "us.gcr.io"   | "stackrox-ci/nginx"      | "1.11"       | ""
+        "Ubuntu Package Manager in Image" | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "struts-app" | ""
+        "Curl in Image"                   | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "struts-app" | ""
+        "Fixable CVSS >= 7"               | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "nginx-1.12" | ""
         "Wget in Image"                   | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
-        "Apache Struts: CVE-2017-5638"    | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
+        "Apache Struts: CVE-2017-5638"    | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "struts-app" | ""
     }
 
     @Tag("BAT")
