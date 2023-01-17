@@ -2,5 +2,7 @@ spec:
   ports:
   - port: 443
     name: api
+  - port: 8444
+    name: service-8444
   - port: 8446
     name: http-8446

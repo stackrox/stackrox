@@ -219,15 +219,18 @@ patch_resources_for_test() {
 
     kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
     kubectl -n stackrox apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
-    # shellcheck disable=SC2034
-    for i in $(seq 1 20); do
-        if curl -sk --fail "https://${API_HOSTNAME}:8446/v1/metadata" &>/dev/null; then
-            return
-        fi
-        sleep 1
+
+   for target_port in 8444 8446; do
+        # shellcheck disable=SC2034
+        for i in $(seq 1 20); do
+            if curl -sk --fail "https://${API_HOSTNAME}:${target_port}/v1/metadata" &>/dev/null; then
+                return
+            fi
+            sleep 1
+        done
+        die "Port ${target_port} did not become reachable in time"
+        exit 1
     done
-    die "Port 8446 did not become reachable in time"
-    exit 1
 }
 
 start_port_forwards_for_test() {
@@ -243,7 +246,7 @@ start_port_forwards_for_test() {
 
     mkdir -p "$PORT_FORWARD_LOGS"
 
-    for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
+    for target_port in 8080 8081 8082 8443 8445 8447 8448; do
         log_file="$PORT_FORWARD_LOGS/central-${target_port}.log"
         nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" < /dev/null > "${log_file}" 2>&1 &
     done
