@@ -408,9 +408,8 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 	return convertImageToImageScan(image.GetMetadata(), resp.GetImage()), nil
 }
 
-// GetNodeScan retrieves the most recent node scan
-func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
-	req := convertNodeToVulnRequest(node)
+func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error) {
+	req := convertNodeToVulnRequest(node, inv)
 	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
 	defer cancel()
 	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
@@ -424,6 +423,11 @@ func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
 	}
 
 	return scan, nil
+}
+
+// GetNodeScan retrieves the most recent node scan
+func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
+	return c.GetNodeInventoryScan(node, nil)
 }
 
 // Match decides if the image is contained within this scanner
