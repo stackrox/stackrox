@@ -8,3 +8,12 @@ spec:
   resources:
     requests:
       storage: 100Gi
+---
+metadata:
+  name: stackrox-db
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi

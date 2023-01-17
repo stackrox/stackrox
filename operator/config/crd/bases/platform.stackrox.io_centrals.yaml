@@ -74,9 +74,10 @@ spec:
                         default: Default
                         description: Deprecated field. It is no longer necessary to
                           specify it. This field will be removed in a future release.
-                          Central configures to use PostgreSQL by default.
+                          Central is configured to use PostgreSQL by default.
                         enum:
                         - Default
+                        - Enabled
                         type: string
                       nodeSelector:
                         additionalProperties:

@@ -166,7 +166,7 @@ func (c *CentralComponentSpec) IsExternalDB() bool {
 type CentralDBSpec struct {
 	// Deprecated field. It is no longer necessary to specify it.
 	// This field will be removed in a future release.
-	// Central configures to use PostgreSQL by default.
+	// Central is configured to use PostgreSQL by default.
 	//+kubebuilder:validation:Default=Default
 	//+kubebuilder:default=Default
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
@@ -175,18 +175,18 @@ type CentralDBSpec struct {
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
 	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
 	// When using this option, you must explicitly set a password secret; automatically generating a password will not
 	// be supported.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
 	// Configures how Central DB should store its persistent data. You can choose between using a persistent
 	// volume claim (recommended default), and a host path.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Persistence *DBPersistence `json:"persistence,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
@@ -194,11 +194,11 @@ type CentralDBSpec struct {
 }
 
 // CentralDBEnabled is a type for values of spec.central.db.enabled.
-//+kubebuilder:validation:Enum=Default
+//+kubebuilder:validation:Enum=Default;Enabled
 type CentralDBEnabled string
 
 const (
-	// CentralDBEnabledDefault configures the central to use PostgreSQL database (Technology Preview)
+	// CentralDBEnabledDefault configures the central to use PostgreSQL database.
 	CentralDBEnabledDefault CentralDBEnabled = "Default"
 )
 

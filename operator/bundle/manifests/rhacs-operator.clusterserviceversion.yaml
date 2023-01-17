@@ -143,11 +143,6 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Deprecated field. It is no longer necessary to specify it. This
-          field will be removed in a future release. Central configures to use PostgreSQL
-          by default.
-        displayName: Is Enabled
-        path: central.db.isEnabled
       - description: Specify a secret that contains the password in the "password"
           data item. If omitted, the operator will auto-generate a DB password and
           store it in the "password" item in the "central-db-password" secret.
@@ -181,6 +176,13 @@ spec:
         path: central.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: Deprecated field. It is no longer necessary to specify it. This
+          field will be removed in a future release. Central is configured to use
+          PostgreSQL by default.
+        displayName: Is Enabled
+        path: central.db.isEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: central.db.passwordSecret.name

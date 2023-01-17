@@ -12,7 +12,6 @@ metadata:
 spec:
   central:
     db:
-      isEnabled: Default
       connectionString: "foobar"
       passwordSecret:
         name: my-central-db-password
