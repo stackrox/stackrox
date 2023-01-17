@@ -915,11 +915,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("NodeInventory_Components", []string{
 		"namespace: String!",
 		"rhelComponents: [NodeInventory_Components_RHELComponent]!",
+		"rhelContentSets: [String!]!",
 	}))
 	utils.Must(builder.AddType("NodeInventory_Components_RHELComponent", []string{
 		"addedBy: String!",
 		"arch: String!",
-		"cpes: [String!]!",
 		"executables: [NodeInventory_Components_RHELComponent_Executable]!",
 		"id: Int!",
 		"module: String!",
@@ -10516,6 +10516,11 @@ func (resolver *nodeInventory_ComponentsResolver) RhelComponents(ctx context.Con
 	return resolver.root.wrapNodeInventory_Components_RHELComponents(value, nil)
 }
 
+func (resolver *nodeInventory_ComponentsResolver) RhelContentSets(ctx context.Context) []string {
+	value := resolver.data.GetRhelContentSets()
+	return value
+}
+
 type nodeInventory_Components_RHELComponentResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10565,11 +10570,6 @@ func (resolver *nodeInventory_Components_RHELComponentResolver) AddedBy(ctx cont
 
 func (resolver *nodeInventory_Components_RHELComponentResolver) Arch(ctx context.Context) string {
 	value := resolver.data.GetArch()
-	return value
-}
-
-func (resolver *nodeInventory_Components_RHELComponentResolver) Cpes(ctx context.Context) []string {
-	value := resolver.data.GetCpes()
 	return value
 }
 
