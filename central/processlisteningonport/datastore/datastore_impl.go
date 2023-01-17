@@ -61,12 +61,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	portProcesses, completedInBatch := normalizePLOPs(portProcesses)
+	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 
 	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
 	// be done in a single join query fetching both ProcessIndicator and needed
 	// bits from PLOP.
-	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, portProcesses...)
+	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, normalizedPLOPs...)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
-	for _, val := range portProcesses {
+	for _, val := range normalizedPLOPs {
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
