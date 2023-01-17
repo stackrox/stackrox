@@ -17,6 +17,7 @@ var (
 // SelectQueryField represents a field that's queried in a select.
 type SelectQueryField struct {
 	SelectPath string // This goes into the "SELECT" portion of the SQL.
+	Alias      string // Alias for "SelectPath". Primarily used for derived fields.
 	FieldType  walker.DataType
 	FieldPath  string // This is the search.Field.FieldPath for this field.
 
@@ -40,12 +41,20 @@ type SelectQueryField struct {
 	PostTransform func(interface{}) interface{}
 }
 
+// PathForSelectPortion returns the selector string that goes into SELECT portion of the SQL.
+func (f *SelectQueryField) PathForSelectPortion() string {
+	if f.Alias == "" {
+		return f.SelectPath
+	}
+	return fmt.Sprintf("%s as %s", f.SelectPath, f.Alias)
+}
+
 // QueryEntry is an entry with clauses added by portions of the query.
 type QueryEntry struct {
-	Where             WhereClause
-	Having            *WhereClause
-	SelectedFields    []SelectQueryField
-	GroupByPrimaryKey bool
+	Where          WhereClause
+	Having         *WhereClause
+	SelectedFields []SelectQueryField
+	GroupBy        []string
 
 	// This is populated only in the case of enums, so that callers know how to
 	// convert the returned enum value to a string.
@@ -116,9 +125,6 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 	qe, err := matchFieldQuery(qualifiedColName, dataType, field, value, highlight, now, goesIntoHavingClause)
 	if err != nil {
 		return nil, err
-	}
-	if goesIntoHavingClause {
-		qe.GroupByPrimaryKey = true
 	}
 	return qe, nil
 }
