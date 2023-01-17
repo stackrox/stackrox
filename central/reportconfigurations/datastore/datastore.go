@@ -2,11 +2,14 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/reportconfigurations/index"
 	"github.com/stackrox/rox/central/reportconfigurations/search"
 	"github.com/stackrox/rox/central/reportconfigurations/store"
+	"github.com/stackrox/rox/central/reportconfigurations/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -45,4 +48,13 @@ func New(reportConfigStore store.Store, indexer index.Indexer, searcher search.S
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	store := postgres.New(pool)
+	indexer := postgres.NewIndexer(pool)
+	searcher := search.New(store, indexer)
+
+	return New(store, indexer, searcher)
 }
