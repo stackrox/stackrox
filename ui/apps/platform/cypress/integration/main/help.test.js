@@ -59,6 +59,7 @@ describe('Help menu Help Center', () => {
             cy.get('button[aria-label="Help menu"]').click();
         }, routeMatcherMapForMetadata);
 
+        // Assert link, but do not click it (in case external web site is unavailable).
         cy.get('a:contains("Help Center")');
     });
 });
