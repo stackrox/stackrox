@@ -277,7 +277,6 @@ check_for_stackrox_OOMs() {
         die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
-    # TODO :: How much logging should we have here?
     local objects
     objects=$(ls "$dir"/stackrox/pods/*_object.json || true)
     if [[ -n "$objects" ]]; then
@@ -290,7 +289,6 @@ check_for_stackrox_OOMs() {
                     echo "OOM $describe"
                     save_junit_failure "OOMCheck-$pod_name" "OOMCheck" "$pod_name was OOMKilled"
                 else
-                    # TODO :: Do we care about this?
                     echo "NOT OOM $describe"
                     save_junit_success "OOMCheck-$pod_name" "$pod_name was not OOMKilled"
                 fi
