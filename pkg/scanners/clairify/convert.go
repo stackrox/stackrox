@@ -13,14 +13,18 @@ import (
 )
 
 func convertNodeToVulnRequest(node *storage.Node, inventory *storage.NodeInventory) *v1.GetNodeVulnerabilitiesRequest {
-	return &v1.GetNodeVulnerabilitiesRequest{
+	req := &v1.GetNodeVulnerabilitiesRequest{
 		OsImage:          node.GetOsImage(),
 		KernelVersion:    node.GetKernelVersion(),
 		KubeletVersion:   node.GetKubeletVersion(),
 		KubeproxyVersion: node.GetKubeProxyVersion(),
 		Runtime:          convertContainerRuntime(node.GetContainerRuntime()),
-		Components:       convertComponents(inventory.GetComponents()),
+		Components:       nil,
 	}
+	if inventory != nil && inventory.GetComponents() != nil {
+		req.Components = convertComponents(inventory.GetComponents())
+	}
+	return req
 }
 
 func convertComponents(c *storage.NodeInventory_Components) *v1.Components {
