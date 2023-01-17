@@ -21,6 +21,7 @@ const (
 )
 
 type listenerImpl struct {
+	nodeStore          resources.NodeStore
 	client             client.Interface
 	stopSig            concurrency.Signal
 	credentialsManager awscredentials.RegistryCredentialsManager

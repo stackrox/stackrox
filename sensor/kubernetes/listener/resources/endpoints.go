@@ -8,18 +8,19 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
+	"github.com/stackrox/rox/sensor/common/store"
 	v1 "k8s.io/api/core/v1"
 )
 
 type endpointManager interface {
-	OnDeploymentCreateOrUpdateByID(id string)
 	OnDeploymentCreateOrUpdate(deployment *deploymentWrap)
+	OnDeploymentCreateOrUpdateByID(id string)
 	OnDeploymentRemove(deployment *deploymentWrap)
 
 	OnServiceCreate(svc *serviceWrap)
 	OnServiceUpdateOrRemove(namespace string, sel selector.Selector)
 
-	OnNodeCreate(node *nodeWrap)
+	OnNodeCreate(node *store.NodeWrap)
 	OnNodeUpdateOrRemove()
 }
 
@@ -27,12 +28,12 @@ type endpointManagerImpl struct {
 	serviceStore    *serviceStore
 	deploymentStore *DeploymentStore
 	podStore        *PodStore
-	nodeStore       *nodeStore
+	nodeStore       NodeStore
 
 	entityStore *clusterentities.Store
 }
 
-func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore *nodeStore, entityStore *clusterentities.Store) endpointManager {
+func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore NodeStore, entityStore *clusterentities.Store) *endpointManagerImpl {
 	return &endpointManagerImpl{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
@@ -42,7 +43,12 @@ func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentS
 	}
 }
 
-func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP net.IPAddress, node *nodeWrap, port v1.ContainerPort, data *clusterentities.EntityData) {
+func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP net.IPAddress, node *store.NodeWrap, port v1.ContainerPort, data *clusterentities.EntityData) {
 	l4Proto := convertL4Proto(port.Protocol)
 	targetInfo := clusterentities.EndpointTargetInfo{
 		ContainerPort: uint16(port.ContainerPort),
@@ -59,7 +65,7 @@ func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP n
 		boundHostIP := net.ParseIP(port.HostIP)
 		if !boundHostIP.IsValid() || boundHostIP.IsUnspecified() {
 			if node != nil {
-				hostIPs = node.addresses
+				hostIPs = node.Addresses
 			} else if podHostIP.IsValid() {
 				hostIPs = []net.IPAddress{podHostIP}
 			}
@@ -82,9 +88,9 @@ func (m *endpointManagerImpl) addEndpointDataForPod(pod *v1.Pod, data *clusteren
 		data.AddIP(podIP)
 	}
 
-	var node *nodeWrap
+	var node *store.NodeWrap
 	if pod.Spec.NodeName != "" {
-		node = m.nodeStore.getNode(pod.Spec.NodeName)
+		node = m.nodeStore.GetNode(pod.Spec.NodeName)
 	}
 	podHostIP := net.ParseIP(pod.Status.HostIP)
 
@@ -181,8 +187,8 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *serviceWrap, data *clusterentities.EntityData) {
 	var allNodeIPs []net.IPAddress
 	if svc.Spec.Type == v1.ServiceTypeLoadBalancer || svc.Spec.Type == v1.ServiceTypeNodePort {
-		for _, node := range m.nodeStore.getNodes() {
-			allNodeIPs = append(allNodeIPs, node.addresses...)
+		for _, node := range m.nodeStore.GetNodes() {
+			allNodeIPs = append(allNodeIPs, node.Addresses...)
 		}
 	}
 
@@ -212,8 +218,8 @@ func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel sele
 	m.entityStore.Apply(updates, false)
 }
 
-func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
-	if len(node.addresses) == 0 {
+func (m *endpointManagerImpl) OnNodeCreate(node *store.NodeWrap) {
+	if len(node.Addresses) == 0 {
 		return
 	}
 
@@ -227,7 +233,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 			}
 			for _, port := range svc.Spec.Ports {
 				if port.NodePort != 0 {
-					addEndpointDataForServicePort(deployment, nil, node.addresses, port, update)
+					addEndpointDataForServicePort(deployment, nil, node.Addresses, port, update)
 				}
 			}
 		}
@@ -251,14 +257,6 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	}
 
 	m.entityStore.Apply(updates, false)
-}
-
-func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
-	deployment := m.deploymentStore.getWrap(id)
-	if deployment == nil {
-		return
-	}
-	m.OnDeploymentCreateOrUpdate(deployment)
 }
 
 func (m *endpointManagerImpl) OnDeploymentCreateOrUpdate(deployment *deploymentWrap) {
