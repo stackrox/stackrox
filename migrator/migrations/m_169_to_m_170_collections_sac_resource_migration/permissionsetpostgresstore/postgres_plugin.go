@@ -47,6 +47,7 @@ var (
 	targetResource = resources.Role
 )
 
+// Store is the interface for interactions with the database storage
 type Store interface {
 	UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error
 	Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error
@@ -218,9 +219,8 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PermissionSe
 
 		if len(objs) < batchAfter {
 			return s.upsert(ctx, objs...)
-		} else {
-			return s.copyFrom(ctx, objs...)
 		}
+		return s.copyFrom(ctx, objs...)
 	})
 }
 

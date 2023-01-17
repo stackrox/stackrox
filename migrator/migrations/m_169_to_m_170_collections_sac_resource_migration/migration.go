@@ -28,7 +28,7 @@ var (
 		Run: func(databases *types.Databases) error {
 			err := migrateWorkflowAdministrationPermissionSet(databases.PostgresDB)
 			if err != nil {
-				return errors.Wrap(err, "updating WorkflowAdministration permissions")
+				return errors.Wrapf(err, "updating %q permissions", workflowAdminResource)
 			}
 			return nil
 		},
