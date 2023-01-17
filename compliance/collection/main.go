@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -247,6 +248,10 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
+
+	// Start the prometheus metrics server
+	metrics.NewDefaultHTTPServer().RunForever()
+	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 
 	clientconn.SetUserAgent(clientconn.Compliance)
 

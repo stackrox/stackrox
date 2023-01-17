@@ -72,7 +72,7 @@ func ObserveNetworkPolicyStoreEvent(event, namespace string, numSelectors int) {
 	}).Inc()
 }
 
-// ObserveReceivedNodeInventory
+// ObserveReceivedNodeInventory observes the metric.
 func ObserveReceivedNodeInventory(inventory *storage.NodeInventory) {
 	receivedNodeInventory.With(prometheus.Labels{
 		"nodeName": inventory.NodeName,
