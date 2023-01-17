@@ -27,7 +27,7 @@ describe('Help menu API Reference', () => {
         visitMainDashboard();
 
         interactAndWaitForResponses(() => {
-            cy.get('button[aria-label="Help menu"').click();
+            cy.get('button[aria-label="Help menu"]').click();
             cy.get(`a:contains("${title}")`).click();
         }, routeMatcherMapForReference);
 
@@ -56,7 +56,7 @@ describe('Help menu Help Center', () => {
          * which is prerequisite to render the link below.
          */
         interactAndWaitForResponses(() => {
-            cy.get('button[aria-label="Help menu"').click();
+            cy.get('button[aria-label="Help menu"]').click();
         }, routeMatcherMapForMetadata);
 
         cy.get('a:contains("Help Center")');
@@ -74,7 +74,7 @@ describe('Help menu version number', () => {
          * which is prerequisite to render the version number below.
          */
         interactAndWaitForResponses(() => {
-            cy.get('button[aria-label="Help menu"').click();
+            cy.get('button[aria-label="Help menu"]').click();
         }, routeMatcherMapForMetadata);
 
         cy.get('nav[aria-label="Help menu"] a[role="menuitem"][aria-disabled="true"]');
