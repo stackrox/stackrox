@@ -1,27 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
+import SearchFilterInput from 'Components/SearchFilterInput';
 import useURLSearch from 'hooks/useURLSearch';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { getSearchOptionsForCategory } from 'services/SearchService';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
-import { SearchEntry, SearchFilter } from 'types/search';
-import SearchFilterInput from 'Components/SearchFilterInput';
+import {
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
 
 import './NetworkSearch.css';
-
-function searchFilterToSearchEntries(searchFilter): SearchEntry[] {
-    const entries: SearchEntry[] = [];
-    Object.entries(searchFilter).forEach(([key, value]) => {
-        entries.push({ label: `${key}:`, value: `${key}:`, type: 'categoryOption' });
-        if (value !== '') {
-            const values = Array.isArray(value) ? value : [value];
-            const valueOptions = values.map((v) => ({ label: v, value: v }));
-            entries.push(...valueOptions);
-        }
-    });
-    return entries;
-}
 
 const searchCategory = 'DEPLOYMENTS';
 const searchOptionExclusions = [
@@ -32,7 +21,17 @@ const searchOptionExclusions = [
     'Orchestrator Component',
 ];
 
-function NetworkSearch() {
+type NetworkSearchsProps = {
+    selectedCluster?: string;
+    selectedNamespaces?: string[];
+    selectedDeployments?: string[];
+};
+
+function NetworkSearch({
+    selectedCluster = '',
+    selectedNamespaces = [],
+    selectedDeployments = [],
+}: NetworkSearchsProps) {
     const history = useHistory();
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -52,11 +51,17 @@ function NetworkSearch() {
     }, [setSearchOptions]);
 
     function onSearch(options) {
+        options.Cluster = selectedCluster;
+        options.Namespace = selectedNamespaces;
+        options.Deployment = selectedDeployments;
+
         setSearchFilter(options);
         if (isCompleteSearchFilter(options)) {
             history.push(`/main/network-graph${history.location.search as string}`);
         }
     }
+
+    const prependAutocompleteQuery = [...orchestratorComponentsOption];
 
     return (
         <SearchFilterInput
@@ -65,6 +70,7 @@ function NetworkSearch() {
             searchFilter={searchFilter}
             searchCategory="DEPLOYMENTS"
             searchOptions={searchOptions}
+            autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             handleChangeSearchFilter={onSearch}
         />
     );
