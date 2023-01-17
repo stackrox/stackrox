@@ -162,6 +162,7 @@ func (c *CentralComponentSpec) IsExternalDB() bool {
 }
 
 // CentralDBSpec defines settings for the "central db" component.
+// TODO(ROX-14395): drop `IsEnabled` field.
 type CentralDBSpec struct {
 	// Deprecated field. It is no longer necessary to specify it.
 	// This field will be removed in a future release.
