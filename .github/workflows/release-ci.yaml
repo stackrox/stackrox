@@ -76,7 +76,7 @@ jobs:
           ref: ${{ github.ref_name }}
       - uses: 'google-github-actions/auth@v0'
         with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_GHA_ROX }}'
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_GHA_ROXCTL_UPLOADER }}'
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v0'
       - uses: actions/download-artifact@v3
