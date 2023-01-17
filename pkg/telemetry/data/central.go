@@ -59,15 +59,15 @@ type BucketStats struct {
 type TableStats struct {
 	Name      string `json:"name"`
 	RowCount  int64  `json:"rowCount"`
-	TableSize int64  `json:"tableSize"`
-	IndexSize int64  `json:"indexSize"`
-	ToastSize int64  `json:"toastSize"`
+	TableSize int64  `json:"tableSizeBytes"`
+	IndexSize int64  `json:"indexSizeBytes"`
+	ToastSize int64  `json:"toastSizeBytes"`
 }
 
 // DatabaseDetailsStats contains telemetry details about sizing of databases
 type DatabaseDetailsStats struct {
 	DatabaseName string `json:"databaseName"`
-	DatabaseSize int64  `json:"databaseSize"`
+	DatabaseSize int64  `json:"databaseSizeBytes"`
 }
 
 // DatabaseStats contains telemetry data about a DB

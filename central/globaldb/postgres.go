@@ -169,7 +169,7 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 			return nil
 		}
 
-		tableLabel := prometheus.Labels{"Table": tableName}
+		tableLabel := prometheus.Labels{"table": tableName}
 		metrics.PostgresTableCounts.With(tableLabel).Set(float64(rowEstimate))
 		metrics.PostgresTableTotalSize.With(tableLabel).Set(float64(totalSize))
 		metrics.PostgresIndexSize.With(tableLabel).Set(float64(indexSize))
@@ -204,9 +204,6 @@ func CollectPostgresDatabaseSizes(postgresConfig *pgxpool.Config) []*stats.Datab
 			return detailsSlice
 		}
 
-		databaseLabel := prometheus.Labels{"Database": database}
-		metrics.PostgresDBSize.With(databaseLabel).Set(float64(dbSize))
-
 		dbDetails := &stats.DatabaseDetailsStats{
 			DatabaseName: database,
 			DatabaseSize: int64(dbSize),
@@ -222,7 +219,7 @@ func CollectPostgresDatabaseStats(postgresConfig *pgxpool.Config) {
 	dbStats := CollectPostgresDatabaseSizes(postgresConfig)
 
 	for _, dbStat := range dbStats {
-		databaseLabel := prometheus.Labels{"Database": dbStat.DatabaseName}
+		databaseLabel := prometheus.Labels{"database": dbStat.DatabaseName}
 		metrics.PostgresDBSize.With(databaseLabel).Set(float64(dbStat.DatabaseSize))
 	}
 
