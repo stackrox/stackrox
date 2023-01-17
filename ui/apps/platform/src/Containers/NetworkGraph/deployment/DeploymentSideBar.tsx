@@ -128,7 +128,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                     )}
                 </TabContent>
                 <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
-                    <DeploymentFlows />
+                    <DeploymentFlows edges={edges} deploymentId={deploymentId} />
                 </TabContent>
                 <TabContent
                     eventKey="Baselines"
