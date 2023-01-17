@@ -169,7 +169,7 @@ type CentralDBSpec struct {
 	// Central configures to use PostgreSQL by default.
 	//+kubebuilder:validation:Default=Default
 	//+kubebuilder:default=Default
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	IsEnabled *CentralDBEnabled `json:"isEnabled,omitempty"`
 
 	// Specify a secret that contains the password in the "password" data item.
