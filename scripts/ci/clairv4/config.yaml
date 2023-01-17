@@ -15,6 +15,9 @@ matcher:
   run: ""
   migrations: true
   indexer_addr: clair-indexer
+matchers:
+  names:
+  - rhel
 notifier:
   connstring: host=clairv4-postgres port=5432 dbname=clair user=postgres password=postgres sslmode=disable
   delivery_interval: 1m

@@ -74,7 +74,9 @@ spec:
     spec:
       containers:
       - name: postgres
+        # Generic PostgreSQL 12 image used for online-mode.
         image: us.gcr.io/stackrox-ci/postgres:12.13
+        #image: us.gcr.io/stackrox-ci/clairv4-postgres:12.13
         env:
         - name: POSTGRES_USER
           value: "postgres"
