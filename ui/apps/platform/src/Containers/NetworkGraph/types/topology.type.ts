@@ -100,5 +100,6 @@ export type ExtraneousData = {
 export type CustomEdgeModel = Override<EdgeModel, { data: EdgeData }>;
 
 export type EdgeData = {
+    tag?: string;
     properties: EdgeProperties[];
 };

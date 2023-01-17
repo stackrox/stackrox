@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     PageSection,
     Title,
@@ -33,6 +33,7 @@ import {
     transformActiveData,
     createExtraneousFlowsModel,
     graphModel,
+    getPortEdgeLabel,
 } from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
 import getSimulation from './utils/getSimulation';
@@ -42,6 +43,7 @@ import {
     CustomNodeModel,
     DeploymentNodeModel,
     DeploymentData,
+    EdgeData,
 } from './types/topology.type';
 
 import './NetworkGraphPage.css';
@@ -65,6 +67,7 @@ function NetworkGraphPage() {
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
         'policyStatusBadge',
         'externalBadge',
+        'edgeLabel',
     ]);
     const [activeModel, setActiveModel] = useState<CustomModel>(emptyModel);
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
@@ -175,35 +178,73 @@ function NetworkGraphPage() {
         }
     }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount]);
 
-    useEffect(() => {
+    const setModelByEdgeState = useCallback(() => {
         if (edgeState === 'active') {
             setModel(activeModel);
         } else if (edgeState === 'extraneous') {
             setModel(extraneousFlowsModel);
         }
-    }, [edgeState, setModel, activeModel, extraneousFlowsModel]);
+    }, [edgeState, activeModel, extraneousFlowsModel]);
 
     useEffect(() => {
-        // this is to update the display options visually for deployment nodes on the graph
-        if (model.nodes?.length) {
-            const showPolicyState = !!displayOptions.includes('policyStatusBadge');
-            const showExternalState = !!displayOptions.includes('externalBadge');
-            const updatedNodes: CustomNodeModel[] = model.nodes.map((node) => {
-                const { data } = node;
-                if (data.type === 'DEPLOYMENT') {
-                    return {
-                        ...node,
-                        data: {
-                            ...data,
-                            showPolicyState,
-                            showExternalState,
-                        } as DeploymentData,
-                    };
-                }
-                return node;
-            });
+        setModelByEdgeState();
+    }, [setModelByEdgeState]);
 
-            const updatedModel: CustomModel = { ...model, nodes: updatedNodes };
+    useEffect(() => {
+        const showPolicyState = !!displayOptions.includes('policyStatusBadge');
+        const showExternalState = !!displayOptions.includes('externalBadge');
+        const showEdgeLabels = !!displayOptions.includes('edgeLabel');
+        let updatedNodes: CustomNodeModel[] = model.nodes;
+        const updatedEdges: CustomEdgeModel[] = model.edges;
+
+        // if all display options are true, set back to existing default data model
+        if (showPolicyState && showExternalState && showEdgeLabels) {
+            setModelByEdgeState();
+        } else {
+            // this is to update the display options visually for deployment nodes on the graph
+            if (model.nodes?.length) {
+                // need to improve perf to only perform this if policyStatusBadge OR externalBadge has changed
+                updatedNodes = model.nodes.map((node) => {
+                    const { data } = node;
+                    if (data.type === 'DEPLOYMENT') {
+                        return {
+                            ...node,
+                            data: {
+                                ...data,
+                                showPolicyState,
+                                showExternalState,
+                            } as DeploymentData,
+                        };
+                    }
+                    return node;
+                });
+            }
+
+            // if (model.edges?.length) {
+            //     // need to improve perf to only perform this if edgeLabel has changed
+            //     updatedEdges = model.edges.map((edge) => {
+            //         const { data } = edge;
+            //         const { properties } = data;
+            //         const updatedEdgeData: EdgeData = { properties };
+            //         if (showEdgeLabels) {
+            //             const { port, protocol } = data.properties[0];
+            //             updatedEdgeData.tag = getPortEdgeLabel(port, protocol);
+            //         }
+            //         return {
+            //             ...edge,
+            //             data: {
+            //                 ...updatedEdgeData,
+            //             },
+            //         };
+            //     });
+            // }
+            // console.log(updatedEdges);
+
+            const updatedModel: CustomModel = {
+                ...model,
+                nodes: updatedNodes,
+                edges: updatedEdges,
+            };
             setModel(updatedModel);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

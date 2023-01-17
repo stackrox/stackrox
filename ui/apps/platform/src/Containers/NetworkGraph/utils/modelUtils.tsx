@@ -7,6 +7,7 @@ import {
     NetworkEntityInfo,
     Node,
     OutEdges,
+    L4Protocol,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
@@ -23,6 +24,7 @@ import {
     CIDRBlockNodeModel,
     CustomEdgeModel,
 } from '../types/topology.type';
+import { protocolLabel } from './flowUtils';
 
 export const graphModel = {
     id: 'stackrox-active-graph',
@@ -140,6 +142,10 @@ function getNodeModel(
     }
 }
 
+export function getPortEdgeLabel(port: number, protocol: L4Protocol): string {
+    return `${port} ${protocolLabel[protocol]}`;
+}
+
 export function transformActiveData(
     nodes: Node[],
     policyNodeMap: Record<string, DeploymentNodeModel>
@@ -194,6 +200,7 @@ export function transformActiveData(
         // creating edges based off of outEdges per node and adding to data model
         Object.keys(outEdges).forEach((nodeIdx) => {
             const { properties } = outEdges[nodeIdx];
+            const { port, protocol } = properties[0];
             const edge = {
                 id: `${id} ${nodes[nodeIdx].entity.id as string}`,
                 type: 'edge',
@@ -201,6 +208,7 @@ export function transformActiveData(
                 target: nodes[nodeIdx].entity.id,
                 visible: false,
                 data: {
+                    tag: getPortEdgeLabel(port, protocol),
                     properties,
                 },
             };
@@ -283,6 +291,7 @@ export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
         // creating edges based off of outEdges per node and adding to data model
         Object.keys(outEdges).forEach((nodeIdx) => {
             const { properties } = outEdges[nodeIdx];
+            const { port, protocol } = properties[0];
             const edge = {
                 id: `${entity.id} ${nodes[nodeIdx].entity.id as string}`,
                 type: 'edge',
@@ -291,6 +300,7 @@ export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
                 visible: false,
                 edgeStyle: EdgeStyle.dashed,
                 data: {
+                    tag: getPortEdgeLabel(port, protocol),
                     properties,
                 },
             };
