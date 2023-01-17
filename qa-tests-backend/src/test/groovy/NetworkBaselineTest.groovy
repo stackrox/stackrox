@@ -22,7 +22,7 @@ class NetworkBaselineTest extends BaseSpecification {
     static final private String DEFERRED_BASELINED_CLIENT_DEP_NAME = "net-bl-client-deferred-baselined"
     static final private String DEFERRED_POST_LOCK_DEP_NAME = "net-bl-client-post-lock"
 
-    static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1.19-alpine"
+    static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine"
 
     // The baseline generation duration must be changed from the default for this test to succeed.
     static final private int EXPECTED_BASELINE_DURATION_SECONDS = 240
