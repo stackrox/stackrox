@@ -57,13 +57,13 @@ const (
 type ProcessIndicators struct {
 	Id                 string `gorm:"column:id;type:uuid;primaryKey"`
 	DeploymentId       string `gorm:"column:deploymentid;type:uuid;index:processindicators_deploymentid,type:hash"`
-	ContainerName      string `gorm:"column:containername;type:varchar;index:unique_indicator"`
-	PodId              string `gorm:"column:podid;type:varchar;index:unique_indicator"`
+	ContainerName      string `gorm:"column:containername;type:varchar;index:processindicators_unique_indicator"`
+	PodId              string `gorm:"column:podid;type:varchar;index:processindicators_unique_indicator"`
 	PodUid             string `gorm:"column:poduid;type:uuid;index:processindicators_poduid,type:hash"`
 	SignalContainerId  string `gorm:"column:signal_containerid;type:varchar"`
-	SignalName         string `gorm:"column:signal_name;type:varchar;index:unique_indicator"`
-	SignalArgs         string `gorm:"column:signal_args;type:varchar;index:unique_indicator"`
-	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar;index:unique_indicator"`
+	SignalName         string `gorm:"column:signal_name;type:varchar;index:processindicators_unique_indicator"`
+	SignalArgs         string `gorm:"column:signal_args;type:varchar;index:processindicators_unique_indicator"`
+	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar;index:processindicators_unique_indicator"`
 	SignalUid          uint32 `gorm:"column:signal_uid;type:bigint"`
 	ClusterId          string `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree"`
 	Namespace          string `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
