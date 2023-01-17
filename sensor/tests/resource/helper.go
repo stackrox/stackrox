@@ -295,6 +295,32 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 	}
 }
 
+// WaitForDeploymentEvent waits until sensor process a given deployment
+func (c *TestContext) WaitForDeploymentEvent(name string) {
+	c.WaitForDeploymentEventWithTimeout(name, 3*time.Second)
+}
+
+// WaitForDeploymentEventWithTimeout waits until sensor process a given deployment
+func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	lastErr := errors.Errorf("the deployment %s was not processed", name)
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for deployment: %s", lastErr)
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
+			deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
+			if deployment != nil {
+				return
+			}
+		}
+	}
+
+}
+
 // LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
 func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
 	c.LastDeploymentStateWithTimeout(name, assertion, message, 3*time.Second)
@@ -378,17 +404,17 @@ func (c *TestContext) LastViolationStateByID(id string, assertion AlertAssertFun
 func (c *TestContext) LastViolationStateByIDWithTimeout(id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(10 * time.Millisecond)
-	var lastErr error
+	lastErr := errors.New("no alerts asserted")
 	for {
 		select {
 		case <-timer.C:
 			c.t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
-			alerts := GetAllAlertsForDeploymentID(messages, id, checkEmptyAlertResults)
-			var lastViolationState *central.AlertResults
-			if len(alerts) > 0 {
-				lastViolationState = alerts[len(alerts)-1].GetEvent().GetAlertResults()
+			lastAlert := GetLastAlertsWithDeploymentID(messages, id, checkEmptyAlertResults)
+			lastViolationState := lastAlert.GetEvent().GetAlertResults()
+			if lastViolationState == nil {
+				continue
 			}
 			if lastErr = assertion(lastViolationState); lastErr == nil {
 				// Assertion matched the case. We can return here without failing the test case
@@ -405,24 +431,6 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 	for _, m := range messages {
 		for _, alert := range m.GetEvent().GetAlertResults().GetAlerts() {
 			if alert.GetDeployment().GetName() == name {
-				selected = append(selected, m)
-				break
-			}
-		}
-	}
-	return selected
-}
-
-// GetAllAlertsForDeploymentID filters sensor messages and gets all alerts for a deployment with `id`. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
-func GetAllAlertsForDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) []*central.MsgFromSensor {
-	var selected []*central.MsgFromSensor
-	for _, m := range messages {
-		if checkEmptyAlertResults && m.GetEvent().GetAlertResults().GetDeploymentId() == id && len(m.GetEvent().GetAlertResults().GetAlerts()) == 0 {
-			selected = append(selected, m)
-			break
-		}
-		for _, alert := range m.GetEvent().GetAlertResults().GetAlerts() {
-			if alert.GetDeployment().GetId() == id {
 				selected = append(selected, m)
 				break
 			}
@@ -606,10 +614,14 @@ func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, nam
 	return lastMessage
 }
 
-// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID
-func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
+// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID, If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
+func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
+		if checkEmptyAlertResults && messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id && len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
+			lastMessage = messages[i]
+			break
+		}
 		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
 			lastMessage = messages[i]
 			break

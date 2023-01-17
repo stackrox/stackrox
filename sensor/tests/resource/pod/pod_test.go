@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -129,20 +130,17 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 
 func (s *PodHierarchySuite) Test_DeleteDeployment() {
 	s.testContext.RunBare("Removing a deployment should send empty violation", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		deleteDep, err := testC.ApplyFileNoObject(context.Background(), resource.DefaultNamespace, NginxDeployment)
-		require.NoError(t, err)
-
 		var id string
+		k8sDeployment := &appsv1.Deployment{}
+		deleteDep, err := testC.ApplyFile(context.Background(), resource.DefaultNamespace, NginxDeployment, k8sDeployment)
+		require.NoError(t, err)
+		id = string(k8sDeployment.GetUID())
 		// Check the deployment is processed
-		testC.LastDeploymentState("nginx-deployment", func(deployment *storage.Deployment, _ central.ResourceAction) error {
-			id = deployment.GetId()
-			return nil
-		}, "deployment should be processed")
+		testC.WaitForDeploymentEvent("nginx-deployment")
 		testC.GetFakeCentral().ClearReceivedBuffer()
 
 		// Delete the deployment
-		err = deleteDep()
-		require.NoError(t, err)
+		require.NoError(t, deleteDep())
 
 		// Check deployment and action
 		testC.LastDeploymentStateWithTimeout("nginx-deployment", func(_ *storage.Deployment, action central.ResourceAction) error {
@@ -163,19 +161,17 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 
 func (s *PodHierarchySuite) Test_DeletePod() {
 	s.testContext.RunBare("Removing a rogue pod should send empty violation", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		deletePod, err := testC.ApplyFileNoObject(context.Background(), resource.DefaultNamespace, NginxPod)
-		require.NoError(t, err)
 		var id string
+		k8sPod := &v1.Pod{}
+		deletePod, err := testC.ApplyFile(context.Background(), resource.DefaultNamespace, NginxPod, k8sPod)
+		require.NoError(t, err)
+		id = string(k8sPod.GetUID())
 		// Check the pod is processed
-		testC.LastDeploymentState("nginx-rogue", func(deployment *storage.Deployment, _ central.ResourceAction) error {
-			id = deployment.GetId()
-			return nil
-		}, "rogue pod should be processed")
+		testC.WaitForDeploymentEvent("nginx-rogue")
 		testC.GetFakeCentral().ClearReceivedBuffer()
 
 		// Delete the pod
-		err = deletePod()
-		require.NoError(t, err)
+		require.NoError(t, deletePod())
 
 		// Check pod and action
 		testC.LastDeploymentStateWithTimeout("nginx-rogue", func(_ *storage.Deployment, action central.ResourceAction) error {
