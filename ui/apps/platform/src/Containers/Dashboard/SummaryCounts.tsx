@@ -61,6 +61,7 @@ const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute:
 function SummaryCounts() {
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
     const { loading, error, data } = useQuery<SummaryCountsResponse>(SUMMARY_COUNTS, {
+        fetchPolicy: 'network-only',
         onCompleted: () => setLastUpdate(new Date()),
     });
 
