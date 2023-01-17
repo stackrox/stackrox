@@ -70,7 +70,7 @@ func TestReconcileDBPassword(t *testing.T) {
 
 	specWithAutogenPassword := v1alpha1.CentralSpec{
 		Central: &v1alpha1.CentralComponentSpec{
-			DB: &v1alpha1.CentralDBSpec{},
+			DB: &v1alpha1.CentralDBSpec{IsEnabled: v1alpha1.CentralDBEnabledPtr(v1alpha1.CentralDBEnabledDefault)},
 		},
 	}
 
@@ -202,6 +202,20 @@ func TestReconcileDBPassword(t *testing.T) {
 			Spec:          specWithCanonicalAsUserSpecifiedPassword,
 			Existing:      []*v1.Secret{canonicalPWSecretWithNoPassword},
 			ExpectedError: "secret must contain a non-empty",
+		},
+		"When using an external DB with specified password secret, that secret should be left untouched": {
+			Spec: v1alpha1.CentralSpec{
+				Central: &v1alpha1.CentralComponentSpec{
+					DB: &v1alpha1.CentralDBSpec{
+						IsEnabled:                v1alpha1.CentralDBEnabledPtr(v1alpha1.CentralDBEnabledDefault),
+						ConnectionStringOverride: pointers.String("foo"),
+						PasswordSecret: &v1alpha1.LocalSecretReference{
+							Name: customPWSecretName,
+						},
+					},
+				},
+			},
+			Existing: []*v1.Secret{customPWSecretWithPW1, canonicalPWSecretWithPW1},
 		},
 		"When using an external DB, and no password secret is specified, an error should be raised": {
 			Spec: v1alpha1.CentralSpec{

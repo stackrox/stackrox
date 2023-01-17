@@ -83,6 +83,10 @@ func TestReconcilePVCExtension(t *testing.T) {
 	emptyNotDeletedCentralWithDB := makeCentral(nil)
 	emptyNotDeletedCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{}
 
+	externalCentralwithDB := makeCentral(nil)
+	externalCentralwithDB.Spec.Central.DB = &platform.CentralDBSpec{}
+	externalCentralwithDB.Spec.Central.DB.ConnectionStringOverride = pointer.String("foobar")
+
 	deleteHostPathCentral := makeCentral(&platform.Persistence{HostPath: makeHostPathSpec("/tmp/path")})
 
 	changedPVCConfigCentral := makeCentral(&platform.Persistence{
@@ -304,6 +308,14 @@ func TestReconcilePVCExtension(t *testing.T) {
 				testPVCName:           verifyMultiple(notOwnedBy(emptyNotDeletedCentral)),
 				DefaultCentralPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentral), withSize(resource.MustParse("100Gi")), withStorageClass(emptyStorageClass)),
 			},
+		},
+
+		"external central-db provided and no pvc should be created": {
+			Central:      externalCentralwithDB,
+			DefaultClaim: DefaultCentralDBPVCName,
+			Target:       PVCTargetCentralDB,
+			ExistingPVCs: nil,
+			ExpectedPVCs: nil,
 		},
 
 		"central-db-empty-state-create-new-default-pvc": {
