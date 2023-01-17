@@ -24,10 +24,10 @@ echo " Secured Cluster Services Chart location: ${secured_cluster_services_chart
 
 if is_release_test_stream "$version"; then
 	# send to #slack-test when testing the release process
-	webhook_url="${SLACK_MAIN_WEBHOOK}"
+	webhook_url="${SLACK_TEST_WEBHOOK}"
 else
 	# send to #eng-release
-	webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
+	webhook_url="${SLACK_ENG_RELEASE_WEBHOOK}"
 fi
 
 [[ -n "${webhook_url}" ]] || die "No Slack webhook found"

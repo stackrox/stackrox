@@ -54,7 +54,6 @@ scripts/ci/complianceoperator/create.sh
 scripts/ci/deployment-minder.sh
 scripts/ci/logcheck/check-restart-logs.sh
 scripts/ci/logcheck/check.sh
-scripts/ci/roxctl-publish/prepare.sh
 scripts/ci/sensorbundle-label/list-resources.sh
 scripts/connect-ui.sh
 scripts/ensure_image.sh
