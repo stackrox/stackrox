@@ -2,20 +2,23 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
-	"strconv"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,63 +29,75 @@ func BenchmarkNodes(b *testing.B) {
 			sac.ResourceScopeKeys(resources.Node),
 		))
 
-	db, err := rocksdb.NewTemp(b.Name())
-	require.NoError(b, err)
-	defer rocksdbtest.TearDownRocksDB(db)
+	var err error
+	var nodeDS DataStore
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testDB := pgtest.ForT(b)
+		nodeDS, err = GetTestPostgresDataStore(b, testDB.Pool)
+		require.NoError(b, err)
+		defer testDB.Teardown(b)
+	} else {
+		db, err := rocksdb.NewTemp(b.Name())
+		require.NoError(b, err)
+		defer rocksdbtest.TearDownRocksDB(db)
 
-	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
-	require.NoError(b, err)
+		dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+		require.NoError(b, err)
 
-	tempPath := b.TempDir()
-	blevePath := filepath.Join(tempPath, "scorch.bleve")
-	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
-	require.NoError(b, err)
+		tempPath := b.TempDir()
+		blevePath := filepath.Join(tempPath, "scorch.bleve")
+		bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
+		require.NoError(b, err)
 
-	nodeDS := New(dacky, concurrency.NewKeyFence(), bleveIndex, nil, ranking.NewRanker(), ranking.NewRanker())
+		nodeDS, err = GetTestRocksBleveDataStore(b, db, bleveIndex, dacky, concurrency.NewKeyFence())
+		require.NoError(b, err)
+	}
 
-	// Generate CVEs and components for the node.
-	components := make([]*storage.EmbeddedNodeScanComponent, 0, 1000)
+	fakeNode := fixtures.GetNodeWithUniqueComponents(100, 100)
+	nodes := make([]*storage.Node, 100)
 	for i := 0; i < 100; i++ {
-		vulns := make([]*storage.EmbeddedVulnerability, 0, 1000)
-		for j := 0; j < 1000; j++ {
-			vuln := &storage.EmbeddedVulnerability{
-				Cve: strconv.Itoa(i) + strconv.Itoa(j),
-			}
-			vulns = append(vulns, vuln)
-		}
-
-		component := &storage.EmbeddedNodeScanComponent{
-			Name:    strconv.Itoa(i),
-			Version: strconv.Itoa(i),
-			Vulns:   vulns,
-		}
-		components = append(components, component)
+		fakeNode.Id = uuid.NewV4().String()
+		fakeNode.ClusterId = fakeNode.Id
+		fakeNode.ClusterName = fmt.Sprintf("c-%d", i)
+		fakeNode.Name = fmt.Sprintf("node-%d", i)
+		nodes[i] = fakeNode
+		require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 	}
-
-	node1 := &storage.Node{
-		Id: "node1",
-		Scan: &storage.NodeScan{
-			ScanTime:   types.TimestampNow(),
-			Components: components,
-		},
-	}
-
-	require.NoError(b, nodeDS.UpsertNode(ctx, node1))
 
 	// Stored node is read because it contains new scan.
 	b.Run("upsertNodeWithOldScan", func(b *testing.B) {
-		node1.Scan.ScanTime.Seconds = node1.Scan.ScanTime.Seconds - 500
+		fakeNode.Scan.ScanTime.Seconds = fakeNode.Scan.ScanTime.Seconds - 500
 		for i := 0; i < b.N; i++ {
-			err = nodeDS.UpsertNode(ctx, node1)
+			err = nodeDS.UpsertNode(ctx, fakeNode)
 		}
 		require.NoError(b, err)
 	})
 
 	b.Run("upsertNodeWithNewScan", func(b *testing.B) {
-		node1.Scan.ScanTime.Seconds = node1.Scan.ScanTime.Seconds + 500
+		fakeNode.Scan.ScanTime.Seconds = fakeNode.Scan.ScanTime.Seconds + 500
 		for i := 0; i < b.N; i++ {
-			err = nodeDS.UpsertNode(ctx, node1)
+			err = nodeDS.UpsertNode(ctx, fakeNode)
 		}
 		require.NoError(b, err)
+	})
+
+	b.Run("searchAll", func(b *testing.B) {
+		results, err := nodeDS.SearchRawNodes(ctx, search.EmptyQuery())
+		require.NoError(b, err)
+		require.NotNil(b, results)
+	})
+
+	b.Run("searchForCluster", func(b *testing.B) {
+		results, err := nodeDS.SearchRawNodes(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, nodes[0].ClusterId).ProtoQuery())
+		require.NoError(b, err)
+		require.NotNil(b, results)
+	})
+
+	b.Run("deleteForClusters", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			idx := i % len(nodes)
+			err := nodeDS.DeleteAllNodesForCluster(ctx, nodes[idx].ClusterId)
+			require.NoError(b, err)
+		}
 	})
 }
