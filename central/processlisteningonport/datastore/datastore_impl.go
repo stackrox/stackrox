@@ -369,7 +369,7 @@ func normalizePLOPs(
 	completedEvents = []*storage.ProcessListeningOnPortFromSensor{}
 
 	for _, val := range plops {
-		key := fmt.Sprintf("%d %d %s",
+		key := getPlopKeyFromParts(
 			val.GetProtocol(),
 			val.GetPort(),
 			getPlopProcessUniqueKey(val),
