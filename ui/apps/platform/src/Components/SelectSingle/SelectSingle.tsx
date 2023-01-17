@@ -3,6 +3,7 @@ import { Select, SelectVariant } from '@patternfly/react-core';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
+    toggleAriaLabel?: string;
     id: string;
     value: string;
     handleSelect: (name: string, value: string) => void;
@@ -16,6 +17,7 @@ export type SelectSingleProps = {
 
 function SelectSingle({
     toggleIcon,
+    toggleAriaLabel,
     id,
     value,
     handleSelect,
@@ -40,6 +42,7 @@ function SelectSingle({
         <Select
             variant={isTypeahead}
             toggleIcon={toggleIcon}
+            toggleAriaLabel={toggleAriaLabel}
             id={id}
             isDisabled={isDisabled}
             isOpen={isOpen}

@@ -15,6 +15,8 @@ const (
 	username = "_json_key"
 )
 
+var _ types.Registry = (*googleRegistry)(nil)
+
 type googleRegistry struct {
 	types.Registry
 	project string

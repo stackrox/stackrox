@@ -187,17 +187,16 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	defer ds.lock.Unlock()
 
 	// Get wrap with no lock since ds.lock.Lock() was already requested above
-	wrap := ds.deployments[id]
-	if wrap == nil {
+	wrap, found := ds.deployments[id]
+	if !found || wrap == nil {
 		return nil, errors.Errorf("deployment with ID %s doesn't exist in the internal deployment store", id)
 	}
-	clonedWrap := wrap.Clone()
 
-	clonedWrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
-	clonedWrap.updatePortExposureSlice(dependencies.Exposures)
-	if err := clonedWrap.updateHash(); err != nil {
+	wrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
+	wrap.updatePortExposureSlice(dependencies.Exposures)
+	if err := wrap.updateHash(); err != nil {
 		return nil, err
 	}
-	ds.addOrUpdateDeploymentNoLock(clonedWrap)
-	return clonedWrap.GetDeployment(), nil
+	ds.addOrUpdateDeploymentNoLock(wrap)
+	return wrap.GetDeployment().Clone(), nil
 }

@@ -87,6 +87,18 @@ func (s *TestReportConfigurationServiceTestSuite) TestAddInvalidValidReportConfi
 	})
 	s.Error(err)
 
+	missingDaysOfWeekReportConfig := fixtures.GetInvalidReportConfigurationMissingDaysOfWeek()
+	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
+		ReportConfig: missingDaysOfWeekReportConfig,
+	})
+	s.Error(err)
+
+	missingDaysOfMonthReportConfig := fixtures.GetInvalidReportConfigurationMissingDaysOfMonth()
+	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
+		ReportConfig: missingDaysOfMonthReportConfig,
+	})
+	s.Error(err)
+
 	incorrectEmailReportConfig := fixtures.GetInvalidReportConfigurationIncorrectEmail()
 	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
 		ReportConfig: incorrectEmailReportConfig,

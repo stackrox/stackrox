@@ -78,7 +78,7 @@ describe('policyUtils', () => {
                     deployment: null,
                     expiration: null,
                     image: {
-                        name: 'k8s.gcr.io/coredns:1.3.1',
+                        name: 'registry.k8s.io/coredns:1.3.1',
                     },
                     name: '',
                 },
@@ -86,7 +86,7 @@ describe('policyUtils', () => {
 
             const names = getExcludedNamesByType(excludedScopes, 'image');
 
-            expect(names).toEqual('docker.io/library/mysql:5, k8s.gcr.io/coredns:1.3.1');
+            expect(names).toEqual('docker.io/library/mysql:5, registry.k8s.io/coredns:1.3.1');
         });
     });
 });

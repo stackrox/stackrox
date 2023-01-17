@@ -1,4 +1,4 @@
-import { EdgeModel, EdgeStyle } from '@patternfly/react-topology';
+import { EdgeStyle } from '@patternfly/react-topology';
 
 import {
     DeploymentNetworkEntityInfo,
@@ -6,7 +6,7 @@ import {
     InternetNetworkEntityInfo,
     NetworkEntityInfo,
     Node,
-    Edge,
+    OutEdges,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
@@ -21,6 +21,7 @@ import {
     NetworkPolicyState,
     ExternalEntitiesNodeModel,
     CIDRBlockNodeModel,
+    CustomEdgeModel,
 } from '../types/topology.type';
 
 export const graphModel = {
@@ -95,7 +96,7 @@ function getDeploymentNodeModel(
 
 function getExternalNodeModel(
     entity: ExternalSourceNetworkEntityInfo | InternetNetworkEntityInfo,
-    outEdges: Edge[]
+    outEdges: OutEdges
 ): ExternalEntitiesNodeModel | CIDRBlockNodeModel {
     const baseNode = getBaseNode(entity.id);
     switch (entity.type) {
@@ -121,7 +122,7 @@ function getNodeModel(
     policyIds: string[],
     networkPolicyState: NetworkPolicyState,
     isExternallyConnected: boolean,
-    outEdges: Edge[]
+    outEdges: OutEdges
 ): CustomNodeModel {
     switch (entity.type) {
         case 'DEPLOYMENT':
@@ -146,7 +147,7 @@ export function transformActiveData(
     const dataModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
-        edges: [] as EdgeModel[],
+        edges: [] as CustomEdgeModel[],
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
@@ -192,12 +193,16 @@ export function transformActiveData(
 
         // creating edges based off of outEdges per node and adding to data model
         Object.keys(outEdges).forEach((nodeIdx) => {
+            const { properties } = outEdges[nodeIdx];
             const edge = {
                 id: `${id} ${nodes[nodeIdx].entity.id as string}`,
                 type: 'edge',
                 source: id,
                 target: nodes[nodeIdx].entity.id,
                 visible: false,
+                data: {
+                    properties,
+                },
             };
             dataModel.edges.push(edge);
         });
@@ -259,10 +264,10 @@ function getNetworkPolicyState(
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
 export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
-    const dataModel = {
+    const dataModel: CustomModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
-        edges: [] as EdgeModel[],
+        edges: [] as CustomEdgeModel[],
     };
     nodes.forEach(({ entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress }) => {
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
@@ -277,6 +282,7 @@ export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
 
         // creating edges based off of outEdges per node and adding to data model
         Object.keys(outEdges).forEach((nodeIdx) => {
+            const { properties } = outEdges[nodeIdx];
             const edge = {
                 id: `${entity.id} ${nodes[nodeIdx].entity.id as string}`,
                 type: 'edge',
@@ -284,6 +290,9 @@ export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
                 target: nodes[nodeIdx].entity.id,
                 visible: false,
                 edgeStyle: EdgeStyle.dashed,
+                data: {
+                    properties,
+                },
             };
             dataModel.edges.push(edge);
         });
@@ -297,12 +306,12 @@ export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
 export function createExtraneousFlowsModel(
     policyDataModel: CustomModel,
     activeNodeMap: Record<string, CustomNodeModel>,
-    activeEdgeMap: Record<string, EdgeModel>
+    activeEdgeMap: Record<string, CustomEdgeModel>
 ): CustomModel {
     const dataModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
-        edges: [] as EdgeModel[],
+        edges: [] as CustomEdgeModel[],
     };
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     let externalNode: ExternalGroupNodeModel | null = null;
@@ -406,8 +415,8 @@ export function createExtraneousNodes(numFlows: number): {
 }
 
 export function createExtraneousEdges(selectedNodeId: string): {
-    extraneousEgressEdge: EdgeModel;
-    extraneousIngressEdge: EdgeModel;
+    extraneousEgressEdge: CustomEdgeModel;
+    extraneousIngressEdge: CustomEdgeModel;
 } {
     const extraneousEgressEdge = {
         id: 'extraneous-egress-edge',
@@ -416,6 +425,9 @@ export function createExtraneousEdges(selectedNodeId: string): {
         target: 'extraneous-egress',
         visible: true,
         edgeStyle: EdgeStyle.dashed,
+        data: {
+            properties: [],
+        },
     };
     const extraneousIngressEdge = {
         id: 'extraneous-ingress-edge',
@@ -424,6 +436,9 @@ export function createExtraneousEdges(selectedNodeId: string): {
         target: selectedNodeId,
         visible: true,
         edgeStyle: EdgeStyle.dashed,
+        data: {
+            properties: [],
+        },
     };
     return { extraneousEgressEdge, extraneousIngressEdge };
 }

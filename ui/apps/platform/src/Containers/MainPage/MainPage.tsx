@@ -20,6 +20,7 @@ import { clustersBasePath } from 'routePaths';
 
 import CredentialExpiryBanner from './CredentialExpiryBanner';
 import VersionOutOfDate from './VersionOutOfDate';
+import DatabaseBanner from './DatabaseBanner';
 import Masthead from './Header/Masthead';
 import NavigationSidebar from './Sidebar/NavigationSidebar';
 
@@ -98,6 +99,7 @@ function MainPage(): ReactElement {
                     hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
                 />
                 {metadata?.stale && <VersionOutOfDate />}
+                <DatabaseBanner isApiReachable={serverState && serverState !== 'UNREACHABLE'} />
                 <Page
                     mainContainerId="main-page-container"
                     header={<Masthead />}

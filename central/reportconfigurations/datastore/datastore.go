@@ -15,6 +15,7 @@ import (
 )
 
 // DataStore is the datastore for report configurations.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
@@ -38,6 +39,7 @@ func New(reportConfigStore store.Store, indexer index.Indexer, searcher search.S
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
 	if err := d.buildIndex(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")

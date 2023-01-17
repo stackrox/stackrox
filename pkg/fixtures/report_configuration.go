@@ -66,6 +66,36 @@ func GetInvalidReportConfigurationMissingSchedule() *storage.ReportConfiguration
 	return rc
 }
 
+// GetInvalidReportConfigurationMissingDaysOfWeek returns a mock report configuration with an invalid schedule that is
+// missing days of week
+func GetInvalidReportConfigurationMissingDaysOfWeek() *storage.ReportConfiguration {
+	rc := GetValidReportConfiguration()
+	rc.Schedule = &storage.Schedule{
+		IntervalType: storage.Schedule_WEEKLY,
+		Interval: &storage.Schedule_DaysOfWeek_{
+			DaysOfWeek: &storage.Schedule_DaysOfWeek{
+				Days: []int32{},
+			},
+		},
+	}
+	return rc
+}
+
+// GetInvalidReportConfigurationMissingDaysOfMonth returns a mock report configuration with an invalid schedule that is
+// missing days of month
+func GetInvalidReportConfigurationMissingDaysOfMonth() *storage.ReportConfiguration {
+	rc := GetValidReportConfiguration()
+	rc.Schedule = &storage.Schedule{
+		IntervalType: storage.Schedule_MONTHLY,
+		Interval: &storage.Schedule_DaysOfMonth_{
+			DaysOfMonth: &storage.Schedule_DaysOfMonth{
+				Days: nil,
+			},
+		},
+	}
+	return rc
+}
+
 // GetInvalidReportConfigurationIncorrectEmail returns a mock report configuration with incorrect email
 func GetInvalidReportConfigurationIncorrectEmail() *storage.ReportConfiguration {
 	rc := GetValidReportConfiguration()

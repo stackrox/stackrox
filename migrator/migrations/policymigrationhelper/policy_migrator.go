@@ -1,20 +1,19 @@
 package policymigrationhelper
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"path/filepath"
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/set"
 	bolt "go.etcd.io/bbolt"
 )
@@ -188,7 +187,7 @@ func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 		return nil, errors.Wrapf(err, "unable to read file %s", filePath)
 	}
 	var policy storage.Policy
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+	err = jsonutil.JSONBytesToProto(contents, &policy)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to unmarshal policy json at path %s", filePath)
 	}

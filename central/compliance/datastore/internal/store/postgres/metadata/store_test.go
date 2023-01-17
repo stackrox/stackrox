@@ -166,8 +166,8 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACCount() {
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expectedCount := range map[string]int{
@@ -194,11 +194,11 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACWalk() {
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIds := range map[string][]string{
+	for name, expectedIDs := range map[string][]string{
 		withAllAccess:           []string{objA.GetRunId(), objB.GetRunId()},
 		withNoAccess:            []string{},
 		withNoAccessToCluster:   []string{},
@@ -207,14 +207,14 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACWalk() {
 		withAccessToCluster:     []string{objA.GetRunId()},
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			ids := []string{}
-			getIds := func(obj *storage.ComplianceRunMetadata) error {
-				ids = append(ids, obj.GetRunId())
+			identifiers := []string{}
+			getIDs := func(obj *storage.ComplianceRunMetadata) error {
+				identifiers = append(identifiers, obj.GetRunId())
 				return nil
 			}
-			err := s.store.Walk(ctxs[name], getIds)
+			err := s.store.Walk(ctxs[name], getIDs)
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, expectedIds, ids)
+			assert.ElementsMatch(t, expectedIDs, identifiers)
 		})
 	}
 }
@@ -227,11 +227,11 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGetIDs() {
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIds := range map[string][]string{
+	for name, expectedIDs := range map[string][]string{
 		withAllAccess:           []string{objA.GetRunId(), objB.GetRunId()},
 		withNoAccess:            []string{},
 		withNoAccessToCluster:   []string{},
@@ -240,9 +240,9 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGetIDs() {
 		withAccessToCluster:     []string{objA.GetRunId()},
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			ids, err := s.store.GetIDs(ctxs[name])
+			identifiers, err := s.store.GetIDs(ctxs[name])
 			assert.NoError(t, err)
-			assert.EqualValues(t, expectedIds, ids)
+			assert.EqualValues(t, expectedIDs, identifiers)
 		})
 	}
 }
@@ -252,7 +252,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACExists() {
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expected := range map[string]bool{
@@ -276,7 +276,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGet() {
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expected := range map[string]bool{
@@ -376,8 +376,8 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGetMany() {
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expected := range map[string]struct {
@@ -399,7 +399,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGetMany() {
 		})
 	}
 
-	s.T().Run("with no ids", func(t *testing.T) {
+	s.T().Run("with no identifiers", func(t *testing.T) {
 		actual, missingIndices, err := s.store.GetMany(withAllAccessCtx, []string{})
 		assert.Nil(t, err)
 		assert.Nil(t, actual)

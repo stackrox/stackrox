@@ -20,6 +20,9 @@ on:
       name:
         description: Release name (N)
         value: ${{jobs.parse.outputs.name}}
+      named-release:
+        description: Release name and minor version (A.B[-N])
+        value: ${{format('{0}{1}', jobs.parse.outputs.release, jobs.parse.outputs.dash-name)}}
       named-release-patch:
         description: Release.patch-name (A.B.C[-N])
         value: ${{format('{0}.{1}{2}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name)}}

@@ -11,7 +11,6 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { EdgeModel } from '@patternfly/react-topology';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import useFetchClusters from 'hooks/useFetchClusters';
@@ -26,7 +25,8 @@ import useURLParameter from 'hooks/useURLParameter';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
-import EdgeStateSelect, { EdgeState } from './EdgeStateSelect';
+import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
+import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
 import NetworkGraph from './NetworkGraph';
 import {
     transformPolicyData,
@@ -36,12 +36,20 @@ import {
 } from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
 import getSimulation from './utils/getSimulation';
-import { CustomModel, CustomNodeModel, DeploymentNodeModel } from './types/topology.type';
+import {
+    CustomEdgeModel,
+    CustomModel,
+    CustomNodeModel,
+    DeploymentNodeModel,
+    DeploymentData,
+} from './types/topology.type';
 
 import './NetworkGraphPage.css';
 
 const emptyModel = {
     graph: graphModel,
+    nodes: [],
+    edges: [],
 };
 
 // TODO: get real time window from user input
@@ -54,6 +62,10 @@ const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
 
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
+    const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
+        'policyStatusBadge',
+        'externalBadge',
+    ]);
     const [activeModel, setActiveModel] = useState<CustomModel>(emptyModel);
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
@@ -107,7 +119,7 @@ function NetworkGraphPage() {
                 ])
                     .then((values) => {
                         const activeNodeMap: Record<string, CustomNodeModel> = {};
-                        const activeEdgeMap: Record<string, EdgeModel> = {};
+                        const activeEdgeMap: Record<string, CustomEdgeModel> = {};
                         const policyNodeMap: Record<string, DeploymentNodeModel> = {};
 
                         // get policy nodes from api response
@@ -171,11 +183,40 @@ function NetworkGraphPage() {
         }
     }, [edgeState, setModel, activeModel, extraneousFlowsModel]);
 
+    useEffect(() => {
+        // this is to update the display options visually for deployment nodes on the graph
+        if (model.nodes?.length) {
+            const showPolicyState = !!displayOptions.includes('policyStatusBadge');
+            const showExternalState = !!displayOptions.includes('externalBadge');
+            const updatedNodes: CustomNodeModel[] = model.nodes.map((node) => {
+                const { data } = node;
+                if (data.type === 'DEPLOYMENT') {
+                    return {
+                        ...node,
+                        data: {
+                            ...data,
+                            showPolicyState,
+                            showExternalState,
+                        } as DeploymentData,
+                    };
+                }
+                return node;
+            });
+
+            const updatedModel: CustomModel = { ...model, nodes: updatedNodes };
+            setModel(updatedModel);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [displayOptions]);
+
     return (
         <>
             <PageTitle title="Network Graph" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Toolbar data-testid="network-graph-selector-bar">
+                <Toolbar
+                    className="network-graph-selector-bar"
+                    data-testid="network-graph-selector-bar"
+                >
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
                             <Title headingLevel="h1" className="pf-u-screen-reader">
@@ -214,7 +255,12 @@ function NetworkGraphPage() {
                         </ToolbarGroup>
                         <ToolbarGroup>
                             <ToolbarItem>Add one or more deployment filters</ToolbarItem>
-                            <ToolbarItem>Display options</ToolbarItem>
+                            <ToolbarItem>
+                                <DisplayOptionsSelect
+                                    selectedOptions={displayOptions}
+                                    setSelectedOptions={setDisplayOptions}
+                                />
+                            </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup alignment={{ default: 'alignRight' }}>
                             <Divider component="div" isVertical />

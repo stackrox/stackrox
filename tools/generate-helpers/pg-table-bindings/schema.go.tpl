@@ -15,6 +15,7 @@ import (
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/postgres/walker"
     "github.com/stackrox/rox/pkg/search"
+    "github.com/stackrox/rox/pkg/search/postgres/mapping"
     "github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -23,7 +24,7 @@ import (
 &postgres.CreateStmts{
     GormModel: (*{{$schema.Table|upperCamelCase}})(nil),
     Children: []*postgres.CreateStmts{
-     {{- range $idx, $child := $schema.Children }}
+     {{- range $index, $child := $schema.Children }}
         {{- template "createTableStmt" $child }},
     {{- end }}
     },
@@ -70,6 +71,9 @@ var (
         {{- end }}
         {{- if .RegisterSchema }}
         RegisterTable(schema, {{template "createTableStmtVar" .Schema }})
+            {{- if .SearchCategory }}
+                mapping.RegisterCategoryToTable(v1.{{.SearchCategory}}, schema)
+            {{- end}}
         {{- end}}
         return schema
     }()
@@ -80,7 +84,7 @@ var (
 {{- $schema := .Schema }}
     // {{$schema.Table|upperCamelCase}} holds the Gorm model for Postgres table `{{$schema.Table|lowerCase}}`.
     type {{$schema.Table|upperCamelCase}} struct {
-    {{- range $idx, $field := $schema.DBColumnFields }}
+    {{- range $index, $field := $schema.DBColumnFields }}
         {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"{{- /**/ -}}
         column:{{$field.ColumnName|lowerCase}};{{- /**/ -}}
         type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{- /**/ -}}
@@ -93,7 +97,7 @@ var (
         {{end}}{{- /**/ -}}
         "`
     {{- end}}
-    {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
+    {{- range $index, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
         {{$rel.OtherSchema.Table|upperCamelCase}}{{if $rel.CycleReference}}Cycle{{end}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"{{- /**/ -}}
         foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};{{- /**/ -}}
         references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;{{- /**/ -}}
@@ -101,13 +105,13 @@ var (
         "`
     {{- end}}
     }
-    {{- range $idx, $child := $schema.Children }}
+    {{- range $index, $child := $schema.Children }}
         {{- template "createGormModel"  dict "Schema" $child "Obj" $obj }}
     {{- end }}
 {{- end}}
 {{- define "createTableNames" }}
-	{{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
-	{{- range $idx, $child := .Children }}
+    {{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
+	{{- range $index, $child := .Children }}
 	   {{- template "createTableNames" $child }}
     {{- end }}
 {{- end}}

@@ -59,6 +59,7 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 		user.With(permissions.View(resources.Policy)): {
 			"/v1.PolicyService/GetPolicy",
 			"/v1.PolicyService/ListPolicies",
@@ -69,6 +70,7 @@ var (
 			"/v1.PolicyService/PolicyFromSearch",
 			"/v1.PolicyService/GetPolicyMitreVectors",
 		},
+		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 		user.With(permissions.Modify(resources.Policy)): {
 			"/v1.PolicyService/PostPolicy",
 			"/v1.PolicyService/PutPolicy",
@@ -92,6 +94,7 @@ const (
 var (
 	policySyncReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 			sac.ResourceScopeKeys(resources.Policy)))
 
 	partialListPolicyGroups = set.NewStringSet(fieldnames.ImageComponent, fieldnames.DockerfileLine, fieldnames.EnvironmentVariable)

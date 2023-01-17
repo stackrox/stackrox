@@ -23,6 +23,8 @@ type Store interface {
 	RemoveClusterBinding(binding *v1.ClusterRoleBinding)
 	GetPermissionLevelForDeployment(deployment rbac.NamespacedServiceAccount) storage.PermissionLevel
 
+	FindSubjectForRole(namespace, roleName string) []namespacedSubject
+	FindSubjectForBindingID(namespace, name, uuid string) []namespacedSubject
 	FindBindingForNamespacedRole(namespace, roleName string) []namespacedBindingID
 }
 

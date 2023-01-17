@@ -32,11 +32,19 @@ type ResourceEvent struct {
 	// that require processing
 	DeploymentReference resolver.DeploymentReference
 
+	// DeploymentTiming has the timing object that needs to be added to any deployments resolved by this event.
+	DeploymentTiming *central.Timing
+
 	// ParentResourceAction is the resource action that will be sent to central on the deployment event.
 	// If the ResourceEvent originated on a deployment event, this should be set to whatever action triggered
 	// the event. For related resources updates, like RBACs and services, this should always be set to
 	// UPDATE.
 	ParentResourceAction central.ResourceAction
+
+	// ForceDetection is a flag that will force a detection even if the deployment has no changes.
+	// This is needed to trigger detection of deployments associated with a NetworkPolicy, since they are not part of the deployment spec
+	// and therefore will not be triggered since the deduper won't recognize that a deployment was changed.
+	ForceDetection bool
 }
 
 // NewResourceEvent wraps the SensorEvents, CompatibilityDetectionMessages, and the CompatibilityReprocessDeployments into a ResourceEvent message
@@ -49,10 +57,11 @@ func NewResourceEvent(sensorMessages []*central.SensorEvent, detectionDeployment
 }
 
 // NewDeploymentRefEvent returns a resource event given a deployment reference and a resource action.
-func NewDeploymentRefEvent(ref resolver.DeploymentReference, action central.ResourceAction) *ResourceEvent {
+func NewDeploymentRefEvent(ref resolver.DeploymentReference, action central.ResourceAction, forceDetection bool) *ResourceEvent {
 	return &ResourceEvent{
 		DeploymentReference:  ref,
 		ParentResourceAction: action,
+		ForceDetection:       forceDetection,
 	}
 }
 
@@ -68,6 +77,7 @@ func MergeResourceEvents(dest, src *ResourceEvent) *ResourceEvent {
 		dest.CompatibilityDetectionDeployment = append(dest.CompatibilityDetectionDeployment, src.CompatibilityDetectionDeployment...)
 		dest.ParentResourceAction = src.ParentResourceAction
 		dest.DeploymentReference = src.DeploymentReference
+		dest.ForceDetection = src.ForceDetection || dest.ForceDetection
 	}
 	return dest
 }

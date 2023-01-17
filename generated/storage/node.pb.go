@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -74,6 +73,37 @@ func (x NodeScan_Note) String() string {
 
 func (NodeScan_Note) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{1, 0}
+}
+
+type NodeInventory_Note int32
+
+const (
+	NodeInventory_OS_CVES_UNAVAILABLE             NodeInventory_Note = 0
+	NodeInventory_OS_CVES_STALE                   NodeInventory_Note = 1
+	NodeInventory_LANGUAGE_CVES_UNAVAILABLE       NodeInventory_Note = 2
+	NodeInventory_CERTIFIED_RHEL_SCAN_UNAVAILABLE NodeInventory_Note = 3
+)
+
+var NodeInventory_Note_name = map[int32]string{
+	0: "OS_CVES_UNAVAILABLE",
+	1: "OS_CVES_STALE",
+	2: "LANGUAGE_CVES_UNAVAILABLE",
+	3: "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
+}
+
+var NodeInventory_Note_value = map[string]int32{
+	"OS_CVES_UNAVAILABLE":             0,
+	"OS_CVES_STALE":                   1,
+	"LANGUAGE_CVES_UNAVAILABLE":       2,
+	"CERTIFIED_RHEL_SCAN_UNAVAILABLE": 3,
+}
+
+func (x NodeInventory_Note) String() string {
+	return proto.EnumName(NodeInventory_Note_name, int32(x))
+}
+
+func (NodeInventory_Note) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_107f6eed651900c7, []int{2, 0}
 }
 
 // Node represents information about a node in the cluster.
@@ -623,14 +653,20 @@ func (m *NodeScan) Clone() *NodeScan {
 }
 
 type NodeInventory struct {
-	NodeId               string           `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" search:"Node ID,store" sql:"pk,type(uuid)"`
-	NodeName             string           `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty" search:"Node,store"`
-	ScanTime             *types.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Node Scan Time,store"`
-	Components           *v1.Components   `protobuf:"bytes,4,opt,name=components,proto3" json:"components,omitempty"`
-	Notes                []v1.Note        `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=scannerV1.Note" json:"notes,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	NodeName string           `protobuf:"bytes,1,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
+	ScanTime *types.Timestamp `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
+	// Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.
+	// Keep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:
+	// func convertAndDedupRHELComponents (in pkg 'nodeinventorizer'), and the respective reverse convertion in pkg 'clairify'.
+	// We are not using scannerV1.Components here for the following reasons:
+	// - to avoid conflicts between v1 and scannerV1 APIs when generating the code in central/graphql/resolvers/generated.go
+	// - to not expose scanner v1 API over stackrox graphql API
+	Components *NodeInventory_Components `protobuf:"bytes,3,opt,name=components,proto3" json:"components,omitempty" sql:"-"`
+	// Note represents scannerV1.Note
+	Notes                []NodeInventory_Note `protobuf:"varint,4,rep,packed,name=notes,proto3,enum=storage.NodeInventory_Note" json:"notes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *NodeInventory) Reset()         { *m = NodeInventory{} }
@@ -666,13 +702,6 @@ func (m *NodeInventory) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NodeInventory proto.InternalMessageInfo
 
-func (m *NodeInventory) GetNodeId() string {
-	if m != nil {
-		return m.NodeId
-	}
-	return ""
-}
-
 func (m *NodeInventory) GetNodeName() string {
 	if m != nil {
 		return m.NodeName
@@ -687,14 +716,14 @@ func (m *NodeInventory) GetScanTime() *types.Timestamp {
 	return nil
 }
 
-func (m *NodeInventory) GetComponents() *v1.Components {
+func (m *NodeInventory) GetComponents() *NodeInventory_Components {
 	if m != nil {
 		return m.Components
 	}
 	return nil
 }
 
-func (m *NodeInventory) GetNotes() []v1.Note {
+func (m *NodeInventory) GetNotes() []NodeInventory_Note {
 	if m != nil {
 		return m.Notes
 	}
@@ -714,9 +743,369 @@ func (m *NodeInventory) Clone() *NodeInventory {
 	cloned.ScanTime = m.ScanTime.Clone()
 	cloned.Components = m.Components.Clone()
 	if m.Notes != nil {
-		cloned.Notes = make([]v1.Note, len(m.Notes))
+		cloned.Notes = make([]NodeInventory_Note, len(m.Notes))
 		copy(cloned.Notes, m.Notes)
 	}
+	return cloned
+}
+
+type NodeInventory_Components struct {
+	Namespace            string                                    `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	RhelComponents       []*NodeInventory_Components_RHELComponent `protobuf:"bytes,2,rep,name=rhel_components,json=rhelComponents,proto3" json:"rhel_components,omitempty"`
+	RhelContentSets      []string                                  `protobuf:"bytes,3,rep,name=rhel_content_sets,json=rhelContentSets,proto3" json:"rhel_content_sets,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                  `json:"-"`
+	XXX_unrecognized     []byte                                    `json:"-"`
+	XXX_sizecache        int32                                     `json:"-"`
+}
+
+func (m *NodeInventory_Components) Reset()         { *m = NodeInventory_Components{} }
+func (m *NodeInventory_Components) String() string { return proto.CompactTextString(m) }
+func (*NodeInventory_Components) ProtoMessage()    {}
+func (*NodeInventory_Components) Descriptor() ([]byte, []int) {
+	return fileDescriptor_107f6eed651900c7, []int{2, 0}
+}
+func (m *NodeInventory_Components) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NodeInventory_Components) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NodeInventory_Components.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NodeInventory_Components) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeInventory_Components.Merge(m, src)
+}
+func (m *NodeInventory_Components) XXX_Size() int {
+	return m.Size()
+}
+func (m *NodeInventory_Components) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeInventory_Components.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeInventory_Components proto.InternalMessageInfo
+
+func (m *NodeInventory_Components) GetNamespace() string {
+	if m != nil {
+		return m.Namespace
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components) GetRhelComponents() []*NodeInventory_Components_RHELComponent {
+	if m != nil {
+		return m.RhelComponents
+	}
+	return nil
+}
+
+func (m *NodeInventory_Components) GetRhelContentSets() []string {
+	if m != nil {
+		return m.RhelContentSets
+	}
+	return nil
+}
+
+func (m *NodeInventory_Components) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NodeInventory_Components) Clone() *NodeInventory_Components {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeInventory_Components)
+	*cloned = *m
+
+	if m.RhelComponents != nil {
+		cloned.RhelComponents = make([]*NodeInventory_Components_RHELComponent, len(m.RhelComponents))
+		for idx, v := range m.RhelComponents {
+			cloned.RhelComponents[idx] = v.Clone()
+		}
+	}
+	if m.RhelContentSets != nil {
+		cloned.RhelContentSets = make([]string, len(m.RhelContentSets))
+		copy(cloned.RhelContentSets, m.RhelContentSets)
+	}
+	return cloned
+}
+
+type NodeInventory_Components_RHELComponent struct {
+	Id                   int64                                                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string                                               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Namespace            string                                               `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Version              string                                               `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	Arch                 string                                               `protobuf:"bytes,5,opt,name=arch,proto3" json:"arch,omitempty"`
+	Module               string                                               `protobuf:"bytes,6,opt,name=module,proto3" json:"module,omitempty"`
+	AddedBy              string                                               `protobuf:"bytes,7,opt,name=added_by,json=addedBy,proto3" json:"added_by,omitempty"`
+	Executables          []*NodeInventory_Components_RHELComponent_Executable `protobuf:"bytes,8,rep,name=executables,proto3" json:"executables,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                             `json:"-"`
+	XXX_unrecognized     []byte                                               `json:"-"`
+	XXX_sizecache        int32                                                `json:"-"`
+}
+
+func (m *NodeInventory_Components_RHELComponent) Reset() {
+	*m = NodeInventory_Components_RHELComponent{}
+}
+func (m *NodeInventory_Components_RHELComponent) String() string { return proto.CompactTextString(m) }
+func (*NodeInventory_Components_RHELComponent) ProtoMessage()    {}
+func (*NodeInventory_Components_RHELComponent) Descriptor() ([]byte, []int) {
+	return fileDescriptor_107f6eed651900c7, []int{2, 0, 0}
+}
+func (m *NodeInventory_Components_RHELComponent) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NodeInventory_Components_RHELComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NodeInventory_Components_RHELComponent.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NodeInventory_Components_RHELComponent) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeInventory_Components_RHELComponent.Merge(m, src)
+}
+func (m *NodeInventory_Components_RHELComponent) XXX_Size() int {
+	return m.Size()
+}
+func (m *NodeInventory_Components_RHELComponent) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeInventory_Components_RHELComponent.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeInventory_Components_RHELComponent proto.InternalMessageInfo
+
+func (m *NodeInventory_Components_RHELComponent) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+func (m *NodeInventory_Components_RHELComponent) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent) GetNamespace() string {
+	if m != nil {
+		return m.Namespace
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent) GetArch() string {
+	if m != nil {
+		return m.Arch
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent) GetModule() string {
+	if m != nil {
+		return m.Module
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent) GetAddedBy() string {
+	if m != nil {
+		return m.AddedBy
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent) GetExecutables() []*NodeInventory_Components_RHELComponent_Executable {
+	if m != nil {
+		return m.Executables
+	}
+	return nil
+}
+
+func (m *NodeInventory_Components_RHELComponent) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NodeInventory_Components_RHELComponent) Clone() *NodeInventory_Components_RHELComponent {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeInventory_Components_RHELComponent)
+	*cloned = *m
+
+	if m.Executables != nil {
+		cloned.Executables = make([]*NodeInventory_Components_RHELComponent_Executable, len(m.Executables))
+		for idx, v := range m.Executables {
+			cloned.Executables[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type NodeInventory_Components_RHELComponent_Executable struct {
+	Path                 string                                                                  `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	RequiredFeatures     []*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion `protobuf:"bytes,2,rep,name=required_features,json=requiredFeatures,proto3" json:"required_features,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                                                `json:"-"`
+	XXX_unrecognized     []byte                                                                  `json:"-"`
+	XXX_sizecache        int32                                                                   `json:"-"`
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable) Reset() {
+	*m = NodeInventory_Components_RHELComponent_Executable{}
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) String() string {
+	return proto.CompactTextString(m)
+}
+func (*NodeInventory_Components_RHELComponent_Executable) ProtoMessage() {}
+func (*NodeInventory_Components_RHELComponent_Executable) Descriptor() ([]byte, []int) {
+	return fileDescriptor_107f6eed651900c7, []int{2, 0, 0, 0}
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable.Merge(m, src)
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) XXX_Size() int {
+	return m.Size()
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable proto.InternalMessageInfo
+
+func (m *NodeInventory_Components_RHELComponent_Executable) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable) GetRequiredFeatures() []*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion {
+	if m != nil {
+		return m.RequiredFeatures
+	}
+	return nil
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) Clone() *NodeInventory_Components_RHELComponent_Executable {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeInventory_Components_RHELComponent_Executable)
+	*cloned = *m
+
+	if m.RequiredFeatures != nil {
+		cloned.RequiredFeatures = make([]*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, len(m.RequiredFeatures))
+		for idx, v := range m.RequiredFeatures {
+			cloned.RequiredFeatures[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Version              string   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Reset() {
+	*m = NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{}
+}
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) String() string {
+	return proto.CompactTextString(m)
+}
+func (*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) ProtoMessage() {}
+func (*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Descriptor() ([]byte, []int) {
+	return fileDescriptor_107f6eed651900c7, []int{2, 0, 0, 0, 0}
+}
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion.Merge(m, src)
+}
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_Size() int {
+	return m.Size()
+}
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion proto.InternalMessageInfo
+
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Clone() *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion)
+	*cloned = *m
+
 	return cloned
 }
 
@@ -884,109 +1273,130 @@ func (m *EmbeddedNodeScanComponent) Clone() *EmbeddedNodeScanComponent {
 func init() {
 	proto.RegisterEnum("storage.Node_Note", Node_Note_name, Node_Note_value)
 	proto.RegisterEnum("storage.NodeScan_Note", NodeScan_Note_name, NodeScan_Note_value)
+	proto.RegisterEnum("storage.NodeInventory_Note", NodeInventory_Note_name, NodeInventory_Note_value)
 	proto.RegisterType((*Node)(nil), "storage.Node")
 	proto.RegisterMapType((map[string]string)(nil), "storage.Node.AnnotationsEntry")
 	proto.RegisterMapType((map[string]string)(nil), "storage.Node.LabelsEntry")
 	proto.RegisterType((*NodeScan)(nil), "storage.NodeScan")
 	proto.RegisterType((*NodeInventory)(nil), "storage.NodeInventory")
+	proto.RegisterType((*NodeInventory_Components)(nil), "storage.NodeInventory.Components")
+	proto.RegisterType((*NodeInventory_Components_RHELComponent)(nil), "storage.NodeInventory.Components.RHELComponent")
+	proto.RegisterType((*NodeInventory_Components_RHELComponent_Executable)(nil), "storage.NodeInventory.Components.RHELComponent.Executable")
+	proto.RegisterType((*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion)(nil), "storage.NodeInventory.Components.RHELComponent.Executable.FeatureNameVersion")
 	proto.RegisterType((*EmbeddedNodeScanComponent)(nil), "storage.EmbeddedNodeScanComponent")
 }
 
 func init() { proto.RegisterFile("storage/node.proto", fileDescriptor_107f6eed651900c7) }
 
 var fileDescriptor_107f6eed651900c7 = []byte{
-	// 1441 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x57, 0xdd, 0x72, 0xdb, 0xb6,
-	0x12, 0xb6, 0x24, 0xff, 0x48, 0x90, 0x7f, 0x64, 0x24, 0x76, 0x68, 0x25, 0x36, 0x79, 0x78, 0x4e,
-	0x12, 0xf9, 0xc4, 0x91, 0x4f, 0x7c, 0xd2, 0x99, 0xc4, 0x33, 0xf1, 0x8c, 0x25, 0xbb, 0x89, 0x9c,
-	0x54, 0xf1, 0x50, 0xb6, 0x2f, 0x72, 0x51, 0x0e, 0x2d, 0xc2, 0x32, 0x2a, 0x09, 0x60, 0x09, 0x48,
-	0x63, 0xbd, 0x49, 0x9f, 0xa8, 0x93, 0x8b, 0x5e, 0xf4, 0x09, 0x34, 0x9d, 0xf4, 0x09, 0xca, 0x27,
-	0xe8, 0x00, 0x24, 0x68, 0x52, 0x76, 0x26, 0x6d, 0xa6, 0x77, 0xd4, 0xee, 0xf7, 0x7d, 0x58, 0x60,
-	0x17, 0x8b, 0x15, 0x80, 0x8c, 0x53, 0xdf, 0xe9, 0xa0, 0x6d, 0x42, 0x5d, 0x54, 0xf5, 0x7c, 0xca,
-	0x29, 0x9c, 0x8b, 0x6c, 0x65, 0xbd, 0x43, 0x69, 0xa7, 0x87, 0xb6, 0xa5, 0xf9, 0x7c, 0x70, 0xb1,
-	0xcd, 0x71, 0x1f, 0x31, 0xee, 0xf4, 0xbd, 0x10, 0x59, 0x5e, 0x63, 0x6d, 0x87, 0x10, 0xe4, 0x6f,
-	0x3b, 0x1e, 0xde, 0x1e, 0x3e, 0xdb, 0x26, 0x94, 0x47, 0x22, 0xe5, 0x8d, 0x09, 0x57, 0x9b, 0xf6,
-	0x3d, 0x4a, 0x10, 0xe1, 0x91, 0x5f, 0x57, 0x0b, 0xb7, 0x29, 0xe1, 0x0e, 0x26, 0xc8, 0xb7, 0xfd,
-	0x01, 0x11, 0x0b, 0x44, 0x80, 0xbb, 0x0a, 0x20, 0xbc, 0x9c, 0x45, 0xd6, 0xfb, 0xca, 0x3a, 0x1c,
-	0xf4, 0x08, 0xf2, 0x9d, 0x73, 0xdc, 0xc3, 0x7c, 0xa4, 0x28, 0x1d, 0xda, 0xa1, 0xf2, 0x73, 0x5b,
-	0x7c, 0x85, 0x56, 0xf3, 0xe7, 0x25, 0x30, 0xdd, 0xa4, 0x2e, 0x82, 0x7b, 0x20, 0x8b, 0x5d, 0x2d,
-	0x63, 0x64, 0x2a, 0x85, 0x5a, 0x35, 0x18, 0xeb, 0xff, 0x65, 0xc8, 0xf1, 0xdb, 0x97, 0xbb, 0xa6,
-	0xf0, 0x1a, 0x8d, 0x83, 0x2d, 0xa1, 0x8d, 0x4c, 0x83, 0xfd, 0xd8, 0xdb, 0x35, 0xbd, 0xee, 0x16,
-	0x1f, 0x79, 0xa8, 0x32, 0x18, 0x60, 0x77, 0xd3, 0xb4, 0xb2, 0xd8, 0x85, 0x4f, 0xc0, 0x34, 0x71,
-	0xfa, 0x48, 0xcb, 0x4a, 0x85, 0x7b, 0xc1, 0x58, 0xbf, 0x93, 0x54, 0x88, 0xe8, 0x96, 0x04, 0xc1,
-	0x47, 0x60, 0x36, 0x0c, 0x5c, 0xcb, 0x19, 0xb9, 0x4a, 0x71, 0x67, 0xb1, 0x1a, 0x45, 0x5e, 0x3d,
-	0x11, 0x66, 0x2b, 0xf2, 0xc2, 0x3e, 0x00, 0xed, 0xde, 0x80, 0x71, 0xe4, 0xdb, 0xd8, 0xd5, 0xa6,
-	0xa5, 0x74, 0x33, 0x18, 0xeb, 0x47, 0x4a, 0xba, 0x1e, 0x7a, 0x27, 0xe3, 0xbb, 0xe8, 0x56, 0x22,
-	0xcf, 0x2e, 0x76, 0x37, 0xb7, 0x08, 0x7d, 0x7a, 0xd1, 0x7d, 0xda, 0xa6, 0x84, 0x71, 0x5f, 0x08,
-	0xa7, 0x82, 0x2f, 0x44, 0x2b, 0x34, 0x5c, 0xf8, 0x0a, 0xcc, 0xab, 0xe5, 0xe4, 0x5e, 0x66, 0xe4,
-	0x82, 0xe5, 0x60, 0xac, 0xaf, 0x4e, 0x2c, 0xa8, 0xb6, 0x53, 0x8c, 0xf0, 0x4d, 0xb1, 0xab, 0x23,
-	0x30, 0xdb, 0x73, 0xce, 0x51, 0x8f, 0x69, 0xb3, 0x72, 0x57, 0x6b, 0xf1, 0xae, 0xc4, 0x09, 0x54,
-	0xdf, 0x49, 0xdf, 0x21, 0xe1, 0xfe, 0xe8, 0xe6, 0xf9, 0x18, 0xd2, 0x6b, 0x5a, 0x91, 0x02, 0xfc,
-	0x1e, 0x14, 0x1d, 0x42, 0x28, 0x77, 0x38, 0xa6, 0x84, 0x69, 0x73, 0x52, 0x70, 0x23, 0x2d, 0xb8,
-	0x7f, 0x0d, 0x08, 0x55, 0x1f, 0x04, 0x63, 0x5d, 0x4b, 0xa9, 0x5e, 0x43, 0x4c, 0x2b, 0x29, 0x08,
-	0x3f, 0x80, 0xc2, 0x0f, 0x14, 0x13, 0xe4, 0xda, 0x0e, 0xd7, 0x16, 0x8c, 0x4c, 0xa5, 0xb8, 0x53,
-	0xae, 0x86, 0x15, 0x5d, 0x55, 0x15, 0x5d, 0x3d, 0x51, 0x15, 0x5d, 0xfb, 0x57, 0x30, 0xd6, 0xd7,
-	0x53, 0xca, 0x47, 0x14, 0x13, 0x43, 0x00, 0xd4, 0x51, 0xe4, 0x43, 0xbd, 0x7d, 0x0e, 0x77, 0xc0,
-	0x0a, 0x26, 0x1c, 0xf9, 0xc4, 0xe9, 0xd9, 0xd8, 0xb3, 0x1d, 0xd7, 0xf5, 0x11, 0x63, 0x88, 0x69,
-	0x79, 0x23, 0x57, 0x29, 0x58, 0x77, 0x94, 0xb3, 0xe1, 0xed, 0x2b, 0x97, 0xe0, 0xa0, 0xab, 0xdb,
-	0x38, 0x85, 0x90, 0xa3, 0x9c, 0x49, 0xce, 0x1e, 0x58, 0xbb, 0x71, 0x3f, 0xec, 0x21, 0xf2, 0x19,
-	0xa6, 0x44, 0x03, 0x32, 0x77, 0x59, 0x2d, 0x63, 0xdd, 0x8b, 0x41, 0x56, 0x88, 0x39, 0x0b, 0x21,
-	0xf0, 0x08, 0x2c, 0xdf, 0xe0, 0x6b, 0x8b, 0xf2, 0x2c, 0xd6, 0xe3, 0x93, 0xae, 0x4f, 0x90, 0x1b,
-	0xe4, 0x82, 0x5a, 0xa5, 0x49, 0x49, 0xf8, 0x10, 0x2c, 0x76, 0x91, 0x4f, 0x50, 0x2f, 0x0e, 0xa0,
-	0x28, 0x02, 0xb0, 0x16, 0x42, 0xab, 0x5a, 0x72, 0x13, 0x94, 0xa8, 0x87, 0x7c, 0x87, 0x63, 0xd2,
-	0xb1, 0xd9, 0x88, 0x71, 0xd4, 0xd7, 0x96, 0x25, 0x70, 0x29, 0xb6, 0xb7, 0xa4, 0x19, 0xee, 0x81,
-	0x3c, 0x65, 0x36, 0xee, 0x3b, 0x1d, 0xa4, 0xcd, 0xcb, 0xcd, 0xfc, 0x3b, 0x18, 0xeb, 0xba, 0x4a,
-	0xc2, 0x7b, 0x05, 0x37, 0x42, 0xbc, 0x4a, 0xc3, 0x1c, 0x65, 0x0d, 0xc1, 0x81, 0x8f, 0xc1, 0x52,
-	0x77, 0x70, 0x8e, 0x7a, 0x88, 0xc7, 0x21, 0x2d, 0xc9, 0x95, 0x16, 0x23, 0xb3, 0x8a, 0x69, 0x0b,
-	0x40, 0x61, 0xb1, 0x3d, 0x9f, 0x5e, 0x8d, 0x62, 0x6c, 0x49, 0x62, 0x4b, 0xc2, 0x73, 0x2c, 0x1c,
-	0x0a, 0x6d, 0x83, 0xf9, 0x9e, 0xc3, 0xb8, 0x3d, 0xf0, 0x5c, 0x87, 0x23, 0x57, 0x5b, 0xfb, 0x62,
-	0xed, 0x18, 0xc1, 0x58, 0x7f, 0xa0, 0xc2, 0x7e, 0xe7, 0x30, 0x6e, 0x9c, 0x86, 0xdc, 0xad, 0x4b,
-	0xec, 0xba, 0x48, 0x54, 0xa6, 0x50, 0x8c, 0x8c, 0xf0, 0x04, 0x14, 0xbb, 0x2f, 0x58, 0xac, 0x5f,
-	0xfe, 0xa2, 0x7e, 0x74, 0x97, 0x08, 0xa3, 0xfe, 0xa5, 0xc3, 0x2e, 0x77, 0x4d, 0xdc, 0x21, 0xf2,
-	0x28, 0x40, 0xf7, 0x05, 0x53, 0xaa, 0xaf, 0xc0, 0xb4, 0xe8, 0xb9, 0x1a, 0x94, 0x72, 0xcb, 0xa9,
-	0x8b, 0xd4, 0x6a, 0x3b, 0xa4, 0xb6, 0x1a, 0x8c, 0x75, 0xe8, 0xd1, 0x1e, 0x6e, 0x8f, 0xa2, 0x0a,
-	0x17, 0x66, 0xd3, 0x92, 0x34, 0xf8, 0x16, 0x80, 0xb8, 0x47, 0x33, 0xed, 0x8e, 0x91, 0xa9, 0xcc,
-	0xd4, 0x36, 0x83, 0xb1, 0xfe, 0x30, 0xee, 0x0b, 0xca, 0x6b, 0xd4, 0xe9, 0x80, 0xf0, 0x30, 0x1b,
-	0x6a, 0x83, 0x6f, 0xa6, 0xac, 0x04, 0x1d, 0xbe, 0x04, 0xd3, 0xed, 0x21, 0x62, 0xda, 0x5d, 0x29,
-	0x93, 0xca, 0x6a, 0xfd, 0xec, 0xf0, 0x56, 0x81, 0x8c, 0x25, 0x29, 0xf0, 0x18, 0xcc, 0x5f, 0xe0,
-	0x2b, 0xe7, 0xbc, 0x87, 0x6c, 0x29, 0xb1, 0x22, 0x25, 0x9e, 0x04, 0x63, 0xfd, 0xb1, 0x92, 0xf8,
-	0x36, 0xf4, 0x1b, 0x9f, 0x93, 0xca, 0x5a, 0xc5, 0x48, 0xa2, 0x2e, 0x14, 0x6b, 0x20, 0xef, 0xf9,
-	0x98, 0xfa, 0x98, 0x8f, 0xb4, 0x55, 0x23, 0x53, 0xc9, 0xd5, 0x1e, 0x05, 0x63, 0xdd, 0x4c, 0xdd,
-	0x75, 0x0b, 0xb3, 0xae, 0x71, 0x1c, 0xa1, 0xe2, 0xac, 0xc5, 0x3c, 0x58, 0x03, 0xc0, 0xc7, 0xac,
-	0x6b, 0xb3, 0x36, 0xf5, 0x91, 0x76, 0xcf, 0xc8, 0x54, 0xb2, 0xe9, 0x6d, 0x5d, 0xab, 0xb4, 0xda,
-	0x89, 0x58, 0xac, 0x82, 0xa0, 0x49, 0x13, 0x7c, 0x05, 0xf2, 0x9c, 0x7a, 0x76, 0x7b, 0xc8, 0x98,
-	0xa6, 0x49, 0x85, 0x54, 0xdd, 0x48, 0x85, 0x13, 0xea, 0x19, 0xf5, 0xb3, 0x56, 0x2b, 0xaa, 0xf5,
-	0x37, 0x39, 0x6b, 0x8e, 0x53, 0xaf, 0x3e, 0x64, 0x0c, 0x56, 0xc0, 0x8c, 0x78, 0x5f, 0x99, 0x76,
-	0xdf, 0xc8, 0x55, 0x16, 0x77, 0x60, 0xba, 0x53, 0x36, 0x29, 0x47, 0x56, 0x08, 0x28, 0xbf, 0x04,
-	0xc5, 0x44, 0x27, 0x86, 0x25, 0x90, 0xeb, 0xa2, 0x51, 0xf8, 0xf0, 0x59, 0xe2, 0x13, 0xde, 0x05,
-	0x33, 0x43, 0xa7, 0x37, 0x88, 0x9e, 0x32, 0x2b, 0xfc, 0xb1, 0x9b, 0x7d, 0x91, 0x29, 0xef, 0x81,
-	0xd2, 0x64, 0xcf, 0xfd, 0x3b, 0x7c, 0x73, 0x5d, 0xbc, 0xb5, 0x1c, 0xc1, 0x15, 0xb0, 0xfc, 0x5d,
-	0xa3, 0xd5, 0x6a, 0x34, 0x5f, 0xdb, 0xad, 0xfa, 0x7e, 0xd3, 0x3e, 0xd8, 0x3f, 0xd9, 0x2f, 0x4d,
-	0xd5, 0x4a, 0x60, 0x91, 0x21, 0x6e, 0x5f, 0x57, 0x4a, 0x0d, 0x80, 0xbc, 0xb4, 0x0c, 0x11, 0xab,
-	0x2d, 0x80, 0xa2, 0xf8, 0x8e, 0x72, 0x57, 0x5b, 0x04, 0xf3, 0xe2, 0xa7, 0x3a, 0x33, 0xf3, 0x97,
-	0x2c, 0xc8, 0xab, 0x62, 0x16, 0xdd, 0x5d, 0x94, 0xad, 0x2d, 0x3b, 0x5a, 0xe6, 0x2b, 0xba, 0xbb,
-	0x50, 0x49, 0x77, 0x77, 0xa1, 0x27, 0x0c, 0xb7, 0xb6, 0xb0, 0xdc, 0xed, 0x2d, 0xec, 0x7d, 0xea,
-	0xd6, 0x64, 0xe5, 0x1b, 0x66, 0xc6, 0x99, 0x39, 0xec, 0x9f, 0x23, 0xd7, 0x45, 0xae, 0x8a, 0x3a,
-	0xbe, 0x42, 0xb5, 0x62, 0x30, 0xd6, 0xe7, 0xe4, 0x43, 0xfe, 0xd4, 0x4c, 0xdd, 0x9c, 0x2d, 0x95,
-	0xe5, 0x69, 0x99, 0xe5, 0xd5, 0x1b, 0xd7, 0x38, 0x99, 0x69, 0x73, 0x37, 0x3a, 0xee, 0x02, 0x98,
-	0x39, 0x6d, 0xb6, 0x0e, 0x4f, 0x4a, 0x53, 0x70, 0x09, 0x14, 0x4f, 0x9b, 0xad, 0xd3, 0xe3, 0xe3,
-	0xf7, 0xd6, 0xc9, 0xe1, 0x41, 0x29, 0x03, 0x57, 0x01, 0x7c, 0x7b, 0x68, 0x35, 0x0f, 0xdf, 0xd9,
-	0x49, 0x7b, 0xd6, 0xfc, 0x98, 0x05, 0x0b, 0x42, 0xb4, 0x41, 0x86, 0x88, 0x70, 0xea, 0x8f, 0xe0,
-	0x6b, 0x30, 0x27, 0xc6, 0x40, 0xfb, 0xab, 0xa7, 0xa4, 0x59, 0x41, 0x6f, 0xb8, 0xf0, 0x39, 0x28,
-	0x48, 0xa1, 0xbf, 0x32, 0x2e, 0xe5, 0x05, 0x52, 0x0e, 0x17, 0xa9, 0x94, 0xe6, 0xfe, 0xd9, 0x94,
-	0x7e, 0x93, 0xca, 0xd3, 0xb4, 0x14, 0x5f, 0xa9, 0x46, 0x33, 0xea, 0xd9, 0xb3, 0x6a, 0x9c, 0x19,
-	0x96, 0xca, 0xc6, 0x43, 0x95, 0x8d, 0x19, 0x99, 0x8d, 0xa5, 0x04, 0x23, 0x99, 0x86, 0x3f, 0xb2,
-	0x60, 0xed, 0xb3, 0xb9, 0x86, 0xff, 0x8b, 0xe6, 0xc6, 0xf0, 0x4c, 0x53, 0x13, 0x4c, 0x0c, 0x4a,
-	0x0f, 0x8f, 0x7b, 0x60, 0x4e, 0x3d, 0x52, 0xe1, 0xe9, 0xfd, 0x27, 0x18, 0xeb, 0xc6, 0xcd, 0x46,
-	0x1c, 0xbd, 0x58, 0xf1, 0xc3, 0x18, 0x91, 0xe0, 0x73, 0x30, 0x23, 0xe6, 0x63, 0x35, 0x7b, 0x6e,
-	0xdc, 0x28, 0xc8, 0xb3, 0xe4, 0xf4, 0x6c, 0x85, 0x60, 0x78, 0x00, 0x96, 0x92, 0x53, 0x35, 0x46,
-	0x6a, 0x28, 0x2b, 0xa7, 0x8a, 0x30, 0xcd, 0x9d, 0xa4, 0xc0, 0x72, 0xa2, 0xdb, 0x8a, 0x73, 0xce,
-	0x25, 0xba, 0xe8, 0xfd, 0x44, 0x07, 0x14, 0x93, 0x67, 0xf6, 0xcd, 0xd4, 0x75, 0x7f, 0x5b, 0x4f,
-	0xb5, 0xd8, 0x59, 0xe1, 0x4e, 0x74, 0xcf, 0xc9, 0x6e, 0x50, 0x7b, 0xfe, 0xf1, 0xd3, 0x46, 0xe6,
-	0xd7, 0x4f, 0x1b, 0x99, 0xdf, 0x3e, 0x6d, 0x64, 0x7e, 0xfa, 0x7d, 0x63, 0x0a, 0xac, 0x61, 0x5a,
-	0x65, 0xdc, 0x69, 0x77, 0x7d, 0x7a, 0x15, 0x16, 0x8c, 0x8a, 0xfb, 0x83, 0xfa, 0x4b, 0x73, 0x3e,
-	0x2b, 0xed, 0xff, 0xff, 0x33, 0x00, 0x00, 0xff, 0xff, 0x2a, 0x32, 0x04, 0x1b, 0xf8, 0x0c, 0x00,
-	0x00,
+	// 1702 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x57, 0xeb, 0x6e, 0xdb, 0xc8,
+	0x15, 0xb6, 0x24, 0x5f, 0xa4, 0x23, 0x5f, 0xe4, 0x49, 0xe2, 0xd0, 0x72, 0x6c, 0x72, 0xb9, 0xdd,
+	0x5d, 0x65, 0xd7, 0x91, 0x5b, 0x77, 0x81, 0x66, 0x0d, 0xc4, 0x80, 0x28, 0x2b, 0x89, 0xb2, 0x5e,
+	0xc5, 0xa0, 0x64, 0xa3, 0x58, 0x14, 0x25, 0x68, 0x71, 0x6c, 0xb3, 0x92, 0x38, 0x5c, 0xce, 0x48,
+	0xb0, 0xfa, 0x06, 0x7d, 0x83, 0x3e, 0x41, 0x1f, 0xa5, 0xe8, 0x8f, 0xfe, 0xe8, 0x13, 0x08, 0x8b,
+	0xf4, 0x09, 0xaa, 0xbe, 0xc0, 0x62, 0x86, 0x1c, 0x8a, 0x94, 0x12, 0x04, 0x9b, 0x7f, 0xe4, 0xb9,
+	0x7c, 0x73, 0xee, 0x73, 0x06, 0x10, 0x65, 0x24, 0xb0, 0x6f, 0xf1, 0x91, 0x47, 0x1c, 0x5c, 0xf5,
+	0x03, 0xc2, 0x08, 0x5a, 0x8b, 0x68, 0x65, 0xf5, 0x96, 0x90, 0xdb, 0x3e, 0x3e, 0x12, 0xe4, 0xeb,
+	0xe1, 0xcd, 0x11, 0x73, 0x07, 0x98, 0x32, 0x7b, 0xe0, 0x87, 0x92, 0x65, 0x55, 0x6a, 0x77, 0x89,
+	0xc7, 0x6c, 0xd7, 0xc3, 0x81, 0x15, 0x0c, 0x3d, 0x2e, 0x15, 0x09, 0x3c, 0x94, 0x02, 0x9c, 0xcb,
+	0x68, 0x44, 0xdd, 0x93, 0xd4, 0xd1, 0xb0, 0xef, 0xe1, 0xc0, 0xbe, 0x76, 0xfb, 0x2e, 0x1b, 0x4b,
+	0x95, 0x5b, 0x72, 0x4b, 0xc4, 0xe7, 0x11, 0xff, 0x0a, 0xa9, 0xfa, 0x3f, 0xb7, 0x60, 0xb9, 0x45,
+	0x1c, 0x8c, 0x4e, 0x21, 0xeb, 0x3a, 0x4a, 0x46, 0xcb, 0x54, 0x0a, 0x46, 0x75, 0x3a, 0x51, 0xbf,
+	0xa6, 0xd8, 0x0e, 0xba, 0x77, 0x27, 0x3a, 0xe7, 0x6a, 0xcd, 0xb3, 0x43, 0x8e, 0x8d, 0x75, 0x8d,
+	0xfe, 0xd4, 0x3f, 0xd1, 0xfd, 0xde, 0x21, 0x1b, 0xfb, 0xb8, 0x32, 0x1c, 0xba, 0xce, 0x53, 0xdd,
+	0xcc, 0xba, 0x0e, 0xfa, 0x06, 0x96, 0x3d, 0x7b, 0x80, 0x95, 0xac, 0x40, 0x78, 0x3c, 0x9d, 0xa8,
+	0x0f, 0x92, 0x08, 0x91, 0xba, 0x29, 0x84, 0xd0, 0x97, 0xb0, 0x1a, 0x1a, 0xae, 0xe4, 0xb4, 0x5c,
+	0xa5, 0x78, 0xbc, 0x59, 0x8d, 0x2c, 0xaf, 0x76, 0x38, 0xd9, 0x8c, 0xb8, 0x68, 0x00, 0xd0, 0xed,
+	0x0f, 0x29, 0xc3, 0x81, 0xe5, 0x3a, 0xca, 0xb2, 0x80, 0x6e, 0x4d, 0x27, 0xea, 0x1b, 0x09, 0x5d,
+	0x0f, 0xb9, 0xf3, 0xf6, 0xdd, 0xf4, 0x2a, 0x11, 0xe7, 0xc4, 0x75, 0x9e, 0x1e, 0x7a, 0xe4, 0xd9,
+	0x4d, 0xef, 0x59, 0x97, 0x78, 0x94, 0x05, 0x1c, 0x38, 0x65, 0x7c, 0x21, 0x3a, 0xa1, 0xe9, 0xa0,
+	0x17, 0xb0, 0x2e, 0x8f, 0x13, 0xbe, 0xac, 0x88, 0x03, 0xcb, 0xd3, 0x89, 0xba, 0x33, 0x77, 0xa0,
+	0x74, 0xa7, 0x18, 0xc9, 0xb7, 0xb8, 0x57, 0x6f, 0x60, 0xb5, 0x6f, 0x5f, 0xe3, 0x3e, 0x55, 0x56,
+	0x85, 0x57, 0xbb, 0xb1, 0x57, 0x3c, 0x02, 0xd5, 0x73, 0xc1, 0x6b, 0x78, 0x2c, 0x18, 0x2f, 0xc6,
+	0x47, 0x13, 0x5c, 0xdd, 0x8c, 0x10, 0xd0, 0x9f, 0xa1, 0x68, 0x7b, 0x1e, 0x61, 0x36, 0x73, 0x89,
+	0x47, 0x95, 0x35, 0x01, 0x78, 0x90, 0x06, 0xac, 0xcd, 0x04, 0x42, 0xd4, 0x27, 0xd3, 0x89, 0xaa,
+	0xa4, 0x50, 0x67, 0x22, 0xba, 0x99, 0x04, 0x44, 0x3f, 0x42, 0xe1, 0x2f, 0xc4, 0xf5, 0xb0, 0x63,
+	0xd9, 0x4c, 0xd9, 0xd0, 0x32, 0x95, 0xe2, 0x71, 0xb9, 0x1a, 0x96, 0x65, 0x55, 0x96, 0x65, 0xb5,
+	0x23, 0xcb, 0xd2, 0xf8, 0x6c, 0x3a, 0x51, 0xf7, 0x53, 0xc8, 0x6f, 0x88, 0xeb, 0x69, 0x5c, 0x40,
+	0x86, 0x22, 0x1f, 0xe2, 0xd5, 0x18, 0x3a, 0x86, 0x47, 0xae, 0xc7, 0x70, 0xe0, 0xd9, 0x7d, 0xcb,
+	0xf5, 0x2d, 0xdb, 0x71, 0x02, 0x4c, 0x29, 0xa6, 0x4a, 0x5e, 0xcb, 0x55, 0x0a, 0xe6, 0x03, 0xc9,
+	0x6c, 0xfa, 0x35, 0xc9, 0xe2, 0x3a, 0xf8, 0xfe, 0x7d, 0x3a, 0x85, 0x50, 0x47, 0x32, 0x93, 0x3a,
+	0xa7, 0xb0, 0xbb, 0xd0, 0x1f, 0xd6, 0x08, 0x07, 0xd4, 0x25, 0x9e, 0x02, 0x22, 0x77, 0x59, 0x25,
+	0x63, 0x3e, 0x8e, 0x85, 0xcc, 0x50, 0xe6, 0x2a, 0x14, 0x41, 0x6f, 0x60, 0x7b, 0x41, 0x5f, 0xd9,
+	0x14, 0xb1, 0xd8, 0x8f, 0x23, 0x5d, 0x9f, 0x53, 0x6e, 0x7a, 0x37, 0xc4, 0x2c, 0xcd, 0x43, 0xa2,
+	0x2f, 0x60, 0xb3, 0x87, 0x03, 0x0f, 0xf7, 0x63, 0x03, 0x8a, 0xdc, 0x00, 0x73, 0x23, 0xa4, 0xca,
+	0x23, 0x9f, 0x42, 0x89, 0xf8, 0x38, 0xb0, 0x99, 0xeb, 0xdd, 0x5a, 0x74, 0x4c, 0x19, 0x1e, 0x28,
+	0xdb, 0x42, 0x70, 0x2b, 0xa6, 0xb7, 0x05, 0x19, 0x9d, 0x42, 0x9e, 0x50, 0xcb, 0x1d, 0xd8, 0xb7,
+	0x58, 0x59, 0x17, 0xce, 0x7c, 0x3e, 0x9d, 0xa8, 0xaa, 0x4c, 0xc2, 0x5b, 0x29, 0xae, 0x85, 0xf2,
+	0x32, 0x0d, 0x6b, 0x84, 0x36, 0xb9, 0x0e, 0xfa, 0x0a, 0xb6, 0x7a, 0xc3, 0x6b, 0xdc, 0xc7, 0x2c,
+	0x36, 0x69, 0x4b, 0x9c, 0xb4, 0x19, 0x91, 0xa5, 0x4d, 0x87, 0x80, 0x38, 0xc5, 0xf2, 0x03, 0x72,
+	0x3f, 0x8e, 0x65, 0x4b, 0x42, 0xb6, 0xc4, 0x39, 0x17, 0x9c, 0x21, 0xa5, 0x2d, 0x58, 0xef, 0xdb,
+	0x94, 0x59, 0x43, 0xdf, 0xb1, 0x19, 0x76, 0x94, 0xdd, 0x8f, 0xd6, 0x8e, 0x36, 0x9d, 0xa8, 0x4f,
+	0xa4, 0xd9, 0xe7, 0x36, 0x65, 0xda, 0x65, 0xa8, 0x7b, 0x78, 0xe7, 0x3a, 0x0e, 0xe6, 0x95, 0xc9,
+	0x11, 0x23, 0x22, 0xea, 0x40, 0xb1, 0xf7, 0x9c, 0xc6, 0xf8, 0xe5, 0x8f, 0xe2, 0x47, 0xbd, 0xe4,
+	0x51, 0x12, 0xdc, 0xd9, 0xf4, 0xee, 0x44, 0x77, 0x6f, 0x3d, 0x11, 0x0a, 0xe8, 0x3d, 0xa7, 0x12,
+	0xf5, 0x05, 0x2c, 0xd3, 0xae, 0xed, 0x29, 0x48, 0xc0, 0x6d, 0xa7, 0x1a, 0xa9, 0xdd, 0xb5, 0x3d,
+	0x63, 0x67, 0x3a, 0x51, 0x91, 0x4f, 0xfa, 0x6e, 0x77, 0x1c, 0x55, 0x38, 0x27, 0xeb, 0xa6, 0x50,
+	0x43, 0xdf, 0x03, 0x74, 0xc9, 0xc0, 0x27, 0x1e, 0xe6, 0x43, 0xeb, 0x81, 0x96, 0xa9, 0xac, 0x18,
+	0x4f, 0xa7, 0x13, 0xf5, 0x8b, 0x78, 0x2e, 0x48, 0xae, 0x56, 0x27, 0x43, 0x8f, 0x85, 0xd9, 0x90,
+	0x0e, 0xbe, 0x5e, 0x32, 0x13, 0xea, 0xe8, 0x3b, 0x58, 0xee, 0x8e, 0x30, 0x55, 0x1e, 0x0a, 0x98,
+	0x54, 0x56, 0xeb, 0x57, 0x8d, 0xf7, 0x02, 0x64, 0x4c, 0xa1, 0x82, 0x2e, 0x60, 0xfd, 0xc6, 0xbd,
+	0xb7, 0xaf, 0xfb, 0xd8, 0x12, 0x10, 0x8f, 0x04, 0xc4, 0x37, 0xd3, 0x89, 0xfa, 0x95, 0x84, 0x78,
+	0x19, 0xf2, 0xb5, 0x0f, 0x41, 0x65, 0xcd, 0x62, 0x04, 0x51, 0xe7, 0x88, 0x06, 0xe4, 0xfd, 0xc0,
+	0x25, 0x81, 0xcb, 0xc6, 0xca, 0x8e, 0x96, 0xa9, 0xe4, 0x8c, 0x2f, 0xa7, 0x13, 0x55, 0x4f, 0xf5,
+	0xba, 0xe9, 0xd2, 0x9e, 0x76, 0x11, 0x49, 0xc5, 0x59, 0x8b, 0xf5, 0x90, 0x01, 0x10, 0xb8, 0xb4,
+	0x67, 0xd1, 0x2e, 0x09, 0xb0, 0xf2, 0x58, 0xcb, 0x54, 0xb2, 0x69, 0xb7, 0x66, 0x28, 0xed, 0x6e,
+	0xc2, 0x16, 0xb3, 0xc0, 0xd5, 0x04, 0x09, 0xbd, 0x80, 0x3c, 0x23, 0xbe, 0xd5, 0x1d, 0x51, 0xaa,
+	0x28, 0x02, 0x21, 0x55, 0x37, 0x02, 0xa1, 0x43, 0x7c, 0xad, 0x7e, 0xd5, 0x6e, 0x47, 0xb5, 0xfe,
+	0x3a, 0x67, 0xae, 0x31, 0xe2, 0xd7, 0x47, 0x94, 0xa2, 0x0a, 0xac, 0x78, 0x84, 0x61, 0xaa, 0xec,
+	0x69, 0xb9, 0xca, 0xe6, 0x31, 0x4a, 0x4f, 0xca, 0x16, 0x61, 0xd8, 0x0c, 0x05, 0xca, 0xdf, 0x41,
+	0x31, 0x31, 0x89, 0x51, 0x09, 0x72, 0x3d, 0x3c, 0x0e, 0x2f, 0x3e, 0x93, 0x7f, 0xa2, 0x87, 0xb0,
+	0x32, 0xb2, 0xfb, 0xc3, 0xe8, 0x2a, 0x33, 0xc3, 0x9f, 0x93, 0xec, 0xf3, 0x4c, 0xf9, 0x14, 0x4a,
+	0xf3, 0x33, 0xf7, 0xd7, 0xe8, 0xeb, 0xfb, 0xfc, 0xae, 0x65, 0x18, 0x3d, 0x82, 0xed, 0x1f, 0x9a,
+	0xed, 0x76, 0xb3, 0xf5, 0xca, 0x6a, 0xd7, 0x6b, 0x2d, 0xeb, 0xac, 0xd6, 0xa9, 0x95, 0x96, 0x8c,
+	0x12, 0x6c, 0x52, 0xcc, 0xac, 0x59, 0xa5, 0x18, 0x00, 0x79, 0x41, 0x19, 0x61, 0x6a, 0x6c, 0x40,
+	0x91, 0x7f, 0x47, 0xb9, 0x33, 0x36, 0x61, 0x9d, 0xff, 0xca, 0x98, 0xe9, 0xff, 0xce, 0x42, 0x5e,
+	0x16, 0x33, 0x9f, 0xee, 0xbc, 0x6c, 0x2d, 0x31, 0xd1, 0x32, 0x9f, 0x30, 0xdd, 0x39, 0x4a, 0x7a,
+	0xba, 0x73, 0x3c, 0x4e, 0x78, 0xef, 0x08, 0xcb, 0xbd, 0x7f, 0x84, 0xbd, 0x4d, 0x75, 0x4d, 0x56,
+	0xdc, 0x61, 0x7a, 0x9c, 0x99, 0xc6, 0xe0, 0x1a, 0x3b, 0x0e, 0x76, 0xa4, 0xd5, 0x71, 0x0b, 0x19,
+	0xc5, 0xe9, 0x44, 0x5d, 0x13, 0x17, 0xf9, 0x33, 0x3d, 0xd5, 0x39, 0x87, 0x32, 0xcb, 0xcb, 0x22,
+	0xcb, 0x3b, 0x0b, 0x6d, 0x9c, 0xcc, 0xb4, 0x7e, 0x12, 0x85, 0xbb, 0x00, 0x2b, 0x97, 0xad, 0x76,
+	0xa3, 0x53, 0x5a, 0x42, 0x5b, 0x50, 0xbc, 0x6c, 0xb5, 0x2f, 0x2f, 0x2e, 0xde, 0x9a, 0x9d, 0xc6,
+	0x59, 0x29, 0x83, 0x76, 0x00, 0x7d, 0xdf, 0x30, 0x5b, 0x8d, 0x73, 0x2b, 0x49, 0xcf, 0xea, 0x7f,
+	0xcb, 0xc3, 0x06, 0x07, 0x6d, 0x7a, 0x23, 0xec, 0x31, 0x12, 0x8c, 0xd1, 0x1e, 0x14, 0xf8, 0x2e,
+	0x17, 0x6e, 0x06, 0x61, 0xba, 0xf3, 0x9c, 0x20, 0xae, 0xfe, 0x3f, 0x24, 0x03, 0x9e, 0xfd, 0x58,
+	0xc0, 0x13, 0xd1, 0x6c, 0xa5, 0x42, 0x94, 0x13, 0x9a, 0x9f, 0xa5, 0xdc, 0x8a, 0x2d, 0xa8, 0xd6,
+	0x67, 0x85, 0xf1, 0xc1, 0x08, 0xfd, 0x2e, 0x1d, 0xa1, 0xbd, 0x0f, 0x40, 0x25, 0x1b, 0xe2, 0x1f,
+	0x2b, 0x00, 0x33, 0x68, 0xf4, 0x04, 0x0a, 0xdc, 0x45, 0xea, 0xdb, 0x5d, 0xe9, 0xe7, 0x8c, 0x80,
+	0xfe, 0x08, 0x5b, 0xc1, 0x1d, 0xee, 0x5b, 0x0b, 0x79, 0x3d, 0xfa, 0xa8, 0xd1, 0x55, 0xf3, 0x75,
+	0xe3, 0x3c, 0xfe, 0x35, 0x37, 0x39, 0x4e, 0xe2, 0xdc, 0xaf, 0x61, 0x3b, 0x42, 0xf6, 0x18, 0xf6,
+	0x98, 0x45, 0x71, 0xb4, 0x1e, 0x16, 0xcc, 0xad, 0x50, 0x54, 0xd0, 0xdb, 0x98, 0xd1, 0xf2, 0xff,
+	0x73, 0xb0, 0x91, 0x42, 0x43, 0x9b, 0xf1, 0xfa, 0x9a, 0x13, 0xeb, 0x28, 0x4a, 0xae, 0xa3, 0xd1,
+	0xd6, 0x99, 0xf2, 0x2c, 0x37, 0xef, 0x99, 0x02, 0x6b, 0xf2, 0xee, 0x13, 0x8b, 0xa6, 0x29, 0x7f,
+	0x39, 0x16, 0x6f, 0x8d, 0x70, 0x1d, 0x34, 0xc5, 0x37, 0xda, 0x81, 0xd5, 0x01, 0x71, 0x86, 0x7d,
+	0xac, 0xac, 0x0a, 0x6a, 0xf4, 0x87, 0x76, 0x21, 0x6f, 0xf3, 0xa2, 0xb6, 0xae, 0xc7, 0xca, 0x5a,
+	0x08, 0x23, 0xfe, 0x8d, 0x31, 0xfa, 0x13, 0x14, 0xf1, 0x3d, 0xee, 0x0e, 0x19, 0xef, 0xdf, 0x70,
+	0x19, 0x2a, 0x1e, 0x9f, 0xfc, 0xca, 0xb0, 0x55, 0x1b, 0x31, 0x84, 0x99, 0x84, 0x2b, 0xff, 0x9c,
+	0x01, 0x98, 0xf1, 0xb8, 0xcd, 0xbe, 0xcd, 0xee, 0xa2, 0x04, 0x8a, 0x6f, 0xf4, 0x57, 0xd8, 0x0e,
+	0xf0, 0x4f, 0x43, 0x37, 0xc0, 0x8e, 0x75, 0x83, 0x6d, 0x36, 0x0c, 0xb0, 0xcc, 0xde, 0x0f, 0x9f,
+	0x6e, 0x46, 0xf5, 0x65, 0x08, 0xc5, 0xfb, 0x20, 0x5a, 0x12, 0xcc, 0x92, 0x3c, 0x27, 0xe2, 0xd1,
+	0xb2, 0x01, 0x68, 0x51, 0x2e, 0xce, 0x52, 0x26, 0x91, 0xa5, 0x44, 0x1e, 0xb2, 0xa9, 0x3c, 0xe8,
+	0xa3, 0xa8, 0x9f, 0x1f, 0xc3, 0x83, 0xb7, 0x6d, 0xab, 0x7e, 0xd5, 0x68, 0x5b, 0x97, 0xad, 0xda,
+	0x55, 0xad, 0x79, 0x5e, 0x33, 0xce, 0x1b, 0xa5, 0x25, 0xb4, 0x0d, 0x1b, 0x92, 0xd1, 0xee, 0xd4,
+	0xce, 0x1b, 0xa5, 0x0c, 0xda, 0x87, 0xdd, 0xf3, 0x5a, 0xeb, 0xd5, 0x65, 0xed, 0x55, 0x63, 0x51,
+	0x23, 0x8b, 0x3e, 0x07, 0xb5, 0xde, 0x30, 0x3b, 0xcd, 0x97, 0xcd, 0xc6, 0x99, 0xc5, 0x3d, 0x0c,
+	0x07, 0x72, 0x52, 0x28, 0xa7, 0xff, 0x2f, 0x0b, 0xbb, 0x1f, 0x1c, 0x56, 0xe8, 0xb7, 0x49, 0x1f,
+	0xd2, 0x2b, 0x78, 0x2c, 0x94, 0x7e, 0xfd, 0x9c, 0xce, 0x79, 0x68, 0xfc, 0x66, 0x3a, 0x51, 0xb5,
+	0xc5, 0x4d, 0x22, 0x8a, 0x52, 0xbc, 0xd9, 0xc9, 0x7a, 0xfc, 0x16, 0x56, 0xf8, 0x03, 0x4f, 0x3e,
+	0x9e, 0x0e, 0x16, 0x26, 0xea, 0x55, 0xf2, 0xf9, 0x67, 0x86, 0xc2, 0xe8, 0x0c, 0xb6, 0x92, 0xcf,
+	0x42, 0x17, 0xcb, 0x57, 0x45, 0x39, 0x95, 0xfb, 0xb4, 0xee, 0xbc, 0x0a, 0x2a, 0x27, 0xd6, 0x85,
+	0x65, 0xd1, 0x6d, 0xb3, 0x35, 0x60, 0x2f, 0x71, 0x85, 0xf3, 0x5e, 0xc9, 0xbe, 0x5e, 0x9a, 0x5d,
+	0xd0, 0xfb, 0xa9, 0x1d, 0x81, 0x37, 0x4d, 0x36, 0x71, 0xfd, 0xcf, 0x5f, 0x67, 0xc6, 0xb7, 0xff,
+	0x7a, 0x77, 0x90, 0xf9, 0xcf, 0xbb, 0x83, 0xcc, 0xcf, 0xef, 0x0e, 0x32, 0x7f, 0xff, 0xef, 0xc1,
+	0x12, 0xec, 0xba, 0xa4, 0x4a, 0x99, 0xdd, 0xed, 0x05, 0xe4, 0x3e, 0x9c, 0xa9, 0xd2, 0xee, 0x1f,
+	0xe5, 0xc3, 0xfa, 0x7a, 0x55, 0xd0, 0x7f, 0xff, 0x4b, 0x00, 0x00, 0x00, 0xff, 0xff, 0xe4, 0x46,
+	0x50, 0x2d, 0x7e, 0x0f, 0x00, 0x00,
 }
 
 func (m *Node) Marshal() (dAtA []byte, err error) {
@@ -1472,7 +1882,7 @@ func (m *NodeInventory) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], dAtA12[:j11])
 		i = encodeVarintNode(dAtA, i, uint64(j11))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x22
 	}
 	if m.Components != nil {
 		{
@@ -1484,7 +1894,7 @@ func (m *NodeInventory) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintNode(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x1a
 	}
 	if m.ScanTime != nil {
 		{
@@ -1496,19 +1906,246 @@ func (m *NodeInventory) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintNode(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 	}
 	if len(m.NodeName) > 0 {
 		i -= len(m.NodeName)
 		copy(dAtA[i:], m.NodeName)
 		i = encodeVarintNode(dAtA, i, uint64(len(m.NodeName)))
 		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeInventory_Components) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeInventory_Components) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeInventory_Components) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.RhelContentSets) > 0 {
+		for iNdEx := len(m.RhelContentSets) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.RhelContentSets[iNdEx])
+			copy(dAtA[i:], m.RhelContentSets[iNdEx])
+			i = encodeVarintNode(dAtA, i, uint64(len(m.RhelContentSets[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.RhelComponents) > 0 {
+		for iNdEx := len(m.RhelComponents) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.RhelComponents[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintNode(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Namespace) > 0 {
+		i -= len(m.Namespace)
+		copy(dAtA[i:], m.Namespace)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Namespace)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeInventory_Components_RHELComponent) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeInventory_Components_RHELComponent) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeInventory_Components_RHELComponent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Executables) > 0 {
+		for iNdEx := len(m.Executables) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Executables[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintNode(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if len(m.AddedBy) > 0 {
+		i -= len(m.AddedBy)
+		copy(dAtA[i:], m.AddedBy)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.AddedBy)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.Module) > 0 {
+		i -= len(m.Module)
+		copy(dAtA[i:], m.Module)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Module)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.Arch) > 0 {
+		i -= len(m.Arch)
+		copy(dAtA[i:], m.Arch)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Arch)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Version) > 0 {
+		i -= len(m.Version)
+		copy(dAtA[i:], m.Version)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Version)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Namespace) > 0 {
+		i -= len(m.Namespace)
+		copy(dAtA[i:], m.Namespace)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Namespace)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Name)))
+		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.NodeId) > 0 {
-		i -= len(m.NodeId)
-		copy(dAtA[i:], m.NodeId)
-		i = encodeVarintNode(dAtA, i, uint64(len(m.NodeId)))
+	if m.Id != 0 {
+		i = encodeVarintNode(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.RequiredFeatures) > 0 {
+		for iNdEx := len(m.RequiredFeatures) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.RequiredFeatures[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintNode(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Path) > 0 {
+		i -= len(m.Path)
+		copy(dAtA[i:], m.Path)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Path)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Version) > 0 {
+		i -= len(m.Version)
+		copy(dAtA[i:], m.Version)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Version)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintNode(dAtA, i, uint64(len(m.Name)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1834,10 +2471,6 @@ func (m *NodeInventory) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.NodeId)
-	if l > 0 {
-		n += 1 + l + sovNode(uint64(l))
-	}
 	l = len(m.NodeName)
 	if l > 0 {
 		n += 1 + l + sovNode(uint64(l))
@@ -1856,6 +2489,121 @@ func (m *NodeInventory) Size() (n int) {
 			l += sovNode(uint64(e))
 		}
 		n += 1 + sovNode(uint64(l)) + l
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NodeInventory_Components) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Namespace)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	if len(m.RhelComponents) > 0 {
+		for _, e := range m.RhelComponents {
+			l = e.Size()
+			n += 1 + l + sovNode(uint64(l))
+		}
+	}
+	if len(m.RhelContentSets) > 0 {
+		for _, s := range m.RhelContentSets {
+			l = len(s)
+			n += 1 + l + sovNode(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NodeInventory_Components_RHELComponent) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Id != 0 {
+		n += 1 + sovNode(uint64(m.Id))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	l = len(m.Namespace)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	l = len(m.Version)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	l = len(m.Arch)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	l = len(m.Module)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	l = len(m.AddedBy)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	if len(m.Executables) > 0 {
+		for _, e := range m.Executables {
+			l = e.Size()
+			n += 1 + l + sovNode(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Path)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	if len(m.RequiredFeatures) > 0 {
+		for _, e := range m.RequiredFeatures {
+			l = e.Size()
+			n += 1 + l + sovNode(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
+	}
+	l = len(m.Version)
+	if l > 0 {
+		n += 1 + l + sovNode(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -3246,38 +3994,6 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NodeId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNode
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNode
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNode
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.NodeId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NodeName", wireType)
 			}
 			var stringLen uint64
@@ -3308,7 +4024,7 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 			}
 			m.NodeName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ScanTime", wireType)
 			}
@@ -3344,7 +4060,7 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Components", wireType)
 			}
@@ -3374,15 +4090,15 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Components == nil {
-				m.Components = &v1.Components{}
+				m.Components = &NodeInventory_Components{}
 			}
 			if err := m.Components.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 4:
 			if wireType == 0 {
-				var v v1.Note
+				var v NodeInventory_Note
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return ErrIntOverflowNode
@@ -3392,7 +4108,7 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					v |= v1.Note(b&0x7F) << shift
+					v |= NodeInventory_Note(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -3426,10 +4142,10 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 				}
 				var elementCount int
 				if elementCount != 0 && len(m.Notes) == 0 {
-					m.Notes = make([]v1.Note, 0, elementCount)
+					m.Notes = make([]NodeInventory_Note, 0, elementCount)
 				}
 				for iNdEx < postIndex {
-					var v v1.Note
+					var v NodeInventory_Note
 					for shift := uint(0); ; shift += 7 {
 						if shift >= 64 {
 							return ErrIntOverflowNode
@@ -3439,7 +4155,7 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 						}
 						b := dAtA[iNdEx]
 						iNdEx++
-						v |= v1.Note(b&0x7F) << shift
+						v |= NodeInventory_Note(b&0x7F) << shift
 						if b < 0x80 {
 							break
 						}
@@ -3449,6 +4165,683 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNode(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNode
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeInventory_Components) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNode
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Components: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Components: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Namespace = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RhelComponents", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RhelComponents = append(m.RhelComponents, &NodeInventory_Components_RHELComponent{})
+			if err := m.RhelComponents[len(m.RhelComponents)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RhelContentSets", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RhelContentSets = append(m.RhelContentSets, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNode(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNode
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeInventory_Components_RHELComponent) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNode
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RHELComponent: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RHELComponent: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Namespace = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Version = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Arch", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Arch = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Module", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Module = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AddedBy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AddedBy = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Executables", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Executables = append(m.Executables, &NodeInventory_Components_RHELComponent_Executable{})
+			if err := m.Executables[len(m.Executables)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNode(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNode
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNode
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Executable: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Executable: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Path = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequiredFeatures", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RequiredFeatures = append(m.RequiredFeatures, &NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{})
+			if err := m.RequiredFeatures[len(m.RequiredFeatures)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNode(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNode
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNode
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: FeatureNameVersion: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: FeatureNameVersion: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNode
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNode
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNode
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Version = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipNode(dAtA[iNdEx:])

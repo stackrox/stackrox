@@ -38,7 +38,6 @@ import (
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
-	nodeGlobalDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentCVEEdgeDataStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
@@ -96,7 +95,6 @@ type Resolver struct {
 	NamespaceDataStore            namespaceDataStore.DataStore
 	NetworkFlowDataStore          nfDS.ClusterDataStore
 	NetworkPoliciesStore          npDS.DataStore
-	NodeGlobalDataStore           nodeGlobalDataStore.GlobalDataStore
 	NodeDataStore                 nodeDataStore.DataStore
 	NotifierStore                 notifierDataStore.DataStore
 	PolicyDataStore               policyDatastore.DataStore
@@ -144,7 +142,6 @@ func New() *Resolver {
 		NamespaceDataStore:          namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:        npDS.Singleton(),
 		NetworkFlowDataStore:        nfDS.Singleton(),
-		NodeGlobalDataStore:         nodeGlobalDataStore.Singleton(),
 		NodeDataStore:               nodeDataStore.Singleton(),
 		NotifierStore:               notifierDataStore.Singleton(),
 		PolicyDataStore:             policyDatastore.Singleton(),
@@ -187,15 +184,16 @@ var (
 	readClusters   = readAuth(resources.Cluster)
 	readCompliance = readAuth(resources.Compliance)
 	// TODO: ROX-12750 Remove readComplianceRuns
-	readComplianceRuns                   = readAuth(resources.ComplianceRuns)
-	readCVEs                             = readAuth(resources.CVE)
-	readDeployments                      = readAuth(resources.Deployment)
-	readDeploymentExtensions             = readAuth(resources.DeploymentExtension)
-	readImages                           = readAuth(resources.Image)
-	readIntegrations                     = readAuth(resources.Integration)
-	readNamespaces                       = readAuth(resources.Namespace)
-	readNetPolicies                      = readAuth(resources.NetworkPolicy)
-	readNodes                            = readAuth(resources.Node)
+	readComplianceRuns       = readAuth(resources.ComplianceRuns)
+	readCVEs                 = readAuth(resources.CVE)
+	readDeployments          = readAuth(resources.Deployment)
+	readDeploymentExtensions = readAuth(resources.DeploymentExtension)
+	readImages               = readAuth(resources.Image)
+	readIntegrations         = readAuth(resources.Integration)
+	readNamespaces           = readAuth(resources.Namespace)
+	readNetPolicies          = readAuth(resources.NetworkPolicy)
+	readNodes                = readAuth(resources.Node)
+	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 	readPolicies                         = readAuth(resources.Policy)
 	readRoles                            = readAuth(resources.Role)
 	readK8sRoles                         = readAuth(resources.K8sRole)
