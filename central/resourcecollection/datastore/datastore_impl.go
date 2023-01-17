@@ -485,7 +485,10 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 				return nil, errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
 			}
 
-			ruleValueQueries := ruleValuesToQueryList(fieldLabel, selectorRule.GetValues())
+			ruleValueQueries, err := ruleValuesToQueryList(fieldLabel, selectorRule.GetValues())
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to parse collection to query")
+			}
 			if len(ruleValueQueries) > 0 {
 				// rule values are conjunct or disjunct with each other depending on the operator
 				switch selectorRule.GetOperator() {
@@ -507,24 +510,31 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 	return ret, nil
 }
 
-func ruleValuesToQueryList(fieldLabel supportedFieldKey, ruleValues []*storage.RuleValue) []*v1.Query {
+func ruleValuesToQueryList(fieldLabel supportedFieldKey, ruleValues []*storage.RuleValue) ([]*v1.Query, error) {
 	ret := make([]*v1.Query, 0, len(ruleValues))
 	for _, ruleValue := range ruleValues {
 		var query *v1.Query
 		if fieldLabel.labelType {
-			key, value := stringutils.Split2(ruleValue.GetValue(), "=")
-			query = pkgSearch.NewQueryBuilder().AddMapQuery(fieldLabel.fieldLabel, fmt.Sprintf("%q", key), fmt.Sprintf("%q", value)).ProtoQuery()
+			switch ruleValue.GetMatchType() {
+			case storage.MatchType_EXACT:
+				key, value := stringutils.Split2(ruleValue.GetValue(), "=")
+				query = pkgSearch.NewQueryBuilder().AddMapQuery(fieldLabel.fieldLabel, fmt.Sprintf("%q", key), fmt.Sprintf("%q", value)).ProtoQuery()
+			default:
+				return nil, errors.Wrap(errox.InvalidArgs, "label rules should only use exact mating")
+			}
 		} else {
 			switch ruleValue.GetMatchType() {
 			case storage.MatchType_EXACT:
 				query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel.fieldLabel, ruleValue.GetValue()).ProtoQuery()
 			case storage.MatchType_REGEX:
 				query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel.fieldLabel, ruleValue.GetValue()).ProtoQuery()
+			default:
+				return nil, errors.Wrapf(errox.InvalidArgs, "unknown match type encountered %q", ruleValue.GetMatchType())
 			}
 		}
 		ret = append(ret, query)
 	}
-	return ret
+	return ret, nil
 }
 
 func embeddedCollectionsToIDList(embeddedList []*storage.ResourceCollection_EmbeddedResourceCollection) []string {
@@ -565,18 +575,9 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 			}
 
 			// we have a short list of supported field name values
-			_, present := supportedFieldNames[selectorRule.GetFieldName()]
+			labelVal, present := supportedFieldNames[selectorRule.GetFieldName()]
 			if !present {
 				return errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
-			}
-
-			// determine whether this is a label rule
-			var labelRule bool
-			switch selectorRule.GetFieldName() {
-			case pkgSearch.DeploymentLabel.String(), pkgSearch.NamespaceLabel.String(), pkgSearch.ClusterLabel.String():
-				labelRule = true
-			default:
-				labelRule = false
 			}
 
 			// we require at least one value if a field name is set
@@ -589,7 +590,9 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 				if _, err := regexp.Compile(ruleValue.GetValue()); err != nil {
 					return errors.Wrap(errors.Wrap(err, errox.InvalidArgs.Error()), "failed to compile rule value regex")
 				}
-				if labelRule {
+
+				// label rules only support exact matching and should be of the form 'key=value'
+				if labelVal.labelType {
 					if ruleValue.GetMatchType() != storage.MatchType_EXACT {
 						return errors.Wrap(errox.InvalidArgs, "label types should only use exact matching")
 					}
