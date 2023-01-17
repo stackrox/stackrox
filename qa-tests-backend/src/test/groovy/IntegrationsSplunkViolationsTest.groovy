@@ -26,7 +26,7 @@ import spock.lang.IgnoreIf
 import util.Env
 
 // ROX-14228 skipping tests for 1st release on power & z
-@IgnoreIf({ Env.HW_ARCH == "ppc64le" || Env.HW_ARCH == "s390x" })
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
