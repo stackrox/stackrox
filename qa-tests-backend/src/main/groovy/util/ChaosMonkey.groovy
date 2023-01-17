@@ -18,6 +18,7 @@ class ChaosMonkey {
     OrchestratorMain orchestrator
 
     static final private String ADMISSION_CONTROLLER_APP_NAME = "admission-control"
+    static final private int ADMISSION_CONTROLLER_EXPECTED_PODS = 3
 
     ChaosMonkey(OrchestratorMain client, int minReadyReplicas, Long gracePeriod) {
         orchestrator = client
@@ -31,21 +32,24 @@ class ChaosMonkey {
                 // Get the current ready, non-deleted pod replicas
                 def admCtrlPods = new ArrayList<Pod>(orchestrator.getPods(
                         Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME))
-                admCtrlPods.removeIf { !it?.status?.containerStatuses[0]?.ready }
+                admCtrlPods.removeIf { Pod p -> !orchestrator.podReady(p) }
 
+                if (admCtrlPods.size() < minReadyReplicas) {
+                    log.warn "Fewer than ${minReadyReplicas} ready ${ADMISSION_CONTROLLER_APP_NAME} pods encountered!" +
+                             " This should not happen!"
+                }
                 if (admCtrlPods.size() <= minReadyReplicas) {
                     lock.lock()
                     effectCond.signalAll()
                     lock.unlock()
                 }
 
-                admCtrlPods.removeIf { it?.metadata?.deletionTimestamp as boolean }
-
                 // If there are more than the minimum number of ready replicas, randomly pick some to delete
                 if (admCtrlPods.size() > minReadyReplicas) {
                     Collections.shuffle(admCtrlPods)
                     def podsToDelete = admCtrlPods.drop(minReadyReplicas)
                     podsToDelete.forEach {
+                        log.info "Deleting pod ${it.metadata.name}."
                         orchestrator.deletePod(it.metadata.namespace, it.metadata.name, gracePeriod)
                     }
                 }
@@ -66,23 +70,19 @@ class ChaosMonkey {
     }
 
     void waitForReady() {
-        def allReady = false
-        while (!allReady) {
-            Helpers.sleepWithRetryBackoff(1000)
-
+        while (true) {
             def admCtrlPods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
-            if (admCtrlPods.size() < 3) {
+            if (admCtrlPods.size() < ADMISSION_CONTROLLER_EXPECTED_PODS) {
                 continue
             }
-            allReady = true
-            for (def pod : admCtrlPods) {
-                if (!pod.status?.containerStatuses[0]?.ready) {
-                    allReady = false
-                    break
-                }
+            def readyPods = admCtrlPods.findAll { Pod p -> orchestrator.podReady(p) }
+            if (readyPods.size() == admCtrlPods.size()) {
+                def readyPodNames = readyPods.collect { Pod p -> p.metadata.name }
+                log.info "ChaosMonkey: All admission control pod replicas ready: ${readyPodNames}"
+                break
             }
+            Helpers.sleepWithRetryBackoff(1000)
         }
-        log.info "ChaosMonkey: All admission control pod replicas ready"
     }
 }
 
