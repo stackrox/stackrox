@@ -176,13 +176,16 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 
 	pingServiceClient := clairGRPCV1.NewPingServiceClient(gRPCConnection)
 	scanServiceClient := clairGRPCV1.NewNodeScanServiceClient(gRPCConnection)
+	// required as RHCOS scanning uses ImageScan API
+	imageScanServiceClient := clairGRPCV1.NewImageScanServiceClient(gRPCConnection)
 
 	return &clairify{
-		NodeScanSemaphore:     scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
-		conf:                  conf,
-		pingServiceClient:     pingServiceClient,
-		nodeScanServiceClient: scanServiceClient,
-		protoNodeIntegration:  protoNodeIntegration,
+		NodeScanSemaphore:      scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
+		conf:                   conf,
+		pingServiceClient:      pingServiceClient,
+		nodeScanServiceClient:  scanServiceClient,
+		imageScanServiceClient: imageScanServiceClient,
+		protoNodeIntegration:   protoNodeIntegration,
 	}, nil
 }
 
