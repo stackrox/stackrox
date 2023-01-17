@@ -4,8 +4,6 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "scanner/api/v1/note.proto";
-import "scanner/api/v1/component.proto";
 import "storage/container_runtime.proto";
 import "storage/taints.proto";
 import "storage/vulnerability.proto";
@@ -86,11 +84,48 @@ message NodeScan {
 }
 
 message NodeInventory {
-    string                         node_id    = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk,type(uuid)"'];
-    string                         node_name  = 2 [(gogoproto.moretags) = 'search:"Node,store"'];
-    google.protobuf.Timestamp      scan_time  = 3 [(gogoproto.moretags) = 'search:"Node Scan Time,store"'];
-    scannerV1.Components           components = 4;
-    repeated scannerV1.Note        notes      = 5;
+    string                         node_name = 1;
+    google.protobuf.Timestamp      scan_time = 2;
+
+    // Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.
+    // Keep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:
+    // func convertAndDedupRHELComponents (in pkg 'nodeinventorizer'), and the respective reverse convertion in pkg 'clairify'.
+    // We are not using scannerV1.Components here for the following reasons:
+    // - to avoid conflicts between v1 and scannerV1 APIs when generating the code in central/graphql/resolvers/generated.go
+    // - to not expose scanner v1 API over stackrox graphql API
+    Components                     components = 3 [(gogoproto.moretags) = 'sql:"-"'];
+    message Components {
+        string                     namespace = 1;
+        repeated RHELComponent     rhel_components = 2;
+        message RHELComponent {
+            int64               id = 1;
+            string              name = 2;
+            string              namespace = 3;
+            string              version = 4;
+            string              arch = 5;
+            string              module = 6;
+            string              added_by = 7;
+            repeated Executable executables = 8;
+            message Executable {
+                string                      path = 1;
+                repeated FeatureNameVersion required_features = 2;
+                message FeatureNameVersion {
+                    string name = 1;
+                    string version = 2;
+                }
+            }
+        }
+        repeated string rhel_content_sets = 3;
+    }
+
+    // Note represents scannerV1.Note
+    repeated Note        notes = 4;
+    enum Note {
+        OS_CVES_UNAVAILABLE = 0;
+        OS_CVES_STALE = 1;
+        LANGUAGE_CVES_UNAVAILABLE = 2;
+        CERTIFIED_RHEL_SCAN_UNAVAILABLE = 3;
+    }
 }
 
 message EmbeddedNodeScanComponent {

@@ -4,7 +4,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
@@ -19,33 +18,51 @@ type FakeNodeInventorizer struct {
 func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, error) {
 	log.Infof("Generating fake scan result message...")
 	msg := &storage.NodeInventory{
-		NodeId:   "",
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
-		Components: &scannerV1.Components{
-			Namespace: "Testme OS",
-			RhelComponents: []*scannerV1.RHELComponent{
+		Components: &storage.NodeInventory_Components{
+			Namespace: "rhcos:4.11",
+			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
 				{
+					Id:        int64(0),
 					Name:      "vim-minimal",
 					Namespace: "rhel:8",
-					Version:   "2:7.4.629-6.el8.x86_64",
+					Version:   "2:7.4.629-6.el8",
 					Arch:      "x86_64",
-					Module:    "FakeMod",
-					Cpes:      []string{"cpe:/a:redhat:enterprise_linux:8::baseos"},
-					AddedBy:   "FakeLayer",
+					Module:    "",
+					AddedBy:   "FakeNodeScanner",
 				},
 				{
-					Name:      "libsolv",
+					Id:        int64(1),
+					Name:      "tar",
 					Namespace: "rhel:8",
-					Version:   "0.7.7-1.el8.x86_64",
+					Version:   "1.27.1.el8",
 					Arch:      "x86_64",
-					Module:    "FakeMod",
-					AddedBy:   "FakeLayer",
+					Module:    "",
+					AddedBy:   "FakeNodeScanner",
+				},
+				{
+					Id:        int64(2),
+					Name:      "lz4-libs",
+					Namespace: "rhel:8",
+					Version:   "1.8.3-3.el8_4",
+					Arch:      "x86_64",
+					Module:    "",
+					AddedBy:   "FakeNodeScanner",
+				},
+				{
+					Id:        int64(3),
+					Name:      "libksba",
+					Namespace: "rhel:8",
+					Version:   "1.3.5-7.el8",
+					Arch:      "x86_64",
+					Module:    "",
+					AddedBy:   "FakeNodeScanner",
 				},
 			},
-			LanguageComponents: nil,
+			RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
 		},
-		Notes: []scannerV1.Note{scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE},
+		Notes: []storage.NodeInventory_Note{storage.NodeInventory_LANGUAGE_CVES_UNAVAILABLE},
 	}
 	return msg, nil
 }
