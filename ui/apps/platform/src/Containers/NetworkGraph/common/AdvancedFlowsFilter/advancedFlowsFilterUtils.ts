@@ -30,7 +30,7 @@ export function selectionsToFilters(selections: string[]): AdvancedFlowsFilterTy
             filters.flows.push(selection);
         } else if (selection === 'ingress' || selection === 'egress') {
             filters.directionality.push(selection);
-        } else if (selection === 'TCP' || selection === 'UDP') {
+        } else if (selection === 'L4_PROTOCOL_TCP' || selection === 'L4_PROTOCOL_UDP') {
             filters.protocols.push(selection);
         } else if (isValidPort(selection)) {
             filters.ports.push(selection);
