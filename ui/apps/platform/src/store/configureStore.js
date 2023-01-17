@@ -3,6 +3,7 @@ import { routerMiddleware } from 'connected-react-router';
 import createSagaMiddleware from 'redux-saga';
 import createRavenMiddleware from 'raven-for-redux';
 import Raven from 'raven-js';
+import thunk from 'redux-thunk';
 
 import rootSaga from 'sagas';
 import createRootReducer from 'reducers';
@@ -19,7 +20,7 @@ const sagaMiddleware = createSagaMiddleware({
 const ravenMiddleware = createRavenMiddleware(Raven, { stateTransformer: () => null });
 
 export default function configureStore(initialState = {}, history) {
-    const middlewares = [sagaMiddleware, routerMiddleware(history), ravenMiddleware];
+    const middlewares = [sagaMiddleware, routerMiddleware(history), ravenMiddleware, thunk];
     const enhancers = [applyMiddleware(...middlewares)];
 
     // If Redux DevTools Extension is installed use it, otherwise use Redux compose
