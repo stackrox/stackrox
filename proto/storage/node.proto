@@ -84,8 +84,9 @@ message NodeScan {
 }
 
 message NodeInventory {
-    string                         node_name = 1;
-    google.protobuf.Timestamp      scan_time = 2;
+    string                           node_id = 1;
+    string                         node_name = 2;
+    google.protobuf.Timestamp      scan_time = 3;
 
     // Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.
     // Keep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:
@@ -93,7 +94,7 @@ message NodeInventory {
     // We are not using scannerV1.Components here for the following reasons:
     // - to avoid conflicts between v1 and scannerV1 APIs when generating the code in central/graphql/resolvers/generated.go
     // - to not expose scanner v1 API over stackrox graphql API
-    Components                     components = 3 [(gogoproto.moretags) = 'sql:"-"'];
+    Components                     components = 4 [(gogoproto.moretags) = 'sql:"-"'];
     message Components {
         string                     namespace = 1;
         repeated RHELComponent     rhel_components = 2;
@@ -119,7 +120,7 @@ message NodeInventory {
     }
 
     // Note represents scannerV1.Note
-    repeated Note        notes = 4;
+    repeated Note        notes = 5;
     enum Note {
         OS_CVES_UNAVAILABLE = 0;
         OS_CVES_STALE = 1;
