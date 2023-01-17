@@ -67,22 +67,23 @@ var (
 )
 
 type Store interface {
-	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.ProcessListeningOnPortStorage, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessListeningOnPortStorage, error)
 	Upsert(ctx context.Context, obj *storage.ProcessListeningOnPortStorage) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessListeningOnPortStorage) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
-	GetIDs(ctx context.Context) ([]string, error)
+	DeleteMany(ctx context.Context, ids []string) error
+
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.ProcessListeningOnPortStorage, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessListeningOnPortStorage, []int, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessListeningOnPortStorage, error)
+	GetIDs(ctx context.Context) ([]string, error)
 	GetProcessListeningOnPort(
 		ctx context.Context,
 		deploymentID string,
 	) ([]*storage.ProcessListeningOnPort, error)
 
-	DeleteMany(ctx context.Context, ids []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.ProcessListeningOnPortStorage) error) error
 
