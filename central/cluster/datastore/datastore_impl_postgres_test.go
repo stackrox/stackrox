@@ -7,17 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
-	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	namespace "github.com/stackrox/rox/central/namespace/datastore"
-	nsPostgres "github.com/stackrox/rox/central/namespace/store/postgres"
-	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
-	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
-	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -37,15 +27,10 @@ func TestClusterDataStoreWithPostgres(t *testing.T) {
 type ClusterPostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	mockCtrl         *gomock.Controller
 	ctx              context.Context
-	db               *pgxpool.Pool
+	db               *pgtest.TestPostgres
 	nsDatastore      namespace.DataStore
 	clusterDatastore DataStore
-	nodeDataStore    *nodeMocks.MockGlobalDataStore
-	netEntities      *netEntitiesMocks.MockEntityDataStore
-	netFlows         *netFlowsMocks.MockClusterDataStore
-	clusterCVEs      *clusterCVEDS.MockDataStore
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
@@ -56,43 +41,21 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	s.ctx = context.Background()
+	s.ctx = sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
+	s.db = pgtest.ForT(s.T())
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
-	s.NoError(err)
-	s.db = pool
-
-	nsPostgres.Destroy(s.ctx, s.db)
-	clusterPostgres.Destroy(s.ctx, s.db)
-
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	ds, err := namespace.New(nsPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), nil, nsPostgres.NewIndexer(s.db), nil, ranking.NamespaceRanker(), nil)
+	ds, err := namespace.GetTestPostgresDataStore(s.T(), s.db.Pool)
 	s.NoError(err)
 	s.nsDatastore = ds
-
-	s.mockCtrl = gomock.NewController(s.T())
-	s.netEntities = netEntitiesMocks.NewMockEntityDataStore(s.mockCtrl)
-	s.nodeDataStore = nodeMocks.NewMockGlobalDataStore(s.mockCtrl)
-	s.netFlows = netFlowsMocks.NewMockClusterDataStore(s.mockCtrl)
-	s.clusterCVEs = clusterCVEDS.NewMockDataStore(s.mockCtrl)
-
-	s.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-
-	clusterDS, err := New(clusterPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterHealthPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), s.clusterCVEs, nil, nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), clusterPostgres.NewIndexer(s.db), nil)
+	clusterDS, err := GetTestPostgresDataStore(s.T(), s.db.Pool)
 
 	s.NoError(err)
 	s.clusterDatastore = clusterDS
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TearDownSuite() {
-	s.db.Close()
-	s.mockCtrl.Finish()
+	s.db.Teardown(s.T())
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TestSearchClusterStatus() {
@@ -111,7 +74,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Upsert cluster.
-	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
 	c1ID, err := s.clusterDatastore.AddCluster(ctx, &storage.Cluster{
 		Name:               "c1",
 		Labels:             map[string]string{"env": "prod", "team": "team"},
@@ -121,7 +83,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(err)
 
 	// Upsert cluster.
-	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
 	c2ID, err := s.clusterDatastore.AddCluster(ctx, &storage.Cluster{
 		Name:               "c2",
 		Labels:             map[string]string{"env": "test", "team": "team"},

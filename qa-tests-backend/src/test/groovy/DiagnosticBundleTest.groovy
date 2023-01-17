@@ -10,6 +10,7 @@ import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
 
+import services.ClusterService
 import services.RoleService
 import util.Env
 
@@ -115,7 +116,8 @@ class DiagnosticBundleTest extends BaseSpecification {
                 ZipEntry entry
                 while ((entry = zis.nextEntry) != null) {
                     log.info "Found file ${entry.name}"
-                    if (entry.name == "kubernetes/remote/stackrox/sensor/deployment-sensor.yaml") {
+                    if (entry.name == ("kubernetes/" + ClusterService.DEFAULT_CLUSTER_NAME +
+                            "/stackrox/sensor/deployment-sensor.yaml")) {
                         foundK8sInfo = true
                     }
                 }

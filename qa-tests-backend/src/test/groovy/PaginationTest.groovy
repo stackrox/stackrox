@@ -22,44 +22,44 @@ class PaginationTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName("pagination1")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-26")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-32")
                     .addLabel("app", "pagination1")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p1", SECRETS[0]),
             new Deployment()
                     .setName("pagination2")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-25")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-31")
                     .addLabel("app", "pagination2")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p2", SECRETS[1]),
             new Deployment()
                     .setName("pagination3")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-30")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-30")
                     .addLabel("app", "pagination3")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p3", SECRETS[2]),
             new Deployment()
                     .setName("pagination4")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-29")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-29")
                     .addLabel("app", "pagination4")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p4", SECRETS[3]),
             new Deployment()
                     .setName("pagination5")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-28")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-28")
                     .addLabel("app", "pagination5")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p5", SECRETS[4]),
             new Deployment()
                     .setName("pagination6")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-27")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-27")
                     .addLabel("app", "pagination6")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p6", SECRETS[5]),
     ]
 
-    static final private IMAGE_AND_TAGS_QUERY = "Image:quay.io/rhacs-eng/qa+"+
-            "Image Tag:busybox-1-25,busybox-1-26,busybox-1-27,busybox-1-28,busybox-1-29,busybox-1-30"
+    static final private IMAGE_AND_TAGS_QUERY = "Image:quay.io/rhacs-eng/qa-multi-arch+"+
+            "Image Tag:busybox-1-31,busybox-1-32,busybox-1-27,busybox-1-28,busybox-1-29,busybox-1-30"
 
     def setupSpec() {
         for (String secretName : SECRETS.keySet()) {

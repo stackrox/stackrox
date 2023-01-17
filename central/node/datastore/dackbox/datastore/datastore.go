@@ -26,6 +26,7 @@ import (
 )
 
 // DataStore is an intermediary to NodeStorage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
@@ -40,6 +41,7 @@ type DataStore interface {
 	UpsertNode(ctx context.Context, node *storage.Node) error
 
 	DeleteNodes(ctx context.Context, ids ...string) error
+	DeleteAllNodesForCluster(ctx context.Context, clusterID string) error
 	Exists(ctx context.Context, id string) (bool, error)
 }
 

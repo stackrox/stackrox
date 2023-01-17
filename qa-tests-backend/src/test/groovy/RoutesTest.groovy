@@ -13,7 +13,7 @@ class RoutesTest extends BaseSpecification {
 
     static final private SERVER_DEP = new Deployment()
         .setName("server")
-        .setImage("quay.io/rhacs-eng/qa:nginx-1.19-alpine")
+        .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine")
         .addLabel("app", "server")
         .addPort(80)
         .setExposeAsService(true)

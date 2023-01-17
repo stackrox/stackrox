@@ -18,8 +18,8 @@ import (
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	nodeNodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
-	nodeGlobalDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/globaldatastore"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -50,11 +50,10 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	if err != nil {
 		return nil, err
 	}
-	nodeInternalStore, err := nodeNodeDataStore.GetTestPostgresDataStore(t, pool)
+	nodeStore, err := nodeDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}
-	nodeStore := nodeGlobalDataStore.New(nodeInternalStore)
 	podStore, err := podDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -129,11 +128,10 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	nodeInternalStore, err := nodeNodeDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
+	nodeStore, err := nodeNodeDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
 	if err != nil {
 		return nil, err
 	}
-	nodeStore := nodeGlobalDataStore.New(nodeInternalStore)
 	podStore, err := podDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
 	if err != nil {
 		return nil, err

@@ -2,7 +2,7 @@ import { Controller } from '@patternfly/react-topology';
 import { uniq } from 'lodash';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { Flow } from '../types/flow.type';
-import { CustomEdgeModel, CustomNodeData } from '../types/topology.type';
+import { CustomEdgeModel, CustomSingleNodeData } from '../types/topology.type';
 
 export const protocolLabel = {
     L4_PROTOCOL_UNKNOWN: 'UNKNOWN',
@@ -50,10 +50,10 @@ export function getNetworkFlows(
         }
         const adjacentNodeId = edge.source !== id ? edge.source : edge.target;
         const adjacentNode = controller.getNodeById(adjacentNodeId);
-        const adjacentNodeData: CustomNodeData = adjacentNode?.getData();
+        const adjacentNodeData: CustomSingleNodeData = adjacentNode?.getData();
         const result = edge.data.properties.map(({ port, protocol }): Flow => {
             const direction: string = edge.source === id ? 'Egress' : 'Ingress';
-            const type = adjacentNodeData.type === 'DEPLOYMENT' ? 'Deployment' : 'External';
+            const { id: entityId, type } = adjacentNodeData;
             let entity = '';
             let namespace = '';
             if (adjacentNodeData.type === 'DEPLOYMENT') {
@@ -70,10 +70,11 @@ export function getNetworkFlows(
                 id: flowId,
                 type,
                 entity,
+                entityId,
                 namespace,
                 direction,
                 port: String(port),
-                protocol: protocolLabel[protocol],
+                protocol,
                 // @TODO: Need to set this depending on whether it is in the baseline or not
                 isAnomalous: true,
                 // @TODO: Need to create nesting structure
@@ -128,9 +129,11 @@ export function filterNetworkFlows(
         // check filtering by protocols
         if (advancedFilters.protocols.length) {
             const isTCPFiltered =
-                advancedFilters.protocols.includes('TCP') && flow.protocol === 'TCP';
+                advancedFilters.protocols.includes('L4_PROTOCOL_TCP') &&
+                flow.protocol === 'L4_PROTOCOL_TCP';
             const isUDPFiltered =
-                advancedFilters.protocols.includes('UDP') && flow.protocol === 'UDP';
+                advancedFilters.protocols.includes('L4_PROTOCOL_UDP') &&
+                flow.protocol === 'L4_PROTOCOL_UDP';
             matchedDirectionality = isTCPFiltered || isUDPFiltered;
         }
 

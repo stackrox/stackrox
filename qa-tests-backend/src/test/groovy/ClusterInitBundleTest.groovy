@@ -50,7 +50,7 @@ class ClusterInitBundleTest extends BaseSpecification {
         assert response.initBundleRevokedIdsCount == 0
         and:
         "impacted cluster is listed"
-        assert response.initBundleRevocationErrorsList.first().impactedClustersList*.id.contains(clusterId)
+        assert response.initBundleRevocationErrorsList.first().impactedClustersList*.id.contains(cluster.id)
     }
 
     def "Test that cluster init bundle can be revoked when it has no impacted clusters"() {

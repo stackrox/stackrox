@@ -1,0 +1,16 @@
+name: Release CI
+on:
+  push:
+    branches:
+    - 'release-*'
+    tags-ignore:
+    - 'nightly-*'
+
+jobs:
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Event: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Ref: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"

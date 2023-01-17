@@ -207,10 +207,28 @@ func (ds *datastoreImpl) DeleteNodes(ctx context.Context, ids ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	errorList := errorhelpers.NewErrorList("deleting nodes")
-	deleteRiskCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.DeploymentExtension)))
+	return ds.deleteNodeFromStore(ctx, ids...)
+}
 
+func (ds *datastoreImpl) DeleteAllNodesForCluster(ctx context.Context, clusterID string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "DeleteAllNodesForCluster")
+
+	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	results, err := ds.searcher.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery())
+	if err != nil {
+		return err
+	}
+	return ds.deleteNodeFromStore(ctx, pkgSearch.ResultsToIDs(results)...)
+}
+
+func (ds *datastoreImpl) deleteNodeFromStore(ctx context.Context, ids ...string) error {
+	errorList := errorhelpers.NewErrorList("deleting nodes")
+	deleteRiskCtx := sac.WithAllAccess(context.Background())
 	for _, id := range ids {
 		if err := ds.storage.Delete(ctx, id); err != nil {
 			errorList.AddError(err)

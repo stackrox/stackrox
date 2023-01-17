@@ -12,6 +12,33 @@ on:
     - reopened
     - synchronize
 jobs:
+  go-postgres:
+    strategy:
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Run Postgres
+      run: |
+        su postgres -c 'initdb -D /tmp/data'
+        su postgres -c 'pg_ctl -D /tmp/data start'
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Is Postgres ready
+      run: pg_isready -h 127.0.0.1
+
+    - name: Go Unit Tests
+      run: ${{ matrix.gotags }} make go-postgres-unit-tests
+
   ui:
     runs-on: ubuntu-latest
     container:
@@ -28,9 +55,3 @@ jobs:
 
     - name: UI Unit Tests
       run: make ui-test
-
-    - name: Publish Test Report
-      uses: mikepenz/action-junit-report@v3
-      if: always()
-      with:
-        report_paths: 'ui/test-results/reports/*.xml'
