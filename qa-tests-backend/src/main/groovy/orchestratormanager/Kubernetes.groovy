@@ -229,6 +229,11 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
+    boolean podReady(Pod pod) {
+        def deleted = pod.metadata.deletionTimestamp as boolean
+        return !deleted && pod.status?.containerStatuses?.every { it.ready }
+    }
+
     def waitForPodsReady(String ns, Map<String, String> labels, int minReady = 1, int retries = 30,
                          int intervalSeconds = 5) {
         LabelSelector selector = new LabelSelector()
@@ -236,10 +241,11 @@ class Kubernetes implements OrchestratorMain {
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             def list = client.pods().inNamespace(ns).withLabelSelector(selector).list()
-            def numReady = list.items.sum { Pod p ->
-                p.status.containerStatuses.every { it.ready } ? 1 : 0
-            }
+            def readyPods = list.items.findAll { Pod p -> podReady(p) }
+            def readyPodNames = readyPods.collect { Pod p -> p.metadata.name }
+            def numReady = readyPodNames.size()
             if (numReady >= minReady) {
+                log.debug "Encountered ${numReady} ready pods matching ${labels}: ${readyPodNames}"
                 return true
             }
         }
