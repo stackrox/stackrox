@@ -12,11 +12,11 @@ import (
 
 type nodeDispatcher struct {
 	deploymentStore *DeploymentStore
-	nodeStore       *nodeStore
+	nodeStore       NodeStore
 	endpointManager endpointManager
 }
 
-func newNodeDispatcher(deploymentStore *DeploymentStore, nodeStore *nodeStore, endpointManager endpointManager) *nodeDispatcher {
+func newNodeDispatcher(deploymentStore *DeploymentStore, nodeStore NodeStore, endpointManager endpointManager) *nodeDispatcher {
 	return &nodeDispatcher{
 		deploymentStore: deploymentStore,
 		nodeStore:       nodeStore,
@@ -39,13 +39,16 @@ func convertTaints(taints []v1.Taint) []*storage.Taint {
 func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	node := obj.(*v1.Node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		h.nodeStore.removeNode(node)
+		h.nodeStore.RemoveNode(buildNode(node))
 		h.endpointManager.OnNodeUpdateOrRemove()
 	} else {
 		wrap := wrapNode(node)
 
 		// Only perform endpoint manager updates if the IP addresses of the node changed.
-		if h.nodeStore.addOrUpdateNode(wrap) {
+		if h.nodeStore == nil {
+			log.Errorf("NodeStore is nil")
+		}
+		if h.nodeStore.AddOrUpdateNode(wrap) {
 			if action == central.ResourceAction_CREATE_RESOURCE {
 				h.endpointManager.OnNodeCreate(wrap)
 			} else {
@@ -53,6 +56,23 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			}
 		}
 	}
+
+	nodeResource := buildNode(node)
+
+	events := []*central.SensorEvent{
+		{
+			Id:     nodeResource.GetId(),
+			Action: action,
+			Resource: &central.SensorEvent_Node{
+				Node: nodeResource,
+			},
+		},
+	}
+
+	return component.NewResourceEvent(events, nil, nil)
+}
+
+func buildNode(node *v1.Node) *storage.Node {
 
 	var internal, external []string
 
@@ -66,7 +86,7 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 	}
 
 	creation := node.CreationTimestamp.ProtoTime()
-	nodeResource := &storage.Node{
+	return &storage.Node{
 		Id:                      string(node.UID),
 		Name:                    node.Name,
 		Taints:                  convertTaints(node.Spec.Taints),
@@ -82,18 +102,6 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		OsImage:                 node.Status.NodeInfo.OSImage,
 		KubeletVersion:          node.Status.NodeInfo.KubeletVersion,
 		KubeProxyVersion:        node.Status.NodeInfo.KubeProxyVersion,
-		K8SUpdated:              types.TimestampNow(),
+		K8SUpdated:              types.TimestampNow(), // move to NodeWrap??
 	}
-
-	events := []*central.SensorEvent{
-		{
-			Id:     nodeResource.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_Node{
-				Node: nodeResource,
-			},
-		},
-	}
-
-	return component.NewResourceEvent(events, nil, nil)
 }

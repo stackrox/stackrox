@@ -68,3 +68,9 @@ type Provider interface {
 type EndpointManager interface {
 	OnDeploymentCreateOrUpdateByID(id string)
 }
+
+// NodeStore provides functionality to get nodes
+//go:generate mockgen-wrapper
+type NodeStore interface {
+	GetNode(nodeName string) *NodeWrap
+}
