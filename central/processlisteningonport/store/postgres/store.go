@@ -49,10 +49,7 @@ const (
 	// me all PLOP by this deployment'.
 	// XXX: Verify the query plan to make sure needed indexes are in use.
 	getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
-		"proc.podid, proc.containername, " +
-		"proc.signal_containerid, " +
-		"proc.signal_name, proc.signal_args, proc.signal_execfilepath, " +
-		"proc.clusterid, proc.serialized as procSerialized " +
+		"proc.serialized as proc_serialized " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
@@ -696,23 +693,13 @@ func (s *storeImpl) readRows(
 	for rows.Next() {
 		var id string
 		var serialized []byte
-		var podID string
-		var containerName string
-		var signalContainerID string
-		var signalName string
-		var signalArgs string
-		var signalExecFilePath string
-		var clusterID string
 		var procSerialized []byte
 
 		// We're getting ProcessIndicator directly from the SQL query, PLOP
 		// parts have to be extra deserialized.
 		if err := rows.Scan(
 			&id, &serialized,
-			&podID, &containerName,
-			&signalContainerID,
-			&signalName, &signalArgs, &signalExecFilePath,
-			&clusterID, &procSerialized); err != nil {
+			&procSerialized); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
@@ -728,31 +715,31 @@ func (s *storeImpl) readRows(
 
 		plop := &storage.ProcessListeningOnPort{
 			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-				Port:     msg.Port,
-				Protocol: msg.Protocol,
+				Port:     msg.GetPort(),
+				Protocol: msg.GetProtocol(),
 			},
-			DeploymentId:  procMsg.DeploymentId,
-			PodId:         podID,
-			PodUid:        procMsg.PodUid,
-			ContainerName: containerName,
+			DeploymentId:  procMsg.GetDeploymentId(),
+			PodId:         procMsg.GetPodId(),
+			PodUid:        procMsg.GetPodUid(),
+			ContainerName: procMsg.GetContainerName(),
 			Signal: &storage.ProcessSignal{
-				Id:           procMsg.Signal.Id,
-				ContainerId:  signalContainerID,
-				Time:         procMsg.Signal.Time,
-				Name:         signalName,
-				Args:         signalArgs,
-				ExecFilePath: signalExecFilePath,
-				Pid:          procMsg.Signal.Pid,
-				Uid:          procMsg.Signal.Uid,
-				Gid:          procMsg.Signal.Gid,
-				Lineage:      procMsg.Signal.Lineage,
-				Scraped:      procMsg.Signal.Scraped,
-				LineageInfo:  procMsg.Signal.LineageInfo,
+				Id:           procMsg.GetSignal().GetId(),
+				ContainerId:  procMsg.GetSignal().GetContainerId(),
+				Time:         procMsg.GetSignal().GetTime(),
+				Name:         procMsg.GetSignal().GetName(),
+				Args:         procMsg.GetSignal().GetArgs(),
+				ExecFilePath: procMsg.GetSignal().GetExecFilePath(),
+				Pid:          procMsg.GetSignal().GetPid(),
+				Uid:          procMsg.GetSignal().GetUid(),
+				Gid:          procMsg.GetSignal().GetGid(),
+				Lineage:      procMsg.GetSignal().GetLineage(),
+				Scraped:      procMsg.GetSignal().GetScraped(),
+				LineageInfo:  procMsg.GetSignal().GetLineageInfo(),
 			},
-			ClusterId:          clusterID,
-			Namespace:          procMsg.Namespace,
-			ContainerStartTime: procMsg.ContainerStartTime,
-			ImageId:            procMsg.ImageId,
+			ClusterId:          procMsg.GetClusterId(),
+			Namespace:          procMsg.GetNamespace(),
+			ContainerStartTime: procMsg.GetContainerStartTime(),
+			ImageId:            procMsg.GetImageId(),
 		}
 
 		plops = append(plops, plop)
