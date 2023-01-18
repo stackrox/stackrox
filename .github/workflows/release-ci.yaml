@@ -65,8 +65,8 @@ jobs:
           scripts/ci/lib.sh \
             check_collector_version
 
-  publish-roxctl:
-    needs: [build, check-scanner-version, check-collector-version, check-is-release]
+  update-collector-released-versions:
+    needs: [check-scanner-version, check-collector-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -75,21 +75,13 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: actions/download-artifact@v3
-        with:
-          name: cli-build
-      - name: Publish roxctl to Google Cloud storage
+      - name: Patch RELEASED_VERSIONS
         env:
           STACKROX_TAG: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
         run: |
-          tar xzf cli-build.tgz
           scripts/ci/lib.sh \
-            publish_roxctl "${STACKROX_TAG}"
+            mark_collector_release "${STACKROX_TAG}"
 
   publish-helm-charts:
     needs: [build, check-scanner-version, check-collector-version, check-is-release]
@@ -117,8 +109,8 @@ jobs:
           scripts/ci/lib.sh \
             push_helm_charts "${STACKROX_TAG}"
 
-  update-collector-released-versions:
-    needs: [check-scanner-version, check-collector-version, check-is-release]
+  publish-roxctl:
+    needs: [build, check-scanner-version, check-collector-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -127,10 +119,18 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - name: Patch RELEASED_VERSIONS
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+      - uses: actions/download-artifact@v3
+        with:
+          name: cli-build
+      - name: Publish roxctl to Google Cloud storage
         env:
           STACKROX_TAG: ${{ github.ref_name }}
-          GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
         run: |
+          tar xzf cli-build.tgz
           scripts/ci/lib.sh \
-            mark_collector_release "${STACKROX_TAG}"
+            publish_roxctl "${STACKROX_TAG}"
