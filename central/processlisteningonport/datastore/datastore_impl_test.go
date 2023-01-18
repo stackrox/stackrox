@@ -40,11 +40,14 @@ type PLOPDataStoreTestSuite struct {
 	mockCtrl *gomock.Controller
 }
 
-func (suite *PLOPDataStoreTestSuite) SetupTest() {
+func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
+		suite.T().Skip("Skip PLOP tests if postgres is disabled")
+		suite.T().SkipNow()
 	}
+}
 
+func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -70,10 +73,6 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 }
 
 func (suite *PLOPDataStoreTestSuite) TearDownTest() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	suite.postgres.Teardown(suite.T())
 	suite.mockCtrl.Finish()
 }
@@ -81,10 +80,6 @@ func (suite *PLOPDataStoreTestSuite) TearDownTest() {
 // TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
 // with a correct process indicator reference and could be fetched later.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -183,10 +178,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 // with a correct process indicator reference and CloseTimestamp set. It will
 // be exluded from the API result.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -275,10 +266,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 // reference and CloseTimestamp set to nil. It will reopen an existing PLOP and
 // present in the API result.
 func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -396,10 +383,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 // TestPLOPCloseSameTimestamp: One PLOP object is added with a correct process
 // indicator reference and CloseTimestamp set to the same as existing one.
 func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -503,10 +486,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 // This will excercise logic of batch normalization. It will be exluded from
 // the API result.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -589,10 +568,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 // previously active PLOP. Will be stored in the db as closed and excluded from
 // the API.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -661,10 +636,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 // reference. It's being stored in the database, but without the reference will
 // not be fetched via API.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{
 			Port:           1234,
@@ -696,10 +667,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 // reference and CloseTimestamp set. It's being stored in the database, but
 // without the reference will not be fetched via API.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{
 			Port:           1234,
@@ -747,10 +714,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 // fetched from the API with only one process indicator attached (one is going
 // to be ignored).
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -832,10 +795,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 }
 
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -924,10 +883,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 }
 
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -1016,10 +971,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 }
 
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrder() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
