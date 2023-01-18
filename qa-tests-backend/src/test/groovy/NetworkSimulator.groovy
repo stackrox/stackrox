@@ -12,6 +12,8 @@ import util.NetworkGraphUtil
 
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
+import util.Env
 
 class NetworkSimulator extends BaseSpecification {
 
@@ -660,6 +662,8 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
+    // skipping tests using SLACK_MAIN_WEBHOOK on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify invalid clusterId passed to notification API"() {
         when:
         "create slack notifier"
