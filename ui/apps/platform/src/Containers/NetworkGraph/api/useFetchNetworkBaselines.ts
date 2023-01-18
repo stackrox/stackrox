@@ -7,7 +7,7 @@ import { Flow, FlowEntityType } from '../types/flow.type';
 
 type Result = {
     isLoading: boolean;
-    data: { networkBaselines: Flow[]; isAlertingEnabled: boolean };
+    data: { networkBaselines: Flow[]; isAlertingOnBaselineViolation: boolean };
     error: string | null;
 };
 
@@ -16,7 +16,7 @@ type FetchNetworkBaselinesResult = {
 } & Result;
 
 const defaultResultState = {
-    data: { networkBaselines: [], isAlertingEnabled: false },
+    data: { networkBaselines: [], isAlertingOnBaselineViolation: false },
     error: null,
     isLoading: true,
 };
@@ -32,7 +32,7 @@ function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
         fetchNetworkBaselines({ deploymentId })
             .then((response: NetworkBaseline) => {
                 const { peers, locked, namespace } = response;
-                const isAlertingEnabled = locked;
+                const isAlertingOnBaselineViolation = locked;
                 const networkBaselines = peers.reduce((acc, currPeer) => {
                     const currPeerType = currPeer.entity.info.type;
                     const entityId = currPeer.entity.info.id;
@@ -72,7 +72,7 @@ function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
                 }, [] as Flow[]);
                 setResult({
                     isLoading: false,
-                    data: { networkBaselines, isAlertingEnabled },
+                    data: { networkBaselines, isAlertingOnBaselineViolation },
                     error: null,
                 });
             })
@@ -83,7 +83,7 @@ function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
 
                 setResult({
                     isLoading: false,
-                    data: { networkBaselines: [], isAlertingEnabled: false },
+                    data: { networkBaselines: [], isAlertingOnBaselineViolation: false },
                     error: errorMessage,
                 });
             });
