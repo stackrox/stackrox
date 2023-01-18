@@ -37,9 +37,9 @@ func init() {
 }
 
 func TestRenderOpenshiftEnv(t *testing.T) {
+	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 	for _, clusterType := range []storage.ClusterType{storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		t.Run(clusterType.String(), func(t *testing.T) {
-			t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 			doTestRenderOpenshiftEnv(t, clusterType)
 		})
 	}
