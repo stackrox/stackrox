@@ -59,8 +59,8 @@ func (suite *ClusterServiceTestSuite) TestGetClusterDefaults() {
 			kernelSupportAvailable: true,
 		},
 	}
-	flavor := defaults.DevelopmentBuildImageFlavor()
-	suite.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
+	suite.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
+	flavor := defaults.GetImageFlavorFromEnv()
 	for name, testCase := range cases {
 		suite.Run(name, func() {
 			ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)

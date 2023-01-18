@@ -82,7 +82,7 @@ func doTestRenderOpenshiftEnv(t *testing.T, clusterType storage.ClusterType) {
 }
 
 func TestRenderWithNoCollection(t *testing.T) {
-	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
+	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 	cluster := &storage.Cluster{
 		Name:             "cluster",
 		MainImage:        "stackrox/main:abc",

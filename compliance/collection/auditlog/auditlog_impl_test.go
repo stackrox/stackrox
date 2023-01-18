@@ -54,6 +54,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderStopDoesNotBlockIfStartFai
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsErrorIfFileExistsButCannotBeRead() {
+	// TODO(ROX-14204): enable this test on GHA
 	if _, ok := os.LookupEnv("GITHUB_ACTIONS"); ok {
 		s.T().Skip("ROX-14204: This test is not working on GHA.")
 	}
