@@ -10,7 +10,6 @@ source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
 
-configure_cwd_as_safe
 openshift_ci_mods
 openshift_ci_import_creds
 create_exit_trap
