@@ -9,10 +9,10 @@ var (
 	buildTimestampUnixSecs string //XDef:BUILD_TIMESTAMP
 
 	// BuildTimestamp is the time when this binary was built.
-	// Deprecated: It will be removed in next release. Please do not use it.
+	// Deprecated: It will be removed in 3.75. Please do not use it.
 	BuildTimestamp time.Time
 	// BuildTimestampParsingErr is the error encountered when parsing the build timestamp (if any).
-	// Deprecated: It will be removed in next release. Please do not use it.
+	// Deprecated: It will be removed in 3.75. Please do not use it.
 	BuildTimestampParsingErr error
 )
 
