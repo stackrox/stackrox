@@ -23,17 +23,17 @@ func Singleton() DataStore {
 	once.Do(func() {
 		var err error
 		var storage store.Store
+		var indexer index.Indexer
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			storage = postgres.New(globaldb.GetPostgres())
+			indexer = postgres.NewIndexer(globaldb.GetPostgres())
 		} else {
 			storage, err = reportConfigStore.New(globaldb.GetRocksDB())
+			indexer = index.New(globalindex.GetGlobalTmpIndex())
 			utils.CrashOnError(err)
 		}
 
-		indexer := index.New(globalindex.GetGlobalTmpIndex())
-		searcher := search.New(storage, indexer)
-
-		ds, err = New(storage, indexer, searcher)
+		ds, err = New(storage, indexer, search.New(storage, indexer))
 		if err != nil {
 			log.Panicf("Failed to initialize report configurations datastore: %s", err)
 		}

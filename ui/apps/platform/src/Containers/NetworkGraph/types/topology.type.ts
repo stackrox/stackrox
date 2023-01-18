@@ -27,6 +27,10 @@ export type CIDRBlockNodeModel = Override<NodeModel, { data: CIDRBlockData }>;
 
 export type ExtraneousNodeModel = Override<NodeModel, { data: ExtraneousData }>;
 
+export type CustomGroupNodeData = NamespaceData | ExternalGroupData;
+
+export type CustomSingleNodeData = DeploymentData | ExternalEntitiesData | CIDRBlockData;
+
 export type CustomNodeData =
     | NamespaceData
     | DeploymentData

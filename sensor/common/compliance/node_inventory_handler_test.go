@@ -8,7 +8,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 )
@@ -19,12 +18,11 @@ func TestNodeInventoryHandler(t *testing.T) {
 
 func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 	msg := &storage.NodeInventory{
-		NodeId:   "",
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
-		Components: &scannerV1.Components{
-			Namespace: "Testme OS",
-			RhelComponents: []*scannerV1.RHELComponent{
+		Components: &storage.NodeInventory_Components{
+			Namespace: "rhcos:4.11",
+			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
 				{
 					Id:        int64(1),
 					Name:      "vim-minimal",
@@ -32,13 +30,12 @@ func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 					Version:   "2:7.4.629-6.el8",
 					Arch:      "x86_64",
 					Module:    "",
-					Cpes:      []string{"cpe:/a:redhat:enterprise_linux:8::baseos"},
 					AddedBy:   "hardcoded",
 				},
 			},
-			LanguageComponents: nil,
+			RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
 		},
-		Notes: nil,
+		Notes: []storage.NodeInventory_Note{storage.NodeInventory_LANGUAGE_CVES_UNAVAILABLE},
 	}
 	return msg
 }

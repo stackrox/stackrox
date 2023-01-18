@@ -50,7 +50,7 @@ class MailServer {
                             .setName(deploymentName)
                             // The original is at docker.io/maildev/maildev:2.0.5
                             // and https://github.com/maildev/maildev
-                            .setImage("quay.io/rhacs-eng/qa:docker-io-maildev-maildev-2-0-5")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:docker-io-maildev-maildev-2-0-5")
                             .addPort(WEB_PORT)
                             .addPort(SMTP_PORT)
                             .setEnv(envVars)

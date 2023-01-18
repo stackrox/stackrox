@@ -66,7 +66,7 @@ class NetworkFlowTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(UDPCONNECTIONTARGET)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(8080, "UDP")
                     .addLabel("app", UDPCONNECTIONTARGET)
                     .setExposeAsService(true)
@@ -74,7 +74,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setArgs(["socat "+SOCAT_DEBUG+" UDP-RECV:8080 STDOUT",]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(80)
                     .addPort(8080)
                     .addLabel("app", TCPCONNECTIONTARGET)
@@ -84,7 +84,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
-                    .setImage("quay.io/rhacs-eng/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addPort(80)
                     .addLabel("app", NGINXCONNECTIONTARGET)
                     .setExposeAsService(true)
@@ -101,11 +101,11 @@ class NetworkFlowTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(NOCONNECTIONSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addLabel("app", NOCONNECTIONSOURCE),
             new Deployment()
                     .setName(SHORTCONSISTENTSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", SHORTCONSISTENTSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
@@ -113,14 +113,14 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(SINGLECONNECTIONSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", SINGLECONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["wget -S -T 2 http://${NGINXCONNECTIONTARGET} && " +
                                       "while sleep 30; do echo hello; done" as String,]),
             new Deployment()
                     .setName(UDPCONNECTIONSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", UDPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -129,7 +129,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", TCPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -138,7 +138,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", MULTIPLEPORTSCONNECTION)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -149,7 +149,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(EXTERNALDESTINATION)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", EXTERNALDESTINATION)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
@@ -158,7 +158,7 @@ class NetworkFlowTest extends BaseSpecification {
             new Deployment()
                     .setName("${TCPCONNECTIONSOURCE}-qa2")
                     .setNamespace(OTHER_NAMESPACE)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", "${TCPCONNECTIONSOURCE}-qa2")
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -252,6 +252,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
@@ -280,6 +282,8 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections between StackRox Services"() {
         when:
         "Fetch uIDs for the central, sensor, and collector services, if present"
@@ -363,6 +367,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
         rebuildForRetries()
@@ -523,7 +529,7 @@ class NetworkFlowTest extends BaseSpecification {
         "create a new deployment that talks to A via the LB IP"
         def newDeployment = new Deployment()
                 .setName("talk-to-lb-ip")
-                .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                 .addLabel("app", "talk-to-lb-ip")
                 .setCommand(["/bin/sh", "-c",])
                 .setArgs(["while sleep 5; do wget -S -T 2 http://"+deploymentIP+"; done"])
@@ -581,6 +587,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify cluster updates can block flow connections from showing"() {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())

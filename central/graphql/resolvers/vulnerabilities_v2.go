@@ -580,7 +580,7 @@ func (resolver *cVEResolver) getEnvImpactComponentsForImages(ctx context.Context
 }
 
 func (resolver *cVEResolver) getEnvImpactComponentsForNodes(ctx context.Context) (numerator, denominator int, err error) {
-	allNodesCount, err := resolver.root.NodeGlobalDataStore.CountAllNodes(ctx)
+	allNodesCount, err := resolver.root.NodeDataStore.CountNodes(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
