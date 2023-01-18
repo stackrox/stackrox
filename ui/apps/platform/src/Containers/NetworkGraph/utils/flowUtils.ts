@@ -1,7 +1,9 @@
 import { Controller } from '@patternfly/react-topology';
+import { EntityType } from 'Containers/Network/networkTypes';
 import { uniq } from 'lodash';
+import { L4Protocol } from 'types/networkFlow.proto';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types/flow.type';
+import { Flow, Peer } from '../types/flow.type';
 import { CustomEdgeModel, CustomSingleNodeData } from '../types/topology.type';
 
 export const protocolLabel = {
@@ -31,6 +33,35 @@ export function getNumFlows(flows: Flow[]): number {
         return acc + (curr.children && curr.children.length ? curr.children.length : 1);
     }, 0);
     return numFlows;
+}
+
+function createUniqueFlowId({
+    entityId,
+    direction,
+    port,
+    protocol,
+}: {
+    entityId: string;
+    direction: string;
+    port: string;
+    protocol: L4Protocol;
+}) {
+    return `${entityId}-${direction}-${port}-${protocol}`;
+}
+
+export function getUniqueIdFromFlow(flow: Flow) {
+    const { entityId, direction, port, protocol } = flow;
+    const id = createUniqueFlowId({ entityId, direction, port, protocol });
+    return id;
+}
+
+export function getUniqueIdFromPeer(peer: Peer) {
+    const { id: entityId } = peer.entity;
+    const direction = peer.ingress ? 'Ingress' : 'Egress';
+    const { port } = peer;
+    const { protocol } = peer;
+    const id = createUniqueFlowId({ entityId, direction, port, protocol });
+    return id;
 }
 
 /*
@@ -151,4 +182,33 @@ export function filterNetworkFlows(
         );
     });
     return filteredFlows;
+}
+
+/*
+  This function takes network flows and transforms it to peers
+*/
+export function transformFlowsToPeers(flows: Flow[]): Peer[] {
+    return flows.map((flow) => {
+        const { entityId, type, entity, namespace, direction, port, protocol } = flow;
+        let backendType: EntityType;
+        if (type === 'CIDR_BLOCK') {
+            backendType = 'EXTERNAL_SOURCE';
+        } else if (type === 'EXTERNAL_ENTITIES') {
+            backendType = 'INTERNET';
+        } else {
+            backendType = 'DEPLOYMENT';
+        }
+        const peer = {
+            entity: {
+                id: entityId,
+                name: entity,
+                namespace,
+                type: backendType,
+            },
+            ingress: direction === 'Ingress',
+            port,
+            protocol,
+        };
+        return peer;
+    });
 }
