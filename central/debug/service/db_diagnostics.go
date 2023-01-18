@@ -5,26 +5,29 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
 
-func buildDBDiagnosticData(ctx context.Context) centralDBDiagnosticData {
+const (
+	unableToGetConnectionInfo = "Unable to get the connection string"
+)
+
+func buildDBDiagnosticData(ctx context.Context, dbConfig *pgxpool.Config, dbPool *pgxpool.Pool) centralDBDiagnosticData {
 	diagnosticData := centralDBDiagnosticData{}
-	_, dbConfig, err := pgconfig.GetPostgresConfig()
-	if err != nil {
-		log.Warnf("Could not parse postgres config: %v", err)
-		return centralDBDiagnosticData{}
-	}
 
 	// Add the database version if Postgres
 	diagnosticData.Database = "PostgresDB"
-	diagnosticData.DatabaseServerVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
+	diagnosticData.DatabaseServerVersion = globaldb.GetPostgresVersion(ctx, dbPool)
 	// Get client software version
 	diagnosticData.DatabaseClientVersion = getDBClientVersion()
 	// Get extensions
-	diagnosticData.DatabaseConnectString = strings.Replace(dbConfig.ConnString(), dbConfig.ConnConfig.Password, "REDACTED", -1)
-	diagnosticData.DatabaseExtensions = getPostgresExtensions(ctx)
+	if dbConfig != nil {
+		diagnosticData.DatabaseConnectString = strings.TrimSpace(strings.Replace(dbConfig.ConnString(), dbConfig.ConnConfig.Password, "REDACTED", -1))
+	} else {
+		diagnosticData.DatabaseConnectString = unableToGetConnectionInfo
+	}
+	diagnosticData.DatabaseExtensions = getPostgresExtensions(ctx, dbPool)
 
 	return diagnosticData
 }
@@ -43,12 +46,12 @@ func getDBClientVersion() string {
 	return strings.TrimSpace(string(clientVersion))
 }
 
-func getPostgresExtensions(ctx context.Context) []dbExtension {
+func getPostgresExtensions(ctx context.Context, dbPool *pgxpool.Pool) []dbExtension {
 	extensionQuery := "SELECT extname, extversion FROM pg_extension;"
 
 	ctx, cancel := context.WithTimeout(ctx, globaldb.PostgresQueryTimeout)
 	defer cancel()
-	row, err := globaldb.GetPostgres().Query(ctx, extensionQuery)
+	row, err := dbPool.Query(ctx, extensionQuery)
 	if err != nil {
 		log.Errorf("error fetching object counts: %v", err)
 		return nil

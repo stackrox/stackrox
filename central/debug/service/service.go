@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -379,7 +380,13 @@ type centralDBDiagnosticData struct {
 }
 
 func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
-	dbDiagnosticData := buildDBDiagnosticData(ctx)
+	_, dbConfig, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		log.Warnf("Could not parse postgres config: %v", err)
+		return err
+	}
+
+	dbDiagnosticData := buildDBDiagnosticData(ctx, dbConfig, globaldb.GetPostgres())
 
 	return addJSONToZip(zipWriter, "central-db.json", dbDiagnosticData)
 }
