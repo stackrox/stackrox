@@ -427,6 +427,14 @@
       },
       "title": "Next available tag: 9"
     },
+    "storageMatchType": {
+      "type": "string",
+      "enum": [
+        "EXACT",
+        "REGEX"
+      ],
+      "default": "EXACT"
+    },
     "storageResourceCollection": {
       "type": "object",
       "properties": {
@@ -485,6 +493,9 @@
       "properties": {
         "value": {
           "type": "string"
+        },
+        "matchType": {
+          "$ref": "#/definitions/storageMatchType"
         }
       }
     },

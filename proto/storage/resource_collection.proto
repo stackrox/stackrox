@@ -50,6 +50,12 @@ message SelectorRule {
   repeated RuleValue values = 3;
 }
 
+enum MatchType {
+  EXACT = 0;
+  REGEX = 1;
+}
+
 message RuleValue {
   string value = 1;
+  MatchType match_type = 2;
 }
