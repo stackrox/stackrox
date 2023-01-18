@@ -23,13 +23,20 @@ func trackClusterRegistered(cluster *storage.Cluster) {
 
 func trackClusterInitialized(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		props := map[string]any{
-			"Health":       cluster.GetHealthStatus().OverallHealthStatus.String(),
-			"Cluster Type": cluster.GetType().String(),
-			"Cluster ID":   cluster.GetId(),
-			"Managed By":   cluster.GetManagedBy().String(),
-		}
-		cfg.Telemeter().Track("Secured Cluster Initialized", cfg.ClientID, props)
+		cfg.Telemeter().Group(cfg.GroupID, cluster.GetId(), nil)
+		cfg.Telemeter().Identify(cluster.GetId(), map[string]any{
+			"Main Image":           cluster.GetMainImage(),
+			"Admission Controller": cluster.GetAdmissionController(),
+			"Collection Method":    cluster.GetCollectionMethod().String(),
+			"Collector Image":      cluster.GetCollectorImage(),
+			"Managed By":           cluster.GetManagedBy().String(),
+			"Priority":             cluster.GetPriority(),
+			"Cluster Type":         cluster.GetType().String(),
+			"Slim Collector":       cluster.GetSlimCollector(),
+		})
+		cfg.Telemeter().Track("Secured Cluster Initialized", cluster.GetId(), map[string]any{
+			"Health": cluster.GetHealthStatus().OverallHealthStatus.String(),
+		})
 	}
 }
 
