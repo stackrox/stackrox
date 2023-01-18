@@ -18,6 +18,7 @@ jobs:
   build:
     name: Build
     uses: ./.github/workflows/build.yaml
+    secrets: inherit
 
   check-is-release:
     runs-on: ubuntu-latest
