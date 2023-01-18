@@ -96,13 +96,12 @@ const SystemConfigForm = ({
                         });
                         setSystemConfig(data);
                         setErrorMessage(null);
+                        setSubmitting(false);
                         setIsNotEditing();
                     })
                     .catch((error) => {
-                        setErrorMessage(getAxiosErrorMessage(error));
-                    })
-                    .finally(() => {
                         setSubmitting(false);
+                        setErrorMessage(getAxiosErrorMessage(error));
                     });
             },
         });

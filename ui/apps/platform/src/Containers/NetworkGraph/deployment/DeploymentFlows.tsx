@@ -27,8 +27,9 @@ import './DeploymentFlows.css';
 const flows: Flow[] = [
     {
         id: 'External Entities-Ingress-Many-TCP',
-        type: 'External',
+        type: 'EXTERNAL_ENTITIES',
         entity: 'External Entities',
+        entityId: '12345',
         namespace: '',
         direction: 'Ingress',
         port: 'Many',
@@ -37,8 +38,9 @@ const flows: Flow[] = [
         children: [
             {
                 id: 'External Entities-Ingress-443-TCP',
-                type: 'External',
+                type: 'EXTERNAL_ENTITIES',
                 entity: 'External Entities',
+                entityId: '12345',
                 namespace: '',
                 direction: 'Ingress',
                 port: '443',
@@ -47,7 +49,8 @@ const flows: Flow[] = [
             },
             {
                 id: 'External Entities-Ingress-9443-TCP',
-                type: 'External',
+                type: 'EXTERNAL_ENTITIES',
+                entityId: '12345',
                 entity: 'External Entities',
                 namespace: '',
                 direction: 'Ingress',
@@ -59,8 +62,9 @@ const flows: Flow[] = [
     },
     {
         id: 'Deployment 1-naples-Ingress-Many-TCP',
-        type: 'Deployment',
+        type: 'DEPLOYMENT',
         entity: 'Deployment 1',
+        entityId: '00000',
         namespace: 'naples',
         direction: 'Ingress',
         port: '9000',
@@ -70,8 +74,9 @@ const flows: Flow[] = [
     },
     {
         id: 'Deployment 2-naples-Ingress-Many-UDP',
-        type: 'Deployment',
+        type: 'DEPLOYMENT',
         entity: 'Deployment 2',
+        entityId: '11111',
         namespace: 'naples',
         direction: 'Ingress',
         port: '8080',
@@ -81,8 +86,9 @@ const flows: Flow[] = [
     },
     {
         id: 'Deployment 3-naples-Egress-7777-UDP',
-        type: 'Deployment',
+        type: 'DEPLOYMENT',
         entity: 'Deployment 3',
+        entityId: '22222',
         namespace: 'naples',
         direction: 'Egress',
         port: '7777',

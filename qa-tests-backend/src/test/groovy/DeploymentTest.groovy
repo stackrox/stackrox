@@ -32,7 +32,7 @@ class DeploymentTest extends BaseSpecification {
 
     private static final Job JOB = new Job()
             .setName("test-job-pi")
-            .setImage("quay.io/rhacs-eng/qa:perl")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:perl-5-32-1")
             .addLabel("app", "test")
             .setCommand(["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"])
 

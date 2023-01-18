@@ -42,6 +42,9 @@ var (
 		getTestDeployment("deployment3", []label{
 			{"key2", "value2"},
 		}...),
+		getTestDeployment("deployment4", []label{
+			{"key1", "value11"},
+		}...),
 	}
 )
 
@@ -282,7 +285,8 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 								Operator:  storage.BooleanOperator_OR,
 								Values: []*storage.RuleValue{
 									{
-										Value: "key1=value1",
+										Value:     "key1=value1",
+										MatchType: storage.MatchType_EXACT,
 									},
 								},
 							},
@@ -323,7 +327,9 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 					WithMatches: true,
 				},
 			},
-			deploymentList,
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment1" || deployment.GetName() == "deployment2" || deployment.GetName() == "deployment3"
+			}),
 		},
 		{
 			"deployment labels and",
@@ -434,11 +440,24 @@ func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
 					{
 						Rules: []*storage.SelectorRule{
 							{
+								FieldName: search.Namespace.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: collectionNamespaces[0],
+									},
+									{
+										Value: collectionNamespaces[1],
+									},
+								},
+							},
+							{
 								FieldName: search.DeploymentName.String(),
 								Operator:  storage.BooleanOperator_OR,
 								Values: []*storage.RuleValue{
 									{
-										Value: ".*2",
+										Value:     ".*2",
+										MatchType: storage.MatchType_REGEX,
 									},
 								},
 							},

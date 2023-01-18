@@ -42,10 +42,8 @@ import (
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeDS "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
-	nodeGlobalDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/globaldatastore"
 	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
-	"github.com/stackrox/rox/central/node/globaldatastore"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentSearch "github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
@@ -103,9 +101,7 @@ func setupResolver(t testing.TB, datastores ...interface{}) (*Resolver, *graphql
 			resolver.NamespaceDataStore = ds
 		case nodeDS.DataStore:
 			registerNodeLoader(t, ds)
-			// Only global node store is registered with the resolver.
-		case globaldatastore.GlobalDataStore:
-			resolver.NodeGlobalDataStore = ds
+			resolver.NodeDataStore = ds
 		case clusterDataStore.DataStore:
 			resolver.ClusterDataStore = ds
 
@@ -234,7 +230,7 @@ func createNamespaceDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) n
 }
 
 func createClusterDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller,
-	clusterCVEDS clusterCVEDataStore.DataStore, namespaceDS namespaceDataStore.DataStore, nodeDataStore globaldatastore.GlobalDataStore) clusterDataStore.DataStore {
+	clusterCVEDS clusterCVEDataStore.DataStore, namespaceDS namespaceDataStore.DataStore, nodeDataStore nodeDS.DataStore) clusterDataStore.DataStore {
 	ctx := context.Background()
 	clusterPostgres.Destroy(ctx, db)
 
@@ -277,7 +273,7 @@ func createNodeComponentDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.D
 	return nodeComponentDataStore.New(storage, indexer, searcher, mockRisk, ranking.NewRanker())
 }
 
-func createNodeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) (nodeDS.DataStore, globaldatastore.GlobalDataStore) {
+func createNodeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) nodeDS.DataStore {
 	ctx := context.Background()
 	nodePostgres.Destroy(ctx, db)
 
@@ -285,9 +281,7 @@ func createNodeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *
 	storage := nodePostgres.CreateTableAndNewStore(ctx, t, db, gormDB, false)
 	indexer := nodePostgres.NewIndexer(db)
 	searcher := nodeSearch.NewV2(storage, indexer)
-	datastore := nodeDS.NewWithPostgres(storage, indexer, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
-	nodeGlobalDatastore := nodeGlobalDataStore.New(datastore)
-	return datastore, nodeGlobalDatastore
+	return nodeDS.NewWithPostgres(storage, indexer, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 }
 
 func createNodeComponentCveEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) nodeComponentCVEEdgeDataStore.DataStore {

@@ -2,9 +2,13 @@ import services.CredentialExpiryService
 import util.Cert
 
 import spock.lang.Tag
+import spock.lang.IgnoreIf
+import util.Env
 
 @Tag("BAT")
 @Tag("COMPATIBILITY")
+// ROX-14228 skipping tests for 1st release on power & z
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class CertExpiryTest extends BaseSpecification {
 
     def "Test Central cert expiry"() {

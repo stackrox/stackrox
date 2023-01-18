@@ -39,16 +39,21 @@ type QueryResolver interface {
 	ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error)
 }
 
+type supportedFieldKey struct {
+	fieldLabel pkgSearch.FieldLabel
+	labelType  bool
+}
+
 var (
-	supportedFieldNames = map[string]pkgSearch.FieldLabel{
-		pkgSearch.Cluster.String():              pkgSearch.Cluster,
-		pkgSearch.ClusterLabel.String():         pkgSearch.ClusterLabel,
-		pkgSearch.Namespace.String():            pkgSearch.Namespace,
-		pkgSearch.NamespaceLabel.String():       pkgSearch.NamespaceLabel,
-		pkgSearch.NamespaceAnnotation.String():  pkgSearch.NamespaceAnnotation,
-		pkgSearch.DeploymentName.String():       pkgSearch.DeploymentName,
-		pkgSearch.DeploymentLabel.String():      pkgSearch.DeploymentLabel,
-		pkgSearch.DeploymentAnnotation.String(): pkgSearch.DeploymentAnnotation,
+	supportedFieldNames = map[string]supportedFieldKey{
+		pkgSearch.Cluster.String():              {pkgSearch.Cluster, false},
+		pkgSearch.ClusterLabel.String():         {pkgSearch.ClusterLabel, true},
+		pkgSearch.Namespace.String():            {pkgSearch.Namespace, false},
+		pkgSearch.NamespaceLabel.String():       {pkgSearch.NamespaceLabel, true},
+		pkgSearch.NamespaceAnnotation.String():  {pkgSearch.NamespaceAnnotation, false},
+		pkgSearch.DeploymentName.String():       {pkgSearch.DeploymentName, false},
+		pkgSearch.DeploymentLabel.String():      {pkgSearch.DeploymentLabel, true},
+		pkgSearch.DeploymentAnnotation.String(): {pkgSearch.DeploymentAnnotation, false},
 	}
 )
 
@@ -56,7 +61,7 @@ var (
 func GetSupportedFieldLabels() []pkgSearch.FieldLabel {
 	var ret []pkgSearch.FieldLabel
 	for _, label := range supportedFieldNames {
-		ret = append(ret, label)
+		ret = append(ret, label.fieldLabel)
 	}
 	return ret
 }

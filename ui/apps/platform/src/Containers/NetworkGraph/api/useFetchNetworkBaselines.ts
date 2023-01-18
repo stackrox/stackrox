@@ -3,17 +3,20 @@ import { useEffect, useState } from 'react';
 import { fetchNetworkBaselines } from 'services/NetworkService';
 import { NetworkBaseline } from 'types/networkBaseline.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { Flow } from '../types/flow.type';
-import { protocolLabel } from '../utils/flowUtils';
+import { Flow, FlowEntityType } from '../types/flow.type';
 
-type FetchNetworkBaselinesResult = {
+type Result = {
     isLoading: boolean;
-    data: { networkBaselines: Flow[]; isAlertingEnabled: boolean };
+    data: { networkBaselines: Flow[]; isAlertingOnBaselineViolation: boolean };
     error: string | null;
 };
 
+type FetchNetworkBaselinesResult = {
+    refetchBaselines: () => void;
+} & Result;
+
 const defaultResultState = {
-    data: { networkBaselines: [], isAlertingEnabled: false },
+    data: { networkBaselines: [], isAlertingOnBaselineViolation: false },
     error: null,
     isLoading: true,
 };
@@ -23,50 +26,53 @@ const defaultResultState = {
  * of the supplied peers
  */
 function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
-    const [result, setResult] = useState<FetchNetworkBaselinesResult>(defaultResultState);
+    const [result, setResult] = useState<Result>(defaultResultState);
 
-    useEffect(() => {
-        const networkBaselinesPromise = fetchNetworkBaselines({ deploymentId });
-
-        networkBaselinesPromise
+    function fetchBaselines() {
+        fetchNetworkBaselines({ deploymentId })
             .then((response: NetworkBaseline) => {
                 const { peers, locked, namespace } = response;
-                const isAlertingEnabled = locked;
+                const isAlertingOnBaselineViolation = locked;
                 const networkBaselines = peers.reduce((acc, currPeer) => {
                     const currPeerType = currPeer.entity.info.type;
-                    const type = currPeerType === 'DEPLOYMENT' ? 'Deployment' : 'External';
+                    const entityId = currPeer.entity.info.id;
                     let entity = '';
+                    let type: FlowEntityType = 'DEPLOYMENT';
                     if (currPeerType === 'DEPLOYMENT') {
                         entity = currPeer.entity.info.deployment.name;
+                        type = 'DEPLOYMENT';
                     } else if (currPeerType === 'EXTERNAL_SOURCE') {
                         entity = currPeer.entity.info.externalSource.name;
+                        type = 'CIDR_BLOCK';
                     } else if (currPeerType === 'INTERNET') {
                         entity = 'External entities';
+                        type = 'EXTERNAL_ENTITIES';
                     }
                     // we need a unique id for each network flow
                     const newNetworkBaselines = currPeer.properties.map(
                         ({ ingress, port, protocol }) => {
                             const direction = ingress ? 'Ingress' : 'Egress';
                             const flowId = `${entity}-${namespace}-${direction}-${port}-${protocol}`;
-                            const networkBaseline = {
+                            const networkBaseline: Flow = {
                                 id: flowId,
                                 type,
                                 entity,
+                                entityId,
                                 namespace,
                                 direction: ingress ? 'Ingress' : 'Egress',
                                 port: String(port),
-                                protocol: protocolLabel[protocol],
+                                protocol,
                                 isAnomalous: false,
                                 children: [],
                             };
                             return networkBaseline;
                         }
                     );
-                    return [...acc, ...newNetworkBaselines] as Flow[];
+                    return [...acc, ...newNetworkBaselines];
                 }, [] as Flow[]);
                 setResult({
                     isLoading: false,
-                    data: { networkBaselines, isAlertingEnabled },
+                    data: { networkBaselines, isAlertingOnBaselineViolation },
                     error: null,
                 });
             })
@@ -77,13 +83,18 @@ function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
 
                 setResult({
                     isLoading: false,
-                    data: { networkBaselines: [], isAlertingEnabled: false },
+                    data: { networkBaselines: [], isAlertingOnBaselineViolation: false },
                     error: errorMessage,
                 });
             });
+    }
+
+    useEffect(() => {
+        fetchBaselines();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deploymentId]);
 
-    return result;
+    return { ...result, refetchBaselines: fetchBaselines };
 }
 
 export default useFetchNetworkBaselines;

@@ -15,13 +15,12 @@ import (
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
@@ -38,11 +37,7 @@ import (
 )
 
 var (
-	log        = logging.LoggerForModule()
-	cleanupCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Node, resources.Cluster)))
+	log = logging.LoggerForModule()
 )
 
 // DataStore is the entry point for modifying Cluster data.
@@ -87,7 +82,7 @@ func New(
 	imageIntegrationStore imageIntegrationDataStore.DataStore,
 	namespaceDS namespaceDataStore.DataStore,
 	dds deploymentDataStore.DataStore,
-	ns nodeDataStore.GlobalDataStore,
+	ns nodeDataStore.DataStore,
 	pods podDataStore.DataStore,
 	ss secretDataStore.DataStore,
 	flows netFlowsDataStore.ClusterDataStore,
@@ -141,6 +136,6 @@ func New(
 		return ds, err
 	}
 
-	go ds.cleanUpNodeStore(cleanupCtx)
+	go ds.cleanUpNodeStore()
 	return ds, nil
 }

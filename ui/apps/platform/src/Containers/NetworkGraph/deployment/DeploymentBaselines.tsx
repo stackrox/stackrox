@@ -30,6 +30,9 @@ import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 import FlowsBulkActions from '../common/FlowsBulkActions';
 import useFetchNetworkBaselines from '../api/useFetchNetworkBaselines';
+import { Flow } from '../types/flow.type';
+import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
+import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
 
 type DeploymentBaselinesProps = {
     deploymentId: string;
@@ -37,7 +40,6 @@ type DeploymentBaselinesProps = {
 
 function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
     // component state
-    const [isAlertingOnViolations, setIsAlertingOnViolations] = React.useState<boolean>(false);
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
 
@@ -47,9 +49,20 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
     );
     const {
         isLoading,
-        error,
-        data: { networkBaselines },
+        error: fetchError,
+        data: { networkBaselines, isAlertingOnBaselineViolation },
+        refetchBaselines,
     } = useFetchNetworkBaselines(deploymentId);
+    const {
+        isModifying,
+        error: modifyError,
+        modifyBaselineStatuses,
+    } = useModifyBaselineStatuses(deploymentId);
+    const {
+        isToggling,
+        error: toggleError,
+        toggleAlertingOnBaselineViolation,
+    } = useToggleAlertingOnBaselineViolation(deploymentId);
     const filteredNetworkBaselines = filterNetworkFlows(
         networkBaselines,
         entityNameFilter,
@@ -66,7 +79,33 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
     const numBaselines = getNumFlows(filteredNetworkBaselines);
     const allUniquePorts = getAllUniquePorts(filteredNetworkBaselines);
 
-    if (isLoading) {
+    function addToBaseline(flow: Flow) {
+        modifyBaselineStatuses([flow], 'BASELINE', refetchBaselines);
+    }
+
+    function markAsAnomalous(flow: Flow) {
+        modifyBaselineStatuses([flow], 'ANOMALOUS', refetchBaselines);
+    }
+
+    function addSelectedToBaseline() {
+        const selectedFlows = filteredNetworkBaselines.filter((networkBaseline) => {
+            return selectedRows.includes(networkBaseline.id);
+        });
+        modifyBaselineStatuses(selectedFlows, 'BASELINE', refetchBaselines);
+    }
+
+    function markSelectedAsAnomalous() {
+        const selectedFlows = filteredNetworkBaselines.filter((networkBaseline) => {
+            return selectedRows.includes(networkBaseline.id);
+        });
+        modifyBaselineStatuses(selectedFlows, 'ANOMALOUS', refetchBaselines);
+    }
+
+    function toggleAlertingOnBaselineViolationHandler() {
+        toggleAlertingOnBaselineViolation(!isAlertingOnBaselineViolation, refetchBaselines);
+    }
+
+    if (isLoading || isModifying || isToggling) {
         return (
             <Bullseye>
                 <Spinner isSVG size="lg" />
@@ -74,23 +113,26 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
         );
     }
 
-    if (error) {
-        return (
-            <Alert isInline variant={AlertVariant.danger} title={error} className="pf-u-mb-lg" />
-        );
-    }
-
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
-            <Stack hasGutter>
+        <div className="pf-u-h-100">
+            {(fetchError || modifyError || toggleError) && (
+                <Alert
+                    isInline
+                    variant={AlertVariant.danger}
+                    title={fetchError || modifyError || toggleError}
+                    className="pf-u-mb-sm"
+                />
+            )}
+            <Stack hasGutter className="pf-u-p-md">
                 <StackItem>
                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                         <FlexItem>
                             <Switch
                                 id="simple-switch"
                                 label="Alert on baseline violation"
-                                isChecked={isAlertingOnViolations}
-                                onChange={setIsAlertingOnViolations}
+                                isChecked={isAlertingOnBaselineViolation}
+                                onChange={toggleAlertingOnBaselineViolationHandler}
+                                isDisabled={isLoading || isModifying || isToggling}
                             />
                         </FlexItem>
                         <FlexItem>
@@ -136,6 +178,8 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                                     type="baseline"
                                     selectedRows={selectedRows}
                                     onClearSelectedRows={() => setSelectedRows([])}
+                                    markSelectedAsAnomalous={markSelectedAsAnomalous}
+                                    addSelectedToBaseline={addSelectedToBaseline}
                                 />
                             </ToolbarItem>
                         </ToolbarContent>
@@ -151,10 +195,11 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                         setExpandedRows={setExpandedRows}
                         selectedRows={selectedRows}
                         setSelectedRows={setSelectedRows}
+                        addToBaseline={addToBaseline}
+                        markAsAnomalous={markAsAnomalous}
                         isEditable
                     />
                 </StackItem>
-                <Divider component="hr" />
                 <StackItem>
                     <Flex
                         className="pf-u-pb-md"

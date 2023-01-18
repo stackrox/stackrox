@@ -13,9 +13,6 @@ import (
 )
 
 var (
-	onceGatherer  sync.Once
-	onceTelemeter sync.Once
-
 	log = logging.LoggerForModule()
 )
 
@@ -48,6 +45,9 @@ type Config struct {
 	telemeter Telemeter
 	gatherer  Gatherer
 
+	onceTelemeter sync.Once
+	onceGatherer  sync.Once
+
 	// Map of event name to the list of interceptors, that gather properties for
 	// the event.
 	interceptors     map[string][]Interceptor
@@ -64,7 +64,7 @@ func (cfg *Config) Gatherer() Gatherer {
 	if cfg == nil {
 		return &nilGatherer{}
 	}
-	onceGatherer.Do(func() {
+	cfg.onceGatherer.Do(func() {
 		if cfg.Enabled() {
 			period := cfg.GatherPeriod
 			if cfg.GatherPeriod.Nanoseconds() == 0 {
@@ -83,7 +83,7 @@ func (cfg *Config) Telemeter() Telemeter {
 	if cfg == nil {
 		return &nilTelemeter{}
 	}
-	onceTelemeter.Do(func() {
+	cfg.onceTelemeter.Do(func() {
 		if cfg.Enabled() {
 			cfg.telemeter = segment.NewTelemeter(
 				cfg.StorageKey,
