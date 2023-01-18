@@ -488,7 +488,7 @@ go-postgres-unit-tests: build-prep test-prep
 shell-unit-tests:
 	@echo "+ $@"
 	$(SILENT)mkdir -p shell-test-output
-	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output scripts
+	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output scripts tests/e2e
 
 .PHONY: ui-build
 ui-build:
