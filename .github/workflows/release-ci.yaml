@@ -108,8 +108,8 @@ jobs:
         env:
           STACKROX_TAG: ${{ github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
-          SLACK_TEST_WEBHOOK: ${{ secrets.SLACK_TEST_WEBHOOK }}
-          SLACK_ENG_RELEASE_WEBHOOK: ${{ secrets.SLACK_ENG_RELEASE_WEBHOOK }}
+          SLACK_TEST_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
+          SLACK_ENG_RELEASE_WEBHOOK: ${{ secrets.RELEASE_WORKFLOW_NOTIFY_WEBHOOK }}
         run: |
           tar xzf cli-build.tgz
           mkdir -p "${HOME}/.local/bin"
