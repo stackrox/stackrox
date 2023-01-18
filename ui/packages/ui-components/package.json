@@ -61,7 +61,7 @@
         "eslint-config-airbnb-typescript": "12.3.1",
         "eslint-config-prettier": "^7.2.0",
         "eslint-plugin-eslint-comments": "^3.2.0",
-        "eslint-plugin-import": "^2.25.3",
+        "eslint-plugin-import": "^2.27.5",
         "eslint-plugin-jest": "^24.5.0",
         "eslint-plugin-jest-dom": "^4.0.2",
         "eslint-plugin-jsx-a11y": "^6.5.1",
