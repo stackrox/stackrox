@@ -587,8 +587,11 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 			for _, ruleValue := range selectorRule.GetValues() {
 
 				// rule values must be valid regex
-				if _, err := regexp.Compile(ruleValue.GetValue()); err != nil {
-					return errors.Wrap(errors.Wrap(err, errox.InvalidArgs.Error()), "failed to compile rule value regex")
+				if ruleValue.GetMatchType() == storage.MatchType_REGEX {
+					_, err := regexp.Compile(ruleValue.GetValue())
+					if err != nil {
+						return errors.Wrap(errors.Wrap(err, errox.InvalidArgs.Error()), "failed to compile rule value regex")
+					}
 				}
 
 				// label rules only support exact matching and should be of the form 'key=value'
