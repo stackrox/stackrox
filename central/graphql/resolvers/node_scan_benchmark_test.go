@@ -69,10 +69,9 @@ func BenchmarkNodeResolver(b *testing.B) {
 	defer pgtest.CloseGormDB(b, gormDB)
 	defer db.Close()
 
-	nodeDS, nodeGlobalDS := createNodeDatastore(b, db, gormDB, mockCtrl)
+	nodeDS := createNodeDatastore(b, db, gormDB, mockCtrl)
 	_, schema := setupResolver(b,
 		nodeDS,
-		nodeGlobalDS,
 		createNodeComponentDatastore(b, db, gormDB, mockCtrl),
 		createNodeCVEDatastore(b, db, gormDB),
 		createNodeComponentCveEdgeDatastore(b, db, gormDB))
