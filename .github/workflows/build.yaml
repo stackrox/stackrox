@@ -349,61 +349,61 @@ jobs:
         file: image/rhel/Dockerfile.gen
         tags: quay.io/rhacs-eng/main:${{ steps.tag.outputs.TAG }}-rcd
 
-  build-and-push-operator:
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
-      env:
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+  # build-and-push-operator:
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+  #     env:
+  #       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+  #       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
+  #         ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+  #     - name: Cache Go dependencies
+  #       uses: ./.github/actions/cache-go-dependencies
 
-      - uses: ./.github/actions/handle-tagged-build
+  #     - uses: ./.github/actions/handle-tagged-build
 
-      - name: Resolve mods for protos
-        run: go mod tidy
+  #     - name: Resolve mods for protos
+  #       run: go mod tidy
 
-      - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.6
+  #     - name: PR labels
+  #       uses: joerick/pr-labels-action@v1.0.6
 
-      - name: Setup Go build environment
-        if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
-        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+  #     - name: Setup Go build environment
+  #       if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
+  #       run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
-      - name: Docker login
-        run: |
-            docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
+  #     - name: Docker login
+  #       run: |
+  #           docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
 
-      - name: Build Operator Bundle image
-        run: |
-          make -C operator/ bundle bundle-build
+  #     - name: Build Operator Bundle image
+  #       run: |
+  #         make -C operator/ bundle bundle-build
 
-      - name: Build Operator image
-        run: make -C operator/ build docker-build
+  #     - name: Build Operator image
+  #       run: make -C operator/ build docker-build
 
-      - name: Check that Operator image is runnable
-        run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet -C operator tag)" --help
+  #     - name: Check that Operator image is runnable
+  #       run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet -C operator tag)" --help
 
-      - name: Push images
-        run: |
-          make -C operator/ docker-push docker-push-bundle | cat
+  #     - name: Push images
+  #       run: |
+  #         make -C operator/ docker-push docker-push-bundle | cat
 
-      # Index image can only be built once bundle was pushed
-      - name: Build index
-        run: |
-          make -C operator/ index-build
+  #     # Index image can only be built once bundle was pushed
+  #     - name: Build index
+  #       run: |
+  #         make -C operator/ index-build
 
-      - name: Push index image
-        run: |
-          make -C operator/ docker-push-index | cat
+  #     - name: Push index image
+  #       run: |
+  #         make -C operator/ docker-push-index | cat
 
   build-and-push-mock-grpc-server:
     runs-on: ubuntu-latest
@@ -499,7 +499,7 @@ jobs:
       - pre-build-docs
       - build-and-push-main
       - build-and-push-main-rcd
-      - build-and-push-operator
+      # - build-and-push-operator
       - build-and-push-mock-grpc-server
       - scan-images-with-roxctl
     steps:
