@@ -15,46 +15,46 @@ func TestUpgradability(t *testing.T) {
 	type testCase struct {
 		centralVersion       string
 		sensorVersion        string
-		expectedStatus       storage.ClusterUpgradeStatus_Upgradability
 		autoUpgradeSupported bool
+		expectedStatus       storage.ClusterUpgradeStatus_Upgradability
 	}
 
 	cases := map[string]testCase{
 		"sensor version is empty": {
 			centralVersion:       "3.73.0",
 			sensorVersion:        "",
-			expectedStatus:       storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED,
 			autoUpgradeSupported: true,
+			expectedStatus:       storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED,
 		},
 		"sensor and central versions are equal": {
 			centralVersion:       "3.73.0",
 			sensorVersion:        "3.73.0",
-			expectedStatus:       storage.ClusterUpgradeStatus_UP_TO_DATE,
 			autoUpgradeSupported: true,
+			expectedStatus:       storage.ClusterUpgradeStatus_UP_TO_DATE,
 		},
 		"sensor version is lower than central": {
 			centralVersion:       "3.73.0",
 			sensorVersion:        "3.72.3",
-			expectedStatus:       storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE,
 			autoUpgradeSupported: true,
+			expectedStatus:       storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE,
 		},
 		"sensor version is higher than central": {
 			centralVersion:       "3.73.0",
 			sensorVersion:        "3.73.1",
-			expectedStatus:       storage.ClusterUpgradeStatus_SENSOR_VERSION_HIGHER,
 			autoUpgradeSupported: true,
+			expectedStatus:       storage.ClusterUpgradeStatus_SENSOR_VERSION_HIGHER,
 		},
 		"sensor version is lower than central when sensor does not support autoupgrade": {
 			centralVersion:       "3.73.0",
 			sensorVersion:        "3.72.3",
-			expectedStatus:       storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED,
 			autoUpgradeSupported: false,
+			expectedStatus:       storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED,
 		},
 		"sensor version is higher than central when sensor does not support autoupgrade": {
 			centralVersion:       "3.73.0",
 			sensorVersion:        "3.73.1",
-			expectedStatus:       storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED,
 			autoUpgradeSupported: false,
+			expectedStatus:       storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED,
 		},
 	}
 
