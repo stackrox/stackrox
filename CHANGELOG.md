@@ -20,6 +20,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 - ROX-12620: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
   - The permission `WorkflowAdministration` will deprecate the permissions `Policy, VulnerabilityReports`.
+- ROX-14398: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
+  - The permission `Access` will deprecate the permissions `Role`.
+  - The default role `Scope Manager` will be removed.
 
 - ROX-14400: product `BuildDate` attribute is deprecated and will be removed in `3.75` release. It won't be returned by
 `/debug/versions.json` endpoint and `roxctl version --json` command.

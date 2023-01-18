@@ -194,7 +194,8 @@ var (
 	readNetPolicies          = readAuth(resources.NetworkPolicy)
 	readNodes                = readAuth(resources.Node)
 	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	readPolicies                         = readAuth(resources.Policy)
+	readPolicies = readAuth(resources.Policy)
+	// TODO: ROX-14398 Replace Role with Access
 	readRoles                            = readAuth(resources.Role)
 	readK8sRoles                         = readAuth(resources.K8sRole)
 	readK8sRoleBindings                  = readAuth(resources.K8sRoleBinding)
