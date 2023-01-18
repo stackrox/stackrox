@@ -133,10 +133,13 @@ export type ClusterForPermission = {
 export type ClustersForPermissionResponse = {
     permission: RolePermission;
     clusters: ClusterForPermission[];
-}
+};
 
-export function getClustersForPermission(permission: RolePermission): Promise<ClustersForPermissionResponse> {
-    const params = qs.stringify(permission,{ arrayFormat: 'repeat' })
-    return axios.get(`${clustersForPermissionUrl}?${params}`)
+export function getClustersForPermission(
+    permission: RolePermission
+): Promise<ClustersForPermissionResponse> {
+    const params = qs.stringify(permission, { arrayFormat: 'repeat' });
+    return axios
+        .get<ClustersForPermissionResponse>(`${clustersForPermissionUrl}?${params}`)
         .then((response) => response.data);
 }

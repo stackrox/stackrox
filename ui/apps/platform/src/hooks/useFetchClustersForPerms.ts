@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 
 import { Cluster } from 'types/cluster.proto';
-import {
-    AccessLevel, ClusterForPermission,
-    getClustersForPermission
-} from 'services/RolesService';
-import { getAxiosErrorMessage } from "../utils/responseErrorUtils";
+import { AccessLevel, ClusterForPermission, getClustersForPermission } from 'services/RolesService';
+import { getAxiosErrorMessage } from '../utils/responseErrorUtils';
 
 type Result = {
     isLoading: boolean;
@@ -23,20 +20,20 @@ function useFetchClustersForPermission(resource: string, access: AccessLevel): R
     const [result, setResult] = useState<Result>(defaultResultState);
 
     useEffect(() => {
-        setResult(defaultResultState)
+        setResult(defaultResultState);
 
-        getClustersForPermission({resource: resource, access: access})
+        getClustersForPermission({ resource, access })
             .then((data) => {
                 const responseClusters = data.clusters;
                 const clusters: Cluster[] = [];
                 responseClusters.forEach((rspCl: ClusterForPermission) => {
-                    let cluster : Cluster = {} as Cluster;
-                    cluster.id = rspCl.id
-                    cluster.name = rspCl.name
+                    const cluster: Cluster = {} as Cluster;
+                    cluster.id = rspCl.id;
+                    cluster.name = rspCl.name;
                     clusters.push(cluster);
                 });
                 setResult({
-                    clusters: (clusters as Cluster[]) || [],
+                    clusters: clusters || [],
                     error: '',
                     isLoading: false,
                 });
@@ -54,7 +51,7 @@ function useFetchClustersForPermission(resource: string, access: AccessLevel): R
             });
     }, []);
 
-    return result
+    return result;
 }
 
 export default useFetchClustersForPermission;

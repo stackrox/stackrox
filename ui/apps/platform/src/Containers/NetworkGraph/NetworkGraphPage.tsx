@@ -54,7 +54,7 @@ const emptyModel = {
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
-const networkGraphResource: string = 'NetworkGraph';
+const networkGraphResource = 'NetworkGraph';
 const readAccess: AccessLevel = 'READ_ACCESS';
 
 // for MVP, always show Orchestrator Components
