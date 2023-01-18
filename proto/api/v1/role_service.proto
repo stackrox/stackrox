@@ -7,6 +7,7 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
 import "storage/role.proto";
 
 package v1;
@@ -42,14 +43,13 @@ message ListSimpleAccessScopesResponse {
     repeated storage.SimpleAccessScope access_scopes = 1;
 }
 
-message ClusterForPermission {
+message ScopeElementForPermission {
     string id = 1;
     string name = 2;
 }
 
 message GetClustersForPermissionResponse {
-    Permission permission = 1;
-    repeated ClusterForPermission clusters = 2;
+    repeated ScopeElementForPermission clusters = 2;
 }
 
 message ComputeEffectiveAccessScopeRequest {
@@ -79,7 +79,16 @@ message CreateRoleRequest {
 }
 
 message GetClustersForPermissionRequest {
-    Permission permission = 1;
+    string         resource   = 1;
+    storage.Access access     = 2;
+    Pagination     pagination = 3;
+}
+
+message GetNamespacesForPermissionAndClusterRequest {
+    string         resource   = 1;
+    storage.Access access     = 2;
+    string         cluster_id = 3;
+    Pagination     pagination = 4;
 }
 
 service RoleService {

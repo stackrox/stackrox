@@ -424,13 +424,13 @@
         },
         "parameters": [
           {
-            "name": "permission.resource",
+            "name": "resource",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "permission.access",
+            "name": "access",
             "in": "query",
             "required": false,
             "type": "string",
@@ -440,6 +440,32 @@
               "READ_WRITE_ACCESS"
             ],
             "default": "NO_ACCESS"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -936,30 +962,16 @@
         }
       }
     },
-    "v1ClusterForPermission": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
     "v1Empty": {
       "type": "object"
     },
     "v1GetClustersForPermissionResponse": {
       "type": "object",
       "properties": {
-        "permission": {
-          "$ref": "#/definitions/v1Permission"
-        },
         "clusters": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1ClusterForPermission"
+            "$ref": "#/definitions/v1ScopeElementForPermission"
           }
         }
       }
@@ -1020,14 +1032,41 @@
         }
       }
     },
-    "v1Permission": {
+    "v1Pagination": {
       "type": "object",
       "properties": {
-        "resource": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        }
+      }
+    },
+    "v1ScopeElementForPermission": {
+      "type": "object",
+      "properties": {
+        "id": {
           "type": "string"
         },
-        "access": {
-          "$ref": "#/definitions/storageAccess"
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
         }
       }
     }

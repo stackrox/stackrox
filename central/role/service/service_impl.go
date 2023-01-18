@@ -354,18 +354,13 @@ func (s *serviceImpl) GetClustersForPermission(ctx context.Context, req *v1.GetC
 	if req == nil {
 		return nil, errox.InvalidArgs
 	}
-	if req.Permission == nil {
-		return nil, errox.InvalidArgs
-	}
-	response := &v1.GetClustersForPermissionResponse{
-		Permission: req.GetPermission(),
-	}
-	targetResource := permissions.Resource(req.GetPermission().GetResource())
+	response := &v1.GetClustersForPermissionResponse{}
+	targetResource := permissions.Resource(req.GetResource())
 	targetResourceMetadata, found := resources.MetadataForResource(targetResource)
 	if !found {
 		return response, nil
 	}
-	targetAccess := req.GetPermission().GetAccess()
+	targetAccess := req.GetAccess()
 	targetResourceWithAccess := permissions.ResourceWithAccess{
 		Resource: targetResourceMetadata,
 		Access:   targetAccess,
@@ -408,7 +403,7 @@ func (s *serviceImpl) GetClustersForPermission(ctx context.Context, req *v1.GetC
 				} else {
 					clusterName = fmt.Sprintf("Cluster with ID %q", clusterID)
 				}
-				clusterInfo := &v1.ClusterForPermission{
+				clusterInfo := &v1.ScopeElementForPermission{
 					Id:   clusterID,
 					Name: clusterName,
 				}
@@ -435,7 +430,7 @@ func (s *serviceImpl) GetClustersForPermission(ctx context.Context, req *v1.GetC
 					}
 				}
 				if hasIncludedNamespace {
-					clusterInfo := &v1.ClusterForPermission{
+					clusterInfo := &v1.ScopeElementForPermission{
 						Id:   clusterID,
 						Name: clusterName,
 					}
