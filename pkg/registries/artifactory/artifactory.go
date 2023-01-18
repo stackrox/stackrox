@@ -9,7 +9,6 @@ import (
 // Creator provides the type and registries.Creator to add to the registry of image registries.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return "artifactory", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := docker.NewDockerRegistry(integration)
-		return reg, err
+		return docker.NewDockerRegistry(integration)
 	}
 }
