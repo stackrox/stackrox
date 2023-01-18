@@ -16,6 +16,32 @@ type segmentTelemeter struct {
 	client segment.Client
 }
 
+func getMessageType(msg segment.Message) string {
+	switch m := msg.(type) {
+	case *segment.Alias:
+		return m.Type
+	case *segment.Group:
+		return m.Type
+	case *segment.Identify:
+		return m.Type
+	case *segment.Page:
+		return m.Type
+	case *segment.Screen:
+		return m.Type
+	case *segment.Track:
+		return m.Type
+	default:
+		return ""
+	}
+}
+
+type logOnFailure struct{}
+
+func (*logOnFailure) Success(msg segment.Message) {}
+func (*logOnFailure) Failure(msg segment.Message, err error) {
+	log.Error("Failure with message '", getMessageType(msg), "': ", err)
+}
+
 // NewTelemeter creates and initializes a Segment telemeter instance.
 func NewTelemeter(key, endpoint, userID, clientName string, interval time.Duration) *segmentTelemeter {
 	segmentConfig := segment.Config{
@@ -23,6 +49,7 @@ func NewTelemeter(key, endpoint, userID, clientName string, interval time.Durati
 		Interval:  interval,
 		Transport: proxy.RoundTripper(),
 		Logger:    &logWrapper{internal: log},
+		Callback:  &logOnFailure{},
 		DefaultContext: &segment.Context{
 			Extra: map[string]any{
 				"Client ID":   userID,
