@@ -43,7 +43,6 @@ import {
     CustomNodeModel,
     DeploymentNodeModel,
     DeploymentData,
-    EdgeData,
 } from './types/topology.type';
 
 import './NetworkGraphPage.css';
@@ -195,7 +194,7 @@ function NetworkGraphPage() {
         const showExternalState = !!displayOptions.includes('externalBadge');
         const showEdgeLabels = !!displayOptions.includes('edgeLabel');
         let updatedNodes: CustomNodeModel[] = model.nodes;
-        const updatedEdges: CustomEdgeModel[] = model.edges;
+        let updatedEdges: CustomEdgeModel[] = model.edges;
 
         // if all display options are true, set back to existing default data model
         if (showPolicyState && showExternalState && showEdgeLabels) {
@@ -220,25 +219,21 @@ function NetworkGraphPage() {
                 });
             }
 
-            // if (model.edges?.length) {
-            //     // need to improve perf to only perform this if edgeLabel has changed
-            //     updatedEdges = model.edges.map((edge) => {
-            //         const { data } = edge;
-            //         const { properties } = data;
-            //         const updatedEdgeData: EdgeData = { properties };
-            //         if (showEdgeLabels) {
-            //             const { port, protocol } = data.properties[0];
-            //             updatedEdgeData.tag = getPortEdgeLabel(port, protocol);
-            //         }
-            //         return {
-            //             ...edge,
-            //             data: {
-            //                 ...updatedEdgeData,
-            //             },
-            //         };
-            //     });
-            // }
-            // console.log(updatedEdges);
+            if (model.edges?.length) {
+                // need to improve perf to only perform this if edgeLabel has changed
+                updatedEdges = model.edges.map((edge) => {
+                    const { data } = edge;
+                    const { properties } = data;
+                    const { port, protocol } = data.properties[0];
+                    return {
+                        ...edge,
+                        data: {
+                            properties,
+                            tag: showEdgeLabels ? getPortEdgeLabel(port, protocol) : undefined,
+                        },
+                    };
+                });
+            }
 
             const updatedModel: CustomModel = {
                 ...model,
@@ -317,7 +312,7 @@ function NetworkGraphPage() {
                 padding={{ default: 'noPadding' }}
             >
                 {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
-                {model.nodes && (
+                {model.nodes.length > 0 && !isLoading && (
                     <NetworkGraph
                         model={model}
                         edgeState={edgeState}

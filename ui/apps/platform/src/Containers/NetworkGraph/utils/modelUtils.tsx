@@ -349,9 +349,6 @@ export function createExtraneousFlowsModel(
         }
     });
 
-    // TODO: need somewhere to check the currently selected node to see if it is nonIsolated ingress/egress
-    // and add the appropriate Egress flows or Ingress flows grouped node accordingly
-
     // find namespace and external nodes
     dataModel.nodes.forEach(({ data }) => {
         const { type } = data;
