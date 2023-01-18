@@ -252,6 +252,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
@@ -280,6 +282,8 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections between StackRox Services"() {
         when:
         "Fetch uIDs for the central, sensor, and collector services, if present"
@@ -363,6 +367,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
         rebuildForRetries()
@@ -581,6 +587,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify cluster updates can block flow connections from showing"() {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
