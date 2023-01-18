@@ -9,7 +9,7 @@ import (
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
-	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -59,7 +59,7 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	suite.postgres = pgtest.ForT(suite.T())
-	suite.store = postgresStore.New(suite.postgres.Pool)
+	suite.store = postgresStore.NewFullStore(suite.postgres.Pool)
 
 	indicatorStorage := processIndicatorStorage.New(suite.postgres.Pool)
 	indicatorIndexer := processIndicatorStorage.NewIndexer(suite.postgres.Pool)

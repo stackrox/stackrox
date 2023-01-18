@@ -4,7 +4,7 @@ import (
 	"context"
 
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/processlisteningonport/store/postgres"
+	"github.com/stackrox/rox/central/processlisteningonport/store"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -28,7 +28,7 @@ type DataStore interface {
 // operations require join with ProcessIndicator table, both PLOP store and
 // ProcessIndicator datastore are needed.
 func New(
-	plopStorage postgres.Store,
+	plopStorage store.Store,
 	indicatorDataStore processIndicatorStore.DataStore,
 ) DataStore {
 	ds := newDatastoreImpl(plopStorage, indicatorDataStore)
