@@ -82,7 +82,7 @@ func (ndl *nodeLoaderImpl) FullNodeWithID(ctx context.Context, id string) (*stor
 	if err != nil {
 		return nil, err
 	}
-	// Load the full node if full scan is not available.
+	// Do not load the full node if full scan is already available.
 	if node.GetComponents() == 0 || len(node.GetScan().GetComponents()) > 0 {
 		return node, nil
 	}
