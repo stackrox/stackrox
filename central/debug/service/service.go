@@ -363,6 +363,27 @@ func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData
 	return addJSONToZip(zipWriter, "telemetry-data.json", telemetryInfo)
 }
 
+type dbExtension struct {
+	ExtensionName    string `json:"ExtensionName"`
+	ExtensionVersion string `json:"ExtensionVersion"`
+}
+
+// centralDBDiagnosticData represents a collection of various pieces of central db config information.
+type centralDBDiagnosticData struct {
+	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
+	Database              string        `json:"Database,omitempty"`
+	DatabaseClientVersion string        `json:"DatabaseClientVersion,omitempty"`
+	DatabaseServerVersion string        `json:"DatabaseServerVersion,omitempty"`
+	DatabaseExtensions    []dbExtension `json:"DatabaseExtensions,omitempty"`
+	DatabaseConnectString string        `json:"DatabaseConnectString,omitempty"`
+}
+
+func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
+	dbDiagnosticData := buildDBDiagnosticData(ctx)
+
+	return addJSONToZip(zipWriter, "central-db.json", dbDiagnosticData)
+}
+
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zip.Writer) error {
 	w, err := zipWriter.Create("logimbue-data.json")
 	if err != nil {
@@ -491,7 +512,6 @@ type debugDumpOptions struct {
 	withAccessControl bool
 	withNotifiers     bool
 	withCentral       bool
-	withCentralDB     bool
 	clusters          []string
 	since             time.Time
 }
@@ -536,6 +556,12 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			}
 
 			if err := zipPrometheusMetrics(zipWriter, "metrics-2"); err != nil {
+				log.Error(err)
+			}
+		}
+
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			if err := getCentralDBData(ctx, zipWriter); err != nil {
 				log.Error(err)
 			}
 		}
@@ -618,7 +644,6 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withAccessControl: true,
 		withNotifiers:     true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
-		withCentralDB:     env.EnableCentralDatabaseDiagnostics.BooleanSetting(),
 		telemetryMode:     0,
 	}
 
@@ -664,7 +689,6 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withLogImbue:      true,
 		withAccessControl: true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
-		withCentralDB:     env.EnableCentralDatabaseDiagnostics.BooleanSetting(),
 		withNotifiers:     true,
 	}
 
