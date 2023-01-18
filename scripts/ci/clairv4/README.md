@@ -17,7 +17,7 @@ To tear it down, run:
 
 Clair runs in offline/air-gapped mode, meaning it will not update its
 vulnerability database. The PostgreSQL database is pre-populated with
-vulnerabilities obtained from a past run of Clair.
+RHEL vulnerabilities obtained from a past run of Clair.
 
 It was done as follows:
 
