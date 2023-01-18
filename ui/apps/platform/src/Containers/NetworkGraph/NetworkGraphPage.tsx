@@ -17,7 +17,7 @@ import useFetchClusters from 'hooks/useFetchClusters';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNetworkPolicyGraph } from 'services/NetworkService';
-import { getQueryString } from 'utils/queryStringUtils';
+import queryService from 'utils/queryService';
 import timeWindowToDate from 'utils/timeWindows';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 
@@ -102,7 +102,7 @@ function NetworkGraphPage() {
             if (selectedClusterId) {
                 setIsLoading(true);
 
-                const queryToUse = getQueryString(remainingQuery).slice(1);
+                const queryToUse = queryService.objectToWhereClause(remainingQuery);
                 const timestampToUse = timeWindowToDate(timeWindow);
 
                 Promise.all([

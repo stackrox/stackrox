@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
 import useURLSearch from 'hooks/useURLSearch';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { getSearchOptionsForCategory } from 'services/SearchService';
-import { isCompleteSearchFilter } from 'utils/searchUtils';
-import {
-    orchestratorComponentsOption,
-} from 'utils/orchestratorComponents';
+import { orchestratorComponentsOption } from 'utils/orchestratorComponents';
 
 import './NetworkSearch.css';
 
@@ -32,7 +28,6 @@ function NetworkSearch({
     selectedNamespaces = [],
     selectedDeployments = [],
 }: NetworkSearchsProps) {
-    const history = useHistory();
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -51,14 +46,12 @@ function NetworkSearch({
     }, [setSearchOptions]);
 
     function onSearch(options) {
-        options.Cluster = selectedCluster;
-        options.Namespace = selectedNamespaces;
-        options.Deployment = selectedDeployments;
+        const newOptions = { ...options };
+        newOptions.Cluster = selectedCluster;
+        newOptions.Namespace = selectedNamespaces;
+        newOptions.Deployment = selectedDeployments;
 
-        setSearchFilter(options);
-        if (isCompleteSearchFilter(options)) {
-            history.push(`/main/network-graph${history.location.search as string}`);
-        }
+        setSearchFilter(newOptions);
     }
 
     const prependAutocompleteQuery = [...orchestratorComponentsOption];
