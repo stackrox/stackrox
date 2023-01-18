@@ -3,6 +3,7 @@ package clustermetrics
 import (
 	"context"
 
+	clusterTelemetry "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -17,6 +18,7 @@ var log = logging.LoggerForModule()
 //////////////////////////////////////////////////////////////////////////////////////
 
 // MetricsStore persists a measurement of ClusterMetrics.
+//
 //go:generate mockgen-wrapper
 type MetricsStore interface {
 	Set(string, *central.ClusterMetrics)
@@ -62,6 +64,8 @@ func (p *pipelineImpl) Run(
 	_ common.MessageInjector,
 ) error {
 	p.metricsStore.Set(clusterID, msg.GetClusterMetrics())
+
+	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
 	return nil
 }
 
