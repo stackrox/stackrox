@@ -988,6 +988,11 @@ gate_pr_job() {
     exit 0
 }
 
+configure_cwd_as_safe() {
+    # Prevent fatal error "detected dubious ownership in repository" from recent git.
+    git config --global --add safe.directory "$(pwd)"
+}
+
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
 
