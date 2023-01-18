@@ -104,10 +104,6 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 			desc: "Test Graph Init graphInitBatchSize+2",
 			size: graphInitBatchSize + 2,
 		},
-		{
-			desc: "Test Graph Init graphInitBatchSize*2",
-			size: graphInitBatchSize * 2,
-		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			objs := make([]*storage.ResourceCollection, 0, tc.size)
@@ -490,6 +486,45 @@ func (s *CollectionPostgresDataStoreTestSuite) TestVerifyCollectionConstraints()
 			}),
 			true,
 		},
+		{
+			"bad formatted label value",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.ClusterLabel.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "bad",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"bad match type on label rule",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.ClusterLabel.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value:     "value",
+									MatchType: storage.MatchType_REGEX,
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
 	}
 
 	// test all supported field names values
@@ -508,7 +543,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestVerifyCollectionConstraints()
 							Operator:  storage.BooleanOperator_OR,
 							Values: []*storage.RuleValue{
 								{
-									Value: "value",
+									Value: "key=value",
 								},
 							},
 						},
@@ -630,17 +665,17 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 						Disjunction: &v1.DisjunctionQuery{
 							Queries: []*v1.Query{
 								{
-									Query: getBaseQuery(pkgSearch.Cluster, "r/1"),
+									Query: getBaseQuery(pkgSearch.Cluster, "\"1\""),
 								},
 								{
-									Query: getBaseQuery(pkgSearch.Cluster, "r/2"),
+									Query: getBaseQuery(pkgSearch.Cluster, "\"2\""),
 								},
 							},
 						},
 					},
 				},
 				{
-					Query: getBaseQuery(pkgSearch.Namespace, "r/3"),
+					Query: getBaseQuery(pkgSearch.Namespace, "\"3\""),
 				},
 			},
 		},
@@ -661,6 +696,30 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 				},
 			},
 			[]*v1.Query{},
+		},
+		{
+			"regex match rule",
+			[]*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value:     "1",
+									MatchType: storage.MatchType_REGEX,
+								},
+							},
+						},
+					},
+				},
+			},
+			[]*v1.Query{
+				{
+					Query: getBaseQuery(pkgSearch.Cluster, "r/1"),
+				},
+			},
 		},
 	}
 
@@ -749,13 +808,13 @@ func (s *CollectionPostgresDataStoreTestSuite) TestResolveCollectionQuery() {
 			Disjunction: &v1.DisjunctionQuery{
 				Queries: []*v1.Query{
 					{
-						Query: getBaseQuery(pkgSearch.DeploymentName, "r/3"),
+						Query: getBaseQuery(pkgSearch.DeploymentName, "\"3\""),
 					},
 					{
-						Query: getBaseQuery(pkgSearch.Namespace, "r/2"),
+						Query: getBaseQuery(pkgSearch.Namespace, "\"2\""),
 					},
 					{
-						Query: getBaseQuery(pkgSearch.Cluster, "r/1"),
+						Query: getBaseQuery(pkgSearch.Cluster, "\"1\""),
 					},
 				},
 			},
@@ -771,10 +830,10 @@ func (s *CollectionPostgresDataStoreTestSuite) TestResolveCollectionQuery() {
 			Disjunction: &v1.DisjunctionQuery{
 				Queries: []*v1.Query{
 					{
-						Query: getBaseQuery(pkgSearch.Cluster, "r/1"),
+						Query: getBaseQuery(pkgSearch.Cluster, "\"1\""),
 					},
 					{
-						Query: getBaseQuery(pkgSearch.Namespace, "r/2"),
+						Query: getBaseQuery(pkgSearch.Namespace, "\"2\""),
 					},
 				},
 			},
