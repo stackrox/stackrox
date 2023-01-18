@@ -8,7 +8,7 @@ import (
 
 	"github.com/stackrox/rox/central/metrics"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/processlisteningonport/store/postgres"
+	"github.com/stackrox/rox/central/processlisteningonport/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +20,7 @@ import (
 )
 
 type datastoreImpl struct {
-	storage            postgres.Store
+	storage            store.Store
 	indicatorDataStore processIndicatorStore.DataStore
 }
 
@@ -30,7 +30,7 @@ var (
 )
 
 func newDatastoreImpl(
-	storage postgres.Store,
+	storage store.Store,
 	indicatorDataStore processIndicatorStore.DataStore,
 ) *datastoreImpl {
 	return &datastoreImpl{
