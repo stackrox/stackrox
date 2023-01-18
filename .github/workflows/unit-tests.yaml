@@ -15,7 +15,7 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.54-3-g9213e16694
     steps:
     - name: Checkout
       uses: actions/checkout@v3
