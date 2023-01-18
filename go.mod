@@ -132,6 +132,12 @@ require (
 require github.com/hashicorp/golang-lru v0.5.4
 
 require (
+	github.com/cloudflare/circl v1.1.0 // indirect
+	github.com/pjbgf/sha1cd v0.2.3 // indirect
+	github.com/skeema/knownhosts v1.1.0 // indirect
+)
+
+require (
 	cloud.google.com/go v0.105.0 // indirect
 	cloud.google.com/go/compute v1.14.0 // indirect
 	cloud.google.com/go/iam v0.8.0 // indirect
