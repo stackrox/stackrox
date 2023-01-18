@@ -15,7 +15,7 @@ import {
 type Result = {
     isLoading: boolean;
     data: { networkFlows: Flow[] };
-    error: string | null;
+    error: string;
 };
 
 type FetchNetworkFlowsParams = {
@@ -29,7 +29,7 @@ type FetchNetworkFlowsResult = {
 
 const defaultResultState = {
     data: { networkFlows: [] },
-    error: null,
+    error: '',
     isLoading: true,
 };
 
@@ -61,7 +61,7 @@ function useFetchNetworkFlows({
                 setResult({
                     isLoading: false,
                     data: { networkFlows: modifiedFlows },
-                    error: null,
+                    error: '',
                 });
             })
             .catch((error) => {

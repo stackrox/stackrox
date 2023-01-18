@@ -1,6 +1,7 @@
 import { Controller } from '@patternfly/react-topology';
 import { EntityType } from 'Containers/Network/networkTypes';
 import { uniq } from 'lodash';
+import { L4Protocol } from 'types/networkFlow.proto';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { Flow, Peer } from '../types/flow.type';
 import { CustomEdgeModel, CustomSingleNodeData } from '../types/topology.type';
@@ -34,9 +35,23 @@ export function getNumFlows(flows: Flow[]): number {
     return numFlows;
 }
 
+function createUniqueFlowId({
+    entityId,
+    direction,
+    port,
+    protocol,
+}: {
+    entityId: string;
+    direction: string;
+    port: string;
+    protocol: L4Protocol;
+}) {
+    return `${entityId}-${direction}-${port}-${protocol}`;
+}
+
 export function getUniqueIdFromFlow(flow: Flow) {
     const { entityId, direction, port, protocol } = flow;
-    const id = `${entityId}-${direction}-${port}-${protocol}`;
+    const id = createUniqueFlowId({ entityId, direction, port, protocol });
     return id;
 }
 
@@ -45,7 +60,7 @@ export function getUniqueIdFromPeer(peer: Peer) {
     const direction = peer.ingress ? 'Ingress' : 'Egress';
     const { port } = peer;
     const { protocol } = peer;
-    const id = `${entityId}-${direction}-${port}-${protocol}`;
+    const id = createUniqueFlowId({ entityId, direction, port, protocol });
     return id;
 }
 
