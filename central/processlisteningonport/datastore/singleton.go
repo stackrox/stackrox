@@ -11,13 +11,13 @@ import (
 var (
 	once sync.Once
 
-	store DataStore
+	dataStore DataStore
 )
 
 func initialize() {
-	plopStore := postgres.New(globaldb.GetPostgres())
+	plopStore := postgres.NewFullStore(globaldb.GetPostgres())
 	indicatorDataStore := processIndicatorDataStore.Singleton()
-	store = New(plopStore, indicatorDataStore)
+	dataStore = New(plopStore, indicatorDataStore)
 }
 
 // Singleton provides the interface for non-service external interaction.
@@ -28,5 +28,5 @@ func Singleton() DataStore {
 	}
 
 	once.Do(initialize)
-	return store
+	return dataStore
 }
