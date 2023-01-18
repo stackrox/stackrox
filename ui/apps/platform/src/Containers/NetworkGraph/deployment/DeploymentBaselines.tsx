@@ -32,6 +32,7 @@ import FlowsBulkActions from '../common/FlowsBulkActions';
 import useFetchNetworkBaselines from '../api/useFetchNetworkBaselines';
 import { Flow } from '../types/flow.type';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
+import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
 
 type DeploymentBaselinesProps = {
     deploymentId: string;
@@ -39,7 +40,6 @@ type DeploymentBaselinesProps = {
 
 function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
     // component state
-    const [isAlertingOnViolations, setIsAlertingOnViolations] = React.useState<boolean>(false);
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
 
@@ -50,7 +50,7 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
     const {
         isLoading,
         error: fetchError,
-        data: { networkBaselines },
+        data: { networkBaselines, isAlertingOnBaselineViolation },
         refetchBaselines,
     } = useFetchNetworkBaselines(deploymentId);
     const {
@@ -58,6 +58,11 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
         error: modifyError,
         modifyBaselineStatuses,
     } = useModifyBaselineStatuses(deploymentId);
+    const {
+        isToggling,
+        error: toggleError,
+        toggleAlertingOnBaselineViolation,
+    } = useToggleAlertingOnBaselineViolation(deploymentId);
     const filteredNetworkBaselines = filterNetworkFlows(
         networkBaselines,
         entityNameFilter,
@@ -96,7 +101,11 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
         modifyBaselineStatuses(selectedFlows, 'ANOMALOUS', refetchBaselines);
     }
 
-    if (isLoading || isModifying) {
+    function toggleAlertingOnBaselineViolationHandler() {
+        toggleAlertingOnBaselineViolation(!isAlertingOnBaselineViolation, refetchBaselines);
+    }
+
+    if (isLoading || isModifying || isToggling) {
         return (
             <Bullseye>
                 <Spinner isSVG size="lg" />
@@ -106,11 +115,11 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
 
     return (
         <div className="pf-u-h-100">
-            {(fetchError || modifyError) && (
+            {(fetchError || modifyError || toggleError) && (
                 <Alert
                     isInline
                     variant={AlertVariant.danger}
-                    title={fetchError || modifyError}
+                    title={fetchError || modifyError || toggleError}
                     className="pf-u-mb-sm"
                 />
             )}
@@ -121,8 +130,9 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                             <Switch
                                 id="simple-switch"
                                 label="Alert on baseline violation"
-                                isChecked={isAlertingOnViolations}
-                                onChange={setIsAlertingOnViolations}
+                                isChecked={isAlertingOnBaselineViolation}
+                                onChange={toggleAlertingOnBaselineViolationHandler}
+                                isDisabled={isLoading || isModifying || isToggling}
                             />
                         </FlexItem>
                         <FlexItem>
