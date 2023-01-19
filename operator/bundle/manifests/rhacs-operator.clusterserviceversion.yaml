@@ -104,9 +104,8 @@ spec:
           and a host path.
         displayName: Persistence
         path: central.persistence
-      - description: 'NOTE: Central DB is in Technology Preview. Settings for Central
-          DB, which is responsible for data persistence.'
-        displayName: Central DB Settings (Technology Preview)
+      - description: Settings for Central DB, which is responsible for data persistence.
+        displayName: Central DB Settings
         path: central.db
       - description: Configures telemetry settings for Central. If enabled, Central
           transmits telemetry and diagnostic data to a remote storage backend.

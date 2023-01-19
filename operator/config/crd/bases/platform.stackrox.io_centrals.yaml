@@ -60,8 +60,8 @@ spec:
                     - name
                     type: object
                   db:
-                    description: 'NOTE: Central DB is in Technology Preview. Settings
-                      for Central DB, which is responsible for data persistence.'
+                    description: Settings for Central DB, which is responsible for
+                      data persistence.
                     properties:
                       connectionString:
                         description: Specify a connection string that corresponds

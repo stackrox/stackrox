@@ -115,9 +115,8 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Persistence *Persistence `json:"persistence,omitempty"`
 
-	// NOTE: Central DB is in Technology Preview.
 	// Settings for Central DB, which is responsible for data persistence.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings (Technology Preview)"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings"
 	DB *CentralDBSpec `json:"db,omitempty"`
 
 	// Configures telemetry settings for Central. If enabled, Central transmits telemetry and diagnostic
