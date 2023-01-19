@@ -19,8 +19,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-12620: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
   - The permission `WorkflowAdministration` will deprecate the permissions `Policy, VulnerabilityReports`.
 
-- ROX-14400: `BuildDate` is deprecated and will be removed in future releases. It won't be returned by
-`/debug/versions.json` endpoint and not available to use in `roxctl` helm templates.
+- ROX-14400: product `BuildDate` attribute is deprecated and will be removed in `3.75` release. It won't be returned by
+`/debug/versions.json` endpoint and `roxctl version --json` command.
 
 ### Required Actions
 - The permission `WorkflowAdministration` will replace `Policy, VulnerabilityReports` in permission sets starting with the 3.76 release.
