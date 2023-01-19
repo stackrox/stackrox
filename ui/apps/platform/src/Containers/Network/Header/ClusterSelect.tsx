@@ -8,13 +8,18 @@ import { actions as graphActions, networkGraphClusters } from 'reducers/network/
 import { actions as pageActions } from 'reducers/network/page';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Cluster } from 'types/cluster.proto';
+// import { Cluster } from 'types/cluster.proto';
+import { AccessLevel } from 'services/RolesService'
+import useFetchClustersForPermission from 'hooks/useFetchClustersForPerms';
+
+const networkGraphResource = 'NetworkGraph';
+const readAccess: AccessLevel = 'READ_ACCESS';
 
 type ClusterSelectProps = {
     id?: string;
     selectClusterId: (clusterId: string) => void;
     closeSidePanel: () => void;
-    clusters: Cluster[];
+    // clusters: Cluster[];
     selectedClusterId?: string;
     isDisabled?: boolean;
 };
@@ -23,7 +28,7 @@ const ClusterSelect = ({
     id,
     selectClusterId,
     closeSidePanel,
-    clusters,
+    // clusters,
     selectedClusterId = '',
     isDisabled = false,
 }: ClusterSelectProps): ReactElement => {
@@ -33,6 +38,8 @@ const ClusterSelect = ({
         closeSelect();
         closeSidePanel();
     }
+
+    const { clusters } = useFetchClustersForPermission(networkGraphResource, readAccess);
 
     return (
         <Select
@@ -45,7 +52,7 @@ const ClusterSelect = ({
             onSelect={changeCluster}
         >
             {clusters
-                .filter((cluster) => networkGraphClusters[cluster.type])
+                // .filter((cluster) => networkGraphClusters[cluster.type])
                 .map(({ id: clusterId, name }) => (
                     <SelectOption key={clusterId} value={clusterId}>
                         {name}
@@ -56,7 +63,7 @@ const ClusterSelect = ({
 };
 
 const mapStateToProps = createStructuredSelector({
-    clusters: selectors.getClusters,
+    // clusters: selectors.getClusters,
     selectedClusterId: selectors.getSelectedNetworkClusterId,
 });
 
