@@ -92,7 +92,7 @@ var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	suite.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip dackbox tests if postgres is enabled")
