@@ -106,9 +106,9 @@ export function tryDeleteCollection(collectionName) {
  * @param {string[]} deployments
  */
 export function assertDeploymentsAreMatchedExactly(deployments) {
+    assertDeploymentsAreMatched(deployments);
     cy.get(collectionSelectors.deploymentResults).its('length').should('be.eq', deployments.length);
     cy.get(collectionSelectors.viewMoreResultsButton).should('not.exist');
-    assertDeploymentsAreMatched(deployments);
 }
 
 export function assertDeploymentsAreMatched(deployments) {
