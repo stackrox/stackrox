@@ -35,6 +35,7 @@ case "$github_login" in
 'connorgorman')     slack_user='U01P76F3BFG' ;;
 'dashrews78')       slack_user='U03FB5XE10V' ;;
 'daynewlee')        slack_user='U03J855QWHF' ;;
+'dcaravel')         slack_user='U04DF45CXBJ' ;;
 'dhaus67')          slack_user='U02CZGZRGBF' ;;
 'dvail')            slack_user='U032WL9RM53' ;;
 'ebensh')           slack_user='U01Q7HTJ126' ;;
