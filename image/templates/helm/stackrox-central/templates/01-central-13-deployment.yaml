@@ -174,12 +174,12 @@ spec:
         {{- end }}
         {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.configMaps) }}
         - name: {{ $mount }}
-          mountPath: /run/secrets/stackrox.io/declarative-configuration/{{ $mount }}
+          mountPath: /run/stackrox.io/declarative-configuration/{{ $mount }}
           readOnly: true
         {{- end }}
         {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.secrets) }}
         - name: {{ $mount }}
-          mountPath: /run/secrets/stackrox.io/declarative-configuration/{{ $mount }}
+          mountPath: /run/stackrox.io/declarative-configuration/{{ $mount }}
           readOnly: true
         {{- end }}
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
