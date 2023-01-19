@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/mocks"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,30 +29,64 @@ func (s *gathererTestSuite) TestNilGatherer() {
 }
 
 func (s *gathererTestSuite) TestGatherer() {
+	/*
+		The test starts a gatherer and stops gathering after 2 executions.
+		Verifies that the gatherer function and Identify() have been called 2 times.
+		Then it restarts the gathering and stops after 1 execution, and ensures that
+		the gatherer function and Identify() have been called once.
+	*/
+
+	identifyStop := concurrency.NewSignal()
+
+	// Counters of the calls to Identify() and gatherer function:
+	var in, gn int64
+
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
-	// Identify and Track should be called once as there's no change in the
-	// identity:
-	t.EXPECT().Identify("test", gomock.Any()).Times(1)
-	t.EXPECT().Track("Updated Identity", "test", nil).Times(1)
-
-	props := make(map[string]any)
-
-	var i int64
-
-	g := newGatherer("test", t, 24*time.Hour)
-	g.AddGatherer(func(context.Context) (map[string]any, error) {
-		atomic.AddInt64(&i, 1)
-		props["key"] = "value"
-		return props, nil
+	t.EXPECT().Identify("test", gomock.Any()).Times(3).Do(func(string, any) {
+		if atomic.AddInt64(&in, 1) > 1 {
+			identifyStop.Signal()
+		}
 	})
-	g.Start()
-	g.Stop()
-	<-g.ctx.Done()
-	s.Equal("value", props["key"], "the gathering function should have been called")
-	s.Equal(int64(1), i)
-	g.Start()
-	g.Stop()
-	<-g.ctx.Done()
-	s.Equal("value", props["key"], "the gathering function should have been called")
-	s.Equal(int64(2), i)
+	t.EXPECT().Track("Updated Identity", "test", nil).Times(3)
+
+	stop := concurrency.NewSignal()
+	gptr := newGatherer("test", t, 10*time.Millisecond)
+	s.Require().NotNil(gptr)
+	gptr.AddGatherer(func(context.Context) (map[string]any, error) {
+		if atomic.AddInt64(&gn, 1) > 1 {
+			stop.Signal()
+		}
+		// Return different properties every time so that the update is not
+		// ignored:
+		return map[string]any{"key": gn}, nil
+	})
+	go func() {
+		stop.Wait()
+		gptr.Stop()
+	}()
+	gptr.Start()
+
+	<-gptr.ctx.Done()
+	// Wait until Idenfity() is called after gathering:
+	identifyStop.Wait()
+
+	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
+	s.Equal(int64(2), in)
+	s.Equal(int64(2), gn)
+
+	identifyStop.Reset()
+	stop.Reset()
+	go func() {
+		stop.Wait()
+		gptr.Stop()
+	}()
+
+	// Should start again.
+	gptr.Start()
+	<-gptr.ctx.Done()
+	// Wait until Idenfity() is called after gathering:
+	identifyStop.Wait()
+	s.ErrorIs(gptr.ctx.Err(), context.Canceled)
+	s.Equal(int64(3), in)
+	s.Equal(int64(3), gn)
 }
