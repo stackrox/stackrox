@@ -148,12 +148,39 @@ function getPortLabel(port: number, protocol: L4Protocol) {
 }
 
 export function getPortEdgeLabel(properties: EdgeProperties[]): string {
-    if (properties.length === 1) {
-        const { port, protocol } = properties[0];
-        return getPortLabel(port, protocol);
+    const { port, protocol } = properties[0];
+    const singlePortLabel = getPortLabel(port, protocol);
+    return `${properties.length === 1 ? singlePortLabel : properties.length}`;
+}
+
+function mergePortEdgeLabels(firstLabel: string, secondLabel = ''): string {
+    const firstLabelNum = Number(firstLabel);
+    const secondLabelNum = Number(secondLabel);
+    let mergedLabel = '';
+    // if both labels are not numbers and current edge label is the same as the previous label,
+    // return same label else return 2
+    if (!firstLabelNum && !secondLabelNum) {
+        mergedLabel = firstLabel === secondLabel ? firstLabel : '2';
     }
-    return 'many';
-    // return properties.map(({ port, protocol }) => getPortLabel(port, protocol)).join(', ');
+
+    // if the previous label is singular (not a number) but the current edge label is multiple
+    // return the sum
+    else if (!firstLabelNum && !!secondLabelNum) {
+        mergedLabel = `${1 + secondLabelNum}`;
+    }
+
+    // if current label is singular (not a number) but the prev label is multiple
+    // return the sum
+    else if (!!firstLabelNum && !secondLabelNum) {
+        mergedLabel = `${firstLabelNum + 1}`;
+    }
+
+    // else return the sum
+    else if (!firstLabelNum && !secondLabelNum) {
+        mergedLabel = `${firstLabelNum + secondLabelNum}`;
+    }
+
+    return mergedLabel;
 }
 
 export function transformActiveData(
@@ -220,6 +247,7 @@ export function transformActiveData(
             const target: string = nodes[nodeIdx].entity.id;
             const edgeId = `${source}-${target}`;
             const reverseEdgeId = `${target}-${source}`;
+            const portEdgeLabel = getPortEdgeLabel(properties);
             const edge: CustomEdgeModel = {
                 id: edgeId,
                 type: 'edge',
@@ -227,7 +255,7 @@ export function transformActiveData(
                 target,
                 visible: false,
                 data: {
-                    tag: getPortEdgeLabel(properties),
+                    tag: portEdgeLabel,
                     properties,
                     isBidirectional: false,
                 },
@@ -237,7 +265,10 @@ export function transformActiveData(
                 edge.id = reverseEdgeId;
                 edge.data.startTerminalType = EdgeTerminalType.directional;
                 edge.data.endTerminalType = EdgeTerminalType.directional;
-                edge.data.tag = 'both';
+                edge.data.tag = mergePortEdgeLabels(
+                    portEdgeLabel,
+                    activeEdgeMap[reverseEdgeId].data.tag
+                );
                 edge.data.isBidirectional = true;
                 activeEdgeMap[reverseEdgeId] = edge;
             } else {
@@ -343,6 +374,7 @@ export function transformPolicyData(
             const edgeId = `${source}-${target}`;
             const reverseEdgeId = `${target}-${source}`;
             const { properties } = outEdges[nodeIdx];
+            const portEdgeLabel = getPortEdgeLabel(properties);
             const edge: CustomEdgeModel = {
                 id: edgeId,
                 type: 'edge',
@@ -351,7 +383,7 @@ export function transformPolicyData(
                 visible: false,
                 edgeStyle: EdgeStyle.dashed,
                 data: {
-                    tag: getPortEdgeLabel(properties),
+                    tag: portEdgeLabel,
                     properties,
                     isBidirectional: false,
                 },
@@ -361,7 +393,10 @@ export function transformPolicyData(
                 edge.id = reverseEdgeId;
                 edge.data.startTerminalType = EdgeTerminalType.directional;
                 edge.data.endTerminalType = EdgeTerminalType.directional;
-                edge.data.tag = 'both';
+                edge.data.tag = mergePortEdgeLabels(
+                    portEdgeLabel,
+                    policyEdgeMap[reverseEdgeId].data.tag
+                );
                 edge.data.isBidirectional = true;
                 policyEdgeMap[reverseEdgeId] = edge;
             } else {
