@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
@@ -109,8 +109,6 @@ const TopologyComponent = ({
     const { detailId } = useParams();
     const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
     const controller = useVisualizationController();
-
-    console.log('TopologyComponent', model);
 
     function rerenderGraph() {
         resetGraphToDefault();
