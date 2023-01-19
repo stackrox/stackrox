@@ -31,6 +31,7 @@ var (
 	targetResource = resources.InstallationInfo
 )
 
+// Store is the interface to interact with the storage for storage.InstallationInfo
 type Store interface {
 	Get(ctx context.Context) (*storage.InstallationInfo, bool, error)
 	Upsert(ctx context.Context, obj *storage.InstallationInfo) error
@@ -68,6 +69,7 @@ func insertIntoInstallationInfos(ctx context.Context, tx pgx.Tx, obj *storage.In
 	return nil
 }
 
+// Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.InstallationInfo) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "InstallationInfo")
 
@@ -109,7 +111,7 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Installati
 	return nil
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context) (*storage.InstallationInfo, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "InstallationInfo")
 
@@ -181,6 +183,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 
 // Used for Testing
 
+// Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS installation_infos CASCADE")
 }

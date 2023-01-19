@@ -66,6 +66,7 @@ jobs:
     uses: ./.github/workflows/variables.yml
     with:
       version: ${{ inputs.version }}
+      assert-format: A.B.C[-N]
 
   publish-release:
     name: Tag Release ${{ needs.variables.outputs.named-release-patch }}
@@ -128,10 +129,11 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *<${{ steps.release.outputs.url }} | ${{ inputs.version }}> of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub.*" }},
+            *Release <${{ steps.release.outputs.url }} | ${{ inputs.version }}> of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: Look for a CI generated PR created in <https://github.com/stackrox/release-artifacts/pulls|stackrox/release-artifacts> repository
-            and confirm that members of the @release-publishers Slack group got notified about
-            it.\n\n:arrow_right: Let's trigger the downstream release!" }}
+            ":arrow_right: Tell the downstream release engineer to trigger the downstream release,
+            and once the downstream release is complete, merge the PR created by CI in
+            <https://github.com/stackrox/release-artifacts/pulls|stackrox/release-artifacts>
+            repository." }}
             ]}

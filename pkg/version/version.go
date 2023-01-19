@@ -43,6 +43,9 @@ type Versions struct {
 	// or rely on defaults.ImageFlavor if you need a default collector image tag.
 	ScannerVersion string `json:"ScannerVersion"`
 	ChartVersion   string `json:"ChartVersion"`
+	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
+	Database              string `json:"Database,omitempty"`
+	DatabaseServerVersion string `json:"DatabaseServerVersion,omitempty"`
 }
 
 // GetAllVersionsDevelopment returns all of the various pieces of version information for development builds of the product.
@@ -172,4 +175,13 @@ func DeriveChartVersion(mainVersion string) string {
 	chartVersion, err := doDeriveChartVersion(mainVersion)
 	utils.Should(err)
 	return chartVersion
+}
+
+// GetMajorMinor returns first two parts of the provided version.
+func GetMajorMinor(version string) string {
+	components := strings.SplitN(version, ".", 3)
+	if len(components) >= 2 {
+		return fmt.Sprintf("%s.%s", components[0], components[1])
+	}
+	return version
 }

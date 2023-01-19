@@ -46,7 +46,7 @@ const (
 
 	// defaultCreationTimeout maximum time the test will wait until sensor emits
 	// resource creation event to central after fake resource was applied.
-	defaultCreationTimeout time.Duration = 10 * time.Second
+	defaultCreationTimeout time.Duration = 30 * time.Second
 )
 
 // YamlTestFile is a test file in YAML

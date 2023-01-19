@@ -1,50 +1,51 @@
 import React from 'react';
-import {
-    Flex,
-    Label,
-    FormGroup,
-    FlexItem,
-    Button,
-    Divider,
-    ValidatedOptions,
-    TextInput,
-} from '@patternfly/react-core';
+import { Label, Button, Divider, ValidatedOptions } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { FormikErrors } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
 
 import useIndexKey from 'hooks/useIndexKey';
-import { SelectorEntityType, ScopedResourceSelector, ByLabelResourceSelector } from '../types';
+import {
+    ByLabelResourceSelector,
+    ClientCollection,
+    ScopedResourceSelector,
+    SelectorEntityType,
+} from '../types';
+import { AutoCompleteSelect, AutoCompleteSelectProps } from './AutoCompleteSelect';
 
 export type ByLabelSelectorProps = {
+    collection: ClientCollection;
     entityType: SelectorEntityType;
     scopedResourceSelector: ByLabelResourceSelector;
     handleChange: (
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
     ) => void;
+    placeholder: AutoCompleteSelectProps['placeholder'];
     validationErrors: FormikErrors<ByLabelResourceSelector> | undefined;
     isDisabled: boolean;
 };
 
 function ByLabelSelector({
+    collection,
     entityType,
     scopedResourceSelector,
     handleChange,
+    placeholder,
     validationErrors,
     isDisabled,
 }: ByLabelSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
     const lowerCaseEntity = entityType.toLowerCase();
-    function onChangeLabelKey(resourceSelector: ByLabelResourceSelector, ruleIndex, value) {
-        const newSelector = cloneDeep(resourceSelector);
-        newSelector.rules[ruleIndex].key = value;
-        handleChange(entityType, newSelector);
-    }
 
-    function onChangeLabelValue(resourceSelector, ruleIndex, valueIndex, value) {
+    function onChangeLabelValue(
+        resourceSelector: ByLabelResourceSelector,
+        ruleIndex: number,
+        valueIndex: number,
+        value: string
+    ) {
         const newSelector = cloneDeep(resourceSelector);
-        newSelector.rules[ruleIndex].values[valueIndex] = value;
+        newSelector.rules[ruleIndex].values[valueIndex].value = value;
         handleChange(entityType, newSelector);
     }
 
@@ -52,8 +53,11 @@ function ByLabelSelector({
         const selector = cloneDeep(scopedResourceSelector);
 
         // Only add a new form row if there are no blank entries
-        if (selector.rules.every(({ key, values }) => key && values.every((value) => value))) {
-            selector.rules.push({ operator: 'OR', key: '', values: [''] });
+        if (selector.rules.every(({ values }) => values.every(({ value }) => value))) {
+            selector.rules.push({
+                operator: 'OR',
+                values: [{ value: '', matchType: 'EXACT' }],
+            });
             handleChange(entityType, selector);
         }
     }
@@ -63,8 +67,8 @@ function ByLabelSelector({
         const rule = selector.rules[ruleIndex];
 
         // Only add a new form row if there are no blank entries
-        if (rule.values.every((value) => value)) {
-            rule.values.push('');
+        if (rule.values.every(({ value }) => value)) {
+            rule.values.push({ value: '', matchType: 'EXACT' });
             handleChange(entityType, selector);
         }
     }
@@ -94,155 +98,97 @@ function ByLabelSelector({
     return (
         <>
             {scopedResourceSelector.rules.map((rule, ruleIndex) => {
-                const keyValidationError = validationErrors?.rules?.[ruleIndex];
-                const keyValidation =
-                    typeof keyValidationError === 'string' || keyValidationError?.key
-                        ? ValidatedOptions.error
-                        : ValidatedOptions.default;
                 return (
                     <div key={keyFor(ruleIndex)}>
                         {ruleIndex > 0 && (
-                            <Flex
-                                className="pf-u-pt-md pf-u-pb-xl"
-                                spaceItems={{ default: 'spaceItemsNone' }}
-                                alignItems={{ default: 'alignItemsCenter' }}
-                            >
+                            <div className="rule-selector-label-rule-separator">
                                 <Label variant="outline" isCompact>
                                     and
                                 </Label>
-                                <span
-                                    style={{
-                                        borderBottom:
-                                            '2px dashed var(--pf-global--Color--light-300)',
-                                        flex: '1 1 0',
-                                    }}
-                                />
-                            </Flex>
+                            </div>
                         )}
 
-                        <Flex>
-                            <Flex className="pf-u-flex-grow-1 pf-u-mb-md">
-                                <FormGroup
-                                    fieldId={`${entityType}-label-key-${ruleIndex}`}
-                                    className="pf-u-flex-grow-1"
-                                    label={ruleIndex === 0 ? 'Label key' : ''}
-                                    isRequired={!isDisabled}
-                                >
-                                    <TextInput
-                                        id={`${entityType}-label-key-${ruleIndex}`}
-                                        aria-label={`Select label key for ${lowerCaseEntity} rule ${
-                                            ruleIndex + 1
-                                        } of ${scopedResourceSelector.rules.length}`}
-                                        value={rule.key}
-                                        onChange={(fieldValue: string) =>
-                                            onChangeLabelKey(
-                                                scopedResourceSelector,
-                                                ruleIndex,
-                                                fieldValue
-                                            )
-                                        }
-                                        validated={keyValidation}
-                                        readOnlyVariant={isDisabled ? 'plain' : undefined}
-                                    />
-                                </FormGroup>
-                                <FlexItem
-                                    className="pf-u-pb-xs"
-                                    alignSelf={{ default: 'alignSelfFlexEnd' }}
-                                >
-                                    =
-                                </FlexItem>
-                            </Flex>
-                            <FormGroup
-                                fieldId={`${entityType}-label-value-${ruleIndex}`}
-                                className="pf-u-flex-grow-1"
-                                label={ruleIndex === 0 ? 'Label value(s)' : ''}
-                                isRequired={!isDisabled}
-                            >
-                                <Flex
-                                    spaceItems={{ default: 'spaceItemsSm' }}
-                                    direction={{ default: 'column' }}
-                                >
-                                    {rule.values.map((value, valueIndex) => {
-                                        const valueValidationError =
-                                            validationErrors?.rules?.[ruleIndex];
-                                        const valueValidation =
-                                            typeof valueValidationError === 'string' ||
-                                            valueValidationError?.values?.[valueIndex]
-                                                ? ValidatedOptions.error
-                                                : ValidatedOptions.default;
-                                        return (
-                                            <Flex key={keyFor(valueIndex)}>
-                                                <TextInput
-                                                    id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
-                                                    aria-label={`Select label value ${
-                                                        valueIndex + 1
-                                                    } of ${
-                                                        rule.values.length
-                                                    } for ${lowerCaseEntity} rule ${
-                                                        ruleIndex + 1
-                                                    } of ${scopedResourceSelector.rules.length}`}
-                                                    className="pf-u-flex-grow-1 pf-u-w-auto"
-                                                    value={value}
-                                                    onChange={(fieldValue: string) =>
-                                                        onChangeLabelValue(
-                                                            scopedResourceSelector,
-                                                            ruleIndex,
-                                                            valueIndex,
-                                                            fieldValue
-                                                        )
-                                                    }
-                                                    validated={valueValidation}
-                                                    readOnlyVariant={
-                                                        isDisabled ? 'plain' : undefined
-                                                    }
-                                                />
-                                                {!isDisabled && (
-                                                    <Button
-                                                        aria-label={`Delete ${value}`}
-                                                        variant="plain"
-                                                        onClick={() =>
-                                                            onDeleteValue(ruleIndex, valueIndex)
-                                                        }
-                                                    >
-                                                        <TrashIcon
-                                                            style={{ cursor: 'pointer' }}
-                                                            color="var(--pf-global--Color--dark-200)"
-                                                        />
-                                                    </Button>
-                                                )}
-                                            </Flex>
-                                        );
-                                    })}
-                                </Flex>
-                                {!isDisabled && (
-                                    <Button
-                                        aria-label={`Add ${lowerCaseEntity} label value for rule ${
-                                            ruleIndex + 1
-                                        }`}
-                                        className="pf-u-pl-0 pf-u-pt-md"
-                                        variant="link"
-                                        onClick={() => onAddLabelValue(ruleIndex)}
+                        <div className="rule-selector-list">
+                            {rule.values.map(({ value }, valueIndex) => {
+                                const valueValidationError = validationErrors?.rules?.[ruleIndex];
+                                const validated =
+                                    typeof valueValidationError === 'string' ||
+                                    valueValidationError?.values?.[valueIndex]
+                                        ? ValidatedOptions.error
+                                        : ValidatedOptions.default;
+                                const ariaLabel = `Select label value ${valueIndex + 1} of ${
+                                    rule.values.length
+                                } for ${lowerCaseEntity} rule ${ruleIndex + 1} of ${
+                                    scopedResourceSelector.rules.length
+                                }`;
+                                return (
+                                    <div
+                                        className="rule-selector-list-item"
+                                        key={keyFor(valueIndex)}
                                     >
-                                        Add value
-                                    </Button>
-                                )}
-                            </FormGroup>
-                        </Flex>
+                                        <AutoCompleteSelect
+                                            id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
+                                            entityType={entityType}
+                                            typeAheadAriaLabel={ariaLabel}
+                                            className="pf-u-flex-grow-1 pf-u-w-auto"
+                                            selectedOption={value}
+                                            onChange={(val) =>
+                                                onChangeLabelValue(
+                                                    scopedResourceSelector,
+                                                    ruleIndex,
+                                                    valueIndex,
+                                                    val
+                                                )
+                                            }
+                                            placeholder={placeholder}
+                                            validated={validated}
+                                            isDisabled={isDisabled}
+                                            collection={collection}
+                                            autocompleteField={`${entityType} Label`}
+                                        />
+                                        {!isDisabled && (
+                                            <Button
+                                                aria-label={`Delete ${value}`}
+                                                variant="plain"
+                                                onClick={() => onDeleteValue(ruleIndex, valueIndex)}
+                                            >
+                                                <TrashIcon
+                                                    style={{ cursor: 'pointer' }}
+                                                    color="var(--pf-global--Color--dark-200)"
+                                                />
+                                            </Button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {!isDisabled && (
+                            <Button
+                                aria-label={`Add ${lowerCaseEntity} label value for rule ${
+                                    ruleIndex + 1
+                                }`}
+                                className="rule-selector-add-value-button"
+                                variant="link"
+                                onClick={() => onAddLabelValue(ruleIndex)}
+                            >
+                                OR...
+                            </Button>
+                        )}
                     </div>
                 );
             })}
             {!isDisabled && (
-                <>
-                    <Divider component="div" className="pf-u-pt-lg" />
+                <div className="pf-u-pt-md">
+                    <Divider component="div" className="pf-u-pb-md" />
                     <Button
                         aria-label={`Add ${lowerCaseEntity} label rule`}
-                        className="pf-u-pl-0 pf-u-pt-md"
+                        className="pf-u-p-0"
                         variant="link"
                         onClick={onAddLabelRule}
                     >
-                        Add label rule
+                        Add label section (AND)
                     </Button>
-                </>
+                </div>
             )}
         </>
     );

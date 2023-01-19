@@ -53,6 +53,9 @@ var (
 		Name:        "Deny All",
 		Description: "No access to scoped resources",
 		Rules:       &storage.SimpleAccessScope_Rules{},
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
 	}
 
 	// AccessScopeIncludeAll gives access to all resources. It is checked by ID, as
@@ -61,6 +64,9 @@ var (
 		Id:          getAccessScopeIncludeAllID(),
 		Name:        "Unrestricted",
 		Description: "Access to all clusters and namespaces",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
 	}
 )
 
@@ -78,15 +84,21 @@ func getAccessScopeIncludeAllID() string {
 	return EnsureValidAccessScopeID("unrestricted")
 }
 
-// IsDefaultRoleName checks if a given role name corresponds to a default role.
-func IsDefaultRoleName(name string) bool {
-	return DefaultRoleNames.Contains(name)
+// IsDefaultRole checks if a given role corresponds to a default role.
+func IsDefaultRole(role *storage.Role) bool {
+	return role.GetTraits().GetOrigin() == storage.Traits_DEFAULT || DefaultRoleNames.Contains(role.GetName())
 }
 
-// IsDefaultAccessScope checks if a given access scope id corresponds to a
+// IsDefaultPermissionSet checks if a given permission set corresponds to a default role.
+func IsDefaultPermissionSet(permissionSet *storage.PermissionSet) bool {
+	return permissionSet.GetTraits().GetOrigin() == storage.Traits_DEFAULT ||
+		DefaultRoleNames.Contains(permissionSet.GetName())
+}
+
+// IsDefaultAccessScope checks if a given access scope corresponds to a
 // default access scope.
-func IsDefaultAccessScope(id string) bool {
-	return defaultScopesIDs.Contains(id)
+func IsDefaultAccessScope(scope *storage.SimpleAccessScope) bool {
+	return scope.GetTraits().GetOrigin() == storage.Traits_DEFAULT || defaultScopesIDs.Contains(scope.GetId())
 }
 
 // GetAnalystPermissions returns permissions for `Analyst` role.

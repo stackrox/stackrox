@@ -10,6 +10,7 @@ import (
 	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
 	accessScopeMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,13 +30,16 @@ type TestReportConfigurationServiceTestSuite struct {
 }
 
 func (s *TestReportConfigurationServiceTestSuite) SetupTest() {
+	if features.ObjectCollections.Enabled() {
+		s.T().Skip("Skip test when ObjectCollections is enabled")
+		s.T().SkipNow()
+	}
 	s.mockCtrl = gomock.NewController(s.T())
 	s.reportConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.accessScopeStore = accessScopeMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
-
-	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.accessScopeStore, s.manager)
+	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.accessScopeStore, nil, s.manager)
 }
 
 func (s *TestReportConfigurationServiceTestSuite) TearDownTest() {
@@ -80,6 +84,18 @@ func (s *TestReportConfigurationServiceTestSuite) TestAddInvalidValidReportConfi
 	missingScheduleReportConfig := fixtures.GetInvalidReportConfigurationMissingSchedule()
 	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
 		ReportConfig: missingScheduleReportConfig,
+	})
+	s.Error(err)
+
+	missingDaysOfWeekReportConfig := fixtures.GetInvalidReportConfigurationMissingDaysOfWeek()
+	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
+		ReportConfig: missingDaysOfWeekReportConfig,
+	})
+	s.Error(err)
+
+	missingDaysOfMonthReportConfig := fixtures.GetInvalidReportConfigurationMissingDaysOfMonth()
+	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
+		ReportConfig: missingDaysOfMonthReportConfig,
 	})
 	s.Error(err)
 

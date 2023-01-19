@@ -1,10 +1,9 @@
-import React, { ForwardedRef, forwardRef, ReactNode } from 'react';
+import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import {
     ClientCollection,
     RuleSelectorOption,
@@ -15,9 +14,24 @@ import {
 import ByNameSelector from './ByNameSelector';
 import ByLabelSelector from './ByLabelSelector';
 
+import './RuleSelector.css';
+
 function isRuleSelectorOption(value: string): value is RuleSelectorOption {
     return selectorOptions.includes(value as RuleSelectorOption);
 }
+
+const placeholders = {
+    ByName: {
+        Deployment: 'nginx-deployment',
+        Namespace: 'payments',
+        Cluster: 'production',
+    },
+    ByLabel: {
+        Deployment: 'app=nginx',
+        Namespace: 'team=payments',
+        Cluster: 'environment=production',
+    },
+};
 
 export type RuleSelectorProps = {
     collection: ClientCollection;
@@ -42,24 +56,6 @@ function RuleSelector({
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
 
-    // We need to wrap this custom SelectOption component in a forward ref
-    // because PatternFly will pass a `ref` to it
-    const OptionComponent = forwardRef(
-        (
-            props: {
-                className: string;
-                children: ReactNode;
-                onClick: (...args: unknown[]) => void;
-            },
-            ref: ForwardedRef<HTMLButtonElement | null>
-        ) => (
-            <button className={props.className} onClick={props.onClick} type="button" ref={ref}>
-                <ResourceIcon kind={entityType} />
-                {props.children}
-            </button>
-        )
-    );
-
     function onRuleOptionSelect(_, value) {
         if (!isRuleSelectorOption(value)) {
             return;
@@ -70,12 +66,12 @@ function RuleSelector({
             ByName: {
                 type: 'ByName',
                 field: entityType,
-                rule: { operator: 'OR', values: [''] },
+                rule: { operator: 'OR', values: [{ value: '', matchType: 'EXACT' }] },
             },
             ByLabel: {
                 type: 'ByLabel',
                 field: `${entityType} Label`,
-                rules: [{ operator: 'OR', key: '', values: [''] }],
+                rules: [{ operator: 'OR', values: [{ value: '', matchType: 'EXACT' }] }],
             },
         };
 
@@ -86,13 +82,9 @@ function RuleSelector({
     const selection = scopedResourceSelector.type;
 
     return (
-        <div
-            className="pf-u-p-lg"
-            style={{ border: '1px solid var(--pf-global--BorderColor--100' }}
-        >
+        <div className="rule-selector">
             <Select
                 toggleAriaLabel={`Select ${pluralEntity.toLowerCase()} by name or label`}
-                className={`${selection === 'All' ? '' : 'pf-u-mb-lg'}`}
                 isOpen={isOpen}
                 onToggle={onToggle}
                 selections={selection}
@@ -101,7 +93,9 @@ function RuleSelector({
             >
                 <SelectOption value="All">All {pluralEntity.toLowerCase()}</SelectOption>
                 <SelectOption value="ByName">{pluralEntity} with names matching</SelectOption>
-                <SelectOption value="ByLabel">{pluralEntity} with labels matching</SelectOption>
+                <SelectOption value="ByLabel">
+                    {pluralEntity} with labels matching exactly
+                </SelectOption>
             </Select>
 
             {scopedResourceSelector.type === 'ByName' && (
@@ -110,17 +104,19 @@ function RuleSelector({
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}
+                    placeholder={placeholders.ByName[entityType]}
                     validationErrors={validationErrors}
                     isDisabled={isDisabled}
-                    OptionComponent={OptionComponent}
                 />
             )}
 
             {scopedResourceSelector.type === 'ByLabel' && (
                 <ByLabelSelector
+                    collection={collection}
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}
+                    placeholder={placeholders.ByLabel[entityType]}
                     validationErrors={validationErrors}
                     isDisabled={isDisabled}
                 />

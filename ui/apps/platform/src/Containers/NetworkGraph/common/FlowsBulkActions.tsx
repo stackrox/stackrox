@@ -7,37 +7,47 @@ type FlowsBulkActionsProps = {
     type: 'baseline' | 'active' | 'extraneous';
     selectedRows: string[];
     onClearSelectedRows: () => void;
+    markSelectedAsAnomalous?: () => void;
+    addSelectedToBaseline?: () => void;
 };
 
 function FlowsBulkActions({
     type,
     selectedRows,
     onClearSelectedRows,
+    markSelectedAsAnomalous,
+    addSelectedToBaseline,
 }: FlowsBulkActionsProps): ReactElement {
     // setter functions
-    const markSelectedAsAnomalous = () => {
+    const markSelectedAsAnomalousHandler = () => {
         // @TODO: Mark as anomalous
+        markSelectedAsAnomalous?.();
         onClearSelectedRows();
     };
-    const addSelectedToBaseline = () => {
+    const addSelectedToBaselineHandler = () => {
         // @TODO: Add to baseline
+        addSelectedToBaseline?.();
         onClearSelectedRows();
     };
 
     return (
         <BulkActionsDropdown isDisabled={selectedRows.length === 0}>
+            <DropdownItem
+                key="mark_as_anomalous"
+                component="button"
+                onClick={markSelectedAsAnomalousHandler}
+            >
+                Mark as anomalous
+            </DropdownItem>
             {type !== 'baseline' && (
                 <DropdownItem
-                    key="mark_as_anomalous"
+                    key="add_to_baseline"
                     component="button"
-                    onClick={markSelectedAsAnomalous}
+                    onClick={addSelectedToBaselineHandler}
                 >
-                    Mark as anomalous
+                    Add to baseline
                 </DropdownItem>
             )}
-            <DropdownItem key="add_to_baseline" component="button" onClick={addSelectedToBaseline}>
-                Add to baseline
-            </DropdownItem>
         </BulkActionsDropdown>
     );
 }

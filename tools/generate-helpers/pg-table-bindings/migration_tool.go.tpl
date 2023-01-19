@@ -16,7 +16,7 @@
 {{- define "convertProtoToModel" }}
 {{- $schema := . }}
     // Convert{{$schema.TypeName}}FromProto converts a `{{$schema.Type}}` to Gorm model
-    func Convert{{$schema.TypeName}}FromProto(obj {{$schema.Type}}{{if $schema.Parent}}, idx int{{end}}{{ range $idx, $field := $schema.FieldsReferringToParent }}, {{$field.Name}} {{$field.Type}}{{end}}) (*{{$schema.Table|upperCamelCase}}, error) {
+    func Convert{{$schema.TypeName}}FromProto(obj {{$schema.Type}}{{if $schema.Parent}}, idx int{{end}}{{ range $index, $field := $schema.FieldsReferringToParent }}, {{$field.Name}} {{$field.Type}}{{end}}) (*{{$schema.Table|upperCamelCase}}, error) {
         {{- if not $schema.Parent }}
         serialized, err := obj.Marshal()
         if err != nil {
@@ -24,14 +24,14 @@
         }
         {{- end}}
         model := &{{$schema.Table|upperCamelCase}}{
-        {{- range $idx, $field := $schema.DBColumnFields }}
+        {{- range $index, $field := $schema.DBColumnFields }}
             {{$field.ColumnName|upperCamelCase}}: {{- template "convertField" $field}}
         {{- end}}
         }
         return model, nil
     }
 
-    {{- range $idx, $child := $schema.Children }}
+    {{- range $index, $child := $schema.Children }}
         {{- template "convertProtoToModel" $child }}
     {{- end }}
 

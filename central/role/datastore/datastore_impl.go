@@ -77,7 +77,7 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 	if err := rolePkg.ValidateRole(role); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	if err := verifyNotDefaultRole(role.GetName()); err != nil {
+	if err := verifyNotDefaultRole(role); err != nil {
 		return err
 	}
 
@@ -103,7 +103,7 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	if err := rolePkg.ValidateRole(role); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	if err := verifyNotDefaultRole(role.GetName()); err != nil {
+	if err := verifyNotDefaultRole(role); err != nil {
 		return err
 	}
 
@@ -126,11 +126,8 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := verifyNotDefaultRole(name); err != nil {
-		return err
-	}
-	// Verify storage constraints.
-	if err := ds.verifyRoleNameExists(ctx, name); err != nil {
+
+	if err := ds.verifyRoleForDeletion(ctx, name); err != nil {
 		return err
 	}
 
@@ -184,7 +181,7 @@ func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *st
 	if err := rolePkg.ValidatePermissionSet(permissionSet); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	if err := verifyNotDefaultPermissionSet(permissionSet.GetName()); err != nil {
+	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
 	}
 
@@ -212,7 +209,7 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 	if err := rolePkg.ValidatePermissionSet(permissionSet); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	if err := verifyNotDefaultPermissionSet(permissionSet.GetName()); err != nil {
+	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
 	}
 
@@ -248,7 +245,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 	if !found {
 		return errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
-	if err := verifyNotDefaultPermissionSet(permissionSet.GetName()); err != nil {
+	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
 	}
 
@@ -457,9 +454,9 @@ func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *st
 }
 
 // Returns errox.InvalidArgs if the given role is a default one.
-func verifyNotDefaultRole(name string) error {
-	if rolePkg.IsDefaultRoleName(name) {
-		return errors.Wrapf(errox.InvalidArgs, "default role %q cannot be modified or deleted", name)
+func verifyNotDefaultRole(role *storage.Role) error {
+	if rolePkg.IsDefaultRole(role) {
+		return errors.Wrapf(errox.InvalidArgs, "default role %q cannot be modified or deleted", role.GetName())
 	}
 	return nil
 }
@@ -491,10 +488,11 @@ func (ds *dataStoreImpl) verifyPermissionSetIDDoesNotExist(ctx context.Context, 
 }
 
 // Returns errox.InvalidArgs if the given permission set is a default
-// one. Note that IsDefaultRoleName() is reused due to the name sameness.
-func verifyNotDefaultPermissionSet(name string) error {
-	if rolePkg.IsDefaultRoleName(name) {
-		return errors.Wrapf(errox.InvalidArgs, "default permission set %q cannot be modified or deleted", name)
+// one. Note that IsDefaultRole() is reused due to the name sameness.
+func verifyNotDefaultPermissionSet(permissionSet *storage.PermissionSet) error {
+	if rolePkg.IsDefaultPermissionSet(permissionSet) {
+		return errors.Wrapf(errox.InvalidArgs, "default permission set %q cannot be modified or deleted",
+			permissionSet.GetName())
 	}
 	return nil
 }
@@ -551,9 +549,26 @@ func (ds *dataStoreImpl) verifyRoleNameExists(ctx context.Context, name string) 
 	return nil
 }
 
+// verifyRoleForDeletion verifies the storage constraints for deleting a role.
+// It will:
+// - verify that the role is not a default role
+// - verify that the role exists
+func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string) error {
+	role, found, err := ds.roleStorage.Get(ctx, name)
+
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.Wrapf(errox.NotFound, "name = %q", name)
+	}
+
+	return verifyNotDefaultRole(role)
+}
+
 // Returns errox.InvalidArgs if the given scope is a default one.
 func verifyNotDefaultAccessScope(scope *storage.SimpleAccessScope) error {
-	if rolePkg.IsDefaultAccessScope(scope.GetId()) {
+	if rolePkg.IsDefaultAccessScope(scope) {
 		return errors.Wrapf(errox.InvalidArgs, "default access scope %q cannot be modified or deleted", scope.GetName())
 	}
 	return nil

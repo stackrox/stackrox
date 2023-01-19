@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"google.golang.org/grpc/codes"
 )
 
@@ -58,20 +59,28 @@ type BucketStats struct {
 type TableStats struct {
 	Name      string `json:"name"`
 	RowCount  int64  `json:"rowCount"`
-	TableSize int64  `json:"tableSize"`
-	IndexSize int64  `json:"indexSize"`
-	ToastSize int64  `json:"toastSize"`
+	TableSize int64  `json:"tableSizeBytes"`
+	IndexSize int64  `json:"indexSizeBytes"`
+	ToastSize int64  `json:"toastSizeBytes"`
+}
+
+// DatabaseDetailsStats contains telemetry details about sizing of databases
+type DatabaseDetailsStats struct {
+	DatabaseName string `json:"databaseName"`
+	DatabaseSize int64  `json:"databaseSizeBytes"`
 }
 
 // DatabaseStats contains telemetry data about a DB
 type DatabaseStats struct {
-	Type           string         `json:"type"`
-	Path           string         `json:"path"`
-	AvailableBytes int64          `json:"availableBytes"`
-	UsedBytes      int64          `json:"usedBytes"`
-	Buckets        []*BucketStats `json:"buckets,omitempty"`
-	Tables         []*TableStats  `json:"tables,omitempty"`
-	Errors         []string       `json:"errors,omitempty"`
+	Type              string                  `json:"type"`
+	Path              string                  `json:"path"`
+	AvailableBytes    int64                   `json:"availableBytes,omitempty"`
+	DatabaseAvailable bool                    `json:"databaseAvailable,omitempty"`
+	UsedBytes         int64                   `json:"usedBytes"`
+	Buckets           []*BucketStats          `json:"buckets,omitempty"`
+	Tables            []*TableStats           `json:"tables,omitempty"`
+	DatabaseDetails   []*DatabaseDetailsStats `json:"databaseDetails,omitempty"`
+	Errors            []string                `json:"errors,omitempty"`
 }
 
 // StorageInfo contains telemetry data about available disk, storage type, and the available databases
@@ -97,7 +106,7 @@ func (l *LicenseJSON) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals license JSON bytes into a License object, following jsonpb rules.
 func (l *LicenseJSON) UnmarshalJSON(data []byte) error {
-	return jsonpb.Unmarshal(bytes.NewReader(data), (*licenseproto.License)(l))
+	return jsonutil.JSONBytesToProto(data, (*licenseproto.License)(l))
 }
 
 // CentralInfo contains telemetry data specific to StackRox' Central deployment

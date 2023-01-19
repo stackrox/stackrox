@@ -324,7 +324,10 @@ function CollectionsFormPage({
             {modalCollectionId && (
                 <CollectionsFormModal
                     hasWriteAccessForCollections={hasWriteAccessForCollections}
-                    collectionId={modalCollectionId}
+                    modalAction={{
+                        type: 'view',
+                        collectionId: modalCollectionId,
+                    }}
                     onClose={() => setModalCollectionId(null)}
                 />
             )}

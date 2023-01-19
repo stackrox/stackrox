@@ -1,8 +1,12 @@
 import React from 'react';
 import {
+    Alert,
+    AlertVariant,
+    Bullseye,
     Divider,
     Flex,
     FlexItem,
+    Spinner,
     Stack,
     StackItem,
     Toolbar,
@@ -11,8 +15,8 @@ import {
 } from '@patternfly/react-core';
 
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types/flow.type';
-import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+import { filterNetworkFlows, getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+import { CustomEdgeModel } from '../types/topology.type';
 
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,
@@ -23,93 +27,85 @@ import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 import FlowsBulkActions from '../common/FlowsBulkActions';
 
 import './DeploymentFlows.css';
+import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
+import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
+import { Flow } from '../types/flow.type';
 
-const flows: Flow[] = [
-    {
-        id: 'External Entities-Ingress-Many-TCP',
-        type: 'External',
-        entity: 'External Entities',
-        namespace: '',
-        direction: 'Ingress',
-        port: 'Many',
-        protocol: 'TCP',
-        isAnomalous: true,
-        children: [
-            {
-                id: 'External Entities-Ingress-443-TCP',
-                type: 'External',
-                entity: 'External Entities',
-                namespace: '',
-                direction: 'Ingress',
-                port: '443',
-                protocol: 'TCP',
-                isAnomalous: true,
-            },
-            {
-                id: 'External Entities-Ingress-9443-TCP',
-                type: 'External',
-                entity: 'External Entities',
-                namespace: '',
-                direction: 'Ingress',
-                port: '9443',
-                protocol: 'TCP',
-                isAnomalous: true,
-            },
-        ],
-    },
-    {
-        id: 'Deployment 1-naples-Ingress-Many-TCP',
-        type: 'Deployment',
-        entity: 'Deployment 1',
-        namespace: 'naples',
-        direction: 'Ingress',
-        port: '9000',
-        protocol: 'TCP',
-        isAnomalous: true,
-        children: [],
-    },
-    {
-        id: 'Deployment 2-naples-Ingress-Many-UDP',
-        type: 'Deployment',
-        entity: 'Deployment 2',
-        namespace: 'naples',
-        direction: 'Ingress',
-        port: '8080',
-        protocol: 'UDP',
-        isAnomalous: false,
-        children: [],
-    },
-    {
-        id: 'Deployment 3-naples-Egress-7777-UDP',
-        type: 'Deployment',
-        entity: 'Deployment 3',
-        namespace: 'naples',
-        direction: 'Egress',
-        port: '7777',
-        protocol: 'UDP',
-        isAnomalous: false,
-        children: [],
-    },
-];
+type DeploymentFlowsProps = {
+    deploymentId: string;
+    edges: CustomEdgeModel[];
+};
 
-function DeploymentFlow() {
+function DeploymentFlows({ deploymentId, edges }: DeploymentFlowsProps) {
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
-    const initialExpandedRows = flows
+
+    const {
+        isLoading,
+        error: fetchError,
+        data: { networkFlows },
+        refetchFlows,
+    } = useFetchNetworkFlows({ edges, deploymentId });
+    const {
+        isModifying,
+        error: modifyError,
+        modifyBaselineStatuses,
+    } = useModifyBaselineStatuses(deploymentId);
+    const filteredFlows = filterNetworkFlows(networkFlows, entityNameFilter, advancedFilters);
+
+    const initialExpandedRows = filteredFlows
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
     const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
     const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
 
     // derived data
-    const numFlows = getNumFlows(flows);
-    const allUniquePorts = getAllUniquePorts(flows);
+    const numFlows = getNumFlows(filteredFlows);
+    const allUniquePorts = getAllUniquePorts(networkFlows);
+
+    function addToBaseline(flow: Flow) {
+        modifyBaselineStatuses([flow], 'BASELINE', refetchFlows);
+    }
+
+    function markAsAnomalous(flow: Flow) {
+        modifyBaselineStatuses([flow], 'ANOMALOUS', refetchFlows);
+    }
+
+    function addSelectedToBaseline() {
+        const selectedFlows = filteredFlows.filter((networkBaseline) => {
+            return selectedRows.includes(networkBaseline.id);
+        });
+        modifyBaselineStatuses(selectedFlows, 'BASELINE', refetchFlows);
+    }
+
+    function markSelectedAsAnomalous() {
+        const selectedFlows = filteredFlows.filter((networkBaseline) => {
+            return selectedRows.includes(networkBaseline.id);
+        });
+        modifyBaselineStatuses(selectedFlows, 'ANOMALOUS', refetchFlows);
+    }
+
+    if (isLoading || isModifying) {
+        return (
+            <Bullseye>
+                <Spinner isSVG size="lg" />
+            </Bullseye>
+        );
+    }
 
     return (
         <div className="pf-u-h-100 pf-u-p-md">
+            {(fetchError || modifyError) && (
+                <Alert
+                    isInline
+                    variant={AlertVariant.danger}
+                    title={fetchError || modifyError}
+                    className="pf-u-mb-sm"
+                />
+            )}
             <Stack hasGutter>
                 <StackItem>
                     <Flex>
@@ -140,6 +136,8 @@ function DeploymentFlow() {
                                     type="active"
                                     selectedRows={selectedRows}
                                     onClearSelectedRows={() => setSelectedRows([])}
+                                    markSelectedAsAnomalous={markSelectedAsAnomalous}
+                                    addSelectedToBaseline={addSelectedToBaseline}
                                 />
                             </ToolbarItem>
                         </ToolbarContent>
@@ -148,12 +146,14 @@ function DeploymentFlow() {
                 <StackItem>
                     <FlowsTable
                         label="Deployment flows"
-                        flows={flows}
+                        flows={filteredFlows}
                         numFlows={numFlows}
                         expandedRows={expandedRows}
                         setExpandedRows={setExpandedRows}
                         selectedRows={selectedRows}
                         setSelectedRows={setSelectedRows}
+                        addToBaseline={addToBaseline}
+                        markAsAnomalous={markAsAnomalous}
                         isEditable
                     />
                 </StackItem>
@@ -162,4 +162,4 @@ function DeploymentFlow() {
     );
 }
 
-export default DeploymentFlow;
+export default DeploymentFlows;

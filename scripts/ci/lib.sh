@@ -550,40 +550,6 @@ check_rhacs_eng_image_exists() {
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
 
-check_docs() {
-    info "Check docs version"
-
-    if [[ "$#" -lt 1 ]]; then
-        die "missing arg. usage: check_docs <tag>"
-    fi
-
-    local tag="$1"
-
-    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
-        info "Skipping step as this is not a release or RC build"
-        return 0
-    }
-
-    local release_version="${BASH_REMATCH[1]}"
-    local expected_content_branch="rhacs-docs-${release_version}"
-    local actual_content_branch
-    actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
-    [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
-        echo >&2 "ERROR: Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
-        return 1
-    }
-
-    git submodule update --remote docs/content
-    git diff --exit-code HEAD || {
-        echo >&2 "ERROR: The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
-        echo >&2 "  git submodule update --remote docs/content"
-        echo >&2 "and commit the result."
-        return 1
-    }
-
-    info "The docs version is as expected"
-}
-
 check_scanner_and_collector_versions() {
     info "Check on builds that COLLECTOR_VERSION and SCANNER_VERSION are release versions"
 

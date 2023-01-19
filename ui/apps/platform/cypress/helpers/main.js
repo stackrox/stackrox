@@ -9,7 +9,7 @@ import { visit } from './visit';
  */
 export const summaryCountsOpname = 'summary_counts';
 export const getAllNamespacesByClusterOpname = 'getAllNamespacesByCluster';
-export const alertsSummaryCountsAlias = 'alerts/summary/counts';
+export const alertCountsBySeverityOpname = 'alertCountsBySeverity';
 export const mostRecentAlertsOpname = 'mostRecentAlerts';
 export const getImagesOpname = 'getImages';
 export const deploymentsWithProcessInfoAlias = 'deploymentswithprocessinfo';
@@ -22,10 +22,7 @@ const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
     getAllNamespacesByClusterOpname,
 ]);
 const routeMatcherMapForViolationsByPolicySeverity = {
-    [alertsSummaryCountsAlias]: {
-        method: 'GET',
-        url: '/v1/alerts/summary/counts?request.query=',
-    },
+    ...getRouteMatcherMapForGraphQL([alertCountsBySeverityOpname]),
     ...getRouteMatcherMapForGraphQL([mostRecentAlertsOpname]),
 };
 const routeMatcherMapForImagesAtMostRisk = getRouteMatcherMapForGraphQL([getImagesOpname]);

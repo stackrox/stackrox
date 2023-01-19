@@ -59,7 +59,7 @@ button.pf-c-toggle-group__button:disabled {
     opacity: inherit;
 }
 
-.pf-c-select__toggle::before {
+.pf-c-select__toggle:not(.pf-m-plain)::before {
     position: absolute;
     top: 0;
     right: 0;
@@ -93,6 +93,12 @@ button.pf-c-toggle-group__button:disabled {
     border-bottom-width: 2px !important;
 }
 
+/* Fix default text in plain PF Select */
+.pf-c-select__toggle.pf-m-plain .pf-c-select__toggle-text {
+    overflow: visible !important;
+}
+
+
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
 .pf-c-button__icon.pf-m-start svg,
 .pf-c-button__icon.pf-m-end svg,
@@ -112,6 +118,11 @@ button.pf-c-toggle-group__button:disabled {
 .theme-dark .pf-c-table input[type='checkbox'],
 .theme-dark .pf-c-check input[type='checkbox'] {
     filter: inherit; /* replace invert(0.3) */
+}
+
+/* override width of thead checkbox so that it's not cut off when table is empty */
+.pf-c-table thead tr > .pf-c-table__check {
+    min-width: 44px;
 }
 
 button.pf-c-tree-view__node {

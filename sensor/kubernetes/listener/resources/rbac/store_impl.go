@@ -111,6 +111,49 @@ func (rs *storeImpl) RemoveClusterBinding(binding *v1.ClusterRoleBinding) {
 	rs.removeRoleBindingGenericNoLock(bindingID)
 }
 
+func (rs *storeImpl) FindBindingForNamespacedRole(namespace, roleName string) []namespacedBindingID {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	var matched []namespacedBindingID
+	for binding, ref := range rs.bindings {
+		// During binding processing `ref.roleRef.namespace` will be set to "" if binding references a ClusterRole.
+		// `namespace` parameter is also set to "" here, meaning that if the binding stored references a ClusterRole
+		// we can determine such by checking if ref.roleRef.namespace == namespace. Otherwise, this simply matches that
+		// a RoleBinding is in the same namespace that the Role being matched against.
+		if ref.roleRef.name == roleName && ref.roleRef.namespace == namespace {
+			matched = append(matched, binding)
+		}
+	}
+
+	return matched
+}
+
+func (rs *storeImpl) FindSubjectForBindingID(namespace, name, uuid string) []namespacedSubject {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	id := namespacedBindingID{namespace: namespace, name: name, uid: uuid}
+	if binding, ok := rs.bindings[id]; ok {
+		return binding.subjects
+	}
+	return nil
+}
+
+func (rs *storeImpl) FindSubjectForRole(namespace, roleName string) []namespacedSubject {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	var matched []namespacedSubject
+	for _, binding := range rs.bindings {
+		if binding.roleRef.name == roleName && binding.roleRef.namespace == namespace {
+			matched = append(matched, binding.subjects...)
+		}
+	}
+
+	return matched
+}
+
 func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() {
 	rs.bucketEvaluator = newBucketEvaluator(rs.roles, rs.bindings)
 	rs.dirty = false

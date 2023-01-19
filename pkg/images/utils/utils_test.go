@@ -68,7 +68,7 @@ func TestExtractImageSha(t *testing.T) {
 		output string
 	}{
 		{
-			input:  "docker-pullable://k8s.gcr.io/etcd-amd64@sha256:68235934469f3bc58917bcf7018bf0d3b72129e6303b0bef28186d96b2259317",
+			input:  "docker-pullable://registry.k8s.io/etcd-amd64@sha256:68235934469f3bc58917bcf7018bf0d3b72129e6303b0bef28186d96b2259317",
 			output: "sha256:68235934469f3bc58917bcf7018bf0d3b72129e6303b0bef28186d96b2259317",
 		},
 		{
@@ -76,7 +76,7 @@ func TestExtractImageSha(t *testing.T) {
 			output: "sha256:041b6144416e6e9c540d1fb4883ebc1b6fe4baf09d066d8311c0109755baae96",
 		},
 		{
-			input:  "docker-pullable://k8s.gcr.io/etcd-amd64@sha512:4cc8f2b59644e88f744c5d889a9082b9c3e6c03c549c703d1ec5613ecb308beae9b0d0c268ef6c5efdc1606d0e918a211276c3ae5d5fa7c7e903b6f2237f2383",
+			input:  "docker-pullable://registry.k8s.io/etcd-amd64@sha512:4cc8f2b59644e88f744c5d889a9082b9c3e6c03c549c703d1ec5613ecb308beae9b0d0c268ef6c5efdc1606d0e918a211276c3ae5d5fa7c7e903b6f2237f2383",
 			output: "sha512:4cc8f2b59644e88f744c5d889a9082b9c3e6c03c549c703d1ec5613ecb308beae9b0d0c268ef6c5efdc1606d0e918a211276c3ae5d5fa7c7e903b6f2237f2383",
 		},
 		{

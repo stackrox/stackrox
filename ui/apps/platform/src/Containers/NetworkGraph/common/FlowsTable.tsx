@@ -14,6 +14,7 @@ import { Flex, FlexItem, Text, TextContent, TextVariants } from '@patternfly/rea
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import { Flow } from '../types/flow.type';
+import { protocolLabel } from '../utils/flowUtils';
 
 type FlowsTableProps = {
     label: string;
@@ -24,6 +25,8 @@ type FlowsTableProps = {
     selectedRows: string[];
     setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
     isEditable?: boolean;
+    addToBaseline?: (flow: Flow) => void;
+    markAsAnomalous?: (flow: Flow) => void;
 };
 
 const columnNames = {
@@ -42,10 +45,12 @@ function FlowsTable({
     selectedRows,
     setSelectedRows,
     isEditable = false,
+    addToBaseline,
+    markAsAnomalous,
 }: FlowsTableProps): ReactElement {
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
-    const areAllRowsSelected = selectedRows.length === numFlows;
+    const areAllRowsSelected = selectedRows.length !== 0 && selectedRows.length === numFlows;
     const isRowSelected = (row: Flow) => selectedRows.includes(row.id);
 
     // setter functions
@@ -100,12 +105,16 @@ function FlowsTable({
                                   ? {
                                         itemKey: 'add-flow-to-baseline',
                                         title: 'Add to baseline',
-                                        onClick: () => {},
+                                        onClick: () => {
+                                            addToBaseline?.(row);
+                                        },
                                     }
                                   : {
                                         itemKey: 'mark-flow-as-anomalous',
                                         title: 'Mark as anomalous',
-                                        onClick: () => {},
+                                        onClick: () => {
+                                            markAsAnomalous?.(row);
+                                        },
                                     },
                           ]
                         : [];
@@ -147,11 +156,9 @@ function FlowsTable({
                                         <div>
                                             <TextContent>
                                                 <Text component={TextVariants.small}>
-                                                    {row.type === 'Deployment'
+                                                    {row.type === 'DEPLOYMENT'
                                                         ? `in "${row.namespace}"`
-                                                        : `${
-                                                              row.children ? row.children.length : 1
-                                                          } active flows`}
+                                                        : 'External to cluster'}
                                                 </Text>
                                             </TextContent>
                                         </div>
@@ -165,7 +172,7 @@ function FlowsTable({
                             </Td>
                             <Td dataLabel={columnNames.direction}>{row.direction}</Td>
                             <Td dataLabel={columnNames.portAndProtocol}>
-                                {row.port} / {row.protocol}
+                                {row.port} / {protocolLabel[row.protocol]}
                             </Td>
                             {isEditable && (
                                 <Td isActionCell>
@@ -183,12 +190,16 @@ function FlowsTable({
                                         ? {
                                               itemKey: 'add-flow-to-baseline',
                                               title: 'Add to baseline',
-                                              onClick: () => {},
+                                              onClick: () => {
+                                                  addToBaseline?.(child);
+                                              },
                                           }
                                         : {
                                               itemKey: 'mark-flow-as-anomalous',
                                               title: 'Mark as anomalous',
-                                              onClick: () => {},
+                                              onClick: () => {
+                                                  markAsAnomalous?.(child);
+                                              },
                                           },
                                 ];
 
@@ -224,7 +235,7 @@ function FlowsTable({
                                         </Td>
                                         <Td>
                                             <ExpandableRowContent>
-                                                {child.port} / {child.protocol}
+                                                {child.port} / {protocolLabel[child.protocol]}
                                             </ExpandableRowContent>
                                         </Td>
                                         {isEditable && (

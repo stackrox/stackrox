@@ -89,6 +89,7 @@ function NotifierSelection({
                     >
                         <SelectSingle
                             id="emailConfig.notifierId"
+                            toggleAriaLabel="Select a notifier"
                             value={notifierId}
                             handleSelect={onNotifierChange}
                             placeholderText="Select a notifier"

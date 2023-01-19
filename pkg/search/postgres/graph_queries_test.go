@@ -65,7 +65,9 @@ func TestGraphQueries(t *testing.T) {
 
 type GraphQueriesTestSuite struct {
 	suite.Suite
-	pool *pgxpool.Pool
+
+	testDB *pgtest.TestPostgres
+	pool   *pgxpool.Pool
 
 	testGrandparentStore   testGrandparent.Store
 	testChild1Store        testChild1.Store
@@ -90,28 +92,22 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 		s.T().SkipNow()
 	}
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(testCtx, config)
-	s.Require().NoError(err)
+	s.testDB = pgtest.ForT(s.T())
+	pool := s.testDB.Pool
 
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.pool = pool
-	s.testGrandparentStore = testGrandparent.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testChild1Store = testChild1.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testChild2Store = testChild2.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testParent1Store = testParent1.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testParent2Store = testParent2.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testParent3Store = testParent3.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testParent4Store = testParent4.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testChild1P4Store = testChild1P4.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testGrandChild1Store = testGrandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testGGrandchild1Store = testGGrandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testG2Grandchild1Store = testG2Grandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testG3Grandchild1Store = testG3Grandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testShortCircuitStore = testShortCircuit.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testGrandparentStore = testGrandparent.New(pool)
+	s.testChild1Store = testChild1.New(pool)
+	s.testChild2Store = testChild2.New(pool)
+	s.testParent1Store = testParent1.New(pool)
+	s.testParent2Store = testParent2.New(pool)
+	s.testParent3Store = testParent3.New(pool)
+	s.testParent4Store = testParent4.New(pool)
+	s.testChild1P4Store = testChild1P4.New(pool)
+	s.testGrandChild1Store = testGrandchild1.New(pool)
+	s.testGGrandchild1Store = testGGrandchild1.New(pool)
+	s.testG2Grandchild1Store = testG2Grandchild1.New(pool)
+	s.testG3Grandchild1Store = testG3Grandchild1.New(pool)
+	s.testShortCircuitStore = testShortCircuit.New(pool)
 	s.initializeTestGraph()
 }
 
@@ -253,13 +249,13 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 }
 
 func (s *GraphQueriesTestSuite) mustRunQuery(typeName string, q *v1.Query) []search.Result {
-	res, err := postgres.RunSearchRequestForSchema(testCtx, getTestSchema(s.T(), typeName), q, s.pool)
+	res, err := postgres.RunSearchRequestForSchema(testCtx, getTestSchema(s.T(), typeName), q, s.testDB.Pool)
 	s.Require().NoError(err)
 	return res
 }
 
 func (s *GraphQueriesTestSuite) mustRunCountQuery(typeName string, q *v1.Query) int {
-	count, err := postgres.RunCountRequestForSchema(ctx, getTestSchema(s.T(), typeName), q, s.pool)
+	count, err := postgres.RunCountRequestForSchema(ctx, getTestSchema(s.T(), typeName), q, s.testDB.Pool)
 	s.Require().NoError(err)
 	return count
 }
@@ -629,7 +625,5 @@ func (s *GraphQueriesTestSuite) TestDerived() {
 }
 
 func (s *GraphQueriesTestSuite) TearDownTest() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 }

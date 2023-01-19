@@ -1,14 +1,12 @@
 package datastore
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
@@ -21,7 +19,7 @@ import (
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -40,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -69,7 +68,7 @@ type ClusterDataStoreTestSuite struct {
 	clusterDataStore          DataStore
 	namespaceDataStore        *namespaceMocks.MockDataStore
 	deploymentDataStore       *deploymentMocks.MockDataStore
-	nodeDataStore             *nodeMocks.MockGlobalDataStore
+	nodeDataStore             *nodeMocks.MockDataStore
 	secretDataStore           *secretMocks.MockDataStore
 	podDataStore              *podMocks.MockDataStore
 	flowsDataStore            *netFlowsMocks.MockClusterDataStore
@@ -117,7 +116,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.namespaceDataStore = namespaceMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.alertDataStore = alertMocks.NewMockDataStore(suite.mockCtrl)
-	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
+	suite.nodeDataStore = nodeMocks.NewMockDataStore(suite.mockCtrl)
 	suite.secretDataStore = secretMocks.NewMockDataStore(suite.mockCtrl)
 	suite.podDataStore = podMocks.NewMockDataStore(suite.mockCtrl)
 	suite.flowsDataStore = netFlowsMocks.NewMockClusterDataStore(suite.mockCtrl)
@@ -132,8 +131,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.roleBindingDataStore = roleBindingMocks.NewMockDataStore(suite.mockCtrl)
 	suite.roleBindingDataStore = roleBindingMocks.NewMockDataStore(suite.mockCtrl)
 	suite.clusterCVEDataStore = clusterCVEMocks.NewMockDataStore(suite.mockCtrl)
-
-	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	suite.nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 	suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
 	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
@@ -217,8 +215,8 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
 	suite.deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	suite.podDataStore.EXPECT().RemovePod(gomock.Any(), "fakepod").Return(nil)
-	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(testSecrets, nil)
+	suite.nodeDataStore.EXPECT().DeleteAllNodesForCluster(gomock.Any(), gomock.Any()).Return(nil)
 	suite.serviceAccountDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testServiceAccounts, nil)
 	suite.roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testRoles, nil)
 	suite.roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testRoleBindings, nil)
@@ -371,8 +369,8 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.indexer.EXPECT().DeleteCluster(gomock.Any()).Return(nil)
 	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
+	suite.nodeDataStore.EXPECT().DeleteAllNodesForCluster(gomock.Any(), gomock.Any()).Return(nil)
 	suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.serviceAccountDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
@@ -610,10 +608,10 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		LastContact:        ts,
 	}
 
-	err := jsonpb.Unmarshal(bytes.NewReader([]byte(someHelmConfigJSON)), &someHelmConfig)
+	err := jsonutil.JSONToProto(someHelmConfigJSON, &someHelmConfig)
 	suite.NoError(err)
 
-	err = jsonpb.Unmarshal(bytes.NewReader([]byte(differentConfigFPHelmConfigJSON)), &differentConfigFPHelmConfig)
+	err = jsonutil.JSONToProto(differentConfigFPHelmConfigJSON, &differentConfigFPHelmConfig)
 	suite.NoError(err)
 
 	someClusterWithManagerType := func(managerType storage.ManagerType, helmConfig *storage.CompleteClusterConfig) *storage.Cluster {

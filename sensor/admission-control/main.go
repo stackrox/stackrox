@@ -109,7 +109,7 @@ func mainCmd() error {
 	apiServer.Start()
 
 	// Graceful shutdown logic:
-	// Upon first SIGTERM, keep running normally until either the internal grace period (20s) passes, or another
+	// Upon first SIGTERM, keep running normally until either the internal grace period passes, or another
 	// SIGTERM is received. However, mark the container as not ready immediately, to make sure we no longer receive
 	// new requests once the API server has picked up the non-readiness.
 	sigTermCounter := 0

@@ -310,12 +310,7 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 		if err := readNodes(ctx); err != nil {
 			return nil, err
 		}
-		store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, resolver.data.GetId(), false)
-		if err != nil {
-			return nil, err
-		}
-		node, err := store.GetNode(string(args.Node))
-		return resolver.root.wrapNode(node, node != nil, err)
+		return resolver.root.wrapNode(resolver.root.NodeDataStore.GetNode(ctx, string(args.Node)))
 	}
 
 	return resolver.root.Node(resolver.clusterScopeContext(ctx), struct{ graphql.ID }{args.Node})

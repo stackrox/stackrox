@@ -75,9 +75,6 @@ make_stackrox_data() {
     info "Making /stackrox-data"
 
     mkdir /stackrox-data
-    cp -r docs/build /stackrox-data/product-docs
-    # Basic sanity check: are the docs in the right place?
-    ls /stackrox-data/product-docs/index.html
 
     "$ROOT/image/fetch-stackrox-data.sh"
 
@@ -143,9 +140,6 @@ build_main_and_bundles() {
     mkdir -p image/bin
     make copy-binaries-to-image-dir
     cp bin/linux_amd64/roxctl image/roxctl/roxctl-linux
-
-    info "Building docs"
-    make -C docs
 
     make_stackrox_data
 

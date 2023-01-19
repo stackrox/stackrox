@@ -16,7 +16,6 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
-import { EdgeModel } from '@patternfly/react-topology';
 
 import useTabs from 'hooks/patternfly/useTabs';
 import useFetchDeployment from 'hooks/useFetchDeployment';
@@ -26,7 +25,7 @@ import {
     getNumExternalFlows,
     getNumInternalFlows,
 } from '../utils/networkGraphUtils';
-import { CustomNodeModel } from '../types/topology.type';
+import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 import DeploymentDetails from './DeploymentDetails';
@@ -37,7 +36,7 @@ import NetworkPolicies from '../common/NetworkPolicies';
 type DeploymentSideBarProps = {
     deploymentId: string;
     nodes: CustomNodeModel[];
-    edges: EdgeModel[];
+    edges: CustomEdgeModel[];
 };
 
 function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProps) {
@@ -129,7 +128,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                     )}
                 </TabContent>
                 <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
-                    <DeploymentFlows />
+                    <DeploymentFlows edges={edges} deploymentId={deploymentId} />
                 </TabContent>
                 <TabContent
                     eventKey="Baselines"
@@ -137,7 +136,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                     hidden={activeKeyTab !== 'Baselines'}
                     className="pf-u-h-100"
                 >
-                    <DeploymentBaselines />
+                    <DeploymentBaselines deploymentId={deploymentId} />
                 </TabContent>
                 <TabContent
                     eventKey="Network policies"

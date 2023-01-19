@@ -91,8 +91,8 @@ function AdvancedFlowsFilter({
                 <SelectOption value="egress">Egress (outbound)</SelectOption>
             </SelectGroup>
             <SelectGroup label="Protocols">
-                <SelectOption value="TCP">TCP</SelectOption>
-                <SelectOption value="UDP">UDP</SelectOption>
+                <SelectOption value="L4_PROTOCOL_TCP">TCP</SelectOption>
+                <SelectOption value="L4_PROTOCOL_UDP">UDP</SelectOption>
             </SelectGroup>
             <SelectGroup label="Ports">
                 <Select

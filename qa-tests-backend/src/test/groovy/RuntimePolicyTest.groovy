@@ -19,13 +19,13 @@ class RuntimePolicyTest extends BaseSpecification  {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName (DEPLOYMENTAPTGET)
-                    .setImage ("quay.io/rhacs-eng/qa:nginx-"+
+                    .setImage ("quay.io/rhacs-eng/qa-multi-arch:nginx-"+
                                "204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
                     .addLabel ( "app", "test" )
                     .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"]),
             new Deployment()
                     .setName (DEPLOYMENTAPT)
-                    .setImage ("quay.io/rhacs-eng/qa:redis-"+
+                    .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-"+
                                "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
                     .addLabel ( "app", "test" )
                     .setCommand(["sh" , "-c" , "apt -y update && sleep 600"]),
@@ -33,7 +33,8 @@ class RuntimePolicyTest extends BaseSpecification  {
 
     static final private DEPLOYMENTREMOVAL =  new Deployment()
             .setName ("runtimeremoval")
-            .setImage ("quay.io/rhacs-eng/qa:redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-" +
+                    "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
             .addLabel ( "app", "test" )
             .setCommand(["sh" , "-c" , "apt -y update && sleep 600"])
 

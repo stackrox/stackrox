@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
@@ -54,6 +55,8 @@ SELECT TABLE_NAME
   ) a
   WHERE oid = parent
 ) a;`
+
+	versionQuery = `SHOW server_version;`
 )
 
 var (
@@ -106,20 +109,47 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 		if err != nil {
 			log.Errorf("Could not create pg_stat_statements extension: %v", err)
 		}
-		go startMonitoringPostgres(ctx, postgresDB)
+		go startMonitoringPostgres(ctx, postgresDB, dbConfig)
 
 	})
 	return postgresDB
 }
 
-// CollectPostgresStats -- collect table level stats for Postgres
-func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) []*stats.TableStats {
+// GetPostgresVersion -- return version of the database
+func GetPostgresVersion(ctx context.Context, db *pgxpool.Pool) string {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
+
+	row := db.QueryRow(ctx, versionQuery)
+	var version string
+	if err := row.Scan(&version); err != nil {
+		log.Errorf("error fetching database version: %v", err)
+		return ""
+	}
+	return version
+}
+
+// CollectPostgresStats -- collect table level stats for Postgres
+func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.DatabaseStats {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	dbStats := &stats.DatabaseStats{}
+
+	if err := db.Ping(ctx); err != nil {
+		metrics.PostgresConnected.Set(float64(0))
+		dbStats.DatabaseAvailable = false
+		log.Errorf("not connected to Postgres: %v", err)
+		return dbStats
+	}
+
+	metrics.PostgresConnected.Set(float64(1))
+	dbStats.DatabaseAvailable = true
+
 	row, err := db.Query(ctx, tableQuery)
 	if err != nil {
 		log.Errorf("error fetching object counts: %v", err)
-		return nil
+		return dbStats
 	}
 
 	statsSlice := make([]*stats.TableStats, 0)
@@ -139,7 +169,7 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) []*stats.TableS
 			return nil
 		}
 
-		tableLabel := prometheus.Labels{"Table": tableName}
+		tableLabel := prometheus.Labels{"table": tableName}
 		metrics.PostgresTableCounts.With(tableLabel).Set(float64(rowEstimate))
 		metrics.PostgresTableTotalSize.With(tableLabel).Set(float64(totalSize))
 		metrics.PostgresIndexSize.With(tableLabel).Set(float64(indexSize))
@@ -157,13 +187,55 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) []*stats.TableS
 		statsSlice = append(statsSlice, tableStat)
 	}
 
-	return statsSlice
+	dbStats.Tables = statsSlice
+	return dbStats
 }
 
-func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool) {
+// CollectPostgresDatabaseSizes -- collect database sizing stats for Postgres
+func CollectPostgresDatabaseSizes(postgresConfig *pgxpool.Config) []*stats.DatabaseDetailsStats {
+	databases := pgadmin.GetAllDatabases(postgresConfig)
+
+	detailsSlice := make([]*stats.DatabaseDetailsStats, 0)
+
+	for _, database := range databases {
+		dbSize, err := pgadmin.GetDatabaseSize(postgresConfig, database)
+		if err != nil {
+			log.Errorf("error fetching clone size: %v", err)
+			return detailsSlice
+		}
+
+		dbDetails := &stats.DatabaseDetailsStats{
+			DatabaseName: database,
+			DatabaseSize: int64(dbSize),
+		}
+		detailsSlice = append(detailsSlice, dbDetails)
+	}
+
+	return detailsSlice
+}
+
+// CollectPostgresDatabaseStats -- collect database level stats for Postgres
+func CollectPostgresDatabaseStats(postgresConfig *pgxpool.Config) {
+	dbStats := CollectPostgresDatabaseSizes(postgresConfig)
+
+	for _, dbStat := range dbStats {
+		databaseLabel := prometheus.Labels{"database": dbStat.DatabaseName}
+		metrics.PostgresDBSize.With(databaseLabel).Set(float64(dbStat.DatabaseSize))
+	}
+
+	totalSize, err := pgadmin.GetTotalPostgresSize(postgresConfig)
+	if err != nil {
+		log.Errorf("error fetching total database size: %v", err)
+		return
+	}
+	metrics.PostgresTotalSize.Set(float64(totalSize))
+}
+
+func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool, postgresConfig *pgxpool.Config) {
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {
 		_ = CollectPostgresStats(ctx, db)
+		CollectPostgresDatabaseStats(postgresConfig)
 	}
 }

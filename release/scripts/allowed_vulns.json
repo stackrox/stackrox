@@ -4,11 +4,5 @@
         "image": ".*",
         "tag": ".*",
         "reason": "An example"
-    },
-    {
-        "vuln": "*",
-        "image": "^docs.*",
-        "tag": ".*",
-        "reason": "The docs image is not deployed in production"
     }
 ]

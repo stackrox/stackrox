@@ -33,13 +33,13 @@ describe('advancedFlowsFilterUtils', () => {
             const filters: AdvancedFlowsFilterType = {
                 flows: [],
                 directionality: [],
-                protocols: ['TCP', 'UDP'],
+                protocols: ['L4_PROTOCOL_TCP', 'L4_PROTOCOL_UDP'],
                 ports: [],
             };
 
             const selections = filtersToSelections(filters);
 
-            expect(selections).toEqual(['TCP', 'UDP']);
+            expect(selections).toEqual(['L4_PROTOCOL_TCP', 'L4_PROTOCOL_UDP']);
         });
 
         it('should convert filters with ports to selections', () => {
@@ -59,7 +59,7 @@ describe('advancedFlowsFilterUtils', () => {
             const filters: AdvancedFlowsFilterType = {
                 flows: ['anomalous', 'baseline'],
                 directionality: ['egress', 'ingress'],
-                protocols: ['TCP', 'UDP'],
+                protocols: ['L4_PROTOCOL_TCP', 'L4_PROTOCOL_UDP'],
                 ports: ['9000', '8080'],
             };
 
@@ -70,8 +70,8 @@ describe('advancedFlowsFilterUtils', () => {
                 'baseline',
                 'egress',
                 'ingress',
-                'TCP',
-                'UDP',
+                'L4_PROTOCOL_TCP',
+                'L4_PROTOCOL_UDP',
                 '9000',
                 '8080',
             ]);
@@ -110,14 +110,14 @@ describe('advancedFlowsFilterUtils', () => {
         });
 
         it('should convert selections with protocols to filters', () => {
-            const selections: string[] = ['TCP', 'UDP'];
+            const selections: string[] = ['L4_PROTOCOL_TCP', 'L4_PROTOCOL_UDP'];
 
             const filters = selectionsToFilters(selections);
 
             const expectedFilters: AdvancedFlowsFilterType = {
                 flows: [],
                 directionality: [],
-                protocols: ['TCP', 'UDP'],
+                protocols: ['L4_PROTOCOL_TCP', 'L4_PROTOCOL_UDP'],
                 ports: [],
             };
 
@@ -145,8 +145,8 @@ describe('advancedFlowsFilterUtils', () => {
                 'baseline',
                 'egress',
                 'ingress',
-                'TCP',
-                'UDP',
+                'L4_PROTOCOL_TCP',
+                'L4_PROTOCOL_UDP',
                 '9000',
                 '8080',
             ];
@@ -156,7 +156,7 @@ describe('advancedFlowsFilterUtils', () => {
             const expectedFilters: AdvancedFlowsFilterType = {
                 flows: ['anomalous', 'baseline'],
                 directionality: ['egress', 'ingress'],
-                protocols: ['TCP', 'UDP'],
+                protocols: ['L4_PROTOCOL_TCP', 'L4_PROTOCOL_UDP'],
                 ports: ['9000', '8080'],
             };
 

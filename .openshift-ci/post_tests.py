@@ -26,6 +26,7 @@ class PostTestsConstants:
     DIAGNOSTIC_OUTPUT = "diagnostic-bundle"
     CENTRAL_DATA_OUTPUT = "central-data"
     STACKROX_LOG_DIR = "/tmp/stackrox-logs"
+    PORT_FORWARD_LOGS = "/tmp/port-forward-logs"
 
 
 class NullPostTest:
@@ -142,6 +143,7 @@ class PostClusterTest(StoreArtifacts):
         self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
+        self.add_port_forward_logs()
         self.store_artifacts(test_outputs)
         self.add_test_results(test_results)
         self.handle_run_failure()
@@ -219,6 +221,9 @@ class PostClusterTest(StoreArtifacts):
             ["tests/e2e/lib.sh", "check_stackrox_logs", PostTestsConstants.K8S_LOG_DIR],
             timeout=PostTestsConstants.CHECK_TIMEOUT,
         )
+
+    def add_port_forward_logs(self):
+        self.data_to_store.append(PostTestsConstants.PORT_FORWARD_LOGS)
 
 
 class CheckStackroxLogs(StoreArtifacts):

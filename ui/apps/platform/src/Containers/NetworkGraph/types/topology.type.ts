@@ -1,9 +1,11 @@
-import { Model, NodeModel } from '@patternfly/react-topology';
+import { EdgeModel, Model, NodeModel } from '@patternfly/react-topology';
 
-import { ListenPort, Edge } from 'types/networkFlow.proto';
+import { EdgeProperties, ListenPort, OutEdges } from 'types/networkFlow.proto';
 import { Override } from 'utils/type.utils';
 
-export type CustomModel = Override<Model, { nodes?: CustomNodeModel[] }>;
+export type CustomModel = Override<Model, { nodes: CustomNodeModel[]; edges: CustomEdgeModel[] }>;
+
+// Node types
 
 export type CustomNodeModel =
     | NamespaceNodeModel
@@ -25,6 +27,10 @@ export type CIDRBlockNodeModel = Override<NodeModel, { data: CIDRBlockData }>;
 
 export type ExtraneousNodeModel = Override<NodeModel, { data: ExtraneousData }>;
 
+export type CustomGroupNodeData = NamespaceData | ExternalGroupData;
+
+export type CustomSingleNodeData = DeploymentData | ExternalEntitiesData | CIDRBlockData;
+
 export type CustomNodeData =
     | NamespaceData
     | DeploymentData
@@ -39,6 +45,13 @@ export type NamespaceData = {
 };
 
 export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
+
+export type NodeDataType =
+    | 'DEPLOYMENT'
+    | 'EXTERNAL_GROUP'
+    | 'EXTERNAL_ENTITIES'
+    | 'CIDR_BLOCK'
+    | 'EXTRANEOUS';
 
 export type DeploymentData = {
     type: 'DEPLOYMENT';
@@ -65,7 +78,7 @@ export type ExternalGroupData = {
 export type ExternalEntitiesData = {
     type: 'EXTERNAL_ENTITIES';
     id: string;
-    outEdges: Edge[];
+    outEdges: OutEdges;
 };
 
 export type CIDRBlockData = {
@@ -76,7 +89,7 @@ export type CIDRBlockData = {
         default: boolean;
         name: string;
     };
-    outEdges: Edge[];
+    outEdges: OutEdges;
 };
 
 export type ExtraneousData = {
@@ -84,4 +97,12 @@ export type ExtraneousData = {
     collapsible: boolean;
     showContextMenu: boolean;
     numFlows: number;
+};
+
+// Edge types
+
+export type CustomEdgeModel = Override<EdgeModel, { data: EdgeData }>;
+
+export type EdgeData = {
+    properties: EdgeProperties[];
 };

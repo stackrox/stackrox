@@ -49,6 +49,9 @@ func init() {
 		PostgresTableTotalSize,
 		PostgresTableDataSize,
 		PostgresToastSize,
+		PostgresDBSize,
+		PostgresTotalSize,
+		PostgresConnected,
 	)
 }
 
@@ -148,35 +151,56 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_table_size",
 		Help:      "estimated number of rows in the table",
-	}, []string{"Table"})
+	}, []string{"table"})
 
 	PostgresIndexSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_table_index_bytes",
 		Help:      "bytes being used by indexes for a table",
-	}, []string{"Table"})
+	}, []string{"table"})
 
 	PostgresTableTotalSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_table_total_bytes",
 		Help:      "bytes being used by the table overall",
-	}, []string{"Table"})
+	}, []string{"table"})
 
 	PostgresTableDataSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_table_data_bytes",
 		Help:      "bytes being used by the data for a table",
-	}, []string{"Table"})
+	}, []string{"table"})
 
 	PostgresToastSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_table_toast_bytes",
 		Help:      "bytes being used by toast for a table",
-	}, []string{"Table"})
+	}, []string{"table"})
+
+	PostgresDBSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_db_size_bytes",
+		Help:      "bytes being used by a Postgres Database",
+	}, []string{"database"})
+
+	PostgresTotalSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_total_size_bytes",
+		Help:      "bytes being used by Postgres all Databases",
+	})
+
+	PostgresConnected = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_connected",
+		Help:      "flag indicating if central is connected to the Postgres Database. 0 NOT connected, 1 connected",
+	})
 )
 
 // SetGaugeInt sets a value for a gauge from an int

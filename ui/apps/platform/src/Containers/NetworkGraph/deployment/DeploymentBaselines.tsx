@@ -1,10 +1,14 @@
 import React from 'react';
 import {
+    Alert,
+    AlertVariant,
+    Bullseye,
     Button,
     Checkbox,
     Divider,
     Flex,
     FlexItem,
+    Spinner,
     Stack,
     StackItem,
     Switch,
@@ -16,8 +20,7 @@ import {
 import { HelpIcon } from '@patternfly/react-icons';
 
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow } from '../types/flow.type';
-import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+import { filterNetworkFlows, getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,
@@ -26,104 +29,110 @@ import EntityNameSearchInput from '../common/EntityNameSearchInput';
 import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 import FlowsBulkActions from '../common/FlowsBulkActions';
+import useFetchNetworkBaselines from '../api/useFetchNetworkBaselines';
+import { Flow } from '../types/flow.type';
+import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
+import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
 
-const baselines: Flow[] = [
-    {
-        id: 'External Entities-Ingress-Many-TCP',
-        type: 'External',
-        entity: 'External Entities',
-        namespace: '',
-        direction: 'Ingress',
-        port: 'Many',
-        protocol: 'TCP',
-        isAnomalous: false,
-        children: [
-            {
-                id: 'External Entities-Ingress-443-TCP',
-                type: 'External',
-                entity: 'External Entities',
-                namespace: '',
-                direction: 'Ingress',
-                port: '443',
-                protocol: 'TCP',
-                isAnomalous: false,
-            },
-            {
-                id: 'External Entities-Ingress-9443-TCP',
-                type: 'External',
-                entity: 'External Entities',
-                namespace: '',
-                direction: 'Ingress',
-                port: '9443',
-                protocol: 'TCP',
-                isAnomalous: false,
-            },
-        ],
-    },
-    {
-        id: 'Deployment 1-naples-Ingress-Many-TCP',
-        type: 'Deployment',
-        entity: 'Deployment 1',
-        namespace: 'naples',
-        direction: 'Ingress',
-        port: '9000',
-        protocol: 'TCP',
-        isAnomalous: false,
-        children: [],
-    },
-    {
-        id: 'Deployment 2-naples-Ingress-Many-UDP',
-        type: 'Deployment',
-        entity: 'Deployment 2',
-        namespace: 'naples',
-        direction: 'Ingress',
-        port: '8080',
-        protocol: 'UDP',
-        isAnomalous: false,
-        children: [],
-    },
-    {
-        id: 'Deployment 3-naples-Egress-7777-UDP',
-        type: 'Deployment',
-        entity: 'Deployment 3',
-        namespace: 'naples',
-        direction: 'Egress',
-        port: '7777',
-        protocol: 'UDP',
-        isAnomalous: false,
-        children: [],
-    },
-];
+type DeploymentBaselinesProps = {
+    deploymentId: string;
+};
 
-function DeploymentBaselines() {
-    const [isAlertingOnViolations, setIsAlertingOnViolations] = React.useState<boolean>(false);
+function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
+    // component state
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
+
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
-    const initialExpandedRows = baselines
+    const {
+        isLoading,
+        error: fetchError,
+        data: { networkBaselines, isAlertingOnBaselineViolation },
+        refetchBaselines,
+    } = useFetchNetworkBaselines(deploymentId);
+    const {
+        isModifying,
+        error: modifyError,
+        modifyBaselineStatuses,
+    } = useModifyBaselineStatuses(deploymentId);
+    const {
+        isToggling,
+        error: toggleError,
+        toggleAlertingOnBaselineViolation,
+    } = useToggleAlertingOnBaselineViolation(deploymentId);
+    const filteredNetworkBaselines = filterNetworkFlows(
+        networkBaselines,
+        entityNameFilter,
+        advancedFilters
+    );
+
+    const initialExpandedRows = filteredNetworkBaselines
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
     const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
     const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
 
     // derived data
-    const numBaselines = getNumFlows(baselines);
-    const allUniquePorts = getAllUniquePorts(baselines);
+    const numBaselines = getNumFlows(filteredNetworkBaselines);
+    const allUniquePorts = getAllUniquePorts(filteredNetworkBaselines);
+
+    function addToBaseline(flow: Flow) {
+        modifyBaselineStatuses([flow], 'BASELINE', refetchBaselines);
+    }
+
+    function markAsAnomalous(flow: Flow) {
+        modifyBaselineStatuses([flow], 'ANOMALOUS', refetchBaselines);
+    }
+
+    function addSelectedToBaseline() {
+        const selectedFlows = filteredNetworkBaselines.filter((networkBaseline) => {
+            return selectedRows.includes(networkBaseline.id);
+        });
+        modifyBaselineStatuses(selectedFlows, 'BASELINE', refetchBaselines);
+    }
+
+    function markSelectedAsAnomalous() {
+        const selectedFlows = filteredNetworkBaselines.filter((networkBaseline) => {
+            return selectedRows.includes(networkBaseline.id);
+        });
+        modifyBaselineStatuses(selectedFlows, 'ANOMALOUS', refetchBaselines);
+    }
+
+    function toggleAlertingOnBaselineViolationHandler() {
+        toggleAlertingOnBaselineViolation(!isAlertingOnBaselineViolation, refetchBaselines);
+    }
+
+    if (isLoading || isModifying || isToggling) {
+        return (
+            <Bullseye>
+                <Spinner isSVG size="lg" />
+            </Bullseye>
+        );
+    }
 
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
-            <Stack hasGutter>
+        <div className="pf-u-h-100">
+            {(fetchError || modifyError || toggleError) && (
+                <Alert
+                    isInline
+                    variant={AlertVariant.danger}
+                    title={fetchError || modifyError || toggleError}
+                    className="pf-u-mb-sm"
+                />
+            )}
+            <Stack hasGutter className="pf-u-p-md">
                 <StackItem>
                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                         <FlexItem>
                             <Switch
                                 id="simple-switch"
                                 label="Alert on baseline violation"
-                                isChecked={isAlertingOnViolations}
-                                onChange={setIsAlertingOnViolations}
+                                isChecked={isAlertingOnBaselineViolation}
+                                onChange={toggleAlertingOnBaselineViolationHandler}
+                                isDisabled={isLoading || isModifying || isToggling}
                             />
                         </FlexItem>
                         <FlexItem>
@@ -169,6 +178,8 @@ function DeploymentBaselines() {
                                     type="baseline"
                                     selectedRows={selectedRows}
                                     onClearSelectedRows={() => setSelectedRows([])}
+                                    markSelectedAsAnomalous={markSelectedAsAnomalous}
+                                    addSelectedToBaseline={addSelectedToBaseline}
                                 />
                             </ToolbarItem>
                         </ToolbarContent>
@@ -178,16 +189,17 @@ function DeploymentBaselines() {
                 <StackItem>
                     <FlowsTable
                         label="Deployment baselines"
-                        flows={baselines}
+                        flows={filteredNetworkBaselines}
                         numFlows={numBaselines}
                         expandedRows={expandedRows}
                         setExpandedRows={setExpandedRows}
                         selectedRows={selectedRows}
                         setSelectedRows={setSelectedRows}
+                        addToBaseline={addToBaseline}
+                        markAsAnomalous={markAsAnomalous}
                         isEditable
                     />
                 </StackItem>
-                <Divider component="hr" />
                 <StackItem>
                     <Flex
                         className="pf-u-pb-md"

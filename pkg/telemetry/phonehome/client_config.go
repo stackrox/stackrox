@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -14,9 +13,6 @@ import (
 )
 
 var (
-	onceGatherer  sync.Once
-	onceTelemeter sync.Once
-
 	log = logging.LoggerForModule()
 )
 
@@ -49,6 +45,9 @@ type Config struct {
 	telemeter Telemeter
 	gatherer  Gatherer
 
+	onceTelemeter sync.Once
+	onceGatherer  sync.Once
+
 	// Map of event name to the list of interceptors, that gather properties for
 	// the event.
 	interceptors     map[string][]Interceptor
@@ -65,7 +64,7 @@ func (cfg *Config) Gatherer() Gatherer {
 	if cfg == nil {
 		return &nilGatherer{}
 	}
-	onceGatherer.Do(func() {
+	cfg.onceGatherer.Do(func() {
 		if cfg.Enabled() {
 			period := cfg.GatherPeriod
 			if cfg.GatherPeriod.Nanoseconds() == 0 {
@@ -84,7 +83,7 @@ func (cfg *Config) Telemeter() Telemeter {
 	if cfg == nil {
 		return &nilTelemeter{}
 	}
-	onceTelemeter.Do(func() {
+	cfg.onceTelemeter.Do(func() {
 		if cfg.Enabled() {
 			cfg.telemeter = segment.NewTelemeter(
 				cfg.StorageKey,
@@ -114,7 +113,7 @@ func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
 func (cfg *Config) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
-		rp := getGRPCRequestDetails(ctx, err, info, req)
+		rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
 		go cfg.track(rp)
 		return resp, err
 	}
@@ -126,15 +125,12 @@ func (cfg *Config) GetHTTPInterceptor() httputil.HTTPInterceptor {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
 			handler.ServeHTTP(statusTrackingWriter, r)
-			rp := getHTTPRequestDetails(r.Context(), r, statusCodeToError(statusTrackingWriter.GetStatusCode()))
+			status := 0
+			if sptr := statusTrackingWriter.GetStatusCode(); sptr != nil {
+				status = *sptr
+			}
+			rp := getHTTPRequestDetails(r.Context(), r, status)
 			go cfg.track(rp)
 		})
 	}
-}
-
-func statusCodeToError(code *int) error {
-	if code == nil || *code == http.StatusOK {
-		return nil
-	}
-	return errors.Errorf("%d %s", *code, http.StatusText(*code))
 }
