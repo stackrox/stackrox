@@ -94,15 +94,22 @@ function CollectionResults({
         (page: number) => fetchMatchingDeployments(dryRunConfig, page, filterText, selected),
         [dryRunConfig, filterText, selected]
     );
-    const { data, fetchNextPage, resetPages, clearPages, isEndOfResults, isRefreshingResults } =
-        usePaginatedQuery(queryFn, 10, {
-            debounceRate: 800,
-            manualFetch: true,
-            dedupKeyFn: ({ id }) => id,
-            onError: (err) => {
-                setConfigError?.(parseConfigError(err));
-            },
-        });
+    const {
+        data,
+        fetchNextPage,
+        resetPages,
+        clearPages,
+        isEndOfResults,
+        isFetchingNextPage,
+        isRefreshingResults,
+    } = usePaginatedQuery(queryFn, 10, {
+        debounceRate: 800,
+        manualFetch: true,
+        dedupKeyFn: ({ id }) => id,
+        onError: (err) => {
+            setConfigError?.(parseConfigError(err));
+        },
+    });
 
     const selectorRulesExist =
         dryRunConfig.resourceSelectors?.[0]?.rules?.length > 0 ||
@@ -215,6 +222,7 @@ function CollectionResults({
                                     variant="link"
                                     isInline
                                     className="pf-u-text-align-center"
+                                    isLoading={isFetchingNextPage || isRefreshingResults}
                                     onClick={() => fetchNextPage(true)}
                                 >
                                     View more
