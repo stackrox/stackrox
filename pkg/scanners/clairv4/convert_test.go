@@ -17,9 +17,14 @@ func TestName(t *testing.T) {
 			expected: "CVE-2018-16840",
 		},
 		{
-			// RHEL
-			original: "RHSA-2023:0173: libxml2 security update (Moderate)",
-			expected: "RHSA-2023:0173",
+			// Amazon
+			original: "ALAS-2022-1654",
+			expected: "ALAS-2022-1654",
+		},
+		{
+			// Debian
+			original: "DSA-4591-1 cyrus-sasl2",
+			expected: "DSA-4591-1",
 		},
 		{
 			// pyup.io
@@ -27,9 +32,9 @@ func TestName(t *testing.T) {
 			expected: "CVE-2020-26137",
 		},
 		{
-			// Debian
-			original: "DSA-4591-1 cyrus-sasl2",
-			expected: "DSA-4591-1",
+			// RHEL
+			original: "RHSA-2023:0173: libxml2 security update (Moderate)",
+			expected: "RHSA-2023:0173",
 		},
 		{
 			// Ubuntu
