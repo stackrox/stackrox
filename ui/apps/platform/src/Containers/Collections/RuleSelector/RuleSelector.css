@@ -4,6 +4,24 @@
   border: 1px solid var(--pf-global--BorderColor--100);
 }
 
+/* Allows rule form elements to shrink further to avoid overlap in constrained screen sizes */
+.rule-selector .pf-c-select__toggle-typeahead {
+  flex-basis: unset;
+  min-width: unset;
+}
+
+.rule-selector .rule-selector-match-type-select {
+  width: 180px;
+}
+
+.rule-selector .rule-selector-name-value-input {
+  flex: 1;
+}
+
+.rule-selector .rule-selector-name-value-input > * {
+  width: 100% !important;
+}
+
 .rule-selector-list {
   border-left: solid 1px var(--pf-global--BorderColor--100);
   margin-left: var(--rule-selector-spacer);
@@ -26,7 +44,7 @@
 }
 
 .rule-selector-add-value-button {
-  padding: var(--rule-selector-spacer) 0 0 calc(var(--rule-selector-spacer) * 2);
+  margin: var(--rule-selector-spacer) 0 0 var(--rule-selector-spacer);
 }
 
 .rule-selector-label-rule-separator {
@@ -40,8 +58,4 @@
   flex: 1 1 0;
   content: "";
   display: inline-block;
-}
-
-.rule-selector-match-type-select {
-  width: 180px;
 }

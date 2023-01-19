@@ -64,7 +64,7 @@ function DeploymentResult({ deployment }: { deployment: ListDeployment }) {
             </FlexItem>
             <FlexItem>
                 <div>{deployment.name}</div>
-                <span className="pf-u-color-400 pf-u-font-size-xs">
+                <span className="pf-u-color-300 pf-u-font-size-xs">
                     In &quot;{deployment.cluster} / {deployment.namespace}
                     &quot;
                 </span>
@@ -142,23 +142,18 @@ function CollectionResults({
 
     if (configError) {
         content = (
-            <Flex className="pf-u-h-100" alignContent={{ default: 'alignContentCenter' }}>
-                <EmptyState variant={EmptyStateVariant.xs}>
-                    <EmptyStateIcon
-                        style={{ color: 'var(--pf-global--danger-color--200)' }}
-                        icon={ExclamationCircleIcon}
-                    />
-                    <Flex
-                        spaceItems={{ default: 'spaceItemsMd' }}
-                        direction={{ default: 'column' }}
-                    >
-                        <Title headingLevel="h2" size="md">
-                            {configError.message}
-                        </Title>
-                        <p className="pf-u-text-align-left">{configError.details}</p>
-                    </Flex>
-                </EmptyState>
-            </Flex>
+            <EmptyState variant={EmptyStateVariant.xs}>
+                <EmptyStateIcon
+                    style={{ color: 'var(--pf-global--danger-color--200)' }}
+                    icon={ExclamationCircleIcon}
+                />
+                <Flex spaceItems={{ default: 'spaceItemsMd' }} direction={{ default: 'column' }}>
+                    <Title headingLevel="h2" size="md">
+                        {configError.message}
+                    </Title>
+                    <p>{configError.details}</p>
+                </Flex>
+            </EmptyState>
         );
     } else if (!selectorRulesExist) {
         content = (
@@ -189,14 +184,14 @@ function CollectionResults({
                             <SelectOption value="Cluster">Cluster</SelectOption>
                         </Select>
                     </FlexItem>
-                    <FlexItem grow={{ default: 'grow' }}>
+                    <div className="pf-u-flex-grow-1 pf-u-flex-basis-0">
                         <SearchInput
                             aria-label="Filter by name"
                             placeholder="Filter by name"
                             value={filterText}
                             onChange={setFilterText}
                         />
-                    </FlexItem>
+                    </div>
                 </Flex>
                 <Flex
                     direction={{ default: 'column' }}
@@ -228,7 +223,7 @@ function CollectionResults({
                                     View more
                                 </Button>
                             ) : (
-                                <span className="pf-u-color-400 pf-u-text-align-center pf-u-font-size-sm">
+                                <span className="pf-u-color-300 pf-u-text-align-center pf-u-font-size-sm">
                                     end of results
                                 </span>
                             )}

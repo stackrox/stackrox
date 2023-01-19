@@ -54,8 +54,8 @@ body {
     border-color: var(--pf-c-form-control--disabled--BorderColor) !important;
 }
 
-/* Override classic opacity: 0.5 for disabled toggle group buttons so they match disabled input elements. */
-button.pf-c-toggle-group__button:disabled {
+/* Override classic opacity: 0.5 for disabled buttons so they match disabled input elements. */
+.pf-c-page__main-section button:disabled {
     opacity: inherit;
 }
 

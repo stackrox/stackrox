@@ -4,11 +4,13 @@
 }
 
 .collection-form-expandable-section button.pf-c-expandable-section__toggle {
-  align-items: center;
   color: inherit;
   font-weight: inherit;
   font-size: inherit;
-  text-align: left;
+}
+
+.collection-form-expandable-section button.pf-c-expandable-section__toggle svg {
+  vertical-align: middle !important;
 }
 
 .collection-form-expandable-section button.pf-c-expandable-section__toggle:focus {
