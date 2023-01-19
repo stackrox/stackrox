@@ -143,17 +143,17 @@ function getNodeModel(
     }
 }
 
-function getPortLabel(port: number, protocol: L4Protocol) {
+function getPortProtocolLabel(port: number, protocol: L4Protocol) {
     return `${port} ${protocolLabel[protocol]}`;
 }
 
-export function getPortEdgeLabel(properties: EdgeProperties[]): string {
+export function getPortProtocolEdgeLabel(properties: EdgeProperties[]): string {
     const { port, protocol } = properties[0];
-    const singlePortLabel = getPortLabel(port, protocol);
+    const singlePortLabel = getPortProtocolLabel(port, protocol);
     return `${properties.length === 1 ? singlePortLabel : properties.length}`;
 }
 
-function mergePortEdgeLabels(firstLabel: string, secondLabel = ''): string {
+function mergePortProtocolEdgeLabels(firstLabel: string, secondLabel = ''): string {
     const firstLabelNum = Number(firstLabel);
     const secondLabelNum = Number(secondLabel);
     // if both labels are not numbers and current edge label is the same as the previous label,
@@ -237,12 +237,11 @@ export function transformActiveData(
         // creating edges based off of outEdges per node and adding to data model
         Object.keys(outEdges).forEach((nodeIdx) => {
             const { properties } = outEdges[nodeIdx];
-            // console.log(getPortEdgeLabel(properties));
             const source = id;
             const target: string = nodes[nodeIdx].entity.id;
             const edgeId = `${source}-${target}`;
             const reverseEdgeId = `${target}-${source}`;
-            const portEdgeLabel = getPortEdgeLabel(properties);
+            const portProtocolLabel = getPortProtocolEdgeLabel(properties);
             const edge: CustomEdgeModel = {
                 id: edgeId,
                 type: 'edge',
@@ -250,7 +249,8 @@ export function transformActiveData(
                 target,
                 visible: false,
                 data: {
-                    tag: portEdgeLabel,
+                    tag: portProtocolLabel,
+                    portProtocolLabel,
                     properties,
                     isBidirectional: false,
                 },
@@ -260,10 +260,12 @@ export function transformActiveData(
                 edge.id = reverseEdgeId;
                 edge.data.startTerminalType = EdgeTerminalType.directional;
                 edge.data.endTerminalType = EdgeTerminalType.directional;
-                edge.data.tag = mergePortEdgeLabels(
-                    portEdgeLabel,
+                const mergedPortEdgeLabel = mergePortProtocolEdgeLabels(
+                    portProtocolLabel,
                     activeEdgeMap[reverseEdgeId].data.tag
                 );
+                edge.data.tag = mergedPortEdgeLabel;
+                edge.data.portProtocolLabel = mergedPortEdgeLabel;
                 edge.data.isBidirectional = true;
                 activeEdgeMap[reverseEdgeId] = edge;
             } else {
@@ -369,7 +371,7 @@ export function transformPolicyData(
             const edgeId = `${source}-${target}`;
             const reverseEdgeId = `${target}-${source}`;
             const { properties } = outEdges[nodeIdx];
-            const portEdgeLabel = getPortEdgeLabel(properties);
+            const portProtocolLabel = getPortProtocolEdgeLabel(properties);
             const edge: CustomEdgeModel = {
                 id: edgeId,
                 type: 'edge',
@@ -378,7 +380,8 @@ export function transformPolicyData(
                 visible: false,
                 edgeStyle: EdgeStyle.dashed,
                 data: {
-                    tag: portEdgeLabel,
+                    tag: portProtocolLabel,
+                    portProtocolLabel,
                     properties,
                     isBidirectional: false,
                 },
@@ -388,16 +391,17 @@ export function transformPolicyData(
                 edge.id = reverseEdgeId;
                 edge.data.startTerminalType = EdgeTerminalType.directional;
                 edge.data.endTerminalType = EdgeTerminalType.directional;
-                edge.data.tag = mergePortEdgeLabels(
-                    portEdgeLabel,
+                const mergedPortEdgeLabel = mergePortProtocolEdgeLabels(
+                    portProtocolLabel,
                     policyEdgeMap[reverseEdgeId].data.tag
                 );
+                edge.data.tag = mergedPortEdgeLabel;
+                edge.data.portProtocolLabel = mergedPortEdgeLabel;
                 edge.data.isBidirectional = true;
                 policyEdgeMap[reverseEdgeId] = edge;
             } else {
                 policyEdgeMap[edgeId] = edge;
             }
-            // policyDataModel.edges.push(edge);
         });
     });
     const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes(flows);
@@ -562,6 +566,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
         data: {
             properties: [],
             isBidirectional: false,
+            portProtocolLabel: '',
         },
     };
     const extraneousIngressEdge = {
@@ -574,6 +579,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
         data: {
             properties: [],
             isBidirectional: false,
+            portProtocolLabel: '',
         },
     };
     return { extraneousEgressEdge, extraneousIngressEdge };

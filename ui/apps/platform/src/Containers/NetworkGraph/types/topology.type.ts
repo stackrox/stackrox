@@ -100,7 +100,10 @@ export type ExtraneousData = {
 export type CustomEdgeModel = Override<EdgeModel, { data: EdgeData }>;
 
 export type EdgeData = {
+    // the edge label shows up when this exists
     tag?: string;
+    // this is so that we can easily reference the tag content
+    portProtocolLabel: string;
     properties: EdgeProperties[];
     startTerminalType?: EdgeTerminalType;
     endTerminalType?: EdgeTerminalType;
