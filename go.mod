@@ -114,7 +114,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.4.6
-	gorm.io/gorm v1.24.2
+	gorm.io/gorm v1.24.3
 	helm.sh/helm/v3 v3.9.4
 	k8s.io/api v0.24.9
 	k8s.io/apimachinery v0.24.9
