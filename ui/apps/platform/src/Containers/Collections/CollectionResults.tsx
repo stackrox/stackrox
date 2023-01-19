@@ -165,71 +165,41 @@ function CollectionResults({
     } else {
         content = (
             <Flex
-                spaceItems={{ default: 'spaceItemsNone' }}
-                alignItems={{ default: 'alignItemsStretch' }}
                 direction={{ default: 'column' }}
+                grow={{ default: 'grow' }}
+                className="pf-u-mt-lg"
             >
-                <Flex spaceItems={{ default: 'spaceItemsNone' }}>
-                    <FlexItem>
-                        <Select
-                            toggleAriaLabel="Select an entity type to filter the results by"
-                            isOpen={isOpen}
-                            onToggle={onToggle}
-                            selections={selected}
-                            onSelect={onRuleOptionSelect}
-                            isDisabled={false}
-                        >
-                            <SelectOption value="Deployment">Deployment</SelectOption>
-                            <SelectOption value="Namespace">Namespace</SelectOption>
-                            <SelectOption value="Cluster">Cluster</SelectOption>
-                        </Select>
-                    </FlexItem>
-                    <div className="pf-u-flex-grow-1 pf-u-flex-basis-0">
-                        <SearchInput
-                            aria-label="Filter by name"
-                            placeholder="Filter by name"
-                            value={filterText}
-                            onChange={setFilterText}
-                        />
-                    </div>
-                </Flex>
-                <Flex
-                    direction={{ default: 'column' }}
-                    grow={{ default: 'grow' }}
-                    className="pf-u-mt-lg"
-                >
-                    {isRefreshingResults ? (
-                        <>
-                            {Array.from(Array(10).keys()).map((index: number) => (
-                                <DeploymentSkeleton key={`refreshing-deployment-${index}`} />
-                            ))}
-                            <Spinner className="pf-u-align-self-center" size="lg" />
-                        </>
-                    ) : (
-                        <>
-                            {data.map((page) =>
-                                page.map((deployment: ListDeployment) => (
-                                    <DeploymentResult key={deployment.id} deployment={deployment} />
-                                ))
-                            )}
-                            {!isEndOfResults ? (
-                                <Button
-                                    variant="link"
-                                    isInline
-                                    className="pf-u-text-align-center"
-                                    isLoading={isFetchingNextPage || isRefreshingResults}
-                                    onClick={() => fetchNextPage(true)}
-                                >
-                                    View more
-                                </Button>
-                            ) : (
-                                <span className="pf-u-color-300 pf-u-text-align-center pf-u-font-size-sm">
-                                    end of results
-                                </span>
-                            )}
-                        </>
-                    )}
-                </Flex>
+                {isRefreshingResults ? (
+                    <>
+                        {Array.from(Array(10).keys()).map((index: number) => (
+                            <DeploymentSkeleton key={`refreshing-deployment-${index}`} />
+                        ))}
+                        <Spinner className="pf-u-align-self-center" size="lg" />
+                    </>
+                ) : (
+                    <>
+                        {data.map((page) =>
+                            page.map((deployment: ListDeployment) => (
+                                <DeploymentResult key={deployment.id} deployment={deployment} />
+                            ))
+                        )}
+                        {!isEndOfResults ? (
+                            <Button
+                                variant="link"
+                                isInline
+                                className="pf-u-text-align-center"
+                                isLoading={isFetchingNextPage || isRefreshingResults}
+                                onClick={() => fetchNextPage(true)}
+                            >
+                                View more
+                            </Button>
+                        ) : (
+                            <span className="pf-u-color-300 pf-u-text-align-center pf-u-font-size-sm">
+                                end of results
+                            </span>
+                        )}
+                    </>
+                )}
             </Flex>
         );
     }
@@ -253,7 +223,37 @@ function CollectionResults({
             </div>
             <Divider />
             <div className="pf-u-h-100 pf-u-p-lg" style={{ overflow: 'auto' }}>
-                {content}
+                <Flex
+                    spaceItems={{ default: 'spaceItemsNone' }}
+                    alignItems={{ default: 'alignItemsStretch' }}
+                    direction={{ default: 'column' }}
+                >
+                    <Flex spaceItems={{ default: 'spaceItemsNone' }}>
+                        <FlexItem>
+                            <Select
+                                toggleAriaLabel="Select an entity type to filter the results by"
+                                isOpen={isOpen}
+                                onToggle={onToggle}
+                                selections={selected}
+                                onSelect={onRuleOptionSelect}
+                                isDisabled={false}
+                            >
+                                <SelectOption value="Deployment">Deployment</SelectOption>
+                                <SelectOption value="Namespace">Namespace</SelectOption>
+                                <SelectOption value="Cluster">Cluster</SelectOption>
+                            </Select>
+                        </FlexItem>
+                        <div className="pf-u-flex-grow-1 pf-u-flex-basis-0">
+                            <SearchInput
+                                aria-label="Filter by name"
+                                placeholder="Filter by name"
+                                value={filterText}
+                                onChange={setFilterText}
+                            />
+                        </div>
+                    </Flex>
+                    {content}
+                </Flex>
             </div>
         </>
     );

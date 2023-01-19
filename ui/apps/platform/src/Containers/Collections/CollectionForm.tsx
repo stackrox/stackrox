@@ -170,7 +170,14 @@ function yupResourceSelectorObject() {
 }
 
 const validationSchema = yup.object({
-    name: yup.string().trim().required(),
+    name: yup
+        .string()
+        .trim()
+        .matches(
+            /^[a-zA-Z0-9 .-]*$/,
+            'Only letters, numbers, dot, dash, and space characters are allowed in collection names'
+        )
+        .required(),
     description: yup.string(),
     embeddedCollectionIds: yup.array(yup.string().trim().required()),
     resourceSelector: yup.object().shape({
@@ -222,6 +229,7 @@ function CollectionForm({
         setFieldValue,
         submitForm,
         isSubmitting,
+        isValid,
     } = useFormik({
         initialValues: initialData,
         onSubmit: (collection, { setSubmitting }) => {
@@ -243,7 +251,7 @@ function CollectionForm({
             create: '',
             view: initialData.name,
             edit: initialData.name,
-            clone: `${initialData.name} (COPY)`,
+            clone: `${initialData.name} -COPY-`,
         }[action.type];
 
         setFieldValue('name', nameValue).catch(() => {
@@ -501,7 +509,7 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting || !!configError}
+                        isDisabled={isSubmitting || !!configError || !isValid}
                         isLoading={isSubmitting}
                     >
                         Save
