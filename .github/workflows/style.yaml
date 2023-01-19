@@ -2,12 +2,15 @@ name: Style
 on:
   push:
     tags:
-       - '*'
+    - '*'
     branches:
-      - master
-      - release-*
+    - master
+    - release-*
   pull_request:
-
+    types:
+    - opened
+    - reopened
+    - synchronize
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
@@ -23,6 +26,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies

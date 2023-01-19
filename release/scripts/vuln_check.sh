@@ -92,15 +92,11 @@ FAIL_SCRIPT=false
 RELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" tag)
 COLLECTOR_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" collector-tag)
 SCANNER_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" scanner-tag)
-DOCS_PRERELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" docs-tag)
 
 ALLOWED_VULNS=$(jq -c '.[]' "$DIR/allowed_vulns.json")
 
 # check main images
 compare_fixable_vulns "main" "$RELEASE_TAG"
-
-# check docs image - using the pre-release tag (not the release tag)
-compare_fixable_vulns "docs" "$DOCS_PRERELEASE_TAG"
 
 # check collector images
 compare_fixable_vulns "collector" "${COLLECTOR_TAG}-slim"
