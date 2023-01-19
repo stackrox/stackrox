@@ -1,6 +1,6 @@
 import { CollectionRequest, Collection } from 'services/CollectionsService';
 import { generateRequest, isCollectionParseError, parseCollection } from './converter';
-import { ByLabelResourceSelector, ClientCollection, LabelSelectorRule } from './types';
+import { ClientCollection } from './types';
 
 describe('Collection parser', () => {
     it('should convert between BE CollectionResponse and FE Collection', () => {
@@ -14,20 +14,31 @@ describe('Collection parser', () => {
                         {
                             operator: 'OR',
                             fieldName: 'Cluster',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Namespace Label',
                             values: [
-                                { value: 'kubernetes.io/metadata.name=backend' },
-                                { value: 'kubernetes.io/metadata.name=frontend' },
+                                {
+                                    value: 'kubernetes.io/metadata.name=backend',
+                                    matchType: 'EXACT',
+                                },
+                                {
+                                    value: 'kubernetes.io/metadata.name=frontend',
+                                    matchType: 'EXACT',
+                                },
                             ],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Namespace Label',
-                            values: [{ value: 'kubernetes.io/metadata.release=stable' }],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.release=stable',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                     ],
                 },
@@ -45,20 +56,32 @@ describe('Collection parser', () => {
                     rules: [
                         {
                             operator: 'OR',
-                            key: 'kubernetes.io/metadata.name',
-                            values: ['backend', 'frontend'],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.name=backend',
+                                    matchType: 'EXACT',
+                                },
+                                {
+                                    value: 'kubernetes.io/metadata.name=frontend',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                         {
                             operator: 'OR',
-                            key: 'kubernetes.io/metadata.release',
-                            values: ['stable'],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.release=stable',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                     ],
                 },
                 Cluster: {
                     type: 'ByName',
                     field: 'Cluster',
-                    rule: { operator: 'OR', values: ['production'] },
+                    rule: { operator: 'OR', values: [{ value: 'production', matchType: 'EXACT' }] },
                 },
             },
             embeddedCollectionIds: ['12', '13', '14'],
@@ -98,12 +121,12 @@ describe('Collection parser', () => {
                         {
                             operator: 'OR',
                             fieldName: 'Cluster',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Cluster Label',
-                            values: [{ value: 'key=value' }],
+                            values: [{ value: 'key=value', matchType: 'EXACT' }],
                         },
                     ],
                 },
@@ -125,7 +148,7 @@ describe('Collection parser', () => {
                         {
                             operator: 'AND',
                             fieldName: 'Cluster',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                     ],
                 },
@@ -147,7 +170,7 @@ describe('Collection parser', () => {
                         {
                             operator: 'AND',
                             fieldName: 'Cluster Annotation',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                     ],
                 },
@@ -156,58 +179,6 @@ describe('Collection parser', () => {
         };
 
         expect(isCollectionParseError(parseCollection(collectionResponse))).toBeTruthy();
-    });
-
-    it('should correctly handle label key/value splitting on `=` delimiter', () => {
-        const collectionResponse: Collection = {
-            id: 'a-b-c',
-            name: 'Sample',
-            description: 'Sample description',
-            resourceSelectors: [
-                {
-                    rules: [
-                        { operator: 'OR', fieldName: 'Cluster Label', values: [{ value: '' }] },
-                    ],
-                },
-            ],
-            embeddedCollections: [],
-        };
-
-        // Get the resource selector we are interested in without so many type assertions
-        function getLabelRule(collection: Collection): LabelSelectorRule {
-            return (
-                (parseCollection(collection) as ClientCollection).resourceSelector
-                    .Cluster as ByLabelResourceSelector
-            ).rules[0];
-        }
-
-        const firstLabelRule = collectionResponse.resourceSelectors[0].rules[0].values[0];
-
-        // Test empty label key handling (NOTE, this should be forbidden from occurring by BE)
-        firstLabelRule.value = '=test';
-        expect(getLabelRule(collectionResponse)).toMatchObject({ key: '', values: ['test'] });
-
-        // Test empty label value handling (NOTE, this should be forbidden from occurring by BE)
-        firstLabelRule.value = 'test=';
-        expect(getLabelRule(collectionResponse)).toMatchObject({ key: 'test', values: [''] });
-
-        // Test plain characters
-        firstLabelRule.value = 'key=value';
-        expect(getLabelRule(collectionResponse)).toMatchObject({ key: 'key', values: ['value'] });
-
-        // Test subdomain prefix
-        firstLabelRule.value = 'app.kubernetes.io/name=value';
-        expect(getLabelRule(collectionResponse)).toMatchObject({
-            key: 'app.kubernetes.io/name',
-            values: ['value'],
-        });
-
-        // Test multiple '=' characters
-        firstLabelRule.value = 'app.kubernetes.io/name=value=with=extra=eq';
-        expect(getLabelRule(collectionResponse)).toMatchObject({
-            key: 'app.kubernetes.io/name',
-            values: ['value=with=extra=eq'],
-        });
     });
 });
 
@@ -226,13 +197,25 @@ describe('Collection response generator', () => {
                     rules: [
                         {
                             operator: 'OR',
-                            key: 'kubernetes.io/metadata.name',
-                            values: ['backend', 'frontend'],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.name=backend',
+                                    matchType: 'EXACT',
+                                },
+                                {
+                                    value: 'kubernetes.io/metadata.name=frontend',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                         {
                             operator: 'OR',
-                            key: 'kubernetes.io/metadata.release',
-                            values: ['stable'],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.release=stable',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                     ],
                 },
@@ -240,7 +223,7 @@ describe('Collection response generator', () => {
                 Cluster: {
                     type: 'ByName',
                     field: 'Cluster',
-                    rule: { operator: 'OR', values: ['production'] },
+                    rule: { operator: 'OR', values: [{ value: 'production', matchType: 'EXACT' }] },
                 },
             },
             embeddedCollectionIds: ['12', '13', '14'],
@@ -255,20 +238,31 @@ describe('Collection response generator', () => {
                         {
                             operator: 'OR',
                             fieldName: 'Cluster',
-                            values: [{ value: 'production' }],
+                            values: [{ value: 'production', matchType: 'EXACT' }],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Namespace Label',
                             values: [
-                                { value: 'kubernetes.io/metadata.name=backend' },
-                                { value: 'kubernetes.io/metadata.name=frontend' },
+                                {
+                                    value: 'kubernetes.io/metadata.name=backend',
+                                    matchType: 'EXACT',
+                                },
+                                {
+                                    value: 'kubernetes.io/metadata.name=frontend',
+                                    matchType: 'EXACT',
+                                },
                             ],
                         },
                         {
                             operator: 'OR',
                             fieldName: 'Namespace Label',
-                            values: [{ value: 'kubernetes.io/metadata.release=stable' }],
+                            values: [
+                                {
+                                    value: 'kubernetes.io/metadata.release=stable',
+                                    matchType: 'EXACT',
+                                },
+                            ],
                         },
                     ],
                 },
