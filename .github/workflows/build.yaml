@@ -1,14 +1,16 @@
 name: Build
 on:
+  workflow_call:
+  push:
+    tags:
+    - 'nightly-*'
+    branches:
+    - master
   pull_request:
     types:
-      - opened
-      - synchronize
-  push:
-    branches:
-      - master
-    tags:
-      - '*-nightly-*'
+    - opened
+    - reopened
+    - synchronize
 
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
@@ -44,7 +46,7 @@ jobs:
         run: make -C ui build
 
       - uses: actions/upload-artifact@v3
-        with: 
+        with:
           name: ui-build
           path: |
             ui/build
@@ -78,7 +80,7 @@ jobs:
         run: tar -cvzf cli-build.tgz bin
 
       - uses: actions/upload-artifact@v3
-        with: 
+        with:
           name: cli-build
           path: cli-build.tgz
 
@@ -117,7 +119,7 @@ jobs:
         run: tar -cvzf go-binaries-build.tgz bin/linux_amd64
 
       - uses: actions/upload-artifact@v3
-        with: 
+        with:
           name: go-binaries-build
           path: go-binaries-build.tgz
 
@@ -201,7 +203,7 @@ jobs:
 
   build-and-push-main:
     runs-on: ubuntu-latest
-    needs: 
+    needs:
       - pre-build-ui
       - pre-build-cli
       - pre-build-go-binaries
