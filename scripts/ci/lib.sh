@@ -960,6 +960,11 @@ openshift_ci_mods() {
     info "Env A-Z dump:"
     env | sort | grep -E '^[A-Z]' || true
 
+    ensure_writable_home_dir
+
+    # Prevent fatal error "detected dubious ownership in repository" from recent git.
+    git config --global --add safe.directory "$(pwd)"
+
     info "Git log:"
     git log --oneline --decorate -n 20 || true
 
@@ -976,14 +981,6 @@ openshift_ci_mods() {
     # These are not set in the binary_build_commands or image build envs.
     export CI=true
     export OPENSHIFT_CI=true
-
-    # Single step test jobs do not have HOME
-    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
-        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
-        HOME=$( mktemp -d )
-        export HOME
-        info "HOME is now $HOME"
-    fi
 
     if is_in_PR_context && ! is_openshift_CI_rehearse_PR; then
         local sha
@@ -1018,6 +1015,16 @@ openshift_ci_mods() {
     export STACKROX_BUILD_TAG
 
     info "END OpenShift CI mods"
+}
+
+ensure_writable_home_dir() {
+    # Single step test jobs do not have HOME
+    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
+        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
+        HOME=$( mktemp -d )
+        export HOME
+        info "HOME is now $HOME"
+    fi
 }
 
 openshift_ci_import_creds() {
