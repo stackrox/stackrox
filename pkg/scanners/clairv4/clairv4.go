@@ -32,6 +32,8 @@ const (
 	indexReportPath         = "/indexer/api/v1/index_report"
 	indexPath               = "/indexer/api/v1/index_report"
 	vulnerabilityReportPath = "/matcher/api/v1/vulnerability_report"
+
+	httpRequestRetryCount = 3
 )
 
 var (
@@ -194,7 +196,7 @@ func (c *clairv4) indexReportExists(digest string) (bool, error) {
 		default:
 			return newUnexpectedStatusCodeError(resp.StatusCode)
 		}
-	}, retry.Tries(3), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
+	}, retry.Tries(httpRequestRetryCount), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
 
 	return exists, err
 }
@@ -236,7 +238,7 @@ func (c *clairv4) index(manifest *claircore.Manifest) error {
 		}
 
 		return nil
-	}, retry.Tries(3), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
+	}, retry.Tries(httpRequestRetryCount), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
 }
 
 func (c *clairv4) getVulnerabilityReport(digest string) (*claircore.VulnerabilityReport, error) {
@@ -270,7 +272,7 @@ func (c *clairv4) getVulnerabilityReport(digest string) (*claircore.Vulnerabilit
 		}
 
 		return nil
-	}, retry.Tries(3), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
+	}, retry.Tries(httpRequestRetryCount), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
 
 	return vulnReport, err
 }
