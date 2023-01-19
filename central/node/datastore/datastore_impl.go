@@ -239,7 +239,6 @@ func (ds *datastoreImpl) deleteNodeFromStore(ctx context.Context, ids ...string)
 			continue
 		}
 	}
-	// removing component risk handled by pruning
 	return errorList.ToError()
 }
 

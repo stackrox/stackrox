@@ -37,7 +37,7 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	"github.com/stackrox/rox/central/node/datastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentCVEEdgeDataStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
@@ -95,7 +95,7 @@ type Resolver struct {
 	NamespaceDataStore            namespaceDataStore.DataStore
 	NetworkFlowDataStore          nfDS.ClusterDataStore
 	NetworkPoliciesStore          npDS.DataStore
-	NodeDataStore                 datastore.DataStore
+	NodeDataStore                 nodeDataStore.DataStore
 	NotifierStore                 notifierDataStore.DataStore
 	PolicyDataStore               policyDatastore.DataStore
 	ProcessIndicatorStore         processIndicatorStore.DataStore
@@ -142,7 +142,7 @@ func New() *Resolver {
 		NamespaceDataStore:          namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:        npDS.Singleton(),
 		NetworkFlowDataStore:        nfDS.Singleton(),
-		NodeDataStore:               datastore.Singleton(),
+		NodeDataStore:               nodeDataStore.Singleton(),
 		NotifierStore:               notifierDataStore.Singleton(),
 		PolicyDataStore:             policyDatastore.Singleton(),
 		ProcessIndicatorStore:       processIndicatorStore.Singleton(),
