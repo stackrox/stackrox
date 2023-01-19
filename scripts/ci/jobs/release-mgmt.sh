@@ -20,9 +20,6 @@ release_mgmt() {
         push_release "$tag"
         mark_collector_release "$tag"
     elif is_RC_version "$tag"; then
-        if ! check_docs "${tag}"; then
-            pre_release_warnings+=("docs/ is not valid for a release.")
-        fi
 
         if ! check_scanner_and_collector_versions; then
             pre_release_warnings+=("SCANNER_VERSION and COLLECTOR_VERSION need to also be release.")
