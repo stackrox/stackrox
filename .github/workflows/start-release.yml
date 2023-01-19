@@ -72,6 +72,7 @@ jobs:
     uses: ./.github/workflows/variables.yml
     with:
       version: ${{github.event.inputs.version}}
+      assert-format: A.B.C[-N]
 
   check-jira:
     name: Check Jira release
@@ -91,53 +92,9 @@ jobs:
             "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}" \
             "${{needs.properties.outputs.jira-project}}"
 
-  check-docs-branch:
-    name: Check documentation branch
-    needs: [variables, properties]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test if branch ${{needs.variables.outputs.docs-branch}} exists
-        id: check
-        env:
-          # required to access internal test-gh-docs repository
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
-        run: |
-          gh api "repos/${{needs.properties.outputs.docs-repository}}/git/refs/heads/${{needs.variables.outputs.docs-branch}}"
-      - name: Post to Slack
-        if: failure() && steps.check.conclusion == 'failure'
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            { "blocks": [
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":${{ fromJSON('["desert", "red_circle"]')[inputs.dry-run != 'true'] }}:
-            *Cannot proceed with upstream release ${{needs.variables.outputs.named-release-patch}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            "There has been no documentation branch created in
-            `${{needs.properties.outputs.docs-repository}}` repository." }},
-
-            { "type": "divider" },
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: *Create branch
-            `${{needs.variables.outputs.docs-branch}}` from the `rhacs-docs`
-            branch in `${{needs.properties.outputs.docs-repository}}` repository and then restart the workflow.*" }},
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ">
-            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Release: ${{needs.variables.outputs.named-release-patch}}\n>
-            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
-            ]}
-
   branch:
     name: Prepare release branch
-    needs: [variables, check-docs-branch]
+    needs: [variables]
     runs-on: ubuntu-latest
     steps:
       - name: Check out code (normal release)
@@ -145,16 +102,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ env.REF }}
-          # required to access internal test-gh-docs repository
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
           submodules: true
       - name: Check out code (patch release)
         if: needs.variables.outputs.patch != 0
         uses: actions/checkout@v3
         with:
           ref: ${{ needs.variables.outputs.branch }}
-          # required to access internal test-gh-docs repository
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
           submodules: true
       - name: Check remote branch exists
         id: check-existing
@@ -183,16 +136,6 @@ jobs:
           # TODO: tag the first commit on the release branch with the current
           #       release version when main branch versioning is changed to
           #       'next.version-dev'.
-      - name: Update docs submodule
-        run: |
-          git -C docs/content config remote.origin.fetch "+refs/heads/${{needs.variables.outputs.docs-branch}}:refs/remotes/origin/${{needs.variables.outputs.docs-branch}}"
-          git submodule set-branch --branch "${{needs.variables.outputs.docs-branch}}" -- docs/content
-          git submodule update --init --remote -- docs/content
-          git add .gitmodules docs/content
-          if ! git diff-index --quiet HEAD; then
-            git commit -am "Docs update for release ${{needs.variables.outputs.milestone}}"
-            echo "Documents submodule has been updated on the release branch." >> "$GITHUB_STEP_SUMMARY"
-          fi
       - name: Update the changelog
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |

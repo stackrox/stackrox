@@ -550,39 +550,6 @@ check_rhacs_eng_image_exists() {
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
 
-check_docs() {
-    info "Check docs version"
-
-    if [[ "$#" -lt 1 ]]; then
-        die "missing arg. usage: check_docs <tag>"
-    fi
-
-    local tag="$1"
-
-    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
-        info "Skipping step as this is not a release or RC build"
-        return 0
-    }
-
-    local release_version="${BASH_REMATCH[1]}"
-    local expected_content_branch="rhacs-docs-${release_version}"
-    local actual_content_branch
-    actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
-    [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
-        echo >&2 "ERROR: Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
-        return 1
-    }
-
-    git submodule update --remote docs/content
-    git diff --exit-code HEAD || {
-        echo >&2 "ERROR: The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
-        echo >&2 "  git submodule update --remote docs/content"
-        echo >&2 "and commit the result."
-        return 1
-    }
-
-    info "The docs version is as expected"
-}
 
 check_scanner_version() {
     if ! is_release_version "$(make --quiet scanner-tag)"; then
@@ -988,6 +955,11 @@ openshift_ci_mods() {
     info "Env A-Z dump:"
     env | sort | grep -E '^[A-Z]' || true
 
+    ensure_writable_home_dir
+
+    # Prevent fatal error "detected dubious ownership in repository" from recent git.
+    git config --global --add safe.directory "$(pwd)"
+
     info "Git log:"
     git log --oneline --decorate -n 20 || true
 
@@ -1004,14 +976,6 @@ openshift_ci_mods() {
     # These are not set in the binary_build_commands or image build envs.
     export CI=true
     export OPENSHIFT_CI=true
-
-    # Single step test jobs do not have HOME
-    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
-        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
-        HOME=$( mktemp -d )
-        export HOME
-        info "HOME is now $HOME"
-    fi
 
     if is_in_PR_context && ! is_openshift_CI_rehearse_PR; then
         local sha
@@ -1046,6 +1010,16 @@ openshift_ci_mods() {
     export STACKROX_BUILD_TAG
 
     info "END OpenShift CI mods"
+}
+
+ensure_writable_home_dir() {
+    # Single step test jobs do not have HOME
+    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
+        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
+        HOME=$( mktemp -d )
+        export HOME
+        info "HOME is now $HOME"
+    fi
 }
 
 openshift_ci_import_creds() {

@@ -12,8 +12,11 @@ import util.Timer
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
 
 @Tag("BAT")
+// ROX-14228 skipping tests for 1st release on power & z
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class AuditScrubbingTest extends BaseSpecification {
 
     static private final String BASIC_AUTH_PROVIDER_ID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"

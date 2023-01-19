@@ -66,6 +66,7 @@ jobs:
     uses: ./.github/workflows/variables.yml
     with:
       version: ${{ inputs.version }}
+      assert-format: A.B.C[-N]
 
   publish-release:
     name: Tag Release ${{ needs.variables.outputs.named-release-patch }}
@@ -134,7 +135,5 @@ jobs:
             ":arrow_right: Tell the downstream release engineer to trigger the downstream release,
             and once the downstream release is complete, merge the PR created by CI in
             <https://github.com/stackrox/release-artifacts/pulls|stackrox/release-artifacts>
-            repository." }},
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: Check the status of the upstream CI for the release tag in <https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-${{ needs.variables.outputs.release }}*|Openshift CI> and follow up on any failures." }}
+            repository." }}
             ]}

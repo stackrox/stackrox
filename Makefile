@@ -43,8 +43,6 @@ ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
 	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
 endif
 
-DOCS_IMAGE = $(DEFAULT_IMAGE_REGISTRY)/docs:$(shell make --quiet --no-print-directory docs-tag)
-
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
 GOPATH_VOLUME_NAME := stackrox-rox-gopath
@@ -566,14 +564,9 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
-.PHONY: docs-image
-docs-image:
-	scripts/ensure_image.sh $(DOCS_IMAGE) docs/Dockerfile docs/
-
 .PHONY: docker-build-data-image
-docker-build-data-image: docs-image
+docker-build-data-image:
 	docker build -t stackrox-data:$(TAG) \
-	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
@@ -731,10 +724,6 @@ ossls-notice: deps
 .PHONY: collector-tag
 collector-tag:
 	@cat COLLECTOR_VERSION
-
-.PHONY: docs-tag
-docs-tag:
-	@echo $$(git ls-tree -d --abbrev=8 HEAD docs | awk '{ print $$3; }')-$$(git submodule status -- docs/content | cut -c 2-9)-$$(git submodule status -- docs/tools | cut -c 2-9)
 
 .PHONY: scanner-tag
 scanner-tag:

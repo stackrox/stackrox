@@ -85,6 +85,7 @@ jobs:
     uses: ./.github/workflows/variables.yml
     with:
       version: ${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+      assert-format: A.B.C[-N]-rc.D
 
   check-jira:
     name: Check Jira tickets for release
@@ -218,15 +219,6 @@ jobs:
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
 
-      - name: Update docs submodule
-        run: |
-          git submodule update --init --remote -- docs/content
-          git add docs/content
-          if ! git diff-index --quiet HEAD; then
-            git commit -m "Update docs submodule for milestone ${{needs.variables.outputs.milestone}}"
-            echo "Documentation submodule has been updated" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
       - name: Tag release branch with "${{needs.variables.outputs.milestone}}"
         id: tag
         env:
@@ -283,7 +275,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.rc}}>
+            *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.milestone}}>
             of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub*" }},
 
             { "type": "divider" },

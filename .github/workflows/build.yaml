@@ -28,6 +28,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
+
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
       - uses: ./.github/actions/cache-ui-dependencies
@@ -58,6 +63,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
@@ -84,6 +94,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -118,6 +133,11 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -155,6 +175,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -198,6 +223,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
 
       - name: Checkout submodules
         run: |
@@ -284,6 +314,11 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
     - name: Checkout submodules
       run: |
         git submodule update --init
@@ -363,6 +398,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
@@ -416,6 +456,11 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -463,6 +508,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
 
       - name: Checkout submodules
         run: |

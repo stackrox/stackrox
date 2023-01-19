@@ -6,7 +6,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )
@@ -27,17 +26,14 @@ func newPostgresGatherer(db *pgxpool.Pool, adminConfig *pgxpool.Config) *postgre
 func (d *postgresGatherer) Gather(ctx context.Context) *data.DatabaseStats {
 	errorList := errorhelpers.NewErrorList("postgres telemetry gather")
 
-	currentDBBytes, err := pgadmin.GetDatabaseSize(d.adminConfig, migrations.GetCurrentClone())
+	totalSize, err := pgadmin.GetTotalPostgresSize(d.adminConfig)
 	errorList.AddError(err)
 
-	tableStats := globaldb.CollectPostgresStats(ctx, d.db)
-
-	dbStats := &data.DatabaseStats{
-		Type:      "postgres",
-		UsedBytes: currentDBBytes,
-		Tables:    tableStats,
-		Errors:    errorList.ErrorStrings(),
-	}
+	dbStats := globaldb.CollectPostgresStats(ctx, d.db)
+	dbStats.Type = "postgres"
+	dbStats.UsedBytes = totalSize
+	dbStats.DatabaseDetails = globaldb.CollectPostgresDatabaseSizes(d.adminConfig)
+	dbStats.Errors = errorList.ErrorStrings()
 
 	// Check Postgres remaining capacity
 	availableDBBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)

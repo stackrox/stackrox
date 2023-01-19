@@ -38,6 +38,7 @@ import org.junit.Rule
 import org.junit.rules.Timeout
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
 
 class IntegrationsTest extends BaseSpecification {
     static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"
@@ -183,6 +184,8 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    // splunk is not supported on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Splunk Integration (legacy mode: #legacy)"() {
         given:
         "the integration is tested"

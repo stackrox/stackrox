@@ -18,8 +18,12 @@ import util.Timer
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Tag
+import spock.lang.IgnoreIf
+import util.Env
 
 @Retry(count = 1)
+// ROX-14228 skipping tests for 1st release on power & z
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class TLSChallengeTest extends BaseSpecification {
     @Shared
     private EnvVar originalCentralEndpoint = new EnvVar()
@@ -192,7 +196,7 @@ class TLSChallengeTest extends BaseSpecification {
         loadBalancerDeployment.setNamespace(PROXY_NAMESPACE)
                 .setName("nginx-loadbalancer")
                 .setExposeAsService(true)
-                .setImage("quay.io/rhacs-eng/qa:nginx-1-17-1")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1")
                 .addVolumeFromConfigMap(nginxConfigMap, "/etc/nginx/conf.d/")
                 .addVolumeFromSecret(tlsConfSecret, "/run/secrets/tls/")
                 .setTargetPort(8443)

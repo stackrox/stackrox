@@ -54,14 +54,15 @@ describe('Collection deployment matching', () => {
         // Restrict collection to two specific deployments
         cy.get('button:contains("All deployments")').click();
         cy.get('button:contains("Deployments with labels matching")').click();
-        cy.get('input[aria-label="Select label key for deployment rule 1 of 1"]').type('app');
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
-            'collector'
+            'app=collector'
         );
+        cy.get(`button:contains('app=collector')`).click();
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 2 of 2 for deployment rule 1 of 1"]').type(
-            'sensor'
+            'app=sensor'
         );
+        cy.get(`button:contains('app=sensor')`).click();
 
         assertDeploymentsAreMatchedExactly(['collector', 'sensor']);
 
@@ -100,21 +101,18 @@ describe('Collection deployment matching', () => {
         // Restrict collection to two specific deployments
         cy.get('button:contains("All deployments")').click();
         cy.get('button:contains("Deployments with labels matching")').click();
-        cy.get('input[aria-label="Select label key for deployment rule 1 of 1"]').type('k8s-app');
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
-            'calico-node-autoscaler'
+            'k8s-app=calico-node-autoscaler'
         );
+        cy.get(`button:contains('k8s-app=calico-node-autoscaler')`).click();
 
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 2 of 2 for deployment rule 1 of 1"]').type(
-            'kube-dns'
+            'k8s-app=kube-dns'
         );
+        cy.get(`button:contains('k8s-app=kube-dns')`).click();
 
-        assertDeploymentsAreMatchedExactly([
-            'kube-dns',
-            'kube-dns-autoscaler',
-            'calico-node-vertical-autoscaler',
-        ]);
+        assertDeploymentsAreMatchedExactly(['kube-dns', 'calico-node-vertical-autoscaler']);
 
         // View another collection via modal
         cy.get(selectors.viewEmbeddedCollectionButton('Available', sampleCollectionName)).click();
@@ -131,7 +129,6 @@ describe('Collection deployment matching', () => {
         cy.get(selectors.attachCollectionButton(sampleCollectionName)).click();
         assertDeploymentsAreMatchedExactly([
             'kube-dns',
-            'kube-dns-autoscaler',
             'calico-node-vertical-autoscaler',
             'collector',
             'sensor',
@@ -139,11 +136,7 @@ describe('Collection deployment matching', () => {
 
         // Detach the collection, assert that embedded collection deployments are gone
         cy.get(selectors.detachCollectionButton(sampleCollectionName)).click();
-        assertDeploymentsAreMatchedExactly([
-            'kube-dns',
-            'kube-dns-autoscaler',
-            'calico-node-vertical-autoscaler',
-        ]);
+        assertDeploymentsAreMatchedExactly(['kube-dns', 'calico-node-vertical-autoscaler']);
 
         // Re-attach and save
         cy.get(selectors.attachCollectionButton(sampleCollectionName)).click();
@@ -157,9 +150,9 @@ describe('Collection deployment matching', () => {
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`).click();
 
         // Filter to deployments with deployment name matching
-        cy.get(selectors.resultsPanelFilterInput).type('kube-dns');
+        cy.get(selectors.resultsPanelFilterInput).type('c');
 
-        assertDeploymentsAreMatchedExactly(['kube-dns', 'kube-dns-autoscaler']);
+        assertDeploymentsAreMatchedExactly(['calico-node-vertical-autoscaler', 'collector']);
 
         // Filter to deployments in namespaces matching
         cy.get(selectors.resultsPanelFilterEntitySelect).click();

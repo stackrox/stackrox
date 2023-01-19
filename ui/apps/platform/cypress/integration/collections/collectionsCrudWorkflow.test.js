@@ -34,14 +34,15 @@ describe('Create collection', () => {
 
         cy.get('button:contains("All deployments")').click();
         cy.get('button:contains("Deployments with labels matching")').click();
-        cy.get('input[aria-label="Select label key for deployment rule 1 of 1"]').type('meta/name');
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
-            'visa.*'
+            'meta/name=visa-processor'
         );
+        cy.get(`button:contains('meta/name=visa-processor')`).click();
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 2 of 2 for deployment rule 1 of 1"]').type(
-            'mastercard.*'
+            'meta/name=mastercard-processor'
         );
+        cy.get(`button:contains('meta/name=mastercard-processor')`).click();
 
         cy.get('button:contains("All namespaces")').click();
         cy.get('button:contains("Namespaces with names matching")').click();
@@ -67,19 +68,18 @@ describe('Create collection', () => {
         cy.get(`button:contains("Edit collection")`).click();
 
         cy.get('button[aria-label="Add deployment label rule"]').click();
-        cy.get('input[aria-label="Select label key for deployment rule 2 of 2"]').type(
-            'meta/net-visibility'
-        );
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 2 of 2"]').type(
-            'public-facing'
+            'meta/net-visibility=public-facing'
         );
+        cy.get(`button:contains('meta/net-visibility=public-facing')`).click();
 
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 3 of 3 for deployment rule 1 of 2"]').type(
-            'discover.*'
+            'meta/name=discover-processor'
         );
+        cy.get(`button:contains('meta/name=discover-processor')`).click();
 
-        cy.get(`button[aria-label='Delete mastercard.*']`).click();
+        cy.get(`button[aria-label='Delete meta/name=mastercard-processor']`).click();
 
         cy.get('button[aria-label="Add cluster name value"]').click();
         cy.get('input[aria-label="Select value 2 of 2 for the cluster name"]').type('staging');
@@ -97,9 +97,11 @@ describe('Create collection', () => {
         cy.get('a:contains("Financial deployments")').click();
 
         // Check "byLabel" inputs for deployment
-        cy.get(`input[aria-label^="Select label value"][value="visa.*"]`);
-        cy.get(`input[aria-label^="Select label value"][value="discover.*"]`);
-        cy.get(`input[aria-label^="Select label value"][value="mastercard.*"]`).should('not.exist');
+        cy.get(`input[aria-label^="Select label value"][value="meta/name=visa-processor"]`);
+        cy.get(`input[aria-label^="Select label value"][value="meta/name=discover-processor"]`);
+        cy.get(
+            `input[aria-label^="Select label value"][value="meta/name=mastercard-processor"]`
+        ).should('not.exist');
 
         // Check "byName" inputs for namespace
         cy.get(`input[aria-label$="for the namespace name"][value="payments"]`);
