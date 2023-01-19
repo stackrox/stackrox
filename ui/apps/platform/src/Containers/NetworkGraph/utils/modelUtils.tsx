@@ -156,31 +156,26 @@ export function getPortEdgeLabel(properties: EdgeProperties[]): string {
 function mergePortEdgeLabels(firstLabel: string, secondLabel = ''): string {
     const firstLabelNum = Number(firstLabel);
     const secondLabelNum = Number(secondLabel);
-    let mergedLabel = '';
     // if both labels are not numbers and current edge label is the same as the previous label,
     // return same label else return 2
     if (!firstLabelNum && !secondLabelNum) {
-        mergedLabel = firstLabel === secondLabel ? firstLabel : '2';
+        return firstLabel === secondLabel ? firstLabel : '2';
     }
 
     // if the previous label is singular (not a number) but the current edge label is multiple
     // return the sum
-    else if (!firstLabelNum && !!secondLabelNum) {
-        mergedLabel = `${1 + secondLabelNum}`;
+    if (!firstLabelNum && !!secondLabelNum) {
+        return `${1 + secondLabelNum}`;
     }
 
     // if current label is singular (not a number) but the prev label is multiple
     // return the sum
-    else if (!!firstLabelNum && !secondLabelNum) {
-        mergedLabel = `${firstLabelNum + 1}`;
+    if (!!firstLabelNum && !secondLabelNum) {
+        return `${firstLabelNum + 1}`;
     }
 
     // else return the sum
-    else if (!firstLabelNum && !secondLabelNum) {
-        mergedLabel = `${firstLabelNum + secondLabelNum}`;
-    }
-
-    return mergedLabel;
+    return `${firstLabelNum + secondLabelNum}`;
 }
 
 export function transformActiveData(
