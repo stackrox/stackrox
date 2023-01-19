@@ -1,4 +1,10 @@
+import { L4Protocol } from 'types/networkFlow.proto';
+
+export type EntityType = 'DEPLOYMENT' | 'INTERNET' | 'EXTERNAL_SOURCE';
+
 export type FlowEntityType = 'DEPLOYMENT' | 'EXTERNAL_ENTITIES' | 'CIDR_BLOCK';
+
+export type BaselineStatusType = 'ANOMALOUS' | 'BASELINE';
 
 export type IndividualFlow = {
     id: string;
@@ -8,7 +14,7 @@ export type IndividualFlow = {
     namespace: string;
     direction: string;
     port: string;
-    protocol: string;
+    protocol: L4Protocol;
     isAnomalous: boolean;
     children?: undefined;
 };
@@ -21,9 +27,28 @@ export type AggregatedFlow = {
     namespace: string;
     direction: string;
     port: string;
-    protocol: string;
+    protocol: L4Protocol;
     isAnomalous: boolean;
     children: IndividualFlow[];
+};
+
+export type Entity = {
+    id: string;
+    type: EntityType;
+    name: string;
+    namespace: string;
+};
+
+export type Peer = {
+    entity: Entity;
+    port: string;
+    protocol: L4Protocol;
+    ingress: boolean;
+};
+
+export type BaselineStatus = {
+    peer: Peer;
+    status: BaselineStatusType;
 };
 
 export type Flow = IndividualFlow | AggregatedFlow;
