@@ -120,45 +120,18 @@ function NetworkGraphPage() {
                     ),
                 ])
                     .then((values) => {
-                        const activeNodeMap: Record<string, CustomNodeModel> = {};
-                        const activeEdgeMap: Record<string, CustomEdgeModel> = {};
-                        const policyNodeMap: Record<string, DeploymentNodeModel> = {};
-
                         // get policy nodes from api response
                         const { nodes: policyNodes } = values[1].response;
                         // transform policy data to DataModel
-                        const policyDataModel = transformPolicyData(
+                        const { policyDataModel, policyNodeMap } = transformPolicyData(
                             policyNodes,
                             deploymentCount || 0
                         );
-                        // set policyNodeMap to be able to cross reference nodes by id
-                        // to enhance active node data
-                        policyDataModel.nodes?.forEach((node) => {
-                            // no grouped nodes in policy graph data model
-                            if (!policyNodeMap[node.id]) {
-                                policyNodeMap[node.id] = node as DeploymentNodeModel;
-                            }
-                        });
-
                         // get active nodes from api response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
-                        const activeDataModel = transformActiveData(activeNodes, policyNodeMap);
-                        // set activeNodeMap to be able to cross reference nodes by id
-                        // for the extraneous graph
-                        activeDataModel.nodes?.forEach((node) => {
-                            // only add to node map when it's not a group node
-                            if (!activeNodeMap[node.id] && !node.group) {
-                                activeNodeMap[node.id] = node;
-                            }
-                        });
-                        // set activeEdgeMap to be able to cross reference edges by id
-                        // for the extraneous graph
-                        activeDataModel.edges?.forEach((edge) => {
-                            if (!activeEdgeMap[edge.id]) {
-                                activeEdgeMap[edge.id] = edge;
-                            }
-                        });
+                        const { activeDataModel, activeEdgeMap, activeNodeMap } =
+                            transformActiveData(activeNodes, policyNodeMap);
 
                         // create extraneous flows graph
                         const extraneousFlowsDataModel = createExtraneousFlowsModel(
@@ -194,7 +167,7 @@ function NetworkGraphPage() {
         const showExternalState = !!displayOptions.includes('externalBadge');
         const showEdgeLabels = !!displayOptions.includes('edgeLabel');
         let updatedNodes: CustomNodeModel[] = model.nodes;
-        let updatedEdges: CustomEdgeModel[] = model.edges;
+        const updatedEdges: CustomEdgeModel[] = model.edges;
 
         // if all display options are true, set back to existing default data model
         if (showPolicyState && showExternalState && showEdgeLabels) {
@@ -219,21 +192,21 @@ function NetworkGraphPage() {
                 });
             }
 
-            if (model.edges?.length) {
-                // need to improve perf to only perform this if edgeLabel has changed
-                updatedEdges = model.edges.map((edge) => {
-                    const { data } = edge;
-                    const { properties } = data;
-                    const { port, protocol } = data.properties[0];
-                    return {
-                        ...edge,
-                        data: {
-                            properties,
-                            tag: showEdgeLabels ? getPortEdgeLabel(port, protocol) : undefined,
-                        },
-                    };
-                });
-            }
+            // if (model.edges?.length) {
+            //     // need to improve perf to only perform this if edgeLabel has changed
+            //     updatedEdges = model.edges.map((edge) => {
+            //         const { data } = edge;
+            //         const { properties } = data;
+            //         const { port, protocol } = data.properties[0];
+            //         return {
+            //             ...edge,
+            //             data: {
+            //                 properties,
+            //                 tag: showEdgeLabels ? getPortEdgeLabel(port, protocol) : undefined,
+            //             },
+            //         };
+            //     });
+            // }
 
             const updatedModel: CustomModel = {
                 ...model,

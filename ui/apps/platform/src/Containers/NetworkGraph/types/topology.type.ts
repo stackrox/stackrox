@@ -1,4 +1,4 @@
-import { EdgeModel, Model, NodeModel } from '@patternfly/react-topology';
+import { EdgeModel, EdgeTerminalType, Model, NodeModel } from '@patternfly/react-topology';
 
 import { EdgeProperties, ListenPort, OutEdges } from 'types/networkFlow.proto';
 import { Override } from 'utils/type.utils';
@@ -102,4 +102,7 @@ export type CustomEdgeModel = Override<EdgeModel, { data: EdgeData }>;
 export type EdgeData = {
     tag?: string;
     properties: EdgeProperties[];
+    startTerminalType?: EdgeTerminalType;
+    endTerminalType?: EdgeTerminalType;
+    isBidirectional: boolean;
 };

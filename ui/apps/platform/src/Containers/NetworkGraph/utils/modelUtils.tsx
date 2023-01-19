@@ -1,4 +1,4 @@
-import { EdgeStyle } from '@patternfly/react-topology';
+import { EdgeStyle, EdgeTerminalType } from '@patternfly/react-topology';
 
 import {
     DeploymentNetworkEntityInfo,
@@ -8,6 +8,7 @@ import {
     Node,
     OutEdges,
     L4Protocol,
+    EdgeProperties,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
@@ -142,15 +143,28 @@ function getNodeModel(
     }
 }
 
-export function getPortEdgeLabel(port: number, protocol: L4Protocol): string {
+function getPortLabel(port: number, protocol: L4Protocol) {
     return `${port} ${protocolLabel[protocol]}`;
+}
+
+export function getPortEdgeLabel(properties: EdgeProperties[]): string {
+    if (properties.length === 1) {
+        const { port, protocol } = properties[0];
+        return getPortLabel(port, protocol);
+    }
+    return 'many';
+    // return properties.map(({ port, protocol }) => getPortLabel(port, protocol)).join(', ');
 }
 
 export function transformActiveData(
     nodes: Node[],
     policyNodeMap: Record<string, DeploymentNodeModel>
-): CustomModel {
-    const dataModel = {
+): {
+    activeDataModel: CustomModel;
+    activeEdgeMap: Record<string, CustomEdgeModel>;
+    activeNodeMap: Record<string, CustomNodeModel>;
+} {
+    const activeDataModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
@@ -159,6 +173,7 @@ export function transformActiveData(
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     const externalNodes: Record<string, ExternalEntitiesNodeModel | CIDRBlockNodeModel> = {};
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
+    const activeEdgeMap: Record<string, CustomEdgeModel> = {};
 
     nodes.forEach(({ entity, policyIds, outEdges }) => {
         const { type, id } = entity;
@@ -200,19 +215,34 @@ export function transformActiveData(
         // creating edges based off of outEdges per node and adding to data model
         Object.keys(outEdges).forEach((nodeIdx) => {
             const { properties } = outEdges[nodeIdx];
-            const { port, protocol } = properties[0];
-            const edge = {
-                id: `${id} ${nodes[nodeIdx].entity.id as string}`,
+            // console.log(getPortEdgeLabel(properties));
+            const source = id;
+            const target: string = nodes[nodeIdx].entity.id;
+            const edgeId = `${source}-${target}`;
+            const reverseEdgeId = `${target}-${source}`;
+            const edge: CustomEdgeModel = {
+                id: edgeId,
                 type: 'edge',
-                source: id,
-                target: nodes[nodeIdx].entity.id,
+                source,
+                target,
                 visible: false,
                 data: {
-                    tag: getPortEdgeLabel(port, protocol),
+                    tag: getPortEdgeLabel(properties),
                     properties,
+                    isBidirectional: false,
                 },
             };
-            dataModel.edges.push(edge);
+            // this is to reuse the first edge if the edge is bidirectional;
+            if (activeEdgeMap[reverseEdgeId]) {
+                edge.id = reverseEdgeId;
+                edge.data.startTerminalType = EdgeTerminalType.directional;
+                edge.data.endTerminalType = EdgeTerminalType.directional;
+                edge.data.tag = 'both';
+                edge.data.isBidirectional = true;
+                activeEdgeMap[reverseEdgeId] = edge;
+            } else {
+                activeEdgeMap[edgeId] = edge;
+            }
         });
     });
 
@@ -237,19 +267,27 @@ export function transformActiveData(
         });
 
         // add external group node to data model
-        dataModel.nodes.push(externalGroupNode);
+        activeDataModel.nodes.push(externalGroupNode);
     }
 
     // add deployment nodes to data model
-    dataModel.nodes.push(...Object.values(deploymentNodes));
+    activeDataModel.nodes.push(...Object.values(deploymentNodes));
 
     // add namespace nodes to data model
-    dataModel.nodes.push(...Object.values(namespaceNodes));
+    activeDataModel.nodes.push(...Object.values(namespaceNodes));
 
     // add external nodes to data model
-    dataModel.nodes.push(...Object.values(externalNodes));
+    activeDataModel.nodes.push(...Object.values(externalNodes));
 
-    return dataModel;
+    // add edges to data model
+    activeDataModel.edges.push(...Object.values(activeEdgeMap));
+    return {
+        activeDataModel,
+        // set activeEdgeMap to be able to cross reference edges by id for the extraneous graph
+        activeEdgeMap,
+        // set activeNodeMap to be able to cross reference nodes by id for the extraneous graph
+        activeNodeMap: { ...deploymentNodes, ...externalNodes },
+    };
 }
 
 function getNetworkPolicyState(
@@ -271,12 +309,19 @@ function getNetworkPolicyState(
 // external connections can only be active, so this is hard coded to false
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
-export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
-    const dataModel: CustomModel = {
+export function transformPolicyData(
+    nodes: Node[],
+    flows: number
+): { policyDataModel: CustomModel; policyNodeMap: Record<string, DeploymentNodeModel> } {
+    const policyDataModel: CustomModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
     };
+    // set policyNodeMap to be able to cross reference nodes by id to enhance active node data
+    const policyNodeMap: Record<string, DeploymentNodeModel> = {};
+    // to reference edges so we don't double merge bidirectional edges
+    const policyEdgeMap: Record<string, CustomEdgeModel> = {};
     nodes.forEach(({ entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress }) => {
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
         const node = getNodeModel(
@@ -286,31 +331,50 @@ export function transformPolicyData(nodes: Node[], flows: number): CustomModel {
             POLICY_NODE_EXTERNALLY_CONNECTED_VALUE,
             outEdges
         );
-        dataModel.nodes.push(node);
+        if (!policyNodeMap[node.id]) {
+            policyNodeMap[node.id] = node as DeploymentNodeModel;
+        }
+        policyDataModel.nodes.push(node);
 
         // creating edges based off of outEdges per node and adding to data model
         Object.keys(outEdges).forEach((nodeIdx) => {
+            const source = entity.id;
+            const target: string = nodes[nodeIdx].entity.id;
+            const edgeId = `${source}-${target}`;
+            const reverseEdgeId = `${target}-${source}`;
             const { properties } = outEdges[nodeIdx];
-            const { port, protocol } = properties[0];
-            const edge = {
-                id: `${entity.id} ${nodes[nodeIdx].entity.id as string}`,
+            const edge: CustomEdgeModel = {
+                id: edgeId,
                 type: 'edge',
-                source: entity.id,
-                target: nodes[nodeIdx].entity.id,
+                source,
+                target,
                 visible: false,
                 edgeStyle: EdgeStyle.dashed,
                 data: {
-                    tag: getPortEdgeLabel(port, protocol),
+                    tag: getPortEdgeLabel(properties),
                     properties,
+                    isBidirectional: false,
                 },
             };
-            dataModel.edges.push(edge);
+            // this is to reuse the first edge if the edge is bidirectional;
+            if (policyEdgeMap[reverseEdgeId]) {
+                edge.id = reverseEdgeId;
+                edge.data.startTerminalType = EdgeTerminalType.directional;
+                edge.data.endTerminalType = EdgeTerminalType.directional;
+                edge.data.tag = 'both';
+                edge.data.isBidirectional = true;
+                policyEdgeMap[reverseEdgeId] = edge;
+            } else {
+                policyEdgeMap[edgeId] = edge;
+            }
+            // policyDataModel.edges.push(edge);
         });
     });
     const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes(flows);
-    dataModel.nodes.push(extraneousEgressNode);
-    dataModel.nodes.push(extraneousIngressNode);
-    return dataModel;
+    policyDataModel.nodes.push(extraneousEgressNode);
+    policyDataModel.nodes.push(extraneousIngressNode);
+    policyDataModel.edges.push(...Object.values(policyEdgeMap));
+    return { policyDataModel, policyNodeMap };
 }
 
 export function createExtraneousFlowsModel(
@@ -318,7 +382,7 @@ export function createExtraneousFlowsModel(
     activeNodeMap: Record<string, CustomNodeModel>,
     activeEdgeMap: Record<string, CustomEdgeModel>
 ): CustomModel {
-    const dataModel = {
+    const extraneousDataModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
@@ -328,7 +392,7 @@ export function createExtraneousFlowsModel(
     // add all non-group nodes from the active graph
     Object.values(activeNodeMap).forEach((node) => {
         if (!node.group) {
-            dataModel.nodes.push(node);
+            extraneousDataModel.nodes.push(node);
         }
     });
 
@@ -337,20 +401,53 @@ export function createExtraneousFlowsModel(
         // add to extraneous flows model when the node is not in the active graph
         // and is not a group node in the policy graph
         if (!activeNodeMap[node.id] && !node.group) {
-            dataModel.nodes.push(node);
+            extraneousDataModel.nodes.push(node);
         }
     });
 
     // loop through each edge in policy graph to see if it exists in the active graph
-    policyDataModel.edges?.forEach((edge) => {
-        // only add to extraneous flows model when edge is not in the active graph
-        if (!activeEdgeMap[edge.id]) {
-            dataModel.edges.push(edge);
+    // only add to extraneous flows model when policy edge is not in the active graph
+    policyDataModel.edges?.forEach((policyEdge) => {
+        const { id: policyEdgeId, source, target } = policyEdge;
+        const reversePolicyEdgeId = `${target as string}-${source as string}`;
+        const activeEdge = activeEdgeMap[policyEdgeId];
+        const activeReverseEdge = activeEdgeMap[reversePolicyEdgeId];
+
+        if (activeEdge || activeReverseEdge) {
+            const existingActiveEdge = activeEdge || activeReverseEdge;
+            const { isBidirectional: policyEdgeIsBidirectional } = policyEdge.data;
+            const { isBidirectional: activeEdgeIsBidirectional } = existingActiveEdge.data;
+            if (policyEdgeIsBidirectional && activeEdgeIsBidirectional) {
+                // if both policy and active edges are bidirectional, skip edge
+            } else if (policyEdgeIsBidirectional && !activeEdgeIsBidirectional) {
+                // if policy edge has both directions and active edge does not, add
+                // other direction to extraneous flows model
+                let edgeDirection = policyEdgeId;
+                if (policyEdgeId === existingActiveEdge.id) {
+                    // if the policy edge id matches the existing active edge id,
+                    // we need to add the reverse edge id to the extraneous data model
+                    edgeDirection = reversePolicyEdgeId;
+                }
+                const edge = {
+                    ...policyEdge,
+                    id: edgeDirection,
+                    data: {
+                        ...policyEdge.data,
+                        isBidirectional: false,
+                    },
+                };
+                extraneousDataModel.edges.push(edge);
+            } else if (!policyEdgeIsBidirectional && activeEdgeIsBidirectional) {
+                // if policy edge has one direction and active edge has both, skip
+            }
+        } else if (!activeEdge && !activeReverseEdge) {
+            // if neither direction exists in the active edge map, add to extraneous edges
+            extraneousDataModel.edges.push(policyEdge);
         }
     });
 
     // find namespace and external nodes
-    dataModel.nodes.forEach(({ data }) => {
+    extraneousDataModel.nodes.forEach(({ data }) => {
         const { type } = data;
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
@@ -376,14 +473,14 @@ export function createExtraneousFlowsModel(
     });
 
     // add namespace nodes to data model
-    dataModel.nodes.push(...Object.values(namespaceNodes));
+    extraneousDataModel.nodes.push(...Object.values(namespaceNodes));
 
     // add external group node to data model
     if (externalNode) {
-        dataModel.nodes.push(externalNode);
+        extraneousDataModel.nodes.push(externalNode);
     }
 
-    return dataModel;
+    return extraneousDataModel;
 }
 
 export function createExtraneousNodes(numFlows: number): {
@@ -434,6 +531,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
         edgeStyle: EdgeStyle.dashed,
         data: {
             properties: [],
+            isBidirectional: false,
         },
     };
     const extraneousIngressEdge = {
@@ -445,6 +543,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
         edgeStyle: EdgeStyle.dashed,
         data: {
             properties: [],
+            isBidirectional: false,
         },
     };
     return { extraneousEgressEdge, extraneousIngressEdge };
