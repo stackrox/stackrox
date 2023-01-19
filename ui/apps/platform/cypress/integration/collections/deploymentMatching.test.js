@@ -96,6 +96,10 @@ describe('Collection deployment matching', () => {
         // View more and ensure the next page loads
         cy.get(`${selectors.resultsPanel} > div:last-child`).scrollTo('bottom');
         cy.get(selectors.viewMoreResultsButton).click();
+        // Scroll to the bottom once the view more has completed
+        cy.get(`${selectors.viewMoreResultsButton}.pf-m-in-progress`);
+        cy.get(`${selectors.viewMoreResultsButton}:not(.pf-m-in-progress)`);
+        cy.get(`${selectors.resultsPanel} > div:last-child`).scrollTo('bottom');
         assertDeploymentsAreMatched(['kube-dns']);
 
         // Restrict collection to two specific deployments
