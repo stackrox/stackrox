@@ -23,7 +23,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	log.Info("Started node inventory")
 	// uncertifiedRHEL is set to false, as scans are only supported on RHCOS for now,
 	// which only exists in certified versions
-	componentsHost, err := nodes.Analyze(nodeName, "/host/", false)
+	componentsHost, err := nodes.Analyze(nodeName, "/host/", nodes.AnalyzeOpts{UncertifiedRHEL: false, IsRHCOSRequired: true})
 	log.Info("Finished node inventory")
 	if err != nil {
 		log.Errorf("Error scanning node /host inventory: %v", err)
