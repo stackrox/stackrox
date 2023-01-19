@@ -702,6 +702,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	}
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		log.Info("SHREWS -- trying something to see if Rocks is hosed")
+		testBolt := globaldb.GetGlobalDB()
+		testRocks := globaldb.GetRocksDB()
+		log.Infof("SHREWS -- %v, %v", testBolt.Info(), testRocks.Name())
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
