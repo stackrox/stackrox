@@ -149,6 +149,7 @@ var defaultRoles = map[string]roleAttributes{
 	},
 }
 
+// TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
 var vulnReportingDefaultRoles = map[string]roleAttributes{
 	rolePkg.VulnReporter: {
 		idSuffix:    "vulnreporter",
