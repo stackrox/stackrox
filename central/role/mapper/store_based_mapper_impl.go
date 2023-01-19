@@ -34,10 +34,6 @@ func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *pe
 func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *permissions.UserDescriptor) {
 	user := rm.createUser(descriptor)
 
-	// Telemetry logic: add the first time logging in users to the group of
-	// other players like central and fleet manager under the tenant group, so
-	// that the users share the common tenant properties like organization ID
-	// available for analytics purposes:
 	if existing, _ := rm.users.GetUser(ctx, user.GetId()); existing == nil && user != nil {
 		addUserToTenantGroup(user)
 	}
