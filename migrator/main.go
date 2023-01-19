@@ -144,10 +144,14 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 
 			rocks = pkgRocksDB.DB
 			defer func() {
+				log.WriteToStderr("Closing legacy databases")
 				if err := boltDB.Close(); err != nil {
 					log.WriteToStderrf("Error closing DB: %v", err)
 				}
 				if rocks != nil {
+					flushOptions := gorocksdb.NewDefaultFlushOptions()
+					defer flushOptions.Destroy()
+					rocks.Flush(flushOptions)
 					rocks.Close()
 				}
 			}()
