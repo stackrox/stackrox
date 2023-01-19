@@ -104,32 +104,34 @@ function ByNameSelector({
                                     <SelectOption value="REGEX">A regex value of</SelectOption>
                                 </NameMatchTypeSelect>
                             </div>
-                            {matchType === 'REGEX' ? (
-                                <TextInput
-                                    id={inputId}
-                                    aria-label={inputAriaLabel}
-                                    placeholder={`^${placeholder}$`}
-                                    className={inputClassName}
-                                    onChange={inputOnChange}
-                                    validated={inputValidated}
-                                    value={value}
-                                    isDisabled={isDisabled}
-                                />
-                            ) : (
-                                <AutoCompleteSelect
-                                    id={inputId}
-                                    entityType={entityType}
-                                    typeAheadAriaLabel={inputAriaLabel}
-                                    className={inputClassName}
-                                    onChange={inputOnChange}
-                                    placeholder={placeholder}
-                                    validated={inputValidated}
-                                    selectedOption={value}
-                                    isDisabled={isDisabled}
-                                    collection={collection}
-                                    autocompleteField={entityType}
-                                />
-                            )}
+                            <div className="rule-selector-name-value-input">
+                                {matchType === 'REGEX' ? (
+                                    <TextInput
+                                        id={inputId}
+                                        aria-label={inputAriaLabel}
+                                        placeholder={`^${placeholder}$`}
+                                        className={inputClassName}
+                                        onChange={inputOnChange}
+                                        validated={inputValidated}
+                                        value={value}
+                                        isDisabled={isDisabled}
+                                    />
+                                ) : (
+                                    <AutoCompleteSelect
+                                        id={inputId}
+                                        entityType={entityType}
+                                        typeAheadAriaLabel={inputAriaLabel}
+                                        className={inputClassName}
+                                        onChange={inputOnChange}
+                                        placeholder={placeholder}
+                                        validated={inputValidated}
+                                        selectedOption={value}
+                                        isDisabled={isDisabled}
+                                        collection={collection}
+                                        autocompleteField={entityType}
+                                    />
+                                )}
+                            </div>
                             {!isDisabled && (
                                 <Button
                                     aria-label={`Delete ${value}`}

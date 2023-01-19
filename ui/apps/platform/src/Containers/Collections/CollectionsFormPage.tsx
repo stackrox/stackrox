@@ -63,7 +63,7 @@ function CollectionsFormPage({
     pageAction,
 }: CollectionsFormPageProps) {
     const history = useHistory();
-    const isLargeScreen = useMediaQuery({ query: '(min-width: 992px)' }); // --pf-global--breakpoint--lg
+    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-global--breakpoint--xl
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
 
     const { data, loading, error } = useCollection(collectionId);
@@ -88,7 +88,7 @@ function CollectionsFormPage({
         toggleSelect: toggleDrawer,
         closeSelect: closeDrawer,
         openSelect: openDrawer,
-    } = useSelectToggle(isLargeScreen);
+    } = useSelectToggle(isXLargeScreen);
 
     function onEditCollection(id: string) {
         history.push({
@@ -196,7 +196,7 @@ function CollectionsFormPage({
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={pageAction}
                 collectionData={data}
-                isInlineDrawer={isLargeScreen}
+                isInlineDrawer={isXLargeScreen}
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
                 onSubmit={(collection) =>
@@ -353,7 +353,7 @@ function CollectionsFormPage({
             </AlertGroup>
             <ConfirmationModal
                 ariaLabel="Confirm delete"
-                confirmText="Delete"
+                confirmText="Delete collection"
                 isLoading={isDeleting}
                 isOpen={deleteId !== null}
                 onConfirm={onConfirmDeleteCollection}
