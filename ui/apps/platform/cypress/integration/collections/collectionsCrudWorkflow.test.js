@@ -13,9 +13,6 @@ describe('Create collection', () => {
         if (!hasFeatureFlag('ROX_OBJECT_COLLECTIONS')) {
             this.skip();
         }
-        // Ignore autocomplete requests
-        // TODO Remove this once the feature is in
-        cy.intercept('/v1/collections/autocomplete', {});
     });
 
     const collectionName = 'Financial deployments';
@@ -37,22 +34,18 @@ describe('Create collection', () => {
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
             'meta/name=visa-processor'
         );
-        cy.get(`button:contains('meta/name=visa-processor')`).click();
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 2 of 2 for deployment rule 1 of 1"]').type(
             'meta/name=mastercard-processor'
         );
-        cy.get(`button:contains('meta/name=mastercard-processor')`).click();
 
         cy.get('button:contains("All namespaces")').click();
         cy.get('button:contains("Namespaces with names matching")').click();
         cy.get('input[aria-label="Select value 1 of 1 for the namespace name"]').type('payments');
-        cy.get(`button:contains('Add "payments"')`).click();
 
         cy.get('button:contains("All clusters")').click();
         cy.get('button:contains("Clusters with names matching")').click();
         cy.get('input[aria-label="Select value 1 of 1 for the cluster name"]').type('production');
-        cy.get(`button:contains('Add "production"')`).click();
 
         cy.get('button:contains("Save")').click();
 
@@ -71,24 +64,20 @@ describe('Create collection', () => {
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 2 of 2"]').type(
             'meta/net-visibility=public-facing'
         );
-        cy.get(`button:contains('meta/net-visibility=public-facing')`).click();
 
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 3 of 3 for deployment rule 1 of 2"]').type(
             'meta/name=discover-processor'
         );
-        cy.get(`button:contains('meta/name=discover-processor')`).click();
 
         cy.get(`button[aria-label='Delete meta/name=mastercard-processor']`).click();
 
         cy.get('button[aria-label="Add cluster name value"]').click();
         cy.get('input[aria-label="Select value 2 of 2 for the cluster name"]').type('staging');
-        cy.get(`button:contains('Add "staging"')`).click();
 
         cy.get('input[aria-label="Select value 1 of 2 for the cluster name"]').type(
             '{selectAll}security'
         );
-        cy.get(`button:contains('Add "security"')`).click();
 
         // Save
         cy.get('button:contains("Save")').click();
