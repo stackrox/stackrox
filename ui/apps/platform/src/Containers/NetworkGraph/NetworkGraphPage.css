@@ -14,11 +14,11 @@
 /* Create a stacking context that is higher than the context for the react-topology component
    that is rendered below the toolbar, so that the search filter dropdown will render above the graph when open */
 [data-testid="network-graph-toolbar"] {
-    z-index: 150;
+    z-index: 250;
 }
 [data-testid="network-graph-toolbar"] .pf-search-shim,
 [data-testid="network-graph-toolbar"] .react-select__menu {
-    z-index: 150;
+    z-index: 250;
 }
 
 /* Remove gray background from plain PF Select trigger button when disabled */
