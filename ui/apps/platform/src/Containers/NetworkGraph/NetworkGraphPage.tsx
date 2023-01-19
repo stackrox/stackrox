@@ -51,6 +51,7 @@ const emptyModel = {
     graph: graphModel,
     nodes: [],
     edges: [],
+    updateCount: 0,
 };
 
 // TODO: get real time window from user input
@@ -158,9 +159,9 @@ function NetworkGraphPage() {
 
     const setModelByEdgeState = useCallback(() => {
         if (edgeState === 'active') {
-            setModel(activeModel);
+            setModel({ ...activeModel, updateCount: model.updateCount + 1 });
         } else if (edgeState === 'extraneous') {
-            setModel(extraneousFlowsModel);
+            setModel({ ...extraneousFlowsModel, updateCount: model.updateCount + 1 });
         }
     }, [edgeState, activeModel, extraneousFlowsModel]);
 
@@ -218,6 +219,7 @@ function NetworkGraphPage() {
                 ...model,
                 nodes: updatedNodes,
                 edges: updatedEdges,
+                updateCount: model.updateCount + 1,
             };
             setModel(updatedModel);
         }
