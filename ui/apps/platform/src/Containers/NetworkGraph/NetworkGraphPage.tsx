@@ -17,13 +17,15 @@ import useFetchClusters from 'hooks/useFetchClusters';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNetworkPolicyGraph } from 'services/NetworkService';
-import { getQueryString } from 'utils/queryStringUtils';
+import queryService from 'utils/queryService';
 import timeWindowToDate from 'utils/timeWindows';
+import { isCompleteSearchFilter } from 'utils/searchUtils';
 
 import PageTitle from 'Components/PageTitle';
 import useURLParameter from 'hooks/useURLParameter';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
+import NetworkSearch from './components/NetworkSearch';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
 import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
@@ -89,12 +91,18 @@ function NetworkGraphPage() {
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
 
     useDeepCompareEffect(() => {
+        // check that user is finished adding a complete filter
+        const isQueryFilterComplete = isCompleteSearchFilter(remainingQuery);
+
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
-        if (clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount) {
+        const isClusterNamespaceSelected =
+            clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
+
+        if (isQueryFilterComplete && isClusterNamespaceSelected) {
             if (selectedClusterId) {
                 setIsLoading(true);
 
-                const queryToUse = getQueryString(remainingQuery).slice(1);
+                const queryToUse = queryService.objectToWhereClause(remainingQuery);
                 const timestampToUse = timeWindowToDate(timeWindow);
 
                 Promise.all([
@@ -173,7 +181,7 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount]);
+    }, [clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount, remainingQuery]);
 
     useEffect(() => {
         if (edgeState === 'active') {
@@ -253,8 +261,14 @@ function NetworkGraphPage() {
                             </ToolbarItem>
                             <ToolbarItem>in the past hour</ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarGroup>
-                            <ToolbarItem>Add one or more deployment filters</ToolbarItem>
+                        <ToolbarGroup className="pf-u-flex-grow-1">
+                            <ToolbarItem className="pf-u-flex-grow-1">
+                                <NetworkSearch
+                                    selectedCluster={clusterFromUrl}
+                                    selectedNamespaces={namespacesFromUrl}
+                                    selectedDeployments={deploymentsFromUrl}
+                                />
+                            </ToolbarItem>
                             <ToolbarItem>
                                 <DisplayOptionsSelect
                                     selectedOptions={displayOptions}
