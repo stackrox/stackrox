@@ -49,16 +49,16 @@ spec:
          - mountPath: /etc/ext-db
            name: central-external-db-volume
          - name: config-map-1
-           mountPath: /run/secrets/stackrox.io/declarative-configuration/config-map-1
+           mountPath: /run/stackrox.io/declarative-configuration/config-map-1
            readOnly: true
          - name: config-map-2
-           mountPath: /run/secrets/stackrox.io/declarative-configuration/config-map-2
+           mountPath: /run/stackrox.io/declarative-configuration/config-map-2
            readOnly: true
          - name: secret-1
-           mountPath: /run/secrets/stackrox.io/declarative-configuration/secret-1
+           mountPath: /run/stackrox.io/declarative-configuration/secret-1
            readOnly: true
          - name: secret-2
-           mountPath: /run/secrets/stackrox.io/declarative-configuration/secret-2
+           mountPath: /run/stackrox.io/declarative-configuration/secret-2
            readOnly: true
          - mountPath: /etc/pki/injected-ca-trust/
            name: trusted-ca-volume

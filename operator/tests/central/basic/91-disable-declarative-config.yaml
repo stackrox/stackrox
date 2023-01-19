@@ -4,6 +4,6 @@ metadata:
   name: stackrox-central-services
 spec:
   central:
-    declarativeConfig:
+    declarativeConfiguration:
       configMaps: []
       secrets: []
