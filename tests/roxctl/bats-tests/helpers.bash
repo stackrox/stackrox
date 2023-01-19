@@ -131,7 +131,7 @@ assert_declarative_config_mount_exist() {
 
   for mount in "${@}"; do
     run yq e "select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == \"central\").volumeMounts[] | select(.name == \"${mount}\")" "${out_dir}/01-central-13-deployment.yaml"
-    assert_output --partial "mountPath: /run/secrets/stackrox.io/declarative-configuration/${mount}"
+    assert_output --partial "mountPath: /run/stackrox.io/declarative-configuration/${mount}"
   done
 }
 

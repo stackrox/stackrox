@@ -99,7 +99,7 @@ func TestRenderWithDeclarativeConfig(t *testing.T) {
 				ScannerDBImage: flavor.ScannerDBImage(),
 			},
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
-			DeclarativeConfig: DeclarativeConfigMounts{
+			DeclarativeConfigMounts: DeclarativeConfigMounts{
 				ConfigMaps: []string{"config-map-1", "config-map-2"},
 				Secrets:    []string{"secret-1", "secret-2"},
 			},
@@ -132,13 +132,13 @@ func TestRenderWithDeclarativeConfig(t *testing.T) {
 		mountNames[mount.Name] = i
 	}
 
-	for _, cm := range config.K8sConfig.DeclarativeConfig.ConfigMaps {
+	for _, cm := range config.K8sConfig.DeclarativeConfigMounts.ConfigMaps {
 		assert.Contains(t, volumeNames, cm)
 		assert.Contains(t, mountNames, cm)
 		assert.NotNil(t, volumes[volumeNames[cm]].ConfigMap)
 	}
 
-	for _, secret := range config.K8sConfig.DeclarativeConfig.Secrets {
+	for _, secret := range config.K8sConfig.DeclarativeConfigMounts.Secrets {
 		assert.Contains(t, volumeNames, secret)
 		assert.Contains(t, mountNames, secret)
 		assert.NotNil(t, volumes[volumeNames[secret]].Secret)

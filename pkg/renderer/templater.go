@@ -103,8 +103,8 @@ type K8sConfig struct {
 	// Telemetry holds the configuration for telemetry.
 	Telemetry TelemetryConfig
 
-	// DeclarativeConfig holds the configuration for creating resources in a declarative manner.
-	DeclarativeConfig DeclarativeConfigMounts
+	// DeclarativeConfigMounts holds the mounts for specifying resources to be created in a declarative manner.
+	DeclarativeConfigMounts DeclarativeConfigMounts
 
 	// ImageFlavorName is the name of the flavor selected by the user with CLI parameters
 	ImageFlavorName string

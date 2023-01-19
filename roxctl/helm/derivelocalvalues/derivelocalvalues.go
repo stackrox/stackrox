@@ -258,6 +258,7 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 		}
 	}
 
+	declarativeConfigMounts := retrieveDeclarativeConfigMounts(ctx, k8s)
 	m := map[string]interface{}{
 		// "image": We do not specify a global registry,
 		// instead we only specify central- and scanner-specific registries.
@@ -279,8 +280,8 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 			},
 			"declarativeConfig": map[string]interface{}{
 				"mounts": map[string]interface{}{
-					"configMaps": retrieveDeclarativeConfigConfigMaps(ctx, k8s, retrieveDeclarativeConfigMounts(ctx, k8s)),
-					"secrets":    retrieveDeclarativeConfigSecrets(ctx, k8s, retrieveDeclarativeConfigMounts(ctx, k8s)),
+					"configMaps": retrieveDeclarativeConfigConfigMaps(ctx, k8s, declarativeConfigMounts),
+					"secrets":    retrieveDeclarativeConfigSecrets(ctx, k8s, declarativeConfigMounts),
 				},
 			},
 			"config":          k8s.evaluateToStringP(ctx, "configmap", "central-config", `{.data['central-config\.yaml']}`),
@@ -357,7 +358,7 @@ func retrieveDeclarativeConfigMounts(ctx context.Context, k8s k8sObjectDescripti
 	var declarativeConfigMounts []string
 
 	for _, mount := range mounts {
-		if strings.HasPrefix(mount, "/run/secrets/stackrox.io/declarative-configuration/") {
+		if strings.HasPrefix(mount, "/run/stackrox.io/declarative-configuration/") {
 			declarativeConfigMounts = append(declarativeConfigMounts, mount)
 		}
 	}
