@@ -3,6 +3,7 @@ import { Select, SelectVariant, SelectGroup, SelectOption } from '@patternfly/re
 import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
+import { ReactComponent as PortLabel } from 'images/network-graph/tcp-icon.svg';
 
 import './DisplayOptionsSelect.css';
 
@@ -51,6 +52,7 @@ function DisplayOptionsSelect({ selectedOptions, setSelectedOptions }: DisplayOp
             </SelectGroup>
             <SelectGroup label="Edge visuals" key="edge">
                 <SelectOption key={2} value="edgeLabel">
+                    <PortLabel width="22px" height="22px" className="pf-u-mr-xs" />
                     Port and protocol label
                 </SelectOption>
             </SelectGroup>
