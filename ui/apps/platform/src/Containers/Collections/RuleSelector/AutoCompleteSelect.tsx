@@ -1,19 +1,32 @@
-import React, { ReactElement, ReactNode, useCallback, useMemo, useState } from 'react';
+import React, {
+    ForwardedRef,
+    forwardRef,
+    ReactElement,
+    ReactNode,
+    useCallback,
+    useMemo,
+    useState,
+} from 'react';
 import { debounce, Select, SelectOption, ValidatedOptions } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
-import { CancellableRequest } from 'services/cancellationUtils';
+import { getCollectionAutoComplete } from 'services/CollectionsService';
+import ResourceIcon from 'Components/PatternFly/ResourceIcon';
+import { generateRequest } from '../converter';
+import { ClientCollection, SelectorEntityType, SelectorField } from '../types';
 
 export type AutoCompleteSelectProps = {
     id: string;
+    collection: ClientCollection;
+    entityType: SelectorEntityType;
+    autocompleteField: SelectorField;
     selectedOption: string;
     className?: string;
     typeAheadAriaLabel?: string;
     onChange: (value: string) => void;
+    placeholder: string;
     validated: ValidatedOptions;
     isDisabled: boolean;
-    autocompleteProvider?: (search: string) => CancellableRequest<string[]>;
-    OptionComponent?: ReactNode;
 };
 
 function getOptions(
@@ -27,25 +40,51 @@ function getOptions(
 
 export function AutoCompleteSelect({
     id,
+    collection,
+    entityType,
+    autocompleteField,
     selectedOption,
     className = '',
     typeAheadAriaLabel,
     onChange,
+    placeholder,
     validated,
     isDisabled,
-    autocompleteProvider,
-    OptionComponent = SelectOption,
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [typeahead, setTypeahead] = useState(selectedOption);
+
     // When isTyping is true, autocomplete results will not be displayed. This prevents
     // a clunky UX where the dropdown results and the user text get out of sync.
     const [isTyping, setIsTyping] = useState(false);
 
+    // We need to wrap this custom SelectOption component in a forward ref
+    // because PatternFly will pass a `ref` to it
+    const OptionComponent = forwardRef(
+        (
+            props: {
+                className: string;
+                children: ReactNode;
+                onClick: (...args: unknown[]) => void;
+            },
+            ref: ForwardedRef<HTMLButtonElement | null>
+        ) => (
+            <button className={props.className} onClick={props.onClick} type="button" ref={ref}>
+                <ResourceIcon kind={entityType} />
+                {props.children}
+            </button>
+        )
+    );
+
     const autocompleteCallback = useCallback(() => {
-        const shouldMakeRequest = isOpen && autocompleteProvider;
+        const shouldMakeRequest = isOpen;
         if (shouldMakeRequest) {
-            const { request, cancel } = autocompleteProvider(typeahead);
+            const req = generateRequest(collection);
+            const { request, cancel } = getCollectionAutoComplete(
+                req.resourceSelectors,
+                autocompleteField,
+                typeahead
+            );
             request.finally(() => setIsTyping(false));
             return { request, cancel };
         }
@@ -56,7 +95,7 @@ export function AutoCompleteSelect({
             }),
             cancel: () => {},
         };
-    }, [isOpen, autocompleteProvider, typeahead]);
+    }, [autocompleteField, collection, isOpen, typeahead]);
 
     const { data } = useRestQuery(autocompleteCallback);
 
@@ -78,6 +117,7 @@ export function AutoCompleteSelect({
                 validated={validated}
                 typeAheadAriaLabel={typeAheadAriaLabel}
                 className={className}
+                placeholderText={placeholder}
                 variant="typeahead"
                 isCreatable
                 createText="Add"

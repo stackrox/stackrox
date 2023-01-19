@@ -20,7 +20,7 @@ function HelpMenu(): ReactElement {
     }
 
     const appLauncherItems = [
-        <ApplicationLauncherGroup key="api">
+        <ApplicationLauncherGroup>
             <ApplicationLauncherItem
                 component={
                     <Link className="pf-c-app-launcher__menu-item" to={apidocsPath}>
@@ -37,8 +37,6 @@ function HelpMenu(): ReactElement {
                 Help Center
             </ApplicationLauncherItem>
             <ApplicationLauncherSeparator />
-        </ApplicationLauncherGroup>,
-        <ApplicationLauncherGroup key="version">
             <ApplicationLauncherItem isDisabled>
                 <span>{metadata.versionString}</span>
             </ApplicationLauncherItem>

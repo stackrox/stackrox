@@ -9,6 +9,8 @@ import {
     isByLabelField,
     selectorEntityTypes,
     isSelectorField,
+    isLabelMatchValue,
+    isNameMatchValue,
 } from './types';
 
 const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
@@ -22,8 +24,6 @@ const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
     'Cluster Label': 'Cluster',
     'Cluster Annotation': 'Cluster',
 };
-
-const LABEL_SEPARATOR = '=';
 
 export type CollectionParseError = {
     errors: [string, ...string[]];
@@ -120,26 +120,32 @@ export function parseCollection(
 
         switch (selector.type) {
             case 'ByLabel': {
-                const firstValue = rule.values[0]?.value;
-
-                if (firstValue && firstValue.includes(LABEL_SEPARATOR)) {
-                    const [key] = firstValue.split(LABEL_SEPARATOR);
-                    selector.rules.push({
-                        operator: 'OR',
-                        key,
-                        values: rule.values.map(({ value }) => {
-                            // Since the label key does not support RE2 Regex, and must be a valid k8s
-                            // label, anything after the first '=' character is the label rule value.
-                            const [, ...valuesPart] = value.split(LABEL_SEPARATOR);
-                            return valuesPart.join(LABEL_SEPARATOR);
-                        }),
-                    });
+                const labelMatchValues = rule.values.filter(isLabelMatchValue);
+                if (labelMatchValues.length !== rule.values.length) {
+                    errors.push(
+                        `An invalid match type was detected for a label value: ${JSON.stringify(
+                            rule
+                        )}`
+                    );
                 }
+                selector.rules.push({
+                    operator: 'OR',
+                    values: labelMatchValues,
+                });
                 break;
             }
-            case 'ByName':
-                selector.rule.values = rule.values.map(({ value }) => value);
+            case 'ByName': {
+                const nameMatchValues = rule.values.filter(isNameMatchValue);
+                if (nameMatchValues.length !== rule.values.length) {
+                    errors.push(
+                        `An invalid match type was detected for a name value: ${JSON.stringify(
+                            rule
+                        )}`
+                    );
+                }
+                selector.rule.values = nameMatchValues;
                 break;
+            }
             case 'All':
                 // Do nothing
                 break;
@@ -170,17 +176,15 @@ export function generateRequest(collection: ClientCollection): CollectionRequest
                 rules.push({
                     fieldName: selector.field,
                     operator: selector.rule.operator,
-                    values: selector.rule.values.map((value) => ({ value })),
+                    values: selector.rule.values,
                 });
                 break;
             case 'ByLabel':
-                selector.rules.forEach(({ operator, key, values }) => {
+                selector.rules.forEach(({ operator, values }) => {
                     rules.push({
                         fieldName: selector.field,
                         operator,
-                        values: values.map((value) => ({
-                            value: `${key}${LABEL_SEPARATOR}${value}`,
-                        })),
+                        values,
                     });
                 });
                 break;

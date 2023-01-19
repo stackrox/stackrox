@@ -431,6 +431,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		gs.AddGatherer(authProviderDS.Gather)
 		gs.AddGatherer(signatureIntegrationDS.Gather)
 		gs.AddGatherer(roleDataStore.Gather)
+		gs.AddGatherer(clusterDataStore.Gather)
 	}
 	return servicesToRegister
 }

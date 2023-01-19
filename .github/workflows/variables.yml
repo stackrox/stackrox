@@ -6,6 +6,11 @@ on:
         description: Version (A.B.C[-N][-rc.D])
         type: string
         required: true
+      assert-format:
+        description: Check for presence of the given version parts
+        type: string
+        default: A.B.C[-N][-rc.D]
+        required: false
 
     outputs:
       release:
@@ -65,20 +70,42 @@ jobs:
           import re
           import sys
 
-          EXPR = r'(?P<release>\d+\.\d+)\.(?P<patch>\d+)(-(?P<name>\w+(-\w+)*))?(-rc\.(?P<rc>\d+))?$'
+          RELEASE=r'(?P<release>\d+\.\d+)'
+          PATCH=r'(?P<patch>\d+)'
+          NAME=r'(-(?P<name>\w+(-\w+)*))'
+          RC=r'(-rc\.(?P<rc>\d+))'
+
+          f = '${{ inputs.assert-format }}'
+
+          EXPR = {
+              'A.B.C':            rf'{RELEASE}\.{PATCH}$',
+              'A.B.C-N':          rf'{RELEASE}\.{PATCH}{NAME}$',
+              'A.B.C[-N]':        rf'{RELEASE}\.{PATCH}{NAME}?$',
+              'A.B.C-N-rc.D':     rf'{RELEASE}\.{PATCH}{NAME}{RC}$',
+              'A.B.C-N[-rc.D]':   rf'{RELEASE}\.{PATCH}{NAME}{RC}?$',
+              'A.B.C[-N]-rc.D':   rf'{RELEASE}\.{PATCH}{NAME}?{RC}$',
+              'A.B.C[-N][-rc.D]': rf'{RELEASE}\.{PATCH}{NAME}?{RC}?$',
+              'A.B.0':            rf'{RELEASE}\.0$',
+              'A.B.0-N':          rf'{RELEASE}\.0{NAME}$',
+              'A.B.0[-N]':        rf'{RELEASE}\.0{NAME}?$',
+              'A.B.0-N-rc.D':     rf'{RELEASE}\.0{NAME}{RC}$',
+              'A.B.0-N[-rc.D]':   rf'{RELEASE}\.0{NAME}{RC}?$',
+              'A.B.0[-N]-rc.D':   rf'{RELEASE}\.0{NAME}?{RC}$',
+              'A.B.0[-N][-rc.D]': rf'{RELEASE}\.0{NAME}?{RC}?$',
+          }[f]
 
           version = '${{ inputs.version }}'
           m = re.match(EXPR, version)
           if not m:
-              print(f'::error::Cannot parse "{version}": should be in a form of `X.X.X[-name][-rc.X]`, where `X` is a decimal number.')
+              print(f'::error::Cannot parse "{version}": should be in a form of `{f}`.')
               exit(1)
 
-          rc = int(m.group('rc') or 1)
-          name = m.group('name') or ''
+          rc = int(m.group('rc') or 1) if '-rc.D' in f else 0
+          name = (m.group('name') if '-N' in f else '') or ''
 
           data = {
               'release': m.group('release'),
-              'patch': m.group('patch'),
+              'patch': m.group('patch') if '.C' in f else 0,
               'name': name,
               'dash-name': f'-{name}' if name else '',
               'rc': rc,
