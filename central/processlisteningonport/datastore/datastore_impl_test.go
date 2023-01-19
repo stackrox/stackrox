@@ -45,9 +45,6 @@ func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 		suite.T().Skip("Skip PLOP tests if postgres is disabled")
 		suite.T().SkipNow()
 	}
-}
-
-func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -57,7 +54,9 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
+}
 
+func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.postgres = pgtest.ForT(suite.T())
 	suite.store = postgresStore.NewFullStore(suite.postgres.Pool)
 
