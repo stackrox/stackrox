@@ -152,8 +152,13 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 	return vulns
 }
 
-func name(name string) string {
-	return vulnNamePattern.FindString(name)
+func name(original string) string {
+	vulnID := vulnNamePattern.FindString(original)
+	if vulnID == "" {
+		return original
+	}
+
+	return vulnID
 }
 
 // link returns a single link to use for the vulnerability,

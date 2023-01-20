@@ -41,6 +41,11 @@ func TestName(t *testing.T) {
 			original: "CVE-2022-45061 on Ubuntu 22.04 LTS (jammy) - medium.",
 			expected: "CVE-2022-45061",
 		},
+		{
+			// Something random
+			original: "cool CVE right here",
+			expected: "cool CVE right here",
+		},
 	}
 	for _, testcase := range testcases {
 		t.Run(testcase.original, func(t *testing.T) {
