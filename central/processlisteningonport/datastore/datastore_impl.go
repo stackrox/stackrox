@@ -123,7 +123,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	// Verify what to do about pairs of open/close events that close the
-	// lifecycle withih the batch. There are only few options:
+	// lifecycle within the batch. There are only few options:
 	// * If an existing open PLOP is present in the db, they will do nothing
 	// * If an existing closed PLOP is present in the db, they will update the
 	// timestamp
@@ -170,12 +170,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	// Now save actual PLOP objects
-	err = ds.storage.UpsertMany(ctx, plopObjects)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ds.storage.UpsertMany(ctx, plopObjects)
 }
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
@@ -245,7 +240,7 @@ func (ds *datastoreImpl) fetchExistingPLOPs(
 	var existingPLOPMap = map[string]*storage.ProcessListeningOnPortStorage{}
 
 	if len(indicatorIds) == 0 {
-		return nil, nil
+		return existingPLOPMap, nil
 	}
 
 	// If no corresponding processes found, we can't verify if the PLOP
