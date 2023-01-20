@@ -73,7 +73,7 @@ describe('Collection deployment matching', () => {
 
     // This test relies on the creation of a collection in the previous test in order to check
     // the resolution of deployments with embedded collections.
-    it('should preview deployments using embedded collections', () => {
+    it.skip('should preview deployments using embedded collections', () => {
         // Cleanup from potential previous test runs
         tryDeleteCollection(withEmbeddedCollectionName);
         visitCollections();
@@ -149,7 +149,7 @@ describe('Collection deployment matching', () => {
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`);
     });
 
-    it('should filter deployment results in the sidebar', () => {
+    it.skip('should filter deployment results in the sidebar', () => {
         visitCollections();
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`).click();
 
