@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/sensor/common/selector"
@@ -45,7 +46,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 			h.netpolStore.Upsert(roxNetpol)
 		}
 
-		if features.ResyncDisabled.Enabled() {
+		if env.ResyncDisabled.BooleanSetting() {
 			events = component.NewDeploymentRefEvent(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel), central.ResourceAction_UPDATE_RESOURCE, true)
 			events = component.MergeResourceEvents(events, component.NewResourceEvent(
 				[]*central.SensorEvent{
