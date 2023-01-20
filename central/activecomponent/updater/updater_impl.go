@@ -52,29 +52,6 @@ func clearExecutables(image *storage.Image) {
 // PopulateExecutableCache extracts executables from image scan and stores them in the executable cache.
 // Image executables are cleared on successful return.
 func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storage.Image) error {
-	imageID := image.GetId()
-	scan := image.GetScan()
-	if imageID == "" || scan == nil {
-		log.Debugf("no valid scan, skip populating executable cache %s: %s", imageID, image.GetName())
-		return nil
-	}
-	scannerVersion := scan.GetScannerVersion()
-
-	// Check if we should update executable cache
-	currRecord, ok := u.executableCache.Get(imageID)
-	if ok && currRecord.(*imageExecutable).scannerVersion == scannerVersion {
-		// Still clear executables even if cache has been pre-populated as it may be a re-scan
-		clearExecutables(image)
-		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scannerVersion, currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
-		return nil
-	}
-
-	// Create or update executable cache
-	execToComponents := u.getExecToComponentsMap(scan)
-	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponents: execToComponents, scannerVersion: scannerVersion})
-
-	log.Debugf("Executable cache updated for image %s of scan version %s with %d paths", image.GetId(), scannerVersion, len(execToComponents))
-
 	return nil
 }
 
@@ -97,20 +74,7 @@ func (u *updaterImpl) getExecToComponentsMap(imageScan *storage.ImageScan) map[s
 
 // Update detects active components with most recent process run.
 func (u *updaterImpl) Update() {
-	ctx := sac.WithAllAccess(context.Background())
-	ids, err := u.deploymentStore.GetDeploymentIDs(ctx)
-	if err != nil {
-		log.Errorf("failed to fetch deployment ids: %v", err)
-		return
-	}
-	deploymentToUpdates := u.aggregator.GetAndPrune(u.imageScanned, set.NewStringSet(ids...))
-	if err := u.updateActiveComponents(deploymentToUpdates); err != nil {
-		log.Errorf("failed to update active components: %v", err)
-	}
-
-	if err := u.pruneExecutableCache(); err != nil {
-		log.Errorf("Error pruning active component executable cache: %v", err)
-	}
+	return
 }
 
 func (u *updaterImpl) imageScanned(imageID string) bool {
