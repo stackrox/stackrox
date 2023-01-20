@@ -9,7 +9,7 @@ import { actions as pageActions } from 'reducers/network/page';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 // import { Cluster } from 'types/cluster.proto';
-import { AccessLevel } from 'services/RolesService'
+import { AccessLevel } from 'services/RolesService';
 import useFetchClustersForPermission from 'hooks/useFetchClustersForPerms';
 
 type ClusterSelectProps = {
@@ -35,7 +35,7 @@ const ClusterSelect = ({
         closeSelect();
         closeSidePanel();
     }
-    
+
     const networkGraphResource = 'NetworkGraph';
     const readAccess: AccessLevel = 'READ_ACCESS';
     const { clusters } = useFetchClustersForPermission(networkGraphResource, readAccess);
@@ -45,7 +45,7 @@ const ClusterSelect = ({
             id={id}
             isOpen={isOpen}
             onToggle={onToggle}
-            isDisabled={isDisabled /*|| !clusters.length*/}
+            isDisabled={isDisabled /* || !clusters.length */}
             selections={selectedClusterId}
             placeholderText="Select a cluster"
             onSelect={changeCluster}
