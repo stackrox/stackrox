@@ -1,8 +1,8 @@
 import addSeconds from 'date-fns/add_seconds';
 
-import { url as loginUrl, selectors } from '../constants/LoginPage';
+import { selectors } from '../constants/LoginPage';
 
-import * as api from '../constants/apiEndpoints';
+const loginUrl = '/login';
 
 const pagePath = '/main/systemconfig';
 
@@ -11,10 +11,10 @@ const UNAUTHENTICATED = false;
 
 describe.skip('Authentication', () => {
     const setupAuth = (landingUrl, authStatusValid, authStatusResponse = {}) => {
-        cy.intercept('GET', api.auth.loginAuthProviders, { fixture: 'auth/authProviders.json' }).as(
+        cy.intercept('GET', '/v1/login/authproviders', { fixture: 'auth/authProviders.json' }).as(
             'authProviders'
         );
-        cy.intercept('GET', api.auth.authStatus, {
+        cy.intercept('GET', '/v1/auth/status', {
             statusCode: authStatusValid ? 200 : 401,
             body: authStatusResponse,
         }).as('authStatus');
@@ -69,7 +69,7 @@ describe.skip('Authentication', () => {
     // TODO: Fix it, see ROX-4983 for more explanation
     it.skip('should request token refresh 30 sec in advance', () => {
         stubAPIs();
-        cy.intercept('POST', api.auth.tokenRefresh, { body: {} }).as('tokenRefresh');
+        cy.intercept('POST', '/sso/session/tokenrefresh', { body: {} }).as('tokenRefresh');
         localStorage.setItem('access_token', 'my-token'); // authenticated user
 
         const expiryDate = addSeconds(Date.now(), 33); // +3 sec should be enough
