@@ -15,12 +15,13 @@ export PORT_FORWARD_LOGS="/tmp/port-forward-logs"
 
 # shellcheck disable=SC2120
 deploy_stackrox() {
+    setup_podsecuritypolicies_config
+    
     deploy_central
 
     get_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${1:-}"
-    setup_podsecuritypolicies_config
 
     deploy_sensor
     echo "Sensor deployed. Waiting for sensor to be up"
@@ -40,13 +41,13 @@ deploy_stackrox_with_custom_sensor() {
         die "expected sensor chart version as parameter in deploy_stackrox_with_custom_sensor"
     fi
     target_version="$1"
+    setup_podsecuritypolicies_config
 
     deploy_central
 
     get_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${2:-}"
-    setup_podsecuritypolicies_config
 
     # generate init bundle
     password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
