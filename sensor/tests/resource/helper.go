@@ -45,8 +45,14 @@ const (
 	DefaultNamespace string = "sensor-integration"
 
 	// defaultCreationTimeout maximum time the test will wait until sensor emits
-	// resource creation event to central after fake resource was applied.
-	defaultCreationTimeout time.Duration = 30 * time.Second
+	// resource creation event to central after a resource was applied.
+	defaultCreationTimeout = 30 * time.Second
+
+	// defaultWaitTimeout maximum time the test will wait for a specific assertion
+	defaultWaitTimeout = 3 * time.Second
+
+	// defaultTicker the default interval for the assertion functions to retry the assertion
+	defaultTicker = 500 * time.Millisecond
 )
 
 // YamlTestFile is a test file in YAML
@@ -270,13 +276,13 @@ type AssertFuncAny func(resource interface{}) error
 
 // LastResourceState same as LastResourceStateWithTimeout with a 3s default timeout.
 func (c *TestContext) LastResourceState(matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
-	c.LastResourceStateWithTimeout(matchResourceFn, assertFn, message, 3*time.Second)
+	c.LastResourceStateWithTimeout(matchResourceFn, assertFn, message, defaultWaitTimeout)
 }
 
 // LastResourceStateWithTimeout filters all messages by `matchResourceFn` and checks that the last message matches `assertFn`. Timeouts after `timeout`.
 func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
-	ticker := time.NewTicker(500 * time.Millisecond)
+	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.New("no resource found for matching function")
 	for {
 		select {
@@ -297,14 +303,14 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 
 // WaitForDeploymentEvent waits until sensor process a given deployment
 func (c *TestContext) WaitForDeploymentEvent(name string) {
-	c.WaitForDeploymentEventWithTimeout(name, 3*time.Second)
+	c.WaitForDeploymentEventWithTimeout(name, defaultWaitTimeout)
 }
 
 // WaitForDeploymentEventWithTimeout waits until sensor process a given deployment
 func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
-	ticker := time.NewTicker(500 * time.Millisecond)
-	lastErr := errors.Errorf("the deployment %s was not processed", name)
+	ticker := time.NewTicker(defaultTicker)
+	lastErr := errors.Errorf("the deployment %s was not sent", name)
 	for {
 		select {
 		case <-timer.C:
@@ -323,14 +329,14 @@ func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout tim
 
 // LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
 func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
-	c.LastDeploymentStateWithTimeout(name, assertion, message, 3*time.Second)
+	c.LastDeploymentStateWithTimeout(name, assertion, message, defaultWaitTimeout)
 }
 
 // LastDeploymentStateWithTimeout checks that a deployment reaches a state asserted by `assertion`. If the deployment does not reach
 // that state until `timeout` the test fails.
 func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
-	ticker := time.NewTicker(500 * time.Millisecond)
+	ticker := time.NewTicker(defaultTicker)
 	var lastErr error
 	for {
 		select {
@@ -365,14 +371,14 @@ type AlertAssertFunc func(alertResults *central.AlertResults) error
 
 // LastViolationState checks the violation state similarly to `LastViolationStateWithTimeout` with a default 3 seconds timeout.
 func (c *TestContext) LastViolationState(name string, assertion AlertAssertFunc, message string) {
-	c.LastViolationStateWithTimeout(name, assertion, message, 3*time.Second)
+	c.LastViolationStateWithTimeout(name, assertion, message, defaultWaitTimeout)
 }
 
 // LastViolationStateWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
 // until `timeout` the test fails.
 func (c *TestContext) LastViolationStateWithTimeout(name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
-	ticker := time.NewTicker(10 * time.Millisecond)
+	ticker := time.NewTicker(defaultTicker)
 	var lastErr error
 	for {
 		select {
@@ -396,15 +402,15 @@ func (c *TestContext) LastViolationStateWithTimeout(name string, assertion Alert
 
 // LastViolationStateByID checks the violation state by deployment ID
 func (c *TestContext) LastViolationStateByID(id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool) {
-	c.LastViolationStateByIDWithTimeout(id, assertion, message, checkEmptyAlertResults, 3*time.Second)
+	c.LastViolationStateByIDWithTimeout(id, assertion, message, checkEmptyAlertResults, defaultWaitTimeout)
 }
 
 // LastViolationStateByIDWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
 // until `timeout` the test fails.
 func (c *TestContext) LastViolationStateByIDWithTimeout(id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
-	ticker := time.NewTicker(10 * time.Millisecond)
-	lastErr := errors.New("no alerts asserted")
+	ticker := time.NewTicker(defaultTicker)
+	lastErr := errors.Errorf("no alerts sent for deployment ID %s", id)
 	for {
 		select {
 		case <-timer.C:
@@ -614,7 +620,7 @@ func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, nam
 	return lastMessage
 }
 
-// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID, If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
+// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
 func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
