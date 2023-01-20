@@ -196,6 +196,10 @@ function compareNameLowercase(search: string): (item: { name: string }) => boole
     return ({ name }) => name.toLowerCase().startsWith(search.toLowerCase());
 }
 
+function byNameCaseInsensitive(collection: Collection) {
+    return collection.name.toLowerCase();
+}
+
 const initialState = {
     page: 1,
     hasMore: true,
@@ -298,8 +302,12 @@ export default function useEmbeddedCollections(
     };
 
     return {
-        attached: sortBy(Object.values(attached), 'name').filter(compareNameLowercase(search)),
-        detached: sortBy(Object.values(detached), 'name').filter(compareNameLowercase(search)),
+        attached: sortBy(Object.values(attached), byNameCaseInsensitive).filter(
+            compareNameLowercase(search)
+        ),
+        detached: sortBy(Object.values(detached), byNameCaseInsensitive).filter(
+            compareNameLowercase(search)
+        ),
         attach: (id: string) => dispatch({ type: 'attachCollection', id }),
         detach: (id: string) => dispatch({ type: 'detachCollection', id }),
         hasMore,
