@@ -183,6 +183,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+	"github.com/tecbot/gorocksdb"
 )
 
 var (
@@ -860,6 +861,15 @@ func waitForTerminationSignal() {
 
 	log.Info("SHREWS -- about to close the databases")
 	listFiles()
+
+	// Lets try a flush
+	flushOptions := gorocksdb.NewDefaultFlushOptions()
+	defer flushOptions.Destroy()
+	globaldb.GetRocksDB().Flush(flushOptions)
+
+	log.Info("SHREWS -- After Flush")
+	listFiles()
+
 	globaldb.Close()
 
 	log.Info("SHREWS -- closed the databases")

@@ -115,9 +115,6 @@ func run() error {
 		return err
 	}
 
-	log.WriteToStderrf("SHREWS -- Finished Persist")
-	listFiles()
-
 	return nil
 }
 
@@ -159,6 +156,14 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 				}
 				if rocks != nil {
 					log.WriteToStderrf("SHREWS -- About to close RocksDB")
+					listFiles()
+
+					// Lets try a flush
+					flushOptions := gorocksdb.NewDefaultFlushOptions()
+					defer flushOptions.Destroy()
+					rocks.Flush(flushOptions)
+
+					log.WriteToStderrf("SHREWS -- After Flush")
 					listFiles()
 
 					rocks.Close()

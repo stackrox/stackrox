@@ -2,10 +2,13 @@ package runner
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
+	"github.com/stackrox/rox/migrator/option"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 )
@@ -59,7 +62,20 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 			return errors.Wrapf(err, "failed to update version after migration %d", seqNum)
 		}
 		log.WriteToStderrf("Successfully updated DB from version %d to %d", seqNum, migration.VersionAfter.GetSeqNum())
+
+		// Check files
+		log.WriteToStderr("SHREWS -- check files after migration")
+		listFiles()
+		log.WriteToStderr("*********************")
 	}
 
 	return nil
+}
+
+func listFiles() {
+	files, _ := os.ReadDir(filepath.Join(option.MigratorOptions.DBPathBase, "rocksdb"))
+
+	for _, file := range files {
+		log.WriteToStderr(file.Name())
+	}
 }
