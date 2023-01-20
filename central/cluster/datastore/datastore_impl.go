@@ -20,7 +20,7 @@ import (
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/node/index/mappings"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"

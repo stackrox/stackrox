@@ -79,7 +79,7 @@ func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher 
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool *pgxpool.Pool) (DataStore, error) {
 	dbstore := postgres.New(pool, false, concurrency.NewKeyFence())
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
@@ -93,7 +93,7 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
+func GetTestRocksBleveDataStore(t testing.TB, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
 	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
 	if err != nil {
 		return nil, err

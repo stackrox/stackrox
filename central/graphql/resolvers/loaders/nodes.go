@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -17,12 +17,12 @@ var nodeLoaderType = reflect.TypeOf(storage.Node{})
 
 func init() {
 	RegisterTypeFactory(nodeLoaderType, func() interface{} {
-		return NewNodeLoader(datastore.Singleton())
+		return NewNodeLoader(nodeDatastore.Singleton())
 	})
 }
 
 // NewNodeLoader creates a new loader for node data.
-func NewNodeLoader(ds datastore.DataStore) NodeLoader {
+func NewNodeLoader(ds nodeDatastore.DataStore) NodeLoader {
 	return &nodeLoaderImpl{
 		loaded: make(map[string]*storage.Node),
 		ds:     ds,
@@ -53,7 +53,7 @@ type nodeLoaderImpl struct {
 	lock   sync.RWMutex
 	loaded map[string]*storage.Node
 
-	ds datastore.DataStore
+	ds nodeDatastore.DataStore
 }
 
 // FromIDs loads a set of nodes from a set of ids.
