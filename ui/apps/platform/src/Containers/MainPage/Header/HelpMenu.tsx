@@ -19,7 +19,7 @@ function HelpMenu(): ReactElement {
         setIsHelpMenuOpen(!isHelpMenuOpen);
     }
 
-    // React requires key (even empty string is enough) to render array of elements.
+    // React requires key to render an item in an array of elements.
     const appLauncherItems = [
         <ApplicationLauncherGroup key="">
             <ApplicationLauncherItem
