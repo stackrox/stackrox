@@ -177,6 +177,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
+	rocksMetrics "github.com/stackrox/rox/pkg/rocksdb/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
@@ -703,9 +704,11 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		log.Info("SHREWS -- trying something to see if Rocks is hosed")
+		listFiles()
 		testBolt := globaldb.GetGlobalDB()
 		testRocks := globaldb.GetRocksDB()
 		log.Infof("SHREWS -- %v, %v", testBolt.Info(), testRocks.Name())
+		listFiles()
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
@@ -855,11 +858,24 @@ func waitForTerminationSignal() {
 	}
 	wg.Wait()
 
+	log.Info("SHREWS -- about to close the databases")
+	listFiles()
 	globaldb.Close()
+
+	log.Info("SHREWS -- closed the databases")
+	listFiles()
 
 	if sig == syscall.SIGHUP {
 		log.Info("Restarting central")
 		osutils.Restart()
 	}
 	log.Info("Central terminated")
+}
+
+func listFiles() {
+	files, _ := os.ReadDir(rocksMetrics.GetRocksDBPath(migrations.CurrentPath()))
+
+	for _, file := range files {
+		log.Info(file.Name())
+	}
 }
