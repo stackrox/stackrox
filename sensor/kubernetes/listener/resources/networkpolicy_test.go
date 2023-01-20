@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
@@ -399,7 +400,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			events := suite.dispatcher.ProcessEvent(c.netpol, c.oldNetpol, c.action)
 			deps := set.NewStringSet()
 			require.NotNil(t, events)
-			if !features.ResyncDisabled.Enabled() {
+			if !env.ResyncDisabled.BooleanSetting() {
 				// If re-sync is disabled we don't send the CompatibilityReprocess in the dispatcher
 				deps.AddAll(events.CompatibilityReprocessDeployments...)
 				for _, d := range c.expectedDeployments {

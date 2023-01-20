@@ -37,7 +37,7 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentCVEEdgeDataStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"

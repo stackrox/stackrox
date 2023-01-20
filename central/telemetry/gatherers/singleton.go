@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/grpc/metrics"
 	installation "github.com/stackrox/rox/central/installation/store"
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	sensorUpgradeConfigDatastore "github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	"github.com/stackrox/rox/pkg/env"

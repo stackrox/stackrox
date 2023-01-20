@@ -53,10 +53,6 @@ export function tryCreateCollection(
     embeddedCollectionIds = [],
     resourceSelectors = []
 ) {
-    // Ignore autocomplete requests
-    // TODO Remove this once the feature is in
-    cy.intercept('/v1/collections/autocomplete', {});
-
     const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
 
     cy.request({

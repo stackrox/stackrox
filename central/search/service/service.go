@@ -10,7 +10,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	categoryDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"

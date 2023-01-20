@@ -6,11 +6,20 @@
 }
 
 .pf-topology-resizable-side-bar {
-    /* we use the page header min height thrice to account for: nav header + page header + secondary header */ 
+    /* we use the page header min height thrice to account for: nav header + page header + secondary header */
     /* @TODO: Consider a more future-proof way of doing this. See https://github.com/stackrox/stackrox/pull/3703#discussion_r1014292340 */
     height: calc(100vh - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight));
 }
 
+/* Create a stacking context that is higher than the context for the react-topology component
+   that is rendered below the toolbar, so that the search filter dropdown will render above the graph when open */
+[data-testid="network-graph-toolbar"] {
+    z-index: 250;
+}
+[data-testid="network-graph-toolbar"] .pf-search-shim,
+[data-testid="network-graph-toolbar"] .react-select__menu {
+    z-index: 250;
+}
 
 /* Remove gray background from plain PF Select trigger button when disabled */
 .network-graph-selector-bar .pf-c-select__toggle.pf-m-disabled,

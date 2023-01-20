@@ -235,10 +235,10 @@ func (ds *datastoreImpl) deleteNodeFromStore(ctx context.Context, ids ...string)
 			continue
 		}
 		if err := ds.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_NODE); err != nil {
-			return err
+			errorList.AddError(err)
+			continue
 		}
 	}
-	// removing component risk handled by pruning
 	return errorList.ToError()
 }
 

@@ -172,6 +172,16 @@ spec:
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
         {{- end }}
+        {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.configMaps) }}
+        - name: {{ $mount }}
+          mountPath: /run/stackrox.io/declarative-configuration/{{ $mount }}
+          readOnly: true
+        {{- end }}
+        {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.secrets) }}
+        - name: {{ $mount }}
+          mountPath: /run/stackrox.io/declarative-configuration/{{ $mount }}
+          readOnly: true
+        {{- end }}
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       volumes:
       - name: varlog
@@ -232,5 +242,17 @@ spec:
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}
+      {{- end }}
+      {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.configMaps) }}
+      - name: {{ $mount }}
+        configMap:
+          name: {{ $mount }}
+          optional: true
+      {{- end }}
+      {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.secrets) }}
+      - name: {{ $mount }}
+        secret:
+          secretName: {{ $mount }}
+          optional: true
       {{- end }}
       {{- include "srox.injectedCABundleVolume" . | nindent 6 }}

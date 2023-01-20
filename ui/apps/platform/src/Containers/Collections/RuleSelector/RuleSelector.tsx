@@ -5,7 +5,6 @@ import { FormikErrors } from 'formik';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import {
-    ClientCollection,
     RuleSelectorOption,
     ScopedResourceSelector,
     SelectorEntityType,
@@ -34,7 +33,6 @@ const placeholders = {
 };
 
 export type RuleSelectorProps = {
-    collection: ClientCollection;
     entityType: SelectorEntityType;
     scopedResourceSelector: ScopedResourceSelector;
     handleChange: (
@@ -46,7 +44,6 @@ export type RuleSelectorProps = {
 };
 
 function RuleSelector({
-    collection,
     entityType,
     scopedResourceSelector,
     handleChange,
@@ -100,7 +97,6 @@ function RuleSelector({
 
             {scopedResourceSelector.type === 'ByName' && (
                 <ByNameSelector
-                    collection={collection}
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}
@@ -112,7 +108,6 @@ function RuleSelector({
 
             {scopedResourceSelector.type === 'ByLabel' && (
                 <ByLabelSelector
-                    collection={collection}
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}

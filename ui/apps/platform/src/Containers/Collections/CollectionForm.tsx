@@ -1,11 +1,10 @@
-import React, { ReactElement, useEffect } from 'react';
+import React, { CSSProperties, ReactElement, useEffect } from 'react';
 import {
     Alert,
     Badge,
     Button,
     EmptyState,
     EmptyStateIcon,
-    EmptyStateVariant,
     ExpandableSection,
     ExpandableSectionToggle,
     Flex,
@@ -17,7 +16,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
-import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
+import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -53,7 +52,7 @@ function AttachedCollectionTable({
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }) {
     return collections.length > 0 ? (
-        <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
+        <TableComposable aria-label="Attached collections">
             <Tbody>
                 {collections.map((collection) => (
                     <Tr key={collection.name}>
@@ -67,7 +66,7 @@ function AttachedCollectionTable({
             </Tbody>
         </TableComposable>
     ) : (
-        <EmptyState variant={EmptyStateVariant.xs}>
+        <EmptyState>
             <EmptyStateIcon icon={CubesIcon} />
             <p>There are no other collections attached to this collection</p>
         </EmptyState>
@@ -171,7 +170,14 @@ function yupResourceSelectorObject() {
 }
 
 const validationSchema = yup.object({
-    name: yup.string().trim().required(),
+    name: yup
+        .string()
+        .trim()
+        .matches(
+            /^[a-zA-Z0-9 .-]*$/,
+            'Only letters, numbers, dot, dash, and space characters are allowed in collection names'
+        )
+        .required(),
     description: yup.string(),
     embeddedCollectionIds: yup.array(yup.string().trim().required()),
     resourceSelector: yup.object().shape({
@@ -223,6 +229,7 @@ function CollectionForm({
         setFieldValue,
         submitForm,
         isSubmitting,
+        isValid,
     } = useFormik({
         initialValues: initialData,
         onSubmit: (collection, { setSubmitting }) => {
@@ -244,7 +251,7 @@ function CollectionForm({
             create: '',
             view: initialData.name,
             edit: initialData.name,
-            clone: `${initialData.name} (COPY)`,
+            clone: `${initialData.name} -COPY-`,
         }[action.type];
 
         setFieldValue('name', nameValue).catch(() => {
@@ -299,7 +306,14 @@ function CollectionForm({
     const ruleCount = getRuleCount(values.resourceSelector);
 
     return (
-        <Form className="pf-u-background-color-200">
+        <Form
+            className="pf-u-background-color-200"
+            style={
+                {
+                    '--pf-c-form--GridGap': 0,
+                } as CSSProperties
+            }
+        >
             <Flex
                 className="pf-u-p-lg"
                 spaceItems={{ default: 'spaceItemsMd' }}
@@ -397,29 +411,26 @@ function CollectionForm({
                                 </Alert>
                             )}
                             <RuleSelector
-                                collection={values}
                                 entityType="Deployment"
                                 scopedResourceSelector={values.resourceSelector.Deployment}
                                 handleChange={onResourceSelectorChange}
                                 validationErrors={errors.resourceSelector?.Deployment}
                                 isDisabled={isReadOnly}
                             />
-                            <Label variant="outline" isCompact className="pf-u-align-self-center">
+                            <Label className="pf-u-px-md pf-u-font-size-md pf-u-align-self-center">
                                 in
                             </Label>
                             <RuleSelector
-                                collection={values}
                                 entityType="Namespace"
                                 scopedResourceSelector={values.resourceSelector.Namespace}
                                 handleChange={onResourceSelectorChange}
                                 validationErrors={errors.resourceSelector?.Namespace}
                                 isDisabled={isReadOnly}
                             />
-                            <Label variant="outline" isCompact className="pf-u-align-self-center">
+                            <Label className="pf-u-px-md pf-u-font-size-md pf-u-align-self-center">
                                 in
                             </Label>
                             <RuleSelector
-                                collection={values}
                                 entityType="Cluster"
                                 scopedResourceSelector={values.resourceSelector.Cluster}
                                 handleChange={onResourceSelectorChange}
@@ -454,7 +465,6 @@ function CollectionForm({
                         isExpanded={isAttachmentSectionOpen}
                     >
                         <Flex
-                            className="pf-u-p-md"
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
@@ -476,7 +486,7 @@ function CollectionForm({
                                     collectionTableCells={collectionTableCells}
                                 />
                             ) : (
-                                <>
+                                <div className="pf-u-p-md">
                                     <CollectionAttacher
                                         excludedCollectionId={
                                             action.type === 'edit' ? action.collectionId : null
@@ -485,7 +495,7 @@ function CollectionForm({
                                         onSelectionChange={onEmbeddedCollectionsChange}
                                         collectionTableCells={collectionTableCells}
                                     />
-                                </>
+                                </div>
                             )}
                         </Flex>
                     </ExpandableSection>
@@ -496,7 +506,7 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting || !!configError}
+                        isDisabled={isSubmitting || !!configError || !isValid}
                         isLoading={isSubmitting}
                     >
                         Save

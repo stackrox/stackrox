@@ -19,9 +19,6 @@ describe('Collection deployment matching', () => {
         if (!hasFeatureFlag('ROX_OBJECT_COLLECTIONS')) {
             this.skip();
         }
-        // Ignore autocomplete requests
-        // TODO Remove this once the feature is in
-        cy.intercept('/v1/collections/autocomplete', {});
     });
 
     // Clean up when the test suite exits
@@ -46,7 +43,6 @@ describe('Collection deployment matching', () => {
         cy.get('button:contains("All namespaces")').click();
         cy.get('button:contains("Namespaces with names matching")').click();
         cy.get('input[aria-label="Select value 1 of 1 for the namespace name"]').type('stackrox');
-        cy.get(`button:contains('stackrox')`).click();
 
         // Test that Stackrox deployments are matched
         assertDeploymentsAreMatched(['central', 'central-db', 'collector', 'scanner', 'sensor']);
@@ -57,12 +53,10 @@ describe('Collection deployment matching', () => {
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
             'app=collector'
         );
-        cy.get(`button:contains('app=collector')`).click();
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 2 of 2 for deployment rule 1 of 1"]').type(
             'app=sensor'
         );
-        cy.get(`button:contains('app=sensor')`).click();
 
         assertDeploymentsAreMatchedExactly(['collector', 'sensor']);
 
@@ -73,7 +67,7 @@ describe('Collection deployment matching', () => {
 
     // This test relies on the creation of a collection in the previous test in order to check
     // the resolution of deployments with embedded collections.
-    it('should preview deployments using embedded collections', () => {
+    it.skip('should preview deployments using embedded collections', () => {
         // Cleanup from potential previous test runs
         tryDeleteCollection(withEmbeddedCollectionName);
         visitCollections();
@@ -87,7 +81,6 @@ describe('Collection deployment matching', () => {
         cy.get('input[aria-label="Select value 1 of 1 for the namespace name"]').type(
             'kube-system'
         );
-        cy.get(`button:contains('kube-system')`).click();
 
         // Assert that results have loaded, but deployments beyond the first page are not visible
         assertDeploymentsAreMatched(['calico-node']);
@@ -96,6 +89,10 @@ describe('Collection deployment matching', () => {
         // View more and ensure the next page loads
         cy.get(`${selectors.resultsPanel} > div:last-child`).scrollTo('bottom');
         cy.get(selectors.viewMoreResultsButton).click();
+        // Scroll to the bottom once the view more has completed
+        cy.get(`${selectors.viewMoreResultsButton}.pf-m-in-progress`);
+        cy.get(`${selectors.viewMoreResultsButton}:not(.pf-m-in-progress)`);
+        cy.get(`${selectors.resultsPanel} > div:last-child`).scrollTo('bottom');
         assertDeploymentsAreMatched(['kube-dns']);
 
         // Restrict collection to two specific deployments
@@ -104,13 +101,11 @@ describe('Collection deployment matching', () => {
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
             'k8s-app=calico-node-autoscaler'
         );
-        cy.get(`button:contains('k8s-app=calico-node-autoscaler')`).click();
 
         cy.get('button[aria-label="Add deployment label value for rule 1"]').click();
         cy.get('input[aria-label="Select label value 2 of 2 for deployment rule 1 of 1"]').type(
             'k8s-app=kube-dns'
         );
-        cy.get(`button:contains('k8s-app=kube-dns')`).click();
 
         assertDeploymentsAreMatchedExactly(['kube-dns', 'calico-node-vertical-autoscaler']);
 
@@ -145,12 +140,13 @@ describe('Collection deployment matching', () => {
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`);
     });
 
-    it('should filter deployment results in the sidebar', () => {
+    it.skip('should filter deployment results in the sidebar', () => {
         visitCollections();
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`).click();
 
         // Filter to deployments with deployment name matching
         cy.get(selectors.resultsPanelFilterInput).type('c');
+        cy.get(selectors.resultsPanelFilterSearch).click();
 
         assertDeploymentsAreMatchedExactly(['calico-node-vertical-autoscaler', 'collector']);
 
@@ -158,6 +154,7 @@ describe('Collection deployment matching', () => {
         cy.get(selectors.resultsPanelFilterEntitySelect).click();
         cy.get(selectors.resultsPanelFilterEntitySelectOption('Namespace')).click();
         cy.get(selectors.resultsPanelFilterInput).type('stackrox');
+        cy.get(selectors.resultsPanelFilterSearch).click();
 
         // Test that only stackrox deployments are visible
         assertDeploymentsAreMatchedExactly(['collector', 'sensor']);

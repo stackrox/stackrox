@@ -13,7 +13,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
