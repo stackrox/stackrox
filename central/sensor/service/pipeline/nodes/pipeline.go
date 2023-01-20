@@ -7,7 +7,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	countMetrics "github.com/stackrox/rox/central/metrics"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"

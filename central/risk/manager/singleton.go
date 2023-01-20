@@ -4,7 +4,7 @@ import (
 	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
-	nodeDS "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	componentScorer "github.com/stackrox/rox/central/risk/scorer/component/singleton"

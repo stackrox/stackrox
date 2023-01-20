@@ -18,8 +18,7 @@ import (
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
-	nodeNodeDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -128,7 +127,7 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	nodeStore, err := nodeNodeDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
+	nodeStore, err := nodeDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
 	if err != nil {
 		return nil, err
 	}

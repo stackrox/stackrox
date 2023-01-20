@@ -31,7 +31,7 @@ import (
 	mockNSDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
