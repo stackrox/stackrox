@@ -5,7 +5,7 @@ import (
 
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stretchr/testify/suite"
@@ -135,7 +135,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		// TODO(ROX-14310): remove the test
 		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
 	}
@@ -151,7 +151,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistingRoute() {
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		// TODO(ROX-14310): remove the test
 		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
 	}
@@ -169,7 +169,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistin
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestManyRoutesMatchingAndDeletions() {
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		// TODO(ROX-14310): remove the test
 		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
 	}
