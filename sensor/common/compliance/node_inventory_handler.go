@@ -8,14 +8,16 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
-// NodeInventoryHandler is responsible for handling arriving NodeInventory messages, processing them, and sending them to central
-type NodeInventoryHandler interface {
+// nodeInventoryHandler is responsible for handling arriving NodeInventory messages, processing them, and sending them to central
+type nodeInventoryHandler interface {
 	common.SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal
 }
 
+var _ nodeInventoryHandler = (*nodeInventoryHandlerImpl)(nil)
+
 // NewNodeInventoryHandler returns a new instance of a NodeInventoryHandler
-func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMatcher) NodeInventoryHandler {
+func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMatcher) *nodeInventoryHandlerImpl {
 	return &nodeInventoryHandlerImpl{
 		inventories: ch,
 		toCentral:   nil,

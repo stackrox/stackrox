@@ -240,5 +240,5 @@ func newmockNodeIDMatcherImpl(store store.NodeStore) *mockNodeIDMatcherImpl {
 }
 
 func (c *mockNodeIDMatcherImpl) GetNodeResource(nodename string) *store.NodeWrap {
-	return &store.NodeWrap{Node: &storage.Node{Name: nodename}}
+	return &store.NodeWrap{Node: &storage.Node{Name: nodename, Id: "abc"}}
 }

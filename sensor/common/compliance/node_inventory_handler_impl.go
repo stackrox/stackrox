@@ -81,9 +81,9 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 					log.Warnf("Received nil NodeInventory - not sending node inventory to Central")
 					break
 				}
-				if nodeWrap := c.nodeMatcher.GetNodeResource(inventory.GetNodeName()); nodeWrap != nil {
-					inventory.NodeId = nodeWrap.GetId()
-					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), inventory.GetNodeId())
+				if nodeID := c.findNodeID(inventory); nodeID != "" {
+					inventory.NodeId = nodeID
+					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
 					c.sendNodeInventory(toC, inventory)
 				} else {
 					log.Warnf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
@@ -92,6 +92,15 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 		}
 	}()
 	return toC
+}
+
+func (c *nodeInventoryHandlerImpl) findNodeID(inventory *storage.NodeInventory) string {
+	nodeWrap := c.nodeMatcher.GetNodeResource(inventory.GetNodeName())
+	if nodeWrap == nil {
+		log.Warnf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
+		return ""
+	}
+	return nodeWrap.GetId()
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *central.MsgFromSensor, inventory *storage.NodeInventory) {
