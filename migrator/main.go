@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -114,6 +115,9 @@ func run() error {
 		return err
 	}
 
+	log.WriteToStderrf("SHREWS -- Finished Persist")
+	listFiles()
+
 	return nil
 }
 
@@ -137,10 +141,15 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		if boltDB == nil {
 			log.WriteToStderr("No legacy DB found. Nothing to migrate...")
 		} else {
+			log.WriteToStderrf("SHREWS -- About to open RocksDB")
+			listFiles()
 			pkgRocksDB, err = rockshelper.New()
 			if err != nil {
 				return errors.Wrap(err, "failed to open rocksdb")
 			}
+
+			log.WriteToStderrf("SHREWS -- Opened RocksDB")
+			listFiles()
 
 			rocks = pkgRocksDB.DB
 			defer func() {
@@ -149,10 +158,13 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 					log.WriteToStderrf("Error closing DB: %v", err)
 				}
 				if rocks != nil {
-					//flushOptions := gorocksdb.NewDefaultFlushOptions()
-					//defer flushOptions.Destroy()
-					//rocks.Flush(flushOptions)
+					log.WriteToStderrf("SHREWS -- About to close RocksDB")
+					listFiles()
+
 					rocks.Close()
+
+					log.WriteToStderrf("SHREWS -- Closed RocksDB")
+					listFiles()
 				}
 			}()
 		}
@@ -200,6 +212,9 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		return errors.Wrap(err, "migrations failed")
 	}
 
+	log.WriteToStderrf("SHREWS -- Back from the runner")
+	listFiles()
+
 	// If we need to process Rocks and Postgres we used Rocks to populate Postgres.  As such we still need
 	// to update the current version of Rocks.  Central takes care of that for active databases, but since
 	// Rocks will not be the active database, we need to do that as part of the migrations.
@@ -213,4 +228,12 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 	}
 
 	return nil
+}
+
+func listFiles() {
+	files, _ := os.ReadDir(filepath.Join(option.MigratorOptions.DBPathBase, "rocksdb"))
+
+	for _, file := range files {
+		log.WriteToStderr(file.Name())
+	}
 }
