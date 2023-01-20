@@ -3,7 +3,7 @@ on:
   workflow_call:
   push:
     tags:
-    - 'nightly-*'
+    - '*-nightly-*'
     branches:
     - master
   pull_request:
