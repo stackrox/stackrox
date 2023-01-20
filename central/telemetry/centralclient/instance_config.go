@@ -79,6 +79,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,
 			"Kubernetes version": v.GitVersion,
+			"Managed":            env.ManagedCentral.BooleanSetting(),
 		}, nil
 }
 
