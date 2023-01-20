@@ -29,7 +29,7 @@ import useTableSort from 'hooks/useTableSort';
 import { vulnManagementReportsPath } from 'routePaths';
 import { deleteReport, runReport } from 'services/ReportsService';
 import { SearchFilter } from 'types/search';
-import { filterAllowedSearch } from 'utils/searchUtils';
+import { filterAllowedSearch, getHasSearchApplied } from 'utils/searchUtils';
 import { getQueryString } from 'utils/queryStringUtils';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
@@ -110,6 +110,9 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
             triggerRefresh();
         });
     }
+
+    const hasSearchApplied = getHasSearchApplied(filteredSearch);
+
     return (
         <>
             <PageSection variant={PageSectionVariants.light}>
@@ -156,7 +159,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                     </Bullseye>
                 </PageSection>
             )}
-            {!isLoading && (reports?.length || Boolean(Object.keys(filteredSearch).length)) && (
+            {!isLoading && (reports?.length || hasSearchApplied) && (
                 <VulnMgmtReportTablePanel
                     reports={reports || []}
                     reportCount={reportCount}
@@ -175,7 +178,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                     onDeleteReports={onDeleteReports}
                 />
             )}
-            {!isLoading && !reports?.length && !Object.keys(filteredSearch).length && (
+            {!isLoading && !reports?.length && !hasSearchApplied && (
                 <PageSection variant={PageSectionVariants.light} isFilled>
                     <EmptyStateTemplate
                         title="No reports are currently configured."

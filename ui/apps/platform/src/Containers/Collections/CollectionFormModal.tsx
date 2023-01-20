@@ -70,13 +70,13 @@ function CollectionsFormModal({
     configError,
     setConfigError,
 }: CollectionsFormModalProps) {
-    const isLargeScreen = useMediaQuery({ query: '(min-width: 992px)' }); // --pf-global--breakpoint--lg
+    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-global--breakpoint--xl
     const {
         isOpen: isDrawerOpen,
         toggleSelect: toggleDrawer,
         closeSelect: closeDrawer,
         openSelect: openDrawer,
-    } = useSelectToggle(isLargeScreen);
+    } = useSelectToggle(isXLargeScreen);
 
     const { data, loading, error } = useCollection(
         modalAction.type === 'view' ? modalAction.collectionId : undefined
@@ -89,7 +89,10 @@ function CollectionsFormModal({
     if (error) {
         content = (
             <Bullseye className="pf-u-p-2xl">
-                <CollectionLoadError error={error} />
+                <CollectionLoadError
+                    title="There was an error loading this collection"
+                    error={error}
+                />
             </Bullseye>
         );
         modalTitle = 'Collection error';
@@ -106,7 +109,7 @@ function CollectionsFormModal({
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={modalAction}
                 collectionData={data}
-                isInlineDrawer={isLargeScreen}
+                isInlineDrawer={isXLargeScreen}
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
                 onSubmit={onSubmit}

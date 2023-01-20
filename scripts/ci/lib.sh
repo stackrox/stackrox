@@ -396,7 +396,7 @@ registry_rw_login() {
             docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
             ;;
         *)
-            die "Unsupported registry login: $registry" 
+            die "Unsupported registry login: $registry"
     esac
 }
 
@@ -412,7 +412,7 @@ registry_ro_login() {
             docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
             ;;
         *)
-            die "Unsupported registry login: $registry" 
+            die "Unsupported registry login: $registry"
     esac
 }
 
@@ -550,80 +550,45 @@ check_rhacs_eng_image_exists() {
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
 
-check_docs() {
-    info "Check docs version"
 
-    if [[ "$#" -lt 1 ]]; then
-        die "missing arg. usage: check_docs <tag>"
-    fi
-
-    local tag="$1"
-
-    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
-        info "Skipping step as this is not a release or RC build"
-        return 0
-    }
-
-    local release_version="${BASH_REMATCH[1]}"
-    local expected_content_branch="rhacs-docs-${release_version}"
-    local actual_content_branch
-    actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
-    [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
-        echo >&2 "ERROR: Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
-        return 1
-    }
-
-    git submodule update --remote docs/content
-    git diff --exit-code HEAD || {
-        echo >&2 "ERROR: The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
-        echo >&2 "  git submodule update --remote docs/content"
-        echo >&2 "and commit the result."
-        return 1
-    }
-
-    info "The docs version is as expected"
-}
-
-check_scanner_and_collector_versions() {
-    info "Check on builds that COLLECTOR_VERSION and SCANNER_VERSION are release versions"
-
-    local release_mismatch=0
-    if ! is_release_version "$(make --quiet collector-tag)"; then
-        echo >&2 "ERROR: Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
-        release_mismatch=1
-    fi
+check_scanner_version() {
     if ! is_release_version "$(make --quiet scanner-tag)"; then
-        echo >&2 "ERROR: Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
-        release_mismatch=1
+        echo "::error::Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
+        exit 1
     fi
-
-    if [[ "$release_mismatch" == "1" ]]; then
-        return 1
-    fi
-
-    info "The scanner and collector versions are release versions"
 }
 
-push_release() {
-    info "Push release artifacts"
+check_collector_version() {
+    if ! is_release_version "$(make --quiet collector-tag)"; then
+        echo "::error::Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
+        exit 1
+    fi
+}
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_release <tag>"
+publish_roxctl() {
+ if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: publish_roxctl <tag>"
     fi
 
     local tag="$1"
 
-    info "Push roxctl to gs://sr-roxc & gs://rhacs-openshift-mirror-src/assets"
-
-    setup_gcp
+    echo "Push roxctl to gs://sr-roxc & gs://rhacs-openshift-mirror-src/assets" >> "${GITHUB_STEP_SUMMARY}"
 
     local temp_dir
     temp_dir="$(mktemp -d)"
     "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/prepare.sh" . "${temp_dir}"
     "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://sr-roxc"
     "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
+}
 
-    info "Publish Helm charts to github repository stackrox/release-artifacts and create a PR"
+push_helm_charts() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_helm_charts <tag>"
+    fi
+
+    local tag="$1"
+
+    echo "Publish Helm charts to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
 
     local central_services_chart_dir
     local secured_cluster_services_chart_dir
@@ -639,8 +604,6 @@ push_release() {
 }
 
 mark_collector_release() {
-    info "Create a PR for collector to add this release to its RELEASED_VERSIONS file"
-
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: mark_collector_release <tag>"
     fi
@@ -683,12 +646,10 @@ mark_collector_release() {
     gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
     gitbot push origin "${branch_name}"
 
-    # RS-487: create_update_pr.sh needs to be fixed so it is not Circle CI dependent.
-    export CIRCLE_USERNAME=roxbot
-    # shellcheck disable=SC2153
-    export CIRCLE_PULL_REQUEST="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
-    export GITHUB_TOKEN_FOR_PRS="${GITHUB_TOKEN}"
-    /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
+    echo "Create a PR for collector to add this release to its RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+    gh pr create \
+        --title "Update RELEASED_VERSIONS for StackRox release ${tag}" \
+        --body "Add entry into the RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
     popd
 }
 
@@ -847,7 +808,7 @@ get_pr_details() {
         echo "${_PR_DETAILS}"
         return
     fi
-    
+
     _not_a_PR() {
         echo '{ "msg": "this is not a PR" }'
         exit 1
@@ -994,6 +955,11 @@ openshift_ci_mods() {
     info "Env A-Z dump:"
     env | sort | grep -E '^[A-Z]' || true
 
+    ensure_writable_home_dir
+
+    # Prevent fatal error "detected dubious ownership in repository" from recent git.
+    git config --global --add safe.directory "$(pwd)"
+
     info "Git log:"
     git log --oneline --decorate -n 20 || true
 
@@ -1010,14 +976,6 @@ openshift_ci_mods() {
     # These are not set in the binary_build_commands or image build envs.
     export CI=true
     export OPENSHIFT_CI=true
-
-    # Single step test jobs do not have HOME
-    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
-        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
-        HOME=$( mktemp -d )
-        export HOME
-        info "HOME is now $HOME"
-    fi
 
     if is_in_PR_context && ! is_openshift_CI_rehearse_PR; then
         local sha
@@ -1052,6 +1010,16 @@ openshift_ci_mods() {
     export STACKROX_BUILD_TAG
 
     info "END OpenShift CI mods"
+}
+
+ensure_writable_home_dir() {
+    # Single step test jobs do not have HOME
+    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
+        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
+        HOME=$( mktemp -d )
+        export HOME
+        info "HOME is now $HOME"
+    fi
 }
 
 openshift_ci_import_creds() {

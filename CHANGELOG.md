@@ -13,7 +13,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   for the (now deprecated) "Public Kubernetes GCR" image integration.
 
 ### Removed Features
-- ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`. 
+- ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`.
+- ROX-13535: Built-in documentation link redirects now to the online version.
+- The `docs` image and the embedded documentation have been removed from the product.
 
 ### Deprecated Features
 - ROX-12620: We continue to simplify access control management by grouping some permissions in permission sets. As a result:

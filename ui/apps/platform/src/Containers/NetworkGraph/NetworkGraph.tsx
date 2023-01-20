@@ -111,6 +111,7 @@ const TopologyComponent = ({
     const controller = useVisualizationController();
 
     function rerenderGraph() {
+        resetGraphToDefault();
         setNodes();
         setEdges();
     }
@@ -225,16 +226,13 @@ const TopologyComponent = ({
         }
     }
 
+    function resetGraphToDefault() {
+        removeExtraneousEdges();
+        controller.fromModel(model);
+    }
+
     // TODO: figure out how to add/show edges more performantly/smoothly
     function setEdges() {
-        removeExtraneousEdges();
-        controller
-            .getGraph()
-            .getEdges()
-            .forEach((edge) => {
-                edge.setVisible(false);
-            });
-
         if (detailId) {
             const selectedNode = controller.getNodeById(detailId);
             if (selectedNode?.isGroup()) {
@@ -270,7 +268,7 @@ const TopologyComponent = ({
         return () => {
             controller.removeEventListener(SELECTION_EVENT, onSelect);
         };
-    }, [controller, model]);
+    }, [model]);
 
     const selectedIds = selectedEntity ? [selectedEntity.id] : [];
 
@@ -371,19 +369,23 @@ const NetworkGraph = React.memo<NetworkGraphProps>(
             });
 
         return (
-            <SimulationFrame simulator={simulator}>
-                <VisualizationProvider controller={controller}>
-                    <TopologyComponent
-                        model={model}
-                        edgeState={edgeState}
-                        simulation={simulation}
-                        selectedClusterId={selectedClusterId}
-                        simulator={simulator}
-                        setNetworkPolicyModification={setNetworkPolicyModification}
-                        applyNetworkPolicyModification={applyNetworkPolicyModification}
-                    />
-                </VisualizationProvider>
-            </SimulationFrame>
+            <>
+                {!simulator.isLoading && (
+                    <SimulationFrame simulator={simulator}>
+                        <VisualizationProvider controller={controller}>
+                            <TopologyComponent
+                                model={model}
+                                edgeState={edgeState}
+                                simulation={simulation}
+                                selectedClusterId={selectedClusterId}
+                                simulator={simulator}
+                                setNetworkPolicyModification={setNetworkPolicyModification}
+                                applyNetworkPolicyModification={applyNetworkPolicyModification}
+                            />
+                        </VisualizationProvider>
+                    </SimulationFrame>
+                )}
+            </>
         );
     }
 );

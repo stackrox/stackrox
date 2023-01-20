@@ -8,7 +8,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"

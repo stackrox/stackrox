@@ -27,10 +27,9 @@ push_images() {
     fi
 
     if is_release_version "$tag"; then
-        check_docs "${tag}"
         check_scanner_and_collector_versions
     else
-        info "Not checking docs/ & version files for non releases"
+        info "Not checking version files for non releases"
     fi
 
     local push_context=""

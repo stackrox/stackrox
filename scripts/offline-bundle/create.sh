@@ -51,9 +51,6 @@ main() {
     save "stackrox.io" "scanner" "${main_tag}" "image-bundle"
     save "stackrox.io" "scanner-db" "${main_tag}" "image-bundle"
 
-    # The docs image (only advertised offline) uses the release tag (same as Main).
-    save "stackrox.io" "docs" "${main_tag}" "image-bundle"
-
     # Collector uses the same version as Main.
     save "collector.stackrox.io" "collector" "${main_tag}" "image-collector-bundle"
 
