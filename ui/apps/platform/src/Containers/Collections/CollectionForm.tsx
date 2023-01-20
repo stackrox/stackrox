@@ -1,11 +1,10 @@
-import React, { ReactElement, useEffect } from 'react';
+import React, { CSSProperties, ReactElement, useEffect } from 'react';
 import {
     Alert,
     Badge,
     Button,
     EmptyState,
     EmptyStateIcon,
-    EmptyStateVariant,
     ExpandableSection,
     ExpandableSectionToggle,
     Flex,
@@ -17,17 +16,22 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
-import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
+import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Collection } from 'services/CollectionsService';
-import { getIsValidLabelKey } from 'utils/labels';
+import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
+import { ensureExhaustive } from 'utils/type.utils';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
 import {
+    byLabelMatchTypes,
+    ByLabelResourceSelector,
+    byNameMatchType,
+    ByNameResourceSelector,
     ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
@@ -48,7 +52,7 @@ function AttachedCollectionTable({
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }) {
     return collections.length > 0 ? (
-        <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
+        <TableComposable aria-label="Attached collections">
             <Tbody>
                 {collections.map((collection) => (
                     <Tr key={collection.name}>
@@ -62,7 +66,7 @@ function AttachedCollectionTable({
             </Tbody>
         </TableComposable>
     ) : (
-        <EmptyState variant={EmptyStateVariant.xs}>
+        <EmptyState>
             <EmptyStateIcon icon={CubesIcon} />
             <p>There are no other collections attached to this collection</p>
         </EmptyState>
@@ -90,36 +94,90 @@ export type CollectionFormProps = {
     headerContent?: ReactElement;
 };
 
-function yupResourceSelectorObject() {
-    return yup.lazy((ruleObject) => {
-        if (ruleObject.type === 'All') {
-            return yup.object().shape({});
-        }
+function yupLabelRuleObject({ field }: ByLabelResourceSelector) {
+    return yup.object().shape({
+        field: yup.string().required().matches(new RegExp(field)),
+        rules: yup.array().of(
+            yup.object().shape({
+                operator: yup.string().required().matches(/OR/),
+                values: yup
+                    .array()
+                    .of(
+                        yup.object().shape({
+                            value: yup
+                                .string()
+                                .trim()
+                                .required()
+                                .test(
+                                    'label-value-k8s-format',
+                                    'Label values must be valid k8s labels',
+                                    (val) => {
+                                        const parts = val.split('=');
+                                        if (parts.length !== 2) {
+                                            return false;
+                                        }
+                                        const validKey = getIsValidLabelKey(parts[0]);
+                                        const validLabel = getIsValidLabelValue(parts[1]);
+                                        return validKey && validLabel;
+                                    }
+                                ),
+                            matchType: yup
+                                .string()
+                                .required()
+                                .matches(new RegExp(byLabelMatchTypes.join('|'))),
+                        })
+                    )
+                    .required(),
+            })
+        ),
+    });
+}
 
-        const { field } = ruleObject;
-        return typeof field === 'string' && field.endsWith('Label')
-            ? yup.object().shape({
-                  field: yup.string().required().matches(new RegExp(field)),
-                  rules: yup.array().of(
-                      yup.object().shape({
-                          operator: yup.string().required().matches(/OR/),
-                          key: yup.string().trim().required().test(getIsValidLabelKey),
-                          values: yup.array().of(yup.string().trim().required()).required(),
-                      })
-                  ),
-              })
-            : yup.object().shape({
-                  field: yup.string().required().matches(new RegExp(field)),
-                  rule: yup.object().shape({
-                      operator: yup.string().required().matches(/OR/),
-                      values: yup.array().of(yup.string().trim().required()).required(),
-                  }),
-              });
+function yupNameRuleObject({ field }: ByNameResourceSelector) {
+    return yup.object().shape({
+        field: yup.string().required().matches(new RegExp(field)),
+        rule: yup.object().shape({
+            operator: yup.string().required().matches(/OR/),
+            values: yup
+                .array()
+                .of(
+                    yup.object().shape({
+                        value: yup.string().trim().required(),
+                        matchType: yup
+                            .string()
+                            .required()
+                            .matches(new RegExp(byNameMatchType.join('|'))),
+                    })
+                )
+                .required(),
+        }),
+    });
+}
+
+function yupResourceSelectorObject() {
+    return yup.lazy((ruleObject: ScopedResourceSelector) => {
+        switch (ruleObject.type) {
+            case 'All':
+                return yup.object().shape({});
+            case 'ByName':
+                return yupNameRuleObject(ruleObject);
+            case 'ByLabel':
+                return yupLabelRuleObject(ruleObject);
+            default:
+                return ensureExhaustive(ruleObject);
+        }
     });
 }
 
 const validationSchema = yup.object({
-    name: yup.string().trim().required(),
+    name: yup
+        .string()
+        .trim()
+        .matches(
+            /^[a-zA-Z0-9 .-]*$/,
+            'Only letters, numbers, dot, dash, and space characters are allowed in collection names'
+        )
+        .required(),
     description: yup.string(),
     embeddedCollectionIds: yup.array(yup.string().trim().required()),
     resourceSelector: yup.object().shape({
@@ -171,6 +229,7 @@ function CollectionForm({
         setFieldValue,
         submitForm,
         isSubmitting,
+        isValid,
     } = useFormik({
         initialValues: initialData,
         onSubmit: (collection, { setSubmitting }) => {
@@ -192,7 +251,7 @@ function CollectionForm({
             create: '',
             view: initialData.name,
             edit: initialData.name,
-            clone: `${initialData.name} (COPY)`,
+            clone: `${initialData.name} -COPY-`,
         }[action.type];
 
         setFieldValue('name', nameValue).catch(() => {
@@ -247,7 +306,14 @@ function CollectionForm({
     const ruleCount = getRuleCount(values.resourceSelector);
 
     return (
-        <Form className="pf-u-background-color-200">
+        <Form
+            className="pf-u-background-color-200"
+            style={
+                {
+                    '--pf-c-form--GridGap': 0,
+                } as CSSProperties
+            }
+        >
             <Flex
                 className="pf-u-p-lg"
                 spaceItems={{ default: 'spaceItemsMd' }}
@@ -319,12 +385,7 @@ function CollectionForm({
                             </Title>
                             <Badge isRead>{ruleCount}</Badge>
                         </Flex>
-                        {!isReadOnly && (
-                            <p>
-                                Select deployments via rules. You can use regular expressions (RE2
-                                syntax).
-                            </p>
-                        )}
+                        {!isReadOnly && <p>Select deployments using names or labels</p>}
                     </ExpandableSectionToggle>
 
                     <ExpandableSection
@@ -357,7 +418,7 @@ function CollectionForm({
                                 validationErrors={errors.resourceSelector?.Deployment}
                                 isDisabled={isReadOnly}
                             />
-                            <Label variant="outline" isCompact className="pf-u-align-self-center">
+                            <Label className="pf-u-px-md pf-u-font-size-md pf-u-align-self-center">
                                 in
                             </Label>
                             <RuleSelector
@@ -368,7 +429,7 @@ function CollectionForm({
                                 validationErrors={errors.resourceSelector?.Namespace}
                                 isDisabled={isReadOnly}
                             />
-                            <Label variant="outline" isCompact className="pf-u-align-self-center">
+                            <Label className="pf-u-px-md pf-u-font-size-md pf-u-align-self-center">
                                 in
                             </Label>
                             <RuleSelector
@@ -407,7 +468,6 @@ function CollectionForm({
                         isExpanded={isAttachmentSectionOpen}
                     >
                         <Flex
-                            className="pf-u-p-md"
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
@@ -429,7 +489,7 @@ function CollectionForm({
                                     collectionTableCells={collectionTableCells}
                                 />
                             ) : (
-                                <>
+                                <div className="pf-u-p-md">
                                     <CollectionAttacher
                                         excludedCollectionId={
                                             action.type === 'edit' ? action.collectionId : null
@@ -438,7 +498,7 @@ function CollectionForm({
                                         onSelectionChange={onEmbeddedCollectionsChange}
                                         collectionTableCells={collectionTableCells}
                                     />
-                                </>
+                                </div>
                             )}
                         </Flex>
                     </ExpandableSection>
@@ -449,7 +509,7 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting || !!configError}
+                        isDisabled={isSubmitting || !!configError || !isValid}
                         isLoading={isSubmitting}
                     >
                         Save

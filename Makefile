@@ -43,8 +43,6 @@ ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
 	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
 endif
 
-DOCS_IMAGE = $(DEFAULT_IMAGE_REGISTRY)/docs:$(shell make --quiet --no-print-directory docs-tag)
-
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
 GOPATH_VOLUME_NAME := stackrox-rox-gopath
@@ -456,7 +454,7 @@ test-prep:
 .PHONY: go-unit-tests
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
-	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
@@ -566,14 +564,9 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
-.PHONY: docs-image
-docs-image:
-	scripts/ensure_image.sh $(DOCS_IMAGE) docs/Dockerfile docs/
-
 .PHONY: docker-build-data-image
-docker-build-data-image: docs-image
+docker-build-data-image:
 	docker build -t stackrox-data:$(TAG) \
-	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
@@ -731,10 +724,6 @@ ossls-notice: deps
 .PHONY: collector-tag
 collector-tag:
 	@cat COLLECTOR_VERSION
-
-.PHONY: docs-tag
-docs-tag:
-	@echo $$(git ls-tree -d --abbrev=8 HEAD docs | awk '{ print $$3; }')-$$(git submodule status -- docs/content | cut -c 2-9)-$$(git submodule status -- docs/tools | cut -c 2-9)
 
 .PHONY: scanner-tag
 scanner-tag:

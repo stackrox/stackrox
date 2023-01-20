@@ -13,7 +13,7 @@ import (
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	nodeDS "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	nodeComponentCVEEdgePostgres "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"

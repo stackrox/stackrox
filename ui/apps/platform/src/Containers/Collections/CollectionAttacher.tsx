@@ -5,6 +5,7 @@ import BacklogListSelector, {
     BacklogListSelectorProps,
 } from 'Components/PatternFly/BacklogListSelector';
 import { Collection } from 'services/CollectionsService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useEmbeddedCollections from './hooks/useEmbeddedCollections';
 
 export type CollectionAttacherProps = {
@@ -69,7 +70,9 @@ function CollectionAttacher({
                     variant="danger"
                     isInline
                     title="There was an error loading more collections"
-                />
+                >
+                    {getAxiosErrorMessage(fetchMoreError)}
+                </Alert>
             )}
             {hasMore && (
                 <Button

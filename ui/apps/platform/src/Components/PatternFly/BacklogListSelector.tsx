@@ -10,14 +10,7 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon, MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
-import {
-    BaseCellProps,
-    TableComposable,
-    TableVariant,
-    Tbody,
-    Td,
-    Tr,
-} from '@patternfly/react-table';
+import { BaseCellProps, TableComposable, Tbody, Td, Tr } from '@patternfly/react-table';
 
 type BacklogTableProps<Item> = {
     type: 'selected' | 'deselected';
@@ -64,7 +57,7 @@ function BacklogTable<Item>({
             }
         >
             {items.length > 0 ? (
-                <TableComposable aria-label={label} variant={TableVariant.compact}>
+                <TableComposable aria-label={label}>
                     <Tbody>
                         {items.map((item) => (
                             <Tr key={rowKey(item)}>

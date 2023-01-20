@@ -9,7 +9,7 @@ import (
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"

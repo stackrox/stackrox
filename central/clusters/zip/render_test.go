@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,6 +37,7 @@ func init() {
 }
 
 func TestRenderOpenshiftEnv(t *testing.T) {
+	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 	for _, clusterType := range []storage.ClusterType{storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		t.Run(clusterType.String(), func(t *testing.T) {
 			doTestRenderOpenshiftEnv(t, clusterType)
@@ -80,6 +82,7 @@ func doTestRenderOpenshiftEnv(t *testing.T, clusterType storage.ClusterType) {
 }
 
 func TestRenderWithNoCollection(t *testing.T) {
+	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 	cluster := &storage.Cluster{
 		Name:             "cluster",
 		MainImage:        "stackrox/main:abc",

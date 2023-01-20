@@ -15,6 +15,8 @@ setup_gcp() {
         service_account="${GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX}"
     elif [[ -n "${GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX:-}" ]]; then
         service_account="${GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX}"
+    elif [[ -n "${GCLOUD_SERVICE_ACCOUNT_CI_ROX:-}" ]]; then
+        service_account="${GCLOUD_SERVICE_ACCOUNT_CI_ROX}"
     else
         die "Support is missing for this environment"
     fi
