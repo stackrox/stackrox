@@ -70,7 +70,6 @@ type EndpointManager interface {
 }
 
 // NodeStore provides functionality to get nodes
-//go:generate mockgen-wrapper
 type NodeStore interface {
 	AddOrUpdateNode(node *NodeWrap) bool
 	GetNode(nodeName string) *NodeWrap
