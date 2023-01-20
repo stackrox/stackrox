@@ -34,4 +34,12 @@ func TestDeterministicUUIDs(t *testing.T) {
 			assert.NotEqual(t, id, otherID)
 		}
 	}
+
+	// 3. Test that using different names in the same namespace will lead to different UUIDs being created.
+	secondDummyName := "another-dummy-resource"
+	for _, f := range declarativeUUIDFuncs {
+		firstID := f(dummyName)
+		secondID := f(secondDummyName)
+		assert.NotEqual(t, firstID, secondID)
+	}
 }
