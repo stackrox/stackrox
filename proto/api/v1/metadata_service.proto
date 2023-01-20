@@ -3,8 +3,10 @@ syntax = "proto3";
 option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+import "google/protobuf/timestamp.proto";
 import weak "google/api/annotations.proto";
 import "api/v1/empty.proto";
+import "storage/system_info.proto";
 
 package v1;
 
@@ -23,6 +25,8 @@ message Metadata {
 
     // Do not use this field. It will always contain "VALID"
     LicenseStatus license_status = 4 [deprecated = true];
+
+    google.protobuf.Timestamp backup_last_run_at = 5;
 }
 
 message TrustInfo {
@@ -62,6 +66,11 @@ message DatabaseStatus {
     string database_version = 3;
 }
 
+
+message DatabaseBackupStatus {
+    storage.BackupInfo backup_info = 1;
+}
+
 service MetadataService {
 
     rpc GetMetadata(Empty) returns (Metadata) {
@@ -79,6 +88,12 @@ service MetadataService {
     rpc GetDatabaseStatus(Empty) returns (DatabaseStatus) {
         option (google.api.http) = {
             get: "/v1/database/status"
+        };
+    }
+
+    rpc GetDatabaseBackupStatus(Empty) returns (DatabaseBackupStatus) {
+        option (google.api.http) = {
+            get: "/v1/backup/status"
         };
     }
 }

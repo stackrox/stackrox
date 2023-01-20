@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/export"
+	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -33,26 +34,28 @@ type scheduler struct {
 	lock              sync.Mutex
 	cron              *cron.Cron
 	reporter          integrationhealth.Reporter
+	backupListener    listener.BackupListener
 	pluginsToEntryIDs map[string]cron.EntryID
 }
 
 // New instantiates a new cron scheduler and accounts for adding and removing external backups
-func New(reporter integrationhealth.Reporter) Scheduler {
+func New(reporter integrationhealth.Reporter, backupListener listener.BackupListener) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 	return &scheduler{
 		pluginsToEntryIDs: make(map[string]cron.EntryID),
 		cron:              cronScheduler,
 		reporter:          reporter,
+		backupListener:    backupListener,
 	}
 }
 
 func (s *scheduler) backup(w *io.PipeWriter, includeCerts bool) {
 	var err error
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = export.BackupPostgres(context.Background(), globaldb.GetPostgres(), includeCerts, w)
+		err = export.BackupPostgres(context.Background(), globaldb.GetPostgres(), s.backupListener, includeCerts, w)
 	} else {
-		err = export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), includeCerts, w)
+		err = export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, includeCerts, w)
 	}
 	if err != nil {
 		log.Errorf("Failed to write backup to io.writer: %v", err)
