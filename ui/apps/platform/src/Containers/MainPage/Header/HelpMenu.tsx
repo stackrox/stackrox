@@ -19,8 +19,9 @@ function HelpMenu(): ReactElement {
         setIsHelpMenuOpen(!isHelpMenuOpen);
     }
 
+    // React requires key (even empty string is enough) to render array of elements.
     const appLauncherItems = [
-        <ApplicationLauncherGroup>
+        <ApplicationLauncherGroup key="">
             <ApplicationLauncherItem
                 component={
                     <Link className="pf-c-app-launcher__menu-item" to={apidocsPath}>
