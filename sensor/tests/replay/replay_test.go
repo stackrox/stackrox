@@ -212,15 +212,15 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			}
 			expectedAlerts := getAlerts(expectedEvents)
 			receivedAlerts := getAlerts(allEvents)
-			assert.Equal(t, len(expectedAlerts), len(receivedAlerts))
+			assert.Equal(t, len(expectedAlerts), len(receivedAlerts), "Not the same number of alerts.\nExpected: %+v\nActual: %+v", expectedAlerts, receivedAlerts)
 			for id, expectedAlertEvent := range expectedAlerts {
 				if receivedAlertEvent, ok := receivedAlerts[id]; !ok {
-					t.Error("Deployment Alert Event not found")
+					t.Error("Deployment Alert Event not found. Expected alert event: ", expectedAlertEvent)
 				} else {
 					assert.Equal(t, len(expectedAlertEvent), len(receivedAlertEvent))
 					for alertID, exp := range expectedAlertEvent {
 						if a, ok := receivedAlertEvent[alertID]; !ok {
-							t.Error("Alert not found")
+							t.Error("Alert not found. Expected alert: ", exp)
 						} else {
 							assert.Equal(t, exp.GetState(), a.GetState())
 						}
@@ -229,10 +229,10 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			}
 			expectedDeployments := getLastStateFromDeployments(expectedEvents)
 			receivedDeployments := getLastStateFromDeployments(allEvents)
-			assert.Equal(t, len(expectedDeployments), len(receivedDeployments))
+			assert.Equal(t, len(expectedDeployments), len(receivedDeployments), "Not the same number of deployments.\nExpected: %+v\nActual: %+v", expectedDeployments, receivedDeployments)
 			for id, exp := range expectedDeployments {
 				if e, ok := receivedDeployments[id]; !ok {
-					t.Error("Deployment not found")
+					t.Error("Deployment not found. Expected Deployment: ", exp)
 				} else {
 					assert.Equal(t, exp.GetDeployment().GetServiceAccountPermissionLevel(), e.GetDeployment().GetServiceAccountPermissionLevel())
 					assert.Equal(t, exp.GetDeployment().GetPorts(), e.GetDeployment().GetPorts())
@@ -245,10 +245,10 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			}
 			expectedPods := getLastStateFromPods(expectedEvents)
 			receivedPods := getLastStateFromPods(allEvents)
-			assert.Equal(t, len(expectedPods), len(receivedPods))
+			assert.Equal(t, len(expectedPods), len(receivedPods), "Not the same number of pods.\nExpected: %+v Actual: %+v", expectedPods, receivedPods)
 			for id, exp := range expectedPods {
 				if e, ok := receivedPods[id]; !ok {
-					t.Error("Pod not found")
+					t.Error("Pod not found. Expected Pod: ", exp)
 				} else {
 					assert.Equal(t, exp.GetPod().GetDeploymentId(), e.GetPod().GetDeploymentId())
 					assert.Equal(t, exp.GetPod().GetName(), e.GetPod().GetName())
