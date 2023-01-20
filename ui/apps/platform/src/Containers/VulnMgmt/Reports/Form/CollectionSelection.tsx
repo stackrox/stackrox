@@ -72,7 +72,9 @@ function CollectionSelection({
         // This is inefficient due to the multiple loops and the fact that we are already tracking
         // uniqueness for the _server side_ values, but need to do it twice to handle possible client
         // side values. However, 'N' should be small here and we are memoizing the result.
-        const sorted = sortBy(data.flat().concat(createdCollections), ['name']);
+        const sorted = sortBy(data.flat().concat(createdCollections), ({ name }) =>
+            name.toLowerCase()
+        );
         return uniqBy(sorted, 'id');
     }, [data, createdCollections]);
 
