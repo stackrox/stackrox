@@ -3,8 +3,10 @@ package postgres
 import (
 	"runtime"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var log = logging.LoggerForModule()
@@ -17,6 +19,7 @@ func LogCallerOnPostgres(name string) {
 		_, file, no, ok := runtime.Caller(2)
 		if ok {
 			log.Infof("%s called from %s#%d", name, file, no)
+			utils.Should(errors.New("Unexpected access call"))
 		}
 	}
 }
