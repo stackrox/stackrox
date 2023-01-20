@@ -409,7 +409,7 @@ func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error 
 	// delete from storage first so postgres can tell if the collection is referenced by another
 	err = ds.storage.Delete(ctx, id)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to delete collection")
 	}
 
 	// update tracking collections
