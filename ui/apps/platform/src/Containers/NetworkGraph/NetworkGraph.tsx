@@ -335,7 +335,6 @@ const TopologyComponent = ({
                         },
                         fitToScreenCallback: () => {
                             controller.getGraph().fit(80);
-                            console.log('controller model', controller.toModel());
                         },
                         resetViewCallback: () => {
                             controller.getGraph().reset();
