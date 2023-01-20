@@ -190,6 +190,7 @@ export function transformActiveData(
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
+        updateCount: 0,
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
@@ -345,6 +346,7 @@ export function transformPolicyData(
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
+        updateCount: 0,
     };
     // set policyNodeMap to be able to cross reference nodes by id to enhance active node data
     const policyNodeMap: Record<string, DeploymentNodeModel> = {};
@@ -420,6 +422,7 @@ export function createExtraneousFlowsModel(
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
+        updateCount: 0,
     };
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     let externalNode: ExternalGroupNodeModel | null = null;
