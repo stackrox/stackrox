@@ -20,6 +20,7 @@ deploy_stackrox() {
     get_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${1:-}"
+    setup_podsecuritypolicies_config
 
     deploy_sensor
     echo "Sensor deployed. Waiting for sensor to be up"
@@ -45,6 +46,7 @@ deploy_stackrox_with_custom_sensor() {
     get_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${2:-}"
+    setup_podsecuritypolicies_config
 
     # generate init bundle
     password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
@@ -209,6 +211,18 @@ setup_generated_certs_for_test() {
     for file in ca.pem sensor-cert.pem sensor-key.pem; do
         echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.stringData[$filename]' -r > "$dir/${file}"
     done
+}
+
+setup_podsecuritypolicies_config() {
+    info "Set POD_SECURITY_POLYCIES variable based on kubernetes version"
+    local version=$(kubectl version --output json)
+    local majorVersion=$(echo $version | jq -r .serverVersion.major)
+    local minorVersion=$(echo $version | jq -r .serverVersion.minor)
+    echo $majorVersion $minorVersion
+    # PodSecurityPolicy was removed in version 1.25
+    if (( "$majorVersion" >= 1 && "$minorVersion" >= 25 )); then
+        ci_export POD_SECURITY_POLICIES "false"
+    fi
 }
 
 patch_resources_for_test() {
