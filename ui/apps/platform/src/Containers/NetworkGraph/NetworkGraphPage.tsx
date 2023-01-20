@@ -308,7 +308,9 @@ function NetworkGraphPage() {
                         </ToolbarGroup>
                         <ToolbarGroup alignment={{ default: 'alignRight' }}>
                             <Divider component="div" orientation={{ default: 'vertical' }} />
-                            <ToolbarItem>Last updated at {lastUpdatedTime}</ToolbarItem>
+                            <ToolbarItem className="pf-u-color-200">
+                                <em>Last updated at {lastUpdatedTime}</em>
+                            </ToolbarItem>
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
