@@ -137,7 +137,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		if boltDB == nil {
 			log.WriteToStderr("No legacy DB found. Nothing to migrate...")
 		} else {
-			pkgRocksDB, err = rockshelper.New()
+			pkgRocksDB = rockshelper.GetRocksDB()
 			if err != nil {
 				return errors.Wrap(err, "failed to open rocksdb")
 			}
