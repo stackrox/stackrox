@@ -37,15 +37,15 @@ func (s *NodeInventoryHandlerImplTestSuite) TestFindNodeID() {
 				{Node: &storage.Node{Id: "id1", Name: "node1"}},
 			},
 			namesToExpectedIDs: map[*storage.NodeInventory]string{
-				&storage.NodeInventory{NodeName: "node1"}: "id1",
-				&storage.NodeInventory{NodeName: "node2"}: "",
+				{NodeName: "node1"}: "id1",
+				{NodeName: "node2"}: "",
 			},
 		},
 		"Empty store": {
 			storageState: []*store.NodeWrap{},
 			namesToExpectedIDs: map[*storage.NodeInventory]string{
-				&storage.NodeInventory{NodeName: "node1"}: "",
-				&storage.NodeInventory{NodeName: "node2"}: "",
+				{NodeName: "node1"}: "",
+				{NodeName: "node2"}: "",
 			},
 		},
 		"Node got replaced and kept the name but changed ID": {
@@ -55,8 +55,8 @@ func (s *NodeInventoryHandlerImplTestSuite) TestFindNodeID() {
 				{Node: &storage.Node{Id: "id7", Name: "node1"}}, // node gets replaced
 			},
 			namesToExpectedIDs: map[*storage.NodeInventory]string{
-				&storage.NodeInventory{NodeName: "node1"}: "id7",
-				&storage.NodeInventory{NodeName: "node2"}: "id2",
+				{NodeName: "node1"}: "id7",
+				{NodeName: "node2"}: "id2",
 			},
 		},
 		"Node changend name but kept ID": {
@@ -65,8 +65,8 @@ func (s *NodeInventoryHandlerImplTestSuite) TestFindNodeID() {
 				{Node: &storage.Node{Id: "id1", Name: "node7"}}, // node got renamed
 			},
 			namesToExpectedIDs: map[*storage.NodeInventory]string{
-				&storage.NodeInventory{NodeName: "node1"}: "id1",
-				&storage.NodeInventory{NodeName: "node7"}: "id1",
+				{NodeName: "node1"}: "id1",
+				{NodeName: "node7"}: "id1",
 			},
 		},
 	}
