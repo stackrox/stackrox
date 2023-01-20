@@ -3,7 +3,7 @@ package gatherers
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	"github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )

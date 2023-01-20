@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	"github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/sync"
 )

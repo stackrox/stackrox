@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { debounce } from 'lodash';
 
 function filterNextPage<Item, ItemKey>(
@@ -136,7 +136,7 @@ export function usePaginatedQuery<Item, ItemKey>(
     // we know that we want to fetch the data _now_.
     // (e.g. We would want to debounce for text input `keypress` events, but a single
     // "View more" button that is immediately disabled once clicked can fetch without delay.)
-    const pageFetcher = useMemo(() => {
+    const pageFetcher = useCallback(() => {
         setIsFetchingNextPage(true);
         return {
             debounced: debounce(fetchPageHandler, debounceRate ?? 0),
@@ -147,9 +147,9 @@ export function usePaginatedQuery<Item, ItemKey>(
     const fetchNextPage = useCallback(
         (immediate = false) => {
             if (immediate) {
-                return pageFetcher.immediate(queryFn, page, itemKeys);
+                return pageFetcher().immediate(queryFn, page, itemKeys);
             }
-            return pageFetcher.debounced(queryFn, page, itemKeys);
+            return pageFetcher().debounced(queryFn, page, itemKeys);
         },
         [pageFetcher, queryFn, page, itemKeys]
     );
@@ -167,7 +167,7 @@ export function usePaginatedQuery<Item, ItemKey>(
         setIsFetchingNextPage(true);
         // Error handling and state setting already complete, so ignore this error
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        pageFetcher.debounced(queryFn, 0, new Set());
+        pageFetcher().debounced(queryFn, 0, new Set());
     }, [clearPages, pageFetcher, queryFn]);
 
     useEffect(() => {

@@ -23,7 +23,7 @@ import {
     upgradeCluster,
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
-import { filterAllowedSearch, convertToRestSearch } from 'utils/searchUtils';
+import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
@@ -258,6 +258,8 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const pageSize =
         currentClusters.length <= DEFAULT_PAGE_SIZE ? DEFAULT_PAGE_SIZE : currentClusters.length;
 
+    const hasSearchApplied = getHasSearchApplied(filteredSearch);
+
     return (
         <div className="overflow-hidden w-full">
             <PanelNew testid="panel">
@@ -271,28 +273,29 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
                             {messages}
                         </div>
                     )}
-                    {(!fetchingClusters || pollingCount > 0) && currentClusters.length <= 0 && (
-                        <AddClusterPrompt />
-                    )}
-                    {(!fetchingClusters || pollingCount > 0) && currentClusters.length > 0 && (
-                        <div data-testid="clusters-table" className="h-full w-full">
-                            <CheckboxTable
-                                ref={(table) => {
-                                    setTableRef(table);
-                                }}
-                                rows={currentClusters}
-                                columns={clusterColumns}
-                                onRowClick={setSelectedClusterId}
-                                toggleRow={toggleCluster}
-                                toggleSelectAll={toggleAllClusters}
-                                selection={checkedClusterIds}
-                                selectedRowId={selectedClusterId}
-                                noDataText="No clusters to show."
-                                minRows={20}
-                                pageSize={pageSize}
-                            />
-                        </div>
-                    )}
+                    {(!fetchingClusters || pollingCount > 0) &&
+                        currentClusters.length <= 0 &&
+                        !hasSearchApplied && <AddClusterPrompt />}
+                    {(!fetchingClusters || pollingCount > 0) &&
+                        (currentClusters.length > 0 || hasSearchApplied) && (
+                            <div data-testid="clusters-table" className="h-full w-full">
+                                <CheckboxTable
+                                    ref={(table) => {
+                                        setTableRef(table);
+                                    }}
+                                    rows={currentClusters}
+                                    columns={clusterColumns}
+                                    onRowClick={setSelectedClusterId}
+                                    toggleRow={toggleCluster}
+                                    toggleSelectAll={toggleAllClusters}
+                                    selection={checkedClusterIds}
+                                    selectedRowId={selectedClusterId}
+                                    noDataText="No clusters to show."
+                                    minRows={20}
+                                    pageSize={pageSize}
+                                />
+                            </div>
+                        )}
                 </PanelBody>
             </PanelNew>
             <Dialog

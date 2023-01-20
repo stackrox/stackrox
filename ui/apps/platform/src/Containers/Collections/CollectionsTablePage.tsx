@@ -9,8 +9,6 @@ import {
     ButtonVariant,
     Divider,
     Alert,
-    Bullseye,
-    Spinner,
     AlertActionCloseButton,
     AlertGroup,
 } from '@patternfly/react-core';
@@ -67,8 +65,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
         refetch: countRefetch,
     } = useRestQuery(countQuery);
 
-    const isDataAvailable = typeof listData !== 'undefined' && typeof countData !== 'undefined';
-    const isLoading = !isDataAvailable && (listLoading || countLoading);
+    const isLoading = listLoading || countLoading;
     const loadError = listError || countError;
 
     function onCollectionDelete({ id, name }: Collection) {
@@ -84,44 +81,6 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                 const error = getAxiosErrorMessage(err);
                 addToast(`Could not delete collection '${name}'`, 'danger', error);
             });
-    }
-
-    let pageContent = (
-        <PageSection variant="light" isFilled>
-            <Bullseye>
-                <Spinner isSVG />
-            </Bullseye>
-        </PageSection>
-    );
-
-    if (loadError) {
-        pageContent = (
-            <PageSection variant="light" isFilled>
-                <Bullseye>
-                    <Alert variant="danger" title={loadError.message} />
-                </Bullseye>
-            </PageSection>
-        );
-    }
-
-    if (isDataAvailable && !isLoading && !loadError) {
-        pageContent = (
-            <PageSection>
-                <CollectionsTable
-                    collections={listData}
-                    collectionsCount={countData}
-                    pagination={pagination}
-                    searchFilter={searchFilter}
-                    setSearchFilter={(value) => {
-                        setPage(1);
-                        setSearchFilter(value);
-                    }}
-                    getSortParams={getSortParams}
-                    onCollectionDelete={onCollectionDelete}
-                    hasWriteAccess={hasWriteAccessForCollections}
-                />
-            </PageSection>
-        );
     }
 
     return (
@@ -149,7 +108,23 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            {pageContent}
+            <PageSection>
+                <CollectionsTable
+                    isLoading={isLoading}
+                    error={loadError}
+                    collections={listData ?? []}
+                    collectionsCount={countData ?? 0}
+                    pagination={pagination}
+                    searchFilter={searchFilter}
+                    setSearchFilter={(value) => {
+                        setPage(1);
+                        setSearchFilter(value);
+                    }}
+                    getSortParams={getSortParams}
+                    onCollectionDelete={onCollectionDelete}
+                    hasWriteAccess={hasWriteAccessForCollections}
+                />
+            </PageSection>
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }: Toast) => (
                     <Alert

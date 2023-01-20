@@ -15,7 +15,7 @@ import (
 	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sac"

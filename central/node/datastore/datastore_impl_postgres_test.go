@@ -373,7 +373,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 // Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
 func (suite *NodePostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
-	node := fixtures.GetNodeWithUniqueComponents()
+	node := fixtures.GetNodeWithUniqueComponents(5, 5)
 	converter.FillV2NodeVulnerabilities(node)
 	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
 	for _, component := range node.GetScan().GetComponents() {
@@ -460,7 +460,7 @@ func (suite *NodePostgresDataStoreTestSuite) deleteTestNodes(ctx context.Context
 
 func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	ctx := sac.WithAllAccess(context.Background())
-	testNode := fixtures.GetNodeWithUniqueComponents()
+	testNode := fixtures.GetNodeWithUniqueComponents(5, 5)
 	converter.MoveNodeVulnsToNewField(testNode)
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode))
 
