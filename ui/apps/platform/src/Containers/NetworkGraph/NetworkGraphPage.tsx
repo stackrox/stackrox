@@ -72,6 +72,8 @@ function NetworkGraphPage() {
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
+    const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
+
     const { searchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
 
@@ -147,6 +149,14 @@ function NetworkGraphPage() {
                         );
                         setActiveModel(activeDataModel);
                         setExtraneousFlowsModel(extraneousFlowsDataModel);
+
+                        const newUpdatedTimestamp = new Date();
+                        // show only hours and minutes, use options with the default locale - use an empty array
+                        const lastUpdatedDisplayTime = newUpdatedTimestamp.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        });
+                        setLastUpdatedTime(lastUpdatedDisplayTime);
                     })
                     .catch(() => {
                         // TODO
@@ -284,8 +294,8 @@ function NetworkGraphPage() {
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup alignment={{ default: 'alignRight' }}>
-                            <Divider component="div" isVertical />
-                            <ToolbarItem>Last updated at 12:34PM</ToolbarItem>
+                            <Divider component="div" orientation={{ default: 'vertical' }} />
+                            <ToolbarItem>Last updated at {lastUpdatedTime}</ToolbarItem>
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
