@@ -87,6 +87,7 @@ function local_dev {
 }
 
 function launch_central {
+    POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
     local k8s_dir="$1"
     local common_dir="${k8s_dir}/../common"
 
