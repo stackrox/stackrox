@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, Button, debounce, Flex, SearchInput } from '@patternfly/react-core';
+import React, { useState } from 'react';
+import { Alert, Button, Flex, SearchInput } from '@patternfly/react-core';
 
 import BacklogListSelector, {
     BacklogListSelectorProps,
@@ -17,10 +17,6 @@ export type CollectionAttacherProps = {
     collectionTableCells: BacklogListSelectorProps<Collection>['cells'];
 };
 
-function compareNameLowercase(search: string): (item: { name: string }) => boolean {
-    return ({ name }) => name.toLowerCase().includes(search.toLowerCase());
-}
-
 function CollectionAttacher({
     excludedCollectionId,
     initialEmbeddedCollections,
@@ -32,29 +28,22 @@ function CollectionAttacher({
     const { attached, detached, attach, detach, hasMore, fetchMore, onSearch } = embedded;
     const { isFetchingMore, fetchMoreError } = embedded;
 
-    const onSearchInputChange = useMemo(
-        () =>
-            debounce((value: string) => {
-                setSearch(value);
-                onSearch(value);
-            }, 800),
-        [onSearch]
-    );
-
-    const selectedOptions = attached.filter(compareNameLowercase(search));
-    const deselectedOptions = detached.filter(compareNameLowercase(search));
-
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXl' }}>
             <SearchInput
                 aria-label="Filter by name"
                 placeholder="Filter by name"
                 value={search}
-                onChange={onSearchInputChange}
+                onChange={setSearch}
+                onSearch={() => onSearch(search)}
+                onClear={() => {
+                    setSearch('');
+                    onSearch('');
+                }}
             />
             <BacklogListSelector
-                selectedOptions={selectedOptions}
-                deselectedOptions={deselectedOptions}
+                selectedOptions={attached}
+                deselectedOptions={detached}
                 onSelectItem={({ id }) => attach(id)}
                 onDeselectItem={({ id }) => detach(id)}
                 onSelectionChange={onSelectionChange}
