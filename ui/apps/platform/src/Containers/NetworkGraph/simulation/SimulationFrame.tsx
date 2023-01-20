@@ -2,19 +2,13 @@ import React from 'react';
 import { ScreenIcon } from '@patternfly/react-icons';
 
 import { Flex, FlexItem } from '@patternfly/react-core';
-import { NetworkPolicySimulator } from '../hooks/useNetworkPolicySimulator';
 
 type SimulationFrameProps = {
-    simulator: NetworkPolicySimulator;
+    isSimulating: boolean;
     children: React.ReactNode;
 };
 
-function SimulationFrame({ simulator, children }: SimulationFrameProps) {
-    const isSimulating =
-        simulator.state === 'GENERATED' ||
-        simulator.state === 'UNDO' ||
-        simulator.state === 'UPLOAD';
-
+function SimulationFrame({ isSimulating, children }: SimulationFrameProps) {
     let style = {};
     if (isSimulating) {
         style = { position: 'relative', border: '5px solid rgb(115,188,247)' };
