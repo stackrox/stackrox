@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-core';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
+import { timeWindows } from 'constants/timeWindows';
 import useFetchClusters from 'hooks/useFetchClusters';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
@@ -29,6 +30,7 @@ import NetworkSearch from './components/NetworkSearch';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
 import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
+import TimeWindowSelector from './components/TimeWindowSelector';
 import NetworkGraph from './NetworkGraph';
 import {
     transformPolicyData,
@@ -52,9 +54,6 @@ const emptyModel = {
     nodes: [],
     edges: [],
 };
-
-// TODO: get real time window from user input
-const timeWindow = 'Past hour';
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
@@ -72,6 +71,7 @@ function NetworkGraphPage() {
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
+    const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
 
     const { searchFilter } = useURLSearch();
@@ -164,7 +164,14 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount, remainingQuery]);
+    }, [
+        clusterFromUrl,
+        namespacesFromUrl,
+        deploymentsFromUrl,
+        deploymentCount,
+        remainingQuery,
+        timeWindow,
+    ]);
 
     const setModelByEdgeState = useCallback(() => {
         if (edgeState === 'active') {
@@ -270,13 +277,19 @@ function NetworkGraphPage() {
                 <Toolbar data-testid="network-graph-toolbar">
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
-                            <ToolbarItem>
+                            <ToolbarItem spacer={{ default: 'spacerMd' }}>
                                 <EdgeStateSelect
                                     edgeState={edgeState}
                                     setEdgeState={setEdgeState}
                                 />
                             </ToolbarItem>
-                            <ToolbarItem>in the past hour</ToolbarItem>
+                            <ToolbarItem>
+                                <TimeWindowSelector
+                                    activeTimeWindow={timeWindow}
+                                    setActiveTimeWindow={setTimeWindow}
+                                    isDisabled={isLoading}
+                                />
+                            </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup className="pf-u-flex-grow-1">
                             <ToolbarItem className="pf-u-flex-grow-1">
