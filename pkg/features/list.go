@@ -53,9 +53,6 @@ var (
 	// ProcessesListeningOnPort enables the NetworkFlow code to also update the processes that are listening on ports
 	ProcessesListeningOnPort = registerFeature("Enable Processes Listening on Port", "ROX_PROCESSES_LISTENING_ON_PORT", false)
 
-	// ResyncDisabled disables the resync behavior of the kubernetes listeners in sensor
-	ResyncDisabled = registerFeature("Disable the re-sync", "ROX_RESYNC_DISABLED", false)
-
 	// ClairV4Scanner enables Clair v4 as an Image Integration option
 	ClairV4Scanner = registerFeature("Enable Clair v4 as an Image Integration option", "ROX_CLAIR_V4_SCANNING", false)
 

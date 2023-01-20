@@ -89,10 +89,13 @@ function CollectionResults({
 }: CollectionResultsProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [selected, setSelected] = useState<SelectorEntityType>('Deployment');
-    const [filterText, setFilterText] = useState<string>('');
+    // This state controls the value of the text in the SearchInput component separately from the value sent via query
+    const [filterInput, setFilterInput] = useState('');
+    // This state controls the filter value that we want to use for queries, and is set by manual user interaction.
+    const [filterValue, setFilterValue] = useState('');
     const queryFn = useCallback(
-        (page: number) => fetchMatchingDeployments(dryRunConfig, page, filterText, selected),
-        [dryRunConfig, filterText, selected]
+        (page: number) => fetchMatchingDeployments(dryRunConfig, page, filterValue, selected),
+        [dryRunConfig, filterValue, selected]
     );
     const {
         data,
@@ -117,7 +120,8 @@ function CollectionResults({
 
     function onRuleOptionSelect(_, value): void {
         setSelected(value);
-        setFilterText('');
+        setFilterInput('');
+        setFilterValue('');
         closeSelect();
     }
 
@@ -247,8 +251,13 @@ function CollectionResults({
                             <SearchInput
                                 aria-label="Filter by name"
                                 placeholder="Filter by name"
-                                value={filterText}
-                                onChange={setFilterText}
+                                value={filterInput}
+                                onChange={setFilterInput}
+                                onSearch={() => setFilterValue(filterInput)}
+                                onClear={() => {
+                                    setFilterInput('');
+                                    setFilterValue('');
+                                }}
                             />
                         </div>
                     </Flex>

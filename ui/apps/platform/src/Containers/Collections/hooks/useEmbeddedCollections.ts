@@ -145,6 +145,7 @@ type UseEmbeddedCollectionsState = {
     fetchMoreError: Error | null;
     attached: CollectionMap;
     detached: CollectionMap;
+    search: string;
 };
 
 type ReducerPayload =
@@ -153,7 +154,7 @@ type ReducerPayload =
     | { type: 'fetchMoreError'; error: Error }
     | { type: 'attachCollection'; id: string }
     | { type: 'detachCollection'; id: string }
-    | { type: 'resetDetachedList' };
+    | { type: 'resetDetachedList'; search: string };
 
 function embeddedCollectionsReducer(
     state: UseEmbeddedCollectionsState,
@@ -182,10 +183,21 @@ function embeddedCollectionsReducer(
             return { ...state, attached, detached };
         }
         case 'resetDetachedList':
-            return { ...state, page: 1, hasMore: true, detached: {} };
+            return { ...state, search: payload.search, page: 1, hasMore: true, detached: {} };
         default:
             return ensureExhaustive(payload);
     }
+}
+
+// We need to use `startsWith` instead of `includes` here, since search values sent to the API use
+// a prefix match. If we filter by substring, collections matching the substring will appear in
+// the "attached" list, but not in the "available" list, since the former are cached client side.
+function compareNameLowercase(search: string): (item: { name: string }) => boolean {
+    return ({ name }) => name.toLowerCase().startsWith(search.toLowerCase());
+}
+
+function byNameCaseInsensitive(collection: Collection) {
+    return collection.name.toLowerCase();
 }
 
 const initialState = {
@@ -194,6 +206,7 @@ const initialState = {
     isFetchingMore: false,
     fetchMoreError: null,
     detached: {},
+    search: '',
 };
 
 export type UseEmbeddedCollectionsReturn = {
@@ -270,7 +283,7 @@ export default function useEmbeddedCollections(
         attached: arrayToMap(initialAttachedCollections),
     }));
 
-    const { attached, detached, page, hasMore, isFetchingMore, fetchMoreError } = state;
+    const { attached, detached, page, hasMore, isFetchingMore, fetchMoreError, search } = state;
 
     useEffect(() => {
         return fetchMore(
@@ -283,18 +296,22 @@ export default function useEmbeddedCollections(
         );
     }, [excludedCollectionId, initialAttachedCollections]);
 
-    const onSearch = (search: string) => {
-        dispatch({ type: 'resetDetachedList' });
-        fetchMore(excludedCollectionId, attached, {}, search, 1, dispatch);
+    const onSearch = (newSearch: string) => {
+        dispatch({ type: 'resetDetachedList', search: newSearch });
+        fetchMore(excludedCollectionId, attached, {}, newSearch, 1, dispatch);
     };
 
     return {
-        attached: sortBy(Object.values(attached), 'name'),
-        detached: sortBy(Object.values(detached), 'name'),
+        attached: sortBy(Object.values(attached), byNameCaseInsensitive).filter(
+            compareNameLowercase(search)
+        ),
+        detached: sortBy(Object.values(detached), byNameCaseInsensitive).filter(
+            compareNameLowercase(search)
+        ),
         attach: (id: string) => dispatch({ type: 'attachCollection', id }),
         detach: (id: string) => dispatch({ type: 'detachCollection', id }),
         hasMore,
-        fetchMore: (search: string) =>
+        fetchMore: () =>
             fetchMore(excludedCollectionId, attached, detached, search, page, dispatch),
         onSearch,
         isFetchingMore,
