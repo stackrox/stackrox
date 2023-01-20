@@ -19,7 +19,7 @@ func Singleton() Store {
 	}
 
 	once.Do(func() {
-		New(globaldb.GetPostgres())
+		store = New(globaldb.GetPostgres())
 	})
 	return store
 }

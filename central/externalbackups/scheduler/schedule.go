@@ -55,7 +55,7 @@ func (s *scheduler) backup(w *io.PipeWriter, includeCerts bool) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		err = export.BackupPostgres(context.Background(), globaldb.GetPostgres(), s.backupListener, includeCerts, w)
 	} else {
-		err = export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, includeCerts, w)
+		err = export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), s.backupListener, includeCerts, w)
 	}
 	if err != nil {
 		log.Errorf("Failed to write backup to io.writer: %v", err)

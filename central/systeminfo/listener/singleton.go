@@ -14,7 +14,7 @@ var (
 // Singleton provides the singleton instance of the backup listener interface.
 func Singleton() BackupListener {
 	once.Do(func() {
-		newBackupListener(systemInfoStorage.Singleton())
+		ls = newBackupListener(systemInfoStorage.Singleton())
 	})
 	return ls
 }

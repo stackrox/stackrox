@@ -114,7 +114,7 @@ func serializeDB(rocksDB *rocksdb.RocksDB, boltDB *bolt.DB, backupListener liste
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
-		if err := export.Backup(req.Context(), boltDB, rocksDB, nil, includeCerts, w); err != nil {
+		if err := export.Backup(req.Context(), boltDB, rocksDB, backupListener, includeCerts, w); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)
 			return
 		}
