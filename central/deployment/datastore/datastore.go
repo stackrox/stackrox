@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
-	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	"github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -67,10 +66,6 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
-	storage, err := cache.NewCachedStore(storage)
-	if err != nil {
-		return nil, err
-	}
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -117,10 +112,6 @@ func NewTestDataStore(t testing.TB, storage store.Store, graphProvider graph.Pro
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	if t == nil {
 		return nil, errors.New("NewTestDataStore called without testing")
-	}
-	storage, err := cache.NewCachedStore(storage)
-	if err != nil {
-		return nil, err
 	}
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher

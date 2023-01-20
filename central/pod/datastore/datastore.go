@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/central/pod/index"
-	"github.com/stackrox/rox/central/pod/store/cache"
 	"github.com/stackrox/rox/central/pod/store/postgres"
 	"github.com/stackrox/rox/central/pod/store/rocksdb"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
@@ -40,10 +39,7 @@ type DataStore interface {
 
 // NewRocksDB creates a pod datastore based on RocksDB
 func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store, err := cache.NewCachedStore(rocksdb.New(db))
-	if err != nil {
-		return nil, err
-	}
+	store := rocksdb.New(db)
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)
 	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
@@ -51,10 +47,7 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 
 // NewPostgresDB creates a pod datastore based on Postgres
 func NewPostgresDB(db *pgxpool.Pool, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store, err := cache.NewCachedStore(postgres.New(db))
-	if err != nil {
-		return nil, err
-	}
+	store := postgres.New(db)
 	indexer := postgres.NewIndexer(db)
 	searcher := search.New(store, indexer)
 	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
