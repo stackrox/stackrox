@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/store"
 )
 
 var (
@@ -78,34 +77,21 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 					c.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
-				c.handleNodeInventory(toC, inventory)
+				if inventory == nil {
+					log.Warnf("Received nil NodeInventory - not sending node inventory to Central")
+					break
+				}
+				if nodeWrap := c.nodeMatcher.GetNodeResource(inventory.GetNodeName()); nodeWrap != nil {
+					inventory.NodeId = nodeWrap.GetId()
+					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), inventory.GetNodeId())
+					c.sendNodeInventory(toC, inventory)
+				} else {
+					log.Warnf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
+				}
 			}
 		}
 	}()
 	return toC
-}
-
-func (c *nodeInventoryHandlerImpl) handleNodeInventory(toC chan<- *central.MsgFromSensor, inventory *storage.NodeInventory) {
-	nodeWrap := findNode(inventory, c.nodeMatcher)
-	if nodeWrap == nil || inventory == nil {
-		return
-	}
-	inventory.NodeId = nodeWrap.GetId()
-	c.sendNodeInventory(toC, inventory)
-}
-
-func findNode(inventory *storage.NodeInventory, matcher NodeIDMatcher) *store.NodeWrap {
-	if inventory == nil {
-		return nil
-	}
-	nodeResource, _ := matcher.GetNodeResource(inventory.GetNodeName())
-
-	if nodeResource == nil {
-		log.Errorf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
-		return nil
-	}
-	log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeResource.GetId())
-	return nodeResource
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *central.MsgFromSensor, inventory *storage.NodeInventory) {

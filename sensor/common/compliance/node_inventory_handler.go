@@ -27,7 +27,7 @@ func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMat
 
 // NodeIDMatcher helps finding NodeWrap by name
 type NodeIDMatcher interface {
-	GetNodeResource(nodename string) (*store.NodeWrap, error)
+	GetNodeResource(nodename string) *store.NodeWrap
 }
 
 // NodeIDMatcherImpl finds Node by name within NodeStore
@@ -43,6 +43,6 @@ func NewNodeIDMatcher(store store.NodeStore) *NodeIDMatcherImpl {
 }
 
 // GetNodeResource returns NodeWrap if a Node with matching name has been found
-func (c *NodeIDMatcherImpl) GetNodeResource(nodename string) (*store.NodeWrap, error) {
-	return c.nodeStore.GetNode(nodename), nil
+func (c *NodeIDMatcherImpl) GetNodeResource(nodename string) *store.NodeWrap {
+	return c.nodeStore.GetNode(nodename)
 }

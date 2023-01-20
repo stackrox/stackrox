@@ -13,6 +13,13 @@ type MockNodeStore struct {
 	nodes map[string]*store.NodeWrap
 }
 
+func NewMockNodeStore() *MockNodeStore {
+	return &MockNodeStore{
+		mutex: sync.RWMutex{},
+		nodes: make(map[string]*store.NodeWrap),
+	}
+}
+
 // GetNode mocks base method.
 func (m *MockNodeStore) GetNode(nodeName string) *store.NodeWrap {
 	m.mutex.RLock()

@@ -52,7 +52,7 @@ type NodeInventoryHandlerTestSuite struct {
 }
 
 func (s *NodeInventoryHandlerTestSuite) SetupTest() {
-	s.nodeStore = &mocks.MockNodeStore{}
+	s.nodeStore = mocks.NewMockNodeStore()
 }
 
 func assertNoGoroutineLeaks(t *testing.T) {
@@ -239,6 +239,6 @@ func newmockNodeIDMatcherImpl(store store.NodeStore) *mockNodeIDMatcherImpl {
 	}
 }
 
-func (c *mockNodeIDMatcherImpl) GetNodeResource(nodename string) (*store.NodeWrap, error) {
-	return &store.NodeWrap{Node: &storage.Node{Name: nodename}}, nil
+func (c *mockNodeIDMatcherImpl) GetNodeResource(nodename string) *store.NodeWrap {
+	return &store.NodeWrap{Node: &storage.Node{Name: nodename}}
 }
