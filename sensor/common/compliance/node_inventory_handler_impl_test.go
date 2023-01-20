@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/compliance/mocks"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -72,7 +72,7 @@ func (s *NodeInventoryHandlerImplTestSuite) TestFindNodeID() {
 	}
 	for name, tc := range tt {
 		s.Run(name, func() {
-			// reset in-mem store
+			// cleanup store state
 			s.nodeStore = mocks.NewMockNodeStore()
 			// populate store with data
 			for _, nwrap := range tc.storageState {
@@ -80,7 +80,7 @@ func (s *NodeInventoryHandlerImplTestSuite) TestFindNodeID() {
 			}
 
 			// create handler with mocked nodeStore
-			h := NewNodeInventoryHandler(dummy, newmockNodeIDMatcherImpl2(s.nodeStore))
+			h := NewNodeInventoryHandler(dummy, NewNodeIDMatcher(s.nodeStore))
 
 			for inventory, expectedID := range tc.namesToExpectedIDs {
 				gotID := h.findNodeID(inventory)
@@ -89,18 +89,4 @@ func (s *NodeInventoryHandlerImplTestSuite) TestFindNodeID() {
 		})
 	}
 
-}
-
-type mockNodeIDMatcherImpl2 struct {
-	nodeStore store.NodeStore
-}
-
-func newmockNodeIDMatcherImpl2(store store.NodeStore) *mockNodeIDMatcherImpl2 {
-	return &mockNodeIDMatcherImpl2{
-		nodeStore: store,
-	}
-}
-
-func (c *mockNodeIDMatcherImpl2) GetNodeResource(nodename string) *store.NodeWrap {
-	return c.nodeStore.GetNode(nodename)
 }

@@ -9,6 +9,8 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
+	storage "github.com/stackrox/rox/generated/storage"
+	store "github.com/stackrox/rox/sensor/common/store"
 	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	resources "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
@@ -309,4 +311,81 @@ func (m *MockDispatcherRegistry) ForServices() resources.Dispatcher {
 func (mr *MockDispatcherRegistryMockRecorder) ForServices() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForServices", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForServices))
+}
+
+// MockNodeStore is a mock of NodeStore interface.
+type MockNodeStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockNodeStoreMockRecorder
+}
+
+// MockNodeStoreMockRecorder is the mock recorder for MockNodeStore.
+type MockNodeStoreMockRecorder struct {
+	mock *MockNodeStore
+}
+
+// NewMockNodeStore creates a new mock instance.
+func NewMockNodeStore(ctrl *gomock.Controller) *MockNodeStore {
+	mock := &MockNodeStore{ctrl: ctrl}
+	mock.recorder = &MockNodeStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockNodeStore) EXPECT() *MockNodeStoreMockRecorder {
+	return m.recorder
+}
+
+// AddOrUpdateNode mocks base method.
+func (m *MockNodeStore) AddOrUpdateNode(node *store.NodeWrap) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddOrUpdateNode", node)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// AddOrUpdateNode indicates an expected call of AddOrUpdateNode.
+func (mr *MockNodeStoreMockRecorder) AddOrUpdateNode(node interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrUpdateNode", reflect.TypeOf((*MockNodeStore)(nil).AddOrUpdateNode), node)
+}
+
+// GetNode mocks base method.
+func (m *MockNodeStore) GetNode(nodeName string) *store.NodeWrap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNode", nodeName)
+	ret0, _ := ret[0].(*store.NodeWrap)
+	return ret0
+}
+
+// GetNode indicates an expected call of GetNode.
+func (mr *MockNodeStoreMockRecorder) GetNode(nodeName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNode", reflect.TypeOf((*MockNodeStore)(nil).GetNode), nodeName)
+}
+
+// GetNodes mocks base method.
+func (m *MockNodeStore) GetNodes() []*store.NodeWrap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNodes")
+	ret0, _ := ret[0].([]*store.NodeWrap)
+	return ret0
+}
+
+// GetNodes indicates an expected call of GetNodes.
+func (mr *MockNodeStoreMockRecorder) GetNodes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodes", reflect.TypeOf((*MockNodeStore)(nil).GetNodes))
+}
+
+// RemoveNode mocks base method.
+func (m *MockNodeStore) RemoveNode(node *storage.Node) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveNode", node)
+}
+
+// RemoveNode indicates an expected call of RemoveNode.
+func (mr *MockNodeStoreMockRecorder) RemoveNode(node interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNode", reflect.TypeOf((*MockNodeStore)(nil).RemoveNode), node)
 }
