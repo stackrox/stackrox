@@ -411,7 +411,6 @@ function CollectionForm({
                                 </Alert>
                             )}
                             <RuleSelector
-                                collection={values}
                                 entityType="Deployment"
                                 scopedResourceSelector={values.resourceSelector.Deployment}
                                 handleChange={onResourceSelectorChange}
@@ -422,7 +421,6 @@ function CollectionForm({
                                 in
                             </Label>
                             <RuleSelector
-                                collection={values}
                                 entityType="Namespace"
                                 scopedResourceSelector={values.resourceSelector.Namespace}
                                 handleChange={onResourceSelectorChange}
@@ -433,7 +431,6 @@ function CollectionForm({
                                 in
                             </Label>
                             <RuleSelector
-                                collection={values}
                                 entityType="Cluster"
                                 scopedResourceSelector={values.resourceSelector.Cluster}
                                 handleChange={onResourceSelectorChange}

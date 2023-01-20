@@ -1,33 +1,25 @@
 import React from 'react';
-import { Label, Button, Divider, ValidatedOptions } from '@patternfly/react-core';
+import { Label, Button, Divider, ValidatedOptions, TextInput } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { FormikErrors } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
 
 import useIndexKey from 'hooks/useIndexKey';
-import {
-    ByLabelResourceSelector,
-    ClientCollection,
-    ScopedResourceSelector,
-    SelectorEntityType,
-} from '../types';
-import { AutoCompleteSelect, AutoCompleteSelectProps } from './AutoCompleteSelect';
+import { ByLabelResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
 
 export type ByLabelSelectorProps = {
-    collection: ClientCollection;
     entityType: SelectorEntityType;
     scopedResourceSelector: ByLabelResourceSelector;
     handleChange: (
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
     ) => void;
-    placeholder: AutoCompleteSelectProps['placeholder'];
+    placeholder: string;
     validationErrors: FormikErrors<ByLabelResourceSelector> | undefined;
     isDisabled: boolean;
 };
 
 function ByLabelSelector({
-    collection,
     entityType,
     scopedResourceSelector,
     handleChange,
@@ -126,26 +118,25 @@ function ByLabelSelector({
                                         className="rule-selector-list-item"
                                         key={keyFor(valueIndex)}
                                     >
-                                        <AutoCompleteSelect
-                                            id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
-                                            entityType={entityType}
-                                            typeAheadAriaLabel={ariaLabel}
-                                            className="pf-u-flex-grow-1 pf-u-w-auto"
-                                            selectedOption={value}
-                                            onChange={(val) =>
-                                                onChangeLabelValue(
-                                                    scopedResourceSelector,
-                                                    ruleIndex,
-                                                    valueIndex,
-                                                    val
-                                                )
-                                            }
-                                            placeholder={placeholder}
-                                            validated={validated}
-                                            isDisabled={isDisabled}
-                                            collection={collection}
-                                            autocompleteField={`${entityType} Label`}
-                                        />
+                                        <div className="rule-selector-name-value-input">
+                                            <TextInput
+                                                id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
+                                                aria-label={ariaLabel}
+                                                className="pf-u-flex-grow-1 pf-u-w-auto"
+                                                onChange={(val) =>
+                                                    onChangeLabelValue(
+                                                        scopedResourceSelector,
+                                                        ruleIndex,
+                                                        valueIndex,
+                                                        val
+                                                    )
+                                                }
+                                                placeholder={placeholder}
+                                                validated={validated}
+                                                value={value}
+                                                isDisabled={isDisabled}
+                                            />
+                                        </div>
                                         {!isDisabled && (
                                             <Button
                                                 aria-label={`Delete ${value}`}
