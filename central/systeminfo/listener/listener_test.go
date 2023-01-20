@@ -13,7 +13,6 @@ import (
 )
 
 func TestListener(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skip postgres listener tests")
 		t.SkipNow()
@@ -49,7 +48,10 @@ func TestListener(t *testing.T) {
 }
 
 func TestListenerWithPostgresDisabled(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "false")
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("Skip non-postgres listener tests")
+		t.SkipNow()
+	}
 
 	listener := newBackupListener(nil)
 
