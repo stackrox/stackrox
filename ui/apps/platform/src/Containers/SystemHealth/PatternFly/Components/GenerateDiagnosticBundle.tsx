@@ -10,6 +10,8 @@ import { useFormik } from 'formik';
 import { parse } from 'date-fns';
 
 import downloadDiagnostics, { DiagnosticBundleRequest } from 'services/DebugService';
+import useMetadata from 'hooks/useMetadata';
+import { getVersionedDocs } from 'utils/versioning';
 import DiagnosticBundleForm from './DiagnosticBundleForm';
 import { getQueryString, startingTimeRegExp } from '../utils/diagnosticBundleUtils';
 
@@ -23,6 +25,7 @@ function GenerateDiagnosticBundle(): ReactElement {
     const [startingTimeObject, setStartingTimeObject] = useState<Date | null>(null); // parsed from text
     const [isStartingTimeValid, setIsStartingTimeValid] = useState<boolean>(true);
     const [currentTimeObject, setCurrentTimeObject] = useState<Date | null>(null); // for pure message
+    const { version } = useMetadata();
 
     function onChangeStartingTime(event: React.FormEvent<HTMLInputElement>): void {
         const trimmedText = event.currentTarget.value.trim();
@@ -80,22 +83,27 @@ function GenerateDiagnosticBundle(): ReactElement {
             >
                 Download diagnostic bundle
             </Button>
-            <Button
-                variant="link"
-                isInline
-                component="a"
-                href="/docs/product/rhacs/latest/configuration/generate-diagnostic-bundle.html"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                <Flex
-                    alignItems={{ default: 'alignItemsCenter' }}
-                    spaceItems={{ default: 'spaceItemsSm' }}
+            {version && (
+                <Button
+                    variant="link"
+                    isInline
+                    component="a"
+                    href={getVersionedDocs(
+                        version,
+                        'configuration/generate-diagnostic-bundle.html'
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
                 >
-                    <span>Generate a diagnostic bundle</span>
-                    <ExternalLinkAltIcon color="var(--pf-global--link--Color)" />
-                </Flex>
-            </Button>
+                    <Flex
+                        alignItems={{ default: 'alignItemsCenter' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                    >
+                        <span>Generate a diagnostic bundle</span>
+                        <ExternalLinkAltIcon color="var(--pf-global--link--Color)" />
+                    </Flex>
+                </Button>
+            )}
         </Flex>
     );
 
