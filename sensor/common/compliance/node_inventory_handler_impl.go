@@ -104,7 +104,7 @@ func findNode(inventory *storage.NodeInventory, matcher NodeIDMatcher) *store.No
 		log.Errorf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
 		return nil
 	}
-	log.Infof("Successfully connected a node with name=%s - Id=%s", inventory.GetNodeName(), nodeResource.GetId())
+	log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeResource.GetId())
 	return nodeResource
 }
 
