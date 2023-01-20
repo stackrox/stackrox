@@ -29,6 +29,8 @@ func getCollectorVersion() string {
 
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
+	// Deprecated: BuildDate will be removed in 3.75. Please do not use it.
+	// TODO(ROX-14336): delete it
 	BuildDate time.Time `json:"BuildDate"`
 	// CollectorVersion is exported for compatibility with users that depend on `roxctl version --json` output.
 	// Please do not depend on it. Rely on internal.CollectorVersion if you need the value from the COLLECTOR_VERSION file,

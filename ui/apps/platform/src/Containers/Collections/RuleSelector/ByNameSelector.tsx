@@ -5,18 +5,15 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import { FormikErrors } from 'formik';
 import useIndexKey from 'hooks/useIndexKey';
-import { AutoCompleteSelect } from './AutoCompleteSelect';
 import {
     ByNameMatchType,
     ByNameResourceSelector,
-    ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
 } from '../types';
 import { NameMatchTypeSelect } from './MatchTypeSelect';
 
 export type ByNameSelectorProps = {
-    collection: ClientCollection;
     entityType: SelectorEntityType;
     scopedResourceSelector: ByNameResourceSelector;
     handleChange: (
@@ -29,7 +26,6 @@ export type ByNameSelectorProps = {
 };
 
 function ByNameSelector({
-    collection,
     entityType,
     scopedResourceSelector,
     handleChange,
@@ -105,32 +101,18 @@ function ByNameSelector({
                                 </NameMatchTypeSelect>
                             </div>
                             <div className="rule-selector-name-value-input">
-                                {matchType === 'REGEX' ? (
-                                    <TextInput
-                                        id={inputId}
-                                        aria-label={inputAriaLabel}
-                                        placeholder={`^${placeholder}$`}
-                                        className={inputClassName}
-                                        onChange={inputOnChange}
-                                        validated={inputValidated}
-                                        value={value}
-                                        isDisabled={isDisabled}
-                                    />
-                                ) : (
-                                    <AutoCompleteSelect
-                                        id={inputId}
-                                        entityType={entityType}
-                                        typeAheadAriaLabel={inputAriaLabel}
-                                        className={inputClassName}
-                                        onChange={inputOnChange}
-                                        placeholder={placeholder}
-                                        validated={inputValidated}
-                                        selectedOption={value}
-                                        isDisabled={isDisabled}
-                                        collection={collection}
-                                        autocompleteField={entityType}
-                                    />
-                                )}
+                                <TextInput
+                                    id={inputId}
+                                    aria-label={inputAriaLabel}
+                                    placeholder={
+                                        matchType === 'REGEX' ? `^${placeholder}$` : placeholder
+                                    }
+                                    className={inputClassName}
+                                    onChange={inputOnChange}
+                                    validated={inputValidated}
+                                    value={value}
+                                    isDisabled={isDisabled}
+                                />
                             </div>
                             {!isDisabled && (
                                 <Button
