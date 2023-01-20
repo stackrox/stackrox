@@ -25,16 +25,6 @@ function DeploymentRuleSelector({ defaultSelector, onChange }) {
 
     return (
         <RuleSelector
-            collection={{
-                name: '',
-                description: '',
-                resourceSelector: {
-                    Deployment: { type: 'All' },
-                    Namespace: { type: 'All' },
-                    Cluster: { type: 'All' },
-                },
-                embeddedCollectionIds: [],
-            }}
             entityType="Deployment"
             scopedResourceSelector={resourceSelector}
             handleChange={(_, newSelector) => setResourceSelector(newSelector)}
