@@ -251,7 +251,7 @@ export function transformActiveData(
                 data: {
                     tag: portProtocolLabel,
                     portProtocolLabel,
-                    properties,
+                    sourceToTargetProperties: properties,
                     isBidirectional: false,
                 },
             };
@@ -267,6 +267,7 @@ export function transformActiveData(
                 edge.data.tag = mergedPortEdgeLabel;
                 edge.data.portProtocolLabel = mergedPortEdgeLabel;
                 edge.data.isBidirectional = true;
+                edge.data.targetToSourceProperties = edge.data.sourceToTargetProperties;
                 activeEdgeMap[reverseEdgeId] = edge;
             } else {
                 activeEdgeMap[edgeId] = edge;
@@ -382,22 +383,34 @@ export function transformPolicyData(
                 data: {
                     tag: portProtocolLabel,
                     portProtocolLabel,
-                    properties,
+                    sourceToTargetProperties: properties,
                     isBidirectional: false,
                 },
             };
-            // this is to reuse the first edge if the edge is bidirectional;
+            // if the reverse edge already exists, the edge is bidirectional
             if (policyEdgeMap[reverseEdgeId]) {
                 edge.id = reverseEdgeId;
-                edge.data.startTerminalType = EdgeTerminalType.directional;
-                edge.data.endTerminalType = EdgeTerminalType.directional;
                 const mergedPortEdgeLabel = mergePortProtocolEdgeLabels(
                     portProtocolLabel,
                     policyEdgeMap[reverseEdgeId].data.tag
                 );
-                edge.data.tag = mergedPortEdgeLabel;
-                edge.data.portProtocolLabel = mergedPortEdgeLabel;
-                edge.data.isBidirectional = true;
+                const reverseData = {
+                    ...edge.data,
+                    isBidirectional: true,
+                    // this makes the PF topology library render arrows on both sides
+                    startTerminalType: EdgeTerminalType.directional,
+                    endTerminalType: EdgeTerminalType.directional,
+                    // this is to save the label string so we don't have to recalulate
+                    portProtocolLabel: mergedPortEdgeLabel,
+                    // the edge label shows up when this exists, we set it so the
+                    // edge label shows up by default
+                    tag: mergedPortEdgeLabel,
+                    // the reverse edge has reverse source/target so we store
+                    // the old properties in the opposite direction
+                    targetToSourceProperties:
+                        policyEdgeMap[reverseEdgeId].data.sourceToTargetProperties,
+                };
+                edge.data = reverseData;
                 policyEdgeMap[reverseEdgeId] = edge;
             } else {
                 policyEdgeMap[edgeId] = edge;
@@ -564,7 +577,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
         visible: true,
         edgeStyle: EdgeStyle.dashed,
         data: {
-            properties: [],
+            sourceToTargetProperties: [],
             isBidirectional: false,
             portProtocolLabel: '',
         },
@@ -577,7 +590,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
         visible: true,
         edgeStyle: EdgeStyle.dashed,
         data: {
-            properties: [],
+            sourceToTargetProperties: [],
             isBidirectional: false,
             portProtocolLabel: '',
         },

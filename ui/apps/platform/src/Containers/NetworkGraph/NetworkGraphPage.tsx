@@ -202,12 +202,10 @@ function NetworkGraphPage() {
                 // need to improve perf to only perform this if edgeLabel has changed
                 updatedEdges = model.edges.map((edge) => {
                     const { data } = edge;
-                    const { properties } = data;
                     return {
                         ...edge,
                         data: {
                             ...data,
-                            properties,
                             tag: showEdgeLabels ? data.portProtocolLabel : undefined,
                         },
                     };

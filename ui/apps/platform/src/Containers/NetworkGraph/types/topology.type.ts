@@ -108,8 +108,12 @@ export type EdgeData = {
     tag?: string;
     // this is so that we can easily reference the tag content
     portProtocolLabel: string;
-    properties: EdgeProperties[];
+    // this makes the PF topology library render arrows on both sides
     startTerminalType?: EdgeTerminalType;
     endTerminalType?: EdgeTerminalType;
+    // previous was `properties`
+    sourceToTargetProperties: EdgeProperties[];
+    // this is for holding on to properties for bidirectional edges
+    targetToSourceProperties?: EdgeProperties[];
     isBidirectional: boolean;
 };
