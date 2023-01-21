@@ -180,11 +180,7 @@ func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) 
 		return nil, err
 	}
 	if !found {
-		return nil, errors.New("database backup status not found")
-	}
-	// Do not share requestor information for anonymous users.
-	if authn.IdentityFromContextOrNil(ctx) == nil {
-		sysInfo.BackupInfo.Requestor = nil
+		return nil, errox.NotFound
 	}
 	return &v1.DatabaseBackupStatus{
 		BackupInfo: sysInfo.GetBackupInfo(),

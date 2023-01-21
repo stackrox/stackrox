@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -57,6 +58,9 @@ func (l *backupListenerImpl) updateSystemInfo(ctx context.Context, backupStatus 
 		Status:          backupStatus,
 		Requestor:       authn.UserFromContext(ctx),
 	}
+
+	// This is a system op.
+	ctx = sac.WithAllAccess(context.Background())
 	storedInfo, _, err := l.systemInfoStore.Get(ctx)
 	if err != nil {
 		log.Errorf("Could not store backup metadata: %v", err)

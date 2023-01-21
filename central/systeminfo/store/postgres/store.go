@@ -7,7 +7,9 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -19,6 +21,10 @@ const (
 	getStmt    = "SELECT serialized FROM " + tableName + " LIMIT 1"
 	insertStmt = "INSERT INTO " + tableName + " (serialized) VALUES($1)"
 	deleteStmt = "DELETE FROM " + tableName
+)
+
+var (
+	sysInfoSAC = sac.ForResource(resources.Administration)
 )
 
 // Store provides functionality to read and write system info.
@@ -58,9 +64,10 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 }
 
 func (s *storeImpl) get(ctx context.Context) (*storage.SystemInfo, bool, error) {
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS)
-	if !scopeChecker.IsAllowed() {
-		return nil, false, nil
+	if ok, err := sysInfoSAC.ReadAllowed(ctx); err != nil {
+		return nil, false, err
+	} else if !ok {
+		return nil, false, errox.NotAuthorized
 	}
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "SystemInfo")
@@ -83,9 +90,8 @@ func (s *storeImpl) get(ctx context.Context) (*storage.SystemInfo, bool, error) 
 }
 
 func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.SystemInfo) error {
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	if ok, err := sysInfoSAC.WriteAllowed(ctx); err != nil || !ok {
+		return err
 	}
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Version")
