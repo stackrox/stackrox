@@ -16,7 +16,7 @@ export PORT_FORWARD_LOGS="/tmp/port-forward-logs"
 # shellcheck disable=SC2120
 deploy_stackrox() {
     setup_podsecuritypolicies_config
-    
+
     deploy_central
 
     get_central_basic_auth_creds
@@ -216,11 +216,12 @@ setup_generated_certs_for_test() {
 
 setup_podsecuritypolicies_config() {
     info "Set POD_SECURITY_POLYCIES variable based on kubernetes version"
-    local version=$(kubectl version --output json)
+    local version
+    version=(kubectl version --output json)
     local majorVersion
-    majorVersion=$(echo $version | jq -r .serverVersion.major)
+    majorVersion=$(echo "$version" | jq -r .serverVersion.major)
     local minorVersion
-    minorVersion=$(echo $version | jq -r .serverVersion.minor)
+    minorVersion=$(echo "$version" | jq -r .serverVersion.minor)
 
     # PodSecurityPolicy was removed in version 1.25
     if (( "$majorVersion" >= 1 && "$minorVersion" >= 25 )); then
