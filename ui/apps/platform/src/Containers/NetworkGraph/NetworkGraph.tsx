@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { useMemo } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
+import { action } from 'mobx';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
+    SelectionEventListener,
+    useEventListener,
     TopologySideBar,
     TopologyView,
     createTopologyControlButtons,
@@ -13,6 +16,8 @@ import {
     Visualization,
     VisualizationSurface,
     VisualizationProvider,
+    Edge,
+    Controller,
 } from '@patternfly/react-topology';
 
 import { networkBasePathPF } from 'routePaths';
@@ -64,22 +69,21 @@ export type NetworkGraphProps = {
     edgeState: EdgeState;
     simulation: Simulation;
     selectedClusterId: string;
+    updateCount: number;
 };
 
 export type TopologyComponentProps = {
     model: CustomModel;
     edgeState: EdgeState;
-    simulation: Simulation;
+    // simulation: Simulation;
     selectedClusterId: string;
-    simulator: NetworkPolicySimulator;
-    setNetworkPolicyModification: SetNetworkPolicyModification;
-    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
+    // simulator: NetworkPolicySimulator;
+    // setNetworkPolicyModification: SetNetworkPolicyModification;
+    // applyNetworkPolicyModification: ApplyNetworkPolicyModification;
 };
 
 function getNodeEdges(selectedNode) {
-    const egressEdges = selectedNode.getSourceEdges();
-    const ingressEdges = selectedNode.getTargetEdges();
-    return [...egressEdges, ...ingressEdges];
+    return [...selectedNode.getSourceEdges(), ...selectedNode.getTargetEdges()];
 }
 
 function setVisibleEdges(edges) {
@@ -87,6 +91,33 @@ function setVisibleEdges(edges) {
         edge.setVisible(true);
     });
 }
+
+// jeff's solution
+const setEdgesVisible = action((edges: Edge[], visible: boolean) =>
+    edges.forEach((edge) => edge.setVisible(visible))
+);
+
+// jeff's solution
+const showNodeEdges = (controller: Controller, nodeId: string) => {
+    console.log('showNodeEdges');
+    if (!nodeId) {
+        setEdgesVisible(controller.getGraph().getEdges(), true);
+        return;
+    }
+
+    setEdgesVisible(controller.getGraph().getEdges(), false);
+
+    const selectedNode = controller.getNodeById(nodeId);
+    if (selectedNode?.isGroup()) {
+        // set visible edges
+        selectedNode
+            .getAllNodeChildren()
+            .forEach((child) => setEdgesVisible(getNodeEdges(child), true));
+    } else if (selectedNode) {
+        // set visible edges
+        setEdgesVisible(getNodeEdges(selectedNode), true);
+    }
+};
 
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
 function clearSimulationQuery(search: string): string {
@@ -99,24 +130,32 @@ function clearSimulationQuery(search: string): string {
 const TopologyComponent = ({
     model,
     edgeState,
-    simulation,
+    // simulation,
     selectedClusterId,
-    simulator,
-    setNetworkPolicyModification,
-    applyNetworkPolicyModification,
-}: TopologyComponentProps) => {
+}: // simulator,
+// setNetworkPolicyModification,
+// applyNetworkPolicyModification,
+TopologyComponentProps) => {
     const history = useHistory();
     const { detailId } = useParams();
     const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
     const controller = useVisualizationController();
+    console.log('TopologyComponent');
+
+    function resetGraphToDefault() {
+        console.log('TopologyComponent: resetGraphToDefault');
+        controller.fromModel(model, true);
+    }
 
     function rerenderGraph() {
+        console.log('TopologyComponent: rerenderGraph');
         resetGraphToDefault();
-        setNodes();
+        // setNodes();
         setEdges();
     }
 
     function showExtraneousNodes() {
+        console.log('showExtraneousNodes');
         // else if there is a selected node, create a node to collect extraneous flows
         const selectedNode = controller.getNodeById(detailId);
         // TODO: figure out if/how to support namespaces
@@ -142,6 +181,7 @@ const TopologyComponent = ({
     }
 
     function hideExtraneousNodes() {
+        console.log('hideExtraneousNodes');
         // if there is no selected node, check if extraneous nodes exist and remove them
         const extraneousIngressNode = controller.getElementById('extraneous-ingress');
         if (extraneousIngressNode) {
@@ -154,6 +194,7 @@ const TopologyComponent = ({
     }
 
     function setExtraneousEdges() {
+        console.log('setExtraneousEdges');
         const currentModel = controller.toModel() as CustomModel;
         const extraneousIngressNode = controller.getElementById('extraneous-ingress');
         const extraneousEgressNode = controller.getElementById('extraneous-egress');
@@ -185,6 +226,7 @@ const TopologyComponent = ({
     }
 
     function removeExtraneousEdges() {
+        console.log('removeExtraneousEdges');
         // if there is no selected node, check if extraneous edges exist and remove them
         const extraneousIngressEdge = controller.getElementById('extraneous-ingress-edge');
         if (extraneousIngressEdge) {
@@ -202,6 +244,7 @@ const TopologyComponent = ({
     }
 
     function onSelect(ids: string[]) {
+        console.log('TopologyComponent: onSelect');
         const newSelectedId = ids?.[0] || '';
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -226,103 +269,95 @@ const TopologyComponent = ({
         }
     }
 
-    function resetGraphToDefault() {
-        removeExtraneousEdges();
-        controller.fromModel(model, true);
-    }
-
     // TODO: figure out how to add/show edges more performantly/smoothly
     function setEdges() {
+        // removeExtraneousEdges();
+        console.log('TopologyComponent: setEdges');
         if (detailId) {
-            const selectedNode = controller.getNodeById(detailId);
-            if (selectedNode?.isGroup()) {
-                selectedNode.getAllNodeChildren().forEach((child) => {
-                    // set visible edges
-                    setVisibleEdges(getNodeEdges(child));
-                });
-            } else if (selectedNode) {
-                // set visible edges
-                setVisibleEdges(getNodeEdges(selectedNode));
-            }
+            // const selectedNode = controller.getNodeById(detailId);
+            // if (selectedNode?.isGroup()) {
+            //     selectedNode.getAllNodeChildren().forEach((child) => {
+            //         // set visible edges
+            //         setVisibleEdges(getNodeEdges(child));
+            //     });
+            // } else if (selectedNode) {
+            //     // set visible edges
+            //     setVisibleEdges(getNodeEdges(selectedNode));
+            // }
 
-            // setting extraneous edges
-            if (edgeState === 'extraneous') {
-                setExtraneousEdges();
-            }
+            // // setting extraneous edges
+            // if (edgeState === 'extraneous') {
+            //     setExtraneousEdges();
+            // }
+
+            // jeff's solution
+            showNodeEdges(controller, detailId);
         }
     }
 
     React.useEffect(() => {
-        // to prevent error where graph hasn't initialized yet
-        if (controller.hasGraph()) {
-            rerenderGraph();
-        }
-    }, [detailId]);
-
-    React.useEffect(() => {
-        controller.fromModel(model, true);
-        controller.addEventListener(SELECTION_EVENT, onSelect);
-
+        console.log('TopologyComponent: useEffect [model, detailId]');
         rerenderGraph();
+    }, [model, detailId]);
 
-        return () => {
-            controller.removeEventListener(SELECTION_EVENT, onSelect);
-        };
-    }, [model]);
+    useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
+        console.log('TopologyComponent: useEventListener');
+        onSelect(ids);
+    });
 
     const selectedIds = selectedEntity ? [selectedEntity.id] : [];
 
     return (
         <TopologyView
-            sideBar={
-                <TopologySideBar resizable onClose={closeSidebar}>
-                    {simulation.isOn && simulation.type === 'networkPolicy' && (
-                        <NetworkPolicySimulatorSidePanel
-                            selectedClusterId={selectedClusterId}
-                            simulator={simulator}
-                            setNetworkPolicyModification={setNetworkPolicyModification}
-                            applyNetworkPolicyModification={applyNetworkPolicyModification}
-                        />
-                    )}
-                    {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
-                        <NamespaceSideBar
-                            namespaceId={selectedEntity.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
-                        />
-                    )}
-                    {selectedEntity && selectedEntity?.data?.type === 'DEPLOYMENT' && (
-                        <DeploymentSideBar
-                            deploymentId={selectedEntity.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
-                        />
-                    )}
-                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_GROUP' && (
-                        <ExternalGroupSideBar
-                            id={selectedEntity.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
-                        />
-                    )}
-                    {selectedEntity && selectedEntity?.data?.type === 'CIDR_BLOCK' && (
-                        <CidrBlockSideBar
-                            id={selectedEntity.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
-                        />
-                    )}
-                    {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_ENTITIES' && (
-                        <ExternalEntitiesSideBar
-                            id={selectedEntity.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
-                        />
-                    )}
-                </TopologySideBar>
-            }
-            sideBarOpen={!!selectedEntity || simulation.isOn}
-            sideBarResizable
+            // sideBar={
+            //     <TopologySideBar resizable onClose={closeSidebar}>
+            //         {simulation.isOn && simulation.type === 'networkPolicy' && (
+            //             <NetworkPolicySimulatorSidePanel
+            //                 selectedClusterId={selectedClusterId}
+            //                 simulator={simulator}
+            //                 setNetworkPolicyModification={setNetworkPolicyModification}
+            //                 applyNetworkPolicyModification={applyNetworkPolicyModification}
+            //             />
+            //         )}
+            //         {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
+            //             <NamespaceSideBar
+            //                 namespaceId={selectedEntity.id}
+            //                 nodes={model?.nodes || []}
+            //                 edges={model?.edges || []}
+            //             />
+            //         )}
+            //         {selectedEntity && selectedEntity?.data?.type === 'DEPLOYMENT' && (
+            //             <DeploymentSideBar
+            //                 deploymentId={selectedEntity.id}
+            //                 nodes={model?.nodes || []}
+            //                 edges={model?.edges || []}
+            //             />
+            //         )}
+            //         {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_GROUP' && (
+            //             <ExternalGroupSideBar
+            //                 id={selectedEntity.id}
+            //                 nodes={model?.nodes || []}
+            //                 edges={model?.edges || []}
+            //             />
+            //         )}
+            //         {selectedEntity && selectedEntity?.data?.type === 'CIDR_BLOCK' && (
+            //             <CidrBlockSideBar
+            //                 id={selectedEntity.id}
+            //                 nodes={model?.nodes || []}
+            //                 edges={model?.edges || []}
+            //             />
+            //         )}
+            //         {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_ENTITIES' && (
+            //             <ExternalEntitiesSideBar
+            //                 id={selectedEntity.id}
+            //                 nodes={model?.nodes || []}
+            //                 edges={model?.edges || []}
+            //             />
+            //         )}
+            //     </TopologySideBar>
+            // }
+            // sideBarOpen={!!selectedEntity || simulation.isOn}
+            // sideBarResizable
             controlBar={
                 <TopologyControlBar
                     controlButtons={createTopologyControlButtons({
@@ -356,25 +391,31 @@ const TopologyComponent = ({
 };
 
 function compareModels(prevProps, nextProps) {
+    console.log(
+        'NetworkGraph: compareModels prevProps nextProps',
+        prevProps.updateCount,
+        nextProps.updateCount
+    );
     return (
-        prevProps.model.updateCount === nextProps.model.updateCount &&
+        prevProps.updateCount === nextProps.updateCount &&
         prevProps.simulation.isOn === nextProps.simulation.isOn &&
         prevProps.simulation.type === nextProps.simulation.type
     );
 }
 
 const NetworkGraph = React.memo<NetworkGraphProps>(
-    ({ model, edgeState, simulation, selectedClusterId }) => {
+    ({ model, edgeState, simulation, selectedClusterId, updateCount }) => {
         const controller = useMemo(() => new Visualization(), []);
         controller.registerLayoutFactory(defaultLayoutFactory);
         controller.registerComponentFactory(defaultComponentFactory);
         controller.registerComponentFactory(stylesComponentFactory);
 
-        const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
-            useNetworkPolicySimulator({
-                simulation,
-                clusterId: selectedClusterId,
-            });
+        // const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
+        //     useNetworkPolicySimulator({
+        //         simulation,
+        //         clusterId: selectedClusterId,
+        //     });
+
         const isSimulating =
             simulator.state === 'GENERATED' ||
             simulator.state === 'UNDO' ||
@@ -382,19 +423,19 @@ const NetworkGraph = React.memo<NetworkGraphProps>(
             (simulation.isOn && simulation.type === 'baseline');
 
         return (
-            <SimulationFrame isSimulating={isSimulating}>
-                <VisualizationProvider controller={controller}>
-                    <TopologyComponent
-                        model={model}
-                        edgeState={edgeState}
-                        simulation={simulation}
-                        selectedClusterId={selectedClusterId}
-                        simulator={simulator}
-                        setNetworkPolicyModification={setNetworkPolicyModification}
-                        applyNetworkPolicyModification={applyNetworkPolicyModification}
-                    />
-                </VisualizationProvider>
-            </SimulationFrame>
+            // <SimulationFrame simulator={simulator}>
+            <VisualizationProvider controller={controller}>
+                <TopologyComponent
+                    model={model}
+                    edgeState={edgeState}
+                    // simulation={simulation}
+                    selectedClusterId={selectedClusterId}
+                    // simulator={simulator}
+                    // setNetworkPolicyModification={setNetworkPolicyModification}
+                    // applyNetworkPolicyModification={applyNetworkPolicyModification}
+                />
+            </VisualizationProvider>
+            // </SimulationFrame>
         );
     },
     compareModels

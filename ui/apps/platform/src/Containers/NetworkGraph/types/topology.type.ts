@@ -3,10 +3,7 @@ import { EdgeModel, EdgeTerminalType, Model, NodeModel } from '@patternfly/react
 import { EdgeProperties, ListenPort, OutEdges } from 'types/networkFlow.proto';
 import { Override } from 'utils/type.utils';
 
-export type CustomModel = Override<
-    Model,
-    { nodes: CustomNodeModel[]; edges: CustomEdgeModel[]; updateCount: number }
->;
+export type CustomModel = Override<Model, { nodes: CustomNodeModel[]; edges: CustomEdgeModel[] }>;
 
 // Node types
 
