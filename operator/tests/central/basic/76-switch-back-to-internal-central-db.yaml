@@ -5,4 +5,6 @@ metadata:
   name: stackrox-central-services
 spec:
   central:
-    db: null
+    db:
+      connectionString: null
+      passwordSecret: null
