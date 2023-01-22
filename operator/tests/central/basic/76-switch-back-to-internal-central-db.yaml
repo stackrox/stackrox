@@ -1,9 +1,8 @@
+# Default specs.central.db behaviour is to use an internal central-db instance
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:
   name: stackrox-central-services
 spec:
   central:
-    db:
-      connectionString: null
-      passwordSecret: null
+    db: null
