@@ -62,7 +62,7 @@ func Read(dbPath string) (*MigrationVersion, error) {
 // SetCurrent update the database migration version of a database directory.
 func SetCurrent(dbPath string) {
 	// We need to write the file each time this is called to keep the LastPersisted time up to date.
-	if _, err := Read(dbPath); err != nil {
+	if _, err := Read(dbPath); err == nil {
 		newVersion := &MigrationVersion{
 			dbPath:        dbPath,
 			MainVersion:   version.GetMainVersion(),
@@ -73,6 +73,8 @@ func SetCurrent(dbPath string) {
 		if err != nil {
 			utils.Should(errors.Wrapf(err, "failed to write migration version to %s", dbPath))
 		}
+	} else {
+		log.Infof("SHREWS -- it failed?  %v", err)
 	}
 }
 
