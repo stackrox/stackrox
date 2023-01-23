@@ -7,7 +7,7 @@ import (
 )
 
 func TestName(t *testing.T) {
-	testcases := []struct{
+	testcases := []struct {
 		original string
 		expected string
 	}{
