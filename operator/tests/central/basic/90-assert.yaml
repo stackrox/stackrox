@@ -129,6 +129,9 @@ spec:
       - name: stackrox-db
         persistentVolumeClaim:
           claimName: stackrox-db
+      - name: central-db
+        persistentVolumeClaim:
+          claimName: central-db
       - name: config-map-1
         configMap:
           name: config-map-1
