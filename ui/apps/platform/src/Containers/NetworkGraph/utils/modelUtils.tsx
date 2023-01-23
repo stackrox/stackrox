@@ -267,7 +267,8 @@ export function transformActiveData(
                 edge.data.tag = mergedPortEdgeLabel;
                 edge.data.portProtocolLabel = mergedPortEdgeLabel;
                 edge.data.isBidirectional = true;
-                edge.data.targetToSourceProperties = edge.data.sourceToTargetProperties;
+                edge.data.targetToSourceProperties =
+                    activeEdgeMap[reverseEdgeId].data.sourceToTargetProperties;
                 activeEdgeMap[reverseEdgeId] = edge;
             } else {
                 activeEdgeMap[edgeId] = edge;
