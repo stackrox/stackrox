@@ -10197,16 +10197,21 @@
             "fields": [
               {
                 "id": 1,
-                "name": "node_name",
+                "name": "node_id",
                 "type": "string"
               },
               {
                 "id": 2,
+                "name": "node_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
                 "name": "scan_time",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 3,
+                "id": 4,
                 "name": "components",
                 "type": "Components",
                 "options": [
@@ -10217,7 +10222,7 @@
                 ]
               },
               {
-                "id": 4,
+                "id": 5,
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true

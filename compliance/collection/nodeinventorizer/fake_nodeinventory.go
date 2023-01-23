@@ -4,6 +4,7 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -18,6 +19,7 @@ type FakeNodeInventorizer struct {
 func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, error) {
 	log.Infof("Generating fake scan result message...")
 	msg := &storage.NodeInventory{
+		NodeId:   uuid.Nil.String(),
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
 		Components: &storage.NodeInventory_Components{

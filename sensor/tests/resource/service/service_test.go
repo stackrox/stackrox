@@ -97,13 +97,13 @@ func checkPortConfig(deployment *storage.Deployment, ports []*storage.PortConfig
 }
 
 func assertLastDeploymentHasPortExposure(ports []*storage.PortConfig) resource.AssertFunc {
-	return func(deployment *storage.Deployment) error {
+	return func(deployment *storage.Deployment, _ central.ResourceAction) error {
 		return checkPortConfig(deployment, ports)
 	}
 }
 
 func assertLastDeploymentMissingPortExposure(ports []*storage.PortConfig) resource.AssertFunc {
-	return func(deployment *storage.Deployment) error {
+	return func(deployment *storage.Deployment, _ central.ResourceAction) error {
 		if err := checkPortConfig(deployment, ports); err != nil {
 			return nil
 		}
