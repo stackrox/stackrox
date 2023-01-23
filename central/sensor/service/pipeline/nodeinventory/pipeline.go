@@ -1,4 +1,4 @@
-package nodescansv2
+package nodeinventory
 
 import (
 	"context"

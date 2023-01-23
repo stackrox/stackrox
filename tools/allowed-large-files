@@ -16,6 +16,7 @@ generated/**/*.pb.gw.go
 generated/**/*.swagger.json
 go.sum
 operator/bundle/manifests/*.yaml
+operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
 pkg/booleanpolicy/default_policies_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
