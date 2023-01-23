@@ -653,6 +653,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		},
 	}
 
+	// Verify that the table is empty before the test
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	err := suite.datastore.WalkAll(suite.hasWriteCtx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			plopsFromDB = append(plopsFromDB, plop)
+			return nil
+		})
+	suite.Len(plopsFromDB, 0)
+
+	// Verify that the table is empty before the test
+	indicatorsFromDB := []*storage.ProcessIndicator{}
+	err = suite.indicatorDataStore.WalkAll(suite.hasWriteCtx,
+		func(processIndicator *storage.ProcessIndicator) error {
+			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
+			return nil
+		})
+	suite.Len(indicatorsFromDB, 0)
+
 	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, plopObjects...))
