@@ -43,11 +43,6 @@ func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentS
 	}
 }
 
-func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
-	// TODO implement me
-	panic("implement me")
-}
-
 func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP net.IPAddress, node *store.NodeWrap, port v1.ContainerPort, data *clusterentities.EntityData) {
 	l4Proto := convertL4Proto(port.Protocol)
 	targetInfo := clusterentities.EndpointTargetInfo{
@@ -257,6 +252,14 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	}
 
 	m.entityStore.Apply(updates, false)
+}
+
+func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
+	deployment := m.deploymentStore.getWrap(id)
+	if deployment == nil {
+		return
+	}
+	m.OnDeploymentCreateOrUpdate(deployment)
 }
 
 func (m *endpointManagerImpl) OnDeploymentCreateOrUpdate(deployment *deploymentWrap) {
