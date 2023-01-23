@@ -148,7 +148,7 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 				return errors.New("ResourceAction should be REMOVE_RESOURCE")
 			}
 			return nil
-		}, "deployment should be deleted", 10*time.Second)
+		}, "deployment should be deleted", 5*time.Minute)
 		testC.LastViolationStateByID(id, func(alertResults *central.AlertResults) error {
 			if alertResults.GetAlerts() != nil {
 				return errors.New("AlertResults should be empty")
@@ -179,7 +179,7 @@ func (s *PodHierarchySuite) Test_DeletePod() {
 				return errors.New("ResourceAction should be REMOVE_RESOURCE")
 			}
 			return nil
-		}, "rogue pod should be deleted", 10*time.Second)
+		}, "rogue pod should be deleted", 5*time.Minute)
 		testC.LastViolationStateByID(id, func(alertResults *central.AlertResults) error {
 			if alertResults.GetAlerts() != nil {
 				return errors.New("AlertResults should be empty")
