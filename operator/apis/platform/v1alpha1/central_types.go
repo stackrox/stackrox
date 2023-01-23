@@ -176,7 +176,9 @@ type DeclarativeConfiguration struct {
 }
 
 // CentralDBSpec defines settings for the "central db" component.
-// TODO(ROX-14395): drop `IsEnabled` field.
+// TODO(ROX-14395): drop `IsEnabled` field when bumping API version.
+// isEnabled is effectively no-op starting from the version 3.74.0. It should be removed when we
+// bump API version of ACS custom resources. Removing it before is unsafe and may break compatibility.
 type CentralDBSpec struct {
 	// Deprecated field. It is no longer necessary to specify it.
 	// This field will be removed in a future release.
