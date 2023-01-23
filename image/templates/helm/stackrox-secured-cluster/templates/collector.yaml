@@ -91,6 +91,8 @@ spec:
       - command:
         - stackrox/compliance
         env:
+        - name: ROX_METRICS_PORT
+          value: ":8443"
         - name: ROX_NODE_NAME
           valueFrom:
             fieldRef:
@@ -102,6 +104,9 @@ spec:
         image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.collector.complianceImagePullPolicy }}
         name: compliance
+        ports:
+        - containerPort: 8443
+          name: cmonitoring
         resources:
           {{- ._rox.collector._complianceResources | nindent 10 }}
         securityContext:
