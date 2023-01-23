@@ -11,6 +11,7 @@ import (
 	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
 	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -158,6 +159,9 @@ func creatCollectionsToEmbedFromScope(scope *storage.SimpleAccessScope) ([]*stor
 }
 
 func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
+	if !features.ObjectCollections.Enabled() {
+		return nil
+	}
 	ctx := context.Background()
 	reportConfigStore := reportConfigurationPostgres.New(db)
 	accessScopeStore := accessScopePostgres.New(db)
