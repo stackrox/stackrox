@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/dackboxhelper"
 	"github.com/stackrox/rox/migrator/migrations"
 	cveUtil "github.com/stackrox/rox/migrator/migrations/cvehelper"
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
@@ -15,7 +16,6 @@ import (
 	legacy "github.com/stackrox/rox/migrator/migrations/n_09_to_n_10_postgres_cluster_cves/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_09_to_n_10_postgres_cluster_cves/postgres"
 	"github.com/stackrox/rox/migrator/types"
-	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -29,7 +29,7 @@ var (
 		StartingSeqNum: startingSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 121
 		Run: func(databases *types.Databases) error {
-			legacyStore := legacy.New(rawDackbox.GetGlobalDackBox(), rawDackbox.GetKeyFence())
+			legacyStore := legacy.New(dackboxhelper.GetMigrationDackBox(), dackboxhelper.GetMigrationKeyFence())
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving cluster_cves from rocksdb to postgres")
