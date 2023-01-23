@@ -3,11 +3,16 @@ package nodeinventorizer
 import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/analyzer/nodes"
 	"golang.org/x/exp/maps"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // NodeInventorizer is the interface that defines the interface a scanner must implement
