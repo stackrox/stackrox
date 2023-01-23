@@ -50,20 +50,25 @@ func Singleton() DataStore {
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
 
-		// TODO ROX-13888 this filtering can be removed once we are fully migrated
-		if features.ObjectCollections.Enabled() {
-			roleAttribute := vulnReportingDefaultRoles[rolePkg.VulnReporter]
-			collectionsResources := make([]permissions.ResourceWithAccess, 0, len(roleAttribute.resourceWithAccess))
-			for _, permission := range roleAttribute.resourceWithAccess {
-				if permission.Resource == resources.Role || permission.Resource == resources.VulnerabilityReports {
-					continue
-				}
-				collectionsResources = append(collectionsResources, permission)
-			}
-			roleAttribute.resourceWithAccess = collectionsResources
-		}
-
 		for r, a := range vulnReportingDefaultRoles {
+			// TODO ROX-13888 this filtering can be removed once we are fully migrated
+			if features.ObjectCollections.Enabled() && r == rolePkg.VulnReporter {
+				collectionResourceWithAccess := make([]permissions.ResourceWithAccess, 0, len(a.resourceWithAccess))
+				for _, permission := range a.resourceWithAccess {
+					if permission.Resource == resources.Role || permission.Resource == resources.VulnerabilityReports {
+						continue
+					}
+					collectionResourceWithAccess = append(collectionResourceWithAccess, permission)
+				}
+				collectionRole := roleAttributes{
+					idSuffix:           a.idSuffix,
+					postgresID:         a.postgresID,
+					description:        a.description,
+					resourceWithAccess: collectionResourceWithAccess,
+				}
+				defaultRoles[r] = collectionRole
+				continue
+			}
 			defaultRoles[r] = a
 		}
 
