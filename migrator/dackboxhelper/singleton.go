@@ -28,8 +28,6 @@ var (
 	dackBox *dackbox.DackBox
 
 	initialized sync.Once
-
-	lazyStarted sync.Once
 )
 
 // GetMigrationDackBox returns the migration dackbox.DackBox instance.
