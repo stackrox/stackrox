@@ -11,6 +11,12 @@
     height: calc(100vh - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight));
 }
 
+/* Create a stacking context that is higher than the context for the network-graph-toolbar component
+   that is rendered below this toolbar, so that the hierarchy dropdowns will render above everything when open */
+.network-graph-selector-bar {
+    z-index: 350;
+}
+
 /* Create a stacking context that is higher than the context for the react-topology component
    that is rendered below the toolbar, so that the search filter dropdown will render above the graph when open */
 [data-testid="network-graph-toolbar"] {
