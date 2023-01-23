@@ -74,7 +74,7 @@ func SetCurrent(dbPath string) {
 			utils.Should(errors.Wrapf(err, "failed to write migration version to %s", dbPath))
 		}
 	} else {
-		log.Infof("SHREWS -- it failed?  %v", err)
+		utils.Should(errors.Wrapf(err, "failed to read current database %s, %v", dbPath, err))
 	}
 }
 
