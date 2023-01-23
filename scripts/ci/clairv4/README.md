@@ -9,6 +9,12 @@ To deploy the scanner, you need to run the deploy script. e.g.:
 ./scripts/ci/clairv4/deploy.sh qa-clairv4
 ```
 
+To test you need to set `CLAIR_V4_ENDPOINT` e.g.:
+
+```
+CLAIR_V4_ENDPOINT="http://clairv4.qa-clairv4:8000" ./gradlew test --tests=ImageScanningTest
+```
+
 To tear it down, run:
 
 ```
