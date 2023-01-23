@@ -53,6 +53,7 @@ case "$github_login" in
 'kovayur')          slack_user='U033ZSBGEUQ' ;;
 'ksurabhi91')       slack_user='U043ZP4RN76' ;;
 'kurlov')           slack_user='U035001CQCV' ;;
+'kylape')           slack_user='UGJML86DD'   ;;
 'lvalerom')         slack_user='U02SJTV567N' ;;
 'md2119')           slack_user='U01Q57U4JFK' ;;
 'mfosterrox')       slack_user='U01PMH71ACU' ;;

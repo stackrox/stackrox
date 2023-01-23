@@ -21,6 +21,9 @@ const (
 
 // BuildTimestamp returns the time when this build was created.
 // CAVEAT: This function panics if no build timestamp information is available.
+//
+// Deprecated: It will be removed in 3.75. Please do not use it.
+// TODO(ROX-14336): delete it
 func BuildTimestamp() time.Time {
 	if timestamp.BuildTimestampParsingErr != nil {
 		panic(errors.Wrap(timestamp.BuildTimestampParsingErr, "failed to parse build timestamp"))

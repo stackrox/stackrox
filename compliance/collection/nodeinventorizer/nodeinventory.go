@@ -3,6 +3,7 @@ package nodeinventorizer
 import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/analyzer/nodes"
@@ -23,12 +24,12 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	log.Info("Started node inventory")
 	// uncertifiedRHEL is set to false, as scans are only supported on RHCOS for now,
 	// which only exists in certified versions
-	componentsHost, err := nodes.Analyze(nodeName, "/host/", false)
-	log.Info("Finished node inventory")
+	componentsHost, err := nodes.Analyze(nodeName, "/host/", nodes.AnalyzeOpts{UncertifiedRHEL: false, IsRHCOSRequired: true})
 	if err != nil {
 		log.Errorf("Error scanning node /host inventory: %v", err)
 		return nil, err
 	}
+	log.Info("Finished node inventory")
 	log.Debugf("Components found under /host: %v", componentsHost)
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
@@ -41,6 +42,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	// which only exists in certified versions. Therefore, no specific notes needed
 	// if uncertifiedRHEL can be true in the future, we can add Note_CERTIFIED_RHEL_SCAN_UNAVAILABLE
 	m := &storage.NodeInventory{
+		NodeId:     uuid.Nil.String(),
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
 		Components: protoComponents,

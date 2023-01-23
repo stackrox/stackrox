@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -178,7 +178,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			// TODO(ROX-14309): move this logic to the resolver
 			// We need to do this here since the resolver relies on the deploymentStore to have the wrap

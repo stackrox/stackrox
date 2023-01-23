@@ -25,6 +25,7 @@ const resultsPanelFilterEntitySelect = `${resultsPanel} button[aria-label="Selec
 const resultsPanelFilterEntitySelectOption = (entity) =>
     `${resultsPanel} *[role="listbox"] button:contains("${entity}")`;
 const resultsPanelFilterInput = `${resultsPanel} input[aria-label="Filter by name"]`;
+const resultsPanelFilterSearch = `${resultsPanel} button[aria-label="Search"]`;
 
 export const collectionSelectors = {
     tableLinkByName: (name) => `td[data-label="Collection"] a:contains("${name}")`,
@@ -41,4 +42,5 @@ export const collectionSelectors = {
     resultsPanelFilterEntitySelect,
     resultsPanelFilterEntitySelectOption,
     resultsPanelFilterInput,
+    resultsPanelFilterSearch,
 };

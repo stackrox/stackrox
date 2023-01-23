@@ -10,7 +10,6 @@ import { Empty, FilterQuery } from './types';
 export const collectionsBaseUrl = '/v1/collections';
 export const collectionsCountUrl = '/v1/collectionscount';
 export const collectionsDryRunUrl = '/v1/collections/dryrun';
-export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
 export type SelectorRule = {
     fieldName: string;
@@ -221,32 +220,5 @@ export function dryRunCollection(
                 signal,
             })
             .then((response) => response.data.deployments)
-    );
-}
-
-/**
- * Function that returns a list of autocomplete suggestions for selector fields based on resources
- * that match the provided resource selectors.
- *
- * @param resourceSelectors
- *      The resource selectors used to scope the autocomplete search
- * @param searchCategory
- *      The field that autocomplete results should be returned for
- * @param searchLabel
- *      The user provided search text
- */
-export function getCollectionAutoComplete(
-    resourceSelectors: ResourceSelector[],
-    searchCategory: string,
-    searchLabel: string
-): CancellableRequest<string[]> {
-    return makeCancellableAxiosRequest((signal) =>
-        axios
-            .post<{ values: string[] }>(
-                collectionsAutocompleteUrl,
-                { resourceSelectors, searchCategory, searchLabel },
-                { signal }
-            )
-            .then((response) => response.data.values)
     );
 }

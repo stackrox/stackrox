@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -25,7 +24,7 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	outputQueue := output.New(detector, env.EventPipelineOutputQueueSize.IntegerSetting())
 	var depResolver component.Resolver
 	var resourceListener component.PipelineComponent
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		depResolver = resolver.New(outputQueue, storeProvider)
 		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
 	} else {

@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -45,7 +45,7 @@ func (p *eventPipeline) Start() error {
 		return err
 	}
 
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		if err := p.resolver.Start(); err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func (p *eventPipeline) Stop(_ error) {
 	// The order is important here, we need to stop the components
 	// that send messages to other components first
 	p.listener.Stop(nil)
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		p.resolver.Stop(nil)
 	}
 	p.output.Stop(nil)

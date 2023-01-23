@@ -4,7 +4,7 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
@@ -171,7 +171,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 
 func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector.Selector) *component.ResourceEvent {
 	var message *component.ResourceEvent
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		message = component.NewDeploymentRefEvent(resolver.ResolveDeploymentLabels(namespace, sel), central.ResourceAction_UPDATE_RESOURCE, false)
 	} else {
 		message = component.NewResourceEvent(sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel), nil, nil)
@@ -184,7 +184,7 @@ func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceE
 	svcWrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(svcWrap)
 	var message *component.ResourceEvent
-	if features.ResyncDisabled.Enabled() {
+	if env.ResyncDisabled.BooleanSetting() {
 		message = component.NewDeploymentRefEvent(resolver.ResolveDeploymentLabels(svc.GetNamespace(), svcWrap.selector), central.ResourceAction_UPDATE_RESOURCE, false)
 	} else {
 		events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{

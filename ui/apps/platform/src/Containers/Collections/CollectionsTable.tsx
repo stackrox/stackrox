@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Bullseye,
@@ -15,7 +15,6 @@ import {
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import debounce from 'lodash/debounce';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -40,8 +39,6 @@ export type CollectionsTableProps = {
     hasWriteAccess: boolean;
 };
 
-const SEARCH_INPUT_REQUEST_DELAY = 800;
-
 function CollectionsTable({
     isLoading,
     error,
@@ -58,6 +55,10 @@ function CollectionsTable({
     const { page, perPage, setPage, setPerPage } = pagination;
     const [isDeleting, setIsDeleting] = useState(false);
     const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null);
+    const [searchValue, setSearchValue] = useState(() => {
+        const filter = searchFilter['Collection Name'];
+        return Array.isArray(filter) ? filter.join(',') : filter;
+    });
     const hasCollections = collections.length > 0;
 
     function getEnabledSortParams(field: string) {
@@ -78,15 +79,6 @@ function CollectionsTable({
         });
     }
 
-    const onSearchInputChange = useMemo(
-        () =>
-            debounce(
-                (value: string) => setSearchFilter({ 'Collection Name': value }),
-                SEARCH_INPUT_REQUEST_DELAY
-            ),
-        [setSearchFilter]
-    );
-
     function onConfirmDeleteCollection(collection: Collection) {
         setIsDeleting(true);
         onCollectionDelete(collection).finally(() => {
@@ -98,13 +90,6 @@ function CollectionsTable({
     function onCancelDeleteCollection() {
         setCollectionToDelete(null);
     }
-
-    // Currently, it is not expected that the value of `searchFilter.Collection` will
-    // be an array even though it would valid. This is a safeguard for future code
-    // changes that might change this assumption.
-    const searchValue = Array.isArray(searchFilter.Collection)
-        ? searchFilter.Collection.join('+')
-        : searchFilter.Collection;
 
     let tableContent = (
         <Tr>
@@ -204,7 +189,12 @@ function CollectionsTable({
                             aria-label="Search by name"
                             placeholder="Search by name"
                             value={searchValue}
-                            onChange={onSearchInputChange}
+                            onChange={setSearchValue}
+                            onSearch={() => setSearchFilter({ 'Collection Name': searchValue })}
+                            onClear={() => {
+                                setSearchValue('');
+                                setSearchFilter({});
+                            }}
                         />
                     </ToolbarItem>
                     <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
