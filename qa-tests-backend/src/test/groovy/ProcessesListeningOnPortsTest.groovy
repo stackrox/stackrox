@@ -133,7 +133,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert processesListeningOnPorts
 
-        def list = processesListeningOnPorts.processesListeningOnPortsList
+        def list = processesListeningOnPorts.listeningEndpointsList
         assert list.size() == 2
 
         def endpoint1 = list.find { it.endpoint.port == 80 }
@@ -180,7 +180,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert processesListeningOnPorts
 
-        list = processesListeningOnPorts.processesListeningOnPortsList
+        list = processesListeningOnPorts.listeningEndpointsList
         assert list.size() == 1
 
         def endpoint = list.find { it.endpoint.port == 8081 }
@@ -210,7 +210,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert processesListeningOnPorts
 
-        def list2 = processesListeningOnPorts.processesListeningOnPortsList
+        def list2 = processesListeningOnPorts.listeningEndpointsList
         assert list2.size() == 0
 
         gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId2, 240)
@@ -225,7 +225,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert processesListeningOnPorts
 
-        def list3 = processesListeningOnPorts.processesListeningOnPortsList
+        def list3 = processesListeningOnPorts.listeningEndpointsList
         assert list3.size() == 0
     }
 
@@ -241,7 +241,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     return temp
             }
 
-            def list = processesListeningOnPorts.processesListeningOnPortsList
+            def list = processesListeningOnPorts.listeningEndpointsList
 
             if (list.size() == numElements) {
                 return true
