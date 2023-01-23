@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
@@ -36,8 +35,6 @@ type PLOPDataStoreTestSuite struct {
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
-
-	mockCtrl *gomock.Controller
 }
 
 func (suite *PLOPDataStoreTestSuite) SetupSuite() {
@@ -66,14 +63,11 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 
 	suite.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, suite.store, indicatorIndexer, indicatorSearcher, nil)
-	processIndicatorDataStore.Singleton()
-	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.datastore = New(suite.store, suite.indicatorDataStore)
 }
 
 func (suite *PLOPDataStoreTestSuite) TearDownTest() {
 	suite.postgres.Teardown(suite.T())
-	suite.mockCtrl.Finish()
 }
 
 // TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
@@ -619,6 +613,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
 
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	err := suite.datastore.WalkAll(suite.hasWriteCtx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			plopsFromDB = append(plopsFromDB, plop)
+			return nil
+		})
+	// Confirm that the database is empty before anything is inserted into it
+	suite.Len(plopsFromDB, 0)
+
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, plopObjects...))
@@ -663,8 +666,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 }
 
 // TestPLOPAddClosedNoIndicator: A PLOP object with a wrong process indicator
-// reference and CloseTimestamp set. It's being stored in the database, but
-// without the reference will not be fetched via API.
+// reference and CloseTimestamp set. It's stored in the database, but
+// without the reference it will not be fetched via API.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{

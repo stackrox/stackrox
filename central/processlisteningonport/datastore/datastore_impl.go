@@ -469,7 +469,7 @@ func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 	sort.Slice(values, func(i, j int) bool {
-		return values[i].CloseTimestamp.Compare(values[j].CloseTimestamp) == -1
+		return values[i].GetCloseTimestamp().Compare(values[j].CloseTimestamp) == -1
 	})
 }
 
