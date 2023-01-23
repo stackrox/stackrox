@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -61,11 +62,15 @@ func Read(dbPath string) (*MigrationVersion, error) {
 
 // SetCurrent update the database migration version of a database directory.
 func SetCurrent(dbPath string) {
-	if curr, err := Read(dbPath); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != LastRocksDBVersionSeqNum() {
+	// If called in Postgres mode migrations and code version have been updated so we need to persist
+	// the file to keep the file system up to date and so we can determine if RocksDB was updated
+	// more recently than Postgres.
+	if curr, err := Read(dbPath); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != LastRocksDBVersionSeqNum() || env.PostgresDatastoreEnabled.BooleanSetting() {
 		newVersion := &MigrationVersion{
-			dbPath:      dbPath,
-			MainVersion: version.GetMainVersion(),
-			SeqNum:      LastRocksDBVersionSeqNum(), // Most recent possible RocksDB version
+			dbPath:        dbPath,
+			MainVersion:   version.GetMainVersion(),
+			SeqNum:        LastRocksDBVersionSeqNum(), // Most recent possible RocksDB version
+			LastPersisted: time.Now(),
 		}
 		err := newVersion.atomicWrite()
 		if err != nil {
