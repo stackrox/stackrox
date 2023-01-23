@@ -113,6 +113,7 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 		assert.Len(t, newPolicyList.GetPolicies(), len(policyList.GetPolicies())+1, "expected one additional policy")
 		numMatches := 0
 		for _, policy := range newPolicyList.GetPolicies() {
+			log.Infof("policy: %v", policy)
 			if proto.Equal(policy, newPolicy) {
 				numMatches++
 			}

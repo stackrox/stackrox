@@ -19,6 +19,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -196,7 +197,7 @@ func NewService() Service {
 		WithClusterDataStore(clusterDataStore.Singleton()).
 		WithImageIntegrationStore(imageIntegrationDataStore.Singleton())
 
-	if features.NewPolicyCategories.Enabled() {
+	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
 		builder = builder.WithPolicyCategoryDataStore(categoryDataStore.Singleton())
 	}
 	return builder.Build()
