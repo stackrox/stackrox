@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -48,6 +49,19 @@ func Singleton() DataStore {
 		}
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
+
+		// TODO ROX-13888 this filtering can be removed once we are fully migrated
+		if features.ObjectCollections.Enabled() {
+			roleAttribute := vulnReportingDefaultRoles[rolePkg.VulnReporter]
+			collectionsResources := make([]permissions.ResourceWithAccess, 0, len(roleAttribute.resourceWithAccess))
+			for _, permission := range roleAttribute.resourceWithAccess {
+				if permission.Resource == resources.Role || permission.Resource == resources.VulnerabilityReports {
+					continue
+				}
+				collectionsResources = append(collectionsResources, permission)
+			}
+			roleAttribute.resourceWithAccess = collectionsResources
+		}
 
 		for r, a := range vulnReportingDefaultRoles {
 			defaultRoles[r] = a
