@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
+	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -25,7 +26,10 @@ type Service interface {
 // New returns a new instance of service.
 func New() Service {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return &serviceImpl{db: globaldb.GetPostgres()}
+		return &serviceImpl{
+			db:              globaldb.GetPostgres(),
+			systemInfoStore: systemInfoStorage.Singleton(),
+		}
 	}
 	return &serviceImpl{}
 }
