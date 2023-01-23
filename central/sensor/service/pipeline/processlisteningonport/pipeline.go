@@ -52,11 +52,16 @@ func (s *pipelineImpl) Run(
 	defer countMetrics.IncrementResourceProcessedCounter(
 		pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ProcessListeningOnPort)
 
-	portProcesses := msg.GetProcessListeningOnPortUpdate().GetProcessesListeningOnPorts()
+	update := msg.GetProcessListeningOnPortUpdate()
+	if s.dataStore != nil && update != nil {
+		portProcesses := update.GetProcessesListeningOnPorts()
 
-	log.Debugf("Store PLOP object: %+v", portProcesses)
-	if err := s.dataStore.AddProcessListeningOnPort(ctx, portProcesses...); err != nil {
-		return err
+		if portProcesses != nil {
+			log.Debugf("Store PLOP object: %+v", portProcesses)
+			if err := s.dataStore.AddProcessListeningOnPort(ctx, portProcesses...); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
