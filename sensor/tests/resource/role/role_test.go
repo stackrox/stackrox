@@ -48,7 +48,7 @@ func (s *RoleDependencySuite) SetupSuite() {
 }
 
 func assertPermissionLevel(permissionLevel storage.PermissionLevel) resource.AssertFunc {
-	return func(deployment *storage.Deployment) error {
+	return func(deployment *storage.Deployment, _ central.ResourceAction) error {
 		if deployment.ServiceAccountPermissionLevel != permissionLevel {
 			return errors.Errorf("expected permission level %s but found %s", permissionLevel, deployment.ServiceAccountPermissionLevel)
 		}
