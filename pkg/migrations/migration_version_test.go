@@ -99,7 +99,7 @@ func TestMigrationVersion_Write(t *testing.T) {
 			prepFunc: func(dbPath string) {
 				SetCurrent(dbPath)
 			},
-			shouldUpdate: false,
+			shouldUpdate: true,
 		},
 	}
 
