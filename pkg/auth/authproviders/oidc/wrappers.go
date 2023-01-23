@@ -99,6 +99,9 @@ type exchangeFunc func(ctx context.Context, oauthCfg *oauth2.Config, code string
 // oauthExchange is a level of indirection over oauth2.Config.Exchange used in testing.
 func oauthExchange(ctx context.Context, oauthCfg *oauth2.Config, code string) (oauth2Token, error) {
 	token, err := oauthCfg.Exchange(ctx, code)
+	print("Token: ")
+	print(token.AccessToken)
+	print("\n")
 	if err != nil {
 		return nil, err
 	}
