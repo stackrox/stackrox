@@ -8,6 +8,7 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 )
@@ -18,6 +19,7 @@ func TestNodeInventoryHandler(t *testing.T) {
 
 func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 	msg := &storage.NodeInventory{
+		NodeId:   uuid.Nil.String(),
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
 		Components: &storage.NodeInventory_Components{

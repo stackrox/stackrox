@@ -295,6 +295,11 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Configures resources within Central in a declarative manner.
+        displayName: Declarative Configuration
+        path: central.declarativeConfiguration
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Stores persistent data on a directory on the host. This is not
           recommended, and should only be used together with a node selector (only
           available in YAML view).
@@ -394,6 +399,22 @@ spec:
       - description: The name of the referenced secret.
         displayName: Name
         path: central.db.passwordSecret.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: List of config maps containing declarative configuration.
+        displayName: Config maps containing declarative configuration
+        path: central.declarativeConfiguration.configMaps
+      - description: The name of the referenced config map.
+        displayName: Name
+        path: central.declarativeConfiguration.configMaps[0].name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: List of secrets containing declarative configuration.
+        displayName: Secrets containing declarative configuration
+        path: central.declarativeConfiguration.secrets
+      - description: The name of the referenced secret.
+        displayName: Name
+        path: central.declarativeConfiguration.secrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
       - description: The name of the referenced secret.
