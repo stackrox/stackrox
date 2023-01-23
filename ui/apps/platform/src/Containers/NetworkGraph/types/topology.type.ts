@@ -101,7 +101,10 @@ export type ExtraneousData = {
 
 // Edge types
 
-export type CustomEdgeModel = Override<EdgeModel, { data: EdgeData }>;
+export type CustomEdgeModel = Override<
+    EdgeModel,
+    { source: string; target: string; data: EdgeData }
+>;
 
 export type EdgeData = {
     // the edge label shows up when this exists

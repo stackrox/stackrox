@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { action } from 'mobx';
+import intersectionWith from 'lodash/intersectionWith';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
@@ -274,24 +275,47 @@ TopologyComponentProps) => {
         // removeExtraneousEdges();
         console.log('TopologyComponent: setEdges');
         if (detailId) {
-            // const selectedNode = controller.getNodeById(detailId);
-            // if (selectedNode?.isGroup()) {
-            //     selectedNode.getAllNodeChildren().forEach((child) => {
-            //         // set visible edges
-            //         setVisibleEdges(getNodeEdges(child));
-            //     });
-            // } else if (selectedNode) {
-            //     // set visible edges
-            //     setVisibleEdges(getNodeEdges(selectedNode));
-            // }
+            const nodeEdges: CustomEdgeModel[] = [];
+            const selectedNode = getNodeById(model.nodes, detailId);
+            if (selectedNode?.type === 'group') {
+                // need to find the edges that have a source or target that equal to the child id
+                model.edges.forEach((edge) => {
+                    const isSource = selectedNode?.children?.includes(edge.source);
+                    const isTarget = selectedNode?.children?.includes(edge.target);
+                    if (isSource || isTarget) {
+                        nodeEdges.push({ ...edge, visible: true });
+                    }
+                });
+                console.log(nodeEdges);
+                // controller.fromModel({ ...model, edges: nodeEdges });
 
+                // const nodeEdges = intersectionWith(
+                //     [model.edges, selectedNode?.children],
+                //     (modelEdge, childNode) =>
+                //         modelEdge.source === childNode.id || modelEdge.target === childNode.id
+                // );
+
+                //    .forEach((child) => {
+                //         // set visible edges
+                //         model.edges.filter((edge) => edge.)
+                //         // setVisibleEdges(getNodeEdges(child));
+                //     });
+            } else if (selectedNode) {
+                // set visible edges
+                const nodeEdges = getNodeEdges(selectedNode);
+                nodeEdges.forEach((edge) => {
+                    const edgeData = edge.getData();
+                    edge.setData({ ...edgeData, visible: true });
+                });
+                // setVisibleEdges(getNodeEdges(selectedNode));
+            }
             // // setting extraneous edges
             // if (edgeState === 'extraneous') {
             //     setExtraneousEdges();
             // }
 
-            // jeff's solution
-            showNodeEdges(controller, detailId);
+            // // jeff's solution
+            // showNodeEdges(controller, detailId);
         }
     }
 
@@ -370,6 +394,7 @@ TopologyComponentProps) => {
                         },
                         fitToScreenCallback: () => {
                             controller.getGraph().fit(80);
+                            resetGraphToDefault();
                         },
                         resetViewCallback: () => {
                             controller.getGraph().reset();
