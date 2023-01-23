@@ -117,6 +117,7 @@ function NamespaceSelector({
                     <span style={{ position: 'relative', top: '1px' }}>Namespaces</span>
                 </span>
             }
+            toggleAriaLabel="Select namespaces"
             isDisabled={namespaceSelectOptions.length === 0}
             selections={selectedNamespaces}
             variant={SelectVariant.checkbox}
