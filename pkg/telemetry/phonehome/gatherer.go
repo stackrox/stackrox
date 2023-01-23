@@ -28,6 +28,7 @@ func (*nilGatherer) AddGatherer(GatherFunc) {}
 
 type gatherer struct {
 	clientID    string
+	clientKind  string
 	telemeter   Telemeter
 	period      time.Duration
 	stopSig     concurrency.Signal
@@ -38,11 +39,12 @@ type gatherer struct {
 	lastData    map[string]any
 }
 
-func newGatherer(clientID string, t Telemeter, p time.Duration) *gatherer {
+func newGatherer(clientID, kind string, t Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
-		clientID:  clientID,
-		telemeter: t,
-		period:    p,
+		clientID:   clientID,
+		clientKind: kind,
+		telemeter:  t,
+		period:     p,
 	}
 }
 
@@ -74,9 +76,9 @@ func (g *gatherer) identify() {
 	defer g.gathering.Unlock()
 	data := g.gather()
 	if !reflect.DeepEqual(g.lastData, data) {
-		g.telemeter.Identify(g.clientID, data)
+		g.telemeter.Identify(g.clientID, g.clientKind, data)
 		// Issue an event so that the new data become visible on analytics:
-		g.telemeter.Track("Updated Identity", g.clientID, nil)
+		g.telemeter.Track("Updated "+g.clientKind+" Identity", g.clientID, nil)
 	}
 	g.lastData = data
 }

@@ -38,7 +38,7 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 func trackClusterInitialized(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		cfg.Telemeter().Group(cfg.GroupID, cluster.GetId(), nil)
-		cfg.Telemeter().Identify(cluster.GetId(), makeClusterProperties(cluster))
+		cfg.Telemeter().Identify(cluster.GetId(), "Secured Cluster", makeClusterProperties(cluster))
 		cfg.Telemeter().Track("Secured Cluster Initialized", cluster.GetId(), map[string]any{
 			"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 		})
@@ -75,7 +75,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props := makeClusterProperties(cluster)
 		props["Total Nodes"] = metrics.NodeCount
 		props["CPU Capacity"] = metrics.CpuCapacity
-		cfg.Telemeter().Identify(cluster.GetId(), props)
-		cfg.Telemeter().Track("Secured Cluster Identity Update", cluster.GetId(), nil)
+		cfg.Telemeter().Identify(cluster.GetId(), "Secured Cluster", props)
+		cfg.Telemeter().Track("Updated Secured Cluster Identity", cluster.GetId(), nil)
 	}
 }

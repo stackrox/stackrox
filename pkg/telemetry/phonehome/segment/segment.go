@@ -89,11 +89,14 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func (t *segmentTelemeter) Identify(userID string, props map[string]any) {
+func (t *segmentTelemeter) Identify(userID, userKind string, props map[string]any) {
 	if t == nil {
 		return
 	}
 	traits := segment.NewTraits()
+	if userKind != "" {
+		traits.Set("Kind", userKind)
+	}
 	identity := segment.Identify{
 		UserId: userID,
 		Traits: traits,

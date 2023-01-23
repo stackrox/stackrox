@@ -46,15 +46,15 @@ func (mr *MockTelemeterMockRecorder) Group(groupID, userID, props interface{}) *
 }
 
 // Identify mocks base method.
-func (m *MockTelemeter) Identify(userID string, props map[string]any) {
+func (m *MockTelemeter) Identify(userID, userKind string, props map[string]any) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Identify", userID, props)
+	m.ctrl.Call(m, "Identify", userID, userKind, props)
 }
 
 // Identify indicates an expected call of Identify.
-func (mr *MockTelemeterMockRecorder) Identify(userID, props interface{}) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Identify(userID, userKind, props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), userID, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), userID, userKind, props)
 }
 
 // Stop mocks base method.
