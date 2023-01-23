@@ -38,16 +38,14 @@ func convertTaints(taints []v1.Taint) []*storage.Taint {
 
 func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	node := obj.(*v1.Node)
+	protoNode := buildNode(node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		h.nodeStore.RemoveNode(buildNode(node))
+		h.nodeStore.RemoveNode(protoNode)
 		h.endpointManager.OnNodeUpdateOrRemove()
 	} else {
 		wrap := wrapNode(node)
 
 		// Only perform endpoint manager updates if the IP addresses of the node changed.
-		if h.nodeStore == nil {
-			log.Errorf("NodeStore is nil")
-		}
 		if h.nodeStore.AddOrUpdateNode(wrap) {
 			if action == central.ResourceAction_CREATE_RESOURCE {
 				h.endpointManager.OnNodeCreate(wrap)
@@ -57,23 +55,18 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		}
 	}
 
-	nodeResource := buildNode(node)
-
-	events := []*central.SensorEvent{
+	return component.NewResourceEvent([]*central.SensorEvent{
 		{
-			Id:     nodeResource.GetId(),
+			Id:     protoNode.GetId(),
 			Action: action,
 			Resource: &central.SensorEvent_Node{
-				Node: nodeResource,
+				Node: protoNode,
 			},
 		},
-	}
-
-	return component.NewResourceEvent(events, nil, nil)
+	}, nil, nil)
 }
 
 func buildNode(node *v1.Node) *storage.Node {
-
 	var internal, external []string
 
 	for _, entry := range node.Status.Addresses {
@@ -102,6 +95,6 @@ func buildNode(node *v1.Node) *storage.Node {
 		OsImage:                 node.Status.NodeInfo.OSImage,
 		KubeletVersion:          node.Status.NodeInfo.KubeletVersion,
 		KubeProxyVersion:        node.Status.NodeInfo.KubeProxyVersion,
-		K8SUpdated:              types.TimestampNow(), // move to NodeWrap??
+		K8SUpdated:              types.TimestampNow(),
 	}
 }
