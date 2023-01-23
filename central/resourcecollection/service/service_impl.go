@@ -45,6 +45,14 @@ var (
 			"/v1.CollectionService/DryRunCollection",
 		},
 	}))
+	defaultCollectionSortOption = &v1.QuerySortOption{
+		Field:    search.CollectionName.String(),
+		Reversed: false,
+	}
+	defaultDeploymentSortOption = &v1.QuerySortOption{
+		Field:    search.DeploymentName.String(),
+		Reversed: false,
+	}
 )
 
 type collectionRequest interface {
@@ -243,6 +251,7 @@ func resolveQuery(rawQuery *v1.RawQuery, withPagination bool) (*v1.Query, error)
 	}
 	if withPagination {
 		paginated.FillPagination(query, rawQuery.GetPagination(), defaultPageSize)
+		paginated.FillDefaultSortOption(query, defaultCollectionSortOption)
 	}
 	return query, nil
 }
@@ -311,5 +320,6 @@ func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *sto
 	}
 	query := search.ConjunctionQuery(collectionQuery, filterQuery)
 	paginated.FillPagination(query, matchOptions.GetFilterQuery().GetPagination(), defaultPageSize)
+	paginated.FillDefaultSortOption(query, defaultDeploymentSortOption)
 	return s.deploymentDS.SearchListDeployments(ctx, query)
 }
