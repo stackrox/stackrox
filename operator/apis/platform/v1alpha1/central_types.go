@@ -124,6 +124,10 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Telemetry",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Telemetry *Telemetry `json:"telemetry,omitempty"`
 
+	// Configures resources within Central in a declarative manner.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
+
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
 }
@@ -158,6 +162,17 @@ func (c *CentralComponentSpec) IsExternalDB() bool {
 		return false
 	}
 	return c.DB.IsExternal()
+}
+
+// DeclarativeConfiguration defines settings for adding resources in a declarative manner.
+type DeclarativeConfiguration struct {
+	// List of config maps containing declarative configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Config maps containing declarative configuration"
+	ConfigMaps []LocalConfigMapReference `json:"configMaps,omitempty"`
+
+	// List of secrets containing declarative configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Secrets containing declarative configuration"
+	Secrets []LocalSecretReference `json:"secrets,omitempty"`
 }
 
 // CentralDBSpec defines settings for the "central db" component.

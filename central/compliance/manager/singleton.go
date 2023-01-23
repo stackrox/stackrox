@@ -8,7 +8,7 @@ import (
 	complianceOperatorCheckDS "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/scrape/factory"
 	"github.com/stackrox/rox/pkg/sync"

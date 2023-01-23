@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     PageSection,
     Title,
@@ -17,13 +17,15 @@ import useFetchClusters from 'hooks/useFetchClusters';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNetworkPolicyGraph } from 'services/NetworkService';
-import { getQueryString } from 'utils/queryStringUtils';
+import queryService from 'utils/queryService';
 import timeWindowToDate from 'utils/timeWindows';
+import { isCompleteSearchFilter } from 'utils/searchUtils';
 
 import PageTitle from 'Components/PageTitle';
 import useURLParameter from 'hooks/useURLParameter';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
+import NetworkSearch from './components/NetworkSearch';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
 import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
@@ -40,7 +42,6 @@ import {
     CustomEdgeModel,
     CustomModel,
     CustomNodeModel,
-    DeploymentNodeModel,
     DeploymentData,
 } from './types/topology.type';
 
@@ -50,6 +51,7 @@ const emptyModel = {
     graph: graphModel,
     nodes: [],
     edges: [],
+    updateCount: 0,
 };
 
 // TODO: get real time window from user input
@@ -65,6 +67,7 @@ function NetworkGraphPage() {
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
         'policyStatusBadge',
         'externalBadge',
+        'edgeLabel',
     ]);
     const [activeModel, setActiveModel] = useState<CustomModel>(emptyModel);
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
@@ -89,12 +92,18 @@ function NetworkGraphPage() {
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
 
     useDeepCompareEffect(() => {
+        // check that user is finished adding a complete filter
+        const isQueryFilterComplete = isCompleteSearchFilter(remainingQuery);
+
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
-        if (clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount) {
+        const isClusterNamespaceSelected =
+            clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
+
+        if (isQueryFilterComplete && isClusterNamespaceSelected) {
             if (selectedClusterId) {
                 setIsLoading(true);
 
-                const queryToUse = getQueryString(remainingQuery).slice(1);
+                const queryToUse = queryService.objectToWhereClause(remainingQuery);
                 const timestampToUse = timeWindowToDate(timeWindow);
 
                 Promise.all([
@@ -118,45 +127,18 @@ function NetworkGraphPage() {
                     ),
                 ])
                     .then((values) => {
-                        const activeNodeMap: Record<string, CustomNodeModel> = {};
-                        const activeEdgeMap: Record<string, CustomEdgeModel> = {};
-                        const policyNodeMap: Record<string, DeploymentNodeModel> = {};
-
                         // get policy nodes from api response
                         const { nodes: policyNodes } = values[1].response;
                         // transform policy data to DataModel
-                        const policyDataModel = transformPolicyData(
+                        const { policyDataModel, policyNodeMap } = transformPolicyData(
                             policyNodes,
                             deploymentCount || 0
                         );
-                        // set policyNodeMap to be able to cross reference nodes by id
-                        // to enhance active node data
-                        policyDataModel.nodes?.forEach((node) => {
-                            // no grouped nodes in policy graph data model
-                            if (!policyNodeMap[node.id]) {
-                                policyNodeMap[node.id] = node as DeploymentNodeModel;
-                            }
-                        });
-
                         // get active nodes from api response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
-                        const activeDataModel = transformActiveData(activeNodes, policyNodeMap);
-                        // set activeNodeMap to be able to cross reference nodes by id
-                        // for the extraneous graph
-                        activeDataModel.nodes?.forEach((node) => {
-                            // only add to node map when it's not a group node
-                            if (!activeNodeMap[node.id] && !node.group) {
-                                activeNodeMap[node.id] = node;
-                            }
-                        });
-                        // set activeEdgeMap to be able to cross reference edges by id
-                        // for the extraneous graph
-                        activeDataModel.edges?.forEach((edge) => {
-                            if (!activeEdgeMap[edge.id]) {
-                                activeEdgeMap[edge.id] = edge;
-                            }
-                        });
+                        const { activeDataModel, activeEdgeMap, activeNodeMap } =
+                            transformActiveData(activeNodes, policyNodeMap);
 
                         // create extraneous flows graph
                         const extraneousFlowsDataModel = createExtraneousFlowsModel(
@@ -173,37 +155,72 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusters, clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount]);
+    }, [clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount, remainingQuery]);
 
-    useEffect(() => {
+    const setModelByEdgeState = useCallback(() => {
         if (edgeState === 'active') {
-            setModel(activeModel);
+            setModel({ ...activeModel, updateCount: model.updateCount + 1 });
         } else if (edgeState === 'extraneous') {
-            setModel(extraneousFlowsModel);
+            setModel({ ...extraneousFlowsModel, updateCount: model.updateCount + 1 });
         }
-    }, [edgeState, setModel, activeModel, extraneousFlowsModel]);
+    }, [edgeState, activeModel, extraneousFlowsModel]);
 
     useEffect(() => {
-        // this is to update the display options visually for deployment nodes on the graph
-        if (model.nodes?.length) {
-            const showPolicyState = !!displayOptions.includes('policyStatusBadge');
-            const showExternalState = !!displayOptions.includes('externalBadge');
-            const updatedNodes: CustomNodeModel[] = model.nodes.map((node) => {
-                const { data } = node;
-                if (data.type === 'DEPLOYMENT') {
+        setModelByEdgeState();
+    }, [setModelByEdgeState]);
+
+    useEffect(() => {
+        const showPolicyState = !!displayOptions.includes('policyStatusBadge');
+        const showExternalState = !!displayOptions.includes('externalBadge');
+        const showEdgeLabels = !!displayOptions.includes('edgeLabel');
+        let updatedNodes: CustomNodeModel[] = model.nodes;
+        let updatedEdges: CustomEdgeModel[] = model.edges;
+
+        // if all display options are true, set back to existing default data model
+        if (showPolicyState && showExternalState && showEdgeLabels) {
+            setModelByEdgeState();
+        } else {
+            // this is to update the display options visually for deployment nodes on the graph
+            if (model.nodes?.length) {
+                // need to improve perf to only perform this if policyStatusBadge OR externalBadge has changed
+                updatedNodes = model.nodes.map((node) => {
+                    const { data } = node;
+                    if (data.type === 'DEPLOYMENT') {
+                        return {
+                            ...node,
+                            data: {
+                                ...data,
+                                showPolicyState,
+                                showExternalState,
+                            } as DeploymentData,
+                        };
+                    }
+                    return node;
+                });
+            }
+
+            if (model.edges?.length) {
+                // need to improve perf to only perform this if edgeLabel has changed
+                updatedEdges = model.edges.map((edge) => {
+                    const { data } = edge;
+                    const { properties } = data;
                     return {
-                        ...node,
+                        ...edge,
                         data: {
                             ...data,
-                            showPolicyState,
-                            showExternalState,
-                        } as DeploymentData,
+                            properties,
+                            tag: showEdgeLabels ? data.portProtocolLabel : undefined,
+                        },
                     };
-                }
-                return node;
-            });
+                });
+            }
 
-            const updatedModel: CustomModel = { ...model, nodes: updatedNodes };
+            const updatedModel: CustomModel = {
+                ...model,
+                nodes: updatedNodes,
+                edges: updatedEdges,
+                updateCount: model.updateCount + 1,
+            };
             setModel(updatedModel);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -253,8 +270,14 @@ function NetworkGraphPage() {
                             </ToolbarItem>
                             <ToolbarItem>in the past hour</ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarGroup>
-                            <ToolbarItem>Add one or more deployment filters</ToolbarItem>
+                        <ToolbarGroup className="pf-u-flex-grow-1">
+                            <ToolbarItem className="pf-u-flex-grow-1">
+                                <NetworkSearch
+                                    selectedCluster={clusterFromUrl}
+                                    selectedNamespaces={namespacesFromUrl}
+                                    selectedDeployments={deploymentsFromUrl}
+                                />
+                            </ToolbarItem>
                             <ToolbarItem>
                                 <DisplayOptionsSelect
                                     selectedOptions={displayOptions}
@@ -276,7 +299,7 @@ function NetworkGraphPage() {
                 padding={{ default: 'noPadding' }}
             >
                 {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
-                {model.nodes && (
+                {model.nodes.length > 0 && !isLoading && (
                     <NetworkGraph
                         model={model}
                         edgeState={edgeState}

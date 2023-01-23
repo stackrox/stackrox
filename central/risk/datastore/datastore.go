@@ -22,6 +22,7 @@ import (
 )
 
 // DataStore is an intermediary to RiskStorage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
@@ -65,7 +66,7 @@ func New(riskStore store.Store, indexer index.Indexer, searcher search.Searcher)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool *pgxpool.Pool) (DataStore, error) {
 	dbstore := postgres.New(pool)
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
@@ -73,7 +74,7 @@ func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, erro
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
+func GetTestRocksBleveDataStore(_ testing.TB, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
 	dbstore := rocksdb.New(rocksengine)
 	indexer := index.New(bleveIndex)
 	searcher := search.New(dbstore, indexer)

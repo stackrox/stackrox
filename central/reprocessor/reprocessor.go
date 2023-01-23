@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/globaldb/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -72,6 +72,7 @@ func Singleton() Loop {
 }
 
 // Loop combines periodically (every 4 hours by default) runs enrichment and detection.
+//
 //go:generate mockgen-wrapper
 type Loop interface {
 	Start()

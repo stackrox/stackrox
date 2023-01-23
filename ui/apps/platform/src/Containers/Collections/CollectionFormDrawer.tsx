@@ -71,6 +71,7 @@ function CollectionFormDrawer({
                         <DrawerPanelContent
                             style={{
                                 borderLeft: 'var(--pf-global--BorderColor--100) 1px solid',
+                                maxWidth: isInlineDrawer ? '40%' : 'unset',
                             }}
                         >
                             <CollectionResults

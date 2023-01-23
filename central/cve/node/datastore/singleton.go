@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	"github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/node/datastore/dackbox/datastore/keyfence"
+	"github.com/stackrox/rox/central/node/datastore/keyfence"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )

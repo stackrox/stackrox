@@ -49,16 +49,6 @@
 }
 
 /*
- * Disabled primary Dropdown needs same colors as Button.
- */
-.pf-c-dropdown__toggle.pf-m-primary[disabled] {
-    background-color: var(--pf-global--disabled-color--200);
-    color: var(--pf-global--disabled-color--100);
-}
-
-/* See also style rule to override classic opacity. */
-
-/*
  * ToggleGroupItem button that is disabled needs lighter background like any other form control.
  */
  button.pf-c-toggle-group__button:disabled {

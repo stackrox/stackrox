@@ -33,8 +33,8 @@ import (
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	dackboxNodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
-	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
+	dackboxNodeDatastore "github.com/stackrox/rox/central/node/datastore"
+	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
@@ -68,6 +68,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
@@ -612,7 +613,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 		s.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
-	s.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
 	testbuildinfo.SetForTest(s.T())
 	versionUtils.SetExampleVersion(s.T())
@@ -845,7 +846,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 		s.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
-	s.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
 	testbuildinfo.SetForTest(s.T())
 	versionUtils.SetExampleVersion(s.T())

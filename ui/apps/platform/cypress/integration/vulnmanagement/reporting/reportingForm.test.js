@@ -135,13 +135,11 @@ describe('Vulnerability Management Reporting form', () => {
         if (!isCollectionsEnabled) {
             return;
         }
-        // TODO Remove this once the feature is in
-        cy.intercept('/v1/collections/autocomplete', {});
 
-        const reportName = 'report config [e2e test]';
+        const reportName = 'report config -e2e test-';
         const reportDescription = 'ui e2e test report';
-        const collectionName = 'stackrox ns collection [e2e test]';
-        const emailNotifierName = 'report config email notifier [e2e test]';
+        const collectionName = 'stackrox ns collection -e2e test-';
+        const emailNotifierName = 'report config email notifier -e2e test-';
         const integrationsSource = 'notifiers';
 
         // Delete collection from previous calls, if present
@@ -193,7 +191,6 @@ describe('Vulnerability Management Reporting form', () => {
         cy.get(
             '*[role="dialog"] input[aria-label="Select value 1 of 1 for the namespace name"]'
         ).type('stackrox');
-        cy.get(`*[role="dialog"] button:contains('stackrox')`).click();
         cy.get('*[role="dialog"] button:contains("Save")').click();
 
         // The newly created collection should automatically be selected

@@ -1,9 +1,10 @@
 import React, { ReactElement } from 'react';
+import { PageSection, PageSectionVariants } from '@patternfly/react-core';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
-import { PageSection, PageSectionVariants } from '@patternfly/react-core';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedDeferralsTable from './ApprovedDeferralsTable';
@@ -39,8 +40,9 @@ function ApprovedDeferrals(): ReactElement {
 
     const rows = data?.vulnerabilityRequests || [];
     const itemCount = data?.vulnerabilityRequestsCount || 0;
+    const hasSearchApplied = getHasSearchApplied(searchFilter);
 
-    if (!isLoading && rows && rows.length === 0 && !Object.keys(searchFilter).length) {
+    if (!isLoading && rows && rows.length === 0 && !hasSearchApplied) {
         return (
             <PageSection variant={PageSectionVariants.light} isFilled>
                 <EmptyStateTemplate title="No deferral requests were approved." headingLevel="h2" />

@@ -1,9 +1,12 @@
-import { EdgeModel, Model, NodeModel } from '@patternfly/react-topology';
+import { EdgeModel, EdgeTerminalType, Model, NodeModel } from '@patternfly/react-topology';
 
 import { EdgeProperties, ListenPort, OutEdges } from 'types/networkFlow.proto';
 import { Override } from 'utils/type.utils';
 
-export type CustomModel = Override<Model, { nodes: CustomNodeModel[]; edges: CustomEdgeModel[] }>;
+export type CustomModel = Override<
+    Model,
+    { nodes: CustomNodeModel[]; edges: CustomEdgeModel[]; updateCount: number }
+>;
 
 // Node types
 
@@ -104,5 +107,12 @@ export type ExtraneousData = {
 export type CustomEdgeModel = Override<EdgeModel, { data: EdgeData }>;
 
 export type EdgeData = {
+    // the edge label shows up when this exists
+    tag?: string;
+    // this is so that we can easily reference the tag content
+    portProtocolLabel: string;
     properties: EdgeProperties[];
+    startTerminalType?: EdgeTerminalType;
+    endTerminalType?: EdgeTerminalType;
+    isBidirectional: boolean;
 };

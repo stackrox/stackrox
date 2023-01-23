@@ -25,7 +25,7 @@ import (
 	imageCVEEdgeDackBox "github.com/stackrox/rox/central/imagecveedge/dackbox"
 	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	nodeIndex "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
 	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"

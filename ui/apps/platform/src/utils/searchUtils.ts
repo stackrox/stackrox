@@ -151,6 +151,17 @@ export function getUrlQueryStringForSearchFilter(
 }
 
 /**
+ * Helper function to determine if any search has been applied.
+ *
+ * @param searchFilter The `SearchFilter` value to check.
+ *
+ * @returns boolean, true if there are any search params
+ */
+export function getHasSearchApplied(searchFilter: SearchFilter): boolean {
+    return Boolean(Object.keys(searchFilter).length);
+}
+
+/**
  * Helper function to flatten the value from a `SearchFilter` into a single Array.
  * Array state values stored in the URL are coerced into a singular `string` if they contain
  * one item, or are `undefined` if the key is not part of the `SearchFilter`.

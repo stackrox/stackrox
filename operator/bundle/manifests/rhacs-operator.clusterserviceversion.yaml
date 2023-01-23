@@ -113,6 +113,11 @@ spec:
         path: central.telemetry
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Configures resources within Central in a declarative manner.
+        displayName: Declarative Configuration
+        path: central.declarativeConfiguration
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -219,6 +224,22 @@ spec:
         path: central.db.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
+      - description: List of config maps containing declarative configuration.
+        displayName: Config maps containing declarative configuration
+        path: central.declarativeConfiguration.configMaps
+      - description: List of secrets containing declarative configuration.
+        displayName: Secrets containing declarative configuration
+        path: central.declarativeConfiguration.secrets
+      - description: The name of the referenced config map.
+        displayName: Name
+        path: central.declarativeConfiguration.configMaps[0].name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: The name of the referenced secret.
+        displayName: Name
+        path: central.declarativeConfiguration.secrets[0].name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
       - description: The name of the referenced secret.
         displayName: Name
         path: central.defaultTLSSecret.name

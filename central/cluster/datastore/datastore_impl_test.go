@@ -19,7 +19,7 @@ import (
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -92,7 +92,7 @@ var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	suite.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip dackbox tests if postgres is enabled")

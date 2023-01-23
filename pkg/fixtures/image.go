@@ -8,10 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func getVulnsPerComponent(componentIndex int, cveType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
-	numVulnsPerComponent := 5
-	vulnsPerComponent := make([]*storage.EmbeddedVulnerability, 0, numVulnsPerComponent)
-	for i := 0; i < numVulnsPerComponent; i++ {
+func getVulnsPerComponent(componentIndex int, numVulns int, cveType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
+	vulnsPerComponent := make([]*storage.EmbeddedVulnerability, 0, numVulns)
+	for i := 0; i < numVulns; i++ {
 		cveName := fmt.Sprintf("CVE-2014-62%d%d", componentIndex, i)
 		vulnsPerComponent = append(vulnsPerComponent, &storage.EmbeddedVulnerability{
 			Cve:               cveName,
@@ -40,7 +39,7 @@ func GetImage() *storage.Image {
 				Name: "blah",
 				Type: "GPL",
 			},
-			Vulns: getVulnsPerComponent(i, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
+			Vulns: getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
 		})
 	}
 	return getImageWithComponents(componentsPerImage)
@@ -57,7 +56,7 @@ func GetImageWithUniqueComponents(numComponents int) *storage.Image {
 				Name: "blah",
 				Type: "GPL",
 			},
-			Vulns: getVulnsPerComponent(i, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
+			Vulns: getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
 		})
 	}
 	return getImageWithComponents(componentsPerImage)

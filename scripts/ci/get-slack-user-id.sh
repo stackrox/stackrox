@@ -35,6 +35,7 @@ case "$github_login" in
 'connorgorman')     slack_user='U01P76F3BFG' ;;
 'dashrews78')       slack_user='U03FB5XE10V' ;;
 'daynewlee')        slack_user='U03J855QWHF' ;;
+'dcaravel')         slack_user='U04DF45CXBJ' ;;
 'dhaus67')          slack_user='U02CZGZRGBF' ;;
 'dvail')            slack_user='U032WL9RM53' ;;
 'ebensh')           slack_user='U01Q7HTJ126' ;;
@@ -52,6 +53,7 @@ case "$github_login" in
 'kovayur')          slack_user='U033ZSBGEUQ' ;;
 'ksurabhi91')       slack_user='U043ZP4RN76' ;;
 'kurlov')           slack_user='U035001CQCV' ;;
+'kylape')           slack_user='UGJML86DD'   ;;
 'lvalerom')         slack_user='U02SJTV567N' ;;
 'md2119')           slack_user='U01Q57U4JFK' ;;
 'mfosterrox')       slack_user='U01PMH71ACU' ;;

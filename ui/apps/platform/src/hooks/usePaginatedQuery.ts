@@ -137,10 +137,13 @@ export function usePaginatedQuery<Item, ItemKey>(
     // (e.g. We would want to debounce for text input `keypress` events, but a single
     // "View more" button that is immediately disabled once clicked can fetch without delay.)
     const pageFetcher = useMemo(() => {
-        setIsFetchingNextPage(true);
+        const fetcherFn = (query, nextPage, keys) => {
+            setIsFetchingNextPage(true);
+            return fetchPageHandler(query, nextPage, keys);
+        };
         return {
-            debounced: debounce(fetchPageHandler, debounceRate ?? 0),
-            immediate: fetchPageHandler,
+            debounced: debounce(fetcherFn, debounceRate ?? 0),
+            immediate: fetcherFn,
         };
     }, [debounceRate, fetchPageHandler]);
 

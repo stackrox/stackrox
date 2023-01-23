@@ -2,12 +2,15 @@ name: Style
 on:
   push:
     tags:
-       - '*'
+    - '*'
     branches:
-      - master
-      - release-*
+    - master
+    - release-*
   pull_request:
-
+    types:
+    - opened
+    - reopened
+    - synchronize
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 

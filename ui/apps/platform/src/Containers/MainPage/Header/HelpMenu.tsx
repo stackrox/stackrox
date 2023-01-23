@@ -12,15 +12,16 @@ import useMetadata from 'hooks/useMetadata';
 import { apidocsPath, productDocsPath } from 'routePaths';
 
 function HelpMenu(): ReactElement {
-    const metadata = useMetadata();
+    const { releaseBuild, version } = useMetadata();
     const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
 
     function onToggleHelpMenu() {
         setIsHelpMenuOpen(!isHelpMenuOpen);
     }
 
+    // React requires key to render an item in an array of elements.
     const appLauncherItems = [
-        <ApplicationLauncherGroup>
+        <ApplicationLauncherGroup key="">
             <ApplicationLauncherItem
                 component={
                     <Link className="pf-c-app-launcher__menu-item" to={apidocsPath}>
@@ -28,18 +29,22 @@ function HelpMenu(): ReactElement {
                     </Link>
                 }
             />
-            <ApplicationLauncherItem
-                href={productDocsPath}
-                isExternal
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Help Center
-            </ApplicationLauncherItem>
-            <ApplicationLauncherSeparator />
-            <ApplicationLauncherItem isDisabled>
-                <span>{metadata.versionString}</span>
-            </ApplicationLauncherItem>
+            {version && (
+                <>
+                    <ApplicationLauncherItem
+                        href={productDocsPath}
+                        isExternal
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Help Center
+                    </ApplicationLauncherItem>
+                    <ApplicationLauncherSeparator />
+                    <ApplicationLauncherItem isDisabled>
+                        {`v${version}${releaseBuild ? '' : ' [DEV BUILD]'}`}
+                    </ApplicationLauncherItem>
+                </>
+            )}
         </ApplicationLauncherGroup>,
     ];
 
