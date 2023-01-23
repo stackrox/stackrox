@@ -26,6 +26,7 @@
         "VulnerabilityManagementRequests": "NO_ACCESS",
         "VulnerabilityReports": "NO_ACCESS",
         "WatchedImage": "NO_ACCESS",
+        "WorkflowAdministration" : "NO_ACCESS",
         "AllComments": "NO_ACCESS",
         "ComplianceRuns": "NO_ACCESS",
         "Config": "NO_ACCESS",
