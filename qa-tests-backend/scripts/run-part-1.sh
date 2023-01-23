@@ -38,7 +38,10 @@ config_part_1() {
 
     deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
 
-    deploy_default_psp
+    if [[ "$POD_SECURITY_POLICIES" ]]; then
+            deploy_default_psp
+    fi
+
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
 }

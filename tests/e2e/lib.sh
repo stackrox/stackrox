@@ -215,7 +215,7 @@ setup_generated_certs_for_test() {
 }
 
 setup_podsecuritypolicies_config() {
-    info "Set POD_SECURITY_POLYCIES variable based on kubernetes version"
+    info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
     local version
     version=$(kubectl version --output json)
     local majorVersion
@@ -226,7 +226,7 @@ setup_podsecuritypolicies_config() {
     # PodSecurityPolicy was removed in version 1.25
     if (( "$majorVersion" >= 1 && "$minorVersion" >= 25 )); then
         ci_export "POD_SECURITY_POLICIES" "false"
-        info "POD_SECURITY_POLIECIES set to false"
+        info "POD_SECURITY_POLICIES set to false"
     fi
 }
 
