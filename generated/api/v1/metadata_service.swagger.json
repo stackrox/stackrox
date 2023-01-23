@@ -11,6 +11,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/backup/status": {
+      "get": {
+        "operationId": "MetadataService_GetDatabaseBackupStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseBackupStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
     "/v1/database/status": {
       "get": {
         "operationId": "MetadataService_GetDatabaseStatus",
@@ -141,6 +163,48 @@
           "items": {
             "$ref": "#/definitions/protobufAny"
           }
+        }
+      }
+    },
+    "storageBackupInfo": {
+      "type": "object",
+      "properties": {
+        "backupLastRunAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "$ref": "#/definitions/storageOperationStatus"
+        },
+        "requestor": {
+          "$ref": "#/definitions/storageSlimUser"
+        }
+      }
+    },
+    "storageOperationStatus": {
+      "type": "string",
+      "enum": [
+        "FAIL",
+        "PASS"
+      ],
+      "default": "FAIL"
+    },
+    "storageSlimUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1DatabaseBackupStatus": {
+      "type": "object",
+      "properties": {
+        "backupInfo": {
+          "$ref": "#/definitions/storageBackupInfo"
         }
       }
     },
