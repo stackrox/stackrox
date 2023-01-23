@@ -25,10 +25,6 @@ export const search = {
     },
 };
 
-export const clusters = {
-    list: 'v1/clusters',
-};
-
 export const risks = {
     // The * at the end exists because sometimes we add ?query= at the end.
     riskyDeployments: '/v1/deploymentswithprocessinfo*',
@@ -44,16 +40,6 @@ export const risks = {
         getPodEventTimeline: 'getPodEventTimeline',
     },
 };
-
-export const auth = {
-    availableAuthProviders: '/v1/availableAuthProviders',
-    loginAuthProviders: '/v1/login/authproviders',
-    authProviders: '/v1/authProviders',
-    authStatus: '/v1/auth/status',
-    tokenRefresh: '/sso/session/tokenrefresh',
-};
-
-export const metadata = 'v1/metadata';
 
 export const network = {
     networkBaseline: '/v1/networkbaseline/*', // deployment id
@@ -76,30 +62,6 @@ export const policies = {
     import: '/v1/policies/import',
     reassess: '/v1/policies/reassess',
 };
-
-export const roles = {
-    list: '/v1/roles',
-    mypermissions: 'v1/mypermissions',
-};
-
-export const permissionSets = {
-    list: '/v1/permissionsets',
-};
-
-export const accessScopes = {
-    list: '/v1/simpleaccessscopes',
-};
-
-export const groups = {
-    batch: '/v1/groupsbatch',
-    list: '/v1/groups',
-};
-
-export const userAttributes = {
-    list: '/v1/userattributes/*',
-};
-
-export const featureFlags = '/v1/featureflags';
 
 export const integrationHealth = {
     imageIntegrations: '/v1/integrationhealth/imageintegrations',
@@ -133,12 +95,4 @@ export const riskAcceptance = {
     getImageVulnerabilities: graphql('getImageVulnerabilities'),
     deferVulnerability: graphql('deferVulnerability'),
     markVulnerabilityFalsePositive: graphql('markVulnerabilityFalsePositive'),
-};
-
-export const extensions = {
-    diagnostics: '/api/extensions/diagnostics',
-};
-
-export const permissions = {
-    mypermissions: '/v1/mypermissions',
 };

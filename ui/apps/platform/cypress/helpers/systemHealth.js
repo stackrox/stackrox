@@ -42,7 +42,7 @@ const routeMatcherMap = {
     },
     clusters: {
         method: 'GET',
-        url: api.clusters.list,
+        url: '/v1/clusters',
     },
     [integrationHealthVulnDefinitionsAlias]: {
         method: 'GET',
