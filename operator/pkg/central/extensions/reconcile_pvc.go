@@ -113,7 +113,7 @@ func reconcilePVC(ctx context.Context, central *platform.Central, persistence *p
 		persistence:      persistence,
 		target:           target,
 		defaultClaimName: defaultClaimName,
-		log:              log,
+		log:              log.WithValues("pvcReconciler", target),
 	}
 
 	return ext.Execute()
