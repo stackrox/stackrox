@@ -410,7 +410,7 @@ func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error 
 	err = ds.storage.Delete(ctx, id)
 	if err != nil {
 		if strings.Contains(err.Error(), "SQLSTATE 23503") {
-			return errors.Wrap(errox.ReferencedByAnotherObject, "failed to delete collection")
+			err = errox.ReferencedByAnotherObject
 		}
 		return errors.Wrap(err, "failed to delete collection")
 	}
