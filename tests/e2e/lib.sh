@@ -217,7 +217,7 @@ setup_generated_certs_for_test() {
 setup_podsecuritypolicies_config() {
     info "Set POD_SECURITY_POLYCIES variable based on kubernetes version"
     local version
-    version=(kubectl version --output json)
+    version=$(kubectl version --output json)
     local majorVersion
     majorVersion=$(echo "$version" | jq -r .serverVersion.major)
     local minorVersion

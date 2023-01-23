@@ -45,7 +45,7 @@ if kubectl get ns "${namespace}"; then
     kubectl delete ns "${namespace}" # handle CI re-runs
 fi
 kubectl create ns "${namespace}"
-if [ "$POD_SECURITY_POLICIES" ]; then
+if [[ "$POD_SECURITY_POLICIES" ]]; then
     kubectl -n "${namespace}" apply -f "${DIR}/psp.yaml"
 fi
 
