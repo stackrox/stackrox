@@ -8,12 +8,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/dackboxhelper"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/postgres"
 	"github.com/stackrox/rox/migrator/types"
-	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -26,7 +26,7 @@ var (
 		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 35,
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 36},
 		Run: func(databases *types.Databases) error {
-			legacyStore := legacy.New(rawDackbox.GetGlobalDackBox(), rawDackbox.GetKeyFence(), true)
+			legacyStore := legacy.New(dackboxhelper.GetMigrationDackBox(), dackboxhelper.GetMigrationKeyFence(), true)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving nodes from rocksdb to postgres")
