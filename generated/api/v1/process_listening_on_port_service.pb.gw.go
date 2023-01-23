@@ -181,7 +181,7 @@ func RegisterProcessesListeningOnPortsServiceHandlerClient(ctx context.Context, 
 }
 
 var (
-	pattern_ProcessesListeningOnPortsService_GetProcessesListeningOnPorts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "processes_listening_on_ports", "deployment", "deployment_id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ProcessesListeningOnPortsService_GetProcessesListeningOnPorts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "listening_endpoints", "deployment", "deployment_id"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

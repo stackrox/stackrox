@@ -45,7 +45,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func emptyProcessesListeningOnPortsResponse() (*v1.GetProcessesListeningOnPortsResponse, error) {
 	result := &v1.GetProcessesListeningOnPortsResponse{
-		ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
+		ListeningEndpoints: make([]*storage.ProcessListeningOnPort, 0),
 	}
 	return result, nil
 }
@@ -75,6 +75,6 @@ func (s *serviceImpl) GetProcessesListeningOnPorts(
 	}
 
 	return &v1.GetProcessesListeningOnPortsResponse{
-		ProcessesListeningOnPorts: processesListeningOnPorts,
+		ListeningEndpoints: processesListeningOnPorts,
 	}, err
 }
