@@ -38,9 +38,7 @@ compatibility_test() {
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
-        if [[ "$POD_SECURITY_POLICIES" ]]; then
-            deploy_default_psp
-        fi
+        deploy_default_psp
 
         deploy_webhook_server
         get_ECR_docker_pull_password
