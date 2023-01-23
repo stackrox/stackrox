@@ -238,7 +238,7 @@ const routeMatcherMapToVisitNetworkGraph = {
     },
     [clustersAlias]: {
         method: 'GET',
-        url: api.clusters.list,
+        url: '/v1/clusters',
     },
     [networkPoliciesGraphEpochAlias]: {
         method: 'GET',
