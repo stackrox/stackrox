@@ -261,8 +261,42 @@ check_stackrox_logs() {
         die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
+    check_for_stackrox_OOMs "$dir"
     check_for_stackrox_restarts "$dir"
     check_for_errors_in_stackrox_logs "$dir"
+}
+
+check_for_stackrox_OOMs() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: check_for_stackrox_OOMs <dir>"
+    fi
+
+    local dir="$1"
+
+    if [[ ! -d "$dir/stackrox/pods" ]]; then
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+    fi
+
+    local objects
+    objects=$(ls "$dir"/stackrox/pods/*_object.json || true)
+    if [[ -n "$objects" ]]; then
+        for object in $objects; do
+            local pod_name
+            # This wack jq slurp flag with the if statement is due to https://github.com/stedolan/jq/issues/1142
+            if pod_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.name end' "$object"); then
+                info "Checking $pod_name for OOMKilled"
+                if jq -e '. | select(.status.containerStatuses[].lastState.terminated.reason=="OOMKilled")' "$object" >/dev/null 2>&1; then
+                    echo "OOM $object"
+                    save_junit_failure "OOMCheck-$pod_name" "OOMCheck" "$pod_name was OOMKilled"
+                else
+                    echo "NOT OOM $object"
+                    save_junit_success "OOMCheck-$pod_name" "$pod_name was not OOMKilled"
+                fi
+            else
+                echo "found $object that isn't a pod object"
+            fi
+        done
+    fi
 }
 
 check_for_stackrox_restarts() {
