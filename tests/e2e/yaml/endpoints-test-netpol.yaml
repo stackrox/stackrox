@@ -8,9 +8,23 @@ metadata:
 spec:
   ingress:
   - ports:
+    - port: 8080
+      protocol: TCP
+    - port: 8081
+      protocol: TCP
+    - port: 8082
+      protocol: TCP
+    - port: 8443
+      protocol: TCP
     - port: 8444
       protocol: TCP
+    - port: 8445
+      protocol: TCP
     - port: 8446
+      protocol: TCP
+    - port: 8447
+      protocol: TCP
+    - port: 8448
       protocol: TCP
   podSelector:
     matchLabels:

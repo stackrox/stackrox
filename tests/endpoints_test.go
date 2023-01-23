@@ -49,24 +49,20 @@ var (
 	}
 )
 
-func endpointForTargetPort(targetPort uint16, accessViaLoadBalancer bool) string {
-	if accessViaLoadBalancer {
-		endpointHostname := os.Getenv("API_HOSTNAME")
-		if endpointHostname == "" || endpointHostname == "localhost" {
-			panic(errors.Errorf("API_HOSTNAME=%q env variable is not set correctly", endpointHostname))
-		}
-		return fmt.Sprintf("%s:%d", endpointHostname, targetPort)
+func endpointForTargetPort(targetPort uint16) string {
+	endpointHostname := os.Getenv("API_HOSTNAME")
+	if endpointHostname == "" || endpointHostname == "localhost" {
+		panic(errors.Errorf("API_HOSTNAME=%q env variable is not set correctly", endpointHostname))
 	}
-	return fmt.Sprintf("localhost:%d", targetPort+portOffset)
+	return fmt.Sprintf("%s:%d", endpointHostname, targetPort)
 }
 
 type endpointsTestCase struct {
 	targetPort uint16
 
-	accessViaLoadBalancer bool
-	skipTLS               bool
-	clientCert            *tls.Certificate
-	validServerNames      []string
+	skipTLS          bool
+	clientCert       *tls.Certificate
+	validServerNames []string
 
 	expectConnectFailure bool
 	expectGRPCSuccess    bool
@@ -122,7 +118,7 @@ func (c *endpointsTestContext) tlsConfig(clientCert *tls.Certificate, serverName
 }
 
 func (c *endpointsTestCase) endpoint() string {
-	return endpointForTargetPort(c.targetPort, c.accessViaLoadBalancer)
+	return endpointForTargetPort(c.targetPort)
 }
 
 func (c *endpointsTestCase) Run(t *testing.T, testCtx *endpointsTestContext) {
@@ -403,26 +399,23 @@ func TestEndpoints(t *testing.T) {
 			expectHTTPSuccess: false,
 		},
 		"service-only TLS port with no client cert": {
-			targetPort:            8444,
-			validServerNames:      []string{"central.stackrox"},
-			accessViaLoadBalancer: true,
-			expectConnectFailure:  true,
+			targetPort:           8444,
+			validServerNames:     []string{"central.stackrox"},
+			expectConnectFailure: true,
 		},
 		"service-only TLS port with service client cert": {
-			targetPort:            8444,
-			validServerNames:      []string{"central.stackrox"},
-			clientCert:            &serviceCert,
-			expectAuth:            serviceAuth,
-			accessViaLoadBalancer: true,
-			expectGRPCSuccess:     true,
-			expectHTTPSuccess:     true,
+			targetPort:        8444,
+			validServerNames:  []string{"central.stackrox"},
+			clientCert:        &serviceCert,
+			expectAuth:        serviceAuth,
+			expectGRPCSuccess: true,
+			expectHTTPSuccess: true,
 		},
 		"service-only TLS port with user client cert": {
-			targetPort:            8444,
-			validServerNames:      []string{"central.stackrox"},
-			clientCert:            &userCert,
-			accessViaLoadBalancer: true,
-			expectConnectFailure:  true,
+			targetPort:           8444,
+			validServerNames:     []string{"central.stackrox"},
+			clientCert:           &userCert,
+			expectConnectFailure: true,
 		},
 		"user-only TLS port with no client cert": {
 			targetPort:        8445,
@@ -446,29 +439,26 @@ func TestEndpoints(t *testing.T) {
 			expectHTTPSuccess: true,
 		},
 		"http-only TLS port with no client cert": {
-			targetPort:            8446,
-			validServerNames:      testCtx.allServerNames,
-			accessViaLoadBalancer: true,
-			expectGRPCSuccess:     false,
-			expectHTTPSuccess:     true,
+			targetPort:        8446,
+			validServerNames:  testCtx.allServerNames,
+			expectGRPCSuccess: false,
+			expectHTTPSuccess: true,
 		},
 		"http-only TLS port with service client cert": {
-			targetPort:            8446,
-			validServerNames:      testCtx.allServerNames,
-			clientCert:            &serviceCert,
-			expectAuth:            serviceAuth,
-			accessViaLoadBalancer: true,
-			expectGRPCSuccess:     false,
-			expectHTTPSuccess:     true,
+			targetPort:        8446,
+			validServerNames:  testCtx.allServerNames,
+			clientCert:        &serviceCert,
+			expectAuth:        serviceAuth,
+			expectGRPCSuccess: false,
+			expectHTTPSuccess: true,
 		},
 		"http-only TLS port with user client cert": {
-			targetPort:            8446,
-			validServerNames:      testCtx.allServerNames,
-			clientCert:            &userCert,
-			expectAuth:            userAuth,
-			accessViaLoadBalancer: true,
-			expectGRPCSuccess:     false,
-			expectHTTPSuccess:     true,
+			targetPort:        8446,
+			validServerNames:  testCtx.allServerNames,
+			clientCert:        &userCert,
+			expectAuth:        userAuth,
+			expectGRPCSuccess: false,
+			expectHTTPSuccess: true,
 		},
 		"grpc-only client-auth required TLS port with no client cert": {
 			targetPort:           8447,
