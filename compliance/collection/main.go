@@ -277,13 +277,9 @@ func main() {
 		go manageSendingToSensor(ctx, cli, sensorC)
 
 		var scanner nodeinventorizer.NodeInventorizer
-		if features.UseFakeNodeInventory.Enabled() {
-			log.Infof("Using FakeNodeInventorizer")
-			scanner = &nodeinventorizer.FakeNodeInventorizer{}
-		} else {
-			log.Infof("Using NodeInventoryCollector")
-			scanner = &nodeinventorizer.NodeInventoryCollector{}
-		}
+
+		log.Infof("Using NodeInventoryCollector")
+		scanner = &nodeinventorizer.NodeInventoryCollector{}
 		nodeInventoriesC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), scanner)
 
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
