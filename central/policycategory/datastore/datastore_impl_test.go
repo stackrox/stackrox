@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	indexMocks "github.com/stackrox/rox/central/policycategory/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/policycategory/store/mocks"
+	policyCategoryEdgeDSMocks "github.com/stackrox/rox/central/policycategoryedge/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -22,10 +23,11 @@ func TestPolicyCategoryDatastore(t *testing.T) {
 type PolicyCategoryDatastoreTestSuite struct {
 	suite.Suite
 
-	mockCtrl  *gomock.Controller
-	store     *storeMocks.MockStore
-	indexer   *indexMocks.MockIndexer
-	datastore DataStore
+	mockCtrl      *gomock.Controller
+	store         *storeMocks.MockStore
+	indexer       *indexMocks.MockIndexer
+	edgeDataStore *policyCategoryEdgeDSMocks.MockDataStore
+	datastore     DataStore
 
 	hasReadWritePolicyAccess                 context.Context
 	hasReadWriteWorkflowAdministrationAccess context.Context
@@ -36,8 +38,9 @@ func (s *PolicyCategoryDatastoreTestSuite) SetupTest() {
 
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
+	s.edgeDataStore = policyCategoryEdgeDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.datastore = newWithoutDefaults(s.store, s.indexer, nil)
+	s.datastore = newWithoutDefaults(s.store, s.indexer, nil, s.edgeDataStore)
 
 	s.hasReadWritePolicyAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

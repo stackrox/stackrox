@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
@@ -10,9 +12,12 @@ import (
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
 	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
+	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policyutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -31,7 +36,6 @@ func initialize() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = policyPostgres.New(globaldb.GetPostgres())
 		indexer = policyPostgres.NewIndexer(globaldb.GetPostgres())
-		addDefaults(storage)
 	} else {
 		storage = boltdb.New(globaldb.GetGlobalDB())
 		indexer = index.New(globalindex.GetGlobalTmpIndex())
@@ -41,8 +45,12 @@ func initialize() {
 
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()
+	categoriesDatastore := categoriesDS.Singleton()
 
-	ad = New(storage, indexer, searcher, clusterDatastore, notifierDatastore)
+	ad = New(storage, indexer, searcher, clusterDatastore, notifierDatastore, categoriesDatastore)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		addDefaults(storage, categoriesDatastore)
+	}
 }
 
 // Singleton provides the interface for non-service external interaction.
@@ -54,7 +62,7 @@ func Singleton() DataStore {
 // addDefaults adds the default policies into the postgres table for policies.
 // TODO: ROX-11279: Data migration for postgres should take care of removing default policies in the bolt bucket named removed_default_policies
 // from the policies table in postgres
-func addDefaults(s policyStore.Store) {
+func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	policyIDSet := set.NewStringSet()
 	storedPolicies, err := s.GetAll(policyCtx)
 	if err != nil {
@@ -82,9 +90,17 @@ func addDefaults(s policyStore.Store) {
 		// fill multi-word sort helper field
 		policyutils.FillSortHelperFields(p)
 
-		if err := s.Upsert(policyCtx, p); err != nil {
-			panic(err)
+		policyCategories := p.GetCategories()
+		if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
+			p.Categories = []string{}
 		}
+		if err := s.Upsert(policyCtx, p); err != nil {
+			utils.CrashOnError(err)
+		}
+		if err := categoriesDS.SetPolicyCategoriesForPolicy(sac.WithAllAccess(context.Background()), p.GetId(), policyCategories); err != nil {
+			utils.CrashOnError(err)
+		}
+
 	}
 	log.Infof("Loaded %d new default Policies", count)
 }
