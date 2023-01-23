@@ -25,13 +25,14 @@ interface MenuProps {
     buttonIcon?: ReactElement;
     menuClassName?: string;
     className?: string;
-    options: GroupedMenuOptions | MenuOption[];
+    options?: GroupedMenuOptions | MenuOption[];
     disabled?: boolean;
     // TODO the `grouped` prop should be deprecated in favor of type narrowing once all dependent files are moved to TypeScript
     grouped?: boolean;
     tooltip?: string;
     dataTestId?: string;
     hideCaret?: boolean;
+    customMenuContent?: ReactElement;
 }
 
 const Menu = ({
@@ -47,6 +48,7 @@ const Menu = ({
     dataTestId = 'menu-button',
     hideCaret = false,
     buttonTextClassName = '',
+    customMenuContent,
 }: MenuProps) => {
     const [isMenuOpen, setMenuState] = useState(false);
 
@@ -104,13 +106,15 @@ const Menu = ({
 
     function renderGroupedOptions(formattedOptions: GroupedMenuOptions) {
         return Object.keys(formattedOptions).map((group) => {
-            return (
+            return options ? (
                 <React.Fragment key={group}>
                     <div className="uppercase font-condensed p-3 border-b border-primary-300 text-lg">
                         {group}
                     </div>
                     <div className="px-2">{renderOptions(options[group])}</div>
                 </React.Fragment>
+            ) : (
+                []
             );
         });
     }
@@ -137,16 +141,18 @@ const Menu = ({
                             ))}
                     </div>
                 </button>
-                {isMenuOpen && (
-                    <div
-                        className={`absolute flex flex-col flex-nowrap menu right-0 z-10 min-w-32 bg-base-100 shadow border border-base-400 ${menuClassName}`}
-                        data-testid="menu-list"
-                    >
-                        {grouped
-                            ? renderGroupedOptions(options as GroupedMenuOptions)
-                            : renderOptions(options as MenuOption[])}
-                    </div>
-                )}
+                {isMenuOpen &&
+                    // if `customMenuContent is provided, show it; otherwise, loop over the options
+                    (customMenuContent || (
+                        <div
+                            className={`absolute flex flex-col flex-nowrap menu right-0 z-10 min-w-32 bg-base-100 shadow border border-base-400 ${menuClassName}`}
+                            data-testid="menu-list"
+                        >
+                            {grouped
+                                ? renderGroupedOptions(options as GroupedMenuOptions)
+                                : renderOptions(options as MenuOption[])}
+                        </div>
+                    ))}
             </div>
         </Tooltip>
     );
