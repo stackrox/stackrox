@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Alert,
     AlertVariant,
@@ -22,6 +22,7 @@ type DeploymentBaselinesSimulatedProps = {
     deploymentId: string;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimulatedProps) {
     // component state
     const networkSimulatedBaselines: Flow[] = [];
@@ -31,8 +32,8 @@ function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimul
     const initialExpandedRows = networkSimulatedBaselines
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
-    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
-    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+    const [expandedRows, setExpandedRows] = useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
     // derived data
     const numBaselines = getNumFlows(networkSimulatedBaselines);
