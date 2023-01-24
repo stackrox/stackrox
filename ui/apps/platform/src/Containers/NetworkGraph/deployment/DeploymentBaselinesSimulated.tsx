@@ -4,6 +4,8 @@ import {
     AlertVariant,
     Bullseye,
     Divider,
+    Flex,
+    FlexItem,
     Spinner,
     Stack,
     StackItem,
@@ -12,11 +14,16 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { getNumFlows } from '../utils/flowUtils';
+import { filterNetworkFlows, getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 
 import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
-import { Flow } from '../types/flow.type';
+import useFetchSimulatedBaselines from '../api/useFetchSimulatedBaselines';
+import AdvancedFlowsFilter, {
+    defaultAdvancedFlowsFilters,
+} from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
+import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import EntityNameSearchInput from '../common/EntityNameSearchInput';
 
 type DeploymentBaselinesSimulatedProps = {
     deploymentId: string;
@@ -25,18 +32,32 @@ type DeploymentBaselinesSimulatedProps = {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimulatedProps) {
     // component state
-    const networkSimulatedBaselines: Flow[] = [];
-    const isLoading = false;
-    const error = '';
+    const {
+        isLoading,
+        data: { simulatedBaselines },
+        error,
+    } = useFetchSimulatedBaselines(deploymentId);
 
-    const initialExpandedRows = networkSimulatedBaselines
+    const [entityNameFilter, setEntityNameFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFlowsFilterType>(
+        defaultAdvancedFlowsFilters
+    );
+
+    const filteredSimulatedBaselines = filterNetworkFlows(
+        simulatedBaselines,
+        entityNameFilter,
+        advancedFilters
+    );
+
+    const initialExpandedRows = filteredSimulatedBaselines
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
     const [expandedRows, setExpandedRows] = useState<string[]>(initialExpandedRows);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
     // derived data
-    const numBaselines = getNumFlows(networkSimulatedBaselines);
+    const numBaselines = getNumFlows(filteredSimulatedBaselines);
+    const allUniquePorts = getAllUniquePorts(filteredSimulatedBaselines);
 
     if (isLoading) {
         return (
@@ -58,6 +79,24 @@ function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimul
             )}
             <Stack hasGutter className="pf-u-p-md">
                 <StackItem>
+                    <Flex>
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <EntityNameSearchInput
+                                value={entityNameFilter}
+                                setValue={setEntityNameFilter}
+                            />
+                        </FlexItem>
+                        <FlexItem>
+                            <AdvancedFlowsFilter
+                                filters={advancedFilters}
+                                setFilters={setAdvancedFilters}
+                                allUniquePorts={allUniquePorts}
+                            />
+                        </FlexItem>
+                    </Flex>
+                </StackItem>
+                <Divider component="hr" />
+                <StackItem>
                     <Toolbar>
                         <ToolbarContent>
                             <ToolbarItem>
@@ -73,13 +112,14 @@ function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimul
                 <StackItem>
                     <FlowsTable
                         label="Deployment simulated baselines"
-                        flows={networkSimulatedBaselines}
+                        flows={filteredSimulatedBaselines}
                         numFlows={numBaselines}
                         expandedRows={expandedRows}
                         setExpandedRows={setExpandedRows}
                         selectedRows={selectedRows}
                         setSelectedRows={setSelectedRows}
                         isEditable={false}
+                        isBaselineSimulation
                     />
                 </StackItem>
             </Stack>

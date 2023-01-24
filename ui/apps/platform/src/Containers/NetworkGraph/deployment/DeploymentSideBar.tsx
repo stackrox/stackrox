@@ -102,67 +102,76 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                     </FlexItem>
                 </Flex>
             </StackItem>
-            <StackItem>
-                <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
-                    <Tab
-                        eventKey="Details"
-                        tabContentId="Details"
-                        title={<TabTitleText>Details</TabTitleText>}
-                        disabled={isBaselineSimulationOn}
-                    />
-                    <Tab
-                        eventKey="Flows"
-                        tabContentId="Flows"
-                        title={<TabTitleText>Flows</TabTitleText>}
-                        disabled={isBaselineSimulationOn}
-                    />
-                    <Tab
-                        eventKey="Baselines"
-                        tabContentId="Baselines"
-                        title={<TabTitleText>Baselines</TabTitleText>}
-                    />
-                    <Tab
-                        eventKey="Network policies"
-                        tabContentId="Network policies"
-                        title={<TabTitleText>Network policies</TabTitleText>}
-                        disabled={isBaselineSimulationOn}
-                    />
-                </Tabs>
-            </StackItem>
-            <StackItem isFilled style={{ overflow: 'auto' }}>
-                <TabContent eventKey="Details" id="Details" hidden={activeKeyTab !== 'Details'}>
-                    {deployment && (
-                        <DeploymentDetails
-                            deployment={deployment}
-                            numExternalFlows={numExternalFlows}
-                            numInternalFlows={numInternalFlows}
-                            listenPorts={listenPorts}
-                        />
-                    )}
-                </TabContent>
-                <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
-                    <DeploymentFlows edges={edges} deploymentId={deploymentId} />
-                </TabContent>
-                <TabContent
-                    eventKey="Baselines"
-                    id="Baselines"
-                    hidden={activeKeyTab !== 'Baselines'}
-                    className="pf-u-h-100"
-                >
-                    {isBaselineSimulationOn ? (
-                        <DeploymentBaselinesSimulated deploymentId={deploymentId} />
-                    ) : (
-                        <DeploymentBaselines deploymentId={deploymentId} />
-                    )}
-                </TabContent>
-                <TabContent
-                    eventKey="Network policies"
-                    id="Network policies"
-                    hidden={activeKeyTab !== 'Network policies'}
-                >
-                    <NetworkPolicies policyIds={deploymentPolicyIds} />
-                </TabContent>
-            </StackItem>
+            {isBaselineSimulationOn && (
+                <StackItem isFilled style={{ overflow: 'auto' }} className="pf-u-h-100">
+                    <DeploymentBaselinesSimulated deploymentId={deploymentId} />
+                </StackItem>
+            )}
+            {!isBaselineSimulationOn && (
+                <>
+                    <StackItem>
+                        <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
+                            <Tab
+                                eventKey="Details"
+                                tabContentId="Details"
+                                title={<TabTitleText>Details</TabTitleText>}
+                                disabled={isBaselineSimulationOn}
+                            />
+                            <Tab
+                                eventKey="Flows"
+                                tabContentId="Flows"
+                                title={<TabTitleText>Flows</TabTitleText>}
+                                disabled={isBaselineSimulationOn}
+                            />
+                            <Tab
+                                eventKey="Baselines"
+                                tabContentId="Baselines"
+                                title={<TabTitleText>Baselines</TabTitleText>}
+                            />
+                            <Tab
+                                eventKey="Network policies"
+                                tabContentId="Network policies"
+                                title={<TabTitleText>Network policies</TabTitleText>}
+                                disabled={isBaselineSimulationOn}
+                            />
+                        </Tabs>
+                    </StackItem>
+                    <StackItem isFilled style={{ overflow: 'auto' }}>
+                        <TabContent
+                            eventKey="Details"
+                            id="Details"
+                            hidden={activeKeyTab !== 'Details'}
+                        >
+                            {deployment && (
+                                <DeploymentDetails
+                                    deployment={deployment}
+                                    numExternalFlows={numExternalFlows}
+                                    numInternalFlows={numInternalFlows}
+                                    listenPorts={listenPorts}
+                                />
+                            )}
+                        </TabContent>
+                        <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
+                            <DeploymentFlows edges={edges} deploymentId={deploymentId} />
+                        </TabContent>
+                        <TabContent
+                            eventKey="Baselines"
+                            id="Baselines"
+                            hidden={activeKeyTab !== 'Baselines'}
+                            className="pf-u-h-100"
+                        >
+                            <DeploymentBaselines deploymentId={deploymentId} />
+                        </TabContent>
+                        <TabContent
+                            eventKey="Network policies"
+                            id="Network policies"
+                            hidden={activeKeyTab !== 'Network policies'}
+                        >
+                            <NetworkPolicies policyIds={deploymentPolicyIds} />
+                        </TabContent>
+                    </StackItem>
+                </>
+            )}
         </Stack>
     );
 }
