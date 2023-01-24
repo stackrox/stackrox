@@ -177,7 +177,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
-	deployment string,
+	deploymentID string,
 ) (
 	processesListeningOnPorts []*storage.ProcessListeningOnPort, err error,
 ) {
@@ -187,7 +187,7 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	processesListeningOnPorts, err = ds.storage.GetProcessListeningOnPort(ctx, deployment)
+	processesListeningOnPorts, err = ds.storage.GetProcessListeningOnPort(ctx, deploymentID)
 
 	if err != nil {
 		return nil, err
@@ -471,7 +471,7 @@ func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 	sort.Slice(values, func(i, j int) bool {
-		return values[i].GetCloseTimestamp().Compare(values[j].CloseTimestamp) == -1
+		return values[i].GetCloseTimestamp().Compare(values[j].GetCloseTimestamp()) == -1
 	})
 }
 

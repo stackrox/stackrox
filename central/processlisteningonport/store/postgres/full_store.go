@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -23,23 +22,9 @@ func NewFullStore(db *pgxpool.Pool) store.Store {
 	}
 }
 
-// FullStoreWrap augments the wrapped store with GetProcessListeningOnPort functions.
-func FullStoreWrap(wrapped store.Store) store.Store {
-	return &fullStoreImpl{
-		Store: wrapped,
-	}
-}
-
 type fullStoreImpl struct {
 	Store
 	db *pgxpool.Pool
-}
-
-// NewFullTestStore is used for testing.
-func NewFullTestStore(_ testing.TB, store store.Store) store.Store {
-	return &fullStoreImpl{
-		Store: store,
-	}
 }
 
 // SQL query to join process_listening_on_port together with
@@ -79,8 +64,12 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	rows, err = s.db.Query(ctx, getByDeploymentStmt, deploymentID)
 
 	if err != nil {
-		log.Warnf("%s: %s", getByDeploymentStmt, err)
-		return nil, pgutils.ErrNilIfNoRows(err)
+		// Do not be alarmed if the error is simply NoRows
+		err = pgutils.ErrNilIfNoRows(err)
+		if err != nil {
+			log.Warnf("%s: %s", getByDeploymentStmt, err)
+		}
+		return nil, err
 	}
 	defer rows.Close()
 

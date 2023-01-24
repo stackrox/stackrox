@@ -1139,7 +1139,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
-func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrder() {
+// TestPLOPAddCloseBatchOutOfOrderMoreClosed: Excersice batching logic when
+// having more "closed" PLOP events
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed() {
 	testNamespace := "test_namespace"
 
 	indicators := []*storage.ProcessIndicator{
@@ -1269,6 +1271,145 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrder() {
 		CloseTimestamp:     closedPlopObject3.GetCloseTimestamp(),
 		ProcessIndicatorId: indicators[0].GetId(),
 		Closed:             true,
+		Process:            nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+// TestPLOPAddCloseBatchOutOfOrderMoreOpen: Excersice batching logic when
+// having more "open" PLOP events
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
+	testNamespace := "test_namespace"
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container2",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process2",
+				Args:         "test_arguments2",
+				ExecFilePath: "test_path2",
+			},
+		},
+	}
+
+	openPlopObject := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: nil,
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+	}
+
+	time1 := time.Now()
+	time2 := time.Now().Local().Add(time.Hour * time.Duration(1))
+	time3 := time.Now().Local().Add(time.Hour * time.Duration(2))
+
+	closedPlopObject1 := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time1),
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+	}
+
+	closedPlopObject2 := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time2),
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+	}
+
+	closedPlopObject3 := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time3),
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject1}
+
+	batchPlopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		&openPlopObject,
+		&closedPlopObject3,
+		&openPlopObject,
+		&closedPlopObject2,
+		&openPlopObject,
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Add the same PLOP in an open and closed state
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, batchPlopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	// It's open and included into the API response
+	suite.Len(newPlops, 1)
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               closedPlopObject3.GetPort(),
+		Protocol:           closedPlopObject3.GetProtocol(),
+		CloseTimestamp:     nil,
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             false,
 		Process:            nil,
 	}
 
