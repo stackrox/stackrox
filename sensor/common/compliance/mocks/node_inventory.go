@@ -1,7 +1,6 @@
 package mocks
 
 import (
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
@@ -23,9 +22,9 @@ func NewMockNodeIDMatcher(store nodeStore) *MockNodeIDMatcher {
 	}
 }
 
-// GetNodeResource always returns a node with give name and hardcoded ID
-func (c *MockNodeIDMatcher) GetNodeResource(nodename string) *store.NodeWrap {
-	return &store.NodeWrap{Node: &storage.Node{Name: nodename, Id: "abc"}}
+// GetNodeID always returns a node with give name and hardcoded ID
+func (c *MockNodeIDMatcher) GetNodeID(nodename string) (string, error) {
+	return "abc", nil
 }
 
 // MockNodeStore is a thread-unsafe, map-based implementation of in-memory store
