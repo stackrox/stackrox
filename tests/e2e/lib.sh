@@ -227,6 +227,9 @@ setup_podsecuritypolicies_config() {
     if (( "$majorVersion" >= 1 && "$minorVersion" >= 25 )); then
         ci_export "POD_SECURITY_POLICIES" "false"
         info "POD_SECURITY_POLICIES set to false"
+    else
+        ci_export "POD_SECURITY_POLICIES" "true"
+        info "POD_SECURITY_POLICIES set to true"
     fi
 }
 
