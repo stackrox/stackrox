@@ -3,6 +3,7 @@ package m169Tom170
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -46,12 +48,17 @@ var (
 
 	scopeIDToCollectionID = make(map[string]string)
 	skippedScopes         = set.NewStringSet()
+	idGenerator           func(collectionName string) string
 )
 
 func buildEmbeddedCollection(scopeName string, index int, rules []*storage.SelectorRule) *storage.ResourceCollection {
+	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
+	colName := fmt.Sprintf("Embedded collection %d for scope <%s>", index, scopeName)
 	return &storage.ResourceCollection{
-		Id:   uuid.NewV4().String(),
-		Name: fmt.Sprintf("Embedded collection %d for scope <%s>", index, scopeName),
+		Id:          idGenerator(colName),
+		Name:        colName,
+		CreatedAt:   timeNow,
+		LastUpdated: timeNow,
 		ResourceSelectors: []*storage.ResourceSelector{
 			{
 				Rules: rules,
@@ -195,9 +202,13 @@ func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
 					Id: collection.GetId(),
 				})
 			}
+			timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
+			rootColName := fmt.Sprintf("Root collection for scope <%s>", scope.GetName())
 			rootCollection := &storage.ResourceCollection{
-				Id:                  uuid.NewV4().String(),
-				Name:                fmt.Sprintf("Root collection for scope <%s>", scope.GetName()),
+				Id:                  idGenerator(rootColName),
+				Name:                rootColName,
+				CreatedAt:           timeNow,
+				LastUpdated:         timeNow,
 				EmbeddedCollections: embeddedCollections,
 			}
 			err = collectionStore.Upsert(ctx, rootCollection)
@@ -230,5 +241,6 @@ func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
 }
 
 func init() {
+	idGenerator = func(collectionName string) string { return uuid.NewV4().String() }
 	migrations.MustRegisterMigration(migration)
 }
