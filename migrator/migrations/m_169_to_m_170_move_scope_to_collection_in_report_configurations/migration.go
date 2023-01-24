@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations"
 	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
 	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
 	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
@@ -226,4 +227,8 @@ func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
 		err = reportConfigStore.UpsertMany(ctx, reportConfigsToUpsert)
 	}
 	return err
+}
+
+func init() {
+	migrations.MustRegisterMigration(migration)
 }
