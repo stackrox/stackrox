@@ -24,7 +24,7 @@ import { isCompleteSearchFilter } from 'utils/searchUtils';
 
 import PageTitle from 'Components/PageTitle';
 import useURLParameter from 'hooks/useURLParameter';
-import NetworkGraphContainer from './NetworkGraphContainer';
+import NetworkGraphContainer, { Models } from './NetworkGraphContainer';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import NetworkSearch from './components/NetworkSearch';
@@ -40,7 +40,6 @@ import {
 } from './utils/modelUtils';
 import getScopeHierarchy from './utils/getScopeHierarchy';
 import getSimulation from './utils/getSimulation';
-import { CustomModel } from './types/topology.type';
 
 import './NetworkGraphPage.css';
 
@@ -50,10 +49,6 @@ const emptyModel = {
     edges: [],
 };
 
-type Models = {
-    active: CustomModel;
-    extraneous: CustomModel;
-};
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
@@ -134,10 +129,7 @@ function NetworkGraphPage() {
                         // get policy nodes from api response
                         const { nodes: policyNodes } = values[1].response;
                         // transform policy data to DataModel
-                        const { policyDataModel, policyNodeMap } = transformPolicyData(
-                            policyNodes,
-                            deploymentCount || 0
-                        );
+                        const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
                         // get active nodes from api response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
@@ -269,6 +261,7 @@ function NetworkGraphPage() {
                             displayOptions={displayOptions}
                             simulation={simulation}
                             selectedClusterId={selectedClusterId || ''}
+                            clusterDeploymentCount={deploymentCount || 0}
                         />
                     )}
                 {isLoading && (

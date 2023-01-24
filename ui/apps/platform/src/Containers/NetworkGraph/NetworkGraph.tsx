@@ -30,10 +30,8 @@ import CidrBlockSideBar from './cidr/CidrBlockSideBar';
 import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel from './simulation/NetworkPolicySimulatorSidePanel';
-import { EdgeState } from './components/EdgeStateSelect';
 import { getNodeById } from './utils/networkGraphUtils';
-import { CustomEdgeModel, CustomModel, CustomNodeModel } from './types/topology.type';
-import { createExtraneousEdges } from './utils/modelUtils';
+import { CustomModel, CustomNodeModel } from './types/topology.type';
 import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
 
@@ -62,7 +60,6 @@ function getUrlParamsForEntity(type, id): [UrlDetailTypeValue, string] {
 
 export type NetworkGraphProps = {
     model: CustomModel;
-    edgeState: EdgeState;
     simulation: Simulation;
     selectedNode?: CustomNodeModel;
     selectedClusterId: string;
@@ -71,7 +68,6 @@ export type NetworkGraphProps = {
 
 export type TopologyComponentProps = {
     model: CustomModel;
-    edgeState: EdgeState;
     simulation: Simulation;
     selectedClusterId: string;
     selectedNode?: CustomNodeModel;
@@ -90,7 +86,6 @@ function clearSimulationQuery(search: string): string {
 
 const TopologyComponent = ({
     model,
-    edgeState,
     simulation,
     selectedClusterId,
     selectedNode,
@@ -99,91 +94,8 @@ const TopologyComponent = ({
     applyNetworkPolicyModification,
 }: TopologyComponentProps) => {
     const history = useHistory();
-    const selectedEntity = selectedNode;
     const controller = useVisualizationController();
-    console.log('TopologyComponent', selectedNode?.data.id);
-
-    function resetGraphToDefault() {
-        console.log('TopologyComponent: resetGraphToDefault');
-        controller.fromModel(model, true);
-    }
-
-    function rerenderGraph() {
-        // console.log('TopologyComponent: rerenderGraph');
-        resetGraphToDefault();
-        // setNodes();
-        // setEdges();
-    }
-
-    function showExtraneousNodes() {
-        console.log('showExtraneousNodes');
-        // else if there is a selected node, create a node to collect extraneous flows
-        const selectedNode = controller.getNodeById(detailId);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore TS2339: Property 'data' does not exist on type 'Node<NodeModel, any> | {}'.
-        const { data } = selectedNode || {};
-        if (data?.type === 'DEPLOYMENT') {
-            const { networkPolicyState } = data || {};
-            const extraneousIngressNode = controller.getElementById('extraneous-ingress');
-            const extraneousEgressNode = controller.getElementById('extraneous-egress');
-            if (networkPolicyState === 'ingress') {
-                // if the node has ingress policies from policy graph, show extraneous egress node
-                extraneousEgressNode?.setVisible(true);
-            } else if (networkPolicyState === 'egress') {
-                // if the node has egress policies from policy graph, show extraneous ingress node
-                extraneousIngressNode?.setVisible(true);
-            } else if (networkPolicyState === 'none') {
-                // if the node has no policies, show both extraneous ingress and egress nodes
-                extraneousEgressNode?.setVisible(true);
-                extraneousIngressNode?.setVisible(true);
-            }
-        }
-    }
-
-    function hideExtraneousNodes() {
-        console.log('hideExtraneousNodes');
-        // if there is no selected node, check if extraneous nodes exist and remove them
-        const extraneousIngressNode = controller.getElementById('extraneous-ingress');
-        if (extraneousIngressNode) {
-            extraneousIngressNode.setVisible(false);
-        }
-        const extraneousEgressNode = controller.getElementById('extraneous-egress');
-        if (extraneousEgressNode) {
-            extraneousEgressNode.setVisible(false);
-        }
-    }
-
-    function setExtraneousEdges() {
-        console.log('setExtraneousEdges');
-        const currentModel = controller.toModel() as CustomModel;
-        const extraneousIngressNode = controller.getElementById('extraneous-ingress');
-        const extraneousEgressNode = controller.getElementById('extraneous-egress');
-        const { extraneousEgressEdge, extraneousIngressEdge } = createExtraneousEdges(detailId);
-        const selectedNode = controller.getNodeById(detailId);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore TS2339: Property 'data' does not exist on type 'Node<NodeModel, any> | {}'.
-        const { data } = selectedNode || {};
-        // else if there is a selected node, create a node to collect extraneous flows
-        // TODO: figure out if/how to support namespaces
-        if (data?.type === 'DEPLOYMENT') {
-            const { networkPolicyState } = data || {};
-            const edges: CustomEdgeModel[] = currentModel.edges || [];
-            if (networkPolicyState === 'ingress' && extraneousEgressNode) {
-                edges.push(extraneousEgressEdge);
-            } else if (networkPolicyState === 'egress' && extraneousIngressNode) {
-                edges.push(extraneousIngressEdge);
-            } else if (
-                networkPolicyState === 'none' &&
-                extraneousEgressNode &&
-                extraneousIngressNode
-            ) {
-                edges.push(extraneousEgressEdge);
-                edges.push(extraneousIngressEdge);
-            }
-            currentModel.edges = edges;
-            controller.fromModel(currentModel);
-        }
-    }
+    console.log('TopologyComponent', selectedNode?.data);
 
     function closeSidebar() {
         const queryString = clearSimulationQuery(history.location.search);
@@ -210,65 +122,26 @@ const TopologyComponent = ({
         }
     }
 
-    function setNodes() {
-        hideExtraneousNodes();
-        if (edgeState === 'extraneous' && detailId) {
-            showExtraneousNodes();
-        }
+    function zoomInCallback() {
+        controller.getGraph().scaleBy(4 / 3);
     }
 
-    // TODO: figure out how to add/show edges more performantly/smoothly
-    // function setEdges() {
-    //     // removeExtraneousEdges();
-    //     console.log('TopologyComponent: setEdges');
-    //     if (detailId) {
-    //         const nodeEdges: CustomEdgeModel[] = [];
-    //         const selectedNode = getNodeById(model.nodes, detailId);
-    //         if (selectedNode?.type === 'group') {
-    //             // need to find the edges that have a source or target that equal to the child id
-    //             model.edges.forEach((edge) => {
-    //                 const isSource = selectedNode?.children?.includes(edge.source);
-    //                 const isTarget = selectedNode?.children?.includes(edge.target);
-    //                 if (isSource || isTarget) {
-    //                     nodeEdges.push({ ...edge, visible: true });
-    //                 }
-    //             });
-    //             console.log(nodeEdges);
-    //             // controller.fromModel({ ...model, edges: nodeEdges });
+    function zoomOutCallback() {
+        controller.getGraph().scaleBy(0.75);
+    }
 
-    //             // const nodeEdges = intersectionWith(
-    //             //     [model.edges, selectedNode?.children],
-    //             //     (modelEdge, childNode) =>
-    //             //         modelEdge.source === childNode.id || modelEdge.target === childNode.id
-    //             // );
+    function fitToScreenCallback() {
+        controller.getGraph().fit(80);
+    }
 
-    //             //    .forEach((child) => {
-    //             //         // set visible edges
-    //             //         model.edges.filter((edge) => edge.)
-    //             //         // setVisibleEdges(getNodeEdges(child));
-    //             //     });
-    //         } else if (selectedNode) {
-    //             // // set visible edges
-    //             // const nodeEdges = getNodeEdges(selectedNode);
-    //             // nodeEdges.forEach((edge) => {
-    //             //     const edgeData = edge.getData();
-    //             //     edge.setData({ ...edgeData, visible: true });
-    //             // });
-    //             // setVisibleEdges(getNodeEdges(selectedNode));
-    //         }
-    //         // // setting extraneous edges
-    //         // if (edgeState === 'extraneous') {
-    //         //     setExtraneousEdges();
-    //         // }
-
-    //         // // jeff's solution
-    //         // showNodeEdges(controller, detailId);
-    //     }
-    // }
+    function resetViewCallback() {
+        controller.getGraph().reset();
+        controller.getGraph().layout();
+    }
 
     React.useEffect(() => {
         console.log('TopologyComponent: useEffect [model]');
-        rerenderGraph();
+        controller.fromModel(model, true);
     }, [model]);
 
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
@@ -276,77 +149,67 @@ const TopologyComponent = ({
         onSelect(ids);
     });
 
-    const selectedIds = selectedEntity ? [selectedEntity.id] : [];
+    const selectedIds = selectedNode ? [selectedNode.id] : [];
 
     return (
         <TopologyView
-            // sideBar={
-            //     <TopologySideBar resizable onClose={closeSidebar}>
-            //         {simulation.isOn && simulation.type === 'networkPolicy' && (
-            //             <NetworkPolicySimulatorSidePanel
-            //                 selectedClusterId={selectedClusterId}
-            //                 simulator={simulator}
-            //                 setNetworkPolicyModification={setNetworkPolicyModification}
-            //                 applyNetworkPolicyModification={applyNetworkPolicyModification}
-            //             />
-            //         )}
-            //         {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
-            //             <NamespaceSideBar
-            //                 namespaceId={selectedEntity.id}
-            //                 nodes={model?.nodes || []}
-            //                 edges={model?.edges || []}
-            //             />
-            //         )}
-            //         {selectedEntity && selectedEntity?.data?.type === 'DEPLOYMENT' && (
-            //             <DeploymentSideBar
-            //                 deploymentId={selectedEntity.id}
-            //                 nodes={model?.nodes || []}
-            //                 edges={model?.edges || []}
-            //             />
-            //         )}
-            //         {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_GROUP' && (
-            //             <ExternalGroupSideBar
-            //                 id={selectedEntity.id}
-            //                 nodes={model?.nodes || []}
-            //                 edges={model?.edges || []}
-            //             />
-            //         )}
-            //         {selectedEntity && selectedEntity?.data?.type === 'CIDR_BLOCK' && (
-            //             <CidrBlockSideBar
-            //                 id={selectedEntity.id}
-            //                 nodes={model?.nodes || []}
-            //                 edges={model?.edges || []}
-            //             />
-            //         )}
-            //         {selectedEntity && selectedEntity?.data?.type === 'EXTERNAL_ENTITIES' && (
-            //             <ExternalEntitiesSideBar
-            //                 id={selectedEntity.id}
-            //                 nodes={model?.nodes || []}
-            //                 edges={model?.edges || []}
-            //             />
-            //         )}
-            //     </TopologySideBar>
-            // }
-            // sideBarOpen={!!selectedEntity || simulation.isOn}
-            // sideBarResizable
+            sideBar={
+                <TopologySideBar resizable onClose={closeSidebar}>
+                    {simulation.isOn && simulation.type === 'networkPolicy' && (
+                        <NetworkPolicySimulatorSidePanel
+                            selectedClusterId={selectedClusterId}
+                            simulator={simulator}
+                            setNetworkPolicyModification={setNetworkPolicyModification}
+                            applyNetworkPolicyModification={applyNetworkPolicyModification}
+                        />
+                    )}
+                    {selectedNode && selectedNode?.data?.type === 'NAMESPACE' && (
+                        <NamespaceSideBar
+                            namespaceId={selectedNode.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
+                    )}
+                    {selectedNode && selectedNode?.data?.type === 'DEPLOYMENT' && (
+                        <DeploymentSideBar
+                            deploymentId={selectedNode.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
+                    )}
+                    {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (
+                        <ExternalGroupSideBar
+                            id={selectedNode.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
+                    )}
+                    {selectedNode && selectedNode?.data?.type === 'CIDR_BLOCK' && (
+                        <CidrBlockSideBar
+                            id={selectedNode.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
+                    )}
+                    {selectedNode && selectedNode?.data?.type === 'EXTERNAL_ENTITIES' && (
+                        <ExternalEntitiesSideBar
+                            id={selectedNode.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
+                    )}
+                </TopologySideBar>
+            }
+            sideBarOpen={!!selectedNode || simulation.isOn}
+            sideBarResizable
             controlBar={
                 <TopologyControlBar
                     controlButtons={createTopologyControlButtons({
                         ...defaultControlButtonsOptions,
-                        zoomInCallback: () => {
-                            controller.getGraph().scaleBy(4 / 3);
-                        },
-                        zoomOutCallback: () => {
-                            controller.getGraph().scaleBy(0.75);
-                        },
-                        fitToScreenCallback: () => {
-                            controller.getGraph().fit(80);
-                            resetGraphToDefault();
-                        },
-                        resetViewCallback: () => {
-                            controller.getGraph().reset();
-                            controller.getGraph().layout();
-                        },
+                        zoomInCallback,
+                        zoomOutCallback,
+                        fitToScreenCallback,
+                        resetViewCallback,
                     })}
                 />
             }
@@ -377,7 +240,7 @@ function compareModels(prevProps, nextProps) {
 
 const NetworkGraph = React.memo<NetworkGraphProps>(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ({ model, edgeState, simulation, selectedClusterId, selectedNode, updateCount }) => {
+    ({ model, simulation, selectedClusterId, selectedNode, updateCount }) => {
         const controller = useMemo(() => new Visualization(), []);
         controller.registerLayoutFactory(defaultLayoutFactory);
         controller.registerComponentFactory(defaultComponentFactory);
@@ -402,7 +265,6 @@ const NetworkGraph = React.memo<NetworkGraphProps>(
                 <VisualizationProvider controller={controller}>
                     <TopologyComponent
                         model={model}
-                        edgeState={edgeState}
                         simulation={simulation}
                         selectedClusterId={selectedClusterId}
                         simulator={simulator}
