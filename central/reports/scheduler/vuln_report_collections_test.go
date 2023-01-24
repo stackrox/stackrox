@@ -11,7 +11,6 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
 	imageComponentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
@@ -326,7 +325,8 @@ func testCollection(collectionName, cluster, namespace, deployment string) *stor
 			Operator:  storage.BooleanOperator_OR,
 			Values: []*storage.RuleValue{
 				{
-					Value: cluster,
+					Value:     cluster,
+					MatchType: storage.MatchType_EXACT,
 				},
 			},
 		})
@@ -337,23 +337,28 @@ func testCollection(collectionName, cluster, namespace, deployment string) *stor
 			Operator:  storage.BooleanOperator_OR,
 			Values: []*storage.RuleValue{
 				{
-					Value: namespace,
+					Value:     namespace,
+					MatchType: storage.MatchType_EXACT,
 				},
 			},
 		})
 	}
 	var deploymentVal string
+	var matchType storage.MatchType
 	if deployment != "" {
 		deploymentVal = deployment
+		matchType = storage.MatchType_EXACT
 	} else {
 		deploymentVal = ".*"
+		matchType = storage.MatchType_REGEX
 	}
 	collection.ResourceSelectors[0].Rules = append(collection.ResourceSelectors[0].Rules, &storage.SelectorRule{
 		FieldName: pkgSearch.DeploymentName.String(),
 		Operator:  storage.BooleanOperator_OR,
 		Values: []*storage.RuleValue{
 			{
-				Value: deploymentVal,
+				Value:     deploymentVal,
+				MatchType: matchType,
 			},
 		},
 	})
