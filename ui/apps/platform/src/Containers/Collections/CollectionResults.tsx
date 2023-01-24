@@ -11,7 +11,6 @@ import {
     SearchInput,
     SelectOption,
     Skeleton,
-    Spinner,
     Text,
     Title,
 } from '@patternfly/react-core';
