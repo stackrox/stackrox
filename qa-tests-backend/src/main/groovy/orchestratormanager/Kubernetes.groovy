@@ -1655,8 +1655,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     protected defaultPspForNamespace(String namespace) {
-        def pspEnabled = Env.get("POD_SECURITY_POLICIES")
-        if pspEnabled != "false" {
+        if (Env.get("POD_SECURITY_POLICIES") != "false") {
             PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
                 .withName("allow-all-for-test")
                 .endMetadata()
