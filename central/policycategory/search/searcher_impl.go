@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/policycategory/index"
-	categoryMapping "github.com/stackrox/rox/central/policycategory/index/mappings"
+	policyCategoryMapping "github.com/stackrox/rox/central/policycategory/index/mappings"
 	"github.com/stackrox/rox/central/policycategory/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
@@ -22,7 +23,7 @@ var (
 	}
 
 	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	policySAC = sac.ForResource(resources.Policy)
+	policyCategorySAC = sac.ForResource(resources.Policy)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -33,7 +34,7 @@ type searcherImpl struct {
 }
 
 func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 
@@ -41,7 +42,7 @@ func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result
 }
 
 func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
 
@@ -91,17 +92,18 @@ func (s *searcherImpl) searchCategories(ctx context.Context, q *v1.Query) ([]*st
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, categoryMapping.OptionsMap)
-	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, policyCategoryMapping.OptionsMap)
+	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
+	paginatedSearcher := paginated.Paginated(transformedCategoryNameSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }
 
 // convertCategory returns proto search result from a category object and the internal search result
-func convertCategory(policy *storage.PolicyCategory, result search.Result) *v1.SearchResult {
+func convertCategory(category *storage.PolicyCategory, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_POLICY_CATEGORIES,
-		Id:             policy.GetId(),
-		Name:           policy.GetName(),
+		Id:             category.GetId(),
+		Name:           category.GetName(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}

@@ -47,7 +47,9 @@ func verifyMultiple(funcs ...pvcVerifyFunc) pvcVerifyFunc {
 func ownedBy(central *platform.Central) pvcVerifyFunc {
 	return func(t *testing.T, pvc *corev1.PersistentVolumeClaim) {
 		require.NotNil(t, pvc)
-		assert.True(t, metav1.IsControlledBy(pvc, central))
+		assert.True(t, metav1.IsControlledBy(pvc, central),
+			"expected PVC to be owned by central %q, but its owner references were %q",
+			central.UID, pvc.OwnerReferences)
 	}
 }
 
@@ -362,6 +364,15 @@ func TestReconcilePVCExtension(t *testing.T) {
 				testPVCName: verifyMultiple(ownedBy(changedPVCConfigCentralDB), withSize(resource.MustParse("500Gi")), withStorageClass("new-storage-class")),
 			},
 		},
+		"central-pvc-should-not-lose-owner-refs-if-central-db-persistence-disabled": {
+			Central:      emptyNotDeletedCentral,
+			DefaultClaim: DefaultCentralDBPVCName,
+			Target:       PVCTargetCentralDB,
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyNotDeletedCentral, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				testPVCName: ownedBy(emptyNotDeletedCentral),
+			},
+		},
 	}
 
 	for name, tc := range cases {
@@ -412,7 +423,7 @@ func executeAndVerify(t *testing.T, testCase pvcReconciliationTestCase, r reconc
 	err = r.client.List(context.TODO(), pvcList)
 	require.NoError(t, err)
 
-	// check pvcs which should exist in cluster
+	// Check pvcs which should exist in cluster.
 	for i := range pvcList.Items {
 		pvc := pvcList.Items[i]
 		pvf := pvcsToVerify[pvc.GetName()]
@@ -421,7 +432,7 @@ func executeAndVerify(t *testing.T, testCase pvcReconciliationTestCase, r reconc
 		delete(pvcsToVerify, pvc.GetName())
 	}
 
-	// Check pvs which should not exit in cluster
+	// Check pvs which should not exist in cluster.
 	for _, pvf := range pvcsToVerify {
 		pvf(t, nil)
 	}

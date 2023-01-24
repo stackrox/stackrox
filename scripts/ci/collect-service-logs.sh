@@ -59,6 +59,7 @@ main() {
         mkdir -p "${log_dir}/${object}"
 
         for item in $(kubectl -n "${namespace}" get "${object}" -o jsonpath='{.items}' | jq -r '.[] | select(.metadata.deletionTimestamp | not) | .metadata.name'); do
+            kubectl get "${object}" "${item}" -n "${namespace}" -o json > "${log_dir}/${object}/${item}_object.json" 2>&1
             {
               kubectl describe "${object}" "${item}" -n "${namespace}" 2>&1
               echo

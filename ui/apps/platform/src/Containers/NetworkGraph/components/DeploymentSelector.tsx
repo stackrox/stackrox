@@ -84,6 +84,7 @@ function DeploymentSelector({
                     <span style={{ position: 'relative', top: '1px' }}>Deployments</span>
                 </span>
             }
+            toggleAriaLabel="Select deployments"
             isDisabled={deploymentsByNamespace.length === 0}
             selections={selectedDeployments}
             variant={SelectVariant.checkbox}

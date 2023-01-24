@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-core';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
+import { timeWindows } from 'constants/timeWindows';
 import useFetchClusters from 'hooks/useFetchClusters';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
@@ -29,6 +30,7 @@ import NetworkSearch from './components/NetworkSearch';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
 import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
+import TimeWindowSelector from './components/TimeWindowSelector';
 import NetworkGraph from './NetworkGraph';
 import {
     transformPolicyData,
@@ -53,9 +55,6 @@ const emptyModel = {
     edges: [],
     updateCount: 0,
 };
-
-// TODO: get real time window from user input
-const timeWindow = 'Past hour';
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
@@ -73,6 +72,9 @@ function NetworkGraphPage() {
     const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
     const [model, setModel] = useState<CustomModel>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
+    const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
+    const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
+
     const { searchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
 
@@ -148,6 +150,14 @@ function NetworkGraphPage() {
                         );
                         setActiveModel(activeDataModel);
                         setExtraneousFlowsModel(extraneousFlowsDataModel);
+
+                        const newUpdatedTimestamp = new Date();
+                        // show only hours and minutes, use options with the default locale - use an empty array
+                        const lastUpdatedDisplayTime = newUpdatedTimestamp.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        });
+                        setLastUpdatedTime(lastUpdatedDisplayTime);
                     })
                     .catch(() => {
                         // TODO
@@ -155,7 +165,14 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, deploymentCount, remainingQuery]);
+    }, [
+        clusterFromUrl,
+        namespacesFromUrl,
+        deploymentsFromUrl,
+        deploymentCount,
+        remainingQuery,
+        timeWindow,
+    ]);
 
     const setModelByEdgeState = useCallback(() => {
         if (edgeState === 'active') {
@@ -203,12 +220,10 @@ function NetworkGraphPage() {
                 // need to improve perf to only perform this if edgeLabel has changed
                 updatedEdges = model.edges.map((edge) => {
                     const { data } = edge;
-                    const { properties } = data;
                     return {
                         ...edge,
                         data: {
                             ...data,
-                            properties,
                             tag: showEdgeLabels ? data.portProtocolLabel : undefined,
                         },
                     };
@@ -262,13 +277,19 @@ function NetworkGraphPage() {
                 <Toolbar data-testid="network-graph-toolbar">
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
-                            <ToolbarItem>
+                            <ToolbarItem spacer={{ default: 'spacerMd' }}>
                                 <EdgeStateSelect
                                     edgeState={edgeState}
                                     setEdgeState={setEdgeState}
                                 />
                             </ToolbarItem>
-                            <ToolbarItem>in the past hour</ToolbarItem>
+                            <ToolbarItem>
+                                <TimeWindowSelector
+                                    activeTimeWindow={timeWindow}
+                                    setActiveTimeWindow={setTimeWindow}
+                                    isDisabled={isLoading}
+                                />
+                            </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup className="pf-u-flex-grow-1">
                             <ToolbarItem className="pf-u-flex-grow-1">
@@ -286,8 +307,10 @@ function NetworkGraphPage() {
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup alignment={{ default: 'alignRight' }}>
-                            <Divider component="div" isVertical />
-                            <ToolbarItem>Last updated at 12:34PM</ToolbarItem>
+                            <Divider component="div" orientation={{ default: 'vertical' }} />
+                            <ToolbarItem className="pf-u-color-200">
+                                <em>Last updated at {lastUpdatedTime}</em>
+                            </ToolbarItem>
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>

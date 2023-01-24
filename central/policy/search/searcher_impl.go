@@ -3,16 +3,19 @@ package search
 import (
 	"context"
 
+	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policy/index"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
@@ -62,7 +65,7 @@ func (ds *searcherImpl) searchPolicies(ctx context.Context, q *v1.Query) ([]*sto
 	for _, result := range results {
 		policy, exists, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, errorsPkg.Wrapf(err, "error retrieving policy %q", result.ID)
 		}
 		// The result may not exist if the object was deleted after the search
 		if !exists {
@@ -76,7 +79,7 @@ func (ds *searcherImpl) searchPolicies(ctx context.Context, q *v1.Query) ([]*sto
 
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, err
+		return nil, errox.NotAuthorized
 	}
 
 	return ds.searcher.Search(ctx, q)
@@ -105,6 +108,7 @@ func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResul
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
 	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, policyMapping.OptionsMap)
-	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
+	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
+	paginatedSearcher := paginated.Paginated(transformedCategoryNameSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }

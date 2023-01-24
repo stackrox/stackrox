@@ -5,14 +5,14 @@ export const timeWindows = [
     'Past week',
     'Past month',
     'All time',
-];
+] as const;
 
 export const snoozeDurations = {
     DAY: '1 Day',
     WEEK: '1 Week',
     MONTH: '1 Month',
     UNSET: 'Indefinite',
-};
+} as const;
 
 export const durations = {
     HOUR: '1h',
@@ -20,4 +20,4 @@ export const durations = {
     WEEK: '168h',
     MONTH: '720h',
     UNSET: '0',
-};
+} as const;

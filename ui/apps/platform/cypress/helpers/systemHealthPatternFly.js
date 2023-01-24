@@ -14,7 +14,7 @@ export function setClock(currentDatetime) {
 // visit
 
 export function visitSystemHealthFromLeftNav() {
-    cy.intercept('GET', api.clusters.list).as('getClusters');
+    cy.intercept('GET', '/v1/clusters').as('getClusters');
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
     cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
     cy.intercept('GET', api.integrations.notifiers).as('getNotifierIntegrations');
@@ -39,7 +39,7 @@ export function visitSystemHealthFromLeftNav() {
 }
 
 export function visitSystemHealth() {
-    // cy.intercept('GET', api.clusters.list).as('getClusters');
+    // cy.intercept('GET', '/v1/clusters').as('getClusters');
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
     cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
     cy.intercept('GET', api.integrations.notifiers).as('getNotifierIntegrations');
@@ -66,7 +66,7 @@ export function visitSystemHealth() {
 // visit clusters
 
 export function visitSystemHealthWithClustersFixture(fixturePath) {
-    cy.intercept('GET', api.clusters.list, {
+    cy.intercept('GET', '/v1/clusters', {
         fixture: fixturePath,
     }).as('getClusters');
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
@@ -94,7 +94,7 @@ export function visitSystemHealthWithClustersFixture(fixturePath) {
 
 export function visitSystemHealthWithClustersFixtureFilteredByNames(fixturePath, clusterNames) {
     cy.fixture(fixturePath).then(({ clusters }) => {
-        cy.intercept('GET', api.clusters.list, {
+        cy.intercept('GET', '/v1/clusters', {
             body: { clusters: clusters.filter(({ name }) => clusterNames.includes(name)) },
         }).as('getClusters');
         cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
@@ -128,7 +128,7 @@ export function visitSystemHealthWithClustersFixtureFilteredByNames(fixturePath,
 // visit integrations
 
 export function visitSystemHealthWithBackupIntegrations(externalBackups, integrationHealth) {
-    cy.intercept('GET', api.clusters.list).as('getClusters');
+    cy.intercept('GET', '/v1/clusters').as('getClusters');
     cy.intercept('GET', api.integrations.externalBackups, {
         body: { externalBackups },
     }).as('getBackupIntegrations');
@@ -157,7 +157,7 @@ export function visitSystemHealthWithBackupIntegrations(externalBackups, integra
 }
 
 export function visitSystemHealthWithImageIntegrations(integrations, integrationHealth) {
-    cy.intercept('GET', api.clusters.list).as('getClusters');
+    cy.intercept('GET', '/v1/clusters').as('getClusters');
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
     cy.intercept('GET', api.integrations.imageIntegrations, {
         body: { integrations },
@@ -186,7 +186,7 @@ export function visitSystemHealthWithImageIntegrations(integrations, integration
 }
 
 export function visitSystemHealthWithNotifierIntegrations(notifiers, integrationHealth) {
-    cy.intercept('GET', api.clusters.list).as('getClusters');
+    cy.intercept('GET', '/v1/clusters').as('getClusters');
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
     cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
     cy.intercept('GET', api.integrations.notifiers, {
@@ -217,7 +217,7 @@ export function visitSystemHealthWithNotifierIntegrations(notifiers, integration
 // visit vulnerability definitions
 
 export function visitSystemHealthWithVulnerabilityDefinitionsTimestamp(lastUpdatedTimestamp) {
-    cy.intercept('GET', api.clusters.list).as('getClusters');
+    cy.intercept('GET', '/v1/clusters').as('getClusters');
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
     cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
     cy.intercept('GET', api.integrations.notifiers).as('getNotifierIntegrations');

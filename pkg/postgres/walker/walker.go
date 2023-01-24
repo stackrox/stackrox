@@ -273,7 +273,7 @@ func getSearchOptions(ctx context, searchTag string) (SearchField, []DerivedSear
 		derivedSearchFields = make([]DerivedSearchField, 0, len(derivedSearchFieldsMap))
 		for fieldName, derivationType := range derivedSearchFieldsMap {
 			derivedSearchFields = append(derivedSearchFields, DerivedSearchField{
-				FieldName:      fieldName,
+				DerivedFrom:    fieldName,
 				DerivationType: derivationType,
 			})
 		}

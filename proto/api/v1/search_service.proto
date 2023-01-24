@@ -8,7 +8,7 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 49
+// Next available tag: 50
 enum SearchCategory {
     SEARCH_UNSET              = 0;
     ALERTS                    = 1;
@@ -58,8 +58,7 @@ enum SearchCategory {
     POLICY_CATEGORIES         = 46;
     IMAGE_INTEGRATIONS        = 47;
     COLLECTIONS               = 48;
-
-    // tags 100-150 are used for test protos.
+    POLICY_CATEGORY_EDGE      = 49;
 }
 
 enum SearchDataType {

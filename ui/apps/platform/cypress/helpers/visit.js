@@ -1,5 +1,3 @@
-import * as api from '../constants/apiEndpoints';
-
 import { interceptRequests, waitForResponses } from './request';
 
 // Single source of truth for keys in staticResponseMapForAuthenticatedRoutes object.
@@ -14,19 +12,19 @@ export const authStatusAlias = 'auth/status';
 const routeMatcherMapForAuthenticatedRoutes = {
     [availableAuthProvidersAlias]: {
         method: 'GET',
-        url: api.auth.availableAuthProviders,
+        url: '/v1/availableAuthProviders',
     }, // reducers/auth and sagas/authSagas
     [featureFlagsAlias]: {
         method: 'GET',
-        url: api.featureFlags,
+        url: '/v1/featureflags',
     }, // reducers/featureFlags and sagas/featureFlagSagas
     [loginAuthProvidersAlias]: {
         method: 'GET',
-        url: api.auth.loginAuthProviders,
+        url: '/v1/login/authproviders',
     }, // reducers/auth and sagas/authSagas
     [myPermissionsAlias]: {
         method: 'GET',
-        url: api.roles.mypermissions,
+        url: 'v1/mypermissions',
     }, // hooks/usePermissions and reducers/roles and sagas/authSagas
     [configPublicAlias]: {
         method: 'GET',
@@ -34,7 +32,7 @@ const routeMatcherMapForAuthenticatedRoutes = {
     }, // reducers/systemConfig and sagas/systemConfig
     [authStatusAlias]: {
         method: 'GET',
-        url: api.auth.authStatus,
+        url: '/v1/auth/status',
     }, // sagas/authSagas
     /*
      * Intentionally omit credentialexpiry requests for central and scanner,

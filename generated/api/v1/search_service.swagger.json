@@ -90,7 +90,8 @@
                 "CLUSTER_HEALTH",
                 "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS",
-                "COLLECTIONS"
+                "COLLECTIONS",
+                "POLICY_CATEGORY_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -180,7 +181,8 @@
                 "CLUSTER_HEALTH",
                 "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS",
-                "COLLECTIONS"
+                "COLLECTIONS",
+                "POLICY_CATEGORY_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -264,7 +266,8 @@
                 "CLUSTER_HEALTH",
                 "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS",
-                "COLLECTIONS"
+                "COLLECTIONS",
+                "POLICY_CATEGORY_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -397,10 +400,11 @@
         "CLUSTER_HEALTH",
         "POLICY_CATEGORIES",
         "IMAGE_INTEGRATIONS",
-        "COLLECTIONS"
+        "COLLECTIONS",
+        "POLICY_CATEGORY_EDGE"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 49"
+      "title": "Next available tag: 50"
     },
     "v1SearchOptionsResponse": {
       "type": "object",
