@@ -2,6 +2,7 @@ package rocksdb
 
 import (
 	"regexp"
+	"time"
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -50,6 +51,9 @@ type DBCloneManager interface {
 
 	// GetVersion -- gets the version of the clone
 	GetVersion(cloneName string) *migrations.MigrationVersion
+
+	// GetCurrentCloneCreationTime - time current clone was created
+	GetCurrentCloneCreationTime() time.Time
 
 	// GetDirName - gets the directory name of the clone
 	GetDirName(cloneName string) string
