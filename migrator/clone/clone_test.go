@@ -161,7 +161,8 @@ func doTestCloneMigrationToPostgres(t *testing.T, runBoth bool) {
 					// Now try to go back to Rocks and make sure that fails
 					// Turn Postgres back off
 					require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
-					mock.runMigrator("", "", true)
+					// TODO (ROX-14524):  re-enable this in 3.75.  Set the unsupportedRocks flag to true
+					mock.runMigrator("", "", false)
 
 					// Turn Postgres back on
 					require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
