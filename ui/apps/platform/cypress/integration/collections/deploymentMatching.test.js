@@ -67,7 +67,7 @@ describe('Collection deployment matching', () => {
 
     // This test relies on the creation of a collection in the previous test in order to check
     // the resolution of deployments with embedded collections.
-    it.skip('should preview deployments using embedded collections', () => {
+    it('should preview deployments using embedded collections', () => {
         // Cleanup from potential previous test runs
         tryDeleteCollection(withEmbeddedCollectionName);
         visitCollections();
@@ -87,12 +87,9 @@ describe('Collection deployment matching', () => {
         assertDeploymentsAreNotMatched(['kube-dns']);
 
         // View more and ensure the next page loads
-        cy.get(`${selectors.resultsPanel} > div:last-child`).scrollTo('bottom');
+        cy.get(selectors.viewMoreResultsButton).scrollIntoView();
         cy.get(selectors.viewMoreResultsButton).click();
-        // Scroll to the bottom once the view more has completed
-        cy.get(`${selectors.viewMoreResultsButton}.pf-m-in-progress`);
-        cy.get(`${selectors.viewMoreResultsButton}:not(.pf-m-in-progress)`);
-        cy.get(`${selectors.resultsPanel} > div:last-child`).scrollTo('bottom');
+        cy.get(`${selectors.viewMoreResultsButton}:not(.pf-m-in-progress)`).scrollIntoView();
         assertDeploymentsAreMatched(['kube-dns']);
 
         // Restrict collection to two specific deployments
@@ -140,7 +137,7 @@ describe('Collection deployment matching', () => {
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`);
     });
 
-    it.skip('should filter deployment results in the sidebar', () => {
+    it('should filter deployment results in the sidebar', () => {
         visitCollections();
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`).click();
 
