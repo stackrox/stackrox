@@ -1678,7 +1678,6 @@ class Kubernetes implements OrchestratorMain {
             createClusterRole(generatePspRole())
             createClusterRoleBinding(generatePspRoleBinding(namespace))
         }
-        
     }
 
     /*
