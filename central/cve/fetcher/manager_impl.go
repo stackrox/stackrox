@@ -33,12 +33,12 @@ func (m *orchestratorIstioCVEManagerImpl) initialize() {
 	m.orchestratorCVEMgr.initialize()
 }
 
-// Start begins the process to periodically scan orchestrator-level components.
+// Start begins the process to periodically scan orchestrator-level components, asynchronously.
 func (m *orchestratorIstioCVEManagerImpl) Start() {
-	ticker := time.NewTicker(env.OrchestratorVulnScanInterval.DurationSetting())
-	defer ticker.Stop()
-
 	go func() {
+		ticker := time.NewTicker(env.OrchestratorVulnScanInterval.DurationSetting())
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ticker.C:
