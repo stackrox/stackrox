@@ -70,6 +70,32 @@ func (suite *PLOPDataStoreTestSuite) TearDownTest() {
 	suite.postgres.Teardown(suite.T())
 }
 
+func (suite *PLOPDataStoreTestSuite) getPlopsFromDB() []*storage.ProcessListeningOnPortStorage {
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	err := suite.datastore.WalkAll(suite.hasWriteCtx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			plopsFromDB = append(plopsFromDB, plop)
+			return nil
+		})
+
+	suite.NoError(err)
+
+	return plopsFromDB
+}
+
+func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {
+	indicatorsFromDB := []*storage.ProcessIndicator{}
+	err := suite.indicatorDataStore.WalkAll(suite.hasWriteCtx,
+		func(processIndicator *storage.ProcessIndicator) error {
+			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
+			return nil
+		})
+
+	suite.NoError(err)
+
+	return indicatorsFromDB
+}
+
 // TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
 // with a correct process indicator reference and could be fetched later.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
@@ -155,16 +181,20 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
 	// process indicator record)
-	processInfo := []*storage.ProcessIndicatorUniqueKey{}
-	err = suite.datastore.WalkAll(suite.hasWriteCtx,
-		func(plop *storage.ProcessListeningOnPortStorage) error {
-			if plop.GetProcess() != nil {
-				processInfo = append(processInfo, plop.GetProcess())
-			}
-			return nil
-		})
-	suite.NoError(err)
-	suite.Len(processInfo, 0)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjects[0].GetPort(),
+		Protocol:		plopObjects[0].GetProtocol(),
+		CloseTimestamp:		plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
+		Closed:			false,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPAddClosed: Happy path for ProcessListeningOnPort closing, one PLOP object is added
@@ -251,8 +281,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	// It's being closed and excluded from the API response
+	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjectsClosed[0].GetPort(),
+		Protocol:		plopObjectsClosed[0].GetProtocol(),
+		CloseTimestamp:		plopObjectsClosed[0].GetCloseTimestamp(),
+		ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
+		Closed:			true,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPReopen: One PLOP object is added with a correct process indicator
@@ -363,14 +409,20 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 	})
 
 	// Verify that PLOP object was updated and no new records were created
-	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	err = suite.datastore.WalkAll(suite.hasWriteCtx,
-		func(plop *storage.ProcessListeningOnPortStorage) error {
-			plopsFromDB = append(plopsFromDB, plop)
-			return nil
-		})
-	suite.NoError(err)
-	suite.Len(plopsFromDB, 1)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjectsActive[0].GetPort(),
+		Protocol:		plopObjectsActive[0].GetProtocol(),
+		CloseTimestamp:		nil,
+		ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
+		Closed:			false,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPCloseSameTimestamp: One PLOP object is added with a correct process
@@ -451,7 +503,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, plopObjectsClosed...))
 
-	// Reopen PLOP objects
+	// Send same close event again
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, plopObjectsClosed...))
 
@@ -460,18 +512,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	// It's being closed and excluded from the API response
+	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
 
-	// Verify that PLOP object was updated and no new records were created
-	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	err = suite.datastore.WalkAll(suite.hasWriteCtx,
-		func(plop *storage.ProcessListeningOnPortStorage) error {
-			plopsFromDB = append(plopsFromDB, plop)
-			return nil
-		})
-	suite.NoError(err)
-	suite.Len(plopsFromDB, 1)
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjectsClosed[0].GetPort(),
+		Protocol:		plopObjectsClosed[0].GetProtocol(),
+		CloseTimestamp:		plopObjectsClosed[0].GetCloseTimestamp(),
+		ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
+		Closed:			true,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPAddClosedSameBatch: One PLOP object is added with a correct process
@@ -552,8 +610,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	// It's being closed and excluded from the API response
+	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjects[1].GetPort(),
+		Protocol:		plopObjects[1].GetProtocol(),
+		CloseTimestamp:		plopObjects[1].GetCloseTimestamp(),
+		ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
+		Closed:			true,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPAddClosedWithoutActive: one PLOP object is added with a correct
@@ -613,13 +687,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
 
-	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	err := suite.datastore.WalkAll(suite.hasWriteCtx,
-		func(plop *storage.ProcessListeningOnPortStorage) error {
-			plopsFromDB = append(plopsFromDB, plop)
-			return nil
-		})
 	// Confirm that the database is empty before anything is inserted into it
+	plopsFromDB := suite.getPlopsFromDB()
 	suite.Len(plopsFromDB, 0)
 
 	// Add PLOP referencing those indicators
@@ -632,6 +701,22 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjects[0].GetPort(),
+		Protocol:		plopObjects[0].GetProtocol(),
+		CloseTimestamp:		plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId:	fixtureconsts.ProcessIndicatorID1,
+		Closed:			true,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPAddNoIndicator: A PLOP object with a wrong process indicator
@@ -663,12 +748,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	suite.Len(plopsFromDB, 0)
 
 	// Verify that the table is empty before the test
-	indicatorsFromDB := []*storage.ProcessIndicator{}
-	err = suite.indicatorDataStore.WalkAll(suite.hasWriteCtx,
-		func(processIndicator *storage.ProcessIndicator) error {
-			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
-			return nil
-		})
+	indicatorsFromDB := suite.getProcessIndicatorsFromDB()
 	suite.Len(indicatorsFromDB, 0)
 
 	// Add PLOP referencing non existing indicators
@@ -681,6 +761,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	// Verify the state of the table after the test
+	// Process should not be nil as we were not able to find
+	// a matching process indicator
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjects[0].GetPort(),
+		Protocol:		plopObjects[0].GetProtocol(),
+		CloseTimestamp:		plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId:	"",
+		Closed:			false,
+		Process:		plopObjects[0].GetProcess(),
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPAddClosedNoIndicator: A PLOP object with a wrong process indicator
@@ -716,23 +814,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	// Verify that newly added PLOP has Process field set, because we were not
 	// able to establish reference to a process indicator and don't want to
 	// loose the data
-	processInfo := []*storage.ProcessIndicatorUniqueKey{}
-	err = suite.datastore.WalkAll(suite.hasWriteCtx,
-		func(plop *storage.ProcessListeningOnPortStorage) error {
-			if plop.GetProcess() != nil {
-				processInfo = append(processInfo, plop.GetProcess())
-			}
-			return nil
-		})
-	suite.NoError(err)
-	suite.Len(processInfo, 1)
-	suite.Equal(processInfo[0], plopObjects[0].Process)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjects[0].GetPort(),
+		Protocol:		plopObjects[0].GetProtocol(),
+		CloseTimestamp:		plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId:	"",
+		Closed:			true,
+		Process:		plopObjects[0].GetProcess(),
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPAddMultipleIndicators: A PLOP object is added with a valid reference
-// that somehow matches two process indicator records. Such object could be
-// fetched from the API with only one process indicator attached (one is going
-// to be ignored).
+// that matches one of two process indicators
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	testNamespace := "test_namespace"
 
@@ -812,6 +911,123 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 			ExecFilePath: "test_path1",
 		},
 	})
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjects[0].GetPort(),
+		Protocol:		plopObjects[0].GetProtocol(),
+		CloseTimestamp:		nil,
+		ProcessIndicatorId:	indicators[0].GetId(),
+		Closed:			false,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+// TestPLOPAddMultipleIndicators: A PLOP object is added with a valid reference
+// that somehow matches two process indicator records. Such object could be
+// fetched from the API with only one process indicator attached (one is going
+// to be ignored).
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIdenticalIndicators() {
+	testNamespace := "test_namespace"
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: nil,
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 1)
+	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     testNamespace,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			plopObjects[0].GetPort(),
+		Protocol:		plopObjects[0].GetProtocol(),
+		CloseTimestamp:		nil,
+		ProcessIndicatorId:	indicators[0].GetId(),
+		Closed:			false,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() {
@@ -898,8 +1114,25 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	// It's being closed and excluded from the API response
+	// The plop is opened. Then in the batch it is closed and opened, so it is in
+	// its original open state.
 	suite.Len(newPlops, 1)
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			openPlopObject.GetPort(),
+		Protocol:		openPlopObject.GetProtocol(),
+		CloseTimestamp:		nil,
+		ProcessIndicatorId:	indicators[0].GetId(),
+		Closed:			false,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch() {
@@ -986,8 +1219,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	// It's being closed and excluded from the API response
+	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			closedPlopObject.GetPort(),
+		Protocol:		closedPlopObject.GetProtocol(),
+		CloseTimestamp:		closedPlopObject.GetCloseTimestamp(),
+		ProcessIndicatorId:	indicators[0].GetId(),
+		Closed:			true,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrder() {
@@ -1086,6 +1335,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrder() {
 		&closedPlopObject3,
 		&openPlopObject,
 		&closedPlopObject2,
+		&openPlopObject,
 	}
 
 	// Prepare indicators for FK
@@ -1105,16 +1355,22 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrder() {
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	// It's being closed and excluded from the API response
+	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
 
-	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	err = suite.datastore.WalkAll(suite.hasWriteCtx,
-		func(plop *storage.ProcessListeningOnPortStorage) error {
-			plopsFromDB = append(plopsFromDB, plop)
-			return nil
-		})
-	suite.NoError(err)
-	suite.Len(plopsFromDB, 1)
-	suite.Equal(plopsFromDB[0].CloseTimestamp, closedPlopObject3.CloseTimestamp)
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:			newPlopsFromDB[0].GetId(),
+		Port:			closedPlopObject3.GetPort(),
+		Protocol:		closedPlopObject3.GetProtocol(),
+		CloseTimestamp:		closedPlopObject3.GetCloseTimestamp(),
+		ProcessIndicatorId:	indicators[0].GetId(),
+		Closed:			true,
+		Process:		nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }

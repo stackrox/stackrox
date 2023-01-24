@@ -130,6 +130,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// * If no existing PLOP is present, they will create a new closed PLOP
 	for _, val := range completedInBatch {
 		indicatorID := ""
+		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		key := getPlopProcessUniqueKey(val)
 
@@ -139,6 +140,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		} else {
 			// TODO ROX-14377: Create a metric for this
 			log.Warnf("Found no matching indicators for %s", key)
+			processInfo = val.Process
 		}
 
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
@@ -165,7 +167,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Warnf("Found active PLOP completed in the batch %+v", val)
 			}
 
-			plopObjects = addNewPLOP(plopObjects, indicatorID, val.Process, val)
+			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
 
