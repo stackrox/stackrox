@@ -98,7 +98,7 @@ function AdvancedFlowsFilter({
                 <Select
                     className="pf-u-px-md"
                     variant={SelectVariant.typeaheadMulti}
-                    aria-label="Select ports"
+                    toggleAriaLabel="Select ports"
                     onToggle={onTogglePortsSelect}
                     onSelect={onSelectPorts}
                     selections={filters.ports}
