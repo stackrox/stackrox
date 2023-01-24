@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
@@ -303,19 +302,6 @@ func (d *dbCloneManagerImpl) GetVersion(cloneName string) *migrations.MigrationV
 		return clone.GetMigVersion()
 	}
 	return nil
-}
-
-// GetCurrentCloneCreationTime - time current clone was created
-func (d *dbCloneManagerImpl) GetCurrentCloneCreationTime() time.Time {
-	path := filepath.Join(d.getPath(CurrentClone), migrations.MigrationVersionFile)
-	fileInfo, err := os.Lstat(path)
-	if err != nil {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			return time.Time{}
-		}
-		log.Panicf("Unable to find current DB path: %v", err)
-	}
-	return fileInfo.ModTime()
 }
 
 // GetDirName - gets the directory name of the clone
