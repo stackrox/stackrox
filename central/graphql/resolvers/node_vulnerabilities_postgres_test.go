@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	gqlTestutils "github.com/stackrox/rox/pkg/graphql/testutils"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -61,15 +62,15 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = SetupTestPostgresConn(s.T())
+	s.db, s.gormDB = gqlTestutils.SetupTestPostgresConn(s.T())
 
-	s.nodeDatastore = CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	resolver, _ := SetupTestResolver(s.T(),
-		CreateTestNodeCVEDatastore(s.T(), s.db, s.gormDB),
-		CreateTestNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+	s.nodeDatastore = gqlTestutils.CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	resolver, _ := gqlTestutils.SetupTestResolver(s.T(),
+		gqlTestutils.CreateTestNodeCVEDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
 		s.nodeDatastore,
-		CreateTestNodeComponentCveEdgeDatastore(s.T(), s.db, s.gormDB),
-		CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, nil, nil, s.nodeDatastore),
+		gqlTestutils.CreateTestNodeComponentCveEdgeDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, nil, nil, s.nodeDatastore),
 	)
 	s.resolver = resolver
 

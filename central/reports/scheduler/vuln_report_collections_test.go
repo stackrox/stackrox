@@ -11,6 +11,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
 	imageComponentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
@@ -28,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	gqlTestutils "github.com/stackrox/rox/pkg/graphql/testutils"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -81,15 +83,15 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = resolvers.SetupTestPostgresConn(s.T())
-	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
+	s.db, s.gormDB = gqlTestutils.SetupTestPostgresConn(s.T())
+	imageDataStore := gqlTestutils.CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	s.resolver, s.schema = gqlTestutils.SetupTestResolver(s.T(),
 		imageDataStore,
-		resolvers.CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		resolvers.CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
-		resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		resolvers.CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		resolvers.CreateTestDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
+		gqlTestutils.CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		gqlTestutils.CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
 	)
 
 	collectionPostgres.Destroy(s.ctx, s.db)

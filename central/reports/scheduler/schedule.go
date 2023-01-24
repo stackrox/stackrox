@@ -370,7 +370,7 @@ func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfigu
 	if features.ObjectCollections.Enabled() {
 		collection, found, err := s.collectionDatastore.Get(ctx, rc.GetScopeId())
 		if err != nil {
-			return nil, errors.Wrap(err, "error building report query: unable to get the collection")
+			return nil, errors.Wrapf(err, "error building report query: unable to get the collection %s", rc.GetScopeId())
 		}
 		if !found {
 			return nil, errors.Errorf("error building report query: collection with id %s not found", rc.GetScopeId())
@@ -423,6 +423,7 @@ func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfigu
 	return r, nil
 }
 
+// TODO : Remove scope arg from function signature after collections feature is released as access scopes will no longer be used in vuln reports
 func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConfiguration,
 	collection *storage.ResourceCollection, scope *storage.SimpleAccessScope, clusters []*storage.Cluster,
 	namespaces []*storage.NamespaceMetadata) (*common.ReportQuery, error) {
@@ -519,7 +520,10 @@ func (s *scheduler) Start() {
 
 func (s *scheduler) Stop() {
 	s.stopper.Client().Stop()
-	_ = s.stopper.Client().Stopped().Wait()
+	err := s.stopper.Client().Stopped().Wait()
+	if err != nil {
+		log.Errorf("Error stopping vulnerability report scheduler : %v", err)
+	}
 }
 
 func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {

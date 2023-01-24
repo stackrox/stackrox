@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	gqlTestutils "github.com/stackrox/rox/pkg/graphql/testutils"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -63,15 +64,15 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = SetupTestPostgresConn(s.T())
-	imageDataStore := CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	resolver, _ := SetupTestResolver(s.T(),
+	s.db, s.gormDB = gqlTestutils.SetupTestPostgresConn(s.T())
+	imageDataStore := gqlTestutils.CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	resolver, _ := gqlTestutils.SetupTestResolver(s.T(),
 		imageDataStore,
-		CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
-		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		CreateTestDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
+		gqlTestutils.CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		gqlTestutils.CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
 	)
 	s.resolver = resolver
 

@@ -17,6 +17,7 @@ import (
 	namespacePostgres "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	gqlTestutils "github.com/stackrox/rox/pkg/graphql/testutils"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -56,16 +57,16 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = SetupTestPostgresConn(s.T())
+	s.db, s.gormDB = gqlTestutils.SetupTestPostgresConn(s.T())
 
-	clusterCVEDS := CreateTestClusterCVEDatastore(s.T(), s.db, s.gormDB)
-	nodeDatastore := CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	namespaceDS := CreateTestNamespaceDatastore(s.T(), s.db, s.gormDB)
-	resolver, _ := SetupTestResolver(s.T(),
+	clusterCVEDS := gqlTestutils.CreateTestClusterCVEDatastore(s.T(), s.db, s.gormDB)
+	nodeDatastore := gqlTestutils.CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	namespaceDS := gqlTestutils.CreateTestNamespaceDatastore(s.T(), s.db, s.gormDB)
+	resolver, _ := gqlTestutils.SetupTestResolver(s.T(),
 		clusterCVEDS,
-		CreateTestClusterCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		gqlTestutils.CreateTestClusterCVEEdgeDatastore(s.T(), s.db, s.gormDB),
 		namespaceDS,
-		CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, clusterCVEDS, namespaceDS, nodeDatastore),
+		gqlTestutils.CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, clusterCVEDS, namespaceDS, nodeDatastore),
 	)
 	s.resolver = resolver
 

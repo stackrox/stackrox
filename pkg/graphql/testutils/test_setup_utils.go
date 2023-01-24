@@ -1,4 +1,4 @@
-package resolvers
+package testutils
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
+	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
@@ -75,8 +76,8 @@ func SetupTestPostgresConn(t testing.TB) (*pgxpool.Pool, *gorm.DB) {
 }
 
 // SetupTestResolver creates a graphQL resolver and schema for testing
-func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *graphql.Schema) {
-	resolver := &Resolver{}
+func SetupTestResolver(t testing.TB, datastores ...interface{}) (*resolvers.Resolver, *graphql.Schema) {
+	resolver := &resolvers.Resolver{}
 	for _, datastoreI := range datastores {
 		switch ds := datastoreI.(type) {
 		case imageCVEDS.DataStore:
@@ -118,7 +119,7 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 		}
 	}
 
-	schema, err := graphql.ParseSchema(Schema(), resolver)
+	schema, err := graphql.ParseSchema(resolvers.Schema(), resolver)
 	assert.NoError(t, err)
 
 	return resolver, schema
