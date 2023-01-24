@@ -64,6 +64,51 @@ export function getUniqueIdFromPeer(peer: Peer) {
     return id;
 }
 
+function createFlow({
+    sourceNodeData,
+    targetNodeData,
+    direction,
+    port,
+    protocol,
+    isSourceNodeSelected,
+}: {
+    sourceNodeData: CustomSingleNodeData;
+    targetNodeData: CustomSingleNodeData;
+    direction: string;
+    port: number;
+    protocol: L4Protocol;
+    isSourceNodeSelected: boolean;
+}) {
+    const adjacentNodeData = isSourceNodeSelected ? targetNodeData : sourceNodeData;
+    const { id: entityId, type } = adjacentNodeData;
+    let entity = '';
+    let namespace = '';
+    if (adjacentNodeData.type === 'DEPLOYMENT') {
+        entity = adjacentNodeData.deployment.name;
+        namespace = adjacentNodeData.deployment.namespace;
+    } else if (adjacentNodeData.type === 'CIDR_BLOCK') {
+        entity = `${adjacentNodeData.externalSource.name}`;
+    } else if (adjacentNodeData.type === 'EXTERNAL_ENTITIES') {
+        entity = 'External entities';
+    }
+    // we need a unique id for each network flow
+    const flowId = `${entity}-${namespace}-${direction}-${String(port)}-${String(protocol)}`;
+    return {
+        id: flowId,
+        type,
+        entity,
+        entityId,
+        namespace,
+        direction,
+        port: String(port),
+        protocol,
+        // @TODO: Need to set this depending on whether it is in the baseline or not
+        isAnomalous: true,
+        // @TODO: Need to create nesting structure
+        children: [],
+    };
+}
+
 /*
   This function takes edges and a selected id of a node and creates an array of flows
   which is a structured data type used for showing specific information in the network graph
@@ -79,40 +124,44 @@ export function getNetworkFlows(
         if ((edge.source !== id && edge.target !== id) || !edge.source || !edge.target) {
             return acc;
         }
-        const adjacentNodeId = edge.source !== id ? edge.source : edge.target;
-        const adjacentNode = controller.getNodeById(adjacentNodeId);
-        const adjacentNodeData: CustomSingleNodeData = adjacentNode?.getData();
-        const result = edge.data.properties.map(({ port, protocol }): Flow => {
-            const direction: string = edge.source === id ? 'Egress' : 'Ingress';
-            const { id: entityId, type } = adjacentNodeData;
-            let entity = '';
-            let namespace = '';
-            if (adjacentNodeData.type === 'DEPLOYMENT') {
-                entity = adjacentNodeData.deployment.name;
-                namespace = adjacentNodeData.deployment.namespace;
-            } else if (adjacentNodeData.type === 'CIDR_BLOCK') {
-                entity = `${adjacentNodeData.externalSource.name}`;
-            } else if (adjacentNodeData.type === 'EXTERNAL_ENTITIES') {
-                entity = 'External entities';
-            }
-            // we need a unique id for each network flow
-            const flowId = `${entity}-${namespace}-${direction}-${port}-${protocol}`;
-            return {
-                id: flowId,
-                type,
-                entity,
-                entityId,
-                namespace,
+
+        const isSourceNodeSelected = edge.source === id;
+
+        const sourceNode = controller.getNodeById(edge.source);
+        const targetNode = controller.getNodeById(edge.target);
+
+        const sourceNodeData: CustomSingleNodeData = sourceNode?.getData();
+        const targetNodeData: CustomSingleNodeData = targetNode?.getData();
+
+        const newFlows = edge.data.sourceToTargetProperties.map(({ port, protocol }): Flow => {
+            const direction: string = isSourceNodeSelected ? 'Egress' : 'Ingress';
+            const flow = createFlow({
+                sourceNodeData,
+                targetNodeData,
                 direction,
-                port: String(port),
+                port,
                 protocol,
-                // @TODO: Need to set this depending on whether it is in the baseline or not
-                isAnomalous: true,
-                // @TODO: Need to create nesting structure
-                children: [],
-            };
+                isSourceNodeSelected,
+            });
+            return flow;
         });
-        return [...acc, ...result] as Flow[];
+
+        const newReverseFlows = edge.data.targetToSourceProperties
+            ? edge.data.targetToSourceProperties.map(({ port, protocol }): Flow => {
+                  const direction: string = isSourceNodeSelected ? 'Ingress' : 'Egress';
+                  const flow = createFlow({
+                      sourceNodeData,
+                      targetNodeData,
+                      direction,
+                      port,
+                      protocol,
+                      isSourceNodeSelected,
+                  });
+                  return flow;
+              })
+            : [];
+
+        return [...acc, ...newFlows, ...newReverseFlows] as Flow[];
     }, [] as Flow[]);
     return networkFlows;
 }

@@ -111,6 +111,7 @@ preamble() {
     fi
 }
 
+# test_upgrade_paths implements tests to run upgrades with Helm, roxctl/kubectl and performs various rollbacks/restores.
 test_upgrade_paths() {
     info "Testing various upgrade paths"
 
@@ -136,6 +137,9 @@ test_upgrade_paths() {
     restore_backup_test
     wait_for_api
 
+    ########################################################################################
+    # Test roxctl/bundle/kubectl upgrade by setting the deployed Central image via kubectl #
+    ########################################################################################
     cd "$TEST_ROOT"
 
     kubectl -n stackrox set env deploy/central ROX_NETPOL_FIELDS="true"
@@ -144,6 +148,10 @@ test_upgrade_paths() {
 
     validate_upgrade "00-3-69-x-to-current" "central upgrade to 3.69.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
+    #####################
+    # Test rollback     #
+    #####################
+
     force_rollback
     wait_for_api
 
@@ -151,6 +159,9 @@ test_upgrade_paths() {
 
     validate_upgrade "01-current-back-to-3-69-x" "forced rollback to 3.69.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
+    ######################################
+    # Test helm upgrade after a rollback #
+    ######################################
     cd "$TEST_ROOT"
 
     helm_upgrade_to_current
@@ -162,6 +173,10 @@ test_upgrade_paths() {
     validate_upgrade "02-after_rollback" "upgrade after rollback" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     collect_and_check_stackrox_logs "$log_output_dir" "00_initial_check"
+
+    ######################################
+    # Test backup and restore            #
+    ######################################
 
     validate_db_backup_and_restore
     wait_for_api
@@ -175,6 +190,10 @@ test_upgrade_paths() {
 
     validate_upgrade "04-after-DB-backup-restore-post-bounce" "after DB backup and restore (post bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce"
+
+    ######################################
+    # Test upgrade some tests            #
+    ######################################
 
     info "Fetching a sensor bundle for cluster 'remote'"
     rm -rf sensor-remote

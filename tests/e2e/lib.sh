@@ -11,7 +11,6 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
-export PORT_FORWARD_LOGS="/tmp/port-forward-logs"
 
 # shellcheck disable=SC2120
 deploy_stackrox() {
@@ -219,35 +218,23 @@ patch_resources_for_test() {
 
     kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
     kubectl -n stackrox apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
+
+    for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
+        check_endpoint_availability "$target_port"
+    done
+}
+
+check_endpoint_availability() {
+    local target_port="$1"
     # shellcheck disable=SC2034
     for i in $(seq 1 20); do
-        if curl -sk --fail "https://${API_HOSTNAME}:8446/v1/metadata" &>/dev/null; then
+        if echo "Endpoint check" 2>/dev/null > /dev/tcp/"${API_HOSTNAME}"/"${target_port}"; then
             return
         fi
         sleep 1
     done
-    die "Port 8446 did not become reachable in time"
+    die "Port ${target_port} did not become reachable in time"
     exit 1
-}
-
-start_port_forwards_for_test() {
-    info "Creating port-forwards for test"
-
-    # Try preventing kubectl port-forward from hitting the FD limit, see
-    # https://github.com/kubernetes/kubernetes/issues/74551#issuecomment-910520361
-    # Note: this might fail if we don't have the correct privileges. Unfortunately,
-    # we cannot `sudo ulimit` because it is a shell builtin.
-    ulimit -n 65535 || true
-
-    central_pod="$(kubectl -n stackrox get po -lapp=central -oname | head -n 1)"
-
-    mkdir -p "$PORT_FORWARD_LOGS"
-
-    for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
-        log_file="$PORT_FORWARD_LOGS/central-${target_port}.log"
-        nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" < /dev/null > "${log_file}" 2>&1 &
-    done
-    sleep 1
 }
 
 check_stackrox_logs() {

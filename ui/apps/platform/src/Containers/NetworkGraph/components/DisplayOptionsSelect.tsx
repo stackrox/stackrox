@@ -37,6 +37,7 @@ function DisplayOptionsSelect({ selectedOptions, setSelectedOptions }: DisplayOp
             onSelect={onSelect}
             selections={selectedOptions}
             placeholderText="Display options"
+            toggleAriaLabel="Select display options"
             isGrouped
             id="display-options-dropdown"
         >

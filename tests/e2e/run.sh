@@ -103,7 +103,6 @@ prepare_for_endpoints_test() {
     export SERVICE_CA_FILE="$gencerts_dir/ca.pem"
     export SERVICE_CERT_FILE="$gencerts_dir/sensor-cert.pem"
     export SERVICE_KEY_FILE="$gencerts_dir/sensor-key.pem"
-    start_port_forwards_for_test
 }
 
 run_roxctl_bats_tests() {
