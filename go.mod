@@ -107,7 +107,7 @@ require (
 	golang.org/x/tools v0.5.0
 	golang.stackrox.io/grpc-http1 v0.2.6
 	google.golang.org/api v0.107.0
-	google.golang.org/genproto v0.0.0-20230119192704-9d59e20e5cd1
+	google.golang.org/genproto v0.0.0-20230123190316-2c411cf9d197
 	google.golang.org/grpc v1.52.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
