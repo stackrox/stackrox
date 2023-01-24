@@ -106,6 +106,7 @@ import objects.Secret
 import objects.SecretKeyRef
 import util.Helpers
 import util.Timer
+import util.Env
 
 @Slf4j
 class Kubernetes implements OrchestratorMain {
@@ -1654,7 +1655,9 @@ class Kubernetes implements OrchestratorMain {
     }
 
     protected defaultPspForNamespace(String namespace) {
-        PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
+        def pspEnabled = Env.get("POD_SECURITY_POLICIES")
+        if pspEnabled != "false" {
+            PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
                 .withName("allow-all-for-test")
                 .endMetadata()
                 .withNewSpec()
@@ -1672,9 +1675,11 @@ class Kubernetes implements OrchestratorMain {
                 .withNewFsGroup().withRule("RunAsAny").endFsGroup()
                 .endSpec()
                 .build()
-        client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
-        createClusterRole(generatePspRole())
-        createClusterRoleBinding(generatePspRoleBinding(namespace))
+            client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
+            createClusterRole(generatePspRole())
+            createClusterRoleBinding(generatePspRoleBinding(namespace))
+        }
+        
     }
 
     /*
@@ -2341,6 +2346,7 @@ class Kubernetes implements OrchestratorMain {
         return evaluateWithRetry(2, 3) {
             Namespace namespace = newNamespace(ns)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
+
             defaultPspForNamespace(ns)
             return namespaceId
         }
