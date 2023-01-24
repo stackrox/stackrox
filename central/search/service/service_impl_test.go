@@ -86,7 +86,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil)
 
-	if features.NewPolicyCategories.Enabled() {
+	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
 		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl))
 	}
 
@@ -111,8 +111,7 @@ type SearchOperationsTestSuite struct {
 	mockCtrl *gomock.Controller
 	rocksDB  *rocksdb.RocksDB
 	boltDB   *bolt.DB
-
-	pool *pgxpool.Pool
+	pool     *pgxpool.Pool
 }
 
 func (s *SearchOperationsTestSuite) SetupTest() {
@@ -194,7 +193,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil)
 
-	if features.NewPolicyCategories.Enabled() {
+	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
 		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	}
 
@@ -257,12 +256,15 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	// Create Policy Searcher
 	var policyIndexer policyIndex.Indexer
 	var ds policyDatastore.DataStore
+
+	categoriesDS := categoryDataStoreMocks.NewMockDataStore(s.mockCtrl)
+
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		policyStore := policyPostgres.New(s.pool)
 		policyIndexer = policyPostgres.NewIndexer(s.pool)
 		s.NoError(policyStore.Upsert(ctx, fixtures.GetPolicy()))
 		policySearcher := policySearcher.New(policyStore, policyIndexer)
-		ds = policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
+		ds = policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil, categoriesDS)
 	} else {
 		policyStore := policyStoreMocks.NewMockStore(s.mockCtrl)
 		policyStore.EXPECT().GetAll(gomock.Any())
@@ -271,7 +273,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		policyIndexer = policyIndex.New(idx)
 		s.NoError(policyIndexer.AddPolicy(fixtures.GetPolicy()))
 		policySearcher := policySearcher.New(policyStore, policyIndexer)
-		ds = policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
+		ds = policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil, nil)
 	}
 
 	builder := NewBuilder().
@@ -288,8 +290,8 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil)
 
-	if features.NewPolicyCategories.Enabled() {
-		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
+		builder = builder.WithPolicyCategoryDataStore(categoriesDS)
 	}
 	service := builder.Build().(*serviceImpl)
 
@@ -353,7 +355,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil)
 
-	if features.NewPolicyCategories.Enabled() {
+	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
 		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	}
 	service := builder.Build().(*serviceImpl)
@@ -438,7 +440,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil)
 
-	if features.NewPolicyCategories.Enabled() {
+	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
 		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	}
 

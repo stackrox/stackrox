@@ -9,12 +9,12 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/vulnerabilityrequest/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -45,6 +45,14 @@ var (
 			"/v1.CollectionService/DryRunCollection",
 		},
 	}))
+	defaultCollectionSortOption = &v1.QuerySortOption{
+		Field:    search.CollectionName.String(),
+		Reversed: false,
+	}
+	defaultDeploymentSortOption = &v1.QuerySortOption{
+		Field:    search.DeploymentName.String(),
+		Reversed: false,
+	}
 )
 
 type collectionRequest interface {
@@ -199,7 +207,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
 
-	slimUser := utils.UserFromContext(ctx)
+	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
@@ -243,6 +251,7 @@ func resolveQuery(rawQuery *v1.RawQuery, withPagination bool) (*v1.Query, error)
 	}
 	if withPagination {
 		paginated.FillPagination(query, rawQuery.GetPagination(), defaultPageSize)
+		paginated.FillDefaultSortOption(query, defaultCollectionSortOption)
 	}
 	return query, nil
 }
@@ -311,5 +320,6 @@ func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *sto
 	}
 	query := search.ConjunctionQuery(collectionQuery, filterQuery)
 	paginated.FillPagination(query, matchOptions.GetFilterQuery().GetPagination(), defaultPageSize)
+	paginated.FillDefaultSortOption(query, defaultDeploymentSortOption)
 	return s.deploymentDS.SearchListDeployments(ctx, query)
 }

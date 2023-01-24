@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
+	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -28,7 +29,8 @@ import (
 type serviceImpl struct {
 	v1.UnimplementedMetadataServiceServer
 
-	db *pgxpool.Pool
+	db              *pgxpool.Pool
+	systemInfoStore systemInfoStorage.Store
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -165,4 +167,22 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 	}
 
 	return dbStatus, nil
+}
+
+// GetDatabaseBackupStatus return the database backup status.
+func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) (*v1.DatabaseBackupStatus, error) {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.New("database backup status check is not supported")
+	}
+
+	sysInfo, found, err := s.systemInfoStore.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, errox.NotFound
+	}
+	return &v1.DatabaseBackupStatus{
+		BackupInfo: sysInfo.GetBackupInfo(),
+	}, nil
 }

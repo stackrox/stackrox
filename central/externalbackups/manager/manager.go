@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/externalbackups/scheduler"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -23,6 +24,7 @@ var (
 )
 
 // Manager implements the interface for external backups
+//
 //go:generate mockgen-wrapper
 type Manager interface {
 	Upsert(ctx context.Context, backup *storage.ExternalBackup) error
@@ -38,9 +40,9 @@ type backupInfo struct {
 }
 
 // New returns a new external backup manager
-func New(reporter integrationhealth.Reporter) Manager {
+func New(reporter integrationhealth.Reporter, backupListener listener.BackupListener) Manager {
 	return &managerImpl{
-		scheduler:            scheduler.New(reporter),
+		scheduler:            scheduler.New(reporter, backupListener),
 		idsToExternalBackups: make(map[string]*backupInfo),
 	}
 }

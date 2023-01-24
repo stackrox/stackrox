@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -80,7 +81,7 @@ func tearDownImportExportTest(t *testing.T) {
 			continue
 		}
 		// If there was any cleanup error other than "not found", log it here.
-		assert.Nil(t, cleanupError)
+		assert.Nil(t, cleanupError, fmt.Sprintf("error: %s", cleanupError.Error()))
 	}
 }
 
@@ -129,6 +130,7 @@ func validateImport(t *testing.T, importResp *v1.ImportPoliciesResponse, policie
 
 func validateSuccess(t *testing.T, importPolicyResponse *v1.ImportPolicyResponse, expectedPolicy *storage.Policy, ignoreID bool) {
 	require.True(t, importPolicyResponse.GetSucceeded())
+	log.Infof("Adding policy %s with id: %s", importPolicyResponse.GetPolicy().GetName(), importPolicyResponse.GetPolicy().GetId())
 	addedPolicies = append(addedPolicies, importPolicyResponse.GetPolicy().GetId())
 	if ignoreID {
 		expectedPolicy.Id = ""

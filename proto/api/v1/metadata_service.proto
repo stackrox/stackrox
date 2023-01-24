@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "api/v1/empty.proto";
+import "storage/system_info.proto";
 
 package v1;
 
@@ -62,6 +63,11 @@ message DatabaseStatus {
     string database_version = 3;
 }
 
+
+message DatabaseBackupStatus {
+    storage.BackupInfo backup_info = 1;
+}
+
 service MetadataService {
 
     rpc GetMetadata(Empty) returns (Metadata) {
@@ -79,6 +85,12 @@ service MetadataService {
     rpc GetDatabaseStatus(Empty) returns (DatabaseStatus) {
         option (google.api.http) = {
             get: "/v1/database/status"
+        };
+    }
+
+    rpc GetDatabaseBackupStatus(Empty) returns (DatabaseBackupStatus) {
+        option (google.api.http) = {
+            get: "/v1/backup/status"
         };
     }
 }

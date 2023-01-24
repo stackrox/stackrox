@@ -96,6 +96,21 @@ func (mr *MockDataStoreMockRecorder) GetAllPolicyCategories(ctx interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPolicyCategories", reflect.TypeOf((*MockDataStore)(nil).GetAllPolicyCategories), ctx)
 }
 
+// GetPolicyCategoriesForPolicy mocks base method.
+func (m *MockDataStore) GetPolicyCategoriesForPolicy(ctx context.Context, policyID string) ([]*storage.PolicyCategory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPolicyCategoriesForPolicy", ctx, policyID)
+	ret0, _ := ret[0].([]*storage.PolicyCategory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPolicyCategoriesForPolicy indicates an expected call of GetPolicyCategoriesForPolicy.
+func (mr *MockDataStoreMockRecorder) GetPolicyCategoriesForPolicy(ctx, policyID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicyCategoriesForPolicy", reflect.TypeOf((*MockDataStore)(nil).GetPolicyCategoriesForPolicy), ctx, policyID)
+}
+
 // GetPolicyCategory mocks base method.
 func (m *MockDataStore) GetPolicyCategory(ctx context.Context, id string) (*storage.PolicyCategory, bool, error) {
 	m.ctrl.T.Helper()
@@ -170,4 +185,18 @@ func (m *MockDataStore) SearchRawPolicyCategories(ctx context.Context, q *v1.Que
 func (mr *MockDataStoreMockRecorder) SearchRawPolicyCategories(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawPolicyCategories", reflect.TypeOf((*MockDataStore)(nil).SearchRawPolicyCategories), ctx, q)
+}
+
+// SetPolicyCategoriesForPolicy mocks base method.
+func (m *MockDataStore) SetPolicyCategoriesForPolicy(ctx context.Context, policyID string, categories []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPolicyCategoriesForPolicy", ctx, policyID, categories)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetPolicyCategoriesForPolicy indicates an expected call of SetPolicyCategoriesForPolicy.
+func (mr *MockDataStoreMockRecorder) SetPolicyCategoriesForPolicy(ctx, policyID, categories interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPolicyCategoriesForPolicy", reflect.TypeOf((*MockDataStore)(nil).SetPolicyCategoriesForPolicy), ctx, policyID, categories)
 }
