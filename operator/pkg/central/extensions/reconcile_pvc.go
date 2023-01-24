@@ -113,7 +113,7 @@ func reconcilePVC(ctx context.Context, central *platform.Central, persistence *p
 		persistence:      persistence,
 		target:           target,
 		defaultClaimName: defaultClaimName,
-		log:              log,
+		log:              log.WithValues("pvcReconciler", target),
 	}
 
 	return ext.Execute()
@@ -186,7 +186,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 }
 
 func (r *reconcilePVCExtensionRun) handleDelete() error {
-	ownedPVCs, err := r.getOwnedPVC()
+	ownedPVCs, err := r.getOwnedPVCsForCurrentTarget()
 	if err != nil {
 		return errors.Wrap(err, "fetching operator owned PVCs")
 	}
@@ -275,52 +275,53 @@ func parseResourceQuantityOr(qStrPtr *string, d resource.Quantity) (resource.Qua
 	return q, nil
 }
 
-func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClaim, error) {
+func (r *reconcilePVCExtensionRun) getOwnedPVCsForCurrentTarget() ([]*corev1.PersistentVolumeClaim, error) {
 	pvcList := &corev1.PersistentVolumeClaimList{}
 
 	if err := r.client.List(r.ctx, pvcList, ctrlClient.InNamespace(r.namespace)); err != nil {
 		return nil, errors.Wrapf(err, "receiving list PVC list for %s %s", r.centralObj.GroupVersionKind(), r.centralObj.GetName())
 	}
 
-	var ownedPVCs []*corev1.PersistentVolumeClaim
+	var pvcs []*corev1.PersistentVolumeClaim
 	for i := range pvcList.Items {
-		item := pvcList.Items[i]
-		if metav1.IsControlledBy(&item, r.centralObj) {
-			tmp := item
-			ownedPVCs = append(ownedPVCs, &tmp)
+		pvc := pvcList.Items[i]
+		if r.getTargetLabelValue(&pvc) == string(r.target) {
+			pvcs = append(pvcs, &pvc)
 		}
 	}
 
-	return ownedPVCs, nil
+	return pvcs, nil
+}
+
+func (r *reconcilePVCExtensionRun) getTargetLabelValue(pvc *corev1.PersistentVolumeClaim) string {
+	// If the PCV is not owned by the Central we're reconciling, do not make any assumptions about the target.
+	if !metav1.IsControlledBy(pvc, r.centralObj) {
+		return ""
+	}
+	if val, ok := pvc.Labels[pvcTargetLabelKey]; ok {
+		return val
+	}
+	// If the target annotation is not set, assume this (owned) PVC is a Central PVC for backwards compatibility.
+	return string(PVCTargetCentral)
 }
 
 func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCForCurrentTarget() (*corev1.PersistentVolumeClaim, error) {
-	pvcList, err := r.getOwnedPVC()
+	pvcList, err := r.getOwnedPVCsForCurrentTarget()
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter PVC List by current PVC Claim Name
-	filtered := make([]*corev1.PersistentVolumeClaim, 0, len(pvcList))
-	for _, pvc := range pvcList {
-		// If the target annotation is empty, default to Central for backwards compatibility
-		if val, ok := pvc.Labels[pvcTargetLabelKey]; !ok && r.target == PVCTargetCentral {
-			filtered = append(filtered, pvc)
-		} else if val == string(r.target) {
-			filtered = append(filtered, pvc)
-		}
-	}
 	// If no previously created managed PVC was found everything is ok.
-	if len(filtered) == 0 {
+	if len(pvcList) == 0 {
 		return nil, nil
 	}
-	if len(filtered) > 1 {
-		names := sliceutils.Map(filtered, (*corev1.PersistentVolumeClaim).GetName)
+	if len(pvcList) > 1 {
+		names := sliceutils.Map(pvcList, (*corev1.PersistentVolumeClaim).GetName)
 		sort.Strings(names)
 
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
 			"multiple owned PVCs were found for %s, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", r.target, strings.Join(names, ", "))
 	}
 
-	return filtered[0], nil
+	return pvcList[0], nil
 }
