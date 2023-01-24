@@ -49,7 +49,11 @@ message ScopeElementForPermission {
 }
 
 message GetClustersForPermissionResponse {
-    repeated ScopeElementForPermission clusters = 2;
+    repeated ScopeElementForPermission clusters = 1;
+}
+
+message GetNamespacesForPermissionAndClusterResponse {
+    repeated ScopeElementForPermission namespaces = 1;
 }
 
 message ComputeEffectiveAccessScopeRequest {
@@ -256,9 +260,17 @@ service RoleService {
         };
     }
 
+    // Extraction of user scope elements
+
     rpc GetClustersForPermission (GetClustersForPermissionRequest) returns (GetClustersForPermissionResponse) {
         option (google.api.http) = {
             get: "/v1/sac/clusters"
+        };
+    }
+
+    rpc GetNamespacesForClusterAndPermission (GetNamespacesForPermissionAndClusterRequest) returns (GetNamespacesForPermissionAndClusterResponse) {
+        option (google.api.http) = {
+            get: "/v1/sac/clusters/{cluster_id}/namespaces"
         };
     }
 

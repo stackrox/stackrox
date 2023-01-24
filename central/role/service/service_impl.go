@@ -10,6 +10,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
+	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -60,6 +61,7 @@ var (
 			"/v1.RoleService/GetResources",
 			"/v1.RoleService/GetMyPermissions",
 			"/v1.RoleService/GetClustersForPermission",
+			"/v1.RoleService/GetNamespacesForClusterAndPermission",
 		},
 	})
 )
@@ -437,6 +439,111 @@ func (s *serviceImpl) GetClustersForPermission(ctx context.Context, req *v1.GetC
 					response.Clusters = append(response.Clusters, clusterInfo)
 				}
 			}
+		}
+	}
+	return response, nil
+}
+
+func (s *serviceImpl) GetNamespacesForClusterAndPermission(ctx context.Context, req *v1.GetNamespacesForPermissionAndClusterRequest) (*v1.GetNamespacesForPermissionAndClusterResponse, error) {
+	if req == nil {
+		return nil, errox.InvalidArgs
+	}
+	log.Info(req)
+	response := &v1.GetNamespacesForPermissionAndClusterResponse{}
+	targetResource := permissions.Resource(req.GetResource())
+	targetResourceMetadata, found := resources.MetadataForResource(targetResource)
+	if !found {
+		return response, nil
+	}
+	targetAccess := req.GetAccess()
+	targetResourceWithAccess := permissions.ResourceWithAccess{
+		Resource: targetResourceMetadata,
+		Access:   targetAccess,
+	}
+	scopeChecker := sac.ForResource(targetResourceMetadata).ScopeChecker(ctx, targetAccess)
+	scope, err := scopeChecker.EffectiveAccessScope(targetResourceWithAccess)
+	if err != nil {
+		return nil, err
+	}
+	log.Info(scope)
+	if scope != nil {
+		isClusterFullyIncluded := false
+		if scope.State == effectiveaccessscope.Included {
+			isClusterFullyIncluded = true
+		} else {
+			clusterNode := scope.GetClusterByID(req.GetClusterId())
+			if clusterNode == nil || clusterNode.State == effectiveaccessscope.Excluded {
+				return response, nil
+			}
+			if clusterNode.State == effectiveaccessscope.Included || targetResourceMetadata.GetScope() == permissions.ClusterScope {
+				isClusterFullyIncluded = true
+			}
+		}
+		log.Info(isClusterFullyIncluded)
+		var elevatedCtx context.Context
+		if isClusterFullyIncluded {
+			elevatedCtx = sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Namespace),
+					sac.ClusterScopeKeys(req.GetClusterId()),
+				),
+			)
+		} else {
+			clusterNode := scope.GetClusterByID(req.GetClusterId())
+			namespaceList := make([]string, 0, len(clusterNode.Namespaces))
+			for name, node := range clusterNode.Namespaces {
+				if node == nil || node.State != effectiveaccessscope.Included {
+					continue
+				}
+				namespaceList = append(namespaceList, name)
+			}
+			elevatedCtx = sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Namespace),
+					sac.ClusterScopeKeys(req.GetClusterId()),
+					sac.NamespaceScopeKeys(namespaceList...),
+				),
+			)
+		}
+
+		query := search.NewQueryBuilder().
+			AddStringsHighlighted(search.Namespace, search.WildcardString).
+			ProtoQuery()
+		log.Info(query)
+		results, err := s.namespaceDataStore.Search(elevatedCtx, query)
+		if err != nil {
+			log.Info("Search error")
+			return nil, err
+		}
+		log.Info(len(results))
+		log.Info(results)
+		var namespaceOptionsMap search.OptionsMap
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			namespaceOptionsMap = schema.NamespacesSchema.OptionsMap
+		} else {
+			namespaceOptionsMap = namespaceMappings.OptionsMap
+		}
+		targetField, fieldFound := namespaceOptionsMap.Get(search.Namespace.String())
+		for _, r := range results {
+			namespaceID := r.ID
+			namespaceName := ""
+			if fieldFound {
+				for _, v := range r.Matches[targetField.GetFieldPath()] {
+					if len(v) > 0 {
+						namespaceName = v
+						break
+					}
+				}
+			} else {
+				namespaceName = fmt.Sprintf("Namespace with ID %q", namespaceID)
+			}
+			clusterInfo := &v1.ScopeElementForPermission{
+				Id:   namespaceID,
+				Name: namespaceName,
+			}
+			response.Namespaces = append(response.Namespaces, clusterInfo)
 		}
 	}
 	return response, nil

@@ -131,8 +131,16 @@ export type ClusterForPermission = {
 };
 
 export type ClustersForPermissionResponse = {
-    permission: RolePermission;
     clusters: ClusterForPermission[];
+};
+
+export type NamespaceForPermission = {
+    id: string;
+    name: string;
+};
+
+export type NamespacesForPermissionResponse = {
+    namespaces: NamespaceForPermission[];
 };
 
 export function getClustersForPermission(
@@ -142,4 +150,13 @@ export function getClustersForPermission(
     return axios
         .get<ClustersForPermissionResponse>(`${clustersForPermissionUrl}?${params}`)
         .then((response) => response.data);
+}
+
+export function getNamespacesForClusterAndPermission(
+    permission: RolePermission,
+    clusterId?: string
+): Promise<NamespacesForPermissionResponse> {
+    const params = qs.stringify(permission, { arrayFormat: 'repeat' });
+    const url = `${clustersForPermissionUrl}/${clusterId}/namespaces?${params}`;
+    return axios.get<NamespacesForPermissionResponse>(url).then((response) => response.data);
 }
