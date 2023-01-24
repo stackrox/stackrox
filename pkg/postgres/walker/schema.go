@@ -488,7 +488,7 @@ type Field struct {
 // DerivedSearchField represents a search field that's derived.
 // It includes the name of the derived field, as well as the derivation type.
 type DerivedSearchField struct {
-	FieldName      string
+	DerivedFrom    string
 	DerivationType search.DerivationType
 }
 

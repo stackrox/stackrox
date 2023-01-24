@@ -77,18 +77,23 @@ type innerJoin struct {
 }
 
 type query struct {
-	Schema         *walker.Schema
-	QueryType      QueryType
-	SelectedFields []pgsearch.SelectQueryField
-	From           string
-	Where          string
-	Data           []interface{}
+	Schema           *walker.Schema
+	QueryType        QueryType
+	PrimaryKeyFields []pgsearch.SelectQueryField
+	SelectedFields   []pgsearch.SelectQueryField
+	From             string
+	Where            string
+	Data             []interface{}
 
-	Having string
+	Having     string
+	Pagination parsedPaginationQuery
+	InnerJoins []innerJoin
 
-	Pagination        parsedPaginationQuery
-	InnerJoins        []innerJoin
-	GroupByPrimaryKey bool
+	GroupBys []groupByEntry
+}
+
+type groupByEntry struct {
+	Field pgsearch.SelectQueryField
 }
 
 // ExtraSelectedFieldPaths includes extra fields to add to the select clause.
@@ -98,6 +103,7 @@ func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
 	if !q.DistinctAppliedOnPrimaryKeySelect() {
 		return nil
 	}
+
 	var out []pgsearch.SelectQueryField
 	for _, orderByEntry := range q.Pagination.OrderBys {
 		var alreadyExists bool
@@ -111,6 +117,37 @@ func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
 		}
 	}
 	return out
+}
+
+func (q *query) populatePrimaryKeySelectFields() {
+	// Note that DB framework version prior to adding this func assumes all primary key fields in Go to be string type.
+	for _, pk := range q.Schema.PrimaryKeys() {
+		q.PrimaryKeyFields = append(q.PrimaryKeyFields, pgsearch.SelectQueryField{
+			SelectPath: qualifyColumn(pk.Schema.Table, pk.ColumnName, ternary.String(pk.SQLType == "uuid", "::text", "")),
+			Alias:      strings.Join([]string{q.Schema.Table, pk.ColumnName}, "_"),
+			FieldType:  pk.DataType,
+		})
+	}
+
+	if len(q.PrimaryKeyFields) == 0 {
+		return
+	}
+	// If we do not need to apply distinct clause to the primary keys, then we are done here.
+	if !q.DistinctAppliedOnPrimaryKeySelect() {
+		return
+	}
+
+	// Collect select paths and apply distinct clause.
+	outStr := make([]string, 0, len(q.PrimaryKeyFields))
+	for _, f := range q.PrimaryKeyFields {
+		outStr = append(outStr, f.SelectPath)
+	}
+	columnName := ternary.String(len(q.PrimaryKeyFields) > 1, "pks", q.PrimaryKeyFields[0].Alias)
+	q.PrimaryKeyFields = q.PrimaryKeyFields[:0]
+	q.PrimaryKeyFields = append(q.PrimaryKeyFields, pgsearch.SelectQueryField{
+		SelectPath: fmt.Sprintf("distinct(%s)", stringutils.JoinNonEmpty(",", outStr...)),
+		Alias:      strings.Join([]string{"distinct", q.Schema.Table, columnName}, "_"),
+	})
 }
 
 func (q *query) getPortionBeforeFromClause() string {
@@ -131,29 +168,20 @@ func (q *query) getPortionBeforeFromClause() string {
 	case GET:
 		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:
-		var primaryKeyPaths []string
 		// Always select the primary keys first.
-		for _, pk := range q.Schema.PrimaryKeys() {
-			var cast string
-			if pk.SQLType == "uuid" {
-				cast = "::text"
-			}
-			primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, cast))
+		var selectPaths []string
+		for _, field := range q.PrimaryKeyFields {
+			selectPaths = append(selectPaths, field.PathForSelectPortion())
 		}
-		primaryKeyPortion := strings.Join(primaryKeyPaths, ", ")
+		for _, field := range q.SelectedFields {
+			selectPaths = append(selectPaths, field.PathForSelectPortion())
+		}
 
-		if q.DistinctAppliedOnPrimaryKeySelect() {
-			primaryKeyPortion = fmt.Sprintf("distinct(%s)", primaryKeyPortion)
-		}
-		var remainingFieldPaths []string
-		for _, selectedField := range q.SelectedFields {
-			remainingFieldPaths = append(remainingFieldPaths, selectedField.SelectPath)
-		}
+		// Extra fields are group by fields and order by fields.
 		for _, field := range q.ExtraSelectedFieldPaths() {
-			remainingFieldPaths = append(remainingFieldPaths, field.SelectPath)
+			selectPaths = append(selectPaths, field.PathForSelectPortion())
 		}
-		remainingPortion := strings.Join(remainingFieldPaths, ", ")
-		return "select " + stringutils.JoinNonEmpty(", ", primaryKeyPortion, remainingPortion)
+		return "select " + stringutils.JoinNonEmpty(", ", selectPaths...)
 	}
 	panic(fmt.Sprintf("unhandled query type %s", q.QueryType))
 }
@@ -162,7 +190,7 @@ func (q *query) DistinctAppliedOnPrimaryKeySelect() bool {
 	// If this involves multiple tables, then we need to wrap the primary key portion in a distinct, because
 	// otherwise there could be multiple rows with the same primary key in the join table.
 	// TODO(viswa): we might be able to do this even more narrowly
-	return len(q.InnerJoins) > 0 && !q.GroupByPrimaryKey
+	return len(q.InnerJoins) > 0 && len(q.GroupBys) == 0
 }
 
 func (q *query) AsSQL() string {
@@ -186,14 +214,14 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(" where ")
 		querySB.WriteString(replaceVars(q.Where))
 	}
-	if q.GroupByPrimaryKey {
-		primaryKeys := q.Schema.PrimaryKeys()
-		primaryKeyPaths := make([]string, 0, len(primaryKeys))
-		for _, pk := range primaryKeys {
-			primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+
+	if len(q.GroupBys) > 0 {
+		groupByClauses := make([]string, 0, len(q.GroupBys))
+		for _, entry := range q.GroupBys {
+			groupByClauses = append(groupByClauses, entry.Field.SelectPath)
 		}
 		querySB.WriteString(" group by ")
-		querySB.WriteString(strings.Join(primaryKeyPaths, ", "))
+		querySB.WriteString(strings.Join(groupByClauses, ", "))
 	}
 	if q.Having != "" {
 		querySB.WriteString(" having ")
@@ -238,6 +266,36 @@ func (p *parsedPaginationQuery) AsSQL() string {
 		paginationSB.WriteString(fmt.Sprintf(" OFFSET %d", p.Offset))
 	}
 	return paginationSB.String()
+}
+
+func populateGroupBy(querySoFar *query, schema *walker.Schema, queryFields map[string]searchFieldMetadata) {
+	// Explicit GROUP BY clauses are not supported yet. If a query field (in select or order by) is a derived field requiring a group by clause,
+	// default to primary key grouping. Note that all fields in the query, including pagination, are in `queryFields`.
+	for _, field := range queryFields {
+		if field.derivedMetadata == nil {
+			continue
+		}
+		switch field.derivedMetadata.DerivationType {
+		case searchPkg.CountDerivationType:
+			applyGroupByPrimaryKeys(querySoFar, schema)
+			return
+		}
+	}
+}
+
+func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
+	for _, pk := range schema.PrimaryKeys() {
+		var cast string
+		if pk.SQLType == "uuid" {
+			cast = "::text"
+		}
+		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{
+			Field: pgsearch.SelectQueryField{
+				SelectPath: qualifyColumn(pk.Schema.Table, pk.ColumnName, cast),
+				FieldType:  pk.DataType,
+			},
+		})
+	}
 }
 
 func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
@@ -290,12 +348,11 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
 					Field: pgsearch.SelectQueryField{
 						SelectPath: fmt.Sprintf("count(%s)", qualifyColumn(dbField.Schema.Table, dbField.ColumnName, "")),
-						FieldType:  dbField.DataType,
+						Alias:      strings.Join([]string{"count", dbField.Schema.Table, dbField.ColumnName}, "_"),
+						FieldType:  walker.Integer,
 					},
 					Descending: so.GetReversed(),
 				})
-				// If we're ordering by a count, we will need to group by the primary key.
-				querySoFar.GroupByPrimaryKey = true
 			case searchPkg.SimpleReverseSortDerivationType:
 				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
 					Field: pgsearch.SelectQueryField{
@@ -350,29 +407,34 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 		return nil, nil
 	}
 
-	query := &query{
+	parsedQuery := &query{
 		Schema:     schema,
 		QueryType:  queryType,
 		InnerJoins: innerJoins,
 		From:       schema.Table,
 	}
 	if queryEntry != nil {
-		query.Where = queryEntry.Where.Query
-		query.Data = queryEntry.Where.Values
-		query.SelectedFields = queryEntry.SelectedFields
-		query.GroupByPrimaryKey = queryEntry.GroupByPrimaryKey
+		parsedQuery.Where = queryEntry.Where.Query
+		parsedQuery.Data = queryEntry.Where.Values
+		parsedQuery.SelectedFields = queryEntry.SelectedFields
 		if queryEntry.Having != nil {
-			query.Having = queryEntry.Having.Query
-			query.Data = append(query.Data, queryEntry.Having.Values...)
+			parsedQuery.Having = queryEntry.Having.Query
+			parsedQuery.Data = append(parsedQuery.Data, queryEntry.Having.Values...)
 		}
 	}
-	if err := populatePagination(query, q.GetPagination(), schema, dbFields); err != nil {
+	populateGroupBy(parsedQuery, schema, dbFields)
+	if err := populatePagination(parsedQuery, q.GetPagination(), schema, dbFields); err != nil {
 		return nil, err
 	}
-	if err := applyPaginationForSearchAfter(query); err != nil {
+	if err := applyPaginationForSearchAfter(parsedQuery); err != nil {
 		return nil, err
 	}
-	return query, nil
+
+	// Populate primary key select fields once so that we do not have to evaluate.
+	parsedQuery.populatePrimaryKeySelectFields()
+
+	// Nothing more to do. Currently, GROUP BY clause is only supported on primary keys.
+	return parsedQuery, nil
 }
 
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
@@ -394,8 +456,8 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 				newQE.SelectedFields = append(newQE.SelectedFields, selectedField)
 			}
 		}
-		if entry.GroupByPrimaryKey {
-			newQE.GroupByPrimaryKey = true
+		if len(entry.GroupBy) > 0 {
+			newQE.GroupBy = append(newQE.GroupBy, entry.GroupBy...)
 		}
 		if entry.Having != nil {
 			if newQE.Having == nil {
@@ -593,15 +655,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 	// Assumes that ids are strings.
 	numPrimaryKeys := len(schema.PrimaryKeys())
 	extraSelectedFields := query.ExtraSelectedFieldPaths()
-	var numFieldsForPrimaryKey int
-	if query.DistinctAppliedOnPrimaryKeySelect() {
-		numFieldsForPrimaryKey = 1
-	} else {
-		numFieldsForPrimaryKey = numPrimaryKeys
-	}
-	primaryKeysComposite := numPrimaryKeys > 1 && numFieldsForPrimaryKey == 1
-
-	bufferToScanRowInto := make([]interface{}, numFieldsForPrimaryKey+len(query.SelectedFields)+len(extraSelectedFields))
+	numSelectFieldsForPrimaryKey := len(query.PrimaryKeyFields)
+	primaryKeysComposite := numPrimaryKeys > 1 && len(query.PrimaryKeyFields) == 1
+	bufferToScanRowInto := make([]interface{}, numSelectFieldsForPrimaryKey+len(query.SelectedFields)+len(extraSelectedFields))
 	if primaryKeysComposite {
 		var outputSlice []interface{}
 		bufferToScanRowInto[0] = &outputSlice
@@ -611,10 +667,10 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 		}
 	}
 	for i, field := range query.SelectedFields {
-		bufferToScanRowInto[i+numFieldsForPrimaryKey] = mustAllocForDataType(field.FieldType)
+		bufferToScanRowInto[i+numSelectFieldsForPrimaryKey] = mustAllocForDataType(field.FieldType)
 	}
 	for i, field := range extraSelectedFields {
-		bufferToScanRowInto[i+len(query.SelectedFields)+numFieldsForPrimaryKey] = mustAllocForDataType(field.FieldType)
+		bufferToScanRowInto[i+numSelectFieldsForPrimaryKey+len(query.SelectedFields)] = mustAllocForDataType(field.FieldType)
 	}
 
 	recordIDIdxMap := make(map[string]int)
@@ -663,7 +719,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 		if len(query.SelectedFields) > 0 {
 			for i, field := range query.SelectedFields {
-				returnedValue := bufferToScanRowInto[i+numFieldsForPrimaryKey]
+				returnedValue := bufferToScanRowInto[i+numSelectFieldsForPrimaryKey]
 				if field.PostTransform != nil {
 					returnedValue = field.PostTransform(returnedValue)
 				}
@@ -867,6 +923,9 @@ func redactedQueryData(query *query) interface{} {
 	// Otherwise, allow the logging
 	return query.Data
 }
+
+// helper functions
+///////////////////
 
 func scanRows[T any, PT unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
 	var results []*T
