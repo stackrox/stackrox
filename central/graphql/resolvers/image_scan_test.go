@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
-	gqlTestutils "github.com/stackrox/rox/pkg/graphql/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -80,7 +79,7 @@ func (s *ImageScanResolverTestSuite) SetupTest() {
 	s.imageComponentDataStore = imageComponentsDSMocks.NewMockDataStore(s.mockCtrl)
 	s.imageCVEDataStore = imageCVEsDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.resolver, s.schema = gqlTestutils.SetupTestResolver(s.T(), s.imageDataStore, s.imageComponentDataStore, s.imageCVEDataStore, nil)
+	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageComponentDataStore, s.imageCVEDataStore, nil)
 }
 
 func (s *ImageScanResolverTestSuite) TearDownTest() {
