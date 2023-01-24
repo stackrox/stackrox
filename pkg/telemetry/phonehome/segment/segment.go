@@ -18,17 +18,17 @@ type segmentTelemeter struct {
 
 func getMessageType(msg segment.Message) string {
 	switch m := msg.(type) {
-	case *segment.Alias:
+	case segment.Alias:
 		return m.Type
-	case *segment.Group:
+	case segment.Group:
 		return m.Type
-	case *segment.Identify:
+	case segment.Identify:
 		return m.Type
-	case *segment.Page:
+	case segment.Page:
 		return m.Type
-	case *segment.Screen:
+	case segment.Screen:
 		return m.Type
-	case *segment.Track:
+	case segment.Track:
 		return m.Type
 	default:
 		return ""
