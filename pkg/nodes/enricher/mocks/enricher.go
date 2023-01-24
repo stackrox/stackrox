@@ -9,21 +9,13 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/nodes/enricher"
 	types "github.com/stackrox/rox/pkg/scanners/types"
 )
-
-var _ enricher.NodeEnricher = (*MockNodeEnricher)(nil)
 
 // MockNodeEnricher is a mock of NodeEnricher interface.
 type MockNodeEnricher struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeEnricherMockRecorder
-}
-
-func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
-	//TODO implement me
-	panic("implement me")
 }
 
 // MockNodeEnricherMockRecorder is the mock recorder for MockNodeEnricher.
@@ -70,6 +62,20 @@ func (m *MockNodeEnricher) EnrichNode(node *storage.Node) error {
 func (mr *MockNodeEnricherMockRecorder) EnrichNode(node interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNode", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNode), node)
+}
+
+// EnrichNodeWithInventory mocks base method.
+func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichNodeWithInventory", node, nodeInventory)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnrichNodeWithInventory indicates an expected call of EnrichNodeWithInventory.
+func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithInventory(node, nodeInventory interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithInventory", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithInventory), node, nodeInventory)
 }
 
 // RemoveNodeIntegration mocks base method.
