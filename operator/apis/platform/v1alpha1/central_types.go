@@ -211,10 +211,12 @@ type CentralDBSpec struct {
 type CentralDBEnabled string
 
 const (
-	// Deprecated: CentralDBEnabledDefault configures the central to use PostgreSQL database.
+	// CentralDBEnabledDefault configures the central to use PostgreSQL database.
+	// Deprecated const.
 	CentralDBEnabledDefault CentralDBEnabled = "Default"
 
-	// Deprecated: CentralDBEnabledTrue configures the central to use a PostgreSQL database.
+	// CentralDBEnabledTrue configures the central to use a PostgreSQL database.
+	// Deprecated const.
 	CentralDBEnabledTrue CentralDBEnabled = "Enabled"
 )
 
