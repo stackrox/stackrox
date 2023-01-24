@@ -158,10 +158,7 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 
 // IsExternalDB returns true if central DB is not managed by the Operator
 func (c *CentralComponentSpec) IsExternalDB() bool {
-	if c == nil || c.DB == nil {
-		return false
-	}
-	return c.DB.IsExternal()
+	return c != nil && c.DB.IsExternal()
 }
 
 // DeclarativeConfiguration defines settings for adding resources in a declarative manner.
@@ -214,16 +211,12 @@ type CentralDBSpec struct {
 type CentralDBEnabled string
 
 const (
-	// CentralDBEnabledDefault configures the central to use PostgreSQL database.
+	// Deprecated: CentralDBEnabledDefault configures the central to use PostgreSQL database.
 	CentralDBEnabledDefault CentralDBEnabled = "Default"
-)
 
-// CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value
-func CentralDBEnabledPtr(c CentralDBEnabled) *CentralDBEnabled {
-	ptr := new(CentralDBEnabled)
-	*ptr = c
-	return ptr
-}
+	// Deprecated: CentralDBEnabledTrue configures the central to use a PostgreSQL database.
+	CentralDBEnabledTrue CentralDBEnabled = "Enabled"
+)
 
 // GetPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
 func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {

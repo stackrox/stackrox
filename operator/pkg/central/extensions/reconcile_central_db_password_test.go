@@ -70,7 +70,7 @@ func TestReconcileDBPassword(t *testing.T) {
 
 	specWithAutogenPassword := v1alpha1.CentralSpec{
 		Central: &v1alpha1.CentralComponentSpec{
-			DB: &v1alpha1.CentralDBSpec{IsEnabled: v1alpha1.CentralDBEnabledPtr(v1alpha1.CentralDBEnabledDefault)},
+			DB: &v1alpha1.CentralDBSpec{},
 		},
 	}
 
@@ -207,7 +207,6 @@ func TestReconcileDBPassword(t *testing.T) {
 			Spec: v1alpha1.CentralSpec{
 				Central: &v1alpha1.CentralComponentSpec{
 					DB: &v1alpha1.CentralDBSpec{
-						IsEnabled:                v1alpha1.CentralDBEnabledPtr(v1alpha1.CentralDBEnabledDefault),
 						ConnectionStringOverride: pointers.String("foo"),
 						PasswordSecret: &v1alpha1.LocalSecretReference{
 							Name: customPWSecretName,
