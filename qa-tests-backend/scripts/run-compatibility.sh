@@ -29,8 +29,8 @@ compatibility_test() {
             info "Not running on CI: skipping cluster setup make sure cluster is already available"
         fi
 
-        setup_podsecuritypolicies_config
         setup_deployment_env false false
+        setup_podsecuritypolicies_config
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
@@ -39,7 +39,6 @@ compatibility_test() {
         kubectl -n stackrox get deploy,ds -o wide
 
         deploy_default_psp
-
         deploy_webhook_server
         get_ECR_docker_pull_password
     fi

@@ -2344,7 +2344,6 @@ class Kubernetes implements OrchestratorMain {
         return evaluateWithRetry(2, 3) {
             Namespace namespace = newNamespace(ns)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
-
             defaultPspForNamespace(ns)
             return namespaceId
         }
