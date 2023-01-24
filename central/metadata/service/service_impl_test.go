@@ -9,9 +9,12 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	cTLS "github.com/google/certificate-transparency-go/tls"
+	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -161,4 +164,30 @@ func (s *serviceImplTestSuite) TestDatabaseStatus() {
 		s.NoError(err)
 		s.True(dbStatus.DatabaseAvailable)
 	}
+}
+
+func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("Skip postgres store tests")
+		s.T().SkipNow()
+	}
+	tp := pgtest.ForT(s.T())
+	defer tp.Teardown(s.T())
+
+	srv := &serviceImpl{
+		db:              tp.Pool,
+		systemInfoStore: systemInfoStorage.New(tp.Pool),
+	}
+	ctx := sac.WithAllAccess(context.Background())
+	expected := &storage.SystemInfo{
+		BackupInfo: &storage.BackupInfo{
+			Status:          storage.OperationStatus_PASS,
+			BackupLastRunAt: timestamp.TimestampNow(),
+		},
+	}
+	err := srv.systemInfoStore.Upsert(ctx, expected)
+	s.NoError(err)
+	actual, err := srv.GetDatabaseBackupStatus(ctx, &v1.Empty{})
+	s.NoError(err)
+	s.EqualValues(expected, actual)
 }

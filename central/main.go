@@ -128,6 +128,7 @@ import (
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
+	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
@@ -402,7 +403,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}
 
-	if features.NewPolicyCategories.Enabled() {
+	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	}
 
@@ -703,16 +704,20 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/backup",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), false)),
-			Compression:   true,
+			Route:      "/db/backup",
+			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
+			ServerHandler: notImplementedOnManagedServices(
+				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), false),
+			),
+			Compression: true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), true)),
-			Compression:   true,
+			Route:      "/api/extensions/backup",
+			Authorizer: user.WithRole(role.Admin),
+			ServerHandler: notImplementedOnManagedServices(
+				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), true),
+			),
+			Compression: true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/export/csv/node/cve",
@@ -736,13 +741,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false)),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), false)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true)),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), true)),
 			Compression:   true,
 		})
 

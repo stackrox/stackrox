@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -149,19 +150,27 @@ var defaultRoles = map[string]roleAttributes{
 	},
 }
 
+// TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
 var vulnReportingDefaultRoles = map[string]roleAttributes{
 	rolePkg.VulnReporter: {
 		idSuffix:    "vulnreporter",
 		postgresID:  vulnReporterPermissionSetID,
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
-		resourceWithAccess: []permissions.ResourceWithAccess{
-			// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-			permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
-			permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
-			permissions.View(resources.Role),                   // required for scopes
-			permissions.View(resources.Image),                  // required to gather CVE data for the report
-			permissions.View(resources.Integration),            // required for vuln report configurations
-		},
+		resourceWithAccess: func() []permissions.ResourceWithAccess {
+			if !features.ObjectCollections.Enabled() {
+				return []permissions.ResourceWithAccess{
+					permissions.View(resources.Role),                   // required for scopes
+					permissions.View(resources.Integration),            // required for vuln report configurations
+					permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations prior to collections
+					permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations prior to collections
+				}
+			}
+			return []permissions.ResourceWithAccess{
+				permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations
+				permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations
+				permissions.View(resources.Integration),              // required for vuln report configurations
+			}
+		}(),
 	},
 }
 

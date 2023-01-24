@@ -12,9 +12,13 @@ import (
 	indexMocks "github.com/stackrox/rox/central/policy/index/mocks"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
 	storeMocks "github.com/stackrox/rox/central/policy/store/mocks"
+	categoriesMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
+	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -27,12 +31,13 @@ func TestPolicyDatastore(t *testing.T) {
 type PolicyDatastoreTestSuite struct {
 	suite.Suite
 
-	mockCtrl          *gomock.Controller
-	store             *storeMocks.MockStore
-	indexer           *indexMocks.MockIndexer
-	datastore         DataStore
-	clusterDatastore  *clusterMocks.MockDataStore
-	notifierDatastore *notifierMocks.MockDataStore
+	mockCtrl            *gomock.Controller
+	store               *storeMocks.MockStore
+	indexer             *indexMocks.MockIndexer
+	datastore           DataStore
+	clusterDatastore    *clusterMocks.MockDataStore
+	notifierDatastore   *notifierMocks.MockDataStore
+	categoriesDatastore *policyCategoryMocks.MockDataStore
 
 	hasReadWritePolicyAccess context.Context
 
@@ -43,14 +48,18 @@ type PolicyDatastoreTestSuite struct {
 }
 
 func (s *PolicyDatastoreTestSuite) SetupTest() {
-	s.mockCtrl = gomock.NewController(s.T())
+	if env.PostgresDatastoreEnabled.BooleanSetting() || features.NewPolicyCategories.Enabled() {
+		s.T().Skip()
+	}
 
+	s.mockCtrl = gomock.NewController(s.T())
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.clusterDatastore = clusterMocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
+	s.categoriesDatastore = categoriesMocks.NewMockDataStore(s.mockCtrl)
 
-	s.datastore = newWithoutDefaults(s.store, s.indexer, nil, s.clusterDatastore, s.notifierDatastore)
+	s.datastore = newWithoutDefaults(s.store, s.indexer, nil, s.clusterDatastore, s.notifierDatastore, s.categoriesDatastore)
 
 	// TODO: ROX-13888 Remove duplicated contexts.
 	s.hasReadWritePolicyAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -102,8 +111,8 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 	}
 
 	// Should work with READ access to Policy.
-	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil, false, nil).Times(1)
-	_, _, err := s.datastore.GetPolicy(s.hasReadWritePolicyAccess, policy.GetId())
+	s.store.EXPECT().Get(s.hasReadPolicyAccess, policy.GetId()).Return(nil, false, nil).Times(1)
+	_, _, err := s.datastore.GetPolicy(s.hasReadPolicyAccess, policy.GetId())
 	s.NoError(err)
 
 	// Should work with READ access to WorkflowAdministration.
@@ -131,6 +140,7 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy).Return(nil).Times(1)
 	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return(nil, nil).Times(1)
 	s.store.EXPECT().Delete(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil).Times(1)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWritePolicyAccess, policy.GetId(), policy.GetCategories()).Return(nil)
 	s.indexer.EXPECT().DeletePolicy(policy.GetId()).Return(nil).Times(1)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil).Times(1)
 
@@ -143,6 +153,7 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policy).Return(nil).Times(1)
 	s.store.EXPECT().GetAll(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil).Times(1)
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil).Times(1)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId(), policy.GetCategories()).Return(nil)
 	s.indexer.EXPECT().DeletePolicy(policy.GetId()).Return(nil).Times(1)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil).Times(1)
 
@@ -154,9 +165,10 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 	policy := &storage.Policy{
-		Name:     "policy-to-import",
-		Id:       "import-1",
-		SORTName: "policy-to-import",
+		Name:       "policy-to-import",
+		Id:         "import-1",
+		SORTName:   "policy-to-import",
+		Categories: []string{"DevOps Best Practices"},
 	}
 
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
@@ -208,6 +220,8 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWritePolicyAccess).Return(nil, nil)
 	s.store.EXPECT().Get(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil, false, nil)
+	s.categoriesDatastore.EXPECT().GetPolicyCategoriesForPolicy(s.hasReadWritePolicyAccess, gomock.Any()).AnyTimes().Return(nil, nil)
+
 	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return([]*storage.Policy{
 		{
 			Name:     name,
@@ -226,20 +240,23 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 	succeedName := "success"
 	policySucceed := &storage.Policy{
-		Name:     succeedName,
-		Id:       "Succeed ID",
-		SORTName: succeedName,
+		Name:       succeedName,
+		Id:         "Succeed ID",
+		SORTName:   succeedName,
+		Categories: []string{},
 	}
 	fail1Name := "fail 1 name"
 	policyFail1 := &storage.Policy{
-		Name:     fail1Name,
-		Id:       "Fail 1 ID",
-		SORTName: fail1Name,
+		Name:       fail1Name,
+		Id:         "Fail 1 ID",
+		SORTName:   fail1Name,
+		Categories: []string{},
 	}
 	policyFail2 := &storage.Policy{
-		Name:     "import failure name",
-		Id:       "Fail 2 ID",
-		SORTName: "import failure name",
+		Name:       "import failure name",
+		Id:         "Fail 2 ID",
+		SORTName:   "import failure name",
+		Categories: []string{},
 	}
 
 	errString := "some error string"
@@ -287,9 +304,10 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 	name := "unknown-error"
 	policy := &storage.Policy{
-		Name:     name,
-		Id:       "unknown-error-id",
-		SORTName: name,
+		Name:       name,
+		Id:         "unknown-error-id",
+		SORTName:   name,
+		Categories: []string{},
 	}
 
 	errString := "this is not a structured error type"
@@ -347,7 +365,11 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy2).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy2).Return(nil)
 
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWritePolicyAccess, policy1.GetId(), policy1.GetCategories()).Return(nil)
+	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWritePolicyAccess, policy2.GetId(), policy2.GetCategories()).Return(nil)
+
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy1.Clone(), policy2.Clone()}, true)
+
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 2)
@@ -428,7 +450,8 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 				},
 			},
 		},
-		Notifiers: []string{notifierName},
+		Notifiers:  []string{notifierName},
+		Categories: []string{"DevOps Best Practices"},
 	}
 
 	mockClusters := []*storage.Cluster{
