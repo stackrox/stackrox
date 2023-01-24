@@ -745,6 +745,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 			plopsFromDB = append(plopsFromDB, plop)
 			return nil
 		})
+	suite.NoError(err)
 	suite.Len(plopsFromDB, 0)
 
 	// Verify that the table is empty before the test
