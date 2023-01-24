@@ -132,7 +132,7 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 			publishedTime, _ = gogotypes.TimestampProto(ccVuln.Issued)
 		}
 		vuln := &storage.EmbeddedVulnerability{
-			Cve:               name(ccVuln.Name),
+			Cve:               vulnName(ccVuln.Name),
 			Summary:           ccVuln.Description,
 			Link:              link(ccVuln.Links),
 			PublishedOn:       publishedTime,

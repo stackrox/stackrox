@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestName(t *testing.T) {
+func TestVulnName(t *testing.T) {
 	testcases := []struct {
 		original string
 		expected string
@@ -49,7 +49,7 @@ func TestName(t *testing.T) {
 	}
 	for _, testcase := range testcases {
 		t.Run(testcase.original, func(t *testing.T) {
-			assert.Equal(t, testcase.expected, name(testcase.original))
+			assert.Equal(t, testcase.expected, vulnName(testcase.original))
 		})
 	}
 }
