@@ -19,16 +19,16 @@ import (
 )
 
 // New instantiates the eventPipeline component
-func New(store resources.NodeStore, client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.InMemoryStoreProvider) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.InMemoryStoreProvider) common.SensorComponent {
 	// TODO(ROX-13413): Move this env.EventPipelineOutputQueueSize to CreateOptions
 	outputQueue := output.New(detector, env.EventPipelineOutputQueueSize.IntegerSetting())
 	var depResolver component.Resolver
 	var resourceListener component.PipelineComponent
 	if env.ResyncDisabled.BooleanSetting() {
 		depResolver = resolver.New(outputQueue, storeProvider)
-		resourceListener = listener.New(store, client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
+		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
 	} else {
-		resourceListener = listener.New(store, client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
+		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
 	}
 
 	pipelineResponses := make(chan *central.MsgFromSensor)
