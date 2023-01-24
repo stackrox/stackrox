@@ -12,11 +12,11 @@ import (
 
 type nodeDispatcher struct {
 	deploymentStore *DeploymentStore
-	nodeStore       NodeStore
+	nodeStore       nodeStore
 	endpointManager endpointManager
 }
 
-func newNodeDispatcher(deploymentStore *DeploymentStore, nodeStore NodeStore, endpointManager endpointManager) *nodeDispatcher {
+func newNodeDispatcher(deploymentStore *DeploymentStore, nodeStore nodeStore, endpointManager endpointManager) *nodeDispatcher {
 	return &nodeDispatcher{
 		deploymentStore: deploymentStore,
 		nodeStore:       nodeStore,

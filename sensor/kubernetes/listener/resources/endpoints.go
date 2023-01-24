@@ -28,12 +28,12 @@ type endpointManagerImpl struct {
 	serviceStore    *serviceStore
 	deploymentStore *DeploymentStore
 	podStore        *PodStore
-	nodeStore       NodeStore
+	nodeStore       nodeStore
 
 	entityStore *clusterentities.Store
 }
 
-func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore NodeStore, entityStore *clusterentities.Store) *endpointManagerImpl {
+func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore nodeStore, entityStore *clusterentities.Store) *endpointManagerImpl {
 	return &endpointManagerImpl{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,

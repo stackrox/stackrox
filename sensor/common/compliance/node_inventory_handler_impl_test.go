@@ -17,7 +17,7 @@ var _ suite.TearDownTestSuite = (*NodeInventoryHandlerTestSuite)(nil)
 
 type NodeInventoryHandlerImplTestSuite struct {
 	suite.Suite
-	nodeStore store.NodeStore
+	nodeStore nodeStore
 }
 
 func (s *NodeInventoryHandlerImplTestSuite) SetupTest() {

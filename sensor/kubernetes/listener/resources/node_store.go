@@ -11,6 +11,14 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// nodeStore represents a collection of NodeWraps
+type nodeStore interface {
+	AddOrUpdateNode(node *store.NodeWrap) bool
+	RemoveNode(node *storage.Node)
+	GetNode(nodeName string) *store.NodeWrap
+	GetNodes() []*store.NodeWrap
+}
+
 func wrapNode(node *v1.Node) *store.NodeWrap {
 	wrap := &store.NodeWrap{Node: buildNode(node)}
 	for _, nodeAddr := range node.Status.Addresses {

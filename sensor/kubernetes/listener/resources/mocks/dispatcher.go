@@ -313,7 +313,7 @@ func (mr *MockDispatcherRegistryMockRecorder) ForServices() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForServices", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForServices))
 }
 
-// MockNodeStore is a mock of NodeStore interface.
+// MockNodeStore is a mock of nodeStore interface.
 type MockNodeStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeStoreMockRecorder

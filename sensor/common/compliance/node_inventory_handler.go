@@ -27,6 +27,12 @@ func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMat
 	}
 }
 
+// nodeStore provides functionality to get nodes
+type nodeStore interface {
+	AddOrUpdateNode(node *store.NodeWrap) bool
+	GetNode(nodeName string) *store.NodeWrap
+}
+
 // NodeIDMatcher helps finding NodeWrap by name
 type NodeIDMatcher interface {
 	GetNodeResource(nodename string) *store.NodeWrap
@@ -34,11 +40,11 @@ type NodeIDMatcher interface {
 
 // NodeIDMatcherImpl finds Node by name within NodeStore
 type NodeIDMatcherImpl struct {
-	nodeStore store.NodeStore
+	nodeStore nodeStore
 }
 
 // NewNodeIDMatcher creates a NodeIDMatcherImpl
-func NewNodeIDMatcher(store store.NodeStore) *NodeIDMatcherImpl {
+func NewNodeIDMatcher(store nodeStore) *NodeIDMatcherImpl {
 	return &NodeIDMatcherImpl{
 		nodeStore: store,
 	}

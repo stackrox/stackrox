@@ -5,13 +5,19 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
+// nodeStore provides functionality to get nodes
+type nodeStore interface {
+	AddOrUpdateNode(node *store.NodeWrap) bool
+	GetNode(nodeName string) *store.NodeWrap
+}
+
 // MockNodeIDMatcher always finds a node when GetNodeResource is called
 type MockNodeIDMatcher struct {
-	nodeStore store.NodeStore
+	nodeStore nodeStore
 }
 
 // NewMockNodeIDMatcher builds MockNodeIDMatcher
-func NewMockNodeIDMatcher(store store.NodeStore) *MockNodeIDMatcher {
+func NewMockNodeIDMatcher(store nodeStore) *MockNodeIDMatcher {
 	return &MockNodeIDMatcher{
 		nodeStore: store,
 	}

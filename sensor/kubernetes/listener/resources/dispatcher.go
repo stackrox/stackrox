@@ -54,14 +54,6 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorTailoredProfiles() Dispatcher
 }
 
-// NodeStore represents a collection of NodeWraps
-type NodeStore interface {
-	AddOrUpdateNode(node *store.NodeWrap) bool
-	RemoveNode(node *storage.Node)
-	GetNode(nodeName string) *store.NodeWrap
-	GetNodes() []*store.NodeWrap
-}
-
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
 func NewDispatcherRegistry(
 	clusterID string,

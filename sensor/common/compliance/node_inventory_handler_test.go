@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/compliance/mocks"
-	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 )
@@ -48,7 +47,7 @@ var _ suite.TearDownTestSuite = (*NodeInventoryHandlerTestSuite)(nil)
 
 type NodeInventoryHandlerTestSuite struct {
 	suite.Suite
-	nodeStore store.NodeStore
+	nodeStore nodeStore
 }
 
 func (s *NodeInventoryHandlerTestSuite) SetupTest() {

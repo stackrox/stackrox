@@ -68,9 +68,3 @@ type Provider interface {
 type EndpointManager interface {
 	OnDeploymentCreateOrUpdateByID(id string)
 }
-
-// NodeStore provides functionality to get nodes
-type NodeStore interface {
-	AddOrUpdateNode(node *NodeWrap) bool
-	GetNode(nodeName string) *NodeWrap
-}
