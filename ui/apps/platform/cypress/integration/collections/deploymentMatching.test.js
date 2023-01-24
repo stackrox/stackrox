@@ -86,8 +86,14 @@ describe('Collection deployment matching', () => {
         assertDeploymentsAreMatched(['calico-node']);
         assertDeploymentsAreNotMatched(['kube-dns']);
 
-        // View more and ensure the next page loads
+        // target `kube-dns` deployment is on the second or third page of results, so load three pages
+        // to ensure it is visible
         cy.get(selectors.viewMoreResultsButton).scrollIntoView();
+
+        // load second page of results
+        cy.get(selectors.viewMoreResultsButton).click();
+        cy.get(`${selectors.viewMoreResultsButton}:not(.pf-m-in-progress)`).scrollIntoView();
+        // load third page of results
         cy.get(selectors.viewMoreResultsButton).click();
         cy.get(`${selectors.viewMoreResultsButton}:not(.pf-m-in-progress)`).scrollIntoView();
         assertDeploymentsAreMatched(['kube-dns']);
