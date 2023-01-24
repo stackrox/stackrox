@@ -5,3 +5,16 @@ commands:
 # from the parent make: the namespace and operator version string (which are arguments to upgrade script).
 - script: make -C ../../.. upgrade-via-olm
   timeout: 600
+# Recover from ROX-14335:
+# Can be removed well after release 3.73.x is not supported.
+- script: |
+    ns=$NAMESPACE
+    # From 05-central-cr.yaml:
+    central_name="stackrox-central-services"
+
+    patch_file="$(mktemp)"
+    pvc_name="$(kubectl get -n "${ns}" central.platform.stackrox.io "${central_name}" -o json | jq -r '.spec?.central?.persistence?.persistentVolumeClaim?.claimName // "stackrox-db"'
+    kubectl get -n "${ns}" central.platform.stackrox.io "${central_name}" -o json | jq '{"metadata":{"ownerReferences": [{"apiVersion": "platform.stackrox.io/v1alpha1","blockOwnerDeletion": true,"controller": true,"kind": "Central","name": .metadata.name, "uid": .metadata.uid}]}}' > "${patch_file}"
+    jq . < "${patch_file}" # make sure it looks sane
+    kubectl patch -n "${ns}" pvc "${pvc_name}" --patch-file="${patch_file}"
+    rm "${patch_file}"
