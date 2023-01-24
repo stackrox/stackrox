@@ -51,24 +51,6 @@ func Singleton() DataStore {
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
 
 		for r, a := range vulnReportingDefaultRoles {
-			// TODO ROX-13888 this filtering can be removed once we are fully migrated
-			if features.ObjectCollections.Enabled() && r == rolePkg.VulnReporter {
-				collectionResourceWithAccess := make([]permissions.ResourceWithAccess, 0, len(a.resourceWithAccess))
-				for _, permission := range a.resourceWithAccess {
-					if permission.Resource == resources.Role || permission.Resource == resources.VulnerabilityReports {
-						continue
-					}
-					collectionResourceWithAccess = append(collectionResourceWithAccess, permission)
-				}
-				collectionRole := roleAttributes{
-					idSuffix:           a.idSuffix,
-					postgresID:         a.postgresID,
-					description:        a.description,
-					resourceWithAccess: collectionResourceWithAccess,
-				}
-				defaultRoles[r] = collectionRole
-				continue
-			}
 			defaultRoles[r] = a
 		}
 
@@ -174,15 +156,21 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 		idSuffix:    "vulnreporter",
 		postgresID:  vulnReporterPermissionSetID,
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
-		resourceWithAccess: []permissions.ResourceWithAccess{
-			permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations
-			permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations
-			permissions.View(resources.Role),                     // required for scopes
-			permissions.View(resources.Image),                    // required to gather CVE data for the report
-			permissions.View(resources.Integration),              // required for vuln report configurations
-			permissions.View(resources.VulnerabilityReports),     // required for vuln report configurations prior to collections
-			permissions.Modify(resources.VulnerabilityReports),   // required for vuln report configurations prior to collections
-		},
+		resourceWithAccess: func() []permissions.ResourceWithAccess {
+			if !features.ObjectCollections.Enabled() {
+				return []permissions.ResourceWithAccess{
+					permissions.View(resources.Role),                   // required for scopes
+					permissions.View(resources.Integration),            // required for vuln report configurations
+					permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations prior to collections
+					permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations prior to collections
+				}
+			}
+			return []permissions.ResourceWithAccess{
+				permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations
+				permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations
+				permissions.View(resources.Integration),              // required for vuln report configurations
+			}
+		}(),
 	},
 }
 
