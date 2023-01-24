@@ -149,7 +149,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 
 			for _, derivedF := range field.DerivedSearchFields {
 				derivedField := derivedF
-				lowerCaseDerivedName := strings.ToLower(derivedField.FieldName)
+				lowerCaseDerivedName := strings.ToLower(derivedField.DerivedFrom)
 				if unreachedFields.Remove(lowerCaseDerivedName) {
 					reachableFields[lowerCaseDerivedName] = searchFieldMetadata{
 						baseField:       &field,
