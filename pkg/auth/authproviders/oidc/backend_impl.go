@@ -182,6 +182,7 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 		return nil, errors.New("invalid token")
 	}
 
+	fmt.Println("verifyIDToken")
 	externalClaims, err := p.extractExternalClaims(idToken)
 	if err != nil {
 		return nil, err
@@ -201,6 +202,7 @@ func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) 
 		return nil, errors.Wrap(err, "fetching updated userinfo")
 	}
 
+	fmt.Println("fetchUserInfo: ")
 	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
@@ -398,7 +400,8 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithIDToken(ctx context.C
 		return nil, errors.New("no id_token field found in response")
 	}
 
-	print("id_token: " + rawIDToken)
+	fmt.Println("processIDPResponseForImplicitFlowWithIDToken")
+	fmt.Println("id_token: " + rawIDToken)
 	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
 	if err != nil {
 		return nil, errors.Wrap(err, "id token verification failed")
@@ -413,7 +416,8 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithAccessToken(ctx conte
 		return nil, errors.New("no access_token field found in response")
 	}
 
-	print("access_token: " + rawToken)
+	fmt.Println("processIDPResponseForImplicitFlowWithAccessToken")
+	fmt.Println("access_token: " + rawToken)
 	authResp, err := p.fetchUserInfo(ctx, rawToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching user info with access token")
@@ -447,7 +451,8 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 		return nil, errors.New("response from server did not contain ID token in violation of OIDC spec")
 	}
 
-	print("id_token: " + rawIDToken)
+	fmt.Println("processIDPResponseForCodeFlow")
+	fmt.Println("id_token: " + rawIDToken)
 	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
 	if err != nil {
 		return nil, errors.Wrap(err, "ID token verification failed")
@@ -481,8 +486,8 @@ func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.V
 	now := time.Now()
 
 	for key, value := range responseData {
-		print("Key: " + key + "\n")
-		print("Value: " + strings.Join(value, ", ") + "\n")
+		fmt.Println("Key: " + key + "\n")
+		fmt.Println("Value: " + strings.Join(value, ", ") + "\n")
 	}
 	var combinedErr error
 	if p.responseTypes.Contains("code") {
@@ -665,7 +670,7 @@ func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[s
 	if err := claimExtractor.Claims(&claims); err != nil {
 		return errors.Wrap(err, "failed to extract claims from IdP's token")
 	}
-	print("mapCustomClaims: ")
+	fmt.Println("mapCustomClaims: ")
 	for claimKey, claimValue := range claims {
 		fmt.Printf("key=&%s, values=%+v\n", claimKey, claimValue)
 	}
