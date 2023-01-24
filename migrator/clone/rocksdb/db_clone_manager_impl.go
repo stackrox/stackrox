@@ -314,15 +314,34 @@ func (d *dbCloneManagerImpl) GetVersion(cloneName string) *migrations.MigrationV
 
 // GetCurrentCloneCreationTime - time current clone was created
 func (d *dbCloneManagerImpl) GetCurrentCloneCreationTime() time.Time {
-	path := filepath.Join(d.getPath(CurrentClone), migrations.MigrationVersionFile)
-	fileInfo, err := os.Lstat(path)
+	// Previous versions may not have the updated the version file.  Additionally,
+	// migrations working off current will not have updated the creation time of
+	// current.  So to determine the creation time of the clone we need to take the
+	// most recent time between the migration_version.yaml and the clone link itself.
+	// The latest time will be returned and used to determine if RocksDB has been used
+	// more recently than Postgres or not.
+	clonePath := d.getPath(CurrentClone)
+	cloneInfo, err := os.Lstat(clonePath)
 	if err != nil {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			return time.Time{}
 		}
 		log.Panicf("Unable to find current DB path: %v", err)
 	}
-	return fileInfo.ModTime()
+
+	migrationFilePath := filepath.Join(d.getPath(CurrentClone), migrations.MigrationVersionFile)
+	migrationFileInfo, err := os.Lstat(migrationFilePath)
+	if err != nil {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			return cloneInfo.ModTime()
+		}
+		log.Panicf("Unable to find migration file: %v", err)
+	}
+
+	if cloneInfo.ModTime().After(migrationFileInfo.ModTime()) {
+		return cloneInfo.ModTime()
+	}
+	return migrationFileInfo.ModTime()
 }
 
 // GetDirName - gets the directory name of the clone
