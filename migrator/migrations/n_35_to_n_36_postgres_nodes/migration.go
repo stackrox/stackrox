@@ -69,6 +69,7 @@ func store_walk(ctx context.Context, s legacy.Store, fn func(obj *storage.Node) 
 		return err
 	}
 
+	log.WriteToStderrf("processing %d nodes", len(ids))
 	for i := 0; i < len(ids); i += batchSize {
 		end := i + batchSize
 

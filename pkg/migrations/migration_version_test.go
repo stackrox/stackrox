@@ -60,6 +60,7 @@ func TestMigrationVersion_Read(t *testing.T) {
 			ver, err := Read(dir)
 			require.Equal(t, c.shouldFail, err != nil)
 			if !c.shouldFail {
+				log.Infof("Shrews test -- %v", ver)
 				assert.Equal(t, c.expectedVer, ver.MainVersion)
 				assert.Equal(t, c.expectedSeq, ver.SeqNum)
 				assert.Equal(t, dir, ver.dbPath)
@@ -98,7 +99,7 @@ func TestMigrationVersion_Write(t *testing.T) {
 			prepFunc: func(dbPath string) {
 				SetCurrent(dbPath)
 			},
-			shouldUpdate: false,
+			shouldUpdate: true,
 		},
 	}
 

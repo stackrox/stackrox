@@ -314,7 +314,7 @@ func (d *dbCloneManagerImpl) GetVersion(cloneName string) *migrations.MigrationV
 
 // GetCurrentCloneCreationTime - time current clone was created
 func (d *dbCloneManagerImpl) GetCurrentCloneCreationTime() time.Time {
-	path := d.getPath(CurrentClone)
+	path := filepath.Join(d.getPath(CurrentClone), migrations.MigrationVersionFile)
 	fileInfo, err := os.Lstat(path)
 	if err != nil {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
