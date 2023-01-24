@@ -91,8 +91,6 @@ spec:
       - command:
         - stackrox/compliance
         env:
-        - name: ROX_METRICS_PORT
-          value: ":8443"
         - name: ROX_NODE_NAME
           valueFrom:
             fieldRef:

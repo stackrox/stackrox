@@ -55,6 +55,6 @@ enableOpenShiftMonitoring: false
 sensor:
   exposeMonitoring: {{ ._rox.exposeMonitoring }}
 collector:
-  exposeMonitoring: true
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
 admissionControl:
   exposeMonitoring: {{ ._rox.exposeMonitoring }}

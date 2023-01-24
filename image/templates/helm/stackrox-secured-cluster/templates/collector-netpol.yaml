@@ -34,8 +34,6 @@ spec:
   - ports:
     - port: 9090
       protocol: TCP
-    - port: 8443
-      protocol: TCP
   podSelector:
     matchLabels:
       app: collector
