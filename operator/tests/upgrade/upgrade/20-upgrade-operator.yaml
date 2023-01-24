@@ -18,5 +18,7 @@ commands:
       | jq '{"metadata":{"ownerReferences": [{"apiVersion": "platform.stackrox.io/v1alpha1","blockOwnerDeletion": true,"controller": true,"kind": "Central","name": .metadata.name, "uid": .metadata.uid}]}}' \
       > "${patch_file}"
     jq . < "${patch_file}" # make sure it looks sane
+    echo Before patch: && kubectl get -n "${ns}" pvc "${pvc_name}" -o json  # Additional debug output
     kubectl patch -n "${ns}" pvc "${pvc_name}" --patch-file="${patch_file}"
+    echo After patch:  && kubectl get -n "${ns}" pvc "${pvc_name}" -o json  # Additional debug output
     rm "${patch_file}"
