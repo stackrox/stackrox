@@ -85,9 +85,9 @@ func TestReconcilePVCExtension(t *testing.T) {
 	emptyNotDeletedCentralWithDB := makeCentral(nil)
 	emptyNotDeletedCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{}
 
-	externalCentralwithDB := makeCentral(nil)
-	externalCentralwithDB.Spec.Central.DB = &platform.CentralDBSpec{}
-	externalCentralwithDB.Spec.Central.DB.ConnectionStringOverride = pointer.String("foobar")
+	externalCentralWithDB := makeCentral(nil)
+	externalCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{}
+	externalCentralWithDB.Spec.Central.DB.ConnectionStringOverride = pointer.String("foobar")
 
 	deleteHostPathCentral := makeCentral(&platform.Persistence{HostPath: makeHostPathSpec("/tmp/path")})
 
@@ -313,7 +313,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"external central-db provided and no pvc should be created": {
-			Central:      externalCentralwithDB,
+			Central:      externalCentralWithDB,
 			DefaultClaim: DefaultCentralDBPVCName,
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: nil,
@@ -364,13 +364,14 @@ func TestReconcilePVCExtension(t *testing.T) {
 				testPVCName: verifyMultiple(ownedBy(changedPVCConfigCentralDB), withSize(resource.MustParse("500Gi")), withStorageClass("new-storage-class")),
 			},
 		},
-		"central-pvc-should-not-lose-owner-refs-if-central-db-persistence-disabled": {
-			Central:      emptyNotDeletedCentral,
+		"central-pvc-should-not-lose-owner-refs": {
+			Central:      emptyNotDeletedCentralWithDB,
 			DefaultClaim: DefaultCentralDBPVCName,
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyNotDeletedCentral, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyNotDeletedCentralWithDB, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				testPVCName: ownedBy(emptyNotDeletedCentral),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentralWithDB), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				testPVCName:             ownedBy(emptyNotDeletedCentralWithDB),
 			},
 		},
 	}
