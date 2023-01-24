@@ -81,10 +81,9 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 			rocksVersion = d.dbmRocks.GetVersion(rocksdb.RestoreClone)
 		} else {
 			rocksVersion = d.dbmRocks.GetVersion(rocksdb.CurrentClone)
-			log.Infof("Current Rocks => %v", rocksVersion)
-			//if rocksVersion != nil {
-			//	rocksVersion.LastPersisted = d.dbmRocks.GetCurrentCloneCreationTime()
-			//}
+			if rocksVersion != nil {
+				rocksVersion.LastPersisted = d.dbmRocks.GetCurrentCloneCreationTime()
+			}
 		}
 
 		pgClone, migrateFromRocks, err = d.dbmPostgres.GetCloneToMigrate(rocksVersion, restoreFromRocks)

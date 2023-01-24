@@ -61,20 +61,17 @@ func Read(dbPath string) (*MigrationVersion, error) {
 
 // SetCurrent update the database migration version of a database directory.
 func SetCurrent(dbPath string) {
-	// We need to write the file each time this is called to keep the LastPersisted time up to date.
-	if _, err := Read(dbPath); err == nil {
-		newVersion := &MigrationVersion{
-			dbPath:        dbPath,
-			MainVersion:   version.GetMainVersion(),
-			SeqNum:        LastRocksDBVersionSeqNum(), // Most recent possible RocksDB version
-			LastPersisted: time.Now(),
-		}
-		err := newVersion.atomicWrite()
-		if err != nil {
-			utils.Should(errors.Wrapf(err, "failed to write migration version to %s", dbPath))
-		}
-	} else {
-		utils.Should(errors.Wrapf(err, "failed to read current database %s, %v", dbPath, err))
+	// We need to write the file each time this is called to keep the LastPersisted time up to date as this
+	// is only called during initial startup or if migrating from Rocks to Postgres.
+	newVersion := &MigrationVersion{
+		dbPath:        dbPath,
+		MainVersion:   version.GetMainVersion(),
+		SeqNum:        LastRocksDBVersionSeqNum(), // Most recent possible RocksDB version
+		LastPersisted: time.Now(),
+	}
+	err := newVersion.atomicWrite()
+	if err != nil {
+		utils.Should(errors.Wrapf(err, "failed to write migration version to %s", dbPath))
 	}
 }
 
