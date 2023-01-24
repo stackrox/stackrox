@@ -73,7 +73,7 @@ test_part_1() {
 
     rm -f FAIL
 
-    "$ROOT/scripts/ci/clairv4/deploy.sh qa-clairv4"
+    "$ROOT/scripts/ci/clairv4/deploy.sh" qa-clairv4
 
     if is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
@@ -98,7 +98,7 @@ test_part_1() {
         make -C qa-tests-backend bat-test || touch FAIL
     fi
 
-    "$ROOT/scripts/ci/clairv4/teardown.sh qa-clairv4"
+    "$ROOT/scripts/ci/clairv4/teardown.sh" qa-clairv4
 
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
