@@ -152,7 +152,7 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 	return vulns
 }
 
-func name(original string) string {
+func vulnName(original string) string {
 	vulnID := vulnNamePattern.FindString(original)
 	if vulnID == "" {
 		return original
