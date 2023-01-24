@@ -71,6 +71,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	ninv = ninv.Clone()
 
+	// TODO(ROX-14484): Resolve the race between pipelines - Start of critical section
 	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())
 	if err != nil || !found {
 		log.Warnf("Node ID %s not found when processing NodeInventory", ninv.GetNodeId())
@@ -90,6 +91,9 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		log.Error(err)
 		return err
 	}
+	// TODO(ROX-14484): Resolve the race between pipelines - End of critical section (when CalculateRiskAndUpsertNode finishes)
+	// We will loose data written in the node pipelinen if the node pipeline writes an update to the DB
+	// while this pipeline is in the critical section!
 	return nil
 }
 
