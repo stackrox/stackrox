@@ -105,7 +105,7 @@ require (
 	golang.org/x/sys v0.4.0
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.5.0
-	golang.stackrox.io/grpc-http1 v0.2.5
+	golang.stackrox.io/grpc-http1 v0.2.6
 	google.golang.org/api v0.107.0
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
 	google.golang.org/grpc v1.52.0
@@ -270,7 +270,6 @@ require (
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
