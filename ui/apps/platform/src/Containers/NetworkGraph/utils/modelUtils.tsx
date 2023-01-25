@@ -339,10 +339,10 @@ function getNetworkPolicyState(
 // external connections can only be active, so this is hard coded to false
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
-export function transformPolicyData(
-    nodes: Node[]
-    // flows: number
-): { policyDataModel: CustomModel; policyNodeMap: Record<string, DeploymentNodeModel> } {
+export function transformPolicyData(nodes: Node[]): {
+    policyDataModel: CustomModel;
+    policyNodeMap: Record<string, DeploymentNodeModel>;
+} {
     const policyDataModel: CustomModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
@@ -418,9 +418,6 @@ export function transformPolicyData(
             }
         });
     });
-    // const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes(flows);
-    // policyDataModel.nodes.push(extraneousEgressNode);
-    // policyDataModel.nodes.push(extraneousIngressNode);
     policyDataModel.edges.push(...Object.values(policyEdgeMap));
     return { policyDataModel, policyNodeMap };
 }

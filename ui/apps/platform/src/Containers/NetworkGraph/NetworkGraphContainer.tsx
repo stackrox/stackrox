@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 
 import NetworkGraph from './NetworkGraph';
@@ -7,7 +7,6 @@ import {
     CustomModel,
     CustomNodeModel,
     DeploymentData,
-    DeploymentNodeModel,
     ExtraneousNodeModel,
     NetworkPolicyState,
 } from './types/topology.type';
@@ -18,20 +17,30 @@ import { getNodeById } from './utils/networkGraphUtils';
 import { createExtraneousNodes, createExtraneousEdges, graphModel } from './utils/modelUtils';
 
 export type Models = {
-    active: CustomModel;
-    extraneous: CustomModel;
+    activeModel: CustomModel;
+    extraneousModel: CustomModel;
 };
 
-// figure out how to handle namespace edge filtering
-function getFilteredEdges(edges: CustomEdgeModel[], detailId: string): CustomEdgeModel[] {
+function getFilteredEdges(
+    edges: CustomEdgeModel[],
+    selectedNode: CustomNodeModel
+): CustomEdgeModel[] {
     const filteredEdges: CustomEdgeModel[] = [];
-    edges.forEach((edge) => {
-        const { source, target } = edge;
-        if (source === detailId || target === detailId) {
-            filteredEdges.push({ ...edge, visible: true });
-        }
-    });
-    console.log('NetworkGraphContainer: getFilteredEdges', filteredEdges);
+    if (selectedNode.data && selectedNode.data.type !== 'EXTRANEOUS') {
+        edges.forEach((edge) => {
+            const { source, target } = edge;
+            const { type } = selectedNode.data;
+            if (type === 'NAMESPACE' || type === 'EXTERNAL_GROUP') {
+                // if a namespace is selected, add children's node edges
+                const { children } = selectedNode;
+                if (children?.includes(source) || children?.includes(target)) {
+                    filteredEdges.push({ ...edge, visible: true });
+                }
+            } else if (source === selectedNode.data?.id || target === selectedNode.data?.id) {
+                filteredEdges.push({ ...edge, visible: true });
+            }
+        });
+    }
     return filteredEdges;
 }
 
@@ -63,52 +72,82 @@ function updateIngressFlowsNode(
     return updatedIngressFlowsNode;
 }
 
+// returns the in/egress flows nodes based on the selected node's policy state
 function getExtraneousNodes(
-    nodes: CustomNodeModel[],
     extraneousFlowsNodes: {
         egressFlowsNode: ExtraneousNodeModel;
         ingressFlowsNode: ExtraneousNodeModel;
     },
-    selectedNodeData?: DeploymentData
+    selectedNodeData: DeploymentData
 ): CustomNodeModel[] {
-    const updatedNodes = [...nodes];
-    if (selectedNodeData?.type === 'DEPLOYMENT') {
+    const extraneousNodes: CustomNodeModel[] = [];
+    if (selectedNodeData.type === 'DEPLOYMENT') {
         const { egressFlowsNode, ingressFlowsNode } = extraneousFlowsNodes;
-        const { networkPolicyState } = selectedNodeData || {};
+        const { networkPolicyState } = selectedNodeData;
         const updatedEgressFlowsNode = updateEgressFlowsNode(egressFlowsNode, networkPolicyState);
         const updatedIngressFlowsNode = updateIngressFlowsNode(
             ingressFlowsNode,
             networkPolicyState
         );
-        updatedNodes.push(updatedEgressFlowsNode);
-        updatedNodes.push(updatedIngressFlowsNode);
+        extraneousNodes.push(updatedEgressFlowsNode);
+        extraneousNodes.push(updatedIngressFlowsNode);
     }
-    return updatedNodes;
+    return extraneousNodes;
 }
 
-function getExtraneousEdges(
-    edges: CustomEdgeModel[],
-    extraneousFlowsEdges?: {
-        extraneousEgressEdge: CustomEdgeModel;
-        extraneousIngressEdge: CustomEdgeModel;
-    },
-    selectedNodeData?: DeploymentData
-): CustomEdgeModel[] {
-    const updatedEdges = [...edges];
-    // else if there is a selected node, add edges to extraneous flows node(s)
-    if (selectedNodeData?.type === 'DEPLOYMENT' && extraneousFlowsEdges) {
-        const { extraneousEgressEdge, extraneousIngressEdge } = extraneousFlowsEdges;
-        const { networkPolicyState } = selectedNodeData || {};
-        if (networkPolicyState === 'ingress') {
-            updatedEdges.push(extraneousEgressEdge);
-        } else if (networkPolicyState === 'egress') {
-            updatedEdges.push(extraneousIngressEdge);
-        } else if (networkPolicyState === 'none') {
-            updatedEdges.push(extraneousEgressEdge);
-            updatedEdges.push(extraneousIngressEdge);
-        }
+// returns edges to the in/egress flows nodes based on the selected node's policy state
+function getExtraneousEdges(selectedNodeData: DeploymentData): CustomEdgeModel[] {
+    const updatedEdges: CustomEdgeModel[] = [];
+    const { id, networkPolicyState } = selectedNodeData;
+    const { extraneousEgressEdge, extraneousIngressEdge } = createExtraneousEdges(id);
+    if (networkPolicyState === 'ingress') {
+        updatedEdges.push(extraneousEgressEdge);
+    } else if (networkPolicyState === 'egress') {
+        updatedEdges.push(extraneousIngressEdge);
+    } else if (networkPolicyState === 'none') {
+        updatedEdges.push(extraneousEgressEdge);
+        updatedEdges.push(extraneousIngressEdge);
     }
     return updatedEdges;
+}
+
+// returns modified nodes based on display options for nodes
+function getDisplayNodes(
+    nodes: CustomNodeModel[],
+    showPolicyState: boolean,
+    showExternalState: boolean
+): CustomNodeModel[] {
+    return nodes.map((node) => {
+        const { data } = node;
+        if (data.type === 'DEPLOYMENT') {
+            return {
+                ...node,
+                data: {
+                    ...data,
+                    showPolicyState,
+                    showExternalState,
+                } as DeploymentData,
+            };
+        }
+        return node;
+    });
+}
+
+// returns modified edges based on display options for edges
+function getDisplayEdges(edges: CustomEdgeModel[], showEdgeLabels: boolean): CustomEdgeModel[] {
+    return edges.map((edge) => {
+        const { data } = edge;
+        const { properties } = data;
+        return {
+            ...edge,
+            visible: true,
+            data: {
+                ...data,
+                properties,
+                tag: showEdgeLabels ? data.portProtocolLabel : undefined,
+            },
+        };
+    });
 }
 
 type NetworkGraphContainerProps = {
@@ -120,6 +159,14 @@ type NetworkGraphContainerProps = {
     clusterDeploymentCount: number;
 };
 
+// the order of model modification is as follows:
+// 1. edgeState determines whether to use the activeModel or the extraneousModel
+// 2. from the selected edgeState model (baseModel), we add/remove related edges
+//    based on the selectedNode and the edgeState (extraneousFlows nodes/edges)
+// 3. from the filtered model, we modify the individual properties of each node/edge
+//    based on displayOptions
+//
+// 1 (edgeState) -> 2 (selectedNode/edgeState) -> 3 (displayOptions)
 function NetworkGraphContainer({
     models,
     edgeState,
@@ -129,126 +176,55 @@ function NetworkGraphContainer({
     clusterDeploymentCount,
 }: NetworkGraphContainerProps) {
     // these are the unfiltered, unmodified data models
-    const { active, extraneous } = models;
-    // this is the current filtered and/or modified model that is represented in the graph
-    const [model, setModel] = useState(active);
-    // this is a count to improve performance (we only rerender children when updateCount changes)
-    const updateCount = useRef(0);
+    const { activeModel, extraneousModel } = models;
+
+    // 1. edgeState base data model setting ----------------------------------------------
+    // this is the unfiltered, unmodified base data model based on edgeState
+    const baseModel = edgeState === 'active' ? activeModel : extraneousModel;
+
+    // 2. selectedNode/edgeState data model filtering ------------------------------------
     // selected node state is stored in the URL
     const { detailId } = useParams();
-    const selectedNode = getNodeById(model?.nodes, detailId);
-    // extraneous catch-all (egress/ingress flows) nodes to add/remove from extraneous nodes model
-    const extraneousFlowsNodes = createExtraneousNodes(clusterDeploymentCount);
-    let extraneousFlowsEdges: {
-        extraneousEgressEdge: CustomEdgeModel;
-        extraneousIngressEdge: CustomEdgeModel;
+    const selectedNode = getNodeById(baseModel?.nodes, detailId);
+    // extraneous catch-all in/egress flows nodes to add/remove from extraneous nodes model
+    const extraneousNodes = createExtraneousNodes(clusterDeploymentCount);
+    // this is the current filtered model that has not been modified yet
+    let filteredNodes: CustomNodeModel[] = [...baseModel.nodes];
+    let filteredEdges: CustomEdgeModel[] = [...baseModel.edges];
+    // if edgeState is extraneous && there is a selectedNode, add in/egress flows nodes/edges
+    if (edgeState === 'extraneous' && selectedNode?.data.type === 'DEPLOYMENT') {
+        const extraneousFlowsNodes = getExtraneousNodes(extraneousNodes, selectedNode.data);
+        filteredNodes = [...extraneousModel.nodes, ...extraneousFlowsNodes];
+        const extraneousFlowsEdges = getExtraneousEdges(selectedNode.data);
+        filteredEdges = [...extraneousModel.edges, ...extraneousFlowsEdges];
+    }
+    // filtering nodes/edges based on selection, edges will be [] by default
+    filteredEdges = selectedNode ? getFilteredEdges(filteredEdges, selectedNode) : [];
+
+    // 3. displayOptions data model modifying --------------------------------------------
+    const showPolicyState = !!displayOptions.includes('policyStatusBadge');
+    const showExternalState = !!displayOptions.includes('externalBadge');
+    const showEdgeLabels = !!displayOptions.includes('edgeLabel');
+    // modified filtered nodes/edges based on selected displayOptions
+    let modifiedNodes = filteredNodes;
+    let modifiedEdges = filteredEdges;
+    // update the display options visually for deployment nodes on the graph
+    modifiedNodes = getDisplayNodes(filteredNodes, showPolicyState, showExternalState);
+    // update the display options visually for edges on the graph
+    modifiedEdges = getDisplayEdges(filteredEdges, showEdgeLabels);
+
+    // this is the resulting model that is passed to the NetworkGraph to render as-is
+    const updatedModel: CustomModel = {
+        graph: graphModel,
+        nodes: modifiedNodes,
+        edges: modifiedEdges,
     };
-    if (detailId) {
-        extraneousFlowsEdges = createExtraneousEdges(detailId);
-    }
-
-    console.log('NetworkGraphContainer', detailId);
-
-    function increaseUpdateCount() {
-        updateCount.current += 1;
-    }
-
-    useEffect(() => {
-        console.log(
-            'NetworkGraphContainer: useEffect [displayOptions, detailId, edgeState, active, extraneous]'
-        );
-        const showPolicyState = !!displayOptions.includes('policyStatusBadge');
-        const showExternalState = !!displayOptions.includes('externalBadge');
-        const showEdgeLabels = !!displayOptions.includes('edgeLabel');
-        let updatedNodes: CustomNodeModel[] = [...active.nodes];
-        let updatedEdges: CustomEdgeModel[] = [...active.edges];
-        if (edgeState === 'extraneous') {
-            updatedNodes = getExtraneousNodes(
-                extraneous.nodes,
-                extraneousFlowsNodes,
-                selectedNode?.data
-            );
-            updatedEdges = getExtraneousEdges(
-                [...extraneous.edges],
-                extraneousFlowsEdges,
-                selectedNode?.data
-            );
-        }
-        updatedEdges = getFilteredEdges(updatedEdges, detailId);
-
-        // if all display options are true, set back to existing default data model
-        if (showPolicyState && showExternalState && showEdgeLabels) {
-            increaseUpdateCount();
-            setModel({
-                ...graphModel,
-                nodes: updatedNodes,
-                edges: updatedEdges,
-            });
-        } else {
-            // sample test to see if node policy/external state is already showing
-            const sampleDeployment = model.nodes.find(
-                (node) => node.data.type === 'DEPLOYMENT'
-            ) as DeploymentNodeModel;
-            const isShowingPolicyState = sampleDeployment.data.showPolicyState;
-            const isShowingExternalState = sampleDeployment.data.showExternalState;
-            // to improve perf to only perform this if policyStatusBadge OR externalBadge has changed
-            if (
-                isShowingPolicyState !== showPolicyState ||
-                isShowingExternalState !== showExternalState
-            ) {
-                // update the display options visually for deployment nodes on the graph
-                updatedNodes = updatedNodes.map((node) => {
-                    const { data } = node;
-                    if (data.type === 'DEPLOYMENT') {
-                        return {
-                            ...node,
-                            data: {
-                                ...data,
-                                showPolicyState,
-                                showExternalState,
-                            } as DeploymentData,
-                        };
-                    }
-                    return node;
-                });
-            }
-
-            // sample test to see if the edge labels are already showing in the current model in the graph
-            const isShowingEdgeLabels = !!model.edges[0].data.tag;
-            // to improve perf to only perform this if showEdgeLabels has changed
-            if (isShowingEdgeLabels !== showEdgeLabels) {
-                // update the display options visually for edges on the graph
-                updatedEdges = updatedEdges.map((edge) => {
-                    const { data } = edge;
-                    const { properties } = data;
-                    return {
-                        ...edge,
-                        visible: true,
-                        data: {
-                            ...data,
-                            properties,
-                            tag: showEdgeLabels ? data.portProtocolLabel : undefined,
-                        },
-                    };
-                });
-            }
-
-            const updatedModel: CustomModel = {
-                ...model,
-                nodes: updatedNodes,
-                edges: updatedEdges,
-            };
-            increaseUpdateCount();
-            setModel(updatedModel);
-        }
-    }, [displayOptions, detailId, edgeState, active, extraneous]);
 
     return (
         <NetworkGraph
-            model={model}
+            model={updatedModel}
             simulation={simulation}
             selectedClusterId={selectedClusterId || ''}
-            updateCount={updateCount.current}
             selectedNode={selectedNode}
         />
     );

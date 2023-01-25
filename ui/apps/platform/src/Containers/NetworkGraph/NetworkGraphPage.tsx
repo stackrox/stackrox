@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
     PageSection,
     Title,
@@ -63,8 +63,8 @@ function NetworkGraphPage() {
         'edgeLabel',
     ]);
     const [models, setModels] = useState<Models>({
-        active: emptyModel,
-        extraneous: emptyModel,
+        activeModel: emptyModel,
+        extraneousModel: emptyModel,
     });
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
@@ -87,8 +87,6 @@ function NetworkGraphPage() {
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
     const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
-
-    console.log('NetworkGraphPage');
 
     useDeepCompareEffect(() => {
         // check that user is finished adding a complete filter
@@ -152,8 +150,8 @@ function NetworkGraphPage() {
                         setLastUpdatedTime(lastUpdatedDisplayTime);
 
                         setModels({
-                            active: activeDataModel,
-                            extraneous: extraneousFlowsDataModel,
+                            activeModel: activeDataModel,
+                            extraneousModel: extraneousFlowsDataModel,
                         });
                     })
                     .catch(() => {
@@ -252,8 +250,8 @@ function NetworkGraphPage() {
                 padding={{ default: 'noPadding' }}
             >
                 {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
-                {models.active.nodes.length > 0 &&
-                    models.extraneous.nodes.length > 0 &&
+                {models.activeModel.nodes.length > 0 &&
+                    models.extraneousModel.nodes.length > 0 &&
                     !isLoading && (
                         <NetworkGraphContainer
                             models={models}
