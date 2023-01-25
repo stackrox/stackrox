@@ -10,6 +10,7 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    Modal,
 } from '@patternfly/react-core';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
@@ -69,6 +70,7 @@ function NetworkGraphPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
+    const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
 
     const { searchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
@@ -169,6 +171,10 @@ function NetworkGraphPage() {
         timeWindow,
     ]);
 
+    function toggleCIDRblockForm() {
+        setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
+    }
+
     return (
         <>
             <PageTitle title="Network Graph" />
@@ -191,7 +197,9 @@ function NetworkGraphPage() {
                         </ToolbarGroup>
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem spacer={{ default: 'spacerMd' }}>
-                                <Button variant="secondary">Manage CIDR blocks</Button>
+                                <Button variant="secondary" onClick={toggleCIDRblockForm}>
+                                    Manage CIDR blocks
+                                </Button>
                             </ToolbarItem>
                             <ToolbarItem spacer={{ default: 'spacerNone' }}>
                                 <SimulateNetworkPolicyButton simulation={simulation} />
@@ -267,6 +275,21 @@ function NetworkGraphPage() {
                         <Spinner isSVG />
                     </Bullseye>
                 )}
+                <Modal
+                    title="Basic modal"
+                    isOpen={isCIDRBlockFormOpen}
+                    onClose={toggleCIDRblockForm}
+                    actions={[
+                        <Button key="confirm" variant="primary" onClick={toggleCIDRblockForm}>
+                            Confirm
+                        </Button>,
+                        <Button key="cancel" variant="link" onClick={toggleCIDRblockForm}>
+                            Cancel
+                        </Button>,
+                    ]}
+                >
+                    test
+                </Modal>
             </PageSection>
         </>
     );
