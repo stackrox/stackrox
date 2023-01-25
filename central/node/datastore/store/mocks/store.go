@@ -111,6 +111,22 @@ func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
+// GetManyNodeMetadata mocks base method.
+func (m *MockStore) GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyNodeMetadata", ctx, ids)
+	ret0, _ := ret[0].([]*storage.Node)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetManyNodeMetadata indicates an expected call of GetManyNodeMetadata.
+func (mr *MockStoreMockRecorder) GetManyNodeMetadata(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyNodeMetadata", reflect.TypeOf((*MockStore)(nil).GetManyNodeMetadata), ctx, ids)
+}
+
 // GetNodeMetadata mocks base method.
 func (m *MockStore) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	m.ctrl.T.Helper()

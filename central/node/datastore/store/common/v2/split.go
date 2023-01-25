@@ -32,7 +32,7 @@ func splitComponents(parts *NodeParts) []*ComponentParts {
 	addedComponents := set.NewStringSet()
 	ret := make([]*ComponentParts, 0, len(components))
 	for _, component := range parts.Node.GetScan().GetComponents() {
-		generatedComponent := generateNodeComponent(os, component)
+		generatedComponent := GenerateNodeComponent(os, component)
 		if !addedComponents.Add(generatedComponent.GetId()) {
 			continue
 		}
@@ -82,7 +82,8 @@ func generateComponentCVEEdge(convertedComponent *storage.NodeComponent, convert
 	return ret
 }
 
-func generateNodeComponent(os string, from *storage.EmbeddedNodeScanComponent) *storage.NodeComponent {
+// GenerateNodeComponent returns top-level node component from embedded component.
+func GenerateNodeComponent(os string, from *storage.EmbeddedNodeScanComponent) *storage.NodeComponent {
 	ret := &storage.NodeComponent{
 		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
 		OperatingSystem: os,

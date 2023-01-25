@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -293,6 +294,11 @@ func (resolver *nodeCVEResolver) FixedByVersion(ctx context.Context) (string, er
 		resolver.ctx = ctx
 	}
 
+	// Short path. Full node is embedded when node scan resolver is called.
+	if embeddedVuln := embeddedobjs.NodeVulnFromContext(resolver.ctx); embeddedVuln != nil {
+		return embeddedVuln.GetFixedBy(), nil
+	}
+
 	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_NODE_COMPONENTS)
 	if !hasScope {
 		return "", nil
@@ -310,6 +316,11 @@ func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "IsFixable")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
+	}
+
+	// Short path. Full node is embedded when node scan resolver is called.
+	if embeddedVuln := embeddedobjs.NodeVulnFromContext(resolver.ctx); embeddedVuln != nil {
+		return embeddedVuln.GetFixedBy() != "", nil
 	}
 
 	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
@@ -343,6 +354,11 @@ func (resolver *nodeCVEResolver) LastScanned(ctx context.Context) (*graphql.Time
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "LastScanned")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
+	}
+
+	// Short path. Full node is embedded when node scan resolver is called.
+	if scanTime := embeddedobjs.NodeComponentLastScannedFromContext(resolver.ctx); scanTime != nil {
+		return timestamp(scanTime)
 	}
 
 	nodeLoader, err := loaders.GetNodeLoader(resolver.ctx)

@@ -46,6 +46,10 @@ func init() {
 			"scan: NodeScan",
 			"topNodeVulnerability(query: String): NodeVulnerability",
 			"unusedVarSink(query: String): Int",
+
+			// Node scan-related fields
+			"scanNotes: [NodeScan_Note!]!",
+			"scanTime: Time",
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Node", []string{
@@ -519,7 +523,23 @@ func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, ar
 }
 
 func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
-	res, err := resolver.root.wrapNodeScan(resolver.data.GetScan(), true, nil)
+	// If Postgres is not enabled, node loader always pulls full node along with scan
+	scan := resolver.data.GetScan()
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		// If scan is pulled, it is most likely for the user to fetch all components and vulns contained in node.
+		// Therefore, load the node again with full scan.
+		nodeLoader, err := loaders.GetNodeLoader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		node, err := nodeLoader.FullNodeWithID(ctx, resolver.data.GetId())
+		if err != nil {
+			return nil, err
+		}
+		scan = node.GetScan()
+	}
+	res, err := resolver.root.wrapNodeScan(scan, true, nil)
 	if err != nil || res == nil {
 		return nil, err
 	}
@@ -545,4 +565,14 @@ func (resolver *nodeResolver) nodeScopeContext(ctx context.Context) context.Cont
 		Level: v1.SearchCategory_NODES,
 		ID:    resolver.data.GetId(),
 	})
+}
+
+//// Node scan-related fields pulled as direct sub-resolvers of node.
+
+func (resolver *nodeResolver) ScanNotes(ctx context.Context) []string {
+	return stringSlice(resolver.data.GetScan().GetNotes())
+}
+
+func (resolver *nodeResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetScan().GetScanTime())
 }
