@@ -63,13 +63,13 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = setupPostgresConn(s.T())
-	resolver, _ := setupResolver(s.T(),
-		createImageDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		createImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		createImageCVEDatastore(s.T(), s.db, s.gormDB),
-		createImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		createImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+	s.db, s.gormDB = SetupTestPostgresConn(s.T())
+	resolver, _ := SetupTestResolver(s.T(),
+		CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
+		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
 	)
 	s.resolver = resolver
 
