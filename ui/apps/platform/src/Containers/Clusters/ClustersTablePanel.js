@@ -25,6 +25,7 @@ import {
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
+import { getVersionedDocs } from 'utils/versioning';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
@@ -101,12 +102,13 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
         </div>
     ));
 
+    const { version } = metadata;
+
     const installMenuOptions = [
         <DropdownItem
             key="link"
-            isExternalLink
             description="Cluster installation guides"
-            href="https://docs.openshift.com/acs/installing/acs-installation-platforms.html"
+            href={getVersionedDocs(version, 'installing/acs-installation-platforms.html')}
             target="_blank"
             rel="noopener noreferrer"
         >
