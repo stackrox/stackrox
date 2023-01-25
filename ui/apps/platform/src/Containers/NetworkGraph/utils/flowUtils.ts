@@ -6,7 +6,7 @@ import { L4Protocol } from 'types/networkFlow.proto';
 import { GroupedDiffFlows } from 'types/networkPolicyService';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
-import { CustomEdgeModel, CustomSingleNodeData } from '../types/topology.type';
+import { CustomEdgeModel, CustomNodeModel, CustomSingleNodeData } from '../types/topology.type';
 
 export const protocolLabel = {
     L4_PROTOCOL_UNKNOWN: 'UNKNOWN',
@@ -302,4 +302,30 @@ export function createFlowsFromGroupedDiffFlows(
         return flow;
     });
     return flows;
+}
+
+export function getNumAllowedEgressFlows(nodes: CustomNodeModel[]): number {
+    const extraneousEgressNode = nodes.find((node) => {
+        return node.id === 'extraneous-egress-flows';
+    });
+    if (!extraneousEgressNode || extraneousEgressNode.visible === false) {
+        return 0;
+    }
+    const numAllowedEgressFlows =
+        extraneousEgressNode?.data.type === 'EXTRANEOUS' ? extraneousEgressNode?.data.numFlows : 0;
+    return numAllowedEgressFlows;
+}
+
+export function getNumAllowedIngressFlows(nodes: CustomNodeModel[]): number {
+    const extraneousIngressNode = nodes.find((node) => {
+        return node.id === 'extraneous-ingress-flows';
+    });
+    if (!extraneousIngressNode || extraneousIngressNode.visible === false) {
+        return 0;
+    }
+    const numAllowedIngressFlows =
+        extraneousIngressNode?.data.type === 'EXTRANEOUS'
+            ? extraneousIngressNode?.data.numFlows
+            : 0;
+    return numAllowedIngressFlows;
 }

@@ -15,8 +15,14 @@ import {
 } from '@patternfly/react-core';
 
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { filterNetworkFlows, getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
-import { CustomEdgeModel } from '../types/topology.type';
+import {
+    filterNetworkFlows,
+    getAllUniquePorts,
+    getNumAllowedEgressFlows,
+    getNumAllowedIngressFlows,
+    getNumFlows,
+} from '../utils/flowUtils';
+import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,
@@ -30,13 +36,16 @@ import './DeploymentFlows.css';
 import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import { Flow } from '../types/flow.type';
+import { EdgeState } from '../components/EdgeStateSelect';
 
 type DeploymentFlowsProps = {
     deploymentId: string;
+    nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    edgeState: EdgeState;
 };
 
-function DeploymentFlows({ deploymentId, edges }: DeploymentFlowsProps) {
+function DeploymentFlows({ deploymentId, nodes, edges, edgeState }: DeploymentFlowsProps) {
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
@@ -48,7 +57,7 @@ function DeploymentFlows({ deploymentId, edges }: DeploymentFlowsProps) {
         error: fetchError,
         data: { networkFlows },
         refetchFlows,
-    } = useFetchNetworkFlows({ edges, deploymentId });
+    } = useFetchNetworkFlows({ edges, deploymentId, edgeState });
     const {
         isModifying,
         error: modifyError,
@@ -65,6 +74,9 @@ function DeploymentFlows({ deploymentId, edges }: DeploymentFlowsProps) {
     // derived data
     const numFlows = getNumFlows(filteredFlows);
     const allUniquePorts = getAllUniquePorts(networkFlows);
+    const numAllowedEgressFlows = getNumAllowedEgressFlows(nodes);
+    const numAllowedIngressFlows = getNumAllowedIngressFlows(nodes);
+    const totalFlows = numFlows + numAllowedEgressFlows + numAllowedIngressFlows;
 
     function addToBaseline(flow: Flow) {
         modifyBaselineStatuses([flow], 'BASELINE', refetchFlows);
@@ -129,7 +141,7 @@ function DeploymentFlows({ deploymentId, edges }: DeploymentFlowsProps) {
                     <Toolbar>
                         <ToolbarContent>
                             <ToolbarItem>
-                                <FlowsTableHeaderText type="active" numFlows={numFlows} />
+                                <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
                             </ToolbarItem>
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
                                 <FlowsBulkActions
@@ -154,6 +166,8 @@ function DeploymentFlows({ deploymentId, edges }: DeploymentFlowsProps) {
                         setSelectedRows={setSelectedRows}
                         addToBaseline={addToBaseline}
                         markAsAnomalous={markAsAnomalous}
+                        numAllowedEgressFlows={numAllowedEgressFlows}
+                        numAllowedIngressFlows={numAllowedIngressFlows}
                         isEditable
                     />
                 </StackItem>

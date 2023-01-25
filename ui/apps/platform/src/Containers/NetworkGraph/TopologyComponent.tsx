@@ -32,6 +32,7 @@ import {
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
+import { EdgeState } from './components/EdgeStateSelect';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -57,6 +58,7 @@ export type TopologyComponentProps = {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
     applyNetworkPolicyModification: ApplyNetworkPolicyModification;
+    edgeState: EdgeState;
 };
 
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
@@ -75,6 +77,7 @@ const TopologyComponent = ({
     simulator,
     setNetworkPolicyModification,
     applyNetworkPolicyModification,
+    edgeState,
 }: TopologyComponentProps) => {
     const history = useHistory();
     const controller = useVisualizationController();
@@ -149,6 +152,7 @@ const TopologyComponent = ({
                             deploymentId={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            edgeState={edgeState}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (

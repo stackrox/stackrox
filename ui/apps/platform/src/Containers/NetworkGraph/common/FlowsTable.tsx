@@ -28,6 +28,8 @@ type FlowsTableProps = {
     addToBaseline?: (flow: Flow) => void;
     markAsAnomalous?: (flow: Flow) => void;
     isBaselineSimulation?: boolean;
+    numAllowedEgressFlows?: number;
+    numAllowedIngressFlows?: number;
 };
 
 const columnNames = {
@@ -63,6 +65,8 @@ function FlowsTable({
     addToBaseline,
     markAsAnomalous,
     isBaselineSimulation = false,
+    numAllowedEgressFlows = 0,
+    numAllowedIngressFlows = 0,
 }: FlowsTableProps): ReactElement {
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows?.includes(row.id);
@@ -289,6 +293,54 @@ function FlowsTable({
                     </Tbody>
                 );
             })}
+            {numAllowedEgressFlows > 0 && (
+                <Tbody>
+                    <Tr>
+                        <Td />
+                        {isEditable && <Td />}
+                        <Td dataLabel={columnNames.entity}>
+                            <Flex direction={{ default: 'row' }}>
+                                <FlexItem>
+                                    <div>+ {numAllowedEgressFlows} allowed flows</div>
+                                    <div>
+                                        <TextContent>
+                                            <Text component={TextVariants.small}>
+                                                Across this cluster
+                                            </Text>
+                                        </TextContent>
+                                    </div>
+                                </FlexItem>
+                            </Flex>
+                        </Td>
+                        <Td dataLabel={columnNames.direction}>Egress</Td>
+                        <Td dataLabel={columnNames.portAndProtocol}>Any / Any</Td>
+                    </Tr>
+                </Tbody>
+            )}
+            {numAllowedIngressFlows > 0 && (
+                <Tbody>
+                    <Tr>
+                        <Td />
+                        {isEditable && <Td />}
+                        <Td dataLabel={columnNames.entity}>
+                            <Flex direction={{ default: 'row' }}>
+                                <FlexItem>
+                                    <div>+ {numAllowedIngressFlows} allowed flows</div>
+                                    <div>
+                                        <TextContent>
+                                            <Text component={TextVariants.small}>
+                                                Across this cluster
+                                            </Text>
+                                        </TextContent>
+                                    </div>
+                                </FlexItem>
+                            </Flex>
+                        </Td>
+                        <Td dataLabel={columnNames.direction}>Ingress</Td>
+                        <Td dataLabel={columnNames.portAndProtocol}>Any / Any</Td>
+                    </Tr>
+                </Tbody>
+            )}
         </TableComposable>
     );
 }
