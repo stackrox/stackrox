@@ -110,7 +110,7 @@ class VulnReportingTest extends BaseSpecification  {
 
         // Since this is a BAT test, keep it simple and only validate we got the attachment and it's not 0 bytes
         Object[] attachments = email["attachments"]
-        assert attachments.size() >= 2
+        assert attachments.size() >= 2 // First attachment is the logo image, 2nd is the report
 
         def csvAttachmentMetadata = attachments.find {
             it["fileName"] =~ /(StackRox|RHACS)_Vulnerability_Report_(\d+)_(.*)_(\d+).zip/
