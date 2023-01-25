@@ -197,13 +197,14 @@ export function transformActiveData(
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
 
-    nodes.forEach(({ entity, policyIds, outEdges }) => {
+    nodes.forEach(({ entity, outEdges }) => {
         const { type, id } = entity;
         const { networkPolicyState } = policyNodeMap[id]?.data || {};
         const isExternallyConnected = Object.keys(outEdges).some((nodeIdx) => {
             const { entity: targetEntity } = nodes[nodeIdx];
             return targetEntity.type === 'EXTERNAL_SOURCE' || targetEntity.type === 'INTERNET';
         });
+        const policyIds = policyNodeMap[id]?.data.policyIds || [];
 
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {

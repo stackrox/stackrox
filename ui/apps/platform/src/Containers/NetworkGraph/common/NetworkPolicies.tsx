@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Alert,
     AlertVariant,
@@ -36,6 +36,11 @@ function NetworkPolicies({ policyIds }: NetworkPoliciesProps): React.ReactElemen
     const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
         NetworkPolicy | undefined
     >(networkPolicies?.[0]);
+
+    useEffect(() => {
+        setSelectedNetworkPolicy(networkPolicies[0]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [networkPolicies]);
 
     function onToggleDarkMode() {
         setCustomDarkMode((prevValue) => !prevValue);

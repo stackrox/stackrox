@@ -2,6 +2,8 @@ import React from 'react';
 import {
     Flex,
     FlexItem,
+    Stack,
+    StackItem,
     Tab,
     TabContent,
     Tabs,
@@ -12,6 +14,7 @@ import {
 } from '@patternfly/react-core';
 
 import useTabs from 'hooks/patternfly/useTabs';
+import { uniq } from 'lodash';
 import { getDeploymentNodesInNamespace, getNumDeploymentFlows } from '../utils/networkGraphUtils';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
@@ -45,30 +48,33 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
         const policyIds: string[] = curr?.data?.policyIds || [];
         return [...acc, ...policyIds];
     }, [] as string[]);
+    const uniqueNamespacePolicyIds = uniq(namespacePolicyIds);
 
     return (
-        <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
-            <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
-                <FlexItem>
-                    <NamespaceIcon />
-                </FlexItem>
-                <FlexItem>
-                    <TextContent>
-                        <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                            stackrox
-                        </Text>
-                    </TextContent>
-                    <TextContent>
-                        <Text
-                            component={TextVariants.h2}
-                            className="pf-u-font-size-sm pf-u-color-200"
-                        >
-                            in &quot;remote&quot;
-                        </Text>
-                    </TextContent>
-                </FlexItem>
-            </Flex>
-            <FlexItem flex={{ default: 'flex_1' }}>
+        <Stack>
+            <StackItem>
+                <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                    <FlexItem>
+                        <NamespaceIcon />
+                    </FlexItem>
+                    <FlexItem>
+                        <TextContent>
+                            <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                                stackrox
+                            </Text>
+                        </TextContent>
+                        <TextContent>
+                            <Text
+                                component={TextVariants.h2}
+                                className="pf-u-font-size-sm pf-u-color-200"
+                            >
+                                in &quot;remote&quot;
+                            </Text>
+                        </TextContent>
+                    </FlexItem>
+                </Flex>
+            </StackItem>
+            <StackItem>
                 <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
                     <Tab
                         eventKey="Deployments"
@@ -81,6 +87,8 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
                         title={<TabTitleText>Network policies</TabTitleText>}
                     />
                 </Tabs>
+            </StackItem>
+            <StackItem isFilled style={{ overflow: 'auto' }}>
                 <TabContent
                     eventKey="Deployments"
                     id="Deployments"
@@ -94,10 +102,10 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
                     hidden={activeKeyTab !== 'Network policies'}
                     className="pf-u-h-100"
                 >
-                    <NetworkPolicies policyIds={namespacePolicyIds} />
+                    <NetworkPolicies policyIds={uniqueNamespacePolicyIds} />
                 </TabContent>
-            </FlexItem>
-        </Flex>
+            </StackItem>
+        </Stack>
     );
 }
 
