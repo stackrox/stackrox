@@ -251,7 +251,7 @@ func main() {
 
 	// Start the prometheus metrics server
 	metrics.NewDefaultHTTPServer().RunForever()
-	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
+	metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
 
 	clientconn.SetUserAgent(clientconn.Compliance)
 

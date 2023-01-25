@@ -40,11 +40,11 @@ func ObserveNodeInventoryScan(inventory *storage.NodeInventory, scanDuration tim
 	}
 
 	numberOfRHELPackages.With(prometheus.Labels{
-		"nodeName": inventory.NodeName,
+		"node_name": inventory.NodeName,
 	}).Set(float64(rhelPackageCount))
 
 	scanTime.With(prometheus.Labels{
-		"nodeName": inventory.NodeName,
+		"node_name": inventory.NodeName,
 	}).Observe(scanDuration.Seconds())
 }
 
