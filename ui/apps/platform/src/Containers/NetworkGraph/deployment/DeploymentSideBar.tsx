@@ -34,14 +34,16 @@ import DeploymentBaselines from './DeploymentBaselines';
 import NetworkPolicies from '../common/NetworkPolicies';
 import useSimulation from '../hooks/useSimulation';
 import DeploymentBaselinesSimulated from './DeploymentBaselinesSimulated';
+import { EdgeState } from '../components/EdgeStateSelect';
 
 type DeploymentSideBarProps = {
     deploymentId: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    edgeState: EdgeState;
 };
 
-function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProps) {
+function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: DeploymentSideBarProps) {
     // component state
     const { deployment, isLoading, error } = useFetchDeployment(deploymentId);
     const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
@@ -152,7 +154,12 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                             )}
                         </TabContent>
                         <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
-                            <DeploymentFlows edges={edges} deploymentId={deploymentId} />
+                            <DeploymentFlows
+                                nodes={nodes}
+                                edges={edges}
+                                deploymentId={deploymentId}
+                                edgeState={edgeState}
+                            />
                         </TabContent>
                         <TabContent
                             eventKey="Baselines"

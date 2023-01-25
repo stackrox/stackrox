@@ -226,6 +226,7 @@ function NetworkGraphContainer({
             simulation={simulation}
             selectedClusterId={selectedClusterId || ''}
             selectedNode={selectedNode}
+            edgeState={edgeState}
         />
     );
 }

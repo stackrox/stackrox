@@ -11,14 +11,22 @@ import './Topology.css';
 import useNetworkPolicySimulator from './hooks/useNetworkPolicySimulator';
 import SimulationFrame from './simulation/SimulationFrame';
 import TopologyComponent from './TopologyComponent';
+import { EdgeState } from './components/EdgeStateSelect';
 
 export type NetworkGraphProps = {
     model: CustomModel;
     simulation: Simulation;
     selectedNode?: CustomNodeModel;
     selectedClusterId: string;
+    edgeState: EdgeState;
 };
-function NetworkGraph({ model, simulation, selectedClusterId, selectedNode }: NetworkGraphProps) {
+function NetworkGraph({
+    model,
+    simulation,
+    selectedClusterId,
+    selectedNode,
+    edgeState,
+}: NetworkGraphProps) {
     const controller = useMemo(() => new Visualization(), []);
     controller.registerLayoutFactory(defaultLayoutFactory);
     controller.registerComponentFactory(defaultComponentFactory);
@@ -47,6 +55,7 @@ function NetworkGraph({ model, simulation, selectedClusterId, selectedNode }: Ne
                     selectedNode={selectedNode}
                     setNetworkPolicyModification={setNetworkPolicyModification}
                     applyNetworkPolicyModification={applyNetworkPolicyModification}
+                    edgeState={edgeState}
                 />
             </VisualizationProvider>
         </SimulationFrame>
