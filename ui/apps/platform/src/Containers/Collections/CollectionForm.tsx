@@ -307,7 +307,7 @@ function CollectionForm({
 
     return (
         <Form
-            className="pf-u-background-color-200"
+            className="pf-u-display-flex pf-u-flex-direction-column pf-u-h-100"
             style={
                 {
                     '--pf-c-form--GridGap': 0,
@@ -315,7 +315,7 @@ function CollectionForm({
             }
         >
             <Flex
-                className="pf-u-p-lg"
+                className="pf-u-p-lg pf-u-flex-grow-1 pf-u-background-color-200"
                 spaceItems={{ default: 'spaceItemsMd' }}
                 direction={{ default: 'column' }}
             >
