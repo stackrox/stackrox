@@ -20,7 +20,7 @@ import (
 
 // This file is a partial copy of central/resourcecollection/datastore/store/postgres/store.go
 // in the state it had when the migration was written.
-// Only the relevant functions (Upsert, UpsertMany and DeleteMany) are kept.
+// Only the relevant functions (Upsert, UpsertMany, DeleteMany, Get and Walk) are kept.
 // The kept functions are stripped from the scoped access control checks.
 
 const (
@@ -47,6 +47,9 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.ResourceCollection) error
 	UpsertMany(ctx context.Context, objs []*storage.ResourceCollection) error
 	DeleteMany(ctx context.Context, identifiers []string) error
+
+	Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error)
+	Walk(ctx context.Context, fn func(obj *storage.ResourceCollection) error) error
 }
 
 type storeImpl struct {
@@ -361,5 +364,47 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 		identifiers = identifiers[localBatchSize:]
 	}
 
+	return nil
+}
+
+// Get returns the object, if it exists from the store.
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error) {
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema[storage.ResourceCollection](ctx, schema, q, s.db)
+	if err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	return data, true, nil
+}
+
+// Walk iterates over all of the objects in the store and applies the closure.
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ResourceCollection) error) error {
+	var sacQueryFilter *v1.Query
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.ResourceCollection](ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, data := range rows {
+			if err := fn(data); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
 	return nil
 }

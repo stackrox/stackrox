@@ -13,7 +13,6 @@ import (
 	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
 	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
@@ -26,9 +25,14 @@ const (
 
 	startSeqNum = 169
 
-	skippedMigrationWarningTemplate = "Failed to create collection for scope %s, skipping migration for report configuration %s : " +
-		"Scope has label selector/s with a different operator than 'IN'. Please manually create an equivalent collection" +
-		"and add it to the report configuration."
+	skippedMigrationMessageTemplate = "Failed to migrate report configuration '%s': Attached scope <%s> has label selector/s " +
+		"with a different operator than 'IN'; Resolution: %s"
+
+	manualInterventionInstruction = "Please manually create a collection and add it to the report configuration. " +
+		"The report will stop working until a collection is added to it."
+
+	embeddedCollectionTemplate = "System-generated embedded collection %d for scope <%s>"
+	rootCollectionTemplate     = "System-generated root collection for scope <%s>"
 )
 
 var (
@@ -53,7 +57,7 @@ var (
 
 func buildEmbeddedCollection(scopeName string, index int, rules []*storage.SelectorRule) *storage.ResourceCollection {
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
-	colName := fmt.Sprintf("Embedded collection %d for scope <%s>", index, scopeName)
+	colName := fmt.Sprintf(embeddedCollectionTemplate, index, scopeName)
 	return &storage.ResourceCollection{
 		Id:          idGenerator(colName),
 		Name:        colName,
@@ -95,7 +99,7 @@ func labelSelectorsToCollections(scopeName string, index int, labelSelectors []*
 	return collections, true
 }
 
-func creatCollectionsToEmbedFromScope(scope *storage.SimpleAccessScope) ([]*storage.ResourceCollection, bool) {
+func createCollectionsToEmbedFromScope(scope *storage.SimpleAccessScope) ([]*storage.ResourceCollection, bool) {
 	collectionsToEmbed := make([]*storage.ResourceCollection, 0)
 
 	index := 0
@@ -167,9 +171,6 @@ func creatCollectionsToEmbedFromScope(scope *storage.SimpleAccessScope) ([]*stor
 }
 
 func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
-	if !features.ObjectCollections.Enabled() {
-		return nil
-	}
 	ctx := context.Background()
 	reportConfigStore := reportConfigurationPostgres.New(db)
 	accessScopeStore := accessScopePostgres.New(db)
@@ -180,16 +181,17 @@ func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
 		scopeID := reportConfig.GetScopeId()
 		scope, found, err := accessScopeStore.Get(ctx, scopeID)
 		if err != nil {
-			return errors.Wrapf(err, "error migrating scope used in report configuration %s: failed to fetch scope id %s", scopeID, reportConfig.GetName())
+			return errors.Wrapf(err, "error migrating report configuration '%s': failed to fetch scope with id %s", reportConfig.GetName(), scopeID)
 		}
 		if !found {
-			return errors.Errorf("error migrating scope used in report configuration %s: scope id %s not found", reportConfig.GetName(), scopeID)
+			log.Errorf("Failed to migrate report configuration '%s': Scope with id %s not found; Resolution: %s",
+				reportConfig.GetName(), scopeID, manualInterventionInstruction)
 		}
 		if _, exists := scopeIDToCollectionID[scopeID]; !exists && !skippedScopes.Contains(scopeID) {
-			collectionsToEmbed, success := creatCollectionsToEmbedFromScope(scope)
+			collectionsToEmbed, success := createCollectionsToEmbedFromScope(scope)
 			if !success {
 				skippedScopes.Add(scopeID)
-				log.Warnf(skippedMigrationWarningTemplate, scope.GetName(), reportConfig.GetName())
+				log.Warnf(skippedMigrationMessageTemplate, reportConfig.GetName(), scope.GetName(), manualInterventionInstruction)
 				return nil
 			}
 			err = collectionStore.UpsertMany(ctx, collectionsToEmbed)
@@ -203,7 +205,7 @@ func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
 				})
 			}
 			timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
-			rootColName := fmt.Sprintf("Root collection for scope <%s>", scope.GetName())
+			rootColName := fmt.Sprintf(rootCollectionTemplate, scope.GetName())
 			rootCollection := &storage.ResourceCollection{
 				Id:                  idGenerator(rootColName),
 				Name:                rootColName,
@@ -225,9 +227,8 @@ func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
 				}
 				reportConfigsToUpsert = reportConfigsToUpsert[:0]
 			}
-		}
-		if skippedScopes.Contains(scopeID) {
-			log.Warnf(skippedMigrationWarningTemplate, scope.GetName(), reportConfig.GetName())
+		} else if skippedScopes.Contains(scopeID) {
+			log.Warnf(skippedMigrationMessageTemplate, reportConfig.GetName(), scope.GetName(), manualInterventionInstruction)
 		}
 		return nil
 	})
