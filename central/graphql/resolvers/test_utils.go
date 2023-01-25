@@ -668,7 +668,7 @@ func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context
 func getTestNodes(nodeCount int) []*storage.Node {
 	nodes := make([]*storage.Node, 0, nodeCount)
 	for i := 0; i < nodeCount; i++ {
-		node := fixtures.GetNodeWithUniqueComponents(100)
+		node := fixtures.GetNodeWithUniqueComponents(100, 5)
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			nodeConverter.MoveNodeVulnsToNewField(node)
 		}

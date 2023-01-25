@@ -619,7 +619,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 
 func (suite *NodePostgresDataStoreTestSuite) TestGetManyNodeMetadata() {
 	ctx := sac.WithAllAccess(context.Background())
-	testNode1 := fixtures.GetNodeWithUniqueComponents(5)
+	testNode1 := fixtures.GetNodeWithUniqueComponents(5, 5)
 	converter.MoveNodeVulnsToNewField(testNode1)
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode1))
 

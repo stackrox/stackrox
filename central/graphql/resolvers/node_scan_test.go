@@ -7,7 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	nodeCVEsDSMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
-	nodeDSMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
+	nodeDSMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	nodeComponentsDSMocks "github.com/stackrox/rox/central/nodecomponent/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -89,7 +89,7 @@ func (s *NodeScanResolverTestSuite) TearDownTest() {
 
 func (s *NodeScanResolverTestSuite) TestGetNodesWithScan() {
 	// Verify that full node is fetched.
-	node := fixtures.GetNodeWithUniqueComponents(5)
+	node := fixtures.GetNodeWithUniqueComponents(5, 5)
 	nodeConverter.MoveNodeVulnsToNewField(node)
 	s.nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).
 		Return([]search.Result{{
@@ -107,7 +107,7 @@ func (s *NodeScanResolverTestSuite) TestGetNodesWithScan() {
 
 func (s *NodeScanResolverTestSuite) TestGetNodesWithoutScan() {
 	// Verify that full node is not fetched but rather node component and vuln stores are queried.
-	node := fixtures.GetNodeWithUniqueComponents(5)
+	node := fixtures.GetNodeWithUniqueComponents(5, 5)
 	nodeConverter.MoveNodeVulnsToNewField(node)
 	s.nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).
 		Return([]search.Result{{
