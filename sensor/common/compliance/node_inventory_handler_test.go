@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/compliance/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 )
@@ -47,11 +46,6 @@ var _ suite.TearDownTestSuite = (*NodeInventoryHandlerTestSuite)(nil)
 
 type NodeInventoryHandlerTestSuite struct {
 	suite.Suite
-	nodeStore nodeStore
-}
-
-func (s *NodeInventoryHandlerTestSuite) SetupTest() {
-	s.nodeStore = mocks.NewMockNodeStore()
 }
 
 func assertNoGoroutineLeaks(t *testing.T) {
@@ -68,7 +62,7 @@ func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
 func (s *NodeInventoryHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
-	h := NewNodeInventoryHandler(inventories, mocks.NewMockNodeIDMatcher(s.nodeStore))
+	h := NewNodeInventoryHandler(inventories, &mockAlwaysHitNodeIDMatcher{})
 	s.Panics(func() {
 		h.ResponsesC()
 	})
@@ -82,7 +76,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
 	producer := concurrency.NewStopper()
-	h := NewNodeInventoryHandler(inventories, mocks.NewMockNodeIDMatcher(s.nodeStore))
+	h := NewNodeInventoryHandler(inventories, &mockAlwaysHitNodeIDMatcher{})
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 1)
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages.
@@ -110,7 +104,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, mocks.NewMockNodeIDMatcher(s.nodeStore))
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -123,7 +117,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, mocks.NewMockNodeIDMatcher(s.nodeStore))
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -180,7 +174,7 @@ func consumeAndCount[T any](ch <-chan *T, numToConsume int) concurrency.StopperC
 func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, mocks.NewMockNodeIDMatcher(s.nodeStore))
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
 
 	s.NoError(h.Start())
 	s.ErrorIs(h.Start(), errStartMoreThanOnce)
@@ -202,7 +196,7 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, mocks.NewMockNodeIDMatcher(s.nodeStore))
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -216,7 +210,7 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 
 func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	ch, producer := s.generateTestInputNoClose(10)
-	h := NewNodeInventoryHandler(ch, mocks.NewMockNodeIDMatcher(s.nodeStore))
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -226,4 +220,13 @@ func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	close(ch)
 	// The handler will stop as there are no more messages to handle
 	s.ErrorIs(h.Stopped().Wait(), errInputChanClosed)
+}
+
+// mockAlwaysHitNodeIDMatcher always finds a node when GetNodeResource is called
+type mockAlwaysHitNodeIDMatcher struct {
+}
+
+// GetNodeID always returns a node with give name and hardcoded ID
+func (c *mockAlwaysHitNodeIDMatcher) GetNodeID(nodename string) (string, error) {
+	return "abc", nil
 }

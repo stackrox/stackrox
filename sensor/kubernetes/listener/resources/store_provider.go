@@ -13,7 +13,7 @@ type InMemoryStoreProvider struct {
 	serviceStore    *serviceStore
 	rbacStore       rbac.Store
 	endpointManager endpointManager
-	nodeStore       nodeStore
+	nodeStore       *nodeStoreImpl
 	entityStore     *clusterentities.Store
 }
 
@@ -58,6 +58,6 @@ func (p *InMemoryStoreProvider) EndpointManager() store.EndpointManager {
 }
 
 // Nodes returns the Nodes public interface
-func (p *InMemoryStoreProvider) Nodes() nodeStore {
+func (p *InMemoryStoreProvider) Nodes() *nodeStoreImpl {
 	return p.nodeStore
 }

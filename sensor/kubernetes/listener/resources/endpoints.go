@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
-	"github.com/stackrox/rox/sensor/common/store"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -20,7 +19,7 @@ type endpointManager interface {
 	OnServiceCreate(svc *serviceWrap)
 	OnServiceUpdateOrRemove(namespace string, sel selector.Selector)
 
-	OnNodeCreate(node *store.NodeWrap)
+	OnNodeCreate(node *nodeWrap)
 	OnNodeUpdateOrRemove()
 }
 
@@ -43,7 +42,7 @@ func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentS
 	}
 }
 
-func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP net.IPAddress, node *store.NodeWrap, port v1.ContainerPort, data *clusterentities.EntityData) {
+func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP net.IPAddress, node *nodeWrap, port v1.ContainerPort, data *clusterentities.EntityData) {
 	l4Proto := convertL4Proto(port.Protocol)
 	targetInfo := clusterentities.EndpointTargetInfo{
 		ContainerPort: uint16(port.ContainerPort),
@@ -60,7 +59,7 @@ func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP n
 		boundHostIP := net.ParseIP(port.HostIP)
 		if !boundHostIP.IsValid() || boundHostIP.IsUnspecified() {
 			if node != nil {
-				hostIPs = node.Addresses
+				hostIPs = node.addresses
 			} else if podHostIP.IsValid() {
 				hostIPs = []net.IPAddress{podHostIP}
 			}
@@ -83,9 +82,9 @@ func (m *endpointManagerImpl) addEndpointDataForPod(pod *v1.Pod, data *clusteren
 		data.AddIP(podIP)
 	}
 
-	var node *store.NodeWrap
+	var node *nodeWrap
 	if pod.Spec.NodeName != "" {
-		node = m.nodeStore.GetNode(pod.Spec.NodeName)
+		node = m.nodeStore.getNode(pod.Spec.NodeName)
 	}
 	podHostIP := net.ParseIP(pod.Status.HostIP)
 
@@ -182,8 +181,8 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *serviceWrap, data *clusterentities.EntityData) {
 	var allNodeIPs []net.IPAddress
 	if svc.Spec.Type == v1.ServiceTypeLoadBalancer || svc.Spec.Type == v1.ServiceTypeNodePort {
-		for _, node := range m.nodeStore.GetNodes() {
-			allNodeIPs = append(allNodeIPs, node.Addresses...)
+		for _, node := range m.nodeStore.getNodes() {
+			allNodeIPs = append(allNodeIPs, node.addresses...)
 		}
 	}
 
@@ -213,8 +212,8 @@ func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel sele
 	m.entityStore.Apply(updates, false)
 }
 
-func (m *endpointManagerImpl) OnNodeCreate(node *store.NodeWrap) {
-	if len(node.Addresses) == 0 {
+func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
+	if len(node.addresses) == 0 {
 		return
 	}
 
@@ -228,7 +227,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *store.NodeWrap) {
 			}
 			for _, port := range svc.Spec.Ports {
 				if port.NodePort != 0 {
-					addEndpointDataForServicePort(deployment, nil, node.Addresses, port, update)
+					addEndpointDataForServicePort(deployment, nil, node.addresses, port, update)
 				}
 			}
 		}

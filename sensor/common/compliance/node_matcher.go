@@ -3,13 +3,11 @@ package compliance
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-// nodeStore provides functionality to get nodes
 type nodeStore interface {
-	AddOrUpdateNode(node *store.NodeWrap) bool
-	GetNode(nodeName string) *store.NodeWrap
+	GetNode(nodeName string) *storage.Node
 }
 
 // NodeIDMatcher helps finding NodeWrap by name

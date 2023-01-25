@@ -68,3 +68,8 @@ type Provider interface {
 type EndpointManager interface {
 	OnDeploymentCreateOrUpdateByID(id string)
 }
+
+// NodeStore represents a collection of Nodes
+type NodeStore interface {
+	GetNode(nodeName string) *storage.Node
+}

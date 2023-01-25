@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/selector"
-	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,7 +93,7 @@ func (m *mockEndpointManager) OnServiceCreate(*serviceWrap) {
 func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector.Selector) {
 }
 
-func (m *mockEndpointManager) OnNodeCreate(*store.NodeWrap) {
+func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {
 }
 
 func (m *mockEndpointManager) OnNodeUpdateOrRemove() {
