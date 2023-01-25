@@ -6,6 +6,8 @@ export type FlowEntityType = 'DEPLOYMENT' | 'EXTERNAL_ENTITIES' | 'CIDR_BLOCK';
 
 export type BaselineStatusType = 'ANOMALOUS' | 'BASELINE';
 
+export type BaselineSimulationDiffState = 'ADDED' | 'REMOVED' | 'UNCHANGED';
+
 export type IndividualFlow = {
     id: string;
     type: FlowEntityType;
@@ -17,6 +19,7 @@ export type IndividualFlow = {
     protocol: L4Protocol;
     isAnomalous: boolean;
     children?: undefined;
+    baselineSimulationDiffState?: BaselineSimulationDiffState;
 };
 
 export type AggregatedFlow = {
@@ -30,6 +33,7 @@ export type AggregatedFlow = {
     protocol: L4Protocol;
     isAnomalous: boolean;
     children: IndividualFlow[];
+    baselineSimulationDiffState?: BaselineSimulationDiffState;
 };
 
 export type Entity = {
