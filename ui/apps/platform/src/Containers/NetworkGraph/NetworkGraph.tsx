@@ -37,7 +37,7 @@ function NetworkGraph({ model, simulation, selectedClusterId, selectedNode }: Ne
         (simulation.isOn && simulation.type === 'baseline');
 
     return (
-        <SimulationFrame simulator={simulator}>
+        <SimulationFrame isSimulating={isSimulating}>
             <VisualizationProvider controller={controller}>
                 <TopologyComponent
                     model={model}
