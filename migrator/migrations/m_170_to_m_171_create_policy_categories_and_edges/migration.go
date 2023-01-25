@@ -39,6 +39,7 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
+// CreatePolicyCategoryEdges reads policies and creates categories and policy <-> category edges
 func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTablePolicyCategoryEdgesStmt)
 
@@ -53,7 +54,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
 	}
 	categoryNameToIDMap := make(map[string]string, categoryCount)
 
-	//read all categories and get category name to id map
+	// read all categories and get category name to id map
 	if err = categoriesStore.Walk(ctx, func(category *storage.PolicyCategory) error {
 		categoryNameToIDMap[category.Name] = category.Id
 		return nil
@@ -69,7 +70,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
 	policyToCategoryIDsMap := make(map[string][]string, policyCount)
 
 	policiesToUpdate := make([]*storage.Policy, 0, policyCount)
-	//read all policies, create policy id -> category ids edge map for each policy
+	// read all policies, create policy id -> category ids edge map for each policy
 	err = policyStore.Walk(ctx, func(p *storage.Policy) error {
 		policyToCategoryIDsMap[p.Id] = make([]string, 0)
 		for _, c := range p.Categories {
@@ -116,7 +117,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
 		}
 	}
 
-	//upsert policies with blank categories
+	// upsert policies with blank categories
 	if err = policyStore.UpsertMany(ctx, policiesToUpdate); err != nil {
 		return err
 	}

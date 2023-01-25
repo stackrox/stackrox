@@ -42,6 +42,7 @@ var (
 	targetResource = resources.Policy
 )
 
+// Store is the interface to interact with the storage for storage.PolicyCategoryEdge
 type Store interface {
 	GetAll(ctx context.Context) ([]*storage.PolicyCategoryEdge, error)
 	UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error
@@ -221,9 +222,8 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCatego
 
 		if len(objs) < batchAfter {
 			return s.upsert(ctx, objs...)
-		} else {
-			return s.copyFrom(ctx, objs...)
 		}
+		return s.copyFrom(ctx, objs...)
 	})
 }
 
