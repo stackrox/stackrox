@@ -226,7 +226,7 @@ func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 type mockAlwaysHitNodeIDMatcher struct {
 }
 
-// GetNodeID always returns a node with give name and hardcoded ID
+// GetNodeID always finds a hardcoded ID "abc"
 func (c *mockAlwaysHitNodeIDMatcher) GetNodeID(nodename string) (string, error) {
 	return "abc", nil
 }

@@ -50,7 +50,6 @@ type nodeStoreImpl struct {
 	nodes map[string]*nodeWrap
 }
 
-// newNodeStore provides a nodeStoreImpl instance
 func newNodeStore() *nodeStoreImpl {
 	return &nodeStoreImpl{
 		nodes: make(map[string]*nodeWrap),
@@ -93,7 +92,7 @@ func (s *nodeStoreImpl) getNode(nodeName string) *nodeWrap {
 	return s.nodes[nodeName]
 }
 
-// GetNode returns node with a given name
+// GetNode returns node with a given name or nil if not found
 func (s *nodeStoreImpl) GetNode(nodeName string) *storage.Node {
 	if wrap := s.getNode(nodeName); wrap != nil {
 		return buildNode(wrap.Node)

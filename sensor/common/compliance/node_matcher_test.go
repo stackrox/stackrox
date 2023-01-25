@@ -73,7 +73,7 @@ func newMockNodeIDMatcher(store map[string]string) *mockNodeIDMatcher {
 	}
 }
 
-// GetNodeID always returns a node with give name and hardcoded ID
+// GetNodeID searches for nodeID in the map and returns it when found
 func (c *mockNodeIDMatcher) GetNodeID(nodename string) (string, error) {
 	if val, ok := c.nodeStore[nodename]; ok {
 		return val, nil
