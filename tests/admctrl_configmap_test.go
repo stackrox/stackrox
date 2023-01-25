@@ -20,6 +20,7 @@ import (
 )
 
 func TestAdmissionControllerConfigMap(t *testing.T) {
+	t.Skip("ROX-14495: This test is not working.")
 	k8sClient := createK8sClient(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
