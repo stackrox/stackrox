@@ -98,7 +98,7 @@ class ClairV4ScannerIntegration implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: "clairv4",
-                endpoint: Env.get("CLAIR_V4_ENDPOINT", "http://clairv4.qa-clairv4:8080"),
+                endpoint: Env.get("CLAIR_V4_ENDPOINT", ""),
                 insecure: true,
         ]
         Map args = defaultArgs + customArgs
