@@ -32,6 +32,7 @@ config_part_1() {
 
     setup_gcp
     setup_deployment_env false false
+    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
