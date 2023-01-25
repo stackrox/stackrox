@@ -1,9 +1,11 @@
 import { Controller } from '@patternfly/react-topology';
-import { EntityType } from 'Containers/Network/networkTypes';
 import { uniq } from 'lodash';
+
+import { EntityType } from 'Containers/Network/networkTypes';
 import { L4Protocol } from 'types/networkFlow.proto';
+import { GroupedDiffFlows } from 'types/networkPolicyService';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow, Peer } from '../types/flow.type';
+import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
 import { CustomEdgeModel, CustomSingleNodeData } from '../types/topology.type';
 
 export const protocolLabel = {
@@ -35,7 +37,7 @@ export function getNumFlows(flows: Flow[]): number {
     return numFlows;
 }
 
-function createUniqueFlowId({
+export function createUniqueFlowId({
     entityId,
     direction,
     port,
@@ -120,11 +122,6 @@ export function getNetworkFlows(
     id: string
 ): Flow[] {
     const networkFlows: Flow[] = edges.reduce((acc, edge) => {
-        // filter out edges not connected to node with selected id
-        if ((edge.source !== id && edge.target !== id) || !edge.source || !edge.target) {
-            return acc;
-        }
-
         const isSourceNodeSelected = edge.source === id;
 
         const sourceNode = controller.getNodeById(edge.source);
@@ -260,4 +257,49 @@ export function transformFlowsToPeers(flows: Flow[]): Peer[] {
         };
         return peer;
     });
+}
+
+export function createFlowsFromGroupedDiffFlows(
+    groupedDiffFlow: GroupedDiffFlows,
+    baselineSimulationDiffState: BaselineSimulationDiffState
+): Flow[] {
+    const { entity, properties } = groupedDiffFlow;
+    const flows = properties.map(({ ingress, port, protocol }) => {
+        const direction = ingress ? 'Ingress' : 'Egress';
+        let entityName = '';
+        let namespace = '';
+        let type: FlowEntityType = 'DEPLOYMENT';
+        if (entity.type === 'DEPLOYMENT') {
+            entityName = entity.deployment.name;
+            namespace = entity.deployment.namespace;
+            type = 'DEPLOYMENT';
+        } else if (entity.type === 'INTERNET') {
+            entityName = 'External entities';
+            type = 'EXTERNAL_ENTITIES';
+        } else if (entity.type === 'EXTERNAL_SOURCE') {
+            entityName = entity.externalSource.name;
+            type = 'CIDR_BLOCK';
+        }
+        const id = createUniqueFlowId({
+            entityId: entity.id,
+            direction,
+            port: String(port),
+            protocol,
+        });
+        const flow: Flow = {
+            id,
+            type,
+            entity: entityName,
+            entityId: entity.id,
+            namespace,
+            direction,
+            port: String(port),
+            protocol,
+            isAnomalous: false,
+            children: [],
+            baselineSimulationDiffState,
+        };
+        return flow;
+    });
+    return flows;
 }

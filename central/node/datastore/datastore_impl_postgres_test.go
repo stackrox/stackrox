@@ -617,6 +617,33 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.Equal(0, count)
 }
 
+func (suite *NodePostgresDataStoreTestSuite) TestGetManyNodeMetadata() {
+	ctx := sac.WithAllAccess(context.Background())
+	testNode1 := fixtures.GetNodeWithUniqueComponents(5, 5)
+	converter.MoveNodeVulnsToNewField(testNode1)
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode1))
+
+	testNode2 := testNode1.Clone()
+	testNode2.Id = fixtureconsts.Node2
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+
+	testNode3 := testNode1.Clone()
+	testNode3.Id = fixtureconsts.Node3
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode3))
+
+	storedNodes, err := suite.datastore.GetManyNodeMetadata(ctx, []string{testNode1.Id, testNode2.Id, testNode3.Id})
+	suite.NoError(err)
+	suite.Len(storedNodes, 3)
+
+	testNode1.Scan.Components = nil
+	testNode1.Priority = 1
+	testNode2.Scan.Components = nil
+	testNode2.Priority = 1
+	testNode3.Scan.Components = nil
+	testNode3.Priority = 1
+	suite.ElementsMatch([]*storage.Node{testNode1, testNode2, testNode3}, storedNodes)
+}
+
 func getTestNodeForPostgres(id, name string) *storage.Node {
 	return &storage.Node{
 		Id:        id,

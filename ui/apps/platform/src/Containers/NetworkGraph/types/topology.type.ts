@@ -3,10 +3,7 @@ import { EdgeModel, EdgeTerminalType, Model, NodeModel } from '@patternfly/react
 import { EdgeProperties, ListenPort, OutEdges } from 'types/networkFlow.proto';
 import { Override } from 'utils/type.utils';
 
-export type CustomModel = Override<
-    Model,
-    { nodes: CustomNodeModel[]; edges: CustomEdgeModel[]; updateCount: number }
->;
+export type CustomModel = Override<Model, { nodes: CustomNodeModel[]; edges: CustomEdgeModel[] }>;
 
 // Node types
 
@@ -104,7 +101,10 @@ export type ExtraneousData = {
 
 // Edge types
 
-export type CustomEdgeModel = Override<EdgeModel, { data: EdgeData }>;
+export type CustomEdgeModel = Override<
+    EdgeModel,
+    { source: string; target: string; data: EdgeData }
+>;
 
 export type EdgeData = {
     // the edge label shows up when this exists

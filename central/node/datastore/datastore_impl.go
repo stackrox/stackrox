@@ -170,6 +170,19 @@ func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*st
 	return nodes, nil
 }
 
+// GetManyNodeMetadata gets the node data without the scan.
+func (ds *datastoreImpl) GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, error) {
+	nodes, missingIdx, err := ds.storage.GetManyNodeMetadata(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	if len(missingIdx) > 0 {
+		log.Errorf("Could not fetch %d/%d nodes", len(missingIdx), len(ids))
+	}
+	ds.updateNodePriority(nodes...)
+	return nodes, nil
+}
+
 // UpsertNode dedupes the node with the underlying storage and adds the node to the index.
 func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "UpsertNode")
