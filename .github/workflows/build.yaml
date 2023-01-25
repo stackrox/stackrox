@@ -16,7 +16,6 @@ env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
 jobs:
-
   pre-build-ui:
     runs-on: ubuntu-latest
     container:
@@ -47,7 +46,19 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: ui-build
+          name: ui-RHACS_BRANDING-build
+          path: |
+            ui/build
+            ui/monorepo.lock
+
+      - name: Build Stackrox UI
+        run: make -C ui build
+        env:
+          ROX_PRODUCT_BRANDING: STACKROX_BRANDING
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ui-STACKROX_BRANDING-build
           path: |
             ui/build
             ui/monorepo.lock
@@ -208,6 +219,9 @@ jobs:
       - pre-build-cli
       - pre-build-go-binaries
       - pre-build-docs
+    strategy:
+      matrix:
+        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
       env:
@@ -217,6 +231,7 @@ jobs:
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+        ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -237,7 +252,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ui-build
+          name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: ui
 
       - uses: actions/download-artifact@v3
@@ -327,7 +342,7 @@ jobs:
 
     - uses: actions/download-artifact@v3
       with:
-        name: ui-build
+        name: ui-${{env.ROX_PRODUCT_BRANDING}}-buil
         path: ui
 
     - uses: actions/download-artifact@v3
