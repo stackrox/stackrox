@@ -57,15 +57,16 @@ func (s *gathererTestSuite) TestGatherer() {
 
 	// Identify and Track should be called once as there's no change in the
 	// identity:
-	t.EXPECT().Identify("test", "Test", &mapMatcher{map[string]any{
+	t.EXPECT().Identify(&mapMatcher{map[string]any{
 		"key": "value",
 	}}).Times(1)
-	t.EXPECT().Track("Updated Test Identity", "test", nil).Times(1)
+
+	t.EXPECT().Track("Updated Test Identity", nil).Times(1)
 
 	props := make(map[string]any)
 	var i int64
 
-	g := newGatherer("test", "Test", t, 24*time.Hour)
+	g := newGatherer("Test", t, 24*time.Hour)
 	g.AddGatherer(func(context.Context) (map[string]any, error) {
 		atomic.AddInt64(&i, 1)
 		props["key"] = "value"

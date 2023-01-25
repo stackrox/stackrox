@@ -34,27 +34,51 @@ func (m *MockTelemeter) EXPECT() *MockTelemeterMockRecorder {
 }
 
 // Group mocks base method.
-func (m *MockTelemeter) Group(groupID, userID string, props map[string]any) {
+func (m *MockTelemeter) Group(groupID string, props map[string]any) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Group", groupID, userID, props)
+	m.ctrl.Call(m, "Group", groupID, props)
 }
 
 // Group indicates an expected call of Group.
-func (mr *MockTelemeterMockRecorder) Group(groupID, userID, props interface{}) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Group(groupID, props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), groupID, userID, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), groupID, props)
+}
+
+// GroupUserAs mocks base method.
+func (m *MockTelemeter) GroupUserAs(userID, clientID, clientType, groupID string, props map[string]any) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GroupUserAs", userID, clientID, clientType, groupID, props)
+}
+
+// GroupUserAs indicates an expected call of GroupUserAs.
+func (mr *MockTelemeterMockRecorder) GroupUserAs(userID, clientID, clientType, groupID, props interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GroupUserAs", reflect.TypeOf((*MockTelemeter)(nil).GroupUserAs), userID, clientID, clientType, groupID, props)
 }
 
 // Identify mocks base method.
-func (m *MockTelemeter) Identify(userID, userKind string, props map[string]any) {
+func (m *MockTelemeter) Identify(props map[string]any) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Identify", userID, userKind, props)
+	m.ctrl.Call(m, "Identify", props)
 }
 
 // Identify indicates an expected call of Identify.
-func (mr *MockTelemeterMockRecorder) Identify(userID, userKind, props interface{}) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Identify(props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), userID, userKind, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), props)
+}
+
+// IdentifyUserAs mocks base method.
+func (m *MockTelemeter) IdentifyUserAs(userID, clientID, clientType string, props map[string]any) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IdentifyUserAs", userID, clientID, clientType, props)
+}
+
+// IdentifyUserAs indicates an expected call of IdentifyUserAs.
+func (mr *MockTelemeterMockRecorder) IdentifyUserAs(userID, clientID, clientType, props interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IdentifyUserAs", reflect.TypeOf((*MockTelemeter)(nil).IdentifyUserAs), userID, clientID, clientType, props)
 }
 
 // Stop mocks base method.
@@ -70,13 +94,25 @@ func (mr *MockTelemeterMockRecorder) Stop() *gomock.Call {
 }
 
 // Track mocks base method.
-func (m *MockTelemeter) Track(event, userID string, props map[string]any) {
+func (m *MockTelemeter) Track(event string, props map[string]any) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Track", event, userID, props)
+	m.ctrl.Call(m, "Track", event, props)
 }
 
 // Track indicates an expected call of Track.
-func (mr *MockTelemeterMockRecorder) Track(event, userID, props interface{}) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Track(event, props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockTelemeter)(nil).Track), event, userID, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockTelemeter)(nil).Track), event, props)
+}
+
+// TrackUserAs mocks base method.
+func (m *MockTelemeter) TrackUserAs(userID, clientID, clientType, event string, props map[string]any) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "TrackUserAs", userID, clientID, clientType, event, props)
+}
+
+// TrackUserAs indicates an expected call of TrackUserAs.
+func (mr *MockTelemeterMockRecorder) TrackUserAs(userID, clientID, clientType, event, props interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackUserAs", reflect.TypeOf((*MockTelemeter)(nil).TrackUserAs), userID, clientID, clientType, event, props)
 }
