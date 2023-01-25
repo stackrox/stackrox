@@ -45,6 +45,7 @@ import (
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
+	"github.com/stackrox/rox/central/declarativeconfig"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -485,6 +486,10 @@ func startGRPCServer() {
 	}
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
+
+	if features.DeclarativeConfiguration.Enabled() {
+		declarativeconfig.Singleton().WatchDeclarativeConfigDir()
+	}
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
