@@ -1,4 +1,4 @@
-package m169Tom170
+package m170Tom171
 
 import (
 	"context"
@@ -9,9 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
-	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
-	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
+	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
+	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
+	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -23,7 +23,7 @@ import (
 const (
 	batchSize = 500
 
-	startSeqNum = 169
+	startSeqNum = 170
 
 	skippedMigrationMessageTemplate = "Failed to migrate report configuration '%s': Attached scope <%s> has label selector/s " +
 		"with a different operator than 'IN'; Resolution: %s"
@@ -40,7 +40,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: startSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 170
+		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 171
 		Run: func(databases *types.Databases) error {
 			err := moveScopeIDToCollectionIDInReports(databases.PostgresDB)
 			if err != nil {

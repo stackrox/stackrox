@@ -1,4 +1,4 @@
-package m169Tom170
+package m170Tom171
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
-	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
-	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
+	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
+	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
+	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"
