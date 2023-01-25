@@ -70,8 +70,8 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		extSrcsStore:        externalsrcs.StoreInstance(),
 		baselineEval:        baseline.NewBaselineEvaluator(),
 		networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
-		deduper:             newDeduper(),
-		enforcer:            enforcer,
+		// deduper:             newDeduper(),
+		enforcer: enforcer,
 
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
 		auditLogUpdater:    auditLogUpdater,
@@ -106,7 +106,7 @@ type detectorImpl struct {
 	baselineEval        baseline.Evaluator
 	networkbaselineEval networkBaselineEval.Evaluator
 	enforcer            enforcer.Enforcer
-	deduper             *deduper
+	// deduper             *deduper
 
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 	auditLogUpdater    updater.Component
@@ -215,7 +215,7 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 	// Note: Assume the version of the policies received from central is never
 	// older than sensor's version. Convert to latest if this proves wrong.
 	d.unifiedDetector.ReconcilePolicies(sync.GetPolicies())
-	d.deduper.reset()
+	// d.deduper.reset()
 
 	// Take deployment lock and flush
 	concurrency.WithLock(&d.deploymentDetectionLock, func() {
@@ -236,7 +236,7 @@ func (d *detectorImpl) processReassessPolicies(_ *central.ReassessPolicies) erro
 	if d.admCtrlSettingsMgr != nil {
 		d.admCtrlSettingsMgr.FlushCache()
 	}
-	d.deduper.reset()
+	// d.deduper.reset()
 	return nil
 }
 
@@ -276,7 +276,7 @@ func (d *detectorImpl) processReprocessDeployments() error {
 		d.admCtrlSettingsMgr.FlushCache()
 	}
 	d.admissionCacheNeedsFlush = false
-	d.deduper.reset()
+	// d.deduper.reset()
 	return nil
 }
 
@@ -402,12 +402,12 @@ func (d *detectorImpl) ProcessDeployment(deployment *storage.Deployment, action 
 }
 
 func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
-	d.deploymentDetectionLock.Lock()
-	defer d.deploymentDetectionLock.Unlock()
-
-	for _, deploymentID := range deploymentIDs {
-		d.deduper.removeDeployment(deploymentID)
-	}
+	// d.deploymentDetectionLock.Lock()
+	// defer d.deploymentDetectionLock.Unlock()
+	//
+	// for _, deploymentID := range deploymentIDs {
+	//	d.deduper.removeDeployment(deploymentID)
+	// }
 }
 
 func (d *detectorImpl) getNetworkPoliciesApplied(deployment *storage.Deployment) *augmentedobjs.NetworkPoliciesApplied {
@@ -424,7 +424,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 	switch action {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		d.baselineEval.RemoveDeployment(deployment.GetId())
-		d.deduper.removeDeployment(deployment.GetId())
+		// d.deduper.removeDeployment(deployment.GetId())
 
 		go func() {
 			// Push an empty AlertResults object to the channel which will mark deploytime alerts as stale
@@ -439,15 +439,15 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 			}
 		}()
 	case central.ResourceAction_CREATE_RESOURCE:
-		d.deduper.addDeployment(deployment)
+		// d.deduper.addDeployment(deployment)
 		d.markDeploymentForProcessing(deployment.GetId())
 		go d.enricher.blockingScan(deployment, d.getNetworkPoliciesApplied(deployment), action)
 	case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
 		// If not, then just return
-		if !d.deduper.needsProcessing(deployment) {
-			return
-		}
+		// if !d.deduper.needsProcessing(deployment) {
+		//	return
+		// }
 		d.markDeploymentForProcessing(deployment.GetId())
 		go d.enricher.blockingScan(deployment, d.getNetworkPoliciesApplied(deployment), action)
 	}
