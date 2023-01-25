@@ -61,17 +61,15 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = setupPostgresConn(s.T())
+	s.db, s.gormDB = SetupTestPostgresConn(s.T())
 
-	nodeDS := createNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	s.nodeDatastore = nodeDS
-	resolver, _ := setupResolver(s.T(),
-		createNodeCVEDatastore(s.T(), s.db, s.gormDB),
-		createNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		nodeDS,
-		nodeDS,
-		createNodeComponentCveEdgeDatastore(s.T(), s.db, s.gormDB),
-		createClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, nil, nil, nodeDS),
+	s.nodeDatastore = CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	resolver, _ := SetupTestResolver(s.T(),
+		CreateTestNodeCVEDatastore(s.T(), s.db, s.gormDB),
+		CreateTestNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		s.nodeDatastore,
+		CreateTestNodeComponentCveEdgeDatastore(s.T(), s.db, s.gormDB),
+		CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, nil, nil, s.nodeDatastore),
 	)
 	s.resolver = resolver
 
@@ -82,7 +80,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 		s.NoError(err)
 	}
 	for _, node := range testNodes {
-		err := nodeDS.UpsertNode(s.ctx, node)
+		err := s.nodeDatastore.UpsertNode(s.ctx, node)
 		s.NoError(err)
 	}
 }

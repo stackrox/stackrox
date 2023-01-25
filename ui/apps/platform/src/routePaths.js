@@ -48,7 +48,6 @@ export const systemHealthPath = `${mainPath}/system-health`;
 export const systemHealthPathPF = `${mainPath}/system-health-pf`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const productDocsPath = '/docs/product';
 
 // Configuration Management
 
@@ -156,7 +155,6 @@ export const basePathToLabelMap = {
     [configManagementPath]: 'Configuration Management',
     [riskBasePath]: 'Risk',
     [apidocsPath]: 'API Reference',
-    [productDocsPath]: 'Help Center',
     [clustersBasePath]: 'Clusters',
     [policyManagementBasePath]: 'Policy Management',
     [policiesBasePath]: 'Policy Management',

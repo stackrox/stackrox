@@ -21,7 +21,7 @@ var (
 func wrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != platform.CentralGVK {
-			log.Error(errUnexpectedGVK, "unable to reconcile central TLS secrets", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
+			log.Error(errUnexpectedGVK, "unable to reconcile central", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
 			return errUnexpectedGVK
 		}
 

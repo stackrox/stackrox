@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb/export"
+	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -31,11 +32,11 @@ const (
 )
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
-func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, postgresDB *pgxpool.Pool, includeCerts bool) http.Handler {
+func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, postgresDB *pgxpool.Pool, backupListener listener.BackupListener, includeCerts bool) http.Handler {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return dumpDB(postgresDB, includeCerts)
+		return dumpDB(postgresDB, backupListener, includeCerts)
 	}
-	return serializeDB(boltDB, rocksDB, includeCerts)
+	return serializeDB(rocksDB, boltDB, backupListener, includeCerts)
 }
 
 func logAndWriteErrorMsg(w http.ResponseWriter, code int, t string, args ...interface{}) {
@@ -105,7 +106,7 @@ func RestoreDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	})
 }
 
-func serializeDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, includeCerts bool) http.HandlerFunc {
+func serializeDB(rocksDB *rocksdb.RocksDB, boltDB *bolt.DB, backupListener listener.BackupListener, includeCerts bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB backup ...")
 		filename := time.Now().Format(dbFileFormat)
@@ -113,7 +114,7 @@ func serializeDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, includeCerts bool) h
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
-		if err := export.Backup(req.Context(), boltDB, rocksDB, includeCerts, w); err != nil {
+		if err := export.Backup(req.Context(), boltDB, rocksDB, backupListener, includeCerts, w); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)
 			return
 		}
@@ -121,7 +122,7 @@ func serializeDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, includeCerts bool) h
 	}
 }
 
-func dumpDB(postgresDB *pgxpool.Pool, includeCerts bool) http.HandlerFunc {
+func dumpDB(postgresDB *pgxpool.Pool, backupListener listener.BackupListener, includeCerts bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting Postgres DB backup ...")
 		filename := time.Now().Format(pgFileFormat)
@@ -129,11 +130,10 @@ func dumpDB(postgresDB *pgxpool.Pool, includeCerts bool) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
-		if err := export.BackupPostgres(req.Context(), postgresDB, includeCerts, w); err != nil {
+		if err := export.BackupPostgres(req.Context(), postgresDB, backupListener, includeCerts, w); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)
 			return
 		}
-
 		log.Info("Postgres DB backup completed")
 	}
 }

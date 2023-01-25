@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/manager"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/role/resources"
+	backupListener "github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -34,7 +35,7 @@ func initializeManager() manager.Manager {
 	if err != nil {
 		panic(err)
 	}
-	mgr := manager.New(reporter.Singleton())
+	mgr := manager.New(reporter.Singleton(), backupListener.Singleton())
 	for _, b := range backups {
 		if err := mgr.Upsert(ctx, b); err != nil {
 			log.Errorf("error initializing backup: %v", err)

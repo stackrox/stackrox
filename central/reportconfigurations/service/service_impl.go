@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,18 +30,24 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		user.With(permissions.View(resources.VulnerabilityReports)): {
+		or.Or(
+			user.With(permissions.View(resources.VulnerabilityReports)),
+			user.With(permissions.View(resources.WorkflowAdministration))): {
 			"/v1.ReportConfigurationService/GetReportConfigurations",
 			"/v1.ReportConfigurationService/GetReportConfiguration",
 			"/v1.ReportConfigurationService/CountReportConfigurations",
 		},
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role)): {
+		or.Or(
+			user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role)),
+			user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration))): {
 			"/v1.ReportConfigurationService/PostReportConfiguration",
 			"/v1.ReportConfigurationService/UpdateReportConfiguration",
 		},
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		user.With(permissions.Modify(resources.VulnerabilityReports)): {
+		or.Or(
+			user.With(permissions.Modify(resources.VulnerabilityReports)),
+			user.With(permissions.Modify(resources.WorkflowAdministration))): {
 			"/v1.ReportConfigurationService/DeleteReportConfiguration",
 		},
 	})

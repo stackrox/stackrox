@@ -5,6 +5,8 @@ import { differenceInDays } from 'date-fns';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import { getTime, getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
+import useMetadata from 'hooks/useMetadata';
+import { getVersionedDocs } from 'utils/versioning';
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { getCredentialExpirationStatus, healthStatusStyles } from '../cluster.helpers';
@@ -21,6 +23,8 @@ function CredentialExpiration({
     certExpiryStatus,
     isList = false,
 }: CredentialExpirationProps): ReactElement {
+    const { version } = useMetadata();
+
     if (!certExpiryStatus?.sensorCertExpiry) {
         return <HealthStatusNotApplicable testId={testId} />;
     }
@@ -79,20 +83,25 @@ function CredentialExpiration({
             ) : (
                 <div>
                     {expirationElement}
-                    <div className="flex flex-row items-end leading-tight text-tertiary-700">
-                        <a
-                            href="/docs/product/rhacs/latest/configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline"
-                            data-testid="reissueCertificatesLink"
-                        >
-                            Re-issue internal certificates
-                        </a>
-                        <span className="flex-shrink-0 ml-2">
-                            <ExternalLink className="h-4 w-4" />
-                        </span>
-                    </div>
+                    {version && (
+                        <div className="flex flex-row items-end leading-tight text-tertiary-700">
+                            <a
+                                href={getVersionedDocs(
+                                    version,
+                                    'configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters'
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline"
+                                data-testid="reissueCertificatesLink"
+                            >
+                                Re-issue internal certificates
+                            </a>
+                            <span className="flex-shrink-0 ml-2">
+                                <ExternalLink className="h-4 w-4" />
+                            </span>
+                        </div>
+                    )}
                 </div>
             )}
         </HealthStatus>

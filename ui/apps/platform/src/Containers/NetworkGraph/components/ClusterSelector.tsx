@@ -51,7 +51,7 @@ function ClusterSelector({
                     <span style={{ position: 'relative', top: '1px' }}>Cluster</span>
                 </span>
             }
-            aria-label="Select a cluster"
+            toggleAriaLabel="Select a cluster"
             onToggle={toggleIsClusterOpen}
             onSelect={onClusterSelect}
             isOpen={isClusterOpen}

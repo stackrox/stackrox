@@ -3,6 +3,7 @@ package clairv4
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	gogotypes "github.com/gogo/protobuf/types"
@@ -14,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
+
+var vulnNamePattern = regexp.MustCompile(`((CVE|ALAS|DSA)-\d{4}-\d+)|((RHSA|RHBA|RHEA)-\d{4}:\d+)`)
 
 // manifest returns a ClairCore image manifest for the given image.
 func manifest(registry registrytypes.Registry, image *storage.Image) (*claircore.Manifest, error) {
@@ -129,7 +132,7 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 			publishedTime, _ = gogotypes.TimestampProto(ccVuln.Issued)
 		}
 		vuln := &storage.EmbeddedVulnerability{
-			Cve:               ccVuln.Name,
+			Cve:               vulnName(ccVuln.Name),
 			Summary:           ccVuln.Description,
 			Link:              link(ccVuln.Links),
 			PublishedOn:       publishedTime,
@@ -147,6 +150,15 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 	}
 
 	return vulns
+}
+
+func vulnName(original string) string {
+	vulnID := vulnNamePattern.FindString(original)
+	if vulnID == "" {
+		return original
+	}
+
+	return vulnID
 }
 
 // link returns a single link to use for the vulnerability,

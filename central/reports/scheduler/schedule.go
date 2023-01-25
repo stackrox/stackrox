@@ -119,6 +119,11 @@ var (
 	log = logging.LoggerForModule()
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
+
+	deploymentSortOption = &v1.QuerySortOption{
+		Field:    search.DeploymentPriority.String(),
+		Reversed: false,
+	}
 )
 
 // Scheduler maintains the schedules for reports
@@ -177,7 +182,17 @@ func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.D
 	if err != nil {
 		panic(err)
 	}
-	s := &scheduler{
+
+	return newSchedulerImpl(reportConfigDS, notifierDS, clusterDS, namespaceDS, deploymentDS, collectionDS, roleDS,
+		collectionQueryRes, notificationProcessor, cronScheduler, ourSchema)
+}
+
+func newSchedulerImpl(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
+	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore,
+	deploymentDS deploymentDataStore.DataStore, collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
+	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor processor.Processor,
+	cronScheduler *cron.Cron, schema *graphql.Schema) *scheduler {
+	return &scheduler{
 		reportConfigToEntryIDs:  make(map[string]cron.EntryID),
 		cron:                    cronScheduler,
 		reportConfigDatastore:   reportConfigDS,
@@ -190,11 +205,10 @@ func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.D
 		collectionQueryResolver: collectionQueryRes,
 		notificationProcessor:   notificationProcessor,
 		reportsToRun:            make(chan *ReportRequest, 100),
-		Schema:                  ourSchema,
+		Schema:                  schema,
 
 		stopper: concurrency.NewStopper(),
 	}
-	return s
 }
 
 func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
@@ -289,45 +303,13 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	rc := req.ReportConfig
 
-	clusters, err := s.clusterDatastore.GetClusters(req.Ctx)
-	if err != nil {
-		return errors.Wrap(err, "error building report query: unable to get clusters")
-	}
-	namespaces, err := s.namespaceDatastore.GetAllNamespaces(req.Ctx)
-	if err != nil {
-		return errors.Wrap(err, "error building report query: unable to get namespaces")
-	}
-
-	var found bool
-	var scope *storage.SimpleAccessScope
-	var collection *storage.ResourceCollection
-	if features.ObjectCollections.Enabled() {
-		collection, found, err = s.collectionDatastore.Get(req.Ctx, rc.GetScopeId())
-	} else {
-		scope, found, err = s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
-	}
-
-	if err != nil {
-		return errors.Wrap(err, "error building report query: unable to get the resource scope")
-	}
-	if !found {
-		return errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
-	}
-
-	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, collection, rc.GetVulnReportFilters(),
-		s.collectionQueryResolver, timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
-	reportQuery, err := qb.BuildQuery(req.Ctx)
-	if err != nil {
-		return errors.Wrap(err, "error building report query")
-	}
-
 	notifier := s.notificationProcessor.GetNotifier(req.Ctx, rc.GetEmailConfig().GetNotifierId())
 	reportNotifier, ok := notifier.(notifiers.ReportNotifier)
 	if !ok {
 		return errors.Errorf("incorrect notifier type in report config '%s'", rc.GetName())
 	}
 	// Get the results of running the report query
-	reportData, err := s.getReportData(req.Ctx, reportQuery)
+	reportData, err := s.getReportData(req.Ctx, rc)
 	if err != nil {
 		return err
 	}
@@ -384,8 +366,19 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
+func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfiguration) ([]common.Result, error) {
 	if features.ObjectCollections.Enabled() {
+		collection, found, err := s.collectionDatastore.Get(ctx, rc.GetScopeId())
+		if err != nil {
+			return nil, errors.Wrapf(err, "error building report query: unable to get the collection %s", rc.GetScopeId())
+		}
+		if !found {
+			return nil, errors.Errorf("error building report query: collection with id %s not found", rc.GetScopeId())
+		}
+		rQuery, err := s.buildReportQuery(ctx, rc, collection, nil, nil, nil)
+		if err != nil {
+			return nil, err
+		}
 		deploymentIds, err := s.getDeploymentIDs(ctx, rQuery.DeploymentsQuery)
 		if err != nil {
 			return nil, err
@@ -397,6 +390,28 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 		result.Deployments = orderByClusterAndNamespace(result.Deployments)
 		return []common.Result{result}, nil
 	}
+
+	scope, found, err := s.roleDatastore.GetAccessScope(ctx, rc.GetScopeId())
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query: unable to get the resource scope")
+	}
+	if !found {
+		return nil, errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
+	}
+	clusters, err := s.clusterDatastore.GetClusters(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query: unable to get clusters")
+	}
+	namespaces, err := s.namespaceDatastore.GetAllNamespaces(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query: unable to get namespaces")
+	}
+
+	rQuery, err := s.buildReportQuery(ctx, rc, nil, scope, clusters, namespaces)
+	if err != nil {
+		return nil, err
+	}
+
 	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
 	for _, sq := range rQuery.ScopeQueries {
 		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery)
@@ -406,6 +421,19 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 		r = append(r, resultData)
 	}
 	return r, nil
+}
+
+// TODO : Remove scope arg from function signature after collections feature is released as access scopes will no longer be used in vuln reports
+func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConfiguration,
+	collection *storage.ResourceCollection, scope *storage.SimpleAccessScope, clusters []*storage.Cluster,
+	namespaces []*storage.NamespaceMetadata) (*common.ReportQuery, error) {
+	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, collection, rc.GetVulnReportFilters(),
+		s.collectionQueryResolver, timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
+	rQuery, err := qb.BuildQuery(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query")
+	}
+	return rQuery, nil
 }
 
 func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string) (common.Result, error) {
@@ -486,6 +514,18 @@ func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Q
 	return search.ResultsToIDs(results), nil
 }
 
+func (s *scheduler) Start() {
+	go s.runReports()
+}
+
+func (s *scheduler) Stop() {
+	s.stopper.Client().Stop()
+	err := s.stopper.Client().Stopped().Wait()
+	if err != nil {
+		log.Errorf("Error stopping vulnerability report scheduler : %v", err)
+	}
+}
+
 func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {
 	sort.SliceStable(deployments, func(i, j int) bool {
 		if deployments[i].Cluster.GetName() == deployments[j].Cluster.GetName() {
@@ -494,13 +534,4 @@ func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Depl
 		return deployments[i].Cluster.GetName() < deployments[j].Cluster.GetName()
 	})
 	return deployments
-}
-
-func (s *scheduler) Start() {
-	go s.runReports()
-}
-
-func (s *scheduler) Stop() {
-	s.stopper.Client().Stop()
-	_ = s.stopper.Client().Stopped().Wait()
 }

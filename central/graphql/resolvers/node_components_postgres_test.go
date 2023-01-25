@@ -51,15 +51,15 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = setupPostgresConn(s.T())
+	s.db, s.gormDB = SetupTestPostgresConn(s.T())
 
-	nodeDS := createNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	resolver, _ := setupResolver(s.T(),
-		createNodeCVEDatastore(s.T(), s.db, s.gormDB),
-		createNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+	nodeDS := CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	resolver, _ := SetupTestResolver(s.T(),
+		CreateTestNodeCVEDatastore(s.T(), s.db, s.gormDB),
+		CreateTestNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
 		nodeDS,
-		createNodeComponentCveEdgeDatastore(s.T(), s.db, s.gormDB),
-		createClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, nil, nil, nodeDS),
+		CreateTestNodeComponentCveEdgeDatastore(s.T(), s.db, s.gormDB),
+		CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, nil, nil, nodeDS),
 	)
 	s.resolver = resolver
 

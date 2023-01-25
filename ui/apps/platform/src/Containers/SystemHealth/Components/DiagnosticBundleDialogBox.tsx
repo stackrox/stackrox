@@ -11,6 +11,8 @@ import { fetchClustersAsArray } from 'services/ClustersService';
 import downloadDiagnostics from 'services/DebugService';
 
 import { Alert, AlertVariant } from '@patternfly/react-core';
+import useMetadata from 'hooks/useMetadata';
+import { getVersionedDocs } from 'utils/versioning';
 import FilterByStartingTimeValidationMessage from './FilterByStartingTimeValidationMessage';
 
 // Recommended format:
@@ -71,6 +73,8 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
     const [currentTimeObject, setCurrentTimeObject] = useState<Date | null>(null); // for pure message
 
     const [alertDownload, setAlertDownload] = useState<ReactElement | null>(null);
+
+    const { version } = useMetadata();
 
     useEffect(() => {
         fetchClustersAsArray()
@@ -219,19 +223,24 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
                         dataTestId="download-diagnostic-bundle-button"
                         text="Download Diagnostic Bundle"
                     />
-                    <div className="inline-flex flex-row text-tertiary-700">
-                        <a
-                            href="/docs/product/rhacs/latest/configuration/generate-diagnostic-bundle.html"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline"
-                        >
-                            Generate a diagnostic bundle
-                        </a>
-                        <span className="flex-shrink-0 ml-2">
-                            <ExternalLink className="h-4 w-4" />
-                        </span>
-                    </div>
+                    {version && (
+                        <div className="inline-flex flex-row text-tertiary-700">
+                            <a
+                                href={getVersionedDocs(
+                                    version,
+                                    'configuration/generate-diagnostic-bundle.html'
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline"
+                            >
+                                Generate a diagnostic bundle
+                            </a>
+                            <span className="flex-shrink-0 ml-2">
+                                <ExternalLink className="h-4 w-4" />
+                            </span>
+                        </div>
+                    )}
                 </div>
             </form>
         </div>
