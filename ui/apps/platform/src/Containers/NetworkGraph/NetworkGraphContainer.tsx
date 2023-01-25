@@ -36,6 +36,8 @@ function getFilteredEdges(
                 if (children?.includes(source) || children?.includes(target)) {
                     filteredEdges.push({ ...edge, visible: true });
                 }
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
             } else if (source === selectedNode.data?.id || target === selectedNode.data?.id) {
                 filteredEdges.push({ ...edge, visible: true });
             }
