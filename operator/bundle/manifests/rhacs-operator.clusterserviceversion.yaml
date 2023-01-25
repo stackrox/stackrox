@@ -748,69 +748,58 @@ spec:
     \ and remediation using the rich context Kubernetes provides.\n1. Increases scalability\
     \ and portability.\n1. Provides scalability and resiliency native to Kubernetes,\
     \ avoiding operational conflict and complexity that can result from out-of-band\
-    \ security controls.\n\n## Using the RHACS Operator\n\n**RHACS Operator channels:**\n\
-    \nRed Hat provides the RHACS Operator by using the following update channels in\
-    \ the Red Hat Operator catalog:\n\n* `stable`: Provides the most recent version\
-    \ and patches to the most recent version.\n  Using the `stable` channel and configuring\
-    \ automatic operator upgrades ensures that the most recent RHACS version is deployed.\n\
-    * `rhacs-x.yy` (for example, `rhacs-3.73`): Channels follow a specific RHACS version\
-    \ and include all patches to that version (e.g. `3.73.0`, `3.73.1`, ...).\n\n\
-    Note that the `latest` channel is deprecated and is not updated after RHACS version\
-    \ 3.73. Newer versions are published to the `stable` channel.\n\n**RHACS comes\
-    \ with two custom resources:**\n\n1. **Central Services** - Central is a deployment\
-    \ required on only one cluster in your environment. Users interact with RHACS\
-    \ via the user interface or APIs on Central. Central also sends notifications\
-    \ for violations and interacts with integrations. Users may select exposures for\
-    \ Central that best meet their environment.\n\n2. **Secured Cluster Services**\
-    \ - Secured cluster services are placed on each cluster you manage and report\
-    \ back to Central. These services allow users to enforce policies and monitor\
-    \ your OpenShift and Kubernetes clusters. Secured Cluster Services come as two\
-    \ Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).\n\
-    \n### Central Services Explained\n\n| Service                          | Deployment\
-    \ Type | Description     |\n| :------------------------------- | :--------------\
-    \ | :-------------- |\n| Central                          | Deployment      |\
-    \ Users interact with Red Hat Advanced Cluster Security through the user interface\
-    \ or APIs on Central. Central also sends notifications for violations and interacts\
-    \ with integrations. |\n| Central DB                       | Deployment      |\
-    \ Central DB is a PostgreSQL-based persistent storage for the data collected and\
-    \ managed by Central. |\n| Scanner                          | Deployment     \
-    \ | Scanner is a Red Hat developed and certified image scanner. Scanner analyzes\
-    \ and reports vulnerabilities for images. Scanner uses HPA to scale the number\
-    \ of replicas based on workload. |\n| Scanner DB                       | Deployment\
-    \      | Scanner DB is a cache for vulnerability definitions to serve vulnerability\
-    \ scanning use cases throughout the software development life cycle. |\n\n###\
-    \ Secured Cluster Services Explained\n\n| Service                          | Deployment\
-    \ Type | Description     |\n| :------------------------------- | :--------------\
-    \ | :-------------- |\n| Sensor                           | Deployment      |\
-    \ Sensor analyzes and monitors Kubernetes in secured clusters. |\n| Collector\
-    \                        | DaemonSet       | Analyzes and monitors container activity\
-    \ on Kubernetes nodes.|\n| Admission Controller             | Deployment     \
-    \ | ValidatingWebhookConfiguration for enforcing policies in the deploy lifecycle.\
-    \ |\n\n### Central Custom Resource\n\nCentral Services is the configuration template\
-    \ for RHACS Central deployment. For all customization options, please visit the\
-    \ RHACS documentation.\n\n### SecuredCluster Custom Resource\n\nSecuredCluster\
-    \ is the configuration template for the RHACS Secured Cluster services.\n\n####\
-    \ Installation Prerequisites\n\nBefore deploying a SecuredCluster resource, you\
-    \ need to create a cluster init bundle secret.\n\n- **Through the RHACS UI:**\
-    \ To create a cluster init bundle secret through the RHACS UI, navigate to `Platform\
-    \ Configuration > Clusters`, and then click `Manage Tokens` in the top-right corner.\
-    \ Select `Cluster Init Bundle`, and click `Generate Bundle`. Select `Download\
-    \ Kubernetes secrets file`, and store the file under a name of your choice (for\
-    \ example, `cluster-init-secrets.yaml`).\n- **Through the `roxctl` CLI:** To create\
-    \ a cluster init bundle secret through the `roxctl` command-line interface, run\
-    \ `roxctl central init-bundles generate <name> --output-secrets <file name>`.\
-    \ Choose any `name` and `file name` that you like.\n\nRun `oc project` and check\
-    \ that it reports the correct namespace where you intend to deploy SecuredCluster.\
-    \ In case you want to install SecuredCluster to a different namespace, select\
-    \ it by running `oc project <namespace>`.\nThen, run `oc create -f init-bundle.yaml`.\
-    \ If you have chosen a name other than `init-bundle.yaml`, specify that file name\
-    \ instead.\n\n#### Required Fields\n\nThe following attributes are required to\
-    \ be specified. For all customization options, please visit the RHACS documentation.\n\
-    \n| Parameter          | Description     |\n| :----------------- | :--------------\
-    \ |\n| `clusterName`      | The name given to this secured cluster. The cluster\
-    \ will appear with this name in RHACS user interface. |\n| `centralEndpoint` \
-    \ | This field should specify the address of the Central endpoint, including the\
-    \ port number. `centralEndpoint` may be omitted if this SecuredCluster Custom\
+    \ security controls.\n\n## Using the RHACS Operator\n\n**RHACS comes with two\
+    \ custom resources:**\n\n1. **Central Services** - Central is a deployment required\
+    \ on only one cluster in your environment. Users interact with RHACS via the user\
+    \ interface or APIs on Central. Central also sends notifications for violations\
+    \ and interacts with integrations. Users may select exposures for Central that\
+    \ best meet their environment.\n\n2. **Secured Cluster Services** - Secured cluster\
+    \ services are placed on each cluster you manage and report back to Central. These\
+    \ services allow users to enforce policies and monitor your OpenShift and Kubernetes\
+    \ clusters. Secured Cluster Services come as two Deployments (Sensor and Admission\
+    \ Controller) and one DaemonSet (Collector).\n\n### Central Services Explained\n\
+    \n| Service                          | Deployment Type | Description     |\n|\
+    \ :------------------------------- | :-------------- | :-------------- |\n| Central\
+    \                          | Deployment      | Users interact with Red Hat Advanced\
+    \ Cluster Security through the user interface or APIs on Central. Central also\
+    \ sends notifications for violations and interacts with integrations. |\n| Scanner\
+    \                          | Deployment      | Scanner is a Red Hat developed\
+    \ and certified image scanner. Scanner analyzes and reports vulnerabilities for\
+    \ images. Scanner uses HPA to scale the number of replicas based on workload.\
+    \ |\n| Scanner DB                       | Deployment      | Scanner DB is a cache\
+    \ for vulnerability definitions to serve vulnerability scanning use cases throughout\
+    \ the software development life cycle. |\n\n### Secured Cluster Services Explained\n\
+    \n| Service                          | Deployment Type | Description     |\n|\
+    \ :------------------------------- | :-------------- | :-------------- |\n| Sensor\
+    \                           | Deployment      | Sensor analyzes and monitors Kubernetes\
+    \ in secured clusters. |\n| Collector                        | DaemonSet     \
+    \  | Analyzes and monitors container activity on Kubernetes nodes.|\n| Admission\
+    \ Controller             | Deployment      | ValidatingWebhookConfiguration for\
+    \ enforcing policies in the deploy lifecycle. |\n\n### Central Custom Resource\n\
+    \nCentral Services is the configuration template for RHACS Central deployment.\
+    \ For all customization options, please visit the RHACS documentation.\n\n###\
+    \ SecuredCluster Custom Resource\n\nSecuredCluster is the configuration template\
+    \ for the RHACS Secured Cluster services.\n\n#### Installation Prerequisites\n\
+    \nBefore deploying a SecuredCluster resource, you need to create a cluster init\
+    \ bundle secret.\n\n- **Through the RHACS UI:** To create a cluster init bundle\
+    \ secret through the RHACS UI, navigate to `Platform Configuration > Clusters`,\
+    \ and then click `Manage Tokens` in the top-right corner. Select `Cluster Init\
+    \ Bundle`, and click `Generate Bundle`. Select `Download Kubernetes secrets file`,\
+    \ and store the file under a name of your choice (for example, `cluster-init-secrets.yaml`).\n\
+    - **Through the `roxctl` CLI:** To create a cluster init bundle secret through\
+    \ the `roxctl` command-line interface, run `roxctl central init-bundles generate\
+    \ <name> --output-secrets <file name>`. Choose any `name` and `file name` that\
+    \ you like.\n\nRun `oc project` and check that it reports the correct namespace\
+    \ where you intend to deploy SecuredCluster. In case you want to install SecuredCluster\
+    \ to a different namespace, select it by running `oc project <namespace>`.\nThen,\
+    \ run `oc create -f init-bundle.yaml`. If you have chosen a name other than `init-bundle.yaml`,\
+    \ specify that file name instead.\n\n#### Required Fields\n\nThe following attributes\
+    \ are required to be specified. For all customization options, please visit the\
+    \ RHACS documentation.\n\n| Parameter          | Description     |\n| :-----------------\
+    \ | :-------------- |\n| `clusterName`      | The name given to this secured cluster.\
+    \ The cluster will appear with this name in RHACS user interface. |\n| `centralEndpoint`\
+    \  | This field should specify the address of the Central endpoint, including\
+    \ the port number. `centralEndpoint` may be omitted if this SecuredCluster Custom\
     \ Resource is in the same cluster and namespace as Central. |\n"
   displayName: Advanced Cluster Security for Kubernetes
   icon:
