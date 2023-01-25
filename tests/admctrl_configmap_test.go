@@ -10,17 +10,23 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestAdmissionControllerConfigMap(t *testing.T) {
-	t.Skip("ROX-14495: This test is not working.")
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Setenv(features.NewPolicyCategories.Name(), "true")
+	}
+
 	k8sClient := createK8sClient(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -51,10 +57,10 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 
 	policyServiceClient := v1.NewPolicyServiceClient(cc)
 	newPolicy := &storage.Policy{
-		Name:        "testpolicy_" + t.Name(),
+		Name:        "testpolicy_" + t.Name() + "_" + uuid.NewV4().String(),
 		Description: "test deploy time policy",
 		Rationale:   "test deploy time policy",
-		Categories:  []string{"test"},
+		Categories:  []string{"Test"},
 		PolicySections: []*storage.PolicySection{
 			{
 				SectionName: "section-1",
@@ -114,7 +120,6 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 		assert.Len(t, newPolicyList.GetPolicies(), len(policyList.GetPolicies())+1, "expected one additional policy")
 		numMatches := 0
 		for _, policy := range newPolicyList.GetPolicies() {
-			log.Infof("policy: %v", policy)
 			if proto.Equal(policy, newPolicy) {
 				numMatches++
 			}
