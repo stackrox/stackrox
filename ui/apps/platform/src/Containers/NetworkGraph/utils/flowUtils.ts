@@ -304,7 +304,7 @@ export function createFlowsFromGroupedDiffFlows(
     return flows;
 }
 
-export function getNumAllowedEgressFlows(nodes: CustomNodeModel[]): number {
+export function getNumExtraneousEgressFlows(nodes: CustomNodeModel[]): number {
     const extraneousEgressNode = nodes.find((node) => {
         return node.id === 'extraneous-egress-flows';
     });
@@ -316,7 +316,7 @@ export function getNumAllowedEgressFlows(nodes: CustomNodeModel[]): number {
     return numAllowedEgressFlows;
 }
 
-export function getNumAllowedIngressFlows(nodes: CustomNodeModel[]): number {
+export function getNumExtraneousIngressFlows(nodes: CustomNodeModel[]): number {
     const extraneousIngressNode = nodes.find((node) => {
         return node.id === 'extraneous-ingress-flows';
     });

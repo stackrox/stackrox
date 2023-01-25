@@ -18,8 +18,8 @@ import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import {
     filterNetworkFlows,
     getAllUniquePorts,
-    getNumAllowedEgressFlows,
-    getNumAllowedIngressFlows,
+    getNumExtraneousEgressFlows,
+    getNumExtraneousIngressFlows,
     getNumFlows,
 } from '../utils/flowUtils';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
@@ -74,9 +74,9 @@ function DeploymentFlows({ deploymentId, nodes, edges, edgeState }: DeploymentFl
     // derived data
     const numFlows = getNumFlows(filteredFlows);
     const allUniquePorts = getAllUniquePorts(networkFlows);
-    const numAllowedEgressFlows = getNumAllowedEgressFlows(nodes);
-    const numAllowedIngressFlows = getNumAllowedIngressFlows(nodes);
-    const totalFlows = numFlows + numAllowedEgressFlows + numAllowedIngressFlows;
+    const numExtraneousEgressFlows = getNumExtraneousEgressFlows(nodes);
+    const numExtraneousIngressFlows = getNumExtraneousIngressFlows(nodes);
+    const totalFlows = numFlows + numExtraneousEgressFlows + numExtraneousIngressFlows;
 
     function addToBaseline(flow: Flow) {
         modifyBaselineStatuses([flow], 'BASELINE', refetchFlows);
@@ -166,8 +166,8 @@ function DeploymentFlows({ deploymentId, nodes, edges, edgeState }: DeploymentFl
                         setSelectedRows={setSelectedRows}
                         addToBaseline={addToBaseline}
                         markAsAnomalous={markAsAnomalous}
-                        numAllowedEgressFlows={numAllowedEgressFlows}
-                        numAllowedIngressFlows={numAllowedIngressFlows}
+                        numExtraneousEgressFlows={numExtraneousEgressFlows}
+                        numExtraneousIngressFlows={numExtraneousIngressFlows}
                         isEditable
                     />
                 </StackItem>
