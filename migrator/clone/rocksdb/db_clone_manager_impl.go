@@ -216,6 +216,13 @@ func (d *dbCloneManagerImpl) Persist(cloneName string) error {
 		return d.doPersist(cloneName, BackupClone)
 	case CurrentClone:
 		// No need to persist
+		// Touch current to make sure update time is calculated correctly for case of
+		// Rocks -> Postgres -> Rocks -> Postgres migrations to ensure migrations
+		// run again when going back to Postgres
+		cmd := exec.Command("touch", d.getPath(cloneName))
+		if output, err := cmd.CombinedOutput(); err != nil {
+			log.Warnf("Unable to update time stamp on current: %s", output)
+		}
 	case TempClone:
 		return d.doPersist(cloneName, PreviousClone)
 	case PreviousClone:
