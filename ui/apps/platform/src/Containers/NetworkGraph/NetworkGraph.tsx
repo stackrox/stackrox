@@ -375,9 +375,14 @@ const NetworkGraph = React.memo<NetworkGraphProps>(
                 simulation,
                 clusterId: selectedClusterId,
             });
+        const isSimulating =
+            simulator.state === 'GENERATED' ||
+            simulator.state === 'UNDO' ||
+            simulator.state === 'UPLOAD' ||
+            (simulation.isOn && simulation.type === 'baseline');
 
         return (
-            <SimulationFrame simulator={simulator}>
+            <SimulationFrame isSimulating={isSimulating}>
                 <VisualizationProvider controller={controller}>
                     <TopologyComponent
                         model={model}
