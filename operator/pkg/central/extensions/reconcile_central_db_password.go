@@ -66,25 +66,29 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 }
 
 func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) error {
-	if r.centralObj.DeletionTimestamp != nil || !r.centralObj.Spec.Central.CentralDBEnabled() {
+	if r.centralObj.DeletionTimestamp != nil {
 		return r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, false, nil, nil, false)
 	}
 
-	dbSpec := r.centralObj.Spec.Central.DB // non-nil thanks to CentralDBEnabled() check above
-	dbPasswordSecret := dbSpec.PasswordSecret
-	if dbSpec.IsExternal() && dbPasswordSecret == nil {
-		return errors.New("setting spec.central.db.passwordSecret is mandatory when using an external DB")
+	centralSpec := r.centralObj.Spec.Central
+	if centralSpec != nil && centralSpec.DB != nil {
+		dbSpec := centralSpec.DB
+		dbPasswordSecret := dbSpec.PasswordSecret
+		if dbSpec.IsExternal() && dbPasswordSecret == nil {
+			return errors.New("setting spec.central.db.passwordSecret is mandatory when using an external DB")
+		}
+
+		if dbPasswordSecret != nil {
+			if err := r.readAndSetPasswordFromReferencedSecret(ctx); err != nil {
+				return err
+			}
+			// If the user wants to use the central-db-password secret directly, that's fine, and we don't have anything more to do.
+			if dbPasswordSecret.Name == canonicalCentralDBPasswordSecretName {
+				return nil
+			}
+		}
 	}
 
-	if dbPasswordSecret != nil {
-		if err := r.readAndSetPasswordFromReferencedSecret(ctx); err != nil {
-			return err
-		}
-		// If the user wants to use the central-db-password secret directly, that's fine, and we don't have anything more to do.
-		if dbPasswordSecret.Name == canonicalCentralDBPasswordSecretName {
-			return nil
-		}
-	}
 	// At this point, r.password was set via readAndSetPasswordFromReferencedSecret above (user-specified mode), or is unset,
 	// in which case the auto-generation logic will take effect.
 	if err := r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, true, r.validateSecretData, r.generateDBPassword, true); err != nil {

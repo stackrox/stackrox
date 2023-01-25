@@ -65,6 +65,18 @@ func TestCreateCentralTLS(t *testing.T) {
 		Data: centralFileMap,
 	}
 
+	centralDBFileMap := make(types.SecretDataMap)
+	certgen.AddCACertToFileMap(centralDBFileMap, testCA)
+	require.NoError(t, certgen.IssueServiceCert(centralDBFileMap, testCA, mtls.CentralDBSubject, ""))
+
+	existingCentralDB := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-db-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralDBFileMap,
+	}
+
 	scannerFileMap := make(types.SecretDataMap)
 	certgen.AddCACertToFileMap(scannerFileMap, testCA)
 	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerSubject, ""))
@@ -90,10 +102,11 @@ func TestCreateCentralTLS(t *testing.T) {
 	}
 
 	cases := map[string]secretReconciliationTestCase{
-		"When no secrets exist and scanner is disabled, a managed central-tls secret should be created": {
+		"When no secrets exist and scanner is disabled, a managed central-tls and central-db-tls secrets should be created": {
 			Spec: basicSpecWithScanner(false),
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"central-tls": verifyCentralCert,
+				"central-tls":    verifyCentralCert,
+				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
 			},
 		},
 		"When no secrets exist and scanner is disabled but secured cluster exists, a managed central-tls secret and init bundle secrets should be created": {
@@ -106,6 +119,7 @@ func TestCreateCentralTLS(t *testing.T) {
 			}},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-tls":           verifyCentralCert,
+				"central-db-tls":        verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
 				"admission-control-tls": verifySecuredClusterServiceCert(storage.ServiceType_ADMISSION_CONTROL_SERVICE),
 				"collector-tls":         verifySecuredClusterServiceCert(storage.ServiceType_COLLECTOR_SERVICE),
 				"sensor-tls":            verifySecuredClusterServiceCert(storage.ServiceType_SENSOR_SERVICE),
@@ -115,17 +129,18 @@ func TestCreateCentralTLS(t *testing.T) {
 			Spec: basicSpecWithScanner(true),
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
+				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
 				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
 				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 			},
 		},
-		"When a valid unmanaged central-tls secret exists and scanner is disabled, no further secrets should be created": {
+		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is disabled, no further secrets should be created": {
 			Spec:     basicSpecWithScanner(false),
-			Existing: []*v1.Secret{existingCentral},
+			Existing: []*v1.Secret{existingCentral, existingCentralDB},
 		},
-		"When a valid unmanaged central-tls secret exists and scanner is enabled, managed secrets should be created for scanner": {
+		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is enabled, managed secrets should be created for scanner": {
 			Spec:     basicSpecWithScanner(true),
-			Existing: []*v1.Secret{existingCentral},
+			Existing: []*v1.Secret{existingCentral, existingCentralDB},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
 				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
@@ -133,11 +148,11 @@ func TestCreateCentralTLS(t *testing.T) {
 		},
 		"When valid unmanaged secrets exist for everything and scanner is disabled, no secrets should be created or deleted": {
 			Spec:     basicSpecWithScanner(false),
-			Existing: []*v1.Secret{existingCentral, existingScanner, existingScannerDB},
+			Existing: []*v1.Secret{existingCentral, existingCentralDB, existingScanner, existingScannerDB},
 		},
 		"When valid unmanaged secrets exist for everything and scanner is enabled, no secrets should be created or deleted": {
 			Spec:     basicSpecWithScanner(true),
-			Existing: []*v1.Secret{existingCentral, existingScanner, existingScannerDB},
+			Existing: []*v1.Secret{existingCentral, existingCentralDB, existingScanner, existingScannerDB},
 		},
 		// TODO(ROX-7416): Test error cases
 	}
