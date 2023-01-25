@@ -39,16 +39,6 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-type PolicyIDAndCategories struct {
-	Id         string   `gorm:"column:id;type:varchar;primaryKey"`
-	Categories []string `gorm:"column:categories;type:varchar"`
-}
-
-type Categories struct {
-	Id   string `gorm:"column:id;type:varchar;primaryKey"`
-	Name string `gorm:"column:name;type:varchar"`
-}
-
 func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTablePolicyCategoryEdgesStmt)
 
@@ -99,9 +89,10 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
 				policyToCategoryIDsMap[p.Id] = append(policyToCategoryIDsMap[p.Id], id)
 				categoryNameToIDMap[c] = id
 			}
-			p.Categories = []string{}
-			policiesToUpdate = append(policiesToUpdate, p)
 		}
+		// policies will be upserted without category info
+		p.Categories = []string{}
+		policiesToUpdate = append(policiesToUpdate, p)
 
 		return nil
 	})
@@ -125,7 +116,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
 		}
 	}
 
-	//blank out policy categories for each policy and write those back
+	//upsert policies with blank categories
 	if err = policyStore.UpsertMany(ctx, policiesToUpdate); err != nil {
 		return err
 	}
