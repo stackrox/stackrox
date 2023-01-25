@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,41 +17,35 @@ var (
 	},
 		[]string{
 			// The Node this scan belongs to
-			"nodeName",
-			// The number of installed RHEL packages discovered by the scan
-			"numRHELPackages",
+			"node_name",
 		})
 
-	scanTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	scanTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
-		Name:      "inventory_scan_time_seconds",
-		Help:      "Scan time for Node Inventory (per Node)",
+		Name:      "inventory_scan_time",
+		Help:      "Scan time for Node Inventory (per Node) in seconds",
 	},
 		[]string{
-			// The time it took to complete the Node Inventory scan on a given node
-			"scanTime",
+			// The Node this scan belongs to
+			"node_name",
 		})
 )
 
 // ObserveNodeInventoryScan observes the metric.
-func ObserveNodeInventoryScan(inventory *storage.NodeInventory) {
+func ObserveNodeInventoryScan(inventory *storage.NodeInventory, scanDuration time.Duration) {
 	rhelPackageCount := 0
 	if inventory.Components.RhelComponents != nil {
 		rhelPackageCount = len(inventory.Components.RhelComponents)
 	}
 
 	numberOfRHELPackages.With(prometheus.Labels{
-		"nodeName":        inventory.NodeName,
-		"numRHELPackages": fmt.Sprintf("%d", rhelPackageCount),
-	})
-}
+		"nodeName": inventory.NodeName,
+	}).Set(float64(rhelPackageCount))
 
-// ObserveNodeInventoryScanTime observes the metric.
-func ObserveNodeInventoryScanTime(duration time.Duration) {
 	scanTime.With(prometheus.Labels{
-		"scanTime": fmt.Sprintf("%d", duration),
-	})
+		"nodeName": inventory.NodeName,
+	}).Observe(scanDuration.Seconds())
 }
 
 func init() {

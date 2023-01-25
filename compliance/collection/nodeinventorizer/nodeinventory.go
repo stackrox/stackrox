@@ -30,7 +30,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	// which only exists in certified versions
 	componentsHost, err := nodes.Analyze(nodeName, "/host/", nodes.AnalyzeOpts{UncertifiedRHEL: false, IsRHCOSRequired: true})
 	endTime := time.Since(startTime)
-	metrics.ObserveNodeInventoryScanTime(endTime)
+
 	log.Info("Finished node inventory")
 
 	if err != nil {
@@ -59,7 +59,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 		Notes:      []storage.NodeInventory_Note{storage.NodeInventory_LANGUAGE_CVES_UNAVAILABLE},
 	}
 
-	metrics.ObserveNodeInventoryScan(m)
+	metrics.ObserveNodeInventoryScan(m, endTime)
 	return m, nil
 }
 
