@@ -50,7 +50,6 @@ type Categories struct {
 }
 
 func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
-	// TODO: check
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTablePolicyCategoryEdgesStmt)
 
 	ctx := sac.WithAllAccess(context.Background())
