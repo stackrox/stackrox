@@ -120,11 +120,6 @@ export function getNetworkFlows(
     id: string
 ): Flow[] {
     const networkFlows: Flow[] = edges.reduce((acc, edge) => {
-        // filter out edges not connected to node with selected id
-        if ((edge.source !== id && edge.target !== id) || !edge.source || !edge.target) {
-            return acc;
-        }
-
         const isSourceNodeSelected = edge.source === id;
 
         const sourceNode = controller.getNodeById(edge.source);

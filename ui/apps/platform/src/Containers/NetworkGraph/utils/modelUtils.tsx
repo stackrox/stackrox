@@ -190,7 +190,6 @@ export function transformActiveData(
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
-        updateCount: 0,
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
@@ -340,15 +339,14 @@ function getNetworkPolicyState(
 // external connections can only be active, so this is hard coded to false
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
-export function transformPolicyData(
-    nodes: Node[],
-    flows: number
-): { policyDataModel: CustomModel; policyNodeMap: Record<string, DeploymentNodeModel> } {
+export function transformPolicyData(nodes: Node[]): {
+    policyDataModel: CustomModel;
+    policyNodeMap: Record<string, DeploymentNodeModel>;
+} {
     const policyDataModel: CustomModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
-        updateCount: 0,
     };
     // set policyNodeMap to be able to cross reference nodes by id to enhance active node data
     const policyNodeMap: Record<string, DeploymentNodeModel> = {};
@@ -420,9 +418,6 @@ export function transformPolicyData(
             }
         });
     });
-    const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes(flows);
-    policyDataModel.nodes.push(extraneousEgressNode);
-    policyDataModel.nodes.push(extraneousIngressNode);
     policyDataModel.edges.push(...Object.values(policyEdgeMap));
     return { policyDataModel, policyNodeMap };
 }
@@ -436,7 +431,6 @@ export function createExtraneousFlowsModel(
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
-        updateCount: 0,
     };
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     let externalNode: ExternalGroupNodeModel | null = null;
@@ -460,7 +454,7 @@ export function createExtraneousFlowsModel(
     // only add to extraneous flows model when policy edge is not in the active graph
     policyDataModel.edges?.forEach((policyEdge) => {
         const { id: policyEdgeId, source, target } = policyEdge;
-        const reversePolicyEdgeId = `${target as string}-${source as string}`;
+        const reversePolicyEdgeId = `${target}-${source}`;
         const activeEdge = activeEdgeMap[policyEdgeId];
         const activeReverseEdge = activeEdgeMap[reversePolicyEdgeId];
 
@@ -535,11 +529,11 @@ export function createExtraneousFlowsModel(
 }
 
 export function createExtraneousNodes(numFlows: number): {
-    extraneousEgressNode: ExtraneousNodeModel;
-    extraneousIngressNode: ExtraneousNodeModel;
+    egressFlowsNode: ExtraneousNodeModel;
+    ingressFlowsNode: ExtraneousNodeModel;
 } {
-    const extraneousEgressNode: ExtraneousNodeModel = {
-        id: 'extraneous-egress',
+    const egressFlowsNode: ExtraneousNodeModel = {
+        id: 'extraneous-egress-flows',
         type: 'fakeGroup',
         width: 75,
         height: 75,
@@ -552,8 +546,8 @@ export function createExtraneousNodes(numFlows: number): {
             numFlows,
         },
     };
-    const extraneousIngressNode: ExtraneousNodeModel = {
-        id: 'extraneous-ingress',
+    const ingressFlowsNode: ExtraneousNodeModel = {
+        id: 'extraneous-ingress-flows',
         type: 'fakeGroup',
         width: 75,
         height: 75,
@@ -566,7 +560,7 @@ export function createExtraneousNodes(numFlows: number): {
             numFlows,
         },
     };
-    return { extraneousEgressNode, extraneousIngressNode };
+    return { egressFlowsNode, ingressFlowsNode };
 }
 
 export function createExtraneousEdges(selectedNodeId: string): {
@@ -577,7 +571,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
         id: 'extraneous-egress-edge',
         type: 'edge',
         source: selectedNodeId,
-        target: 'extraneous-egress',
+        target: 'extraneous-egress-flows',
         visible: true,
         edgeStyle: EdgeStyle.dashed,
         data: {
@@ -589,7 +583,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
     const extraneousIngressEdge = {
         id: 'extraneous-ingress-edge',
         type: 'edge',
-        source: 'extraneous-ingress',
+        source: 'extraneous-ingress-flows',
         target: selectedNodeId,
         visible: true,
         edgeStyle: EdgeStyle.dashed,
