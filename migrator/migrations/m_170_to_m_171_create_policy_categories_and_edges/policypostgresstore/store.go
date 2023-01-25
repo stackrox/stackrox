@@ -2,21 +2,17 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -32,9 +28,8 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.PoliciesSchema
-	targetResource = resources.Policy
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.PoliciesSchema
 )
 
 // Store is the interface to interact with the storage for storage.Policy
@@ -222,7 +217,6 @@ func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Poli
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -264,14 +258,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Policy) error {
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Policy")
-
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
 
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
@@ -306,13 +293,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 
 // UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Policy")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
@@ -329,27 +309,12 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) erro
 
 // Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Policy")
-
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return 0, nil
-	}
-
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Policy) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Policy")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return pgutils.Retry(func() error {
 		return s.upsert(ctx, obj)
 	})
@@ -357,14 +322,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Policy) error {
 
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Policy, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Policy")
-
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, false, nil
-	}
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
@@ -382,10 +340,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Policy, bool, 
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil
-	}
 	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.Policy](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err

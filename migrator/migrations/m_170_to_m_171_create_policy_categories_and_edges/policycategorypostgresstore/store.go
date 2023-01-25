@@ -2,21 +2,17 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -30,9 +26,8 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.PolicyCategoriesSchema
-	targetResource = resources.Policy
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.PolicyCategoriesSchema
 )
 
 // Store is the interface to interact with the storage for storage.PolicyCategory
@@ -58,14 +53,8 @@ func New(db *pgxpool.Pool) Store {
 
 // GetByQuery returns the objects from the store matching the query.
 func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.PolicyCategory, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "PolicyCategory")
-
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil
-	}
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		query,
@@ -83,24 +72,14 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 
 // Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "PolicyCategory")
 
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return 0, nil
-	}
 
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil
-	}
 	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.PolicyCategory](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
@@ -125,13 +104,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategor
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.PolicyCategory) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "PolicyCategory")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return pgutils.Retry(func() error {
 		return s.upsert(ctx, obj)
 	})
@@ -158,7 +130,6 @@ func dropTablePolicyCategories(ctx context.Context, db *pgxpool.Pool) {
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err

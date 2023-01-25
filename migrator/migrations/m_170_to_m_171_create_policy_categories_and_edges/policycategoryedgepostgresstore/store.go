@@ -9,14 +9,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -37,9 +35,8 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.PolicyCategoryEdgesSchema
-	targetResource = resources.Policy
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.PolicyCategoryEdgesSchema
 )
 
 // Store is the interface to interact with the storage for storage.PolicyCategoryEdge
@@ -208,11 +205,6 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryE
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "PolicyCategoryEdge")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
@@ -243,12 +235,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "PolicyCategoryEdge")
 
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
 	numRecordsToDelete := len(ids)
@@ -283,10 +269,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil
-	}
 	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.PolicyCategoryEdge](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
