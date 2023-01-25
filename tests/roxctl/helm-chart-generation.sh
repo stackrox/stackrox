@@ -25,7 +25,7 @@ die() {
 test_central_services_chart_generation() {
     local chart_name="central-services"
     local output_dir="$(mktemp -d)"
-    local chart_output_dir="$output_dir/chart"
+    local chart_output_dir="$output_dir/uncharted"
 
     if OUTPUT="$(roxctl helm output "$chart_name" --output-dir="$chart_output_dir" 2>&1)"; then
         echo "[OK] 'roxctl helm output $chart_name' succeeded"

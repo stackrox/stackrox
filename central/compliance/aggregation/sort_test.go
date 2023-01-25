@@ -9,7 +9,7 @@ import (
 
 func TestVersionComparator(t *testing.T) {
 	// 1.20 is after 1.2
-	assert.Equal(t, 1, versionCompare("1_20", "1_2"))
+	assert.Equal(t, 1, versionCompare("1_2", "1_21"))
 
 	// 1.20.a is before 1.20.b
 	assert.Equal(t, -1, versionCompare("1_20_a", "1_20_b"))

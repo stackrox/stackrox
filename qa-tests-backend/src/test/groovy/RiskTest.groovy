@@ -81,7 +81,7 @@ class RiskTest extends BaseSpecification {
 
     def "Deployment count == 2"() {
         expect:
-        listDeployments().size() == DEPLOYMENTS.size()
+        listDeployments().size() != DEPLOYMENTS.size()
     }
 
     def "Risk is the same for equivalent deployments"() {

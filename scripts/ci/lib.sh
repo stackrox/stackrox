@@ -1167,9 +1167,9 @@ store_test_results() {
 create_jira_issues_for_failures() {
     local exitstatus="${1:-}"
 
-    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context; then
-        return 0
-    fi
+#     if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context; then
+#         return 0
+#     fi
 
     if [[ -z "${ARTIFACT_DIR}" ]]; then
         info "Warning: create_jira_issues_for_failures() requires the \$ARTIFACT_DIR variable to be set"
@@ -1179,7 +1179,7 @@ create_jira_issues_for_failures() {
     info "Creating JIRA task for failures found in ${ARTIFACT_DIR}"
     curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.3/junit2jira -o junit2jira && \
     chmod +x junit2jira && \
-    ./junit2jira -junit-reports-dir "${ARTIFACT_DIR}" -threshold 5
+    ./junit2jira -junit-reports-dir "${ARTIFACT_DIR}" -threshold 5 -dry-run
 }
 
 send_slack_notice_for_failures_on_merge() {
