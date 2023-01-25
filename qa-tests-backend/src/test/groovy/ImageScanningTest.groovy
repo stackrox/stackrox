@@ -428,12 +428,13 @@ class ImageScanningTest extends BaseSpecification {
         "Data inputs are: "
 
         scanner                          | component      | version            | idx | cve              | image        | registry
-        new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "RHSA-2014:1052" | RHEL7_IMAGE  | ""
-        new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "CVE-2014-3509"  | RHEL7_IMAGE  | ""
-        new StackroxScannerIntegration() | "systemd"      | "229-4ubuntu21.29" | 0   | "CVE-2021-33910" | OCI_IMAGE    | ""
-        new ClairScannerIntegration()    | "apt"          | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE  | ""
-        new ClairScannerIntegration()    | "bash"         | "4.4-5"            | 0   | "CVE-2019-18276" | NGINX_IMAGE  | ""
-        new ClairV4ScannerIntegration()  | "openssl-libs" | "1.1.1-8.el8"      | 0   | "RHSA-2021:1024" | UBI8_0_IMAGE | ""
+        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.1e-34.el7"  | 1   | "RHSA-2014:1052" | RHEL7_IMAGE  | ""
+        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.1e-34.el7"  | 1   | "CVE-2014-3509"  | RHEL7_IMAGE  | ""
+        new StackroxScannerIntegration() | "systemd"             | "229-4ubuntu21.29" | 0   | "CVE-2021-33910" | OCI_IMAGE    | ""
+        new ClairScannerIntegration()    | "apt"                 | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE  | ""
+        new ClairScannerIntegration()    | "bash"                | "4.4-5"            | 0   | "CVE-2019-18276" | NGINX_IMAGE  | ""
+        new ClairV4ScannerIntegration()  | "openssl-libs"        | "1:1.1.1-8.el8"    | 0   | "RHSA-2021:1024" | UBI8_0_IMAGE | ""
+        new ClairV4ScannerIntegration()  | "platform-python-pip" | "9.0.3-13.el8"     | 0   | "RHSA-2020:4432" | UBI8_0_IMAGE | ""
     }
 
     @Unroll
