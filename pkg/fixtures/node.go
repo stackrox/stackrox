@@ -43,6 +43,9 @@ func getNodeWithComponents(components []*storage.EmbeddedNodeScanComponent) *sto
 			ScanTime:   types.TimestampNow(),
 			Components: components,
 		},
+		SetComponents: &storage.Node_Components{
+			Components: int32(len(components)),
+		},
 	}
 }
 
