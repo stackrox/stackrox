@@ -53,6 +53,7 @@ import services.PolicyService
 import services.ProcessService
 import services.RoleService
 import util.Timer
+import util.Env
 
 import org.junit.Assume
 import spock.lang.IgnoreIf
@@ -623,6 +624,8 @@ class ComplianceTest extends BaseSpecification {
     */
 
     @Tag("BAT")
+    // skipping tests using SLACK_MAIN_WEBHOOK on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify checks based on Integrations"() {
         def failureEvidence = ["No image scanners are being used in the cluster"]
         def controls = [
