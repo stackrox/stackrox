@@ -65,16 +65,16 @@ func BenchmarkNodeResolver(b *testing.B) {
 
 	mockCtrl := gomock.NewController(b)
 	defer mockCtrl.Finish()
-	db, gormDB := setupPostgresConn(b)
+	db, gormDB := SetupTestPostgresConn(b)
 	defer pgtest.CloseGormDB(b, gormDB)
 	defer db.Close()
 
-	nodeDS := createNodeDatastore(b, db, gormDB, mockCtrl)
-	_, schema := setupResolver(b,
+	nodeDS := CreateTestNodeDatastore(b, db, gormDB, mockCtrl)
+	_, schema := SetupTestResolver(b,
 		nodeDS,
-		createNodeComponentDatastore(b, db, gormDB, mockCtrl),
-		createNodeCVEDatastore(b, db, gormDB),
-		createNodeComponentCveEdgeDatastore(b, db, gormDB))
+		CreateTestNodeComponentDatastore(b, db, gormDB, mockCtrl),
+		CreateTestNodeCVEDatastore(b, db, gormDB),
+		CreateTestNodeComponentCveEdgeDatastore(b, db, gormDB))
 
 	ctx := contextWithNodePerm(b, mockCtrl)
 

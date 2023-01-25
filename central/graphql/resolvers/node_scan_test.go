@@ -80,7 +80,7 @@ func (s *NodeScanResolverTestSuite) SetupTest() {
 	s.nodeComponentDataStore = nodeComponentsDSMocks.NewMockDataStore(s.mockCtrl)
 	s.nodeCVEDataStore = nodeCVEsDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.resolver, s.schema = setupResolver(s.T(), s.nodeDataStore, s.nodeComponentDataStore, s.nodeCVEDataStore, nil)
+	s.resolver, s.schema = SetupTestResolver(s.T(), s.nodeDataStore, s.nodeComponentDataStore, s.nodeCVEDataStore, nil)
 }
 
 func (s *NodeScanResolverTestSuite) TearDownTest() {
