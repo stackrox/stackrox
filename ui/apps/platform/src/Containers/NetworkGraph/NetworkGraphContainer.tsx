@@ -137,13 +137,11 @@ function getDisplayNodes(
 function getDisplayEdges(edges: CustomEdgeModel[], showEdgeLabels: boolean): CustomEdgeModel[] {
     return edges.map((edge) => {
         const { data } = edge;
-        const { properties } = data;
         return {
             ...edge,
             visible: true,
             data: {
                 ...data,
-                properties,
                 tag: showEdgeLabels ? data.portProtocolLabel : undefined,
             },
         };
