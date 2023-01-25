@@ -39,6 +39,7 @@ import installRaven from 'installRaven';
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
 import { fetchPublicConfigThunk } from './reducers/systemConfig';
+import { fetchTelemetryConfigThunk } from './reducers/telemetryConfig';
 import configureApollo from './configureApolloClient';
 
 // We need to call this MobX utility function, to prevent the error
@@ -61,6 +62,7 @@ const dispatch = (action) =>
 
 dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
+dispatch(fetchTelemetryConfigThunk());
 
 ReactDOM.render(
     <Provider store={store}>
