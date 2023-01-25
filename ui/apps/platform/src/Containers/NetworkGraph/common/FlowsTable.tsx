@@ -49,18 +49,18 @@ function FlowsTable({
     markAsAnomalous,
 }: FlowsTableProps): ReactElement {
     // getter functions
-    const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
-    const areAllRowsSelected = selectedRows.length !== 0 && selectedRows.length === numFlows;
-    const isRowSelected = (row: Flow) => selectedRows.includes(row.id);
+    const isRowExpanded = (row: Flow) => expandedRows?.includes(row.id);
+    const areAllRowsSelected = selectedRows?.length !== 0 && selectedRows?.length === numFlows;
+    const isRowSelected = (row: Flow) => selectedRows?.includes(row.id);
 
     // setter functions
     const setRowExpanded = (row: Flow, isExpanding = true) =>
-        setExpandedRows((prevExpanded) => {
+        setExpandedRows?.((prevExpanded) => {
             const otherExpandedRows = prevExpanded.filter((r) => r !== row.id);
             return isExpanding ? [...otherExpandedRows, row.id] : otherExpandedRows;
         });
     const setRowSelected = (row: Flow, isSelecting = true) =>
-        setSelectedRows((prevSelected) => {
+        setSelectedRows?.((prevSelected) => {
             const otherSelectedRows = prevSelected.filter((r) => r !== row.id);
             return isSelecting ? [...otherSelectedRows, row.id] : otherSelectedRows;
         });
@@ -72,9 +72,9 @@ function FlowsTable({
                 }
                 return [...acc, curr.id];
             }, [] as string[]);
-            return setSelectedRows(newSelectedRows);
+            return setSelectedRows?.(newSelectedRows);
         }
-        return setSelectedRows([]);
+        return setSelectedRows?.([]);
     };
 
     return (

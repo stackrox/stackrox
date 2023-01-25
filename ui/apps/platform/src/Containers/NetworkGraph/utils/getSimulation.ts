@@ -1,8 +1,10 @@
 import { QueryValue } from 'hooks/useURLParameter';
 
+export type SimulationType = 'baseline' | 'networkPolicy';
+
 type SimulationOn = {
     isOn: true;
-    type: 'baseline' | 'networkPolicy';
+    type: SimulationType;
 };
 
 type SimulationOff = {
