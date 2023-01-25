@@ -3,7 +3,6 @@ import {
     Alert,
     AlertVariant,
     Bullseye,
-    Button,
     Checkbox,
     Divider,
     Flex,
@@ -33,6 +32,7 @@ import useFetchNetworkBaselines from '../api/useFetchNetworkBaselines';
 import { Flow } from '../types/flow.type';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
+import SimulateBaselinesButton from './SimulateBaselinesButton';
 
 type DeploymentBaselinesProps = {
     deploymentId: string;
@@ -217,7 +217,7 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                             />
                         </FlexItem>
                         <FlexItem>
-                            <Button variant="primary">Simulate baseline as network policy</Button>
+                            <SimulateBaselinesButton />
                         </FlexItem>
                     </Flex>
                 </StackItem>

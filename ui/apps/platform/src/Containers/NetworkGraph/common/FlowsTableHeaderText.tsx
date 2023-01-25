@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { Text, TextContent, TextVariants } from '@patternfly/react-core';
 
 type FlowsTableHeaderTextProps = {
-    type: 'baseline' | 'active' | 'extraneous';
+    type: 'baseline' | 'active' | 'extraneous' | 'baseline simulated';
     numFlows: number;
 };
 
