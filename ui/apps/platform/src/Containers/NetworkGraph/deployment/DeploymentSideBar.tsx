@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Alert,
     AlertVariant,
@@ -32,6 +32,8 @@ import DeploymentDetails from './DeploymentDetails';
 import DeploymentFlows from './DeploymentFlows';
 import DeploymentBaselines from './DeploymentBaselines';
 import NetworkPolicies from '../common/NetworkPolicies';
+import useSimulation from '../hooks/useSimulation';
+import DeploymentBaselinesSimulated from './DeploymentBaselinesSimulated';
 
 type DeploymentSideBarProps = {
     deploymentId: string;
@@ -42,9 +44,17 @@ type DeploymentSideBarProps = {
 function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProps) {
     // component state
     const { deployment, isLoading, error } = useFetchDeployment(deploymentId);
-    const { activeKeyTab, onSelectTab } = useTabs({
+    const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
         defaultTab: 'Details',
     });
+    const { simulation } = useSimulation();
+    const isBaselineSimulationOn = simulation.isOn && simulation.type === 'baseline';
+
+    useEffect(() => {
+        if (isBaselineSimulationOn) {
+            setActiveKeyTab('Baselines');
+        }
+    }, [isBaselineSimulationOn, setActiveKeyTab]);
 
     // derived values
     const deploymentNode = getNodeById(nodes, deploymentId);
@@ -98,11 +108,13 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                         eventKey="Details"
                         tabContentId="Details"
                         title={<TabTitleText>Details</TabTitleText>}
+                        disabled={isBaselineSimulationOn}
                     />
                     <Tab
                         eventKey="Flows"
                         tabContentId="Flows"
                         title={<TabTitleText>Flows</TabTitleText>}
+                        disabled={isBaselineSimulationOn}
                     />
                     <Tab
                         eventKey="Baselines"
@@ -113,6 +125,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                         eventKey="Network policies"
                         tabContentId="Network policies"
                         title={<TabTitleText>Network policies</TabTitleText>}
+                        disabled={isBaselineSimulationOn}
                     />
                 </Tabs>
             </StackItem>
@@ -136,7 +149,11 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                     hidden={activeKeyTab !== 'Baselines'}
                     className="pf-u-h-100"
                 >
-                    <DeploymentBaselines deploymentId={deploymentId} />
+                    {isBaselineSimulationOn ? (
+                        <DeploymentBaselinesSimulated deploymentId={deploymentId} />
+                    ) : (
+                        <DeploymentBaselines deploymentId={deploymentId} />
+                    )}
                 </TabContent>
                 <TabContent
                     eventKey="Network policies"

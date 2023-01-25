@@ -63,15 +63,15 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = setupPostgresConn(s.T())
-	imageDataStore := createImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	resolver, _ := setupResolver(s.T(),
+	s.db, s.gormDB = SetupTestPostgresConn(s.T())
+	imageDataStore := CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	resolver, _ := SetupTestResolver(s.T(),
 		imageDataStore,
-		createImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		createImageCVEDatastore(s.T(), s.db, s.gormDB),
-		createImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		createImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		createDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
+		CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
+		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		CreateTestDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
 	)
 	s.resolver = resolver
 
