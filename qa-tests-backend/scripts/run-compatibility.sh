@@ -28,6 +28,7 @@ compatibility_test() {
         fi
 
         setup_deployment_env false false
+        setup_podsecuritypolicies_config
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
