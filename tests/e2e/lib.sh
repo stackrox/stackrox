@@ -14,6 +14,8 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
 deploy_stackrox() {
+    setup_podsecuritypolicies_config
+
     deploy_central
 
     get_central_basic_auth_creds
@@ -157,6 +159,25 @@ setup_generated_certs_for_test() {
     for file in ca.pem sensor-cert.pem sensor-key.pem; do
         echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.stringData[$filename]' -r > "$dir/${file}"
     done
+}
+
+setup_podsecuritypolicies_config() {
+    info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
+    local version
+    version=$(kubectl version --output json)
+    local majorVersion
+    majorVersion=$(echo "$version" | jq -r .serverVersion.major)
+    local minorVersion
+    minorVersion=$(echo "$version" | jq -r .serverVersion.minor)
+
+    # PodSecurityPolicy was removed in version 1.25
+    if (( "$majorVersion" >= 1 && "$minorVersion" >= 25 )); then
+        ci_export "POD_SECURITY_POLICIES" "false"
+        info "POD_SECURITY_POLICIES set to false"
+    else
+        ci_export "POD_SECURITY_POLICIES" "true"
+        info "POD_SECURITY_POLICIES set to true"
+    fi
 }
 
 patch_resources_for_test() {
