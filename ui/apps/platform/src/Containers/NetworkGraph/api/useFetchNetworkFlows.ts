@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { fetchNetworkBaselineStatuses } from 'services/NetworkService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { EdgeState } from '../components/EdgeStateSelect';
 import { BaselineStatus, BaselineStatusType, Flow } from '../types/flow.type';
 import { CustomEdgeModel } from '../types/topology.type';
 import {
@@ -21,6 +22,7 @@ type Result = {
 type FetchNetworkFlowsParams = {
     edges: CustomEdgeModel[];
     deploymentId: string;
+    edgeState: EdgeState;
 };
 
 type FetchNetworkFlowsResult = {
@@ -36,11 +38,13 @@ const defaultResultState = {
 function useFetchNetworkFlows({
     edges,
     deploymentId,
+    edgeState,
 }: FetchNetworkFlowsParams): FetchNetworkFlowsResult {
     const controller = useVisualizationController();
     const [result, setResult] = useState<Result>(defaultResultState);
 
     function fetchFlows() {
+        setResult({ data: { networkFlows: [] }, isLoading: true, error: '' });
         const flows = getNetworkFlows(edges, controller, deploymentId);
         const peers = transformFlowsToPeers(flows);
         fetchNetworkBaselineStatuses({ deploymentId, peers })
@@ -80,7 +84,7 @@ function useFetchNetworkFlows({
     useEffect(() => {
         fetchFlows();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deploymentId]);
+    }, [deploymentId, edgeState]);
 
     return { ...result, refetchFlows: fetchFlows };
 }

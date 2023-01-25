@@ -28,6 +28,8 @@ type FlowsTableProps = {
     addToBaseline?: (flow: Flow) => void;
     markAsAnomalous?: (flow: Flow) => void;
     isBaselineSimulation?: boolean;
+    numExtraneousEgressFlows?: number;
+    numExtraneousIngressFlows?: number;
 };
 
 const columnNames = {
@@ -51,6 +53,39 @@ function getBaselineSimulatedRowStyle(
     return customStyle;
 }
 
+function ExtraneousFlowsRow({
+    isEditable,
+    numExtraneousEgressFlows,
+    direction,
+}: {
+    isEditable: boolean;
+    numExtraneousEgressFlows: number;
+    direction: 'Ingress' | 'Egress';
+}) {
+    return (
+        <Tbody>
+            <Tr>
+                <Td />
+                {isEditable && <Td />}
+                <Td dataLabel={columnNames.entity}>
+                    <Flex direction={{ default: 'row' }}>
+                        <FlexItem>
+                            <div>+ {numExtraneousEgressFlows} allowed flows</div>
+                            <div>
+                                <TextContent>
+                                    <Text component={TextVariants.small}>Across this cluster</Text>
+                                </TextContent>
+                            </div>
+                        </FlexItem>
+                    </Flex>
+                </Td>
+                <Td dataLabel={columnNames.direction}>{direction}</Td>
+                <Td dataLabel={columnNames.portAndProtocol}>Any / Any</Td>
+            </Tr>
+        </Tbody>
+    );
+}
+
 function FlowsTable({
     label,
     flows,
@@ -63,6 +98,8 @@ function FlowsTable({
     addToBaseline,
     markAsAnomalous,
     isBaselineSimulation = false,
+    numExtraneousEgressFlows = 0,
+    numExtraneousIngressFlows = 0,
 }: FlowsTableProps): ReactElement {
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows?.includes(row.id);
@@ -289,6 +326,20 @@ function FlowsTable({
                     </Tbody>
                 );
             })}
+            {numExtraneousEgressFlows > 0 && (
+                <ExtraneousFlowsRow
+                    isEditable
+                    numExtraneousEgressFlows={numExtraneousEgressFlows}
+                    direction="Egress"
+                />
+            )}
+            {numExtraneousIngressFlows > 0 && (
+                <ExtraneousFlowsRow
+                    isEditable
+                    numExtraneousEgressFlows={numExtraneousIngressFlows}
+                    direction="Ingress"
+                />
+            )}
         </TableComposable>
     );
 }
