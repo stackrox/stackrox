@@ -8,9 +8,9 @@ import (
 
 // PermissionSet is representation of storage.PermissionSet that supports transformation from YAML.
 type PermissionSet struct {
-	Name             string               `yaml:"name,omitempty"`
-	Description      string               `yaml:"description,omitempty"`
-	ResourceToAccess []ResourceWithAccess `yaml:"resources,omitempty"`
+	Name        string               `yaml:"name,omitempty"`
+	Description string               `yaml:"description,omitempty"`
+	Resources   []ResourceWithAccess `yaml:"resources,omitempty"`
 }
 
 // Access is representation of storage.Access that supports transformation from YAML.

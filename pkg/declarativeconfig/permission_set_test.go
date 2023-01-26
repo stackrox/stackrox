@@ -24,9 +24,9 @@ resources:
 	assert.NoError(t, err)
 	assert.Equal(t, "test-name", ps.Name)
 	assert.Equal(t, "test-description", ps.Description)
-	assert.Len(t, ps.ResourceToAccess, 2)
-	resourceA := ps.ResourceToAccess[0]
-	resourceB := ps.ResourceToAccess[1]
+	assert.Len(t, ps.Resources, 2)
+	resourceA := ps.Resources[0]
+	resourceB := ps.Resources[1]
 	assert.Equal(t, "a", resourceA.Resource)
 	assert.Equal(t, "b", resourceB.Resource)
 	assert.Equal(t, storage.Access_READ_ACCESS, storage.Access(resourceA.Access))
