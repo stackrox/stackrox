@@ -276,7 +276,7 @@ func (c *mockAlwaysHitNodeIDMatcher) GetNodeID(nodename string) (string, error) 
 // mockNeverHitNodeIDMatcher simulates inability to find a node when GetNodeResource is called
 type mockNeverHitNodeIDMatcher struct{}
 
-// GetNodeID neever finds a node and returns error hardcoded ID "abc"
+// GetNodeID never finds a node and returns error
 func (c *mockNeverHitNodeIDMatcher) GetNodeID(nodename string) (string, error) {
 	return "", errors.New("cannot find node")
 }
