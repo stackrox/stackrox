@@ -36,11 +36,7 @@ function NamespaceSelector({
     searchFilter,
     setSearchFilter,
 }: NamespaceSelectorProps) {
-    const {
-        isOpen: isNamespaceOpen,
-        toggleSelect: toggleIsNamespaceOpen,
-        closeSelect: closeNamespaceSelect,
-    } = useSelectToggle();
+    const { isOpen: isNamespaceOpen, toggleSelect: toggleIsNamespaceOpen } = useSelectToggle();
 
     const onFilterNamespaces = useCallback(
         (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
@@ -68,8 +64,6 @@ function NamespaceSelector({
     }, {});
 
     const onNamespaceSelect = (_, selected) => {
-        closeNamespaceSelect();
-
         const newSelection = selectedNamespaces.find((nsFilter) => nsFilter === selected)
             ? selectedNamespaces.filter((nsFilter) => nsFilter !== selected)
             : selectedNamespaces.concat(selected);
