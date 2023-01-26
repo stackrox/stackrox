@@ -23,7 +23,7 @@ type managerImpl struct {
 }
 
 // New creates a new instance of Manager.
-// Note that it will not watch the declarative configuration directories when creaeted, only after
+// Note that it will not watch the declarative configuration directories when created, only after
 // WatchDeclarativeConfigDir has been called.
 func New() Manager {
 	return &managerImpl{}

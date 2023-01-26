@@ -14,4 +14,5 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 }
 
 func (w *watchHandler) OnWatchError(err error) {
+	log.Errorf("Error watching declarative configuration directory: %+v", err)
 }
