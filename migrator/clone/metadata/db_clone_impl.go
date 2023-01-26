@@ -29,9 +29,6 @@ kubectl -n stackrox set env deploy/central ROX_DONT_COMPARE_DEV_BUILDS=true
 
 	// ErrUnableToRestore -- cannot restore upgraded backup to a downgraded central
 	ErrUnableToRestore = "The backup bundle being restored is from an upgraded version of central and thus cannot applied.  The restored version %s, current version %s"
-
-	// ErrUnsupportedDatabase -- cannot use this database as it is stale after previous upgrades to Postgres
-	ErrUnsupportedDatabase = "Central has previously underwent multiple upgrades to Postgres.  This version of RocksDB is stale and not supported."
 )
 
 // DBClone -- holds information related to DB clones
