@@ -3,6 +3,7 @@ package m170Tom171
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -16,20 +17,16 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
-	batchSize = 500
-
 	startSeqNum = 170
 
-	skippedMigrationMessageTemplate = "Failed to migrate report configuration '%s': Attached scope <%s> has label selector/s " +
-		"with a different operator than 'IN'; Resolution: %s"
+	scopeAttachedToConfigsTemplate = "This scope is attached to following report configurations [%s]; "
 
-	manualInterventionInstruction = "Please manually create a collection and add it to the report configuration. " +
-		"The report will stop working until a collection is added to it."
+	manualResolutionTemplate = "Resolution : Please manually create a collection and attach it to the listed report configs. " +
+		"These reports will stop working until a collection is attached to them."
 
 	embeddedCollectionTemplate = "System-generated embedded collection %d for scope <%s>"
 	rootCollectionTemplate     = "System-generated root collection for scope <%s>"
@@ -42,7 +39,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 171
 		Run: func(databases *types.Databases) error {
-			err := moveScopeIDToCollectionIDInReports(databases.PostgresDB)
+			err := moveScopesInReportsToCollections(databases.PostgresDB)
 			if err != nil {
 				return errors.Wrap(err, "error converting scopes to collections in reportConfigurations")
 			}
@@ -50,9 +47,8 @@ var (
 		},
 	}
 
-	scopeIDToCollectionID = make(map[string]string)
-	skippedScopes         = set.NewStringSet()
-	idGenerator           func(collectionName string) string
+	scopeIDToConfigNames = make(map[string][]string)
+	idGenerator          func(collectionName string) string
 )
 
 func buildEmbeddedCollection(scopeName string, index int, rules []*storage.SelectorRule) *storage.ResourceCollection {
@@ -71,13 +67,13 @@ func buildEmbeddedCollection(scopeName string, index int, rules []*storage.Selec
 	}
 }
 
-func labelSelectorsToCollections(scopeName string, index int, labelSelectors []*storage.SetBasedLabelSelector, fieldName string) ([]*storage.ResourceCollection, bool) {
+func labelSelectorsToCollections(scopeName string, index int, labelSelectors []*storage.SetBasedLabelSelector, fieldName string) ([]*storage.ResourceCollection, error) {
 	collections := make([]*storage.ResourceCollection, 0, len(labelSelectors))
 	for _, labelSelector := range labelSelectors {
 		selectorRules := make([]*storage.SelectorRule, 0, len(labelSelector.GetRequirements()))
 		for _, requirement := range labelSelector.GetRequirements() {
 			if requirement.GetOp() != storage.SetBasedLabelSelector_IN {
-				return nil, false
+				return nil, errors.Errorf("Unsupported operator %s in scope's label selectors. Only operator 'IN' is supported", requirement.GetOp())
 			}
 			ruleValues := make([]*storage.RuleValue, 0, len(requirement.GetValues()))
 			for _, val := range requirement.GetValues() {
@@ -96,10 +92,10 @@ func labelSelectorsToCollections(scopeName string, index int, labelSelectors []*
 		collections = append(collections, col)
 		index = index + 1
 	}
-	return collections, true
+	return collections, nil
 }
 
-func createCollectionsToEmbedFromScope(scope *storage.SimpleAccessScope) ([]*storage.ResourceCollection, bool) {
+func getCollectionsToEmbed(scope *storage.SimpleAccessScope) ([]*storage.ResourceCollection, error) {
 	collectionsToEmbed := make([]*storage.ResourceCollection, 0)
 
 	index := 0
@@ -152,93 +148,95 @@ func createCollectionsToEmbedFromScope(scope *storage.SimpleAccessScope) ([]*sto
 	}
 
 	if clusterLabelSelectors := scope.GetRules().GetClusterLabelSelectors(); len(clusterLabelSelectors) > 0 {
-		labelCollections, success := labelSelectorsToCollections(scope.GetName(), index, clusterLabelSelectors, search.ClusterLabel.String())
-		if !success {
-			return nil, false
+		labelCollections, err := labelSelectorsToCollections(scope.GetName(), index, clusterLabelSelectors, search.ClusterLabel.String())
+		if err != nil {
+			return nil, err
 		}
 		index = index + len(labelCollections)
 		collectionsToEmbed = append(collectionsToEmbed, labelCollections...)
 	}
 
 	if namespaceLabelSelectors := scope.GetRules().GetNamespaceLabelSelectors(); len(namespaceLabelSelectors) > 0 {
-		labelCollections, success := labelSelectorsToCollections(scope.GetName(), index, namespaceLabelSelectors, search.NamespaceLabel.String())
-		if !success {
-			return nil, false
+		labelCollections, err := labelSelectorsToCollections(scope.GetName(), index, namespaceLabelSelectors, search.NamespaceLabel.String())
+		if err != nil {
+			return nil, err
 		}
 		collectionsToEmbed = append(collectionsToEmbed, labelCollections...)
 	}
-	return collectionsToEmbed, true
+	return collectionsToEmbed, nil
 }
 
-func moveScopeIDToCollectionIDInReports(db *pgxpool.Pool) error {
+// Creates embedded and root collections for the access scope with ID scopeID.
+// Adds the embedded and root collections to the collection store.
+func createCollectionsForScope(ctx context.Context, scopeID string,
+	accessScopeStore accessScopePostgres.Store, collectionStore collectionPostgres.Store) error {
+	scope, found, err := accessScopeStore.Get(ctx, scopeID)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to fetch scope with id %s. "+scopeAttachedToConfigsTemplate,
+			scopeID, getJoinedConfigsForScopeID(scopeID))
+	}
+	if !found {
+		log.Errorf("Scope with id %s not found. "+scopeAttachedToConfigsTemplate+manualResolutionTemplate,
+			scopeID, strings.Join(scopeIDToConfigNames[scopeID], ", "))
+		return nil
+	}
+
+	collectionsToEmbed, err := getCollectionsToEmbed(scope)
+	if err != nil {
+		if strings.Contains(err.Error(), "Unsupported operator") {
+			log.Errorf("Failed to create collections for scope <%s>; Reason : %s; "+
+				scopeAttachedToConfigsTemplate+manualResolutionTemplate,
+				scope.GetName(), err.Error(), getJoinedConfigsForScopeID(scopeID))
+			return nil
+		}
+		return err
+	}
+	err = collectionStore.UpsertMany(ctx, collectionsToEmbed)
+	if err != nil {
+		return err
+	}
+	embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(collectionsToEmbed))
+	for _, collection := range collectionsToEmbed {
+		embeddedCollections = append(embeddedCollections, &storage.ResourceCollection_EmbeddedResourceCollection{
+			Id: collection.GetId(),
+		})
+	}
+	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
+	rootCollection := &storage.ResourceCollection{
+		Id:                  scopeID,
+		Name:                fmt.Sprintf(rootCollectionTemplate, scope.GetName()),
+		CreatedAt:           timeNow,
+		LastUpdated:         timeNow,
+		EmbeddedCollections: embeddedCollections,
+	}
+	return collectionStore.Upsert(ctx, rootCollection)
+}
+
+func moveScopesInReportsToCollections(db *pgxpool.Pool) error {
 	ctx := context.Background()
 	reportConfigStore := reportConfigurationPostgres.New(db)
 	accessScopeStore := accessScopePostgres.New(db)
 	collectionStore := collectionPostgres.New(db)
 
-	reportConfigsToUpsert := make([]*storage.ReportConfiguration, 0, batchSize)
 	err := reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
-		scopeID := reportConfig.GetScopeId()
-		scope, found, err := accessScopeStore.Get(ctx, scopeID)
-		if err != nil {
-			return errors.Wrapf(err, "error migrating report configuration '%s': failed to fetch scope with id %s", reportConfig.GetName(), scopeID)
-		}
-		if !found {
-			log.Errorf("Failed to migrate report configuration '%s': Scope with id %s not found; Resolution: %s",
-				reportConfig.GetName(), scopeID, manualInterventionInstruction)
-		}
-		if _, exists := scopeIDToCollectionID[scopeID]; !exists && !skippedScopes.Contains(scopeID) {
-			collectionsToEmbed, success := createCollectionsToEmbedFromScope(scope)
-			if !success {
-				skippedScopes.Add(scopeID)
-				log.Warnf(skippedMigrationMessageTemplate, reportConfig.GetName(), scope.GetName(), manualInterventionInstruction)
-				return nil
-			}
-			err = collectionStore.UpsertMany(ctx, collectionsToEmbed)
-			if err != nil {
-				return err
-			}
-			embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(collectionsToEmbed))
-			for _, collection := range collectionsToEmbed {
-				embeddedCollections = append(embeddedCollections, &storage.ResourceCollection_EmbeddedResourceCollection{
-					Id: collection.GetId(),
-				})
-			}
-			timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
-			rootColName := fmt.Sprintf(rootCollectionTemplate, scope.GetName())
-			rootCollection := &storage.ResourceCollection{
-				Id:                  idGenerator(rootColName),
-				Name:                rootColName,
-				CreatedAt:           timeNow,
-				LastUpdated:         timeNow,
-				EmbeddedCollections: embeddedCollections,
-			}
-			err = collectionStore.Upsert(ctx, rootCollection)
-			if err != nil {
-				return err
-			}
-			scopeIDToCollectionID[reportConfig.GetScopeId()] = rootCollection.GetId()
-			reportConfig.ScopeId = rootCollection.GetId()
-			reportConfigsToUpsert = append(reportConfigsToUpsert, reportConfig)
-			if len(reportConfigsToUpsert) >= batchSize {
-				err = reportConfigStore.UpsertMany(ctx, reportConfigsToUpsert)
-				if err != nil {
-					return err
-				}
-				reportConfigsToUpsert = reportConfigsToUpsert[:0]
-			}
-		} else if skippedScopes.Contains(scopeID) {
-			log.Warnf(skippedMigrationMessageTemplate, reportConfig.GetName(), scope.GetName(), manualInterventionInstruction)
-		}
+		scopeIDToConfigNames[reportConfig.GetScopeId()] = append(scopeIDToConfigNames[reportConfig.GetScopeId()], reportConfig.GetName())
 		return nil
 	})
 	if err != nil {
 		return err
 	}
-	if len(reportConfigsToUpsert) > 0 {
-		err = reportConfigStore.UpsertMany(ctx, reportConfigsToUpsert)
+
+	for scopeID := range scopeIDToConfigNames {
+		err = createCollectionsForScope(ctx, scopeID, accessScopeStore, collectionStore)
+		if err != nil {
+			return err
+		}
 	}
 	return err
+}
+
+func getJoinedConfigsForScopeID(scopeID string) string {
+	return strings.Join(scopeIDToConfigNames[scopeID], ", ")
 }
 
 func init() {

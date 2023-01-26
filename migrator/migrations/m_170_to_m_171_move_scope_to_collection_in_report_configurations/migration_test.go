@@ -111,7 +111,7 @@ var (
 		},
 	}
 
-	reportConfigsBeforeMigration = map[string]*storage.ReportConfiguration{
+	configIDToReportConfig = map[string]*storage.ReportConfiguration{
 		"config0": {
 			Id:      "config0",
 			Name:    "migratable",
@@ -150,6 +150,7 @@ var (
 			},
 		},
 		fmt.Sprintf(rootCollectionTemplate, id0): {
+			Id:   id0,
 			Name: fmt.Sprintf(rootCollectionTemplate, id0),
 			EmbeddedCollections: []*storage.ResourceCollection_EmbeddedResourceCollection{
 				{Id: fmt.Sprintf(embeddedCollectionTemplate, 0, id0)},
@@ -291,7 +292,7 @@ var (
 			},
 		},
 		fmt.Sprintf(rootCollectionTemplate, id1): {
-			Id:   fmt.Sprintf(rootCollectionTemplate, id1),
+			Id:   id1,
 			Name: fmt.Sprintf(rootCollectionTemplate, id1),
 			EmbeddedCollections: []*storage.ResourceCollection_EmbeddedResourceCollection{
 				{Id: fmt.Sprintf(embeddedCollectionTemplate, 0, id1)},
@@ -336,7 +337,7 @@ func (s *reportConfigsMigrationTestSuite) TearDownTest() {
 func (s *reportConfigsMigrationTestSuite) TestMigration() {
 	ctx := context.Background()
 	s.NoError(s.accessScopeStore.UpsertMany(ctx, accessScopes))
-	s.NoError(s.reportConfigStore.UpsertMany(ctx, configSliceFromMap(reportConfigsBeforeMigration)))
+	s.NoError(s.reportConfigStore.UpsertMany(ctx, configSliceFromMap(configIDToReportConfig)))
 
 	// mock idGenerator func so we can generate predictable Ids. This will help us guess what embedded collection ids will
 	// be present in the generated root collections. We can use that to build expected collection objects for matching in tests.
@@ -354,6 +355,7 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 	err := s.collectionStore.Walk(ctx, func(collection *storage.ResourceCollection) error {
 		expectedCollection, found := expectedCollections[collection.GetName()]
 		s.True(found)
+		s.Equal(expectedCollection.GetId(), collection.GetId())
 		s.Equal(expectedCollection.GetName(), collection.GetName())
 		s.Equal(expectedCollection.GetResourceSelectors(), collection.GetResourceSelectors())
 		s.Equal(expectedCollection.GetEmbeddedCollections(), collection.GetEmbeddedCollections())
@@ -363,20 +365,19 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 
 	// check all migratable reports have migrated and unmigratable reports remain the same
 	err = s.reportConfigStore.Walk(ctx, func(config *storage.ReportConfiguration) error {
-		oldConfig, found := reportConfigsBeforeMigration[config.GetId()]
-		s.True(found)
-
-		scope, found, err := s.accessScopeStore.Get(ctx, oldConfig.GetScopeId())
+		// Generated root collection will have the same ID as the scope that was attached to the report before migration.
+		// So, we can use the same config.scopeID to get both the access scope and the collection
+		scope, found, err := s.accessScopeStore.Get(ctx, config.GetScopeId())
 		s.NoError(err)
 		s.True(found)
 
-		if oldConfig.GetName() == "migratable" {
-			collection, found, err := s.collectionStore.Get(ctx, config.GetScopeId())
-			s.NoError(err)
+		collection, found, err := s.collectionStore.Get(ctx, config.GetScopeId())
+		s.NoError(err)
+		if config.GetName() == "migratable" {
 			s.True(found)
 			s.Equal(fmt.Sprintf(rootCollectionTemplate, scope.GetName()), collection.GetName())
 		} else {
-			s.Equal(oldConfig.GetScopeId(), scope.GetId())
+			s.False(found)
 		}
 		return nil
 	})
