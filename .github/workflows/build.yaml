@@ -222,6 +222,8 @@ jobs:
     strategy:
       matrix:
         branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
       env:
@@ -231,7 +233,6 @@ jobs:
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
