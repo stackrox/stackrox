@@ -17,6 +17,11 @@ env:
 
 jobs:
   pre-build-ui:
+    strategy:
+      matrix:
+        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
@@ -46,19 +51,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: ui-RHACS_BRANDING-build
-          path: |
-            ui/build
-            ui/monorepo.lock
-
-      - name: Build Stackrox UI
-        run: make -C ui build
-        env:
-          ROX_PRODUCT_BRANDING: STACKROX_BRANDING
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: ui-STACKROX_BRANDING-build
+          name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: |
             ui/build
             ui/monorepo.lock
