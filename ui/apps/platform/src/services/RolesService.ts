@@ -154,7 +154,7 @@ export function getClustersForPermission(
 
 export function getNamespacesForClusterAndPermission(
     permission: RolePermission,
-    clusterId?: string
+    clusterId: string
 ): Promise<NamespacesForPermissionResponse> {
     const params = qs.stringify(permission, { arrayFormat: 'repeat' });
     const url = `${clustersForPermissionUrl}/${clusterId}/namespaces?${params}`;

@@ -2,7 +2,8 @@ import React, { useCallback, ChangeEvent } from 'react';
 import { Badge, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Namespace } from 'hooks/useFetchClusterNamespaces';
+// import { Namespace } from 'hooks/useFetchClusterNamespaces';
+import { Namespace } from 'hooks/useFetchClusterNamespacesForPermission';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 
@@ -50,7 +51,7 @@ function NamespaceSelector({
                     <SelectOption
                         key={namespace.metadata.id}
                         value={namespace.metadata.name}
-                        isDisabled={namespace.deploymentCount < 1}
+                        isDisabled={false /*namespace.deploymentCount < 1*/}
                     >
                         <span>
                             <NamespaceIcon /> {namespace.metadata.name}{' '}
