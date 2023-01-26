@@ -42,6 +42,7 @@ import getScopeHierarchy from './utils/getScopeHierarchy';
 import getSimulation from './utils/getSimulation';
 
 import './NetworkGraphPage.css';
+import CIDRFormModal from './components/CIDRFormModal';
 
 const emptyModel = {
     graph: graphModel,
@@ -69,6 +70,7 @@ function NetworkGraphPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
+    const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
 
     const { searchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
@@ -169,6 +171,10 @@ function NetworkGraphPage() {
         timeWindow,
     ]);
 
+    function toggleCIDRBlockForm() {
+        setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
+    }
+
     return (
         <>
             <PageTitle title="Network Graph" />
@@ -191,7 +197,13 @@ function NetworkGraphPage() {
                         </ToolbarGroup>
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem spacer={{ default: 'spacerMd' }}>
-                                <Button variant="secondary">Manage CIDR blocks</Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={toggleCIDRBlockForm}
+                                    isDisabled={!selectedClusterId}
+                                >
+                                    Manage CIDR blocks
+                                </Button>
                             </ToolbarItem>
                             <ToolbarItem spacer={{ default: 'spacerNone' }}>
                                 <SimulateNetworkPolicyButton simulation={simulation} />
@@ -267,6 +279,11 @@ function NetworkGraphPage() {
                         <Spinner isSVG />
                     </Bullseye>
                 )}
+                <CIDRFormModal
+                    selectedClusterId={selectedClusterId || ''}
+                    isOpen={isCIDRBlockFormOpen}
+                    onClose={toggleCIDRBlockForm}
+                />
             </PageSection>
         </>
     );
