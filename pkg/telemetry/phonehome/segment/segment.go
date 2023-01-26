@@ -88,7 +88,7 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func (t *segmentTelemeter) overwriteId(id string) string {
+func (t *segmentTelemeter) overwriteID(id string) string {
 	if id == "" {
 		return t.userID
 	}
@@ -118,7 +118,7 @@ func (t *segmentTelemeter) IdentifyUserAs(userID, clientID, clientType string, p
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
-		UserId:  t.overwriteId(userID),
+		UserId:  t.overwriteID(userID),
 		Traits:  traits,
 		Context: makeDeviceContext(clientID, clientType),
 	}
@@ -142,7 +142,7 @@ func (t *segmentTelemeter) GroupUserAs(userID, clientID, clientType, groupID str
 
 	group := segment.Group{
 		GroupId: groupID,
-		UserId:  t.overwriteId(userID),
+		UserId:  t.overwriteID(userID),
 		Traits:  props,
 		Context: makeDeviceContext(clientID, clientType),
 	}
@@ -162,7 +162,7 @@ func (t *segmentTelemeter) TrackUserAs(userID, clientID, clientType, event strin
 	}
 
 	track := segment.Track{
-		UserId:     t.overwriteId(userID),
+		UserId:     t.overwriteID(userID),
 		Event:      event,
 		Properties: props,
 		Context:    makeDeviceContext(clientID, clientType),
