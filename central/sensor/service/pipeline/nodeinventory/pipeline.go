@@ -62,7 +62,9 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
 
-	log.Infof("Central received NodeInventory for Node name='%s' ID='%s'", ninv.GetNodeName(), ninv.GetNodeId())
+	log.Infof("Received NodeInventory for Node name='%s' ID='%s'", ninv.GetNodeName(), ninv.GetNodeId())
+	log.Debugf("NodeInventory for name='%s' contains %d packages to scan from %d content sets", ninv.GetNodeName(),
+		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
 
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		// NodeInventory will never be deleted
@@ -83,6 +85,9 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if err != nil {
 		log.Warnf("enriching node with node inventory %s:%s: %v", node.GetClusterName(), node.GetName(), err)
 	}
+
+	log.Debugf("NodeInventory for name='%s' has been scanned and contains %d results", ninv.GetNodeName(),
+		len(node.GetScan().GetComponents()))
 
 	// Here NodeInventory stops to matter. All data required for the DB and UI is in node.NodeScan already
 
