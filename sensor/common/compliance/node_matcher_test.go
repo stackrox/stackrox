@@ -16,7 +16,6 @@ var _ suite.TearDownTestSuite = (*NodeInventoryHandlerTestSuite)(nil)
 
 type NodeInventoryHandlerImplTestSuite struct {
 	suite.Suite
-	nodeStore nodeStore
 }
 
 func (s *NodeInventoryHandlerImplTestSuite) TestNodeIDMatcherGetNodeID() {

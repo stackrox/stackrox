@@ -3,12 +3,8 @@ package compliance
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/store"
 )
-
-type nodeStore interface {
-	GetNode(nodeName string) *storage.Node
-}
 
 // NodeIDMatcher helps finding NodeWrap by name
 type NodeIDMatcher interface {
@@ -17,11 +13,11 @@ type NodeIDMatcher interface {
 
 // NodeIDMatcherImpl finds Node by name within NodeStore
 type NodeIDMatcherImpl struct {
-	nodeStore nodeStore
+	nodeStore store.NodeStore
 }
 
 // NewNodeIDMatcher creates a NodeIDMatcherImpl
-func NewNodeIDMatcher(store nodeStore) *NodeIDMatcherImpl {
+func NewNodeIDMatcher(store store.NodeStore) *NodeIDMatcherImpl {
 	return &NodeIDMatcherImpl{
 		nodeStore: store,
 	}
