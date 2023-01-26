@@ -222,6 +222,35 @@ func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	s.ErrorIs(h.Stopped().Wait(), errInputChanClosed)
 }
 
+func (s *NodeInventoryHandlerTestSuite) generateNilTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, concurrency.StopperClient) {
+	input := make(chan *storage.NodeInventory)
+	st := concurrency.NewStopper()
+	go func() {
+		defer st.Flow().ReportStopped()
+		for i := 0; i < numToProduce; i++ {
+			select {
+			case <-st.Flow().StopRequested():
+				return
+			case input <- nil:
+			}
+		}
+	}()
+	return input, st.Client()
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
+	ch, producer := s.generateNilTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	s.NoError(h.Start())
+	consumer := consumeAndCount(h.ResponsesC(), 0)
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(consumer.Stopped().Wait())
+
+	h.Stop(nil)
+	s.NoError(h.Stopped().Wait())
+}
+
 // mockAlwaysHitNodeIDMatcher always finds a node when GetNodeResource is called
 type mockAlwaysHitNodeIDMatcher struct {
 }
