@@ -2,13 +2,11 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -203,8 +201,6 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryE
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "PolicyCategoryEdge")
-
 	return pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
@@ -220,8 +216,6 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCatego
 }
 
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.PolicyCategoryEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "PolicyCategoryEdge")
-
 	var objs []*storage.PolicyCategoryEdge
 	err := s.Walk(ctx, func(obj *storage.PolicyCategoryEdge) error {
 		objs = append(objs, obj)
@@ -232,8 +226,6 @@ func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.PolicyCategoryEdge, 
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "PolicyCategoryEdge")
-
 	var sacQueryFilter *v1.Query
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
@@ -292,7 +284,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategor
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
