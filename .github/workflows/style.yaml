@@ -19,7 +19,7 @@ jobs:
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/tjanisze/stackrox-test:0.0.1
     steps:
       - name: Checkout
         uses: actions/checkout@v3
