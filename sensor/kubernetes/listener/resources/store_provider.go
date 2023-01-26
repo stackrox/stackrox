@@ -58,6 +58,6 @@ func (p *InMemoryStoreProvider) EndpointManager() store.EndpointManager {
 }
 
 // Nodes returns the Nodes public interface
-func (p *InMemoryStoreProvider) Nodes() *nodeStoreImpl {
+func (p *InMemoryStoreProvider) Nodes() store.NodeStore {
 	return p.nodeStore
 }
