@@ -58,9 +58,6 @@ type DBCloneManager interface {
 	// GetDirName - gets the directory name of the clone
 	GetDirName(cloneName string) string
 
-	// DecommissionRocksDB -- removes RocksDB from central
-	DecommissionRocksDB()
-
 	// CheckForRestore -- checks to see if a restore from a RocksDB is requested
 	CheckForRestore() bool
 }

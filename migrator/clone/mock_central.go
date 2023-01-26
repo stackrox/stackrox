@@ -10,7 +10,6 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/clone/metadata"
 	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
@@ -190,10 +189,6 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string, unsup
 	err := dbm.Scan()
 	if err != nil {
 		log.Info(err)
-	}
-	if unsupportedRocks {
-		require.Error(m.t, err, metadata.ErrUnsupportedDatabase)
-		return
 	}
 	require.NoError(m.t, err)
 	if breakPoint == breakAfterScan {
