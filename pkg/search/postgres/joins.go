@@ -112,6 +112,9 @@ func collectFields(q *v1.Query) set.StringSet {
 	for _, query := range queries {
 		collectedFields.AddAll(collectFields(query).AsSlice()...)
 	}
+	for _, groupByField := range q.GetGroupBy().GetFields() {
+		collectedFields.Add(groupByField)
+	}
 	for _, sortOption := range q.GetPagination().GetSortOptions() {
 		collectedFields.Add(sortOption.GetField())
 	}

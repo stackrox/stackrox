@@ -21,6 +21,9 @@ type SelectQueryField struct {
 	FieldType  walker.DataType
 	FieldPath  string // This is the search.Field.FieldPath for this field.
 
+	FromGroupBy  bool
+	DerivedField bool
+
 	// PostTransform is a function that will be applied to the returned rows from SQL before
 	// further processing.
 	// The input will be of the type directly returned from the postgres rows.Scan function.
@@ -46,7 +49,12 @@ func (f *SelectQueryField) PathForSelectPortion() string {
 	if f.Alias == "" {
 		return f.SelectPath
 	}
-	return fmt.Sprintf("%s as %s", f.SelectPath, f.Alias)
+	return fmt.Sprintf("%s %s", f.SelectPath, f.Alias)
+}
+
+// AggrAndUnnest returns true if the select field needs to aggregated and unnested.
+func (f *SelectQueryField) AggrAndUnnest() bool {
+	return !f.FromGroupBy && !f.DerivedField
 }
 
 // QueryEntry is an entry with clauses added by portions of the query.

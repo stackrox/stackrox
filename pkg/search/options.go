@@ -345,6 +345,7 @@ var (
 
 	// Derived test fields
 	TestGrandparentCount    = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
+	TestParent1ValCount     = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
 	TestParent1Count        = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
 	TestChild1Count         = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
 	TestGrandParentPriority = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
