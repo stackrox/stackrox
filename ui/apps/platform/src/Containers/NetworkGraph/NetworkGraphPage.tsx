@@ -174,6 +174,7 @@ function NetworkGraphPage() {
     function toggleCIDRBlockForm() {
         setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
     }
+    console.log('NetworkGrpahPage');
 
     return (
         <>

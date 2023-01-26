@@ -220,6 +220,8 @@ function NetworkGraphContainer({
         edges: modifiedEdges,
     };
 
+    console.log('NetworkGraphContainer');
+
     return (
         <NetworkGraph
             model={updatedModel}

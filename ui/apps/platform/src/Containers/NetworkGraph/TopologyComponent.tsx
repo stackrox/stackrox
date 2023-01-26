@@ -128,6 +128,8 @@ const TopologyComponent = ({
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
+    console.log('TopologyComponent');
+
     return (
         <TopologyView
             sideBar={

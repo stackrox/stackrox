@@ -44,6 +44,8 @@ function NetworkGraph({
         simulator.state === 'UPLOAD' ||
         (simulation.isOn && simulation.type === 'baseline');
 
+    console.log('NetworkGraph');
+
     return (
         <SimulationFrame isSimulating={isSimulating}>
             <VisualizationProvider controller={controller}>
