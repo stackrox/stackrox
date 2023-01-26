@@ -488,7 +488,7 @@ func startGRPCServer() {
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
 	if features.DeclarativeConfiguration.Enabled() {
-		declarativeconfig.Singleton().WatchDeclarativeConfigDir()
+		declarativeconfig.ManagerSingleton().WatchDeclarativeConfigDir()
 	}
 
 	clusterInitBackend := backend.Singleton()

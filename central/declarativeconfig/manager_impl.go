@@ -5,17 +5,12 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
 	watchInterval        = 5 * time.Second
 	declarativeConfigDir = "/run/stackrox.io/declarative-configuration"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type managerImpl struct {

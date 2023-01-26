@@ -1,6 +1,11 @@
 package declarativeconfig
 
+import "github.com/stackrox/rox/pkg/logging"
+
 // TODO(ROX-14147): Add reconciliation of declarative configuration to the watch handler.
+var (
+	log = logging.LoggerForModule()
+)
 
 type watchHandler struct {
 	m *managerImpl

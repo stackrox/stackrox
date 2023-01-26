@@ -7,8 +7,8 @@ var (
 	instance Manager
 )
 
-// Singleton provides the instance of Manager to use.
-func Singleton() Manager {
+// ManagerSingleton provides the instance of Manager to use.
+func ManagerSingleton() Manager {
 	once.Do(func() {
 		instance = New()
 	})
