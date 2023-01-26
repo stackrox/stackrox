@@ -88,6 +88,25 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
+func (t *segmentTelemeter) overwriteId(id string) string {
+	if id == "" {
+		return t.userID
+	}
+	return id
+}
+
+func makeDeviceContext(clientID, clientType string) *segment.Context {
+	if clientID == "" {
+		return nil
+	}
+	return &segment.Context{
+		Device: segment.DeviceInfo{
+			Id:   clientID,
+			Type: clientType,
+		},
+	}
+}
+
 func (t *segmentTelemeter) Identify(props map[string]any) {
 	t.IdentifyUserAs("", "", "", props)
 }
@@ -99,21 +118,9 @@ func (t *segmentTelemeter) IdentifyUserAs(userID, clientID, clientType string, p
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
-		UserId: t.userID,
-		Traits: traits,
-	}
-
-	if userID == "" {
-		identity.UserId = t.userID
-	}
-
-	if clientID != "" {
-		identity.Context = &segment.Context{
-			Device: segment.DeviceInfo{
-				Id:   clientID,
-				Type: clientType,
-			},
-		}
+		UserId:  t.overwriteId(userID),
+		Traits:  traits,
+		Context: makeDeviceContext(clientID, clientType),
 	}
 
 	for k, v := range props {
@@ -135,21 +142,9 @@ func (t *segmentTelemeter) GroupUserAs(userID, clientID, clientType, groupID str
 
 	group := segment.Group{
 		GroupId: groupID,
-		UserId:  t.userID,
+		UserId:  t.overwriteId(userID),
 		Traits:  props,
-	}
-
-	if userID == "" {
-		group.UserId = t.userID
-	}
-
-	if clientID != "" {
-		group.Context = &segment.Context{
-			Device: segment.DeviceInfo{
-				Id:   clientID,
-				Type: clientType,
-			},
-		}
+		Context: makeDeviceContext(clientID, clientType),
 	}
 
 	if err := t.client.Enqueue(group); err != nil {
@@ -167,22 +162,10 @@ func (t *segmentTelemeter) TrackUserAs(userID, clientID, clientType, event strin
 	}
 
 	track := segment.Track{
-		UserId:     userID,
+		UserId:     t.overwriteId(userID),
 		Event:      event,
 		Properties: props,
-	}
-
-	if userID == "" {
-		track.UserId = t.userID
-	}
-
-	if clientID != "" {
-		track.Context = &segment.Context{
-			Device: segment.DeviceInfo{
-				Id:   clientID,
-				Type: clientType,
-			},
-		}
+		Context:    makeDeviceContext(clientID, clientType),
 	}
 
 	if err := t.client.Enqueue(track); err != nil {
