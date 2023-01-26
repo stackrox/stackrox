@@ -116,10 +116,10 @@ require (
 	gorm.io/driver/postgres v1.4.6
 	gorm.io/gorm v1.24.3
 	helm.sh/helm/v3 v3.9.4
-	k8s.io/api v0.24.9
-	k8s.io/apimachinery v0.24.9
+	k8s.io/api v0.24.10
+	k8s.io/apimachinery v0.24.10
 	k8s.io/apiserver v0.24.9
-	k8s.io/client-go v0.24.9
+	k8s.io/client-go v0.24.10
 	k8s.io/kubectl v0.24.9
 	k8s.io/kubelet v0.24.9
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
@@ -368,7 +368,7 @@ require (
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 	sigs.k8s.io/kustomize/api v0.11.4 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
 // To bump the version of a replacement package, use:

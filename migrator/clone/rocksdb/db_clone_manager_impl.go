@@ -18,10 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-const (
-	decommissionedCurrent = ".central.internal.database.decommissioned.roll.back.not.supported"
-)
-
 // dbCloneManagerImpl - scans and manage database clones within central.
 type dbCloneManagerImpl struct {
 	basePath             string
@@ -88,9 +84,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists && !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return errors.Errorf("Cannot find database at %s", filepath.Join(d.basePath, CurrentClone))
-	}
-	if currExists && !env.PostgresDatastoreEnabled.BooleanSetting() && currClone.GetDirName() == decommissionedCurrent {
-		return errors.New(metadata.ErrUnsupportedDatabase)
 	}
 	if currExists && (currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0) {
 		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
@@ -328,69 +321,6 @@ func (d *dbCloneManagerImpl) GetCurrentCloneCreationTime() time.Time {
 // GetDirName - gets the directory name of the clone
 func (d *dbCloneManagerImpl) GetDirName(cloneName string) string {
 	return d.cloneMap[cloneName].GetDirName()
-}
-
-// DecommissionRocksDB -- removes RocksDB from central
-func (d *dbCloneManagerImpl) DecommissionRocksDB() {
-	log.Info("DecommissionRocksDB")
-	for k := range d.cloneMap {
-		dirPath := d.getPath(k)
-		if exists, err := fileutils.Exists(dirPath); err != nil {
-			log.Error(err)
-			continue
-		} else if exists {
-			// TODO(ROX-9882): While there is still stuff on the PVC there is an expectation that current
-			// exists in a certain state.  So until we can remove the rest of the components on the PVC, it
-			// is safer to put an empty current to ensure everything else starts properly.
-			if k == CurrentClone {
-				dirName := d.GetDirName(CurrentClone)
-				// Get the location Current points to
-				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				if linkTo == d.getPath(decommissionedCurrent) {
-					log.Info("we have already moved to the RocksDB current to be decomissioned")
-					continue
-				}
-				if err := os.MkdirAll(d.getPath(decommissionedCurrent), 0755); err != nil {
-					log.Error(err)
-					continue
-				}
-				// Set the new symbolic link
-				if err := fileutils.AtomicSymlink(decommissionedCurrent, d.getPath(CurrentClone)); err != nil {
-					log.Error(err)
-					continue
-				}
-
-				// Remove the stale database
-				if err := os.RemoveAll(d.getPath(dirName)); err != nil {
-					log.Error(err)
-					continue
-				}
-			} else {
-				log.Infof("Removing database %s", dirPath)
-				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				log.Infof("Remove path = %q", dirPath)
-				if err = os.RemoveAll(dirPath); err != nil {
-					log.Error(err)
-					continue
-				}
-				// Remove any rocks database if in postgres mode
-				log.Infof("Remove linkTo = %q", linkTo)
-				if err = os.RemoveAll(linkTo); err != nil {
-					log.Error(err)
-					continue
-				}
-			}
-		}
-		delete(d.cloneMap, k)
-	}
 }
 
 // CheckForRestore - checks to see if a restore clone exists
