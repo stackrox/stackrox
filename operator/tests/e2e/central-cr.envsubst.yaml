@@ -1,0 +1,28 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  # Match the values set by deploy/ scripts.
+  central:
+    adminPasswordSecret:
+      name: admin-pass
+    db:
+      isEnabled: $central_db_isEnabled
+    exposure:
+      loadBalancer:
+        enabled: $central_exposure_loadBalancer_enabled
+      route:
+        enabled: $central_exposure_route_enabled
+  scanner:
+    analyzer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admin-pass
+data:
+  password: $ADMIN_PASSWORD_BASE64
