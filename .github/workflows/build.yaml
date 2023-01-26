@@ -342,7 +342,7 @@ jobs:
 
     - uses: actions/download-artifact@v3
       with:
-        name: ui-${{env.ROX_PRODUCT_BRANDING}}-buil
+        name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
         path: ui
 
     - uses: actions/download-artifact@v3
