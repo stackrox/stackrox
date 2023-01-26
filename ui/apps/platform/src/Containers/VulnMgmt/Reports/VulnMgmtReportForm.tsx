@@ -29,6 +29,7 @@ import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMess
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import { ReportScope } from 'hooks/useFetchReport';
 import useMultiSelect from 'hooks/useMultiSelect';
 import usePermissions from 'hooks/usePermissions';
 import { saveReport } from 'services/ReportsService';
@@ -42,6 +43,7 @@ import { getMappedFixability, getFixabilityConstantFromMap } from './VulnMgmtRep
 
 export type VulnMgmtReportFormProps = {
     initialValues: ReportConfiguration;
+    initialReportScope: ReportScope | null;
     isEditable?: boolean;
     refreshQuery?: () => void;
 };
@@ -99,6 +101,7 @@ export const validationSchema = yup.object().shape({
 
 function VulnMgmtReportForm({
     initialValues,
+    initialReportScope,
     isEditable = true,
     refreshQuery = () => {},
 }: VulnMgmtReportFormProps): ReactElement {
@@ -378,6 +381,7 @@ function VulnMgmtReportForm({
                                     {isCollectionsEnabled ? (
                                         <CollectionSelection
                                             scopeId={values.scopeId}
+                                            initialReportScope={initialReportScope}
                                             setFieldValue={setFieldValue}
                                             allowCreate={canWriteCollections}
                                         />

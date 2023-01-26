@@ -27,7 +27,7 @@ function VulnMgmtReportPage(): ReactElement {
 
     const result = useFetchReport(reportId, refresh);
 
-    const { report, isLoading, error } = result;
+    const { report, reportScope, isLoading, error } = result;
 
     return (
         <>
@@ -45,9 +45,13 @@ function VulnMgmtReportPage(): ReactElement {
                 </Alert>
             )}
             {action === 'edit' && hasVulnReportWriteAccess && !!report ? (
-                <VulnMgmtEditReportPage report={report} refreshQuery={refreshQuery} />
+                <VulnMgmtEditReportPage
+                    report={report}
+                    reportScope={reportScope}
+                    refreshQuery={refreshQuery}
+                />
             ) : (
-                !!report && <VulnMgmtReportDetail report={report} />
+                !!report && <VulnMgmtReportDetail report={report} reportScope={reportScope} />
             )}
         </>
     );
