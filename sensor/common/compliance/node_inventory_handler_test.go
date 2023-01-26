@@ -251,11 +251,32 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
 	s.NoError(h.Stopped().Wait())
 }
 
-// mockAlwaysHitNodeIDMatcher always finds a node when GetNodeResource is called
-type mockAlwaysHitNodeIDMatcher struct {
+func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
+	ch, producer := s.generateTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeInventoryHandler(ch, &mockNeverHitNodeIDMatcher{})
+	s.NoError(h.Start())
+	// expect consumer to get 0 messages - sensor should drop inventory when node is not found
+	consumer := consumeAndCount(h.ResponsesC(), 0)
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(consumer.Stopped().Wait())
+
+	h.Stop(nil)
+	s.NoError(h.Stopped().Wait())
 }
+
+// mockAlwaysHitNodeIDMatcher always finds a node when GetNodeResource is called
+type mockAlwaysHitNodeIDMatcher struct{}
 
 // GetNodeID always finds a hardcoded ID "abc"
 func (c *mockAlwaysHitNodeIDMatcher) GetNodeID(nodename string) (string, error) {
 	return "abc", nil
+}
+
+// mockNeverHitNodeIDMatcher simulates inability to find a node when GetNodeResource is called
+type mockNeverHitNodeIDMatcher struct{}
+
+// GetNodeID neever finds a node and returns error hardcoded ID "abc"
+func (c *mockNeverHitNodeIDMatcher) GetNodeID(nodename string) (string, error) {
+	return "", errors.New("cannot find node")
 }
