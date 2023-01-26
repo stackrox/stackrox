@@ -29,7 +29,7 @@ func convertNodeToVulnRequest(node *storage.Node, inventory *storage.NodeInvento
 
 func convertComponents(c *storage.NodeInventory_Components) *v1.Components {
 	components := &v1.Components{
-		Namespace:          c.Namespace,
+		Namespace:          c.GetNamespace(),
 		OsComponents:       nil,
 		LanguageComponents: nil,
 		RhelComponents:     make([]*v1.RHELComponent, len(c.GetRhelComponents())),
