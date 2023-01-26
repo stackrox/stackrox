@@ -1,4 +1,4 @@
-FROM quay.io/tjanisze/stackrox-test:0.0.1
+FROM quay.io/tjanisze/stackrox-test:latest
 # note the above FROM line is ignored and OpenShift CI uses build_root image instead
 
 ARG ROX_PRODUCT_BRANDING
