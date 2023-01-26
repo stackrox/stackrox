@@ -7,19 +7,24 @@ import (
 )
 
 type PermissionSet struct {
-	Name             string              `yaml:"name,omitempty"`
-	Description      string              ` yaml:"description,omitempty"`
-	ResourceToAccess map[string]DCAccess `yaml:"resource_to_access,omitempty"`
+	Name             string               `yaml:"name,omitempty"`
+	Description      string               `yaml:"description,omitempty"`
+	ResourceToAccess []ResourceWithAccess `yaml:"resources,omitempty"`
 }
 
-type DCAccess storage.Access
+type Access storage.Access
 
-func (a DCAccess) MarshalYAML() ([]byte, error) {
+type ResourceWithAccess struct {
+	Resource string `yaml:"resource,omitempty"`
+	Access   Access `yaml:"access,omitempty"`
+}
+
+func (a Access) MarshalYAML() ([]byte, error) {
 	protoAccess := storage.Access(a)
 	return []byte(protoAccess.String()), nil
 }
 
-func (a *DCAccess) UnmarshalYAML(value *yaml.Node) error {
+func (a *Access) UnmarshalYAML(value *yaml.Node) error {
 	var v string
 	if err := value.Decode(&v); err != nil {
 		return err
@@ -28,6 +33,6 @@ func (a *DCAccess) UnmarshalYAML(value *yaml.Node) error {
 	if !ok {
 		return errors.New("not found")
 	}
-	*a = DCAccess(i)
+	*a = Access(i)
 	return nil
 }

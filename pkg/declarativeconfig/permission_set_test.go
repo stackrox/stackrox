@@ -12,9 +12,11 @@ func TestPermissionSetYAMLTransformation(t *testing.T) {
 	data := []byte(`
 name: test-name
 description: test-description
-resource_to_access:
-  a: READ_ACCESS
-  b: READ_WRITE_ACCESS
+resources:
+- resource: a
+  access: READ_ACCESS
+- resource: b
+  access: READ_WRITE_ACCESS
 `)
 	ps := PermissionSet{}
 
@@ -22,11 +24,11 @@ resource_to_access:
 	assert.NoError(t, err)
 	assert.Equal(t, "test-name", ps.Name)
 	assert.Equal(t, "test-description", ps.Description)
-	accessValueForA, hasA := ps.ResourceToAccess["a"]
-	accessValueForB, hasB := ps.ResourceToAccess["b"]
-	assert.True(t, hasA)
-	assert.True(t, hasB)
 	assert.Len(t, ps.ResourceToAccess, 2)
-	assert.Equal(t, storage.Access_READ_ACCESS, storage.Access(accessValueForA))
-	assert.Equal(t, storage.Access_READ_WRITE_ACCESS, storage.Access(accessValueForB))
+	resourceA := ps.ResourceToAccess[0]
+	resourceB := ps.ResourceToAccess[1]
+	assert.Equal(t, "a", resourceA.Resource)
+	assert.Equal(t, "b", resourceB.Resource)
+	assert.Equal(t, storage.Access_READ_ACCESS, storage.Access(resourceA.Access))
+	assert.Equal(t, storage.Access_READ_WRITE_ACCESS, storage.Access(resourceB.Access))
 }
