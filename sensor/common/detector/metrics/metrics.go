@@ -49,7 +49,7 @@ var (
 	},
 		[]string{
 			// Name of the node sending an inventory
-			"nodeName",
+			"node_name",
 		})
 )
 
@@ -75,7 +75,7 @@ func ObserveNetworkPolicyStoreEvent(event, namespace string, numSelectors int) {
 // ObserveReceivedNodeInventory observes the metric.
 func ObserveReceivedNodeInventory(inventory *storage.NodeInventory) {
 	receivedNodeInventory.With(prometheus.Labels{
-		"nodeName": inventory.NodeName,
+		"node_name": inventory.NodeName,
 	}).Inc()
 }
 
