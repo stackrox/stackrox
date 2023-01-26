@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
@@ -207,6 +208,71 @@ func TestMultiTableQueries(t *testing.T) {
 					actualJoins = append(actualJoins, join.rightTable)
 				}
 				assert.ElementsMatch(t, c.expectedJoinTables, actualJoins)
+			}
+		})
+	}
+}
+
+func TestGroupByString(t *testing.T) {
+	t.Parallel()
+
+	for _, c := range []struct {
+		desc          string
+		q             *v1.Query
+		schema        *walker.Schema
+		expectedQuery string
+		expectedError bool
+	}{
+		{
+			desc:          "group by primary key; having w/ derived field",
+			q:             search.NewQueryBuilder().AddStrings(search.TestParent1ValCount, ">1").ProtoQuery(),
+			schema:        schema.TestParent1Schema,
+			expectedQuery: "select test_parent1.Id test_parent1_Id from test_parent1 group by test_parent1.Id having count(test_parent1.Val) > $1",
+		},
+		{
+			desc: "group by non-primary key; having w/ derived field; no join",
+			q: func() *v1.Query {
+				q := search.NewQueryBuilder().AddStrings(search.TestParent1ValCount, ">2").ProtoQuery()
+				q.GroupBy = &v1.QueryGroupBy{
+					Fields: []string{search.TestParent1Val.String()},
+				}
+				return q
+			}(),
+			schema:        schema.TestParent1Schema,
+			expectedQuery: "select unnest_t.f1, inner_t.Val from (select jsonb_agg(row(test_parent1.Id)), test_parent1.Val from test_parent1 group by test_parent1.Val having count(test_parent1.Val) > $1) inner_t, jsonb_to_recordset(inner_t.jsonb_agg) as unnest_t(f1 varchar)",
+		},
+		{
+			desc: "group by non-primary key; having w/ derived field; w/ join",
+			q: func() *v1.Query {
+				q := search.NewQueryBuilder().AddStrings(search.TestChild1Count, ">5").ProtoQuery()
+				q.GroupBy = &v1.QueryGroupBy{
+					Fields: []string{search.TestGrandparentVal.String()},
+				}
+				return q
+			}(),
+			schema:        schema.TestGrandparentsSchema,
+			expectedQuery: "select unnest_t.f1, inner_t.Val from (select jsonb_agg(row(test_grandparents.Id)), test_grandparents.Val from test_grandparents inner join test_parent1 on test_grandparents.Id = test_parent1.ParentId inner join test_parent1_childrens on test_parent1.Id = test_parent1_childrens.test_parent1_Id inner join test_child1 on test_parent1_childrens.ChildId = test_child1.Id group by test_grandparents.Val having count(test_child1.Id) > $1) inner_t, jsonb_to_recordset(inner_t.jsonb_agg) as unnest_t(f1 varchar)",
+		},
+		{
+			desc: "group by derived field",
+			q: func() *v1.Query {
+				q := search.NewQueryBuilder().AddStrings(search.TestParent1ValCount, ">2").ProtoQuery()
+				q.GroupBy = &v1.QueryGroupBy{
+					Fields: []string{search.TestParent1ValCount.String()},
+				}
+				return q
+			}(),
+			schema:        schema.TestParent1Schema,
+			expectedError: true,
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			actual, err := standardizeQueryAndPopulatePath(c.q, c.schema, SEARCH)
+			if c.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, c.expectedQuery, actual.AsSQL())
 			}
 		})
 	}

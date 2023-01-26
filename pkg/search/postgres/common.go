@@ -531,7 +531,6 @@ func aggregateRowsAndUnnest(innerQ *query) *query {
 			// The json fields are f1, f2,...
 			fieldName := fmt.Sprintf("f%d", i+1)
 			field.SelectPath = qualifyColumn(unnestTableAlias, fieldName, "")
-			// TODO: UUID cast
 			innerQAggrFieldsTypeStr = append(innerQAggrFieldsTypeStr,
 				fmt.Sprintf("%s %s", fieldName, walker.DataTypeToSQLType(field.FieldType)),
 			)
