@@ -92,7 +92,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return err
 	}
 	// TODO(ROX-14484): Resolve the race between pipelines - End of critical section (when CalculateRiskAndUpsertNode finishes)
-	// We will loose data written in the node pipelinen if the node pipeline writes an update to the DB
+	// We will loose data written in the node pipeline if the node pipeline writes an update to the DB
 	// while this pipeline is in the critical section!
 	return nil
 }
