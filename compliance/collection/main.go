@@ -10,6 +10,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
+	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/collection/nodeinventorizer"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -276,7 +277,9 @@ func main() {
 	go manageReceiveStream(ctx, cli, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		log.Infof("Node Rescan interval: %v", env.NodeRescanInterval.DurationSetting())
+		rescanInterval := env.NodeRescanInterval.DurationSetting()
+		cmetrics.ObserveRescanInterval(rescanInterval, getNode())
+		log.Infof("Node Rescan interval: %v", rescanInterval)
 		sensorC := make(chan *sensor.MsgFromCompliance)
 		defer close(sensorC)
 		go manageSendingToSensor(ctx, cli, sensorC)
@@ -289,7 +292,7 @@ func main() {
 			log.Infof("Using NodeInventoryCollector")
 			scanner = &nodeinventorizer.NodeInventoryCollector{}
 		}
-		nodeInventoriesC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), scanner)
+		nodeInventoriesC := manageNodeScanLoop(ctx, rescanInterval, scanner)
 
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
 		go func() {

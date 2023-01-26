@@ -11,8 +11,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-13814: A new "Public Kubernetes Registry" image integration is now available as a replacement
   for the (now deprecated) "Public Kubernetes GCR" image integration.
-- ROX-13799: Introduce Prometheus metrics for Node Scanning. 
-  Specifically, the `Compliance` container now exposes metrics on `ROX_METRICS_PORT` (defaults to `:9091`)  if `exposeMonitoring` is set for the collector Pod.
 
 ### Removed Features
 - ROX-12316: As announced in 3.72, the permission `Cluster` replaces the deprecated permission `ClusterCVE`.
