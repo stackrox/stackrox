@@ -1,4 +1,4 @@
-package m170Tom171
+package m171Tom172
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
-	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
-	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
+	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
+	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
+	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	startSeqNum = 170
+	startSeqNum = 171
 
 	scopeAttachedToConfigsTemplate = "This scope is attached to following report configurations [%s]; "
 
@@ -37,7 +37,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: startSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 171
+		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 172
 		Run: func(databases *types.Databases) error {
 			err := moveScopesInReportsToCollections(databases.PostgresDB)
 			if err != nil {

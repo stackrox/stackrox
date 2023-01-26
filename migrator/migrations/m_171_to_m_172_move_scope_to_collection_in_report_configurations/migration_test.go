@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package m170Tom171
+package m171Tom172
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
-	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
-	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
+	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
+	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
+	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"
