@@ -137,7 +137,7 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       --platform linux/amd64 \
       --rm -it \
       --entrypoint="$0" \
-      quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.53 "$@"
+      quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55 "$@"
     exit 0
 fi
 
