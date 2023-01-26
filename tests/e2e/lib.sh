@@ -164,18 +164,7 @@ deploy_central_via_operator() {
       > /tmp/central-cr.yaml
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
 
-    # Wait until the central deployment has appeared
-    local count=0
-    until kubectl -n stackrox get deploy central > /dev/null 2>&1; do
-        count=$((count + 1))
-        if [[ $count -ge 15 ]]; then
-            info "The central deployment did not appear after 5 minutes"
-            kubectl -n stackrox get deploy central
-            exit 1
-        fi
-        info "Waiting for the central deployment to appear"
-        sleep 20
-    done
+    wait_for_object_to_appear stackrox deploy/central 300
 }
 
 deploy_sensor_from_helm_charts() {
@@ -245,6 +234,8 @@ deploy_sensor_via_operator() {
     | kubectl -n stackrox apply -f -
 
     kubectl apply -n stackrox -f operator/tests/e2e/secured-cluster-cr.yaml
+
+    wait_for_object_to_appear stackrox deploy/sensor 300
 }
 
 export_central_basic_auth_creds() {
@@ -696,6 +687,31 @@ wait_for_central_db() {
     done
 
     info "Central DB deployment is ready."
+}
+
+wait_for_object_to_appear() {
+    if [[ "$#" -lt 2 ]]; then
+        die "missing args. usage: wait_for_object_to_appear <namespace> <object> [<delay>]"
+    fi
+
+    local namespace="$1"
+    local object="$2"
+    local delay="${3:-300}"
+    local waitInterval=20
+    local tries=$(( delay / waitInterval ))
+    local count=0
+    until kubectl -n "$namespace" get "$object" > /dev/null 2>&1; do
+        count=$((count + 1))
+        if [[ $count -ge "$tries" ]]; then
+            info "$namespace $object did not appear after $count tries"
+            kubectl -n "$namespace" get "$object"
+            return 1
+        fi
+        info "Waiting for $namespace $object to appear"
+        sleep "$waitInterval"
+    done
+
+    return 0
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
