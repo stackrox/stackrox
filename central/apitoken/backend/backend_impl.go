@@ -32,6 +32,8 @@ func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames
 	}
 
 	md := metadataFromTokenInfo(name, tokenInfo)
+	// Preset info for notifications about expiring tokens
+	md.ExpirationNotifiedAt = md.IssuedAt
 
 	if err := c.tokenStore.AddToken(ctx, md); err != nil {
 		return "", nil, err
@@ -68,7 +70,6 @@ func (c *backendImpl) RevokeToken(ctx context.Context, tokenID string) (bool, er
 func metadataFromTokenInfo(name string, info *tokens.TokenInfo) *storage.TokenMetadata {
 	var singleRole string
 	if len(info.RoleNames) == 1 {
-		singleRole = info.RoleNames[0]
 	}
 	return &storage.TokenMetadata{
 		Id:         info.ID,

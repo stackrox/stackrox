@@ -3,9 +3,12 @@ package datastore
 import (
 	"context"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is the gateway to the DB that enforces access control.
@@ -15,9 +18,21 @@ type DataStore interface {
 
 	AddToken(ctx context.Context, token *storage.TokenMetadata) error
 	RevokeToken(ctx context.Context, id string) (exists bool, err error)
+
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 }
 
 // New returns a ready-to-use DataStore instance.
 func New(storage store.Store) DataStore {
 	return &datastoreImpl{storage: storage}
+}
+
+// NewPostgres returns a ready-to-use DataStore instance plugged to postgres.
+func NewPostgres(pool *pgxpool.Pool) DataStore {
+	return newPostgres(pool)
+}
+
+// NewRocks returns a ready-to-use DataStore instance plugged to rocksdb.
+func NewRocks(rocksDBInstance *rocksdb.RocksDB) DataStore {
+	return newRocks(rocksDBInstance)
 }

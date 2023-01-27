@@ -99,7 +99,7 @@ func parseDuration(d string) (time.Duration, bool) {
 }
 
 func parseTimeString(value string) (time.Time, bool) {
-	layouts := []string{"01/02/2006 3:04:05 PM MST", "01/02/2006 3:04 PM MST", "01/02/2006 3:04:05 PM", "01/02/2006 3:04 PM", "01/02/2006 MST", "01/02/2006"}
+	layouts := []string{"01/02/2006 3:04:05 PM MST", "01/02/2006 3:04 PM MST", "01/02/2006 3:04:05 PM", "01/02/2006 3:04 PM", "01/02/2006 MST", "01/02/2006", sqlTimeStampFormat}
 	for _, layout := range layouts {
 		if t, err := time.Parse(layout, value); err == nil {
 			return t, true

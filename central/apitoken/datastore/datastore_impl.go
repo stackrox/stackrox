@@ -3,12 +3,18 @@ package datastore
 import (
 	"context"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
+	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
+	rocksdbStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -17,9 +23,29 @@ var (
 )
 
 type datastoreImpl struct {
-	storage store.Store
+	storage  store.Store
+	searcher search.Searcher
 
 	sync.Mutex
+}
+
+func newPostgres(pool *pgxpool.Pool) *datastoreImpl {
+	storage := postgresStore.New(pool)
+	indexer := postgresStore.NewIndexer(pool)
+	searcher := blevesearch.WrapUnsafeSearcherAsSearcher(indexer)
+
+	return &datastoreImpl{
+		storage:  storage,
+		searcher: searcher,
+	}
+}
+
+func newRocks(rocksDBInstance *rocksdb.RocksDB) *datastoreImpl {
+	storage := rocksdbStore.New(rocksDBInstance)
+	return &datastoreImpl{
+		storage:  storage,
+		searcher: nil,
+	}
 }
 
 func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetadata) error {
@@ -105,4 +131,13 @@ func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error
 		return false, err
 	}
 	return true, nil
+}
+
+func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+	return b.searcher.Search(ctx, q)
 }

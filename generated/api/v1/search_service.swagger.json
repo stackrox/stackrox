@@ -92,7 +92,8 @@
                 "IMAGE_INTEGRATIONS",
                 "COLLECTIONS",
                 "POLICY_CATEGORY_EDGE",
-                "PROCESS_LISTENING_ON_PORT"
+                "PROCESS_LISTENING_ON_PORT",
+                "API_TOKEN"
               ]
             },
             "collectionFormat": "multi"
@@ -184,7 +185,8 @@
                 "IMAGE_INTEGRATIONS",
                 "COLLECTIONS",
                 "POLICY_CATEGORY_EDGE",
-                "PROCESS_LISTENING_ON_PORT"
+                "PROCESS_LISTENING_ON_PORT",
+                "API_TOKEN"
               ]
             },
             "collectionFormat": "multi"
@@ -270,7 +272,8 @@
                 "IMAGE_INTEGRATIONS",
                 "COLLECTIONS",
                 "POLICY_CATEGORY_EDGE",
-                "PROCESS_LISTENING_ON_PORT"
+                "PROCESS_LISTENING_ON_PORT",
+                "API_TOKEN"
               ]
             },
             "collectionFormat": "multi"
@@ -405,10 +408,11 @@
         "IMAGE_INTEGRATIONS",
         "COLLECTIONS",
         "POLICY_CATEGORY_EDGE",
-        "PROCESS_LISTENING_ON_PORT"
+        "PROCESS_LISTENING_ON_PORT",
+        "API_TOKEN"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 51"
+      "title": "Next available tag: 52"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

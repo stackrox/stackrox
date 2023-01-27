@@ -1346,6 +1346,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.TaintEffect(0)))
 	utils.Must(builder.AddType("TokenMetadata", []string{
 		"expiration: Time",
+		"expirationNotifiedAt: Time",
 		"id: ID!",
 		"issuedAt: Time",
 		"name: String!",
@@ -14622,6 +14623,11 @@ func (resolver *Resolver) wrapTokenMetadatasWithContext(ctx context.Context, val
 
 func (resolver *tokenMetadataResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
+	return timestamp(value)
+}
+
+func (resolver *tokenMetadataResolver) ExpirationNotifiedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetExpirationNotifiedAt()
 	return timestamp(value)
 }
 
