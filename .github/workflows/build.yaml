@@ -87,7 +87,7 @@ jobs:
   pre-build-go-binaries:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55-1-gd2a8e8bfde
     steps:
       - name: Checkout
         uses: actions/checkout@v3
