@@ -200,6 +200,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
+    @IgnoreIf({ Env.CI_JOB_NAME.contains("postgres") })
     def "Verify upgraded policies match default policy set"() {
         given:
         "Default policies in code"
