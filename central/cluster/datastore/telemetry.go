@@ -7,20 +7,26 @@ import (
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
 const securedClusterClient = "Secured Cluster"
 
-func trackClusterRegistered(cluster *storage.Cluster) {
+func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		userID := cfg.ClientID
+		id, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			userID = cfg.HashUserAuthID(id)
+		}
 		props := map[string]any{
 			"Cluster Type": cluster.GetType().String(),
 			"Cluster ID":   cluster.GetId(),
 			"Managed By":   cluster.GetManagedBy().String(),
 		}
-		cfg.Telemeter().Track("Secured Cluster Registered", props)
+		cfg.Telemeter().TrackUserAs(userID, "", "", "Secured Cluster Registered", props)
 
 		// Add the secured cluster 'user' to the Tenant group:
 		cfg.Telemeter().GroupUserAs(cluster.GetId(), "", "", cfg.GroupID, nil)
