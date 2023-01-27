@@ -42,11 +42,17 @@ function getBaseNode(id: string): CustomNodeModel {
     } as CustomNodeModel;
 }
 
-function getNamespaceNode(namespace: string, deploymentId: string): NamespaceNodeModel {
+function getNamespaceNode(
+    namespace: string,
+    cluster: string,
+    deploymentId: string
+): NamespaceNodeModel {
     const namespaceData: NamespaceData = {
         collapsible: true,
         showContextMenu: false,
         type: 'NAMESPACE',
+        namespace,
+        cluster,
     };
     return {
         id: namespace,
@@ -208,12 +214,12 @@ export function transformActiveData(
 
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
-            const { namespace } = entity.deployment;
+            const { namespace, cluster } = entity.deployment;
             const namespaceNode = namespaceNodes[namespace];
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, id);
+                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
             }
 
             // creating deployment nodes
@@ -498,12 +504,12 @@ export function createExtraneousFlowsModel(
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
             const { deployment, id } = data;
-            const { namespace } = deployment;
+            const { namespace, cluster } = deployment;
             const namespaceNode = namespaceNodes[namespace];
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, id);
+                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
             }
         }
 

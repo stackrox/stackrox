@@ -15,7 +15,11 @@ import {
 
 import useTabs from 'hooks/patternfly/useTabs';
 import { uniq } from 'lodash';
-import { getDeploymentNodesInNamespace, getNumDeploymentFlows } from '../utils/networkGraphUtils';
+import {
+    getDeploymentNodesInNamespace,
+    getNodeById,
+    getNumDeploymentFlows,
+} from '../utils/networkGraphUtils';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
@@ -35,7 +39,9 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
     });
 
     // derived state
+    const namespaceNode = getNodeById(nodes, namespaceId);
     const deploymentNodes = getDeploymentNodesInNamespace(nodes, namespaceId);
+    const cluster = namespaceNode?.data.type === 'NAMESPACE' ? namespaceNode.data.cluster : '';
 
     const deployments = deploymentNodes.map((deploymentNode) => {
         const numFlows = getNumDeploymentFlows(edges, deploymentNode.id);
@@ -60,7 +66,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
                     <FlexItem>
                         <TextContent>
                             <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                                stackrox
+                                {namespaceNode?.label}
                             </Text>
                         </TextContent>
                         <TextContent>
@@ -68,7 +74,9 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
                                 component={TextVariants.h2}
                                 className="pf-u-font-size-sm pf-u-color-200"
                             >
-                                in &quot;remote&quot;
+                                in &quot;
+                                {cluster}
+                                &quot;
                             </Text>
                         </TextContent>
                     </FlexItem>
