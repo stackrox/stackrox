@@ -156,7 +156,10 @@ deploy_central_via_operator() {
     make -C operator stackrox-image-pull-secret
 
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    ADMIN_PASSWORD_BASE64="$(echo "$ROX_PASSWORD" | base64)"
+    centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
+
+    centralDefaultTlsSecretKeyBase64="$(base64 < "${ROX_DEFAULT_TLS_KEY_FILE}")"
+    centralDefaultTlsSecretCertBase64="$(base64 < "${ROX_DEFAULT_TLS_CERT_FILE}")"
 
     case "${ROX_POSTGRES_DATASTORE}" in
     "true") central_db_isEnabled="Enabled" ;;
@@ -171,7 +174,9 @@ deploy_central_via_operator() {
     esac
 
     env - \
-      ADMIN_PASSWORD_BASE64="$ADMIN_PASSWORD_BASE64" \
+      centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+      centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
+      centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
       central_db_isEnabled="$central_db_isEnabled" \
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
