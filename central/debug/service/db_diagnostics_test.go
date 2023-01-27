@@ -70,5 +70,5 @@ func (s *DBDiagnosticTestSuite) TestBuildDiagnosticData() {
 
 	// Drive some error cases
 	diagnosticData = buildDBDiagnosticData(s.ctx, nil, s.dbPool)
-	s.Equal(diagnosticData.DatabaseConnectString, unableToGetConnectionInfo)
+	s.Equal(diagnosticData.DatabaseConnectString, "")
 }
