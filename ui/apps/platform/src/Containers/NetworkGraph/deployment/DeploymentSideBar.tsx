@@ -65,6 +65,10 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
     const listenPorts = getListenPorts(nodes, deploymentId);
     const deploymentPolicyIds =
         deploymentNode?.data.type === 'DEPLOYMENT' ? deploymentNode?.data?.policyIds : [];
+    const networkPolicyState =
+        deploymentNode?.data.type === 'DEPLOYMENT'
+            ? deploymentNode.data.networkPolicyState
+            : 'none';
 
     if (isLoading) {
         return (
@@ -150,6 +154,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                                     numExternalFlows={numExternalFlows}
                                     numInternalFlows={numInternalFlows}
                                     listenPorts={listenPorts}
+                                    networkPolicyState={networkPolicyState}
                                 />
                             )}
                         </TabContent>
