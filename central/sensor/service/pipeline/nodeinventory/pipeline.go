@@ -67,7 +67,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
 
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
-		// NodeInventory will never be deleted
+		log.Warn("Deletion of NodeInventories is not supported", ninv.GetNodeId())
 		return nil
 	}
 
