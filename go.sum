@@ -1791,6 +1791,8 @@ github.com/stackrox/scanner v0.0.0-20230120022619-96107ead11f0 h1:zptoNaSOjU3NWs
 github.com/stackrox/scanner v0.0.0-20230120022619-96107ead11f0/go.mod h1:RwswIqA9mUk4ON9GPU9bTFBXzsQFQR8F85Yv/8W8vU0=
 github.com/stackrox/scanner v0.0.0-20230123093733-a299911d6af0 h1:kxTaX5WGC3HRDdiUCYxxquLajf/Vfq0kQXBqsPOzMAI=
 github.com/stackrox/scanner v0.0.0-20230123093733-a299911d6af0/go.mod h1:RwswIqA9mUk4ON9GPU9bTFBXzsQFQR8F85Yv/8W8vU0=
+github.com/stackrox/scanner v0.0.0-20230127075840-1c373325cab0 h1:sYRklnvpw92Juwh9hwd7MHQE2p6WIKCzJw69JSNIgxQ=
+github.com/stackrox/scanner v0.0.0-20230127075840-1c373325cab0/go.mod h1:RwswIqA9mUk4ON9GPU9bTFBXzsQFQR8F85Yv/8W8vU0=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
