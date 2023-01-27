@@ -153,7 +153,7 @@ export const basePathToLabelMap = {
     [networkBasePath]: 'Network Graph',
     [networkBasePathPF]: (
         <Flex>
-            <FlexItem>New Network Graph</FlexItem>
+            <FlexItem>Network Graph 2.0</FlexItem>
             <FlexItem>
                 <Badge style={{ backgroundColor: 'var(--pf-global--palette--gold-400)' }}>
                     Preview
