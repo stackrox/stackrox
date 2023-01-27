@@ -2,6 +2,9 @@
  * Application route paths constants.
  */
 
+import React from 'react';
+import { Badge, Flex, FlexItem } from '@patternfly/react-core';
+
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
 
 export const mainPath = '/main';
@@ -148,7 +151,16 @@ const vulnManagementPathToLabelMap = {
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph',
-    [networkBasePathPF]: 'Network Graph-Patternfly',
+    [networkBasePathPF]: (
+        <Flex>
+            <FlexItem>New Network Graph</FlexItem>
+            <FlexItem>
+                <Badge style={{ backgroundColor: 'var(--pf-global--palette--gold-400)' }}>
+                    Preview
+                </Badge>
+            </FlexItem>
+        </Flex>
+    ),
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     ...vulnManagementPathToLabelMap,
