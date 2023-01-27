@@ -175,16 +175,16 @@ deploy_central_via_operator() {
 
     customize_envVars=""
     if [[ "${CGO_CHECKS:-}" == "true" ]]; then
-        customize_envVars+=$'\n      GODEBUG: 2'
-        customize_envVars+=$'\n      MUTEX_WATCHDOG_TIMEOUT_SECS: 15'
+        customize_envVars+=$'\n      - GODEBUG: 2'
+        customize_envVars+=$'\n      - MUTEX_WATCHDOG_TIMEOUT_SECS: 15'
     fi
-    customize_envVars+=$'\n      ROX_BASELINE_GENERATION_DURATION: '"${ROX_BASELINE_GENERATION_DURATION}"
-    customize_envVars+=$'\n      ROX_DEVELOPMENT_BUILD: true'
-    customize_envVars+=$'\n      ROX_HOTRELOAD: false'
-    customize_envVars+=$'\n      ROX_MANAGED_CENTRAL: false'
-    customize_envVars+=$'\n      ROX_NETWORK_ACCESS_LOG: false'
-    customize_envVars+=$'\n      ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
-    customize_envVars+=$'\n      ROX_POSTGRES_DATASTORE: '"${ROX_POSTGRES_DATASTORE:-false}"
+    customize_envVars+=$'\n      - ROX_BASELINE_GENERATION_DURATION: '"${ROX_BASELINE_GENERATION_DURATION}"
+    customize_envVars+=$'\n      - ROX_DEVELOPMENT_BUILD: true'
+    customize_envVars+=$'\n      - ROX_HOTRELOAD: false'
+    customize_envVars+=$'\n      - ROX_MANAGED_CENTRAL: false'
+    customize_envVars+=$'\n      - ROX_NETWORK_ACCESS_LOG: false'
+    customize_envVars+=$'\n      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
+    customize_envVars+=$'\n      - ROX_POSTGRES_DATASTORE: '"${ROX_POSTGRES_DATASTORE:-false}"
 
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
