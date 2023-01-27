@@ -42,11 +42,17 @@ function getBaseNode(id: string): CustomNodeModel {
     } as CustomNodeModel;
 }
 
-function getNamespaceNode(namespace: string, deploymentId: string): NamespaceNodeModel {
+function getNamespaceNode(
+    namespace: string,
+    cluster: string,
+    deploymentId: string
+): NamespaceNodeModel {
     const namespaceData: NamespaceData = {
         collapsible: true,
         showContextMenu: false,
         type: 'NAMESPACE',
+        namespace,
+        cluster,
     };
     return {
         id: namespace,
@@ -197,22 +203,23 @@ export function transformActiveData(
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
 
-    nodes.forEach(({ entity, policyIds, outEdges }) => {
+    nodes.forEach(({ entity, outEdges }) => {
         const { type, id } = entity;
         const { networkPolicyState } = policyNodeMap[id]?.data || {};
         const isExternallyConnected = Object.keys(outEdges).some((nodeIdx) => {
             const { entity: targetEntity } = nodes[nodeIdx];
             return targetEntity.type === 'EXTERNAL_SOURCE' || targetEntity.type === 'INTERNET';
         });
+        const policyIds = policyNodeMap[id]?.data.policyIds || [];
 
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
-            const { namespace } = entity.deployment;
+            const { namespace, cluster } = entity.deployment;
             const namespaceNode = namespaceNodes[namespace];
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, id);
+                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
             }
 
             // creating deployment nodes
@@ -497,12 +504,12 @@ export function createExtraneousFlowsModel(
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
             const { deployment, id } = data;
-            const { namespace } = deployment;
+            const { namespace, cluster } = deployment;
             const namespaceNode = namespaceNodes[namespace];
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, id);
+                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
             }
         }
 
