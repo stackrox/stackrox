@@ -158,9 +158,9 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
 	// Otherwise we roll with Postgres->Postgres
-	if d.rocksExists(rocksVersion) {
+	if d.versionExists(rocksVersion) {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
-		if !currExists || currClone.GetMigVersion() == nil {
+		if !currExists || !d.versionExists(currClone.GetMigVersion()) {
 			return CurrentClone, true, nil
 		}
 	}
@@ -210,10 +210,10 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	return CurrentClone, false, nil
 }
 
-func (d *dbCloneManagerImpl) rocksExists(rocksVersion *migrations.MigrationVersion) bool {
-	if rocksVersion != nil &&
-		rocksVersion.SeqNum != 0 &&
-		rocksVersion.MainVersion != "0" {
+func (d *dbCloneManagerImpl) versionExists(dbVersion *migrations.MigrationVersion) bool {
+	if dbVersion != nil &&
+		dbVersion.SeqNum != 0 &&
+		dbVersion.MainVersion != "0" {
 		return true
 	}
 

@@ -232,30 +232,16 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 		LastPersisted: time.Now(),
 	}
 
-	// Need to migrate from Rocks because Rocks is more current.
+	// Need to migrate from Postgres because it exists
 	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion, false)
-	s.Equal(clone, CurrentClone)
-	s.True(migrateRocks)
-	s.Nil(err)
-
-	rocksVersion = &migrations.MigrationVersion{
-		SeqNum:        currVer.seqNum,
-		MainVersion:   currVer.version,
-		LastPersisted: time.Now().Add(-time.Hour * 24),
-	}
-
-	// Need to migrate from Rocks because Rocks is more current.
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
 	s.Nil(err)
 
-	// Need to migrate from Rocks because it is newer.
-	rocksVersion = &migrations.MigrationVersion{
-		SeqNum:        currVer.seqNum,
-		MainVersion:   currVer.version,
-		LastPersisted: time.Now().Add(time.Hour * 24),
-	}
+	// Need to migrate from Rocks because Rocks exists and Postgres is fresh.
+	pgtest.DropDatabase(s.T(), migrations.CurrentDatabase)
+	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
+
 	// Need to re-scan to get the clone deletion
 	s.Nil(dbm.Scan())
 	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
