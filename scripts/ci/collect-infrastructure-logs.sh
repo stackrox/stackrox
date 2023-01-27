@@ -23,6 +23,10 @@ else
     log_dir="/tmp/k8s-service-logs"
 fi
 
+# This will attempt to collect kube API server audit logs on OpenShift.
+# It would be great to do the same on other cluster types but that would be much harder do in a portable way.
+(cd "${log_dir}" && oc version && oc adm must-gather -- /usr/bin/gather_audit_logs && du -sh must-gather*) || true
+
 kubectl proxy &
 proxy_pid=$!
 

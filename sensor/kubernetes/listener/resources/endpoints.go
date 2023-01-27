@@ -12,8 +12,8 @@ import (
 )
 
 type endpointManager interface {
-	OnDeploymentCreateOrUpdateByID(id string)
 	OnDeploymentCreateOrUpdate(deployment *deploymentWrap)
+	OnDeploymentCreateOrUpdateByID(id string)
 	OnDeploymentRemove(deployment *deploymentWrap)
 
 	OnServiceCreate(svc *serviceWrap)
@@ -27,12 +27,12 @@ type endpointManagerImpl struct {
 	serviceStore    *serviceStore
 	deploymentStore *DeploymentStore
 	podStore        *PodStore
-	nodeStore       *nodeStore
+	nodeStore       nodeStore
 
 	entityStore *clusterentities.Store
 }
 
-func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore *nodeStore, entityStore *clusterentities.Store) endpointManager {
+func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore nodeStore, entityStore *clusterentities.Store) *endpointManagerImpl {
 	return &endpointManagerImpl{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
