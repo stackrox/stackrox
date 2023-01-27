@@ -16,6 +16,8 @@ spec:
         enabled: $central_exposure_loadBalancer_enabled
       route:
         enabled: $central_exposure_route_enabled
+  customize:
+    envVars:$customize_envVars
   scanner:
     analyzer:
       scaling:

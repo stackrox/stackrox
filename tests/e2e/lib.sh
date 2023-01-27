@@ -173,6 +173,19 @@ deploy_central_via_operator() {
     "route") central_exposure_route_enabled="true" ;;
     esac
 
+    customize_envVars=""
+    if [[ "${CGO_CHECKS}" == "true" ]]; then
+        customize_envVars+=$'\n      GODEBUG: 2'
+        customize_envVars+=$'\n      MUTEX_WATCHDOG_TIMEOUT_SECS: 15'
+    fi
+    customize_envVars+=$'\n      ROX_BASELINE_GENERATION_DURATION: '"${ROX_BASELINE_GENERATION_DURATION}"
+    customize_envVars+=$'\n      ROX_DEVELOPMENT_BUILD: true'
+    customize_envVars+=$'\n      ROX_HOTRELOAD: false'
+    customize_envVars+=$'\n      ROX_MANAGED_CENTRAL: false'
+    customize_envVars+=$'\n      ROX_NETWORK_ACCESS_LOG: false'
+    customize_envVars+=$'\n      ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
+    customize_envVars+=$'\n      ROX_POSTGRES_DATASTORE: '"${ROX_POSTGRES_DATASTORE:-false}"
+
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
       centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
@@ -180,6 +193,7 @@ deploy_central_via_operator() {
       central_db_isEnabled="$central_db_isEnabled" \
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
+      customize_envVars="$customize_envVars" \
     envsubst \
       < operator/tests/e2e/central-cr.envsubst.yaml \
       > /tmp/central-cr.yaml
