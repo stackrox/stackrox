@@ -109,7 +109,7 @@ spec:
           value: "true"
         {{- end }}
         {{- if ._rox.env.openshift }}
-        - name: ROX_OPENSHIFT_API
+        - name: ROX_OPENSHIFT
           value: "true"
         {{- end }}
         {{- if ._rox.env.managedServices }}

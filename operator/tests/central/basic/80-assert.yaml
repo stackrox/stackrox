@@ -21,7 +21,7 @@ spec:
               value: "false"
             - name: ROX_ENABLE_OPENSHIFT_AUTH
               value: "true"
-            - name: ROX_OPENSHIFT_API
+            - name: ROX_OPENSHIFT
               value: "true"
             - name: ROX_POSTGRES_DATASTORE
               value: "true"
