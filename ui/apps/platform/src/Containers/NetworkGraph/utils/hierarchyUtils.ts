@@ -1,6 +1,6 @@
 import { SearchFilter } from 'types/search';
 
-export default function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
+export function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
     const workingQuery = { ...searchFilter };
     const hierarchy: {
         cluster: string | undefined;
@@ -34,3 +34,7 @@ export default function getScopeHierarchyFromSearch(searchFilter: SearchFilter) 
 
     return hierarchy;
 }
+
+export default {
+    getScopeHierarchyFromSearch,
+};

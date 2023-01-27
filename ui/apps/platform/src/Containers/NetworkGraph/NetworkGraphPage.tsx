@@ -38,7 +38,7 @@ import {
     createExtraneousFlowsModel,
     graphModel,
 } from './utils/modelUtils';
-import getScopeHierarchy from './utils/getScopeHierarchy';
+import { getScopeHierarchyFromSearch } from './utils/hierarchyUtils';
 import getSimulation from './utils/getSimulation';
 
 import './NetworkGraphPage.css';
@@ -80,7 +80,7 @@ function NetworkGraphPage() {
         namespaces: namespacesFromUrl,
         deployments: deploymentsFromUrl,
         remainingQuery,
-    } = getScopeHierarchy(searchFilter);
+    } = getScopeHierarchyFromSearch(searchFilter);
     const simulation = getSimulation(simulationQueryValue);
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
