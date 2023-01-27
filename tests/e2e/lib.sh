@@ -108,11 +108,11 @@ deploy_stackrox_operator() {
     #Hack
     (
         set -x
-        original_machine_count="$(oc -n openshift-machine-api get machines -o json | jq -r '.items | map(select(.status.providerStatus.instanceState=="RUNNING")) | length')"
+        original_machine_count="$(oc -n openshift-machine-api get machines -o json | jq -r '.items | map(select(.status.providerStatus.instanceState | ascii_upcase=="RUNNING")) | length')"
         first_machine_set="$(oc -n openshift-machine-api get machineset -o json | jq -r '.items[0].metadata.name')"
         oc -n openshift-machine-api scale machineset "$first_machine_set" --replicas=2
         expected_machine_count=$((original_machine_count+1))
-        while [[ "$(oc -n openshift-machine-api get machines -o json | jq -r '.items | map(select(.status.providerStatus.instanceState=="RUNNING")) | length')" != "$expected_machine_count" ]]; do
+        while [[ "$(oc -n openshift-machine-api get machines -o json | jq -r '.items | map(select(.status.providerStatus.instanceState | ascii_upcase=="RUNNING")) | length')" != "$expected_machine_count" ]]; do
             sleep 60
         done
     ) || touch /tmp/hold
