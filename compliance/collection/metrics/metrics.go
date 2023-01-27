@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -15,6 +16,19 @@ var (
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "packages_in_inventory",
 		Help:      "Number of packages discovered by the last Node Inventory (per Node)",
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			// The OS name and version of the Node
+			"os_namespace",
+		})
+
+	numberOfContentSets = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "content_sets_in_inventory",
+		Help:      "Number of content sets discovered by the last Node Inventory (per Node)",
 	},
 		[]string{
 			// The Node this scan belongs to
@@ -47,6 +61,17 @@ var (
 			"node_name",
 		})
 
+	protobufMessageSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "protobuf_inventory_message_size",
+		Help:      "Message size of sent Node Inventory gRPC messages (per Node) in bytes",
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+		})
+
 	scansTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
@@ -65,11 +90,19 @@ func ObserveNodeInventoryScan(inventory *storage.NodeInventory) {
 	if inventory.Components.RhelComponents != nil {
 		rhelPackageCount = len(inventory.Components.RhelComponents)
 	}
-
 	numberOfRHELPackages.With(prometheus.Labels{
 		"node_name":    inventory.NodeName,
 		"os_namespace": inventory.Components.Namespace,
 	}).Set(float64(rhelPackageCount))
+
+	rhelContentSets := 0
+	if inventory.Components.RhelContentSets != nil {
+		rhelContentSets = len(inventory.Components.RhelContentSets)
+	}
+	numberOfContentSets.With(prometheus.Labels{
+		"node_name":    inventory.NodeName,
+		"os_namespace": inventory.Components.Namespace,
+	}).Set(float64(rhelContentSets))
 }
 
 // ObserveScanDuration observes the metric.
@@ -87,16 +120,22 @@ func ObserveRescanInterval(d time.Duration, nodeName string) {
 	}).Set(d.Seconds())
 }
 
-// ObserveScansTotal observed the metric.
+// ObserveScansTotal observed the metric
 func ObserveScansTotal(nodeName string) {
 	scansTotal.With(prometheus.Labels{
 		"node_name": nodeName,
 	}).Inc()
 }
 
+// ObserveInventoryProtobufMessage observes the metric.
+func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance) {
+	protobufMessageSize.With(prometheus.Labels{
+		"node_name": cmsg.Node,
+	}).Observe(float64(cmsg.Size()))
+}
+
 // TODO(ROX-13164): Add number of retries
-// TODO: add number of discovered language components
 
 func init() {
-	prometheus.MustRegister(numberOfRHELPackages, scanDuration, rescanInterval, scansTotal)
+	prometheus.MustRegister(numberOfRHELPackages, numberOfContentSets, scanDuration, rescanInterval, scansTotal, protobufMessageSize)
 }

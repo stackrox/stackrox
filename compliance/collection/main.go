@@ -187,10 +187,12 @@ func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sens
 	if err != nil {
 		return nil, err
 	}
-	return &sensor.MsgFromCompliance{
+	msg := &sensor.MsgFromCompliance{
 		Node: nodeName,
 		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: result},
-	}, nil
+	}
+	cmetrics.ObserveInventoryProtobufMessage(msg)
+	return msg, nil
 }
 
 func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
