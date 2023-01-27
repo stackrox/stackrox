@@ -1,4 +1,3 @@
-
 # Changelog
 Entries in this file should be limited to:
 -  Any changes that introduce a deprecation in functionality, OR
