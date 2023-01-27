@@ -73,7 +73,7 @@ tests:
     .rolebindings["central-use-scc"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
-    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT_API") == true)
+    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)
 
 - name: "central with OpenShift 4 and disabled SCCs"
   server:
@@ -92,14 +92,14 @@ tests:
     .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
-    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT_API") == true)
+    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)
 
 - name: "central with Kubernetes 1.20"
   server:
     visibleSchemas:
     - kubernetes-1.20.2
   expect: |
-    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT_API") == false)
+    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == false)
 
 - name: Tenant ID should be set when env.managedServices is true
   set:
