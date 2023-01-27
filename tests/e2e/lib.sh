@@ -103,7 +103,19 @@ deploy_stackrox_operator() {
 
     #DEBUG
     oc get nodes -o wide
-    oc get machineset -n openshift-machine-api
+    oc -n openshift-machine-api get machineset
+    oc -n openshift-machine-api get machines
+    #Hack
+    (
+        set -x
+        original_machine_count="$(oc -n openshift-machine-api get machines -o json | jq -r '.items | map(select(.status.providerStatus.instanceState=="RUNNING")) | length')"
+        first_machine_set="$(oc -n openshift-machine-api get machineset -o json | jq -r '.items[0].metadata.name')"
+        oc -n openshift-machine-api scale machineset "$first_machine_set" --replicas=2
+        expected_machine_count=$((original_machine_count+1))
+        while [[ "$(oc -n openshift-machine-api get machines -o json | jq -r '.items | map(select(.status.providerStatus.instanceState=="RUNNING")) | length')" != "$expected_machine_count" ]]; do
+            sleep 60
+        done
+    ) || touch /tmp/hold
 
     export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
     export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
@@ -453,6 +465,7 @@ remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
 
     (
+        kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
         # openshift specific:
         kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
         kubectl delete -R -f scripts/ci/psp --wait
