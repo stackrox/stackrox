@@ -80,6 +80,10 @@ Simply run:
 $ make test-e2e
 ```
 
+The end-to-end tests use [kuttl](https://kuttl.dev/) which is a tool for declarative testing of Kubernetes-based systems.
+We have a [guide that helps understand `kuttl` output
+and learn how to troubleshoot failing end-to-end tests](tests/TROUBLESHOOTING_E2E_TESTS.md).
+
 ### Secured Cluster Services
 
 An example can be found in `config/samples/platform_v1alpha1_securedcluster.yaml`.
@@ -266,4 +270,7 @@ For upgrading an existing operator:
 make kuttl upgrade-via-olm
 
 ```
-Note ерфе there is a specific command for upgrading `-dirty` suffixed tags `upgrade-dirty-tag-via-olm`
+Note that there is a specific command for upgrading `-dirty` suffixed tags `upgrade-dirty-tag-via-olm`
+
+The above targets use `kuttl` internally, so if something goes wrong you may find
+[this guide](tests/TROUBLESHOOTING_E2E_TESTS.md) useful.
