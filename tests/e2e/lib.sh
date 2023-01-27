@@ -174,7 +174,7 @@ deploy_central_via_operator() {
     esac
 
     customize_envVars=""
-    if [[ "${CGO_CHECKS}" == "true" ]]; then
+    if [[ "${CGO_CHECKS:-}" == "true" ]]; then
         customize_envVars+=$'\n      GODEBUG: 2'
         customize_envVars+=$'\n      MUTEX_WATCHDOG_TIMEOUT_SECS: 15'
     fi
