@@ -10,6 +10,8 @@ import { ReportScope } from 'hooks/useFetchReport';
 
 type ScopeNameProps = {
     reportScope: ReportScope | null;
+    // TODO This isn't a prop-type, and it -is- used. Not sure why the lint error needs to be suppressed
+    // eslint-disable-next-line react/no-unused-prop-types
     canWriteReports: boolean;
 };
 
