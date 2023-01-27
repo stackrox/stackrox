@@ -10,22 +10,20 @@ import (
 )
 
 const (
-	unableToGetConnectionInfo = "Unable to get the connection string"
+	databaseType = "PostgresDB"
 )
 
 func buildDBDiagnosticData(ctx context.Context, dbConfig *pgxpool.Config, dbPool *pgxpool.Pool) centralDBDiagnosticData {
 	diagnosticData := centralDBDiagnosticData{}
 
 	// Add the database version if Postgres
-	diagnosticData.Database = "PostgresDB"
+	diagnosticData.Database = databaseType
 	diagnosticData.DatabaseServerVersion = globaldb.GetPostgresVersion(ctx, dbPool)
 	// Get client software version
 	diagnosticData.DatabaseClientVersion = getDBClientVersion()
 	// Get extensions
 	if dbConfig != nil {
 		diagnosticData.DatabaseConnectString = strings.TrimSpace(strings.Replace(dbConfig.ConnString(), dbConfig.ConnConfig.Password, "REDACTED", -1))
-	} else {
-		diagnosticData.DatabaseConnectString = unableToGetConnectionInfo
 	}
 	diagnosticData.DatabaseExtensions = getPostgresExtensions(ctx, dbPool)
 
@@ -39,7 +37,7 @@ func getDBClientVersion() string {
 
 	clientVersion, err := exec.Command("pg_dump", options...).Output()
 	if err != nil {
-		log.Errorf("Unable to get client version:  %v", err)
+		log.Errorf("Unable to get Postgres client version:  %v", err)
 		return ""
 	}
 
@@ -53,7 +51,7 @@ func getPostgresExtensions(ctx context.Context, dbPool *pgxpool.Pool) []dbExtens
 	defer cancel()
 	row, err := dbPool.Query(ctx, extensionQuery)
 	if err != nil {
-		log.Errorf("error fetching object counts: %v", err)
+		log.Errorf("error fetching Postgres extensions: %v", err)
 		return nil
 	}
 
