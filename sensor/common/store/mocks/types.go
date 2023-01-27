@@ -511,3 +511,40 @@ func (mr *MockEndpointManagerMockRecorder) OnDeploymentCreateOrUpdateByID(id int
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnDeploymentCreateOrUpdateByID", reflect.TypeOf((*MockEndpointManager)(nil).OnDeploymentCreateOrUpdateByID), id)
 }
+
+// MockNodeStore is a mock of NodeStore interface.
+type MockNodeStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockNodeStoreMockRecorder
+}
+
+// MockNodeStoreMockRecorder is the mock recorder for MockNodeStore.
+type MockNodeStoreMockRecorder struct {
+	mock *MockNodeStore
+}
+
+// NewMockNodeStore creates a new mock instance.
+func NewMockNodeStore(ctrl *gomock.Controller) *MockNodeStore {
+	mock := &MockNodeStore{ctrl: ctrl}
+	mock.recorder = &MockNodeStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockNodeStore) EXPECT() *MockNodeStoreMockRecorder {
+	return m.recorder
+}
+
+// GetNode mocks base method.
+func (m *MockNodeStore) GetNode(nodeName string) *storage.Node {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNode", nodeName)
+	ret0, _ := ret[0].(*storage.Node)
+	return ret0
+}
+
+// GetNode indicates an expected call of GetNode.
+func (mr *MockNodeStoreMockRecorder) GetNode(nodeName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNode", reflect.TypeOf((*MockNodeStore)(nil).GetNode), nodeName)
+}

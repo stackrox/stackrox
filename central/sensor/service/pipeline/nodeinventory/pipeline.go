@@ -48,8 +48,8 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
 
-	// TODO(ROX-12240, ROX-13053): Do something meaningful with the nodeInventory
-	log.Debugf("Central received NodeInventory: %+v", nodeInventory)
+	// TODO(ROX-12975): Handle nodeInventory
+	log.Infof("Central received NodeInventory for Node name='%s' ID='%s'", nodeInventory.GetNodeName(), nodeInventory.GetNodeId())
 
 	return nil
 }
