@@ -163,23 +163,6 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		if !currExists || currClone.GetMigVersion() == nil {
 			return CurrentClone, true, nil
 		}
-
-		// Rocks more recently updated than Postgres so need to migrate from there.  Otherwise, Postgres is more recent
-		// so just fall through to the rest of the processing.
-		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) {
-			// We want to start fresh as we are migrating from Rocks->Postgres.  So any data that exists in
-			// Postgres from a previous upgrade followed by a rollback needs to be ignored.  So just drop current
-			// and let it create anew.
-			log.Infof("To start with a clean Postgres, dropping database %q", CurrentClone)
-			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, CurrentClone)
-			if err != nil {
-				log.Errorf("Unable to drop current clone: %v", err)
-				return "", true, err
-			}
-
-			return CurrentClone, true, nil
-		}
-		log.Info("Postgres is the more recent version so we will process that.")
 	}
 
 	prevClone, prevExists := d.cloneMap[PreviousClone]
@@ -229,7 +212,6 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 
 func (d *dbCloneManagerImpl) rocksExists(rocksVersion *migrations.MigrationVersion) bool {
 	if rocksVersion != nil &&
-		!rocksVersion.LastPersisted.IsZero() &&
 		rocksVersion.SeqNum != 0 &&
 		rocksVersion.MainVersion != "0" {
 		return true
