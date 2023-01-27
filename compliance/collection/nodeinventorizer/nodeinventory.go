@@ -29,13 +29,15 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 		log.Errorf("Error scanning node /host inventory: %v", err)
 		return nil, err
 	}
-	log.Info("Finished node inventory")
 	log.Debugf("Components found under /host: %v", componentsHost)
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
 	if protoComponents == nil {
 		log.Warn("Empty components returned from NodeInventory")
+	} else {
+		log.Infof("Node inventory has been built with %d packages and %d content sets",
+			len(protoComponents.GetRhelComponents()), len(protoComponents.GetRhelContentSets()))
 	}
 
 	// uncertifiedRHEL is false since scanning is only supported on RHCOS for now,
@@ -66,11 +68,17 @@ func protoComponentsFromScanComponents(c *nodes.Components) *storage.NodeInvento
 	}
 
 	// For now, we only care about RHEL components, but this must be extended once we support non-RHCOS
-	rhelComponents := convertAndDedupRHELComponents(c.CertifiedRHELComponents)
+	var rhelComponents []*storage.NodeInventory_Components_RHELComponent
+	var contentSets []string
+	if c.CertifiedRHELComponents != nil {
+		rhelComponents = convertAndDedupRHELComponents(c.CertifiedRHELComponents)
+		contentSets = c.CertifiedRHELComponents.ContentSets
+	}
 
 	protoComponents := &storage.NodeInventory_Components{
-		Namespace:      namespace,
-		RhelComponents: rhelComponents,
+		Namespace:       namespace,
+		RhelComponents:  rhelComponents,
+		RhelContentSets: contentSets,
 	}
 	return protoComponents
 }
