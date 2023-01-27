@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import logging
+
 
 def rewrite(d, rewriter):
     """
@@ -22,7 +24,9 @@ def rewrite(d, rewriter):
             if res is not None:
                 updates.append((k, res))
         for k, v in updates:
+            logging.info(f'Replaced: {d[k]} with {v}')
             d[k] = v
+
 
 def string_replacer(old, new):
     """
