@@ -38,7 +38,7 @@ func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *perm
 	// other players like central and fleet manager under the tenant group, so
 	// that the users share the common tenant properties like organization ID
 	// available for analytics purposes:
-	if existing, _ := rm.users.GetUser(ctx, user.GetId()); existing == nil && user != nil {
+	if existing, _ := rm.users.GetUser(ctx, user.GetId()); existing == nil {
 		addUserToTenantGroup(user)
 	}
 
