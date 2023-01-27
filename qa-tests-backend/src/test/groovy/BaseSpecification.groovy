@@ -393,7 +393,7 @@ class BaseSpecification extends Specification {
     }
 
     static Boolean isPostgresRun() {
-        return Env.CI_JOBNAME.contains("postgres") || Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
+        return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
     }
 
     static Boolean isRaceBuild() {
