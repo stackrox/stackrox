@@ -42,6 +42,8 @@ export type NamespaceData = {
     type: 'NAMESPACE';
     collapsible: boolean;
     showContextMenu: boolean;
+    namespace: string;
+    cluster: string;
 };
 
 export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
