@@ -197,6 +197,10 @@ deploy_central_via_operator() {
     envsubst \
       < operator/tests/e2e/central-cr.envsubst.yaml \
       > /tmp/central-cr.yaml
+
+    #DEBUG
+    cat /tmp/central-cr.yaml
+
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
 
     wait_for_object_to_appear stackrox deploy/central 300
