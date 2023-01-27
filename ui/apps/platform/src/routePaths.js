@@ -150,13 +150,13 @@ const vulnManagementPathToLabelMap = {
 
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
-    [networkBasePath]: 'Network Graph',
+    [networkBasePath]: 'Network Graph (1.0)',
     [networkBasePathPF]: (
         <Flex>
-            <FlexItem>Network Graph 2.0</FlexItem>
+            <FlexItem>Network Graph</FlexItem>
             <FlexItem>
-                <Badge style={{ backgroundColor: 'var(--pf-global--palette--gold-400)' }}>
-                    Preview
+                <Badge style={{ backgroundColor: 'var(--pf-global--palette--cyan-400)' }}>
+                    2.0 preview
                 </Badge>
             </FlexItem>
         </Flex>
