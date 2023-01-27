@@ -346,7 +346,7 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 
 	// test error when collectionId is in use by report config
 	reportConfig := &storage.ReportConfiguration{
-		Name:    "migratable",
+		Name:    "config0",
 		ScopeId: "col0",
 	}
 	id, err := suite.resourceConfigDS.AddReportConfiguration(allAccessCtx, reportConfig)
