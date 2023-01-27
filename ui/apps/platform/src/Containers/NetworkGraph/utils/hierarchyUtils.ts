@@ -1,4 +1,5 @@
 import { SearchFilter } from 'types/search';
+import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 
 export function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
     const workingQuery = { ...searchFilter };
@@ -35,6 +36,16 @@ export function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
     return hierarchy;
 }
 
+export function getDeploymentLookupMap(
+    deploymentsByNamespace: NamespaceWithDeployments[]
+): Record<string, string[]> {
+    return deploymentsByNamespace.reduce<Record<string, string[]>>((acc, ns) => {
+        const deployments = ns.deployments.map((deployment) => deployment.name);
+        return { ...acc, [ns.metadata.name]: deployments };
+    }, {});
+}
+
 export default {
     getScopeHierarchyFromSearch,
+    getDeploymentLookupMap,
 };
