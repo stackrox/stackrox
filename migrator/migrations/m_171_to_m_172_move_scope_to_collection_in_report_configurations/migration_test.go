@@ -332,6 +332,7 @@ func (s *reportConfigsMigrationTestSuite) SetupTest() {
 
 func (s *reportConfigsMigrationTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
+	scopeIDToConfigNames = make(map[string][]string)
 }
 
 func (s *reportConfigsMigrationTestSuite) TestMigration() {

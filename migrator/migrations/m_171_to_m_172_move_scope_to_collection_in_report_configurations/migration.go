@@ -23,11 +23,6 @@ import (
 const (
 	startSeqNum = 171
 
-	scopeAttachedToConfigsTemplate = "This scope is attached to following report configurations [%s]; "
-
-	manualResolutionTemplate = "Resolution : Please manually create a collection and attach it to the listed report configs. " +
-		"These reports will stop working until a collection is attached to them."
-
 	embeddedCollectionTemplate = "System-generated embedded collection %d for scope <%s>"
 	rootCollectionTemplate     = "System-generated root collection for scope <%s>"
 )
@@ -73,7 +68,7 @@ func labelSelectorsToCollections(scopeName string, index int, labelSelectors []*
 		selectorRules := make([]*storage.SelectorRule, 0, len(labelSelector.GetRequirements()))
 		for _, requirement := range labelSelector.GetRequirements() {
 			if requirement.GetOp() != storage.SetBasedLabelSelector_IN {
-				return nil, errors.Errorf("Unsupported operator %s in scope's label selectors. Only operator 'IN' is supported", requirement.GetOp())
+				return nil, errors.Errorf("Unsupported operator %s in scope's label selectors. Only operator 'IN' is supported.", requirement.GetOp())
 			}
 			ruleValues := make([]*storage.RuleValue, 0, len(requirement.GetValues()))
 			for _, val := range requirement.GetValues() {
@@ -172,28 +167,23 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 	accessScopeStore accessScopePostgres.Store, collectionStore collectionPostgres.Store) error {
 	scope, found, err := accessScopeStore.Get(ctx, scopeID)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to fetch scope with id %s. "+scopeAttachedToConfigsTemplate,
-			scopeID, getJoinedConfigsForScopeID(scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to fetch scope with id %s. ", scopeID), scopeID))
+		return nil
 	}
 	if !found {
-		log.Errorf("Scope with id %s not found. "+scopeAttachedToConfigsTemplate+manualResolutionTemplate,
-			scopeID, strings.Join(scopeIDToConfigNames[scopeID], ", "))
+		log.Error(errorWithResolutionMsg(errors.Errorf("Scope with id %s not found.", scopeID), scopeID))
 		return nil
 	}
 
 	collectionsToEmbed, err := getCollectionsToEmbed(scope)
 	if err != nil {
-		if strings.Contains(err.Error(), "Unsupported operator") {
-			log.Errorf("Failed to create collections for scope <%s>; Reason : %s; "+
-				scopeAttachedToConfigsTemplate+manualResolutionTemplate,
-				scope.GetName(), err.Error(), getJoinedConfigsForScopeID(scopeID))
-			return nil
-		}
-		return err
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed create collections for scope <%s>", scope.GetName()), scopeID))
+		return nil
 	}
 	err = collectionStore.UpsertMany(ctx, collectionsToEmbed)
 	if err != nil {
-		return err
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed create collections for scope <%s>", scope.GetName()), scopeID))
+		return nil
 	}
 	embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(collectionsToEmbed))
 	for _, collection := range collectionsToEmbed {
@@ -209,7 +199,10 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 		LastUpdated:         timeNow,
 		EmbeddedCollections: embeddedCollections,
 	}
-	return collectionStore.Upsert(ctx, rootCollection)
+	if err := collectionStore.Upsert(ctx, rootCollection); err != nil {
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed create collections for scope <%s>", scope.GetName()), scopeID))
+	}
+	return nil
 }
 
 func moveScopesInReportsToCollections(db *pgxpool.Pool) error {
@@ -235,8 +228,12 @@ func moveScopesInReportsToCollections(db *pgxpool.Pool) error {
 	return err
 }
 
-func getJoinedConfigsForScopeID(scopeID string) string {
-	return strings.Join(scopeIDToConfigNames[scopeID], ", ")
+func errorWithResolutionMsg(err error, scopeID string) string {
+	return err.Error() + "\n" +
+		" The scope is attached to the following report configurations: " +
+		"[" + strings.Join(scopeIDToConfigNames[scopeID], ", ") + "]; " +
+		"Please manually create an equivalent collection and attach it to the listed report configurations. " +
+		"Note that reports will not function correctly until a collection is attached."
 }
 
 func init() {
