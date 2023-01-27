@@ -126,4 +126,5 @@ import (
 	// Postgres -> Postgres migrations
 	_ "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission"
 	_ "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_collections_sac_resource_migration"
+	_ "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges"
 )
