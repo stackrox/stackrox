@@ -18,11 +18,7 @@ function DeploymentSelector({
     searchFilter,
     setSearchFilter,
 }: DeploymentSelectorProps) {
-    const {
-        isOpen: isDeploymentOpen,
-        toggleSelect: toggleIsDeploymentOpen,
-        closeSelect: closeDeploymentSelect,
-    } = useSelectToggle();
+    const { isOpen: isDeploymentOpen, toggleSelect: toggleIsDeploymentOpen } = useSelectToggle();
 
     const onFilterDeployments = useCallback(
         (_, filterValue: string) => {
@@ -48,8 +44,6 @@ function DeploymentSelector({
     );
 
     const onDeploymentSelect = (_, selected) => {
-        closeDeploymentSelect();
-
         const newSelection = selectedDeployments.find((nsFilter) => nsFilter === selected)
             ? selectedDeployments.filter((nsFilter) => nsFilter !== selected)
             : selectedDeployments.concat(selected);
