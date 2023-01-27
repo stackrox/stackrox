@@ -35,7 +35,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   [upstream](https://kubernetes.io/blog/2022/11/28/registry-k8s-io-faster-cheaper-ga/).
 
 ### Technical Changes
-- ROX-12967: Re-introduce `rpm` to the main image in order to be able parse installed packages on RHCOS nodes (from Compliance container)
+- ROX-12967: Re-introduce `rpm` to the main image in order to be able to parse installed packages on RHCOS nodes (from Compliance container)
+
+### Major Upcoming Changes
+- The 3.74.z set of releases will be the last major release in the 3.x series. The next release will be 4.0.
+- Postgres will become the backing database as of 4.0.
+- Restoring a backup taken on a 3.y release will no longer be supported starting from 4.1.
+- The stackrox-db PVC will no longer be used starting from 4.1. All users must upgrade from a 3.y release to 4.0 prior to
+  upgrading to a later release in order to properly migrate to Postgres.
 
 ## [3.73.1]
 
