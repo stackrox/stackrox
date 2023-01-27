@@ -101,6 +101,10 @@ deploy_stackrox_operator() {
 
     info "Deploying ACS operator"
 
+    #DEBUG
+    oc get nodes -o wide
+    oc get machineset -n openshift-machine-api
+
     export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
     export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
 
@@ -449,7 +453,6 @@ remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
 
     (
-        kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
         # openshift specific:
         kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
         kubectl delete -R -f scripts/ci/psp --wait
