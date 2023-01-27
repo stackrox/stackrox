@@ -5,7 +5,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Namespace } from 'hooks/useFetchClusterNamespaces';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
-import { getDeploymentLookupMap } from '../utils/hierarchyUtils';
+import { getDeploymentLookupMap, getDeploymentsAllowedByNamespaces } from '../utils/hierarchyUtils';
 
 function filterElementsWithValueProp(
     filterValue: string,
@@ -66,10 +66,10 @@ function NamespaceSelector({
             ? selectedNamespaces.filter((nsFilter) => nsFilter !== selected)
             : selectedNamespaces.concat(selected);
 
-        const newDeploymentLookup = Object.fromEntries(
-            Object.entries(deploymentLookupMap).filter(([key]) => newSelection.includes(key))
+        const allowedDeployments = getDeploymentsAllowedByNamespaces(
+            deploymentLookupMap,
+            newSelection
         );
-        const allowedDeployments = Object.values(newDeploymentLookup).flat(1);
 
         const filteredSelectedDeployments = selectedDeployments.filter((deployment) =>
             allowedDeployments.includes(deployment)

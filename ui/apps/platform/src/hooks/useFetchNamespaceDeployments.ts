@@ -50,10 +50,10 @@ function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
 
     useEffect(() => {
         if (!data || !data.results) {
-            return;
+            setAvailableNamespaces([]);
+        } else {
+            setAvailableNamespaces(data.results);
         }
-
-        setAvailableNamespaces(data.results);
     }, [data]);
 
     return {

@@ -45,6 +45,18 @@ export function getDeploymentLookupMap(
     }, {});
 }
 
+export function getDeploymentsAllowedByNamespaces(
+    deploymentLookupMap: Record<string, string[]>,
+    namespaceSelection: string[]
+) {
+    const newDeploymentLookup = Object.fromEntries(
+        Object.entries(deploymentLookupMap).filter(([key]) => namespaceSelection.includes(key))
+    );
+    const allowedDeployments = Object.values(newDeploymentLookup).flat(1);
+
+    return allowedDeployments;
+}
+
 export default {
     getScopeHierarchyFromSearch,
     getDeploymentLookupMap,
