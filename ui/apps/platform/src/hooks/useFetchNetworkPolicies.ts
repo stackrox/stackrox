@@ -30,7 +30,7 @@ function useFetchNetworkPolicies(policyIds: string[]): Result {
                 });
         }
 
-        return setResult(defaultResultState);
+        return () => setResult(defaultResultState);
     }, [policyIds]);
 
     return result;

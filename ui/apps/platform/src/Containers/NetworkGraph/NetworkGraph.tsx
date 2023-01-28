@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Visualization, VisualizationProvider } from '@patternfly/react-topology';
 
 import stylesComponentFactory from './components/stylesComponentFactory';
