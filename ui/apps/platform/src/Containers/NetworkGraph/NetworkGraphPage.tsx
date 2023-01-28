@@ -95,7 +95,8 @@ function NetworkGraphPage() {
         const isQueryFilterComplete = isCompleteSearchFilter(remainingQuery);
 
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
-        const isClusterNamespaceSelected = clusterFromUrl && namespacesFromUrl.length > 0;
+        const isClusterNamespaceSelected =
+            clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
 
         if (isQueryFilterComplete && isClusterNamespaceSelected) {
             if (selectedClusterId) {
@@ -161,13 +162,18 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, remainingQuery, timeWindow]);
+    }, [
+        clusterFromUrl,
+        namespacesFromUrl,
+        deploymentsFromUrl,
+        remainingQuery,
+        timeWindow,
+        deploymentCount,
+    ]);
 
     function toggleCIDRBlockForm() {
         setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
     }
-
-    console.log('NetworkGraphPage');
 
     return (
         <>

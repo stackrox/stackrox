@@ -30,7 +30,7 @@ import { protocolLabel } from './flowUtils';
 export const graphModel = {
     id: 'stackrox-active-graph',
     type: 'graph',
-    layout: 'ColaGroups',
+    layout: 'ColaNoForce',
 };
 
 function getBaseNode(id: string): CustomNodeModel {

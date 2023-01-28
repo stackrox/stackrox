@@ -113,20 +113,12 @@ const TopologyComponent = ({
     }
 
     function fitToScreenCallback() {
-        // controller.getGraph().fit(80);
-        if (selectedNode) {
-            const selectedNodeElement = controller.getNodeById(selectedNode.id);
-            if (selectedNodeElement) {
-                console.log('panIntoView', selectedNodeElement);
-                controller
-                    .getGraph()
-                    .panIntoView(selectedNodeElement, { offset: 250, minimumVisible: 100 });
-            }
-        }
+        controller.getGraph().fit(80);
     }
 
     function resetViewCallback() {
         controller.getGraph().reset();
+        controller.getGraph().layout();
     }
 
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
@@ -135,20 +127,9 @@ const TopologyComponent = ({
 
     useEffect(() => {
         controller.fromModel(model);
-        if (selectedNode) {
-            const selectedNodeElement = controller.getNodeById(selectedNode.id);
-            if (selectedNodeElement) {
-                console.log('useEffect', selectedNodeElement);
-                controller
-                    .getGraph()
-                    .panIntoView(selectedNodeElement, { offset: 10, minimumVisible: 10 });
-            }
-        }
-    }, [controller, model, selectedNode]);
+    }, [controller, model]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
-
-    console.log('TopologyComponent');
 
     return (
         <TopologyView

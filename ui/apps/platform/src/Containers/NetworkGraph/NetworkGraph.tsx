@@ -27,11 +27,13 @@ function NetworkGraph({
     selectedNode,
     edgeState,
 }: NetworkGraphProps) {
-    const controller = new Visualization();
-    controller.registerLayoutFactory(defaultLayoutFactory);
-    controller.registerComponentFactory(defaultComponentFactory);
-    controller.registerComponentFactory(stylesComponentFactory);
-
+    const controller = useMemo(() => {
+        const newController = new Visualization();
+        newController.registerLayoutFactory(defaultLayoutFactory);
+        newController.registerComponentFactory(defaultComponentFactory);
+        newController.registerComponentFactory(stylesComponentFactory);
+        return newController;
+    }, []);
     const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
         useNetworkPolicySimulator({
             simulation,
@@ -43,8 +45,6 @@ function NetworkGraph({
         simulator.state === 'UNDO' ||
         simulator.state === 'UPLOAD' ||
         (simulation.isOn && simulation.type === 'baseline');
-
-    console.log('NetworkGraph');
 
     return (
         <SimulationFrame isSimulating={isSimulating}>
