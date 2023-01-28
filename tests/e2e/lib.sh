@@ -101,22 +101,6 @@ deploy_stackrox_operator() {
 
     info "Deploying ACS operator"
 
-    #DEBUG
-    oc get nodes -o wide
-    oc -n openshift-machine-api get machineset
-    oc -n openshift-machine-api get machines
-    #Hack
-    (
-        set -x
-        original_machine_count="$(oc -n openshift-machine-api get machines -o json | jq -r '.items | map(select(.status.providerStatus.instanceState | ascii_upcase=="RUNNING")) | length')"
-        first_machine_set="$(oc -n openshift-machine-api get machineset -o json | jq -r '.items[0].metadata.name')"
-        oc -n openshift-machine-api scale machineset "$first_machine_set" --replicas=2
-        expected_machine_count=$((original_machine_count+1))
-        while [[ "$(oc -n openshift-machine-api get machines -o json | jq -r '.items | map(select(.status.providerStatus.instanceState | ascii_upcase=="RUNNING")) | length')" != "$expected_machine_count" ]]; do
-            sleep 60
-        done
-    ) || touch /tmp/hold
-
     export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
     export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
 
@@ -200,9 +184,6 @@ deploy_central_via_operator() {
     envsubst \
       < operator/tests/e2e/central-cr.envsubst.yaml \
       > /tmp/central-cr.yaml
-
-    #DEBUG
-    cat /tmp/central-cr.yaml
 
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
 
