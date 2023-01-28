@@ -38,4 +38,4 @@ metadata:
   name: central-default-tls-secret
 data:
   tls.key: $centralDefaultTlsSecretKeyBase64
-  tls.cert: $centralDefaultTlsSecretCertBase64
+  tls.crt: $centralDefaultTlsSecretCertBase64
