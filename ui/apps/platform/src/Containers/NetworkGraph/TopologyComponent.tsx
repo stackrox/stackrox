@@ -113,7 +113,16 @@ const TopologyComponent = ({
     }
 
     function fitToScreenCallback() {
-        controller.getGraph().fit(80);
+        // controller.getGraph().fit(80);
+        if (selectedNode) {
+            const selectedNodeElement = controller.getNodeById(selectedNode.id);
+            if (selectedNodeElement) {
+                console.log('panIntoView', selectedNodeElement);
+                controller
+                    .getGraph()
+                    .panIntoView(selectedNodeElement, { offset: 250, minimumVisible: 100 });
+            }
+        }
     }
 
     function resetViewCallback() {
@@ -129,7 +138,7 @@ const TopologyComponent = ({
         if (selectedNode) {
             const selectedNodeElement = controller.getNodeById(selectedNode.id);
             if (selectedNodeElement) {
-                console.log('useEffect');
+                console.log('useEffect', selectedNodeElement);
                 controller
                     .getGraph()
                     .panIntoView(selectedNodeElement, { offset: 10, minimumVisible: 10 });
