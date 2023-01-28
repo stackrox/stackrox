@@ -184,12 +184,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: '"${ROX_BASELINE_GENERATION_DURATION}"
     customize_envVars+=$'\n      - name: ROX_DEVELOPMENT_BUILD'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_HOTRELOAD'
-    customize_envVars+=$'\n        value: "false"'
-    customize_envVars+=$'\n      - name: ROX_MANAGED_CENTRAL'
-    customize_envVars+=$'\n        value: "false"'
-    customize_envVars+=$'\n      - name: ROX_NETWORK_ACCESS_LOG'
-    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_BASELINE_OBSERVATION_PERIOD'
     customize_envVars+=$'\n        value: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
     customize_envVars+=$'\n      - name: ROX_POSTGRES_DATASTORE'
