@@ -158,8 +158,8 @@ deploy_central_via_operator() {
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
 
-    centralDefaultTlsSecretKeyBase64="$(base64 < "${ROX_DEFAULT_TLS_KEY_FILE}")"
-    centralDefaultTlsSecretCertBase64="$(base64 < "${ROX_DEFAULT_TLS_CERT_FILE}")"
+    centralDefaultTlsSecretKeyBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_KEY_FILE}")"
+    centralDefaultTlsSecretCertBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_CERT_FILE}")"
 
     case "${ROX_POSTGRES_DATASTORE}" in
     "true") central_db_isEnabled="Enabled" ;;
