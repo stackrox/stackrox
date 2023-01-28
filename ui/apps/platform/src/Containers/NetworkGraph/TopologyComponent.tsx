@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
@@ -81,7 +81,6 @@ const TopologyComponent = ({
 }: TopologyComponentProps) => {
     const history = useHistory();
     const controller = useVisualizationController();
-    controller.fromModel(model, true);
 
     function closeSidebar() {
         const queryString = clearSimulationQuery(history.location.search);
@@ -119,12 +118,24 @@ const TopologyComponent = ({
 
     function resetViewCallback() {
         controller.getGraph().reset();
-        controller.getGraph().layout();
     }
 
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
         onSelect(ids);
     });
+
+    useEffect(() => {
+        controller.fromModel(model);
+        if (selectedNode) {
+            const selectedNodeElement = controller.getNodeById(selectedNode.id);
+            if (selectedNodeElement) {
+                console.log('useEffect');
+                controller
+                    .getGraph()
+                    .panIntoView(selectedNodeElement, { offset: 10, minimumVisible: 10 });
+            }
+        }
+    }, [controller, model, selectedNode]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 

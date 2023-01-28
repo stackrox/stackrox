@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Visualization, VisualizationProvider } from '@patternfly/react-topology';
 
 import stylesComponentFactory from './components/stylesComponentFactory';
@@ -27,7 +27,7 @@ function NetworkGraph({
     selectedNode,
     edgeState,
 }: NetworkGraphProps) {
-    const controller = useMemo(() => new Visualization(), []);
+    const controller = new Visualization();
     controller.registerLayoutFactory(defaultLayoutFactory);
     controller.registerComponentFactory(defaultComponentFactory);
     controller.registerComponentFactory(stylesComponentFactory);

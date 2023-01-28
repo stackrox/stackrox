@@ -141,7 +141,10 @@ function DeploymentDetails({
                                                         ''
                                                     );
                                                     return (
-                                                        <Label variant="outline">
+                                                        <Label
+                                                            variant="outline"
+                                                            key={`${port}-${protocol}`}
+                                                        >
                                                             {protocol}: {port}
                                                         </Label>
                                                     );
@@ -257,7 +260,7 @@ function DeploymentDetails({
                             <Stack hasGutter>
                                 {deployment.ports.map((port) => {
                                     return (
-                                        <StackItem>
+                                        <StackItem key={port.name}>
                                             <DeploymentPortConfig port={port} />
                                         </StackItem>
                                     );

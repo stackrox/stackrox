@@ -83,7 +83,7 @@ function NetworkGraphPage() {
     } = getScopeHierarchy(searchFilter);
     const simulation = getSimulation(simulationQueryValue);
 
-    const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
+    const hasClusterNamespaceSelected = !!(clusterFromUrl && namespacesFromUrl.length);
 
     const { clusters } = useFetchClusters();
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
@@ -95,8 +95,7 @@ function NetworkGraphPage() {
         const isQueryFilterComplete = isCompleteSearchFilter(remainingQuery);
 
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
-        const isClusterNamespaceSelected =
-            clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
+        const isClusterNamespaceSelected = clusterFromUrl && namespacesFromUrl.length > 0;
 
         if (isQueryFilterComplete && isClusterNamespaceSelected) {
             if (selectedClusterId) {
@@ -162,14 +161,7 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [
-        clusterFromUrl,
-        namespacesFromUrl,
-        deploymentsFromUrl,
-        deploymentCount,
-        remainingQuery,
-        timeWindow,
-    ]);
+    }, [clusterFromUrl, namespacesFromUrl, deploymentsFromUrl, remainingQuery, timeWindow]);
 
     function toggleCIDRBlockForm() {
         setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
