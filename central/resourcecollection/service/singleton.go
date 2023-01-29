@@ -4,7 +4,6 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -21,7 +20,7 @@ func initialize() {
 
 // Singleton provides the instance of the Service interface to register.
 func Singleton() Service {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}
 	once.Do(initialize)

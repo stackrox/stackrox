@@ -15,8 +15,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -216,7 +216,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 		}
 	}
 
-	if features.ObjectCollections.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		_, found, err := s.collectionDatastore.Get(ctx, config.GetScopeId())
 		if !found || err != nil {
 			return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", config.GetScopeId(), err)

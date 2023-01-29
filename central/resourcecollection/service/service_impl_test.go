@@ -11,7 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/sac"
@@ -39,8 +39,8 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.queryResolver = datastoreMocks.NewMockQueryResolver(suite.mockCtrl)
 	suite.deploymentDS = deploymentDSMocks.NewMockDataStore(suite.mockCtrl)
-	suite.T().Setenv(features.ObjectCollections.EnvVar(), "true")
 	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS)
+	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
@@ -51,7 +51,7 @@ func (suite *CollectionServiceTestSuite) TearDownSuite() {
 }
 
 func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
-	if !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("skipping because env var is not set")
 	}
 
@@ -73,7 +73,7 @@ func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
 }
 
 func (suite *CollectionServiceTestSuite) TestGetCollection() {
-	if !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("skipping because env var is not set")
 	}
 
@@ -115,7 +115,7 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestGetCollectionCount() {
-	if !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("skipping because env var is not set")
 	}
 
@@ -141,7 +141,7 @@ func (suite *CollectionServiceTestSuite) TestGetCollectionCount() {
 }
 
 func (suite *CollectionServiceTestSuite) TestCreateCollection() {
-	if !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("skipping because env var is not set")
 	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -227,7 +227,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
-	if !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("skipping because env var is not set")
 	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -325,7 +325,7 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
-	if !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("skipping because env var is not set")
 	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -347,7 +347,7 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestListCollections() {
-	if !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("skipping because env var is not set")
 	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -377,7 +377,7 @@ func (suite *CollectionServiceTestSuite) TestListCollections() {
 }
 
 func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
-	if !features.ObjectCollections.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("skipping because env var is not set")
 	}
 	allAccessCtx := sac.WithAllAccess(context.Background())

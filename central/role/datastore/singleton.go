@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -157,7 +156,7 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 		postgresID:  vulnReporterPermissionSetID,
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
-			if !features.ObjectCollections.Enabled() {
+			if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				return []permissions.ResourceWithAccess{
 					permissions.View(resources.Role),                   // required for scopes
 					permissions.View(resources.Integration),            // required for vuln report configurations
