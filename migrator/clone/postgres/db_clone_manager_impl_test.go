@@ -212,14 +212,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	pgtest.DropDatabase(s.T(), tempDB)
 	pgtest.DropDatabase(s.T(), migrations.RestoreDatabase)
 	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
-
-	// Set central_active in the future and have no previous
-	currVersion := &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-		Version:       currVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
-	}
-	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
+	pgtest.DropDatabase(s.T(), migrations.CurrentDatabase)
 
 	dbm := New("", s.config, s.sourceMap)
 
@@ -232,22 +225,37 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 		LastPersisted: time.Now(),
 	}
 
-	// Need to migrate from Postgres because it exists
+	// No central_active exists so we return that as the clone to use and migrate to rocks
 	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion, false)
 	s.Equal(clone, CurrentClone)
-	s.False(migrateRocks)
+	s.True(migrateRocks)
 	s.Nil(err)
 
 	// Need to migrate from Rocks because Rocks exists and Postgres is fresh.
-	pgtest.DropDatabase(s.T(), migrations.CurrentDatabase)
 	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
 
-	// Need to re-scan to get the clone deletion
-	s.Nil(dbm.Scan())
+	// Still migrate from Rocks because no version in Postgres meaning it is empty
 	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
 	s.Equal(clone, CurrentClone)
 	s.True(migrateRocks)
 	s.Nil(err)
+
+	// Set central_active version
+	currVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
+		Version:       currVer.version,
+		LastPersisted: timestamp.Now().GogoProtobuf(),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
+
+	// Need to re-scan to get the updated clone version
+	s.Nil(dbm.Scan())
+	// Need to use use the Postgres database so migrateRocks will be false.
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	s.Equal(clone, CurrentClone)
+	s.False(migrateRocks)
+	s.Nil(err)
+
 }
 
 func (s *PostgresCloneManagerSuite) TestGetCloneFreshCurrent() {

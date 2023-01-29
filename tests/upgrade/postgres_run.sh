@@ -186,11 +186,6 @@ test_upgrade_paths() {
 
     # Ensure we still have the access scopes added to Rocks
     checkForRocksAccessScopes
-    # The scopes added after the initial upgrade to Postgres should no longer exist.
-    verifyNoPostgresAccessScopes
-
-    # Add the Postgres access scopes back in
-    createPostgresScopes
 
     info "Bouncing central"
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
