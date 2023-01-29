@@ -100,7 +100,7 @@ export const accessScopesAlias = 'simpleaccessscopes';
 export const collectionsAlias = 'collections';
 export const notifiersAlias = 'notifiers';
 
-// TODO This object can be deleted once the ROX_OBJECT_COLLECTIONS feature flag is removed
+// TODO This object can be deleted once the ROX_POSTGRES_DATASTORE feature flag is removed
 const routeMatcherMapToCreate = {
     [accessScopesAlias]: {
         method: 'GET',

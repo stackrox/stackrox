@@ -59,7 +59,7 @@ function NavigationSidebar({
         systemHealthPath,
     ];
 
-    if (isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS') && hasReadAccess('WorkflowAdministration')) {
+    if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE') && hasReadAccess('WorkflowAdministration')) {
         // Insert 'Collections' after 'Policy Management'
         platformConfigurationPaths.splice(
             platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,

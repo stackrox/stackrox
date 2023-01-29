@@ -22,7 +22,7 @@ import {
 describe('Vulnerability Management Reporting form', () => {
     withAuth();
 
-    const isCollectionsEnabled = hasFeatureFlag('ROX_OBJECT_COLLECTIONS');
+    const isCollectionsEnabled = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
     it('should navigate from table by button', () => {
         visitVulnerabilityReporting();
