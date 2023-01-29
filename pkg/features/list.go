@@ -37,9 +37,6 @@ var (
 	// RoxctlNetpolGenerate enables 'roxctl netpol generate' command which integrates with NP-Guard
 	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl generate netpol' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
 
-	// ObjectCollections enables 'collection' entity APIs and Frontend collection pages
-	ObjectCollections = registerFeature("Enable object collection entities", "ROX_OBJECT_COLLECTIONS", false)
-
 	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
 	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", false)
 
