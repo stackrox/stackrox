@@ -87,7 +87,7 @@ const TopologyComponent = ({
         history.push(`${networkBasePathPF}${queryString}`);
     }
 
-    function onSelect(ids: string[]) {
+    function onNodeClick(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
         if (newSelectedEntity) {
@@ -102,6 +102,10 @@ const TopologyComponent = ({
                 history.push(`${networkBasePathPF}${queryString}`);
             }
         }
+    }
+
+    function onNodeSelect(id: string) {
+        onNodeClick([id]);
     }
 
     function zoomInCallback() {
@@ -122,7 +126,7 @@ const TopologyComponent = ({
     }
 
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
-        onSelect(ids);
+        onNodeClick(ids);
     });
 
     useEffect(() => {
@@ -148,6 +152,7 @@ const TopologyComponent = ({
                             namespaceId={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'DEPLOYMENT' && (
@@ -156,6 +161,7 @@ const TopologyComponent = ({
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
                             edgeState={edgeState}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (
@@ -163,6 +169,7 @@ const TopologyComponent = ({
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'CIDR_BLOCK' && (
@@ -170,6 +177,7 @@ const TopologyComponent = ({
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_ENTITIES' && (
@@ -177,6 +185,7 @@ const TopologyComponent = ({
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                 </TopologySideBar>

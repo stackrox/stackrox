@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-    Button,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -207,9 +206,7 @@ function DeploymentDetails({
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Name</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.name}
-                                            </Button>
+                                            {deployment.name}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
@@ -221,33 +218,25 @@ function DeploymentDetails({
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Cluster</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.clusterName}
-                                            </Button>
+                                            {deployment.clusterName}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Namespace</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.namespace}
-                                            </Button>
+                                            {deployment.namespace}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Replicas</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.replicas}
-                                            </Button>
+                                            {deployment.replicas}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Service account</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.serviceAccount}
-                                            </Button>
+                                            {deployment.serviceAccount}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </DescriptionList>

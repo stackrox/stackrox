@@ -41,9 +41,10 @@ import useFetchBaselineNetworkPolicy from '../api/useFetchBaselineNetworkPolicy'
 type DeploymentBaselinesProps = {
     deployment: Deployment;
     deploymentId: string;
+    onNodeSelect: (id: string) => void;
 };
 
-function DeploymentBaselines({ deployment, deploymentId }: DeploymentBaselinesProps) {
+function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: DeploymentBaselinesProps) {
     // component state
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
@@ -93,6 +94,10 @@ function DeploymentBaselines({ deployment, deploymentId }: DeploymentBaselinesPr
     const numBaselines = getNumFlows(filteredNetworkBaselines);
     const allUniquePorts = getAllUniquePorts(filteredNetworkBaselines);
     const errorMessage = networkPolicyError || fetchError || modifyError || toggleError;
+
+    const onSelectFlow = (entityId: string) => {
+        onNodeSelect(entityId);
+    };
 
     function addToBaseline(flow: Flow) {
         modifyBaselineStatuses([flow], 'BASELINE', refetchBaselines);
@@ -226,6 +231,7 @@ function DeploymentBaselines({ deployment, deploymentId }: DeploymentBaselinesPr
                         addToBaseline={addToBaseline}
                         markAsAnomalous={markAsAnomalous}
                         isEditable
+                        onSelectFlow={onSelectFlow}
                     />
                 </StackItem>
                 <StackItem>

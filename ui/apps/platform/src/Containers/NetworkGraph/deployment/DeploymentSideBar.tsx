@@ -41,9 +41,16 @@ type DeploymentSideBarProps = {
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
     edgeState: EdgeState;
+    onNodeSelect: (id: string) => void;
 };
 
-function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: DeploymentSideBarProps) {
+function DeploymentSideBar({
+    deploymentId,
+    nodes,
+    edges,
+    edgeState,
+    onNodeSelect,
+}: DeploymentSideBarProps) {
     // component state
     const { deployment, isLoading, error } = useFetchDeployment(deploymentId);
     const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
@@ -110,7 +117,10 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
             </StackItem>
             {isBaselineSimulationOn && (
                 <StackItem isFilled style={{ overflow: 'auto' }} className="pf-u-h-100">
-                    <DeploymentBaselinesSimulated deploymentId={deploymentId} />
+                    <DeploymentBaselinesSimulated
+                        deploymentId={deploymentId}
+                        onNodeSelect={onNodeSelect}
+                    />
                 </StackItem>
             )}
             {!isBaselineSimulationOn && deployment && (
@@ -164,6 +174,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                                 edges={edges}
                                 deploymentId={deploymentId}
                                 edgeState={edgeState}
+                                onNodeSelect={onNodeSelect}
                             />
                         </TabContent>
                         <TabContent
@@ -175,6 +186,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                             <DeploymentBaselines
                                 deployment={deployment}
                                 deploymentId={deploymentId}
+                                onNodeSelect={onNodeSelect}
                             />
                         </TabContent>
                         <TabContent
