@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { combineReducers } from 'redux';
 
 import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
@@ -29,7 +28,7 @@ export const fetchTelemetryConfigThunk = () => {
                 response: result.response,
             });
         } catch (error) {
-            dispatch({ type: types.FETCH_TELEMETRY_CONFIG.FAILURE, payload: error });
+            dispatch({ type: types.FETCH_TELEMETRY_CONFIG.FAILURE, error });
         }
     };
 };
