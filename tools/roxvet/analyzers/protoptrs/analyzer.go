@@ -98,10 +98,7 @@ func isProtoMessageStructType(ty types.Type) bool {
 		return false
 	}
 	tyPtr := types.NewPointer(ty)
-	if !types.Implements(tyPtr, protoMsgType) {
-		return false
-	}
-	return true
+	return types.Implements(tyPtr, protoMsgType)
 }
 
 func isNew(e ast.Expr) bool {

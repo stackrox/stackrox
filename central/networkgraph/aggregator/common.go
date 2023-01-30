@@ -12,7 +12,7 @@ import (
 func mapToSupernet(networkTree tree.ReadOnlyNetworkTree,
 	supernetCache map[string]*storage.NetworkEntityInfo,
 	supernetPred func(e *storage.NetworkEntityInfo) bool, entityPtrs ...**storage.NetworkEntityInfo) {
-	for _, entityPtr := range entityPtrs {
+	for i, entityPtr := range entityPtrs {
 		entity := *entityPtr
 		if !networkgraph.IsKnownExternalSrc(entity) {
 			continue
@@ -22,9 +22,11 @@ func mapToSupernet(networkTree tree.ReadOnlyNetworkTree,
 		if err != nil {
 			utils.Should(errors.Wrapf(err, "getting CIDR from external source ID %s", entity.GetId()))
 			*entityPtr = networkgraph.InternetEntity().ToProto()
+			entityPtrs[i] = entityPtr
 			continue
 		}
 		*entityPtr = getSupernet(networkTree, supernetCache, cidr, supernetPred)
+		entityPtrs[i] = entityPtr
 	}
 }
 

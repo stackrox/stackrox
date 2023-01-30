@@ -50,6 +50,10 @@ issues:
       linters:
         - staticcheck
       text: "SA4023" # github.com/blevesearch/bleve.OpenUsing never returns a nil interface value
+    - path: "pkg/transitional/protocompat/shallow_clone.go"
+      linters:
+      - gosec
+      text: "G103"
 
 
 linters-settings:

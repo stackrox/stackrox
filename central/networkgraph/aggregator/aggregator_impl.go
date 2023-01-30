@@ -56,7 +56,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		}
 
 		// Move the connections to supernet.
-		a.mapToSupernetIfNotfound(supernetCache, conn.Props.SrcEntity, conn.Props.DstEntity)
+		a.mapToSupernetIfNotfound(supernetCache, &conn.Props.SrcEntity, &conn.Props.DstEntity)
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
@@ -74,8 +74,9 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 	return ret
 }
 
-func (a *aggregateToSupernetImpl) mapToSupernetIfNotfound(supernetCache map[string]*storage.NetworkEntityInfo, entities ...*storage.NetworkEntityInfo) {
-	for _, entity := range entities {
+func (a *aggregateToSupernetImpl) mapToSupernetIfNotfound(supernetCache map[string]*storage.NetworkEntityInfo, entities ...**storage.NetworkEntityInfo) {
+	for _, entityPtr := range entities {
+		entity := *entityPtr
 		if !networkgraph.IsKnownExternalSrc(entity) {
 			continue
 		}
@@ -83,8 +84,7 @@ func (a *aggregateToSupernetImpl) mapToSupernetIfNotfound(supernetCache map[stri
 		if a.tree.Exists(entity.GetId()) {
 			continue
 		}
-
-		mapToSupernet(a.tree, supernetCache, a.supernetPred, &entity)
+		mapToSupernet(a.tree, supernetCache, a.supernetPred, entityPtr)
 	}
 }
 
@@ -124,9 +124,13 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 
 		// Move the connection from default external network to non-default supernet. If none is found, it gets mapped to INTERNET.
 		if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetSrcEntity()) {
+			srcEntityPtr := &conn.Props.SrcEntity
 			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, &conn.Props.SrcEntity)
+			conn.Props.SrcEntity = *srcEntityPtr
 		} else if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetDstEntity()) {
+			dstEntityPtr := &conn.Props.DstEntity
 			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, &conn.Props.DstEntity)
+			conn.Props.DstEntity = *dstEntityPtr
 		}
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
