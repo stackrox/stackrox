@@ -596,12 +596,6 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
-		return s.retryableRemoveStaleFlows(ctx)
-	})
-}
-
-func (s *flowStoreImpl) retryableRemoveStaleFlows(ctx context.Context) error {
 	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -612,23 +606,10 @@ func (s *flowStoreImpl) retryableRemoveStaleFlows(ctx context.Context) error {
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if _, err := tx.Exec(ctx, pruneStaleNetworkFlowsStmt, s.clusterID); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	// This is purposefully not retried as this is an optimization and not a requirement
+	// It is also currently prone to statement timeouts
+	_, err = conn.Exec(ctx, pruneStaleNetworkFlowsStmt, s.clusterID)
+	return err
 }
 
 //// Used for testing
