@@ -30,7 +30,7 @@ kind: NetworkPolicy
 metadata:
   labels:
     app.kubernetes.io/name: stackrox
-  name: allow-cmonitoring
+  name: allow-compliance-monitoring
   namespace: stackrox
 spec:
   ingress:
