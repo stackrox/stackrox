@@ -99,7 +99,10 @@ function ClairIntegrationForm({
                     isInline
                     className="pf-u-mb-lg"
                 >
-                    <Text>CoreOS Clair v2 integration will be removed in Red Hat Advanced Cluster Security 4.x release.</Text>
+                    <Text>
+                        CoreOS Clair v2 integration will be removed in Red Hat Advanced Cluster
+                        Security 4.1 release.
+                    </Text>
                     <Text>Use Clair v4 integration instead.</Text>
                 </Alert>
                 <FormMessage message={message} />
