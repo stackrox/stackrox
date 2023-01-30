@@ -26,14 +26,21 @@ import pluralize from 'pluralize';
 import { Deployment } from 'types/deployment.proto';
 import { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
+import { NetworkPolicyState } from 'Containers/NetworkGraph/types/topology.type';
 
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
+
+import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
+import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
+import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
+import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
 
 type DeploymentDetailsProps = {
     deployment: Deployment;
     numExternalFlows: number;
     numInternalFlows: number;
     listenPorts: ListenPort[];
+    networkPolicyState: NetworkPolicyState;
 };
 
 function DetailSection({ title, children }) {
@@ -65,6 +72,7 @@ function DeploymentDetails({
     numExternalFlows,
     numInternalFlows,
     listenPorts,
+    networkPolicyState,
 }: DeploymentDetailsProps) {
     return (
         <div className="pf-u-h-100 pf-u-p-md">
@@ -105,25 +113,58 @@ function DeploymentDetails({
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Network policy rules</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    <Flex
-                                        direction={{ default: 'row' }}
-                                        alignItems={{ default: 'alignItemsCenter' }}
-                                    >
-                                        <FlexItem>
+                                    {networkPolicyState === 'both' && (
+                                        <Label
+                                            variant="outline"
+                                            color="blue"
+                                            icon={<BothPolicyRules width="22px" height="22px" />}
+                                        >
+                                            1 or more policies regulating bidirectional traffic
+                                        </Label>
+                                    )}
+                                    {networkPolicyState === 'egress' && (
+                                        <LabelGroup>
                                             <Label
                                                 variant="outline"
-                                                color="gold"
-                                                icon={<ExclamationCircleIcon />}
+                                                color="red"
+                                                icon={<NoPolicyRules width="22px" height="22px" />}
                                             >
-                                                0 egress, allowing 325 flows
+                                                A missing policy is allowing all ingress traffic
                                             </Label>
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Label variant="outline" color="blue">
-                                                1 egress
+                                            <Label
+                                                variant="outline"
+                                                color="blue"
+                                                icon={<EgressOnly width="22px" height="22px" />}
+                                            >
+                                                1 or more policies regulating egress traffic
                                             </Label>
-                                        </FlexItem>
-                                    </Flex>
+                                        </LabelGroup>
+                                    )}
+                                    {networkPolicyState === 'ingress' && (
+                                        <LabelGroup>
+                                            <Label
+                                                variant="outline"
+                                                icon={<NoPolicyRules width="22px" height="22px" />}
+                                            >
+                                                A missing policy is allowing all egress traffic
+                                            </Label>
+                                            <Label
+                                                variant="outline"
+                                                color="blue"
+                                                icon={<IngressOnly width="22px" height="22px" />}
+                                            >
+                                                1 or more policies regulating ingress traffic
+                                            </Label>
+                                        </LabelGroup>
+                                    )}
+                                    {networkPolicyState === 'none' && (
+                                        <Label
+                                            variant="outline"
+                                            icon={<NoPolicyRules width="22px" height="22px" />}
+                                        >
+                                            A missing policy is allowing all network traffic
+                                        </Label>
+                                    )}
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
