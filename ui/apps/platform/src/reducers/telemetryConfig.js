@@ -5,7 +5,7 @@ import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
 import { fetchTelemetryConfig } from 'services/TelemetryConfigService';
 import { analyticsIdentity } from 'utils/analytics';
 
-import { initializeSegment } from 'global/analytics';
+import { initializeSegment } from 'global/initializeAnalytics';
 
 // Types
 

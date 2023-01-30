@@ -58,7 +58,5 @@ export function initializeSegment(writeKey) {
             analytics.load(writeKey);
             analytics.page();
         }
-    };
+    }
 }
-
-
