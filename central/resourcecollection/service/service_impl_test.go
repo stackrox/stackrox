@@ -40,7 +40,13 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.queryResolver = datastoreMocks.NewMockQueryResolver(suite.mockCtrl)
 	suite.deploymentDS = deploymentDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS)
+
+	// Collections requires postgres
 	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	// Release builds might not respect the flag (depending on default value), so skip
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.T().Skip("skipping because env var is not set")
+	}
 
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
@@ -51,10 +57,6 @@ func (suite *CollectionServiceTestSuite) TearDownSuite() {
 }
 
 func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
-
 	selectorsResponse, err := suite.collectionService.ListCollectionSelectors(context.Background(), &v1.Empty{})
 	suite.NoError(err)
 
@@ -73,10 +75,6 @@ func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
 }
 
 func (suite *CollectionServiceTestSuite) TestGetCollection() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
-
 	request := &v1.GetCollectionRequest{
 		Id: "a",
 		Options: &v1.CollectionDeploymentMatchOptions{
@@ -115,10 +113,6 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestGetCollectionCount() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
-
 	allAccessCtx := sac.WithAllAccess(context.Background())
 	request := &v1.GetCollectionCountRequest{
 		Query: &v1.RawQuery{},
@@ -141,9 +135,6 @@ func (suite *CollectionServiceTestSuite) TestGetCollectionCount() {
 }
 
 func (suite *CollectionServiceTestSuite) TestCreateCollection() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	// test error when collection name is empty
@@ -227,9 +218,6 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	// test error when collection Id is empty
@@ -325,9 +313,6 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	// test error when ID is empty
@@ -347,9 +332,6 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestListCollections() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	expectedResp := &v1.ListCollectionsResponse{
@@ -377,9 +359,6 @@ func (suite *CollectionServiceTestSuite) TestListCollections() {
 }
 
 func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	expectedResp := &v1.DryRunCollectionResponse{
