@@ -14,21 +14,22 @@ var (
 
 type segmentTelemeter struct {
 	client segment.Client
+	userID string
 }
 
 func getMessageType(msg segment.Message) string {
 	switch m := msg.(type) {
-	case *segment.Alias:
+	case segment.Alias:
 		return m.Type
-	case *segment.Group:
+	case segment.Group:
 		return m.Type
-	case *segment.Identify:
+	case segment.Identify:
 		return m.Type
-	case *segment.Page:
+	case segment.Page:
 		return m.Type
-	case *segment.Screen:
+	case segment.Screen:
 		return m.Type
-	case *segment.Track:
+	case segment.Track:
 		return m.Type
 	default:
 		return ""
@@ -43,7 +44,7 @@ func (*logOnFailure) Failure(msg segment.Message, err error) {
 }
 
 // NewTelemeter creates and initializes a Segment telemeter instance.
-func NewTelemeter(key, endpoint, userID, clientName string, interval time.Duration) *segmentTelemeter {
+func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Duration) *segmentTelemeter {
 	segmentConfig := segment.Config{
 		Endpoint:  endpoint,
 		Interval:  interval,
@@ -51,9 +52,9 @@ func NewTelemeter(key, endpoint, userID, clientName string, interval time.Durati
 		Logger:    &logWrapper{internal: log},
 		Callback:  &logOnFailure{},
 		DefaultContext: &segment.Context{
-			Extra: map[string]any{
-				"Client ID":   userID,
-				"Client Name": clientName,
+			Device: segment.DeviceInfo{
+				Id:   clientID,
+				Type: clientType,
 			},
 		},
 	}
@@ -64,9 +65,7 @@ func NewTelemeter(key, endpoint, userID, clientName string, interval time.Durati
 		return nil
 	}
 
-	return &segmentTelemeter{
-		client: client,
-	}
+	return &segmentTelemeter{client: client, userID: clientID}
 }
 
 type logWrapper struct {
@@ -89,14 +88,39 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func (t *segmentTelemeter) Identify(userID string, props map[string]any) {
+func (t *segmentTelemeter) overwriteID(id string) string {
+	if id == "" {
+		return t.userID
+	}
+	return id
+}
+
+func makeDeviceContext(clientID, clientType string) *segment.Context {
+	if clientID == "" {
+		return nil
+	}
+	return &segment.Context{
+		Device: segment.DeviceInfo{
+			Id:   clientID,
+			Type: clientType,
+		},
+	}
+}
+
+func (t *segmentTelemeter) Identify(props map[string]any) {
+	t.IdentifyUserAs("", "", "", props)
+}
+
+func (t *segmentTelemeter) IdentifyUserAs(userID, clientID, clientType string, props map[string]any) {
 	if t == nil {
 		return
 	}
 	traits := segment.NewTraits()
+
 	identity := segment.Identify{
-		UserId: userID,
-		Traits: traits,
+		UserId:  t.overwriteID(userID),
+		Traits:  traits,
+		Context: makeDeviceContext(clientID, clientType),
 	}
 
 	for k, v := range props {
@@ -107,15 +131,20 @@ func (t *segmentTelemeter) Identify(userID string, props map[string]any) {
 	}
 }
 
-func (t *segmentTelemeter) Group(groupID, userID string, props map[string]any) {
+func (t *segmentTelemeter) Group(groupID string, props map[string]any) {
+	t.GroupUserAs("", "", "", groupID, props)
+}
+
+func (t *segmentTelemeter) GroupUserAs(userID, clientID, clientType, groupID string, props map[string]any) {
 	if t == nil {
 		return
 	}
 
 	group := segment.Group{
 		GroupId: groupID,
-		UserId:  userID,
+		UserId:  t.overwriteID(userID),
 		Traits:  props,
+		Context: makeDeviceContext(clientID, clientType),
 	}
 
 	if err := t.client.Enqueue(group); err != nil {
@@ -123,15 +152,20 @@ func (t *segmentTelemeter) Group(groupID, userID string, props map[string]any) {
 	}
 }
 
-func (t *segmentTelemeter) Track(event, userID string, props map[string]any) {
+func (t *segmentTelemeter) Track(event string, props map[string]any) {
+	t.TrackUserAs("", "", "", event, props)
+}
+
+func (t *segmentTelemeter) TrackUserAs(userID, clientID, clientType, event string, props map[string]any) {
 	if t == nil {
 		return
 	}
 
 	track := segment.Track{
-		UserId:     userID,
+		UserId:     t.overwriteID(userID),
 		Event:      event,
 		Properties: props,
+		Context:    makeDeviceContext(clientID, clientType),
 	}
 
 	if err := t.client.Enqueue(track); err != nil {

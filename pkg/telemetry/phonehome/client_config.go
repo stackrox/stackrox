@@ -70,7 +70,7 @@ func (cfg *Config) Gatherer() Gatherer {
 			if cfg.GatherPeriod.Nanoseconds() == 0 {
 				period = 1 * time.Hour
 			}
-			cfg.gatherer = newGatherer(cfg.ClientID, cfg.Telemeter(), period)
+			cfg.gatherer = newGatherer(cfg.ClientName, cfg.Telemeter(), period)
 		} else {
 			cfg.gatherer = &nilGatherer{}
 		}
