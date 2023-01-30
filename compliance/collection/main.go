@@ -281,7 +281,7 @@ func main() {
 	if features.RHCOSNodeScanning.Enabled() {
 		rescanInterval := env.NodeRescanInterval.DurationSetting()
 		cmetrics.ObserveRescanInterval(rescanInterval, getNode())
-		log.Infof("Node Rescan interval: %v", rescanInterval)
+		log.Infof("Node Rescan interval: %s", rescanInterval.String())
 		sensorC := make(chan *sensor.MsgFromCompliance)
 		defer close(sensorC)
 		go manageSendingToSensor(ctx, cli, sensorC)
