@@ -12,9 +12,6 @@ on:
     - reopened
     - synchronize
 
-env:
-  ROX_PRODUCT_BRANDING: RHACS_BRANDING
-
 jobs:
   pre-build-ui:
     strategy:
@@ -314,6 +311,11 @@ jobs:
     - pre-build-cli
     - pre-build-go-binaries-rcd
     - pre-build-docs
+    strategy:
+      matrix:
+        branding: [ RHACS_BRANDING ]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
     steps:
@@ -400,6 +402,11 @@ jobs:
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+    strategy:
+      matrix:
+        branding: [ RHACS_BRANDING ]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
