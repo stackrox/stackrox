@@ -109,7 +109,7 @@ function VulnMgmtReportForm({
     const [message, setMessage] = useState<FormResponseMessage>(null);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasRoleWriteAccess = hasReadWriteAccess('Role');

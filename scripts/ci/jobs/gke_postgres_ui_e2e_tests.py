@@ -16,9 +16,6 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 # use postgres
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
-# Enable 'Collections' feature during development
-os.environ["ROX_OBJECT_COLLECTIONS"] = "true"
-
 # Override test env defaults here:
 # (for defaults see: tests/e2e/lib.sh export_test_environment())
 # TODO(janisz): Reenable below setting.
