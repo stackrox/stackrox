@@ -107,7 +107,11 @@ function AdvancedFlowsFilter({
                     menuAppendTo="parent"
                 >
                     {allUniquePorts.map((port) => {
-                        return <SelectOption value={port}>{port}</SelectOption>;
+                        return (
+                            <SelectOption value={port} key={port}>
+                                {port}
+                            </SelectOption>
+                        );
                     })}
                 </Select>
             </SelectGroup>

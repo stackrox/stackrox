@@ -65,7 +65,7 @@ function DeploymentPortConfig({ port }: DeploymentPortConfigProps) {
                     <Stack hasGutter>
                         {port.exposureInfos.map((exposureInfo) => {
                             return (
-                                <StackItem>
+                                <StackItem key={exposureInfo.serviceId}>
                                     <Card isFlat>
                                         <CardBody>
                                             <DescriptionList

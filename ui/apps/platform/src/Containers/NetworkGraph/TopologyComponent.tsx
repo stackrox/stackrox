@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
@@ -81,7 +81,6 @@ const TopologyComponent = ({
 }: TopologyComponentProps) => {
     const history = useHistory();
     const controller = useVisualizationController();
-    controller.fromModel(model, true);
 
     function closeSidebar() {
         const queryString = clearSimulationQuery(history.location.search);
@@ -125,6 +124,10 @@ const TopologyComponent = ({
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
         onSelect(ids);
     });
+
+    useEffect(() => {
+        controller.fromModel(model);
+    }, [controller, model]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
