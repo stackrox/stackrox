@@ -25,7 +25,7 @@ function DeploymentPortConfig({ port }: DeploymentPortConfigProps) {
     };
 
     const toggleText = port.name
-        ? `${port.name} - ${port.containerPort}/${port.protocol}`
+        ? `${port.name} — ${port.containerPort}/${port.protocol}`
         : `${port.containerPort}/${port.protocol}`;
 
     return (
