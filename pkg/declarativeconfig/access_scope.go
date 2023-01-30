@@ -19,13 +19,13 @@ type Namespace struct {
 
 type Operator storage.SetBasedLabelSelector_Operator
 
-// MarshalYAML transforms Access to YAML format.
+// MarshalYAML transforms Operator to YAML format.
 func (a Operator) MarshalYAML() ([]byte, error) {
 	protoAccess := storage.SetBasedLabelSelector_Operator(a)
 	return []byte(protoAccess.String()), nil
 }
 
-// UnmarshalYAML makes transformation from YAML to Access.
+// UnmarshalYAML makes transformation from YAML to Operator.
 func (a *Operator) UnmarshalYAML(value *yaml.Node) error {
 	var v string
 	if err := value.Decode(&v); err != nil {
