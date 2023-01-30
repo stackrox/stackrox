@@ -401,7 +401,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}
 
-	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	}
 

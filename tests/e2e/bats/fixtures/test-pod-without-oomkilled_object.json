@@ -175,7 +175,11 @@
                         "value": "false"
                     },
                     {
+<<<<<<< HEAD
                         "name": "ROX_NEW_POLICY_CATEGORIES",
+=======
+                        "name": "ROX_OBJECT_COLLECTIONS",
+>>>>>>> 5780979e91 (ROX-14634: Miscellaneous policy category fixes: Feature flag removal, upgrade path crashes, roxdb import export workflow fixes)
                         "value": "false"
                     },
                     {

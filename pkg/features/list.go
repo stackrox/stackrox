@@ -22,9 +22,6 @@ var (
 	// against network policies applied in the secured cluster.
 	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", true)
 
-	// NewPolicyCategories enables new policy categories as first-class entities.
-	NewPolicyCategories = registerFeature("Enable new policy categories as first-class entities", "ROX_NEW_POLICY_CATEGORIES", false)
-
 	// SearchPageUI enables search page instead of search modal in UI. Frontend only.
 	SearchPageUI = registerFeature("Enable search page instead of search modal in UI", "ROX_SEARCH_PAGE_UI", false)
 
