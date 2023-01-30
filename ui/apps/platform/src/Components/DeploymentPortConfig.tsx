@@ -24,9 +24,13 @@ function DeploymentPortConfig({ port }: DeploymentPortConfigProps) {
         setIsExpanded(_isExpanded);
     };
 
+    const toggleText = port.name
+        ? `${port.name} — ${port.containerPort}/${port.protocol}`
+        : `${port.containerPort}/${port.protocol}`;
+
     return (
         <ExpandableSection
-            toggleText={port.name}
+            toggleText={toggleText}
             onToggle={onToggle}
             isExpanded={isExpanded}
             displaySize="large"
