@@ -5,12 +5,12 @@ import { NavItem } from '@patternfly/react-core';
 export type LeftNavItemProps = {
     isActive: boolean;
     path: string;
-    title: string;
+    title: string | ReactElement;
 };
 
 function LeftNavItem({ isActive, path, title }: LeftNavItemProps): ReactElement {
     return (
-        <NavItem id={title} isActive={isActive}>
+        <NavItem id={title.toString()} isActive={isActive}>
             <NavLink exact to={path} activeClassName="pf-m-current">
                 {title}
             </NavLink>

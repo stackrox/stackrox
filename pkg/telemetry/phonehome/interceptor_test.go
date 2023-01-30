@@ -63,7 +63,7 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		return true
 	})
 
-	s.mockTelemeter.EXPECT().Track("TestEvent", cfg.HashUserAuthID(nil), map[string]any{
+	s.mockTelemeter.EXPECT().TrackUserAs(cfg.HashUserAuthID(nil), "", "", "TestEvent", map[string]any{
 		"Property": "test value",
 	}).Times(1)
 
@@ -95,7 +95,7 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 
 	mockID.EXPECT().ExternalAuthProvider().Return(nil).Times(2)
 	mockID.EXPECT().UID().Return("id").Times(2)
-	s.mockTelemeter.EXPECT().Track("TestEvent", cfg.HashUserAuthID(mockID), map[string]any{
+	s.mockTelemeter.EXPECT().TrackUserAs(cfg.HashUserAuthID(mockID), "", "", "TestEvent", map[string]any{
 		"Property": "test_value",
 	}).Times(1)
 

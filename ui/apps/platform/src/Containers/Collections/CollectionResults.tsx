@@ -11,7 +11,6 @@ import {
     SearchInput,
     SelectOption,
     Skeleton,
-    Spinner,
     Text,
     Title,
 } from '@patternfly/react-core';
@@ -178,7 +177,6 @@ function CollectionResults({
                         {Array.from(Array(10).keys()).map((index: number) => (
                             <DeploymentSkeleton key={`refreshing-deployment-${index}`} />
                         ))}
-                        <Spinner className="pf-u-align-self-center" size="lg" />
                     </>
                 ) : (
                     <>
@@ -192,7 +190,7 @@ function CollectionResults({
                                 variant="link"
                                 isInline
                                 className="pf-u-text-align-center"
-                                isLoading={isFetchingNextPage || isRefreshingResults}
+                                isLoading={isFetchingNextPage}
                                 onClick={() => fetchNextPage(true)}
                             >
                                 View more

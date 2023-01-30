@@ -9,6 +9,6 @@ import (
 // such users could be segmented by tenant properties.
 func addUserToTenantGroup(user *storage.User) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		cfg.Telemeter().Group(cfg.GroupID, cfg.HashUserID(user.GetId(), user.GetAuthProviderId()), nil)
+		cfg.Telemeter().GroupUserAs(cfg.HashUserID(user.GetId(), user.GetAuthProviderId()), cfg.GroupID, "", "", nil)
 	}
 }

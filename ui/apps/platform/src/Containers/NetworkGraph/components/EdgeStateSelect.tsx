@@ -5,9 +5,10 @@ export type EdgeState = 'active' | 'extraneous';
 type EdgeStateSelectProps = {
     edgeState: EdgeState;
     setEdgeState: (state) => void;
+    isDisabled: boolean;
 };
 
-function EdgeStateSelect({ edgeState, setEdgeState }: EdgeStateSelectProps) {
+function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     function onToggle() {
@@ -26,6 +27,7 @@ function EdgeStateSelect({ edgeState, setEdgeState }: EdgeStateSelectProps) {
             onToggle={onToggle}
             onSelect={onSelect}
             selections={edgeState}
+            isDisabled={isDisabled}
         >
             <SelectOption
                 value="active"

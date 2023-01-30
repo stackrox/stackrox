@@ -45,6 +45,7 @@ import (
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
+	"github.com/stackrox/rox/central/declarativeconfig"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -486,6 +487,10 @@ func startGRPCServer() {
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
+	if features.DeclarativeConfiguration.Enabled() {
+		declarativeconfig.ManagerSingleton().WatchDeclarativeConfigDir()
+	}
+
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
 	if err != nil {
@@ -542,9 +547,9 @@ func startGRPCServer() {
 		config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
 		config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
 		// Central adds itself to the tenant group, with no group properties:
-		cfg.Telemeter().Group(cfg.GroupID, cfg.ClientID, nil)
+		cfg.Telemeter().GroupUserAs(cfg.ClientID, "", "", cfg.GroupID, nil)
 		// Add the local admin user as well, with no extra group properties:
-		cfg.Telemeter().Group(cfg.GroupID, cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), nil)
+		cfg.Telemeter().GroupUserAs(cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), "", "", cfg.GroupID, nil)
 	}
 
 	// Before authorization is checked, we want to inject the sac client into the context.

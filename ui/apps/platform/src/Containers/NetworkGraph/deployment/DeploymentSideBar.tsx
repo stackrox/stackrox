@@ -109,7 +109,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                     <DeploymentBaselinesSimulated deploymentId={deploymentId} />
                 </StackItem>
             )}
-            {!isBaselineSimulationOn && (
+            {!isBaselineSimulationOn && deployment && (
                 <>
                     <StackItem>
                         <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
@@ -167,7 +167,10 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                             hidden={activeKeyTab !== 'Baselines'}
                             className="pf-u-h-100"
                         >
-                            <DeploymentBaselines deploymentId={deploymentId} />
+                            <DeploymentBaselines
+                                deployment={deployment}
+                                deploymentId={deploymentId}
+                            />
                         </TabContent>
                         <TabContent
                             eventKey="Network policies"

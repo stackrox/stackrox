@@ -108,6 +108,10 @@ spec:
         - name: ROX_ENABLE_OPENSHIFT_AUTH
           value: "true"
         {{- end }}
+        {{- if ._rox.env.openshift }}
+        - name: ROX_OPENSHIFT
+          value: "true"
+        {{- end }}
         {{- if ._rox.env.managedServices }}
         - name: ROX_MANAGED_CENTRAL
           value: "true"
