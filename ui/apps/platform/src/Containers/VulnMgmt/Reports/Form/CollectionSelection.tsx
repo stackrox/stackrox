@@ -8,6 +8,7 @@ import {
     SelectOption,
     SelectProps,
     SelectVariant,
+    ValidatedOptions,
 } from '@patternfly/react-core';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
@@ -19,17 +20,20 @@ import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCol
 import { useFormik } from 'formik';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
+import { ReportScope } from 'hooks/useFetchReport';
 
 const COLLECTION_PAGE_SIZE = 10;
 
 type CollectionSelectionProps = {
     scopeId: string;
+    initialReportScope: ReportScope | null;
     setFieldValue: ReturnType<typeof useFormik<{ scopeId: string }>>['setFieldValue'];
     allowCreate: boolean;
 };
 
 function CollectionSelection({
     scopeId,
+    initialReportScope,
     setFieldValue,
     allowCreate,
 }: CollectionSelectionProps): ReactElement {
@@ -58,6 +62,9 @@ function CollectionSelection({
         COLLECTION_PAGE_SIZE
     );
 
+    const isLegacyReportScopeSelected =
+        initialReportScope?.type === 'AccessControlScope' && initialReportScope?.id === scopeId;
+
     // Combines the server-side fetched pages of collections data with the local cache
     // of created collections to create a flattened array sorted by name. This is intended to keep
     // the collection dropdown up to date with any collections that the user creates while in the form.
@@ -69,14 +76,22 @@ function CollectionSelection({
     // This functionality can likely be removed if we move to a library based method of data fetching.
     const [createdCollections, setCreatedCollections] = useState<Collection[]>([]);
     const sortedCollections = useMemo(() => {
+        const availableScopes: Pick<Collection, 'id' | 'name' | 'description'>[] = [
+            ...data.flat(),
+            ...createdCollections,
+        ];
+        // Adding the initial report scope, if available, allows the collection name to be displayed even
+        // if it has not yet been fetched via the dropdown's pagination.
+        if (initialReportScope && initialReportScope.type === 'CollectionScope') {
+            availableScopes.push(initialReportScope);
+        }
+
         // This is inefficient due to the multiple loops and the fact that we are already tracking
         // uniqueness for the _server side_ values, but need to do it twice to handle possible client
         // side values. However, 'N' should be small here and we are memoizing the result.
-        const sorted = sortBy(data.flat().concat(createdCollections), ({ name }) =>
-            name.toLowerCase()
-        );
+        const sorted = sortBy(availableScopes, ({ name }) => name.toLowerCase());
         return uniqBy(sorted, 'id');
-    }, [data, createdCollections]);
+    }, [data, createdCollections, initialReportScope]);
 
     function onToggleCollectionModal() {
         setIsCollectionModalOpen((current) => !current);
@@ -107,13 +122,17 @@ function CollectionSelection({
                         isRequired
                         label="Configure report scope"
                         fieldId="scopeId"
-                        touched={{}}
-                        errors={{}}
+                        touched={isLegacyReportScopeSelected ? { scopeId: true } : {}}
+                        errors={
+                            isLegacyReportScopeSelected
+                                ? { scopeId: 'Choose a new collection to use as the report scope' }
+                                : {}
+                        }
                     >
                         <Select
                             id="scopeId"
                             onSelect={onScopeChange}
-                            selections={scopeId}
+                            selections={isLegacyReportScopeSelected ? '' : scopeId}
                             placeholderText="Select a collection"
                             variant={SelectVariant.typeahead}
                             isOpen={isOpen}
@@ -121,6 +140,11 @@ function CollectionSelection({
                             onTypeaheadInputChanged={setSearch}
                             loadingVariant={selectLoadingVariant}
                             isInputValuePersisted
+                            validated={
+                                isLegacyReportScopeSelected
+                                    ? ValidatedOptions.error
+                                    : ValidatedOptions.default
+                            }
                         >
                             {sortedCollections.map(({ id, name, description }) => (
                                 <SelectOption key={id} value={id} description={description}>
