@@ -1,6 +1,7 @@
 import { SearchFilter } from 'types/search';
+import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 
-export default function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
+export function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
     const workingQuery = { ...searchFilter };
     const hierarchy: {
         cluster: string | undefined;
@@ -34,3 +35,29 @@ export default function getScopeHierarchyFromSearch(searchFilter: SearchFilter) 
 
     return hierarchy;
 }
+
+export function getDeploymentLookupMap(
+    deploymentsByNamespace: NamespaceWithDeployments[]
+): Record<string, string[]> {
+    return deploymentsByNamespace.reduce<Record<string, string[]>>((acc, ns) => {
+        const deployments = ns.deployments.map((deployment) => deployment.name);
+        return { ...acc, [ns.metadata.name]: deployments };
+    }, {});
+}
+
+export function getDeploymentsAllowedByNamespaces(
+    deploymentLookupMap: Record<string, string[]>,
+    namespaceSelection: string[]
+) {
+    const newDeploymentLookup = Object.fromEntries(
+        Object.entries(deploymentLookupMap).filter(([key]) => namespaceSelection.includes(key))
+    );
+    const allowedDeployments = Object.values(newDeploymentLookup).flat(1);
+
+    return allowedDeployments;
+}
+
+export default {
+    getScopeHierarchyFromSearch,
+    getDeploymentLookupMap,
+};

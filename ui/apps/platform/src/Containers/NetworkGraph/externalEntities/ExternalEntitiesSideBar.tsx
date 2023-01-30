@@ -36,10 +36,16 @@ type ExternalEntitiesSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    onNodeSelect: (id: string) => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ExternalEntitiesSideBar({ id, nodes, edges }: ExternalEntitiesSideBarProps): ReactElement {
+function ExternalEntitiesSideBar({
+    id,
+    nodes,
+    edges,
+    onNodeSelect,
+}: ExternalEntitiesSideBarProps): ReactElement {
     const controller = useVisualizationController();
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
@@ -58,6 +64,10 @@ function ExternalEntitiesSideBar({ id, nodes, edges }: ExternalEntitiesSideBarPr
     const externalEntitiesNode = getNodeById(nodes, id);
     const numFlows = getNumFlows(filteredFlows);
     const allUniquePorts = getAllUniquePorts(filteredFlows);
+
+    const onSelectFlow = (entityId: string) => {
+        onNodeSelect(entityId);
+    };
 
     return (
         <Stack>
@@ -121,6 +131,7 @@ function ExternalEntitiesSideBar({ id, nodes, edges }: ExternalEntitiesSideBarPr
                             setExpandedRows={setExpandedRows}
                             selectedRows={selectedRows}
                             setSelectedRows={setSelectedRows}
+                            onSelectFlow={onSelectFlow}
                         />
                     </StackItem>
                 </Stack>

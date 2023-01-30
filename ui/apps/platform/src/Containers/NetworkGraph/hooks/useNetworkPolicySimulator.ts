@@ -61,18 +61,18 @@ type UseNetworkPolicySimulatorParams = {
     clusterId: string;
 };
 
+const defaultResultState = {
+    state: 'ACTIVE',
+    networkPolicies: [],
+    error: '',
+    isLoading: true,
+} as NetworkPolicySimulator;
+
 function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySimulatorParams): {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
     applyNetworkPolicyModification: ApplyNetworkPolicyModification;
 } {
-    const defaultResultState = {
-        state: 'ACTIVE',
-        networkPolicies: [],
-        error: '',
-        isLoading: true,
-    } as NetworkPolicySimulator;
-
     const [simulator, setSimulator] = useState<NetworkPolicySimulator>(defaultResultState);
 
     useEffect(() => {
@@ -102,7 +102,6 @@ function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySi
                 isLoading: true,
             });
         }
-
         switch (state) {
             case 'ACTIVE':
                 // @TODO: Add the network search query as a second argument

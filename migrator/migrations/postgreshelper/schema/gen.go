@@ -16,4 +16,3 @@ package schema
 //go:generate pg-schema-migration-helper --type=storage.TestGrandChild1 --search-category 64 --references storage.TestChild1,storage.TestGGrandChild1
 //go:generate pg-schema-migration-helper --type=storage.TestG3GrandChild1 --search-category 67
 //go:generate pg-schema-migration-helper --type=storage.TestShortCircuit --search-category 71 --references storage.TestChild1,storage.TestG2GrandChild1
-//go:generate pg-schema-migration-helper --type=storage.Image --search-category IMAGES --search-scope IMAGE_VULNERABILITIES,COMPONENT_VULN_EDGE,IMAGE_COMPONENTS,IMAGE_COMPONENT_EDGE,IMAGE_VULN_EDGE,IMAGES,DEPLOYMENTS,NAMESPACES,CLUSTERS

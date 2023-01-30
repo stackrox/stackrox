@@ -83,6 +83,7 @@ function useFetchNetworkFlows({
 
     useEffect(() => {
         fetchFlows();
+        return () => setResult(defaultResultState);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deploymentId, edgeState]);
 

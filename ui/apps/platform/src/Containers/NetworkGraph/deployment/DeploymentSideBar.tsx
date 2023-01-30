@@ -41,9 +41,16 @@ type DeploymentSideBarProps = {
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
     edgeState: EdgeState;
+    onNodeSelect: (id: string) => void;
 };
 
-function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: DeploymentSideBarProps) {
+function DeploymentSideBar({
+    deploymentId,
+    nodes,
+    edges,
+    edgeState,
+    onNodeSelect,
+}: DeploymentSideBarProps) {
     // component state
     const { deployment, isLoading, error } = useFetchDeployment(deploymentId);
     const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
@@ -65,6 +72,10 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
     const listenPorts = getListenPorts(nodes, deploymentId);
     const deploymentPolicyIds =
         deploymentNode?.data.type === 'DEPLOYMENT' ? deploymentNode?.data?.policyIds : [];
+    const networkPolicyState =
+        deploymentNode?.data.type === 'DEPLOYMENT'
+            ? deploymentNode.data.networkPolicyState
+            : 'none';
 
     if (isLoading) {
         return (
@@ -106,10 +117,13 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
             </StackItem>
             {isBaselineSimulationOn && (
                 <StackItem isFilled style={{ overflow: 'auto' }} className="pf-u-h-100">
-                    <DeploymentBaselinesSimulated deploymentId={deploymentId} />
+                    <DeploymentBaselinesSimulated
+                        deploymentId={deploymentId}
+                        onNodeSelect={onNodeSelect}
+                    />
                 </StackItem>
             )}
-            {!isBaselineSimulationOn && (
+            {!isBaselineSimulationOn && deployment && (
                 <>
                     <StackItem>
                         <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
@@ -150,6 +164,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                                     numExternalFlows={numExternalFlows}
                                     numInternalFlows={numInternalFlows}
                                     listenPorts={listenPorts}
+                                    networkPolicyState={networkPolicyState}
                                 />
                             )}
                         </TabContent>
@@ -159,6 +174,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                                 edges={edges}
                                 deploymentId={deploymentId}
                                 edgeState={edgeState}
+                                onNodeSelect={onNodeSelect}
                             />
                         </TabContent>
                         <TabContent
@@ -167,7 +183,11 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                             hidden={activeKeyTab !== 'Baselines'}
                             className="pf-u-h-100"
                         >
-                            <DeploymentBaselines deploymentId={deploymentId} />
+                            <DeploymentBaselines
+                                deployment={deployment}
+                                deploymentId={deploymentId}
+                                onNodeSelect={onNodeSelect}
+                            />
                         </TabContent>
                         <TabContent
                             eventKey="Network policies"

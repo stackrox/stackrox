@@ -24,8 +24,7 @@ import (
 const (
 	clusterOS = ""
 
-	waitForIndexing     = true
-	dontWaitForIndexing = false
+	waitForIndexing = true
 )
 
 var (
@@ -499,8 +498,8 @@ func (s *clusterCVEDatastoreSACSuite) TestUpsertClusterCVEData() {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("CVE Cluster datastore Upsert is postgres-only")
 	}
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
+	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
 	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
@@ -572,8 +571,8 @@ func (s *clusterCVEDatastoreSACSuite) TestDeleteClusterCVEData() {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("CVE Cluster datastore Delete is postgres-only")
 	}
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
+	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
 	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
@@ -641,8 +640,8 @@ func (s *clusterCVEDatastoreSACSuite) TestDeleteClusterCVEData() {
 }
 
 func (s *clusterCVEDatastoreSACSuite) runTestExistCVE(targetCVE string) {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
+	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
 	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
@@ -673,8 +672,8 @@ func (s *clusterCVEDatastoreSACSuite) TestExistsSharedCVE() {
 }
 
 func (s *clusterCVEDatastoreSACSuite) runTestGetCVE(targetCVE string, cveObj *storage.EmbeddedVulnerability) {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
+	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
 	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
@@ -736,8 +735,8 @@ func (s *clusterCVEDatastoreSACSuite) TestGetSharedCVE() {
 }
 
 func (s *clusterCVEDatastoreSACSuite) TestGetBatch() {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
+	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
 	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
@@ -1090,8 +1089,8 @@ func (s *clusterCVEDatastoreSACSuite) checkCVEUnsnoozed(targetCVE string,
 }
 
 func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE string) {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
+	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
 	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)

@@ -59,18 +59,13 @@ function NavigationSidebar({
         systemHealthPath,
     ];
 
-    if (isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS') && hasReadAccess('WorkflowAdministration')) {
+    if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE') && hasReadAccess('WorkflowAdministration')) {
         // Insert 'Collections' after 'Policy Management'
         platformConfigurationPaths.splice(
             platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,
             0,
             collectionsBasePath
         );
-    }
-
-    // TODO remove this temporary extra config menu item when the PF network graph goes live in the main menu
-    if (isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY')) {
-        platformConfigurationPaths.push(networkBasePathPF);
     }
 
     const Navigation = (
@@ -81,6 +76,13 @@ function NavigationSidebar({
                     path={dashboardPath}
                     title={basePathToLabelMap[dashboardPath]}
                 />
+                {isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY') && (
+                    <LeftNavItem
+                        isActive={location.pathname.includes(networkBasePathPF)}
+                        path={networkBasePathPF}
+                        title={basePathToLabelMap[networkBasePathPF]}
+                    />
+                )}
                 <LeftNavItem
                     isActive={
                         location.pathname.includes(networkBasePath) &&

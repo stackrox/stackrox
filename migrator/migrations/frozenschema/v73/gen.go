@@ -1,5 +1,9 @@
 package schema
 
+/***
+ * Disable frozen schema generation here. Enabling this only when you need to change and backport a schema change to 3.73.x.
+ * Auto generation need to stay disabled after the change.
+
 //go:generate pg-schema-migration-helper --type=storage.Alert --search-category ALERTS
 //go:generate pg-schema-migration-helper --type=storage.Pod --search-category PODS --references storage.Deployment
 //go:generate pg-schema-migration-helper --type=storage.WatchedImage
@@ -68,3 +72,4 @@ package schema
 //go:generate pg-schema-migration-helper --type=storage.Policy --search-category POLICIES --get-all-func
 //go:generate pg-schema-migration-helper --type=storage.ComponentCVEEdge --table=image_component_cve_edges --search-category COMPONENT_VULN_EDGE --references=storage.ImageComponent,image_cves:storage.ImageCVE --read-only-store --search-scope IMAGE_VULNERABILITIES,COMPONENT_VULN_EDGE,IMAGE_COMPONENTS,IMAGE_COMPONENT_EDGE,IMAGE_VULN_EDGE,IMAGES,DEPLOYMENTS,NAMESPACES,CLUSTERS
 //go:generate sh -c "rm ./convert_*.go"
+*/

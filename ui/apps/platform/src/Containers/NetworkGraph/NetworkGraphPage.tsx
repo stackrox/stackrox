@@ -38,7 +38,7 @@ import {
     createExtraneousFlowsModel,
     graphModel,
 } from './utils/modelUtils';
-import getScopeHierarchy from './utils/getScopeHierarchy';
+import { getScopeHierarchyFromSearch } from './utils/hierarchyUtils';
 import getSimulation from './utils/getSimulation';
 
 import './NetworkGraphPage.css';
@@ -80,7 +80,7 @@ function NetworkGraphPage() {
         namespaces: namespacesFromUrl,
         deployments: deploymentsFromUrl,
         remainingQuery,
-    } = getScopeHierarchy(searchFilter);
+    } = getScopeHierarchyFromSearch(searchFilter);
     const simulation = getSimulation(simulationQueryValue);
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
@@ -166,9 +166,9 @@ function NetworkGraphPage() {
         clusterFromUrl,
         namespacesFromUrl,
         deploymentsFromUrl,
-        deploymentCount,
         remainingQuery,
         timeWindow,
+        deploymentCount,
     ]);
 
     function toggleCIDRBlockForm() {
@@ -206,7 +206,10 @@ function NetworkGraphPage() {
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem spacer={{ default: 'spacerNone' }}>
-                                <SimulateNetworkPolicyButton simulation={simulation} />
+                                <SimulateNetworkPolicyButton
+                                    simulation={simulation}
+                                    isDisabled={!hasClusterNamespaceSelected}
+                                />
                             </ToolbarItem>
                         </ToolbarGroup>
                     </ToolbarContent>
@@ -221,13 +224,14 @@ function NetworkGraphPage() {
                                 <EdgeStateSelect
                                     edgeState={edgeState}
                                     setEdgeState={setEdgeState}
+                                    isDisabled={!hasClusterNamespaceSelected}
                                 />
                             </ToolbarItem>
                             <ToolbarItem>
                                 <TimeWindowSelector
                                     activeTimeWindow={timeWindow}
                                     setActiveTimeWindow={setTimeWindow}
-                                    isDisabled={isLoading}
+                                    isDisabled={isLoading || !hasClusterNamespaceSelected}
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
@@ -237,12 +241,14 @@ function NetworkGraphPage() {
                                     selectedCluster={clusterFromUrl}
                                     selectedNamespaces={namespacesFromUrl}
                                     selectedDeployments={deploymentsFromUrl}
+                                    isDisabled={!hasClusterNamespaceSelected}
                                 />
                             </ToolbarItem>
                             <ToolbarItem>
                                 <DisplayOptionsSelect
                                     selectedOptions={displayOptions}
                                     setSelectedOptions={setDisplayOptions}
+                                    isDisabled={!hasClusterNamespaceSelected}
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>

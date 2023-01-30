@@ -8,6 +8,13 @@ import { Collection } from 'services/CollectionsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useEmbeddedCollections from './hooks/useEmbeddedCollections';
 
+// We need to use `startsWith` instead of `includes` here, since search values sent to the API use
+// a prefix match. If we filter by substring, collections matching the substring will appear in
+// the "attached" list, but not in the "available" list, since the former are cached client side.
+function compareNameLowercase(search: string, item: { name: string }): boolean {
+    return item.name.toLowerCase().startsWith(search.toLowerCase());
+}
+
 export type CollectionAttacherProps = {
     // A collection ID that should not be visible in the collection attacher component. This is
     // used when editing a collection to prevent reference cycles.
@@ -23,7 +30,8 @@ function CollectionAttacher({
     onSelectionChange,
     collectionTableCells,
 }: CollectionAttacherProps) {
-    const [search, setSearch] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [searchValue, setSearchValue] = useState('');
     const embedded = useEmbeddedCollections(excludedCollectionId, initialEmbeddedCollections);
     const { attached, detached, attach, detach, hasMore, fetchMore, onSearch } = embedded;
     const { isFetchingMore, fetchMoreError } = embedded;
@@ -33,12 +41,16 @@ function CollectionAttacher({
             <SearchInput
                 aria-label="Filter by name"
                 placeholder="Filter by name"
-                value={search}
-                onChange={setSearch}
-                onSearch={() => onSearch(search)}
+                value={searchInput}
+                onChange={setSearchInput}
+                onSearch={() => {
+                    onSearch(searchInput);
+                    setSearchValue(searchInput);
+                }}
                 onClear={() => {
-                    setSearch('');
                     onSearch('');
+                    setSearchValue('');
+                    setSearchInput('');
                 }}
             />
             <BacklogListSelector
@@ -53,6 +65,7 @@ function CollectionAttacher({
                 deselectedLabel="Available collections"
                 selectButtonText="Attach"
                 deselectButtonText="Detach"
+                searchFilter={(item) => compareNameLowercase(searchValue, item)}
             />
             {fetchMoreError && (
                 <Alert
@@ -67,7 +80,7 @@ function CollectionAttacher({
                 <Button
                     className="pf-u-align-self-flex-start"
                     variant="secondary"
-                    onClick={() => fetchMore(search)}
+                    onClick={() => fetchMore(searchValue)}
                     isLoading={isFetchingMore}
                 >
                     View more

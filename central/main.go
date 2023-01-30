@@ -395,10 +395,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
-
-		if features.ObjectCollections.Enabled() {
-			servicesToRegister = append(servicesToRegister, collectionService.Singleton())
-		}
+		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
@@ -547,9 +544,9 @@ func startGRPCServer() {
 		config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
 		config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
 		// Central adds itself to the tenant group, with no group properties:
-		cfg.Telemeter().Group(cfg.GroupID, cfg.ClientID, nil)
+		cfg.Telemeter().GroupUserAs(cfg.ClientID, "", "", cfg.GroupID, nil)
 		// Add the local admin user as well, with no extra group properties:
-		cfg.Telemeter().Group(cfg.GroupID, cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), nil)
+		cfg.Telemeter().GroupUserAs(cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), "", "", cfg.GroupID, nil)
 	}
 
 	// Before authorization is checked, we want to inject the sac client into the context.

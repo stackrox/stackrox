@@ -43,9 +43,16 @@ type DeploymentFlowsProps = {
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
     edgeState: EdgeState;
+    onNodeSelect: (id: string) => void;
 };
 
-function DeploymentFlows({ deploymentId, nodes, edges, edgeState }: DeploymentFlowsProps) {
+function DeploymentFlows({
+    deploymentId,
+    nodes,
+    edges,
+    edgeState,
+    onNodeSelect,
+}: DeploymentFlowsProps) {
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
@@ -77,6 +84,10 @@ function DeploymentFlows({ deploymentId, nodes, edges, edgeState }: DeploymentFl
     const numExtraneousEgressFlows = getNumExtraneousEgressFlows(nodes);
     const numExtraneousIngressFlows = getNumExtraneousIngressFlows(nodes);
     const totalFlows = numFlows + numExtraneousEgressFlows + numExtraneousIngressFlows;
+
+    const onSelectFlow = (entityId: string) => {
+        onNodeSelect(entityId);
+    };
 
     function addToBaseline(flow: Flow) {
         modifyBaselineStatuses([flow], 'BASELINE', refetchFlows);
@@ -169,6 +180,7 @@ function DeploymentFlows({ deploymentId, nodes, edges, edgeState }: DeploymentFl
                         numExtraneousEgressFlows={numExtraneousEgressFlows}
                         numExtraneousIngressFlows={numExtraneousIngressFlows}
                         isEditable
+                        onSelectFlow={onSelectFlow}
                     />
                 </StackItem>
             </Stack>

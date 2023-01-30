@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mathutil"
@@ -367,7 +366,7 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 }
 
 func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfiguration) ([]common.Result, error) {
-	if features.ObjectCollections.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		collection, found, err := s.collectionDatastore.Get(ctx, rc.GetScopeId())
 		if err != nil {
 			return nil, errors.Wrapf(err, "error building report query: unable to get the collection %s", rc.GetScopeId())
