@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -363,6 +364,33 @@ func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData
 	return addJSONToZip(zipWriter, "telemetry-data.json", telemetryInfo)
 }
 
+type dbExtension struct {
+	ExtensionName    string `json:"ExtensionName"`
+	ExtensionVersion string `json:"ExtensionVersion"`
+}
+
+// centralDBDiagnosticData represents a collection of various pieces of central db config information.
+type centralDBDiagnosticData struct {
+	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
+	Database              string        `json:"Database,omitempty"`
+	DatabaseClientVersion string        `json:"DatabaseClientVersion,omitempty"`
+	DatabaseServerVersion string        `json:"DatabaseServerVersion,omitempty"`
+	DatabaseExtensions    []dbExtension `json:"DatabaseExtensions,omitempty"`
+	DatabaseConnectString string        `json:"DatabaseConnectString,omitempty"`
+}
+
+func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
+	_, dbConfig, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		log.Warnf("Could not parse postgres config: %v", err)
+		return err
+	}
+
+	dbDiagnosticData := buildDBDiagnosticData(ctx, dbConfig, globaldb.GetPostgres())
+
+	return addJSONToZip(zipWriter, "central-db.json", dbDiagnosticData)
+}
+
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zip.Writer) error {
 	w, err := zipWriter.Create("logimbue-data.json")
 	if err != nil {
@@ -535,6 +563,12 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			}
 
 			if err := zipPrometheusMetrics(zipWriter, "metrics-2"); err != nil {
+				log.Error(err)
+			}
+		}
+
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			if err := getCentralDBData(ctx, zipWriter); err != nil {
 				log.Error(err)
 			}
 		}
