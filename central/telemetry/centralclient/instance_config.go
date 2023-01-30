@@ -46,7 +46,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	trackedPaths = strings.Split(apiWhiteList.Setting(), ",")
 
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
-	if env.OpenshiftAPI.BooleanSetting() {
+	if env.Openshift.BooleanSetting() {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
@@ -79,6 +79,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,
 			"Kubernetes version": v.GitVersion,
+			"Managed":            env.ManagedCentral.BooleanSetting(),
 		}, nil
 }
 
