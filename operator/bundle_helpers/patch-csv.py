@@ -100,7 +100,7 @@ def parse_args():
                         help='Which operator image to use in the patched CSV')
     parser.add_argument("--no-related-images", action='store_true',
                         help='Disable passthrough of related images')
-    parser.add_argument("--replace-rbac-proxy", required=False, metavar='replacement-image:v',
+    parser.add_argument("--replace-rbac-proxy", required=False, metavar='replacement-image:tag',
                         help='Replacement directives for the RBAC proxy image')
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
@@ -114,7 +114,7 @@ def parse_args():
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
     args = parse_args()
     doc = yaml.safe_load(sys.stdin)
     patch_csv(doc,
