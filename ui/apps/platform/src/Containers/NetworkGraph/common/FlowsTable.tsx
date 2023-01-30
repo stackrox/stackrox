@@ -13,7 +13,7 @@ import {
 import { Flex, FlexItem, Text, TextContent, TextVariants, Tooltip } from '@patternfly/react-core';
 import { ExclamationCircleIcon, MinusIcon, PlusIcon } from '@patternfly/react-icons';
 
-import { BaselineSimulationDiffState, Flow } from '../types/flow.type';
+import { BaselineSimulationDiffState, Flow, FlowEntityType } from '../types/flow.type';
 import { protocolLabel } from '../utils/flowUtils';
 
 type FlowsTableProps = {
@@ -83,6 +83,21 @@ function ExtraneousFlowsRow({
                 <Td dataLabel={columnNames.portAndProtocol}>Any / Any</Td>
             </Tr>
         </Tbody>
+    );
+}
+
+function AnomalousIcon({ type }: { type: FlowEntityType }) {
+    if (type === 'CIDR_BLOCK' || type === 'EXTERNAL_ENTITIES') {
+        return (
+            <Tooltip content={<div>Anomalous external flow</div>}>
+                <ExclamationCircleIcon className="pf-u-danger-color-100" />
+            </Tooltip>
+        );
+    }
+    return (
+        <Tooltip content={<div>Anomalous internal flow</div>}>
+            <ExclamationCircleIcon className="pf-u-warning-color-100" />
+        </Tooltip>
     );
 }
 
@@ -242,7 +257,7 @@ function FlowsTable({
                                     </FlexItem>
                                     {row.isAnomalous && (
                                         <FlexItem>
-                                            <ExclamationCircleIcon className="pf-u-danger-color-100" />
+                                            <AnomalousIcon type={row.type} />
                                         </FlexItem>
                                     )}
                                 </Flex>
@@ -297,9 +312,9 @@ function FlowsTable({
                                             <ExpandableRowContent>
                                                 <Flex direction={{ default: 'row' }}>
                                                     <FlexItem>{child.entity}</FlexItem>
-                                                    {row.isAnomalous && (
+                                                    {child.isAnomalous && (
                                                         <FlexItem>
-                                                            <ExclamationCircleIcon className="pf-u-danger-color-100" />
+                                                            <AnomalousIcon type={child.type} />
                                                         </FlexItem>
                                                     )}
                                                 </Flex>
