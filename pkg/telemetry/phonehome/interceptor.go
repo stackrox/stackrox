@@ -27,7 +27,7 @@ func (cfg *Config) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			cfg.telemeter.TrackUserAs(id, "", "", event, props)
+			cfg.telemeter.With(id).Track(event, props)
 		}
 	}
 }

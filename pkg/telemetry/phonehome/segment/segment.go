@@ -6,15 +6,18 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                     = logging.LoggerForModule()
+	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
 )
 
 type segmentTelemeter struct {
 	client segment.Client
 	userID string
+	ctx    *segment.Context
 }
 
 func getMessageType(msg segment.Message) string {
@@ -107,20 +110,24 @@ func makeDeviceContext(clientID, clientType string) *segment.Context {
 	}
 }
 
-func (t *segmentTelemeter) Identify(props map[string]any) {
-	t.IdentifyUserAs("", "", "", props)
+func (t *segmentTelemeter) With(userID string) telemeter.Telemeter {
+	return &segmentTelemeter{client: t.client, userID: userID, ctx: t.ctx}
 }
 
-func (t *segmentTelemeter) IdentifyUserAs(userID, clientID, clientType string, props map[string]any) {
+func (t *segmentTelemeter) As(clientID string, clientType string) telemeter.Telemeter {
+	return &segmentTelemeter{client: t.client, userID: t.userID, ctx: makeDeviceContext(clientID, clientType)}
+}
+
+func (t *segmentTelemeter) Identify(props map[string]any) {
 	if t == nil {
 		return
 	}
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
-		UserId:  t.overwriteID(userID),
+		UserId:  t.userID,
 		Traits:  traits,
-		Context: makeDeviceContext(clientID, clientType),
+		Context: t.ctx,
 	}
 
 	for k, v := range props {
@@ -132,19 +139,15 @@ func (t *segmentTelemeter) IdentifyUserAs(userID, clientID, clientType string, p
 }
 
 func (t *segmentTelemeter) Group(groupID string, props map[string]any) {
-	t.GroupUserAs("", "", "", groupID, props)
-}
-
-func (t *segmentTelemeter) GroupUserAs(userID, clientID, clientType, groupID string, props map[string]any) {
 	if t == nil {
 		return
 	}
 
 	group := segment.Group{
 		GroupId: groupID,
-		UserId:  t.overwriteID(userID),
+		UserId:  t.userID,
 		Traits:  props,
-		Context: makeDeviceContext(clientID, clientType),
+		Context: t.ctx,
 	}
 
 	if err := t.client.Enqueue(group); err != nil {
@@ -153,19 +156,15 @@ func (t *segmentTelemeter) GroupUserAs(userID, clientID, clientType, groupID str
 }
 
 func (t *segmentTelemeter) Track(event string, props map[string]any) {
-	t.TrackUserAs("", "", "", event, props)
-}
-
-func (t *segmentTelemeter) TrackUserAs(userID, clientID, clientType, event string, props map[string]any) {
 	if t == nil {
 		return
 	}
 
 	track := segment.Track{
-		UserId:     t.overwriteID(userID),
+		UserId:     t.userID,
 		Event:      event,
 		Properties: props,
-		Context:    makeDeviceContext(clientID, clientType),
+		Context:    t.ctx,
 	}
 
 	if err := t.client.Enqueue(track); err != nil {

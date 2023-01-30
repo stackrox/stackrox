@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"google.golang.org/grpc"
 )
 
@@ -42,7 +43,7 @@ type Config struct {
 	// The period of identity gathering. Default is 1 hour.
 	GatherPeriod time.Duration
 
-	telemeter Telemeter
+	telemeter telemeter.Telemeter
 	gatherer  Gatherer
 
 	onceTelemeter sync.Once
@@ -79,7 +80,7 @@ func (cfg *Config) Gatherer() Gatherer {
 }
 
 // Telemeter returns the instance of the telemeter.
-func (cfg *Config) Telemeter() Telemeter {
+func (cfg *Config) Telemeter() telemeter.Telemeter {
 	if cfg == nil {
 		return &nilTelemeter{}
 	}

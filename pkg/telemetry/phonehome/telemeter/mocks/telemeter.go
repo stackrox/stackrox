@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	telemeter "github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 // MockTelemeter is a mock of Telemeter interface.
@@ -33,6 +34,20 @@ func (m *MockTelemeter) EXPECT() *MockTelemeterMockRecorder {
 	return m.recorder
 }
 
+// As mocks base method.
+func (m *MockTelemeter) As(clientID, clientType string) telemeter.Telemeter {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "As", clientID, clientType)
+	ret0, _ := ret[0].(telemeter.Telemeter)
+	return ret0
+}
+
+// As indicates an expected call of As.
+func (mr *MockTelemeterMockRecorder) As(clientID, clientType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "As", reflect.TypeOf((*MockTelemeter)(nil).As), clientID, clientType)
+}
+
 // Group mocks base method.
 func (m *MockTelemeter) Group(groupID string, props map[string]any) {
 	m.ctrl.T.Helper()
@@ -45,18 +60,6 @@ func (mr *MockTelemeterMockRecorder) Group(groupID, props interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), groupID, props)
 }
 
-// GroupUserAs mocks base method.
-func (m *MockTelemeter) GroupUserAs(userID, clientID, clientType, groupID string, props map[string]any) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GroupUserAs", userID, clientID, clientType, groupID, props)
-}
-
-// GroupUserAs indicates an expected call of GroupUserAs.
-func (mr *MockTelemeterMockRecorder) GroupUserAs(userID, clientID, clientType, groupID, props interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GroupUserAs", reflect.TypeOf((*MockTelemeter)(nil).GroupUserAs), userID, clientID, clientType, groupID, props)
-}
-
 // Identify mocks base method.
 func (m *MockTelemeter) Identify(props map[string]any) {
 	m.ctrl.T.Helper()
@@ -67,18 +70,6 @@ func (m *MockTelemeter) Identify(props map[string]any) {
 func (mr *MockTelemeterMockRecorder) Identify(props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), props)
-}
-
-// IdentifyUserAs mocks base method.
-func (m *MockTelemeter) IdentifyUserAs(userID, clientID, clientType string, props map[string]any) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "IdentifyUserAs", userID, clientID, clientType, props)
-}
-
-// IdentifyUserAs indicates an expected call of IdentifyUserAs.
-func (mr *MockTelemeterMockRecorder) IdentifyUserAs(userID, clientID, clientType, props interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IdentifyUserAs", reflect.TypeOf((*MockTelemeter)(nil).IdentifyUserAs), userID, clientID, clientType, props)
 }
 
 // Stop mocks base method.
@@ -105,14 +96,16 @@ func (mr *MockTelemeterMockRecorder) Track(event, props interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockTelemeter)(nil).Track), event, props)
 }
 
-// TrackUserAs mocks base method.
-func (m *MockTelemeter) TrackUserAs(userID, clientID, clientType, event string, props map[string]any) {
+// With mocks base method.
+func (m *MockTelemeter) With(userID string) telemeter.Telemeter {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "TrackUserAs", userID, clientID, clientType, event, props)
+	ret := m.ctrl.Call(m, "With", userID)
+	ret0, _ := ret[0].(telemeter.Telemeter)
+	return ret0
 }
 
-// TrackUserAs indicates an expected call of TrackUserAs.
-func (mr *MockTelemeterMockRecorder) TrackUserAs(userID, clientID, clientType, event, props interface{}) *gomock.Call {
+// With indicates an expected call of With.
+func (mr *MockTelemeterMockRecorder) With(userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackUserAs", reflect.TypeOf((*MockTelemeter)(nil).TrackUserAs), userID, clientID, clientType, event, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "With", reflect.TypeOf((*MockTelemeter)(nil).With), userID)
 }

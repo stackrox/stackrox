@@ -27,12 +27,13 @@ func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 		}
 		cfg.Telemeter().TrackUserAs(userID, "", "", "Secured Cluster Registered", props)
 
+		clusterUser := cfg.Telemeter().With(cluster.GetId())
+
 		// Add the secured cluster 'user' to the Tenant group:
-		cfg.Telemeter().GroupUserAs(cluster.GetId(), "", "", cfg.GroupID, nil)
+		clusterUser.Group(cfg.GroupID, nil)
 
 		// Update the secured cluster identity from its name:
-		cfg.Telemeter().IdentifyUserAs(cluster.GetId(), cluster.GetId(), securedClusterClient,
-			makeClusterProperties(cluster))
+		clusterUser.As(cluster.GetId(), securedClusterClient).Identify(makeClusterProperties(cluster))
 	}
 }
 
@@ -52,8 +53,8 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 func trackClusterInitialized(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		// Issue an event that makes the secured cluster identity effective:
-		cfg.Telemeter().TrackUserAs(cluster.GetId(), cluster.GetId(), securedClusterClient,
-			"Secured Cluster Initialized", map[string]any{
+		cfg.Telemeter().With(cluster.GetId()).As(cluster.GetId(), securedClusterClient).
+			Track("Secured Cluster Initialized", map[string]any{
 				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 			})
 	}
@@ -89,7 +90,8 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props := makeClusterProperties(cluster)
 		props["Total Nodes"] = metrics.NodeCount
 		props["CPU Capacity"] = metrics.CpuCapacity
-		cfg.Telemeter().IdentifyUserAs(cluster.GetId(), cluster.GetId(), securedClusterClient, props)
-		cfg.Telemeter().TrackUserAs(cluster.GetId(), cluster.GetId(), securedClusterClient, "Updated Secured Cluster Identity", nil)
+		t := cfg.Telemeter().With(cluster.GetId()).As(cluster.GetId(), securedClusterClient)
+		t.Identify(props)
+		t.Track("Updated Secured Cluster Identity", nil)
 	}
 }
