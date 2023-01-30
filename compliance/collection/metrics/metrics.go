@@ -42,6 +42,7 @@ var (
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "inventory_scan_duration_seconds",
 		Help:      "Scan duration for Node Inventory (per Node) in seconds",
+		Buckets:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20},
 	},
 		[]string{
 			// The Node this scan belongs to
@@ -64,8 +65,9 @@ var (
 	protobufMessageSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
-		Name:      "protobuf_inventory_message_size",
+		Name:      "protobuf_inventory_message_size_bytes",
 		Help:      "Message size of sent Node Inventory gRPC messages (per Node) in bytes",
+		Buckets:   []float64{500, 1000, 10000, 50000, 100000, 500000, 1000000},
 	},
 		[]string{
 			// The Node this scan belongs to
@@ -87,21 +89,27 @@ var (
 // ObserveNodeInventoryScan observes the metric.
 func ObserveNodeInventoryScan(inventory *storage.NodeInventory) {
 	rhelPackageCount := 0
-	if inventory.GetComponents() != nil && inventory.GetComponents().RhelComponents() != nil {
-		rhelPackageCount = len(inventory.Components.RhelComponents)
+	components := inventory.GetComponents()
+
+	if components == nil {
+		return
+	}
+
+	if components.GetRhelComponents() != nil {
+		rhelPackageCount = len(components.GetRhelComponents())
 	}
 	numberOfRHELPackages.With(prometheus.Labels{
-		"node_name":    inventory.NodeName,
-		"os_namespace": inventory.Components.Namespace,
+		"node_name":    inventory.GetNodeName(),
+		"os_namespace": components.GetNamespace(),
 	}).Set(float64(rhelPackageCount))
 
 	rhelContentSets := 0
-	if inventory.Components.RhelContentSets != nil {
-		rhelContentSets = len(inventory.Components.RhelContentSets)
+	if components.GetRhelContentSets() != nil {
+		rhelContentSets = len(components.GetRhelContentSets())
 	}
 	numberOfContentSets.With(prometheus.Labels{
-		"node_name":    inventory.NodeName,
-		"os_namespace": inventory.Components.Namespace,
+		"node_name":    inventory.GetNodeName(),
+		"os_namespace": components.GetNamespace(),
 	}).Set(float64(rhelContentSets))
 }
 
@@ -130,7 +138,7 @@ func ObserveScansTotal(nodeName string) {
 // ObserveInventoryProtobufMessage observes the metric.
 func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance) {
 	protobufMessageSize.With(prometheus.Labels{
-		"node_name": cmsg.Node,
+		"node_name": cmsg.GetNode(),
 	}).Observe(float64(cmsg.Size()))
 }
 

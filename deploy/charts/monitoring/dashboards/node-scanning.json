@@ -162,7 +162,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(rox_compliance_protobuf_inventory_message_size_sum[5m])/rate(rox_compliance_protobuf_inventory_message_size_count[5m])",
+          "expr": "rate(rox_compliance_protobuf_inventory_message_size_bytes_sum[5m])/rate(rox_compliance_protobuf_inventory_message_size_bytes_count[5m])",
           "interval": "",
           "legendFormat": "{{node_name}}",
           "refId": "A"
