@@ -63,7 +63,7 @@ type CollectionE2ETestSuite struct {
 }
 
 func (s *CollectionE2ETestSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting(){
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip collection tests as it requires postgres")
 		s.T().SkipNow()
 	}
