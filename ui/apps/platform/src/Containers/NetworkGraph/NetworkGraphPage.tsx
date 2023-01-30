@@ -166,9 +166,9 @@ function NetworkGraphPage() {
         clusterFromUrl,
         namespacesFromUrl,
         deploymentsFromUrl,
-        deploymentCount,
         remainingQuery,
         timeWindow,
+        deploymentCount,
     ]);
 
     function toggleCIDRBlockForm() {

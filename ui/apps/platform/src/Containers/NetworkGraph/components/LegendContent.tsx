@@ -35,8 +35,13 @@ function LegendContent() {
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
                         <DescriptionListItem
+                            term={<PficonNetworkRangeIcon className="pf-u-ml-xs" />}
+                            desc="Connected to external entities"
+                            groupClassName="pf-u-align-items-center"
+                        />
+                        <DescriptionListItem
                             term={<BothPolicyRules width="22px" height="22px" />}
-                            desc="Isolated by network poilcy rules"
+                            desc="Isolated by network policy rules"
                             groupClassName="pf-u-align-items-center"
                         />
                         <DescriptionListItem

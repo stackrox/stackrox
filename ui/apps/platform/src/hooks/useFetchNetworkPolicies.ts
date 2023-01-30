@@ -29,6 +29,8 @@ function useFetchNetworkPolicies(policyIds: string[]): Result {
                     setResult({ networkPolicies: [], error, isLoading: false });
                 });
         }
+
+        return () => setResult(defaultResultState);
     }, [policyIds]);
 
     return result;
