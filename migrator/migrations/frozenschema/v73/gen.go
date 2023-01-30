@@ -1,7 +1,7 @@
 package schema
 
 /***
- * Disable frozen schema generation here. Enabling this only when you need to change and backport a schema change to 4.73.x.
+ * Disable frozen schema generation here. Enabling this only when you need to change and backport a schema change to 3.73.x.
  * Auto generation need to stay disabled after the change.
 
 //go:generate pg-schema-migration-helper --type=storage.Alert --search-category ALERTS
