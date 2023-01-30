@@ -4,6 +4,7 @@ import {
     assertDeploymentsAreMatched,
     assertDeploymentsAreMatchedExactly,
     assertDeploymentsAreNotMatched,
+    tryCreateCollection,
     tryDeleteCollection,
     visitCollections,
 } from './Collections.helpers';
@@ -141,10 +142,6 @@ describe('Collection deployment matching', () => {
         cy.get('button:contains("Save")').click();
 
         cy.get(`td[data-label="Collection"] a:contains("${withEmbeddedCollectionName}")`);
-    });
-
-    it('should correctly handle embedded collections with filters applied', () => {
-        // TODO - Ensure filtering the embedded collections list doesn't bork the data
     });
 
     it('should filter deployment results in the sidebar', () => {
