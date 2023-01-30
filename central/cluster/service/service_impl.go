@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/cluster/index/mappings"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -15,13 +17,18 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -31,7 +38,6 @@ import (
 var (
 	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Cluster)): {
-			"/v1.ClustersService/GetClusters",
 			"/v1.ClustersService/GetCluster",
 			"/v1.ClustersService/GetKernelSupportAvailable",
 			"/v1.ClustersService/GetClusterDefaultValues",
@@ -40,6 +46,9 @@ var (
 			"/v1.ClustersService/PostCluster",
 			"/v1.ClustersService/PutCluster",
 			"/v1.ClustersService/DeleteCluster",
+		},
+		allow.Anonymous(): {
+			"/v1.ClustersService/GetClusters",
 		},
 	}))
 )
@@ -191,7 +200,89 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		return nil, err
 	}
 
+	clustersMap := make(map[string]*storage.Cluster, 0)
+	for ix := range clusters {
+		c := clusters[ix]
+		clustersMap[c.GetId()] = c
+	}
+
+	// Extend cluster list with Clusters belonging to any scope linked to a scoped user permission
+	hasResourceWithFullScope := false
+	targetClusterIDs := make(map[string]struct{}, 0)
+	for _, p := range resources.AllResourcesViewPermissions() {
+		if p.Resource.GetScope() == permissions.GlobalScope {
+			continue
+		}
+		scope, err := sac.ForResource(p.Resource).ScopeChecker(ctx, p.Access).EffectiveAccessScope(p)
+		if err != nil {
+			continue
+		}
+		if scope == nil {
+			continue
+		}
+		if scope.State == effectiveaccessscope.Included {
+			hasResourceWithFullScope = true
+			break
+		}
+		for _, id := range scope.GetClusterIDs() {
+			targetClusterIDs[id] = struct{}{}
+		}
+	}
+	var elevatedCtx context.Context
+	if hasResourceWithFullScope {
+		elevatedCtx = sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+			),
+		)
+	} else {
+		clusterIDs := make([]string, 0, len(targetClusterIDs))
+		for k := range targetClusterIDs {
+			clusterIDs = append(clusterIDs, k)
+		}
+		elevatedCtx = sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+				sac.ClusterScopeKeys(clusterIDs...),
+			),
+		)
+	}
+	extraClusterQuery := search.NewQueryBuilder().
+		AddStringsHighlighted("Cluster", search.WildcardString).ProtoQuery()
+	extraClusterResults, err := s.datastore.Search(elevatedCtx, extraClusterQuery)
+	if err != nil {
+		// In case of error, do not display any extra cluster info
+		extraClusterResults = nil
+	}
+	extraClusters := make([]*storage.Cluster, 0, len(extraClusterResults))
+	var clusterOptions search.OptionsMap
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		clusterOptions = schema.ClustersSchema.OptionsMap
+	} else {
+		clusterOptions = mappings.OptionsMap
+	}
+	for _, r := range extraClusterResults {
+		if _, found := clustersMap[r.ID]; found {
+			continue
+		}
+		clusterName := fmt.Sprintf("Cluster with id %q", r.ID)
+		matches := r.Matches[clusterOptions.MustGet(search.Cluster.String()).GetFieldPath()]
+		for _, m := range matches {
+			if len(m) > 0 {
+				clusterName = m
+				break
+			}
+		}
+		extraClusters = append(extraClusters, &storage.Cluster{
+			Id:   r.ID,
+			Name: clusterName,
+		})
+	}
+
 	if !features.DecommissionedClusterRetention.Enabled() {
+		clusters = append(clusters, extraClusters...)
 		return &v1.ClustersList{
 			Clusters: clusters,
 		}, nil
@@ -202,6 +293,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		return nil, err
 	}
 
+	clusters = append(clusters, extraClusters...)
 	return &v1.ClustersList{
 		Clusters:                 clusters,
 		ClusterIdToRetentionInfo: clusterIDToRetentionInfoMap,
