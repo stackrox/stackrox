@@ -129,7 +129,7 @@ func RegisterCentralClient(config grpc.Config, basicAuthProviderID string) {
 	}
 	registerInterceptors(config)
 	// Central adds itself to the tenant group, with no group properties:
-	cfg.Telemeter().With(cfg.ClientID).Group(cfg.GroupID, nil)
+	cfg.Telemeter().User(cfg.ClientID).Group(cfg.GroupID, nil)
 	registerAdminUser(basicAuthProviderID)
 }
 
@@ -147,12 +147,12 @@ func registerAdminUser(basicAuthProviderID string) {
 
 	// Add the basic authorization ID form ('admin'):
 	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	cfg.Telemeter().With(adminHash).Group(cfg.GroupID, nil)
+	cfg.Telemeter().User(adminHash).Group(cfg.GroupID, nil)
 
 	// Add the token based ID form ('sso:<provider id>:admin'):
 	adminTokenHash := cfg.HashUserID(
 		tokenbased.FormatUserID(basic.DefaultUsername, basicAuthProviderID),
 		basicAuthProviderID,
 	)
-	cfg.Telemeter().With(adminTokenHash).Group(cfg.GroupID, nil)
+	cfg.Telemeter().User(adminTokenHash).Group(cfg.GroupID, nil)
 }

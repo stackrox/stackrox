@@ -91,13 +91,6 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func (t *segmentTelemeter) overwriteID(id string) string {
-	if id == "" {
-		return t.userID
-	}
-	return id
-}
-
 func makeDeviceContext(clientID, clientType string) *segment.Context {
 	if clientID == "" {
 		return nil
@@ -110,7 +103,7 @@ func makeDeviceContext(clientID, clientType string) *segment.Context {
 	}
 }
 
-func (t *segmentTelemeter) With(userID string) telemeter.Telemeter {
+func (t *segmentTelemeter) User(userID string) telemeter.Telemeter {
 	return &segmentTelemeter{client: t.client, userID: userID, ctx: t.ctx}
 }
 

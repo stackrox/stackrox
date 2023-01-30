@@ -14,6 +14,8 @@ type Telemeter interface {
 	// Group adds the user to a group, supplying group specific properties.
 	Group(groupID string, props map[string]any)
 
-	With(userID string) Telemeter
+	// User set's the user for the calls on the returned Telemeter.
+	User(userID string) Telemeter
+	// As overrides the device context for the calls on the returned Telemeter.
 	As(clientID string, clientType string) Telemeter
 }

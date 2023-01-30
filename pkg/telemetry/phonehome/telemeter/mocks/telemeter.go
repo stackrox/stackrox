@@ -96,16 +96,16 @@ func (mr *MockTelemeterMockRecorder) Track(event, props interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockTelemeter)(nil).Track), event, props)
 }
 
-// With mocks base method.
-func (m *MockTelemeter) With(userID string) telemeter.Telemeter {
+// User mocks base method.
+func (m *MockTelemeter) User(userID string) telemeter.Telemeter {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "With", userID)
+	ret := m.ctrl.Call(m, "User", userID)
 	ret0, _ := ret[0].(telemeter.Telemeter)
 	return ret0
 }
 
-// With indicates an expected call of With.
-func (mr *MockTelemeterMockRecorder) With(userID interface{}) *gomock.Call {
+// User indicates an expected call of User.
+func (mr *MockTelemeterMockRecorder) User(userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "With", reflect.TypeOf((*MockTelemeter)(nil).With), userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "User", reflect.TypeOf((*MockTelemeter)(nil).User), userID)
 }
