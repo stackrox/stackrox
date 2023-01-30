@@ -87,7 +87,7 @@ var (
 // ObserveNodeInventoryScan observes the metric.
 func ObserveNodeInventoryScan(inventory *storage.NodeInventory) {
 	rhelPackageCount := 0
-	if inventory.Components.RhelComponents != nil {
+	if inventory.GetComponents() != nil && inventory.GetComponents().RhelComponents() != nil {
 		rhelPackageCount = len(inventory.Components.RhelComponents)
 	}
 	numberOfRHELPackages.With(prometheus.Labels{
