@@ -24,7 +24,6 @@ type NodeInventoryCollector struct {
 
 // Scan scans the current node and returns the results as storage.NodeInventory object
 func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, error) {
-	log.Debug("Start collecting node inventory")
 	metrics.ObserveScansTotal(nodeName)
 	startTime := time.Now()
 
@@ -34,7 +33,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 
 	scanDuration := time.Since(startTime)
 	metrics.ObserveScanDuration(scanDuration, nodeName, err)
-	log.Debug("Finished collecting node inventory")
+	log.Debugf("Collecting Node Inventory took %f seconds", scanDuration.Seconds())
 
 	if err != nil {
 		log.Errorf("Error scanning node /host inventory: %v", err)

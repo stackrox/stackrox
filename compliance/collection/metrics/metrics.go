@@ -42,7 +42,7 @@ var (
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "inventory_scan_duration_seconds",
 		Help:      "Scan duration for Node Inventory (per Node) in seconds",
-		Buckets:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20},
+		Buckets:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 50, 100, 500, 1000},
 	},
 		[]string{
 			// The Node this scan belongs to
