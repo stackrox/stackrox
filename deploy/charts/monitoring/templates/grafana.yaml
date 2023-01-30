@@ -70,6 +70,4 @@ data:
 {{ .Files.Get "dashboards/cluster-health.json" | indent 4 }}
   dataplane.json: |-
 {{ .Files.Get "dashboards/dataplane.json" | indent 4 }}
-  node-scanning.json: |-
-{{ .Files.Get "dashboards/node-scanning.json" | indent 4 }}
 
