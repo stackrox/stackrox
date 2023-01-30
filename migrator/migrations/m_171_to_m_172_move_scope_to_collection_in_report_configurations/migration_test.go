@@ -327,7 +327,6 @@ func (s *reportConfigsMigrationTestSuite) SetupTest() {
 
 	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.ReportConfigurationsTableName)
 	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.SimpleAccessScopesTableName)
-	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.CollectionsTableName)
 }
 
 func (s *reportConfigsMigrationTestSuite) TearDownTest() {
@@ -348,6 +347,7 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 
 	dbs := &types.Databases{
 		PostgresDB: s.db.Pool,
+		GormDB:     s.db.GetGormDB(),
 	}
 
 	s.NoError(migration.Run(dbs))
@@ -388,6 +388,7 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 func (s *reportConfigsMigrationTestSuite) TestMigrationOnCleanDB() {
 	dbs := &types.Databases{
 		PostgresDB: s.db.Pool,
+		GormDB:     s.db.GetGormDB(),
 	}
 	s.NoError(migration.Run(dbs))
 }

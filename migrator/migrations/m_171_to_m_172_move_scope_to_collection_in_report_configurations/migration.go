@@ -10,14 +10,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
 	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
 	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
 	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"gorm.io/gorm"
 )
 
 const (
@@ -34,7 +37,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 172
 		Run: func(databases *types.Databases) error {
-			err := moveScopesInReportsToCollections(databases.PostgresDB)
+			err := moveScopesInReportsToCollections(databases.GormDB, databases.PostgresDB)
 			if err != nil {
 				return errors.Wrap(err, "error converting scopes to collections in reportConfigurations")
 			}
@@ -177,12 +180,12 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 
 	collectionsToEmbed, err := getCollectionsToEmbed(scope)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed create collections for scope <%s>", scope.GetName()), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
 		return nil
 	}
 	err = collectionStore.UpsertMany(ctx, collectionsToEmbed)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed create collections for scope <%s>", scope.GetName()), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
 		return nil
 	}
 	embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(collectionsToEmbed))
@@ -200,13 +203,14 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 		EmbeddedCollections: embeddedCollections,
 	}
 	if err := collectionStore.Upsert(ctx, rootCollection); err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed create collections for scope <%s>", scope.GetName()), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
 	}
 	return nil
 }
 
-func moveScopesInReportsToCollections(db *pgxpool.Pool) error {
+func moveScopesInReportsToCollections(gormDB *gorm.DB, db *pgxpool.Pool) error {
 	ctx := context.Background()
+	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableCollectionsStmt)
 	reportConfigStore := reportConfigurationPostgres.New(db)
 	accessScopeStore := accessScopePostgres.New(db)
 	collectionStore := collectionPostgres.New(db)
