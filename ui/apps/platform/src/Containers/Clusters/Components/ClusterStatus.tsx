@@ -3,6 +3,8 @@ import { Button, Popover, PopoverPosition } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ExternalLinkAltIcon } from '@patternfly/react-icons/dist/esm/icons';
 
 import { healthStatusLabels } from 'messages/common';
+import useMetadata from 'hooks/useMetadata';
+import { getVersionedDocs } from 'utils/versioning';
 import HealthStatus from './HealthStatus';
 import ClusterStatusPill from './ClusterStatusPill';
 import { healthStatusStyles } from '../cluster.helpers';
@@ -20,15 +22,20 @@ type ClusterStatusProps = {
 };
 
 function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): ReactElement {
+    const { version } = useMetadata();
+
     const { overallHealthStatus } = healthStatus;
     const { Icon, bgColor, fgColor } = healthStatusStyles[overallHealthStatus];
     const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
 
     const unhealthyClusterDetailAvailable = overallHealthStatus === 'UNHEALTHY';
-    const bodyContent = (
+    const bodyContent = version ? (
         <Button
             component="a"
-            href="https://docs.openshift.com/acs/installing/installing_cloud_ocp/prerequisites-cloud-ocp.html#collector-prerequisites_prerequisites-cloud-ocp"
+            href={getVersionedDocs(
+                version,
+                'troubleshooting/retrieving-and-analyzing-the-collector-logs-and-pod-status.html'
+            )}
             variant="link"
             target="_blank"
             rel="noopener noreferrer"
@@ -38,6 +45,8 @@ function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): Re
         >
             Troubleshooting collector
         </Button>
+    ) : (
+        <span>Documentation not available; version missing</span>
     );
 
     return (
