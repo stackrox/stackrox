@@ -36,10 +36,11 @@ type CidrBlockSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    onNodeSelect: (id: string) => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactElement {
+function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarProps): ReactElement {
     const controller = useVisualizationController();
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
@@ -58,6 +59,10 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
     const cidrBlockNode = getNodeById(nodes, id) as CIDRBlockNodeModel;
     const numFlows = getNumFlows(filteredFlows);
     const allUniquePorts = getAllUniquePorts(filteredFlows);
+
+    const onSelectFlow = (entityId: string) => {
+        onNodeSelect(entityId);
+    };
 
     return (
         <Stack>
@@ -121,6 +126,7 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
                             setExpandedRows={setExpandedRows}
                             selectedRows={selectedRows}
                             setSelectedRows={setSelectedRows}
+                            onSelectFlow={onSelectFlow}
                         />
                     </StackItem>
                 </Stack>

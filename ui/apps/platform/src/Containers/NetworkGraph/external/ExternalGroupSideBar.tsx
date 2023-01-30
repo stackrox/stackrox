@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
+    Button,
     Divider,
     Flex,
     FlexItem,
@@ -30,6 +31,7 @@ type ExternalGroupSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    onNodeSelect: (id: string) => void;
 };
 
 const columnNames = {
@@ -39,7 +41,12 @@ const columnNames = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ExternalGroupSideBar({ id, nodes, edges }: ExternalGroupSideBarProps): ReactElement {
+function ExternalGroupSideBar({
+    id,
+    nodes,
+    edges,
+    onNodeSelect,
+}: ExternalGroupSideBarProps): ReactElement {
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
 
@@ -48,6 +55,11 @@ function ExternalGroupSideBar({ id, nodes, edges }: ExternalGroupSideBarProps): 
     const externalNodes = nodes.filter(
         (node) => node.data.type === 'CIDR_BLOCK' || node.data.type === 'EXTERNAL_ENTITIES'
     ) as (ExternalEntitiesNodeModel | CIDRBlockNodeModel)[];
+
+    const onNodeSelectHandler =
+        (externalNode: ExternalEntitiesNodeModel | CIDRBlockNodeModel) => () => {
+            onNodeSelect(externalNode.id);
+        };
 
     const filteredExternalNodes = entityNameFilter
         ? externalNodes.filter((externalNode) => {
@@ -133,7 +145,17 @@ function ExternalGroupSideBar({ id, nodes, edges }: ExternalGroupSideBarProps): 
                                             <Td dataLabel={columnNames.entity}>
                                                 <Flex>
                                                     <FlexItem>{entityIcon}</FlexItem>
-                                                    <FlexItem>{entityName}</FlexItem>
+                                                    <FlexItem>
+                                                        <Button
+                                                            variant="link"
+                                                            isInline
+                                                            onClick={onNodeSelectHandler(
+                                                                externalNode
+                                                            )}
+                                                        >
+                                                            {entityName}
+                                                        </Button>
+                                                    </FlexItem>
                                                 </Flex>
                                             </Td>
                                             <Td dataLabel={columnNames.address}>{address}</Td>

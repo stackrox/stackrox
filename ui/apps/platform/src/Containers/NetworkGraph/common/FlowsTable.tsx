@@ -10,7 +10,15 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { Flex, FlexItem, Text, TextContent, TextVariants, Tooltip } from '@patternfly/react-core';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    Text,
+    TextContent,
+    TextVariants,
+    Tooltip,
+} from '@patternfly/react-core';
 import { ExclamationCircleIcon, MinusIcon, PlusIcon } from '@patternfly/react-icons';
 
 import { BaselineSimulationDiffState, Flow, FlowEntityType } from '../types/flow.type';
@@ -30,6 +38,7 @@ type FlowsTableProps = {
     isBaselineSimulation?: boolean;
     numExtraneousEgressFlows?: number;
     numExtraneousIngressFlows?: number;
+    onSelectFlow: (entityId: string) => void;
 };
 
 const columnNames = {
@@ -115,6 +124,7 @@ function FlowsTable({
     isBaselineSimulation = false,
     numExtraneousEgressFlows = 0,
     numExtraneousIngressFlows = 0,
+    onSelectFlow,
 }: FlowsTableProps): ReactElement {
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows?.includes(row.id);
@@ -143,6 +153,10 @@ function FlowsTable({
             return setSelectedRows?.(newSelectedRows);
         }
         return setSelectedRows?.([]);
+    };
+
+    const onSelectFlowHandler = (flow: Flow) => () => {
+        onSelectFlow(flow.entityId);
     };
 
     return (
@@ -244,7 +258,15 @@ function FlowsTable({
                             <Td dataLabel={columnNames.entity}>
                                 <Flex direction={{ default: 'row' }}>
                                     <FlexItem>
-                                        <div>{row.entity}</div>
+                                        <div>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onSelectFlowHandler(row)}
+                                            >
+                                                {row.entity}
+                                            </Button>
+                                        </div>
                                         <div>
                                             <TextContent>
                                                 <Text component={TextVariants.small}>
@@ -311,7 +333,15 @@ function FlowsTable({
                                         <Td>
                                             <ExpandableRowContent>
                                                 <Flex direction={{ default: 'row' }}>
-                                                    <FlexItem>{child.entity}</FlexItem>
+                                                    <FlexItem>
+                                                        <Button
+                                                            variant="link"
+                                                            isInline
+                                                            onClick={onSelectFlowHandler(child)}
+                                                        >
+                                                            {child.entity}
+                                                        </Button>
+                                                    </FlexItem>
                                                     {child.isAnomalous && (
                                                         <FlexItem>
                                                             <AnomalousIcon type={child.type} />
