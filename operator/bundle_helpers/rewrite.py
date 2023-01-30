@@ -16,7 +16,8 @@ def rewrite(d, rewriter):
         for i, elem in enumerate(d):
             res = rewrite(elem, rewriter)
             if res is not None:
-                list[i] = res
+                logging.info(f'Replaced: {d[i]} with {res}')
+                d[i] = res
     if isinstance(d, dict):
         updates = []
         for k, v in d.items():
