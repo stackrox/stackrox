@@ -27,14 +27,16 @@ func initialize() {
 	var store policyCategoryStore.Store
 	var indexer index.Indexer
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		store = policyCategoryPostgres.New(globaldb.GetPostgres())
-		indexer = policyCategoryPostgres.NewIndexer(globaldb.GetPostgres())
-
-		addDefaults(store)
-		searcher := search.New(store, indexer)
-		ad = New(store, indexer, searcher, policyCategoryEdgeDS.Singleton())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
 	}
+	store = policyCategoryPostgres.New(globaldb.GetPostgres())
+	indexer = policyCategoryPostgres.NewIndexer(globaldb.GetPostgres())
+
+	addDefaults(store)
+	searcher := search.New(store, indexer)
+	ad = New(store, indexer, searcher, policyCategoryEdgeDS.Singleton())
+
 }
 
 // Singleton provides the interface for non-service external interaction.
