@@ -105,15 +105,21 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const { version } = metadata;
 
     const installMenuOptions = [
-        <DropdownItem
-            key="link"
-            description="Cluster installation guides"
-            href={getVersionedDocs(version, 'installing/acs-installation-platforms.html')}
-            target="_blank"
-            rel="noopener noreferrer"
-        >
-            View instructions
-        </DropdownItem>,
+        version ? (
+            <DropdownItem
+                key="link"
+                description="Cluster installation guides"
+                href={getVersionedDocs(version, 'installing/acs-installation-platforms.html')}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                View instructions
+            </DropdownItem>
+        ) : (
+            <DropdownItem key="version-missing" isPlainText>
+                Instructions unavailable; version missing
+            </DropdownItem>
+        ),
         <DropdownItem key="add" onClick={onAddCluster}>
             New cluster
         </DropdownItem>,
