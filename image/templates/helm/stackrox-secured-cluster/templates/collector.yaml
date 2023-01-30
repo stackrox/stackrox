@@ -91,10 +91,8 @@ spec:
       - command:
         - stackrox/compliance
         env:
-        {{- if ._rox.collector.exposeMonitoring }}
         - name: ROX_METRICS_PORT
           value: ":9091"
-        {{- end }}
         - name: ROX_NODE_NAME
           valueFrom:
             fieldRef:
