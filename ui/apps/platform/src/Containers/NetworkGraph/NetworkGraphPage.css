@@ -26,9 +26,3 @@
 [data-testid="network-graph-toolbar"] .react-select__menu {
     z-index: 250;
 }
-
-/* Remove gray background from plain PF Select trigger button when disabled */
-.network-graph-selector-bar .pf-c-select__toggle.pf-m-disabled,
-.network-graph-selector-bar .pf-c-select__toggle:disabled {
-    --pf-c-select__toggle--disabled--BackgroundColor: none;
-}
