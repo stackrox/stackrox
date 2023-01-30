@@ -82,7 +82,7 @@ function useFetchReport(reportId: string, refresh = 0): Result {
     const [result, setResult] = useState<Result>(defaultResultState);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     useEffect(() => {
         setResult(defaultResultState);
