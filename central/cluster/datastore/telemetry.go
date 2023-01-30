@@ -17,8 +17,7 @@ const securedClusterClient = "Secured Cluster"
 func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		userID := cfg.ClientID
-		id, err := authn.IdentityFromContext(ctx)
-		if err != nil {
+		if id, err := authn.IdentityFromContext(ctx); err == nil {
 			userID = cfg.HashUserAuthID(id)
 		}
 		props := map[string]any{
