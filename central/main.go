@@ -395,10 +395,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
-
-		if features.ObjectCollections.Enabled() {
-			servicesToRegister = append(servicesToRegister, collectionService.Singleton())
-		}
+		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())

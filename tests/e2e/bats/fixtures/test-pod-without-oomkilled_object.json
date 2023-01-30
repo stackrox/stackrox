@@ -179,10 +179,6 @@
                         "value": "false"
                     },
                     {
-                        "name": "ROX_OBJECT_COLLECTIONS",
-                        "value": "false"
-                    },
-                    {
                         "name": "ROX_PROCESSES_LISTENING_ON_PORT",
                         "value": "false"
                     },

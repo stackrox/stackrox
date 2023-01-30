@@ -69,7 +69,7 @@ function CollectionScopeName({ reportScope, canWriteReports }: ScopeNameProps): 
 
 function ScopeName(props: ScopeNameProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     return isCollectionsEnabled ? (
         <CollectionScopeName {...props} />

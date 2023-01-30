@@ -9,7 +9,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
@@ -63,8 +63,8 @@ type CollectionE2ETestSuite struct {
 }
 
 func (s *CollectionE2ETestSuite) SetupSuite() {
-	if !features.ObjectCollections.Enabled() {
-		s.T().Skip("Skip collection tests")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("Skip collection tests as it requires postgres")
 		s.T().SkipNow()
 	}
 
