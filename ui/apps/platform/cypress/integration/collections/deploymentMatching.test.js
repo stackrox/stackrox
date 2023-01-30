@@ -4,7 +4,6 @@ import {
     assertDeploymentsAreMatched,
     assertDeploymentsAreMatchedExactly,
     assertDeploymentsAreNotMatched,
-    tryCreateCollection,
     tryDeleteCollection,
     visitCollections,
 } from './Collections.helpers';
