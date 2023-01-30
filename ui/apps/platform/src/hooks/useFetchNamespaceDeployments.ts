@@ -54,6 +54,8 @@ function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
         } else {
             setAvailableNamespaces(data.results);
         }
+        // clean up state on unmount
+        return () => setAvailableNamespaces([]);
     }, [data]);
 
     return {
