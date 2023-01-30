@@ -83,7 +83,7 @@ function NetworkGraphPage() {
     } = getScopeHierarchy(searchFilter);
     const simulation = getSimulation(simulationQueryValue);
 
-    const hasClusterNamespaceSelected = !!(clusterFromUrl && namespacesFromUrl.length);
+    const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
     const { clusters } = useFetchClusters();
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;

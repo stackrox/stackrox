@@ -87,6 +87,21 @@ function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySi
 
     function setNetworkPolicyModification(action: SetNetworkPolicyModificationAction): void {
         const { state, options } = action;
+        if (state === 'ACTIVE') {
+            setSimulator({
+                state: 'ACTIVE',
+                networkPolicies: [],
+                error: '',
+                isLoading: true,
+            });
+        } else {
+            setSimulator({
+                state,
+                modification: null,
+                error: '',
+                isLoading: true,
+            });
+        }
         switch (state) {
             case 'ACTIVE':
                 // @TODO: Add the network search query as a second argument
