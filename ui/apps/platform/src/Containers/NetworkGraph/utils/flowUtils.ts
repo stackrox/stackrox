@@ -127,44 +127,47 @@ export function getNetworkFlows(
         const sourceNode = controller.getNodeById(edge.source);
         const targetNode = controller.getNodeById(edge.target);
 
-        const sourceNodeData: CustomSingleNodeData = sourceNode?.getData();
-        const targetNodeData: CustomSingleNodeData = targetNode?.getData();
+        if (sourceNode && targetNode) {
+            const sourceNodeData: CustomSingleNodeData = sourceNode?.getData();
+            const targetNodeData: CustomSingleNodeData = targetNode?.getData();
 
-        const newFlows = edge.data.sourceToTargetProperties.map(({ port, protocol }): Flow => {
-            const direction: string = isSourceNodeSelected ? 'Egress' : 'Ingress';
-            const flow = createFlow({
-                sourceNodeData,
-                targetNodeData,
-                direction,
-                port,
-                protocol,
-                isSourceNodeSelected,
+            const newFlows = edge.data.sourceToTargetProperties.map(({ port, protocol }): Flow => {
+                const direction: string = isSourceNodeSelected ? 'Egress' : 'Ingress';
+                const flow = createFlow({
+                    sourceNodeData,
+                    targetNodeData,
+                    direction,
+                    port,
+                    protocol,
+                    isSourceNodeSelected,
+                });
+                return flow;
             });
-            return flow;
-        });
 
-        const newReverseFlows = edge.data.targetToSourceProperties
-            ? edge.data.targetToSourceProperties.map(({ port, protocol }): Flow => {
-                  const direction: string = isSourceNodeSelected ? 'Ingress' : 'Egress';
-                  const flow = createFlow({
-                      sourceNodeData,
-                      targetNodeData,
-                      direction,
-                      port,
-                      protocol,
-                      isSourceNodeSelected,
-                  });
-                  return flow;
-              })
-            : [];
+            const newReverseFlows = edge.data.targetToSourceProperties
+                ? edge.data.targetToSourceProperties.map(({ port, protocol }): Flow => {
+                      const direction: string = isSourceNodeSelected ? 'Ingress' : 'Egress';
+                      const flow = createFlow({
+                          sourceNodeData,
+                          targetNodeData,
+                          direction,
+                          port,
+                          protocol,
+                          isSourceNodeSelected,
+                      });
+                      return flow;
+                  })
+                : [];
 
-        return [...acc, ...newFlows, ...newReverseFlows] as Flow[];
+            return [...acc, ...newFlows, ...newReverseFlows] as Flow[];
+        }
+        return [...acc];
     }, [] as Flow[]);
     return networkFlows;
 }
 
 /*
-  This function takes network flows and filters the data based on a text search value 
+  This function takes network flows and filters the data based on a text search value
   for entity name and some advanced filters specific to network flows. These include:
   flow types, directionality, protocols, and ports
 */
