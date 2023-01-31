@@ -143,9 +143,9 @@ describe('Vulnerability Management Reporting form', () => {
         const integrationsSource = 'notifiers';
 
         // Delete collection from previous calls, if present
+        tryDeleteVMReportConfigs(reportName);
         tryDeleteCollection(collectionName);
         tryDeleteIntegration(integrationsSource, emailNotifierName);
-        tryDeleteVMReportConfigs(reportName);
 
         visitVulnerabilityReportingToCreate({}, isCollectionsEnabled);
 
@@ -232,9 +232,15 @@ describe('Vulnerability Management Reporting form', () => {
         // Verify that we have landed on the correct collection page
         cy.get(`h1:contains("${collectionName}")`);
 
+        // Attempt to delete the collection while it is in use by the VM report config
+        cy.get(`button:contains("Actions")`).click();
+        cy.get(`button:contains("Delete collection")`).click();
+        cy.get('*[role="dialog"] button:contains("Delete")').click();
+        cy.get('*:contains("Failed to delete collection")');
+
         // Self cleanup
+        tryDeleteVMReportConfigs(reportName);
         tryDeleteCollection(collectionName);
         tryDeleteIntegration(integrationsSource, emailNotifierName);
-        tryDeleteVMReportConfigs(reportName);
     });
 });
