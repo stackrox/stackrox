@@ -41,6 +41,7 @@ config_part_1() {
     deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
+    deploy_clair_v4
 }
 
 reuse_config_part_1() {
