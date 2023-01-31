@@ -134,7 +134,8 @@ const TopologyComponent = ({
         if (selectedNode) {
             const selectedNodeElement = controller.getNodeById(selectedNode.id);
             if (selectedNodeElement) {
-                controller.getGraph().panIntoView(selectedNodeElement);
+                // the offset is to make sure the label also makes it inside the viewport
+                controller.getGraph().panIntoView(selectedNodeElement, { offset: 50 });
             }
         }
     }, [controller, model, selectedNode]);
