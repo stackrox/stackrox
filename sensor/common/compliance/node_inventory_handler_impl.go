@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/detector/metrics"
 )
 
 var (
@@ -85,6 +86,7 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 					log.Warnf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
 				} else {
 					inventory.NodeId = nodeID
+					metrics.ObserveReceivedNodeInventory(inventory)
 					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
 					c.sendNodeInventory(toC, inventory)
 				}
