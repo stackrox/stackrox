@@ -45,41 +45,46 @@ function PolicyScopeCard({
     const { scope } = value || {};
     const { setValue } = helper;
 
-    function handleChangeCluster(e, val) {
+    function handleChangeCluster(e, clusterUntrimmed) {
+        const clusterTrimmed = clusterUntrimmed.trim();
         setIsClusterSelectOpen(false);
         if (type === 'exclusion') {
-            setValue({ ...value, scope: { ...scope, cluster: val } });
+            setValue({ ...value, scope: { ...scope, cluster: clusterTrimmed } });
         } else {
-            setValue({ ...value, cluster: val });
+            setValue({ ...value, cluster: clusterTrimmed });
         }
     }
 
-    function handleChangeDeployment(e, val) {
+    function handleChangeDeployment(e, deploymentUntrimmed) {
+        const deploymentTrimmed = deploymentUntrimmed.trim();
         setIsDeploymentSelectOpen(false);
-        setValue({ ...value, name: val });
+        setValue({ ...value, name: deploymentTrimmed });
     }
 
-    function handleChangeLabelKey(key) {
+    function handleChangeLabelKey(keyUntrimmed) {
+        const keyTrimmed = keyUntrimmed.trim();
         if (type === 'exclusion') {
             const { label } = scope || {};
-            setValue({ ...value, scope: { ...scope, label: { ...label, key } } });
+            setValue({ ...value, scope: { ...scope, label: { ...label, key: keyTrimmed } } });
         } else {
             const { label } = value || {};
-            setValue({ ...value, label: { ...label, key } });
+            setValue({ ...value, label: { ...label, key: keyTrimmed } });
         }
     }
 
-    function handleChangeLabelValue(val) {
+    function handleChangeLabelValue(valueUntrimmed) {
+        const valueTrimmed = valueUntrimmed.trim();
         if (type === 'exclusion') {
             const { label } = scope || {};
-            setValue({ ...value, scope: { ...scope, label: { ...label, value: val } } });
+            setValue({ ...value, scope: { ...scope, label: { ...label, value: valueTrimmed } } });
         } else {
             const { label } = value || {};
-            setValue({ ...value, label: { ...label, value: val } });
+            setValue({ ...value, label: { ...label, value: valueTrimmed } });
         }
     }
 
-    function handleChangeNamespace(namespace) {
+    function handleChangeNamespace(namespaceUntrimmed) {
+        const namespace = namespaceUntrimmed.trim();
         if (type === 'exclusion') {
             setValue({ ...value, scope: { ...scope, namespace } });
         } else {

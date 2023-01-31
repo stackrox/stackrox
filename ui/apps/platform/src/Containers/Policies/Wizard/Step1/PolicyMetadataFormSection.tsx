@@ -5,11 +5,21 @@ import { Field, useFormikContext } from 'formik';
 import PolicyCategoriesSelectField from './PolicyCategoriesSelectField';
 
 function PolicyMetadataFormSection(): ReactElement {
-    const { handleChange } = useFormikContext();
+    const { handleChange, setFieldValue } = useFormikContext();
 
     function onChange(_value, event) {
         handleChange(event);
     }
+
+    function onChangeWithTrim(valueUntrimmed, event) {
+        const name = event.target.id ?? event.target.name;
+        if (name) {
+            setFieldValue(name, valueUntrimmed.trim());
+        } else {
+            onChange(valueUntrimmed, event);
+        }
+    }
+
     return (
         <Form>
             <Field name="name">
@@ -99,7 +109,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             id={field.name}
                             name={field.name}
                             value={field.value}
-                            onChange={onChange}
+                            onChange={onChangeWithTrim}
                         />
                     </FormGroup>
                 )}
@@ -115,7 +125,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             id={field.name}
                             name={field.name}
                             value={field.value}
-                            onChange={onChange}
+                            onChange={onChangeWithTrim}
                         />
                     </FormGroup>
                 )}
@@ -131,7 +141,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             id={field.name}
                             name={field.name}
                             value={field.value}
-                            onChange={onChange}
+                            onChange={onChangeWithTrim}
                         />
                     </FormGroup>
                 )}

@@ -33,8 +33,13 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
     const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
 
-    function onEditSectionName(_, e) {
-        handleChange(e);
+    function onEditSectionName(valueUntrimmed, event) {
+        const name = event.target.id ?? event.target.name;
+        if (name) {
+            setFieldValue(name, valueUntrimmed.trim());
+        } else {
+            handleChange(event);
+        }
     }
 
     function onDeleteSection() {
