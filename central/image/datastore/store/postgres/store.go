@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -735,10 +734,8 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
-		utils.Should(
-			errors.Errorf("Number of component (%d) in image-component edges is not equal to number of stored components (%d) for image %s (imageID=%s)",
-				len(componentEdgeMap), len(componentMap), image.GetName().GetFullName(), image.GetId()),
-		)
+		log.Errorf("Number of component (%d) in image-component edges is not equal to number of stored components (%d) for image %s (imageID=%s)",
+			len(componentEdgeMap), len(componentMap), image.GetName().GetFullName(), image.GetId())
 	}
 
 	imageParts := common.ImageParts{
