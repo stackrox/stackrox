@@ -175,10 +175,6 @@
                         "value": "false"
                     },
                     {
-                        "name": "ROX_NEW_POLICY_CATEGORIES",
-                        "value": "false"
-                    },
-                    {
                         "name": "ROX_PROCESSES_LISTENING_ON_PORT",
                         "value": "false"
                     },
