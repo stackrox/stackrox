@@ -156,7 +156,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
 					return err
 				}
 				policyToCategoryIDsMap[p.Id] = append(policyToCategoryIDsMap[p.Id], id)
-				categoryNameToIDMap[c] = id
+				categoryNameToIDMap[strings.Title(c)] = id
 			}
 		}
 		// policies will be upserted without category info
