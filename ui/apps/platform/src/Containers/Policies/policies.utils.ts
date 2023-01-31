@@ -526,6 +526,7 @@ function trimPolicyScope(scope: PolicyScope) {
         }
     }
     */
+    /* eslint-enable no-param-reassign */
 
     return scope;
 }
