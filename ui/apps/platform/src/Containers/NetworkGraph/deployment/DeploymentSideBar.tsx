@@ -84,6 +84,10 @@ function DeploymentSideBar({
             ? deploymentNode.data.networkPolicyState
             : 'none';
 
+    const onDeploymentTabsSelect = (tab: string) => {
+        setActiveKeyTab(tab);
+    };
+
     if (isLoading) {
         return (
             <Bullseye>
@@ -174,6 +178,7 @@ function DeploymentSideBar({
                                     numInternalFlows={numInternalFlows}
                                     listenPorts={listenPorts}
                                     networkPolicyState={networkPolicyState}
+                                    onDeploymentTabsSelect={onDeploymentTabsSelect}
                                 />
                             )}
                         </TabContent>
