@@ -12,7 +12,6 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { useVisualizationController } from '@patternfly/react-topology';
 
 import { getNodeById } from '../utils/networkGraphUtils';
 import {
@@ -41,13 +40,12 @@ type CidrBlockSideBarProps = {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarProps): ReactElement {
-    const controller = useVisualizationController();
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
-    const flows = getNetworkFlows(edges, controller, id);
+    const flows = getNetworkFlows(nodes, edges, id);
     const filteredFlows = filterNetworkFlows(flows, entityNameFilter, advancedFilters);
     const initialExpandedRows = filteredFlows
         .filter((row) => row.children && !!row.children.length)
