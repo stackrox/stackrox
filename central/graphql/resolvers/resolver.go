@@ -44,6 +44,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
+	policyCategoryDatastore "github.com/stackrox/rox/central/policycategory/datastore"
 	baselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sroleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -98,6 +99,7 @@ type Resolver struct {
 	NodeDataStore                 nodeDataStore.DataStore
 	NotifierStore                 notifierDataStore.DataStore
 	PolicyDataStore               policyDatastore.DataStore
+	PolicyCategoryDataStore       policyCategoryDatastore.DataStore
 	ProcessIndicatorStore         processIndicatorStore.DataStore
 	K8sRoleStore                  k8sroleStore.DataStore
 	K8sRoleBindingStore           k8srolebindingStore.DataStore
@@ -170,7 +172,7 @@ func New() *Resolver {
 		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
 		resolver.NodeComponentCVEEdgeDataStore = nodeComponentCVEEdgeDataStore.Singleton()
 		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
-
+		resolver.PolicyCategoryDataStore = policyCategoryDatastore.Singleton()
 	} else {
 		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
 	}
@@ -194,7 +196,8 @@ var (
 	readNetPolicies          = readAuth(resources.NetworkPolicy)
 	readNodes                = readAuth(resources.Node)
 	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	readPolicies                         = readAuth(resources.Policy)
+	readPolicies = readAuth(resources.Policy)
+	// TODO: ROX-14398 Replace Role with Access
 	readRoles                            = readAuth(resources.Role)
 	readK8sRoles                         = readAuth(resources.K8sRole)
 	readK8sRoleBindings                  = readAuth(resources.K8sRoleBinding)

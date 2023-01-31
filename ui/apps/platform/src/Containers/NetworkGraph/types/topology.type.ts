@@ -15,6 +15,11 @@ export type CustomNodeModel =
     | CIDRBlockNodeModel
     | ExtraneousNodeModel;
 
+export type CustomSingleNodeModel =
+    | DeploymentNodeModel
+    | ExternalEntitiesNodeModel
+    | CIDRBlockNodeModel;
+
 export type NamespaceNodeModel = Override<NodeModel, { data: NamespaceData }>;
 
 export type DeploymentNodeModel = Override<NodeModel, { data: DeploymentData }>;

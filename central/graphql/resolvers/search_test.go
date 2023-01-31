@@ -18,6 +18,7 @@ import (
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	nodeComponentMocks "github.com/stackrox/rox/central/nodecomponent/datastore/mocks"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
+	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8srolebindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	globalSearch "github.com/stackrox/rox/central/search"
@@ -64,6 +65,7 @@ func TestSearchCategories(t *testing.T) {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		resolver.CVEDataStore = cves
 	} else {
+		resolver.PolicyCategoryDataStore = policyCategoryMocks.NewMockDataStore(ctrl)
 		resolver.ImageCVEDataStore = imageCVEMocks.NewMockDataStore(ctrl)
 		resolver.NodeCVEDataStore = nodeCVEMocks.NewMockDataStore(ctrl)
 		resolver.ClusterCVEDataStore = clusterCVEMocks.NewMockDataStore(ctrl)

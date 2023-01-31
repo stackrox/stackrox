@@ -64,7 +64,7 @@ function DeploymentFlows({
         error: fetchError,
         data: { networkFlows },
         refetchFlows,
-    } = useFetchNetworkFlows({ edges, deploymentId, edgeState });
+    } = useFetchNetworkFlows({ nodes, edges, deploymentId, edgeState });
     const {
         isModifying,
         error: modifyError,

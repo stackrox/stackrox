@@ -15,7 +15,6 @@ import (
 	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -91,14 +90,16 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		policyutils.FillSortHelperFields(p)
 
 		policyCategories := p.GetCategories()
-		if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			p.Categories = []string{}
 		}
 		if err := s.Upsert(policyCtx, p); err != nil {
 			utils.CrashOnError(err)
 		}
-		if err := categoriesDS.SetPolicyCategoriesForPolicy(sac.WithAllAccess(context.Background()), p.GetId(), policyCategories); err != nil {
-			utils.CrashOnError(err)
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			if err := categoriesDS.SetPolicyCategoriesForPolicy(sac.WithAllAccess(context.Background()), p.GetId(), policyCategories); err != nil {
+				utils.CrashOnError(err)
+			}
 		}
 
 	}

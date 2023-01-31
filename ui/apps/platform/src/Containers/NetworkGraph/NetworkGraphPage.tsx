@@ -67,6 +67,10 @@ function NetworkGraphPage() {
         activeModel: emptyModel,
         extraneousModel: emptyModel,
     });
+    const [previouslySelectedCluster, setPreviouslySelectedCluster] = useState<string | undefined>(
+        undefined
+    );
+
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
@@ -74,6 +78,7 @@ function NetworkGraphPage() {
 
     const { searchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
+    const simulation = getSimulation(simulationQueryValue);
 
     const {
         cluster: clusterFromUrl,
@@ -81,7 +86,13 @@ function NetworkGraphPage() {
         deployments: deploymentsFromUrl,
         remainingQuery,
     } = getScopeHierarchyFromSearch(searchFilter);
-    const simulation = getSimulation(simulationQueryValue);
+    if (clusterFromUrl !== previouslySelectedCluster) {
+        setModels({
+            activeModel: emptyModel,
+            extraneousModel: emptyModel,
+        });
+        setPreviouslySelectedCluster(clusterFromUrl);
+    }
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
@@ -220,7 +231,7 @@ function NetworkGraphPage() {
                 <Toolbar data-testid="network-graph-toolbar">
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
-                            <ToolbarItem spacer={{ default: 'spacerMd' }}>
+                            <ToolbarItem>
                                 <EdgeStateSelect
                                     edgeState={edgeState}
                                     setEdgeState={setEdgeState}
@@ -235,6 +246,7 @@ function NetworkGraphPage() {
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
+                        <Divider orientation={{ default: 'vertical' }} />
                         <ToolbarGroup className="pf-u-flex-grow-1">
                             <ToolbarItem className="pf-u-flex-grow-1">
                                 <NetworkSearch

@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -686,10 +685,8 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
-		utils.Should(
-			errors.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
-				len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId()),
-		)
+		log.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
+			len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId())
 	}
 	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
 	if err != nil {

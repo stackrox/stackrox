@@ -57,7 +57,9 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                     >
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <TextContent>
-                                <Text component="h2">6 results found</Text>
+                                <Text component="h2">
+                                    {filteredDeployments.length} results found
+                                </Text>
                             </TextContent>
                         </FlexItem>
                         <FlexItem>
