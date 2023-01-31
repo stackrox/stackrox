@@ -208,6 +208,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		c := clusters[ix]
 		clustersMap[c.GetId()] = c
 	}
+	log.Info(len(clustersMap))
 
 	// Extend cluster list with Clusters belonging to any scope linked to a scoped user permission
 	hasResourceWithFullScope := false
@@ -233,6 +234,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		}
 	}
 	var elevatedCtx context.Context
+	log.Info(hasResourceWithFullScope)
 	if hasResourceWithFullScope {
 		elevatedCtx = sac.WithGlobalAccessScopeChecker(ctx,
 			sac.AllowFixedScopes(
@@ -252,6 +254,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 				sac.ClusterScopeKeys(clusterIDs...),
 			),
 		)
+		log.Info(clusterIDs)
 	}
 	extraClusterQuery := search.NewQueryBuilder().
 		AddStringsHighlighted("Cluster", search.WildcardString).ProtoQuery()
