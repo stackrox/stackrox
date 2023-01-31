@@ -131,7 +131,13 @@ const TopologyComponent = ({
 
     useEffect(() => {
         controller.fromModel(model);
-    }, [controller, model]);
+        if (selectedNode) {
+            const selectedNodeElement = controller.getNodeById(selectedNode.id);
+            if (selectedNodeElement) {
+                controller.getGraph().panIntoView(selectedNodeElement);
+            }
+        }
+    }, [controller, model, selectedNode]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
