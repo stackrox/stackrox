@@ -91,36 +91,38 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func makeDeviceContext(clientID, clientType string) *segment.Context {
-	if clientID == "" {
+func (t *segmentTelemeter) overrideUserID(o *telemeter.CallOptions) string {
+	if o.UserID != "" {
+		return o.UserID
+	}
+	return t.userID
+}
+
+func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
+	if o.ClientID == "" {
 		return nil
 	}
 	return &segment.Context{
 		Device: segment.DeviceInfo{
-			Id:   clientID,
-			Type: clientType,
+			Id:   o.ClientID,
+			Type: o.ClientType,
 		},
 	}
 }
 
-func (t *segmentTelemeter) User(userID string) telemeter.Telemeter {
-	return &segmentTelemeter{client: t.client, userID: userID, ctx: t.ctx}
-}
-
-func (t *segmentTelemeter) As(clientID string, clientType string) telemeter.Telemeter {
-	return &segmentTelemeter{client: t.client, userID: t.userID, ctx: makeDeviceContext(clientID, clientType)}
-}
-
-func (t *segmentTelemeter) Identify(props map[string]any) {
+func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
 	if t == nil {
 		return
 	}
+
+	options := telemeter.ApplyOptions(opts)
+
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
-		UserId:  t.userID,
+		UserId:  t.overrideUserID(options),
 		Traits:  traits,
-		Context: t.ctx,
+		Context: makeDeviceContext(options),
 	}
 
 	for k, v := range props {
@@ -131,16 +133,18 @@ func (t *segmentTelemeter) Identify(props map[string]any) {
 	}
 }
 
-func (t *segmentTelemeter) Group(groupID string, props map[string]any) {
+func (t *segmentTelemeter) Group(groupID string, props map[string]any, opts ...telemeter.Option) {
 	if t == nil {
 		return
 	}
 
+	options := telemeter.ApplyOptions(opts)
+
 	group := segment.Group{
 		GroupId: groupID,
-		UserId:  t.userID,
+		UserId:  t.overrideUserID(options),
 		Traits:  props,
-		Context: t.ctx,
+		Context: makeDeviceContext(options),
 	}
 
 	if err := t.client.Enqueue(group); err != nil {
@@ -148,16 +152,18 @@ func (t *segmentTelemeter) Group(groupID string, props map[string]any) {
 	}
 }
 
-func (t *segmentTelemeter) Track(event string, props map[string]any) {
+func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
 	if t == nil {
 		return
 	}
 
+	options := telemeter.ApplyOptions(opts)
+
 	track := segment.Track{
-		UserId:     t.userID,
+		UserId:     t.overrideUserID(options),
 		Event:      event,
 		Properties: props,
-		Context:    t.ctx,
+		Context:    makeDeviceContext(options),
 	}
 
 	if err := t.client.Enqueue(track); err != nil {

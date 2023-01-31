@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 const grpcGatewayUserAgentHeader = runtime.MetadataPrefix + "User-Agent"
@@ -27,7 +28,7 @@ func (cfg *Config) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			cfg.telemeter.User(id).Track(event, props)
+			cfg.telemeter.Track(event, props, telemeter.WithUserID(id))
 		}
 	}
 }

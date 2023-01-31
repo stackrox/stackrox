@@ -34,42 +34,38 @@ func (m *MockTelemeter) EXPECT() *MockTelemeterMockRecorder {
 	return m.recorder
 }
 
-// As mocks base method.
-func (m *MockTelemeter) As(clientID, clientType string) telemeter.Telemeter {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "As", clientID, clientType)
-	ret0, _ := ret[0].(telemeter.Telemeter)
-	return ret0
-}
-
-// As indicates an expected call of As.
-func (mr *MockTelemeterMockRecorder) As(clientID, clientType interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "As", reflect.TypeOf((*MockTelemeter)(nil).As), clientID, clientType)
-}
-
 // Group mocks base method.
-func (m *MockTelemeter) Group(groupID string, props map[string]any) {
+func (m *MockTelemeter) Group(groupID string, props map[string]any, opts ...telemeter.Option) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Group", groupID, props)
+	varargs := []interface{}{groupID, props}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Group", varargs...)
 }
 
 // Group indicates an expected call of Group.
-func (mr *MockTelemeterMockRecorder) Group(groupID, props interface{}) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Group(groupID, props interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), groupID, props)
+	varargs := append([]interface{}{groupID, props}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), varargs...)
 }
 
 // Identify mocks base method.
-func (m *MockTelemeter) Identify(props map[string]any) {
+func (m *MockTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Identify", props)
+	varargs := []interface{}{props}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Identify", varargs...)
 }
 
 // Identify indicates an expected call of Identify.
-func (mr *MockTelemeterMockRecorder) Identify(props interface{}) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Identify(props interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), props)
+	varargs := append([]interface{}{props}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), varargs...)
 }
 
 // Stop mocks base method.
@@ -85,27 +81,18 @@ func (mr *MockTelemeterMockRecorder) Stop() *gomock.Call {
 }
 
 // Track mocks base method.
-func (m *MockTelemeter) Track(event string, props map[string]any) {
+func (m *MockTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Track", event, props)
+	varargs := []interface{}{event, props}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Track", varargs...)
 }
 
 // Track indicates an expected call of Track.
-func (mr *MockTelemeterMockRecorder) Track(event, props interface{}) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Track(event, props interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockTelemeter)(nil).Track), event, props)
-}
-
-// User mocks base method.
-func (m *MockTelemeter) User(userID string) telemeter.Telemeter {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "User", userID)
-	ret0, _ := ret[0].(telemeter.Telemeter)
-	return ret0
-}
-
-// User indicates an expected call of User.
-func (mr *MockTelemeterMockRecorder) User(userID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "User", reflect.TypeOf((*MockTelemeter)(nil).User), userID)
+	varargs := append([]interface{}{event, props}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockTelemeter)(nil).Track), varargs...)
 }

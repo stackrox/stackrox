@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 const securedClusterClient = "Secured Cluster"
@@ -27,13 +28,14 @@ func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 		}
 		cfg.Telemeter().TrackUserAs(userID, "", "", "Secured Cluster Registered", props)
 
-		clusterUser := cfg.Telemeter().User(cluster.GetId())
-
 		// Add the secured cluster 'user' to the Tenant group:
-		clusterUser.Group(cfg.GroupID, nil)
+		cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(cluster.GetId()))
 
 		// Update the secured cluster identity from its name:
-		clusterUser.As(cluster.GetId(), securedClusterClient).Identify(makeClusterProperties(cluster))
+		cfg.Telemeter().Identify(makeClusterProperties(cluster),
+			telemeter.WithUserID(cluster.GetId()),
+			telemeter.WithClient(cluster.GetId(), securedClusterClient),
+		)
 	}
 }
 
@@ -53,10 +55,12 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 func trackClusterInitialized(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		// Issue an event that makes the secured cluster identity effective:
-		cfg.Telemeter().User(cluster.GetId()).As(cluster.GetId(), securedClusterClient).
+		cfg.Telemeter().
 			Track("Secured Cluster Initialized", map[string]any{
 				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
-			})
+			},
+				telemeter.WithUserID(cluster.GetId()),
+				telemeter.WithClient(cluster.GetId(), securedClusterClient))
 	}
 }
 
@@ -90,8 +94,12 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props := makeClusterProperties(cluster)
 		props["Total Nodes"] = metrics.NodeCount
 		props["CPU Capacity"] = metrics.CpuCapacity
-		t := cfg.Telemeter().User(cluster.GetId()).As(cluster.GetId(), securedClusterClient)
-		t.Identify(props)
-		t.Track("Updated Secured Cluster Identity", nil)
+
+		opts := []telemeter.Option{
+			telemeter.WithUserID(cluster.GetId()),
+			telemeter.WithClient(cluster.GetId(), securedClusterClient),
+		}
+		cfg.Telemeter().Identify(props, opts...)
+		cfg.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
 	}
 }

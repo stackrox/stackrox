@@ -8,10 +8,7 @@ type nilTelemeter struct{}
 
 var _ telemeter.Telemeter = (*nilTelemeter)(nil)
 
-func (t *nilTelemeter) Stop()                            {}
-func (t *nilTelemeter) Identify(_ map[string]any)        {}
-func (t *nilTelemeter) Track(_ string, _ map[string]any) {}
-func (t *nilTelemeter) Group(_ string, _ map[string]any) {}
-
-func (t *nilTelemeter) User(userID string) telemeter.Telemeter                    { return nil }
-func (t *nilTelemeter) As(clientID string, clientType string) telemeter.Telemeter { return nil }
+func (t *nilTelemeter) Stop()                                                   {}
+func (t *nilTelemeter) Identify(_ map[string]any, _ ...telemeter.Option)        {}
+func (t *nilTelemeter) Track(_ string, _ map[string]any, _ ...telemeter.Option) {}
+func (t *nilTelemeter) Group(_ string, _ map[string]any, _ ...telemeter.Option) {}
