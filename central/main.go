@@ -545,8 +545,18 @@ func startGRPCServer() {
 		config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
 		// Central adds itself to the tenant group, with no group properties:
 		cfg.Telemeter().GroupUserAs(cfg.ClientID, "", "", cfg.GroupID, nil)
-		// Add the local admin user as well, with no extra group properties:
-		cfg.Telemeter().GroupUserAs(cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), "", "", cfg.GroupID, nil)
+
+		// The local admin user is not added to the datastore like other users,
+		// so we need to add it to the tenant group specifically.
+		// Add the basic authorization ID form ('admin'):
+		adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID())
+		cfg.Telemeter().GroupUserAs(adminHash, "", "", cfg.GroupID, nil)
+		// Add the token based ID form ('sso:<provider id>:admin'):
+		adminTokenHash := cfg.HashUserID(
+			tokenbased.FormatUserID(basic.DefaultUsername, basicAuthProvider.ID()),
+			basicAuthProvider.ID(),
+		)
+		cfg.Telemeter().GroupUserAs(adminTokenHash, "", "", cfg.GroupID, nil)
 	}
 
 	// Before authorization is checked, we want to inject the sac client into the context.
