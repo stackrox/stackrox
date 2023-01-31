@@ -434,6 +434,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-14398 Replace Role with Access
 			sac.ResourceScopeKeys(resources.Role)))
 
 	roles, errGetRoles := s.roleDataStore.GetAllRoles(accessRolesCtx)
