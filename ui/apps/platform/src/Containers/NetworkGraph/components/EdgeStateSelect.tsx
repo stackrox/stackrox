@@ -28,6 +28,7 @@ function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelec
             onSelect={onSelect}
             selections={edgeState}
             isDisabled={isDisabled}
+            id="edge-state-select"
         >
             <SelectOption
                 value="active"
