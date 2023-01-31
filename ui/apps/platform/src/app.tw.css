@@ -242,13 +242,6 @@ h6 {
     width: 270px;
 }
 
-.search-modal {
-    position: absolute;
-    left: 0;
-    top: 76px;
-    height: calc(100% - 76px);
-}
-
 /* Collapsible CSS */
 
 .Collapsible__trigger.is-open + .Collapsible__contentOuter {

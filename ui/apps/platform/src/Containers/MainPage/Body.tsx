@@ -1,6 +1,10 @@
 import React, { ReactElement } from 'react';
-import { Redirect, Route, Switch } from 'react-router-dom';
+import { Redirect, Route, Switch, useHistory } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
+import { actions as globalSearchActions } from 'reducers/globalSearch';
+import { useDispatch, useSelector } from 'react-redux';
 
 import {
     mainPath,
@@ -35,6 +39,7 @@ import asyncComponent from 'Components/AsyncComponent';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
+import SearchModal from 'Containers/Search/SearchModal';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
@@ -94,7 +99,21 @@ type BodyProps = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
+const bodySelector = createStructuredSelector({
+    isGlobalSearchView: selectors.getGlobalSearchView,
+});
+
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
+    const { isGlobalSearchView } = useSelector(bodySelector);
+    // Follow-up: Replace SearchModal with path like /main/search and component like GlobalSearchPage.
+    const dispatch = useDispatch();
+    const history = useHistory();
+    function onCloseGlobalSearchModal(toURL) {
+        dispatch(globalSearchActions.toggleGlobalSearchView());
+        if (typeof toURL === 'string') {
+            history.push(toURL);
+        }
+    }
     const { isDarkMode } = useTheme();
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
@@ -111,6 +130,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                 isDarkMode ? 'bg-base-0' : 'bg-base-100'
             }`}
         >
+            {isGlobalSearchView && <SearchModal onClose={onCloseGlobalSearchModal} />}
             <ErrorBoundary>
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />

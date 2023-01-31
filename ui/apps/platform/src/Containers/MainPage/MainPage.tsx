@@ -1,16 +1,14 @@
 import React, { ReactElement } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 import { Page } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
 import { selectors } from 'reducers';
-import { actions as globalSearchActions } from 'reducers/globalSearch';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import Notifications from 'Containers/Notifications';
-import SearchModal from 'Containers/Search/SearchModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper from 'Containers/AppWrapper';
 import Body from 'Containers/MainPage/Body';
@@ -43,7 +41,6 @@ const CLUSTER_COUNT = gql`
 
 function MainPage(): ReactElement {
     const {
-        isGlobalSearchView,
         metadata = {
             stale: false,
         },
@@ -51,15 +48,7 @@ function MainPage(): ReactElement {
         serverState,
     } = useSelector(mainPageSelector);
 
-    // Follow-up: Replace SearchModal with path like /main/search and component like GlobalSearchPage.
-    const dispatch = useDispatch();
     const history = useHistory();
-    function onCloseGlobalSearchModal(toURL) {
-        dispatch(globalSearchActions.toggleGlobalSearchView());
-        if (typeof toURL === 'string') {
-            history.push(toURL);
-        }
-    }
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
@@ -116,7 +105,6 @@ function MainPage(): ReactElement {
                         isFeatureFlagEnabled={isFeatureFlagEnabled}
                     />
                 </Page>
-                {isGlobalSearchView && <SearchModal onClose={onCloseGlobalSearchModal} />}
             </div>
         </AppWrapper>
     );
