@@ -90,7 +90,9 @@ const TopologyComponent = ({
     function onNodeClick(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
-        if (newSelectedEntity) {
+        if (selectedNode && !newSelectedId) {
+            closeSidebar();
+        } else if (newSelectedEntity) {
             const { data, id } = newSelectedEntity;
             const [newDetailType, newDetailId] = getUrlParamsForEntity(data.type, id);
             const queryString = clearSimulationQuery(history.location.search);
