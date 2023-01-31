@@ -16,10 +16,6 @@ import (
 func TestFeatureFlagSettings(t *testing.T) {
 	t.Parallel()
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip for legacy databases")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
