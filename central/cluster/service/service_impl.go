@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -51,6 +52,8 @@ var (
 			"/v1.ClustersService/GetClusters",
 		},
 	}))
+
+	log = logging.LoggerForModule()
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -225,6 +228,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 			break
 		}
 		for _, id := range scope.GetClusterIDs() {
+			log.Infof("Resource %q has access to cluster %q", p.Resource.GetResource(), id)
 			targetClusterIDs[id] = struct{}{}
 		}
 	}
