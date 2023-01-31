@@ -11,6 +11,11 @@
     height: calc(100vh - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight));
 }
 
+.pf-c-drawer__panel.pf-m-resizable {
+    /* simple solution to prevent user from making sidebar too narrow */
+    min-width: 420px !important;
+}
+
 /* Create a stacking context that is higher than the context for the network-graph-toolbar component
    that is rendered below this toolbar, so that the hierarchy dropdowns will render above everything when open */
 .network-graph-selector-bar {
