@@ -18,6 +18,7 @@ import {
     ClientPolicyValue,
     PolicyDeploymentExclusion,
     PolicyImageExclusion,
+    PolicyScope,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -502,6 +503,108 @@ export function postFormatImageSigningPolicyGroup(policy: ClientPolicy): Policy 
     return serverPolicy;
 }
 
+// Impure function assumes caller has cloned the scope!
+function trimPolicyScope(scope: PolicyScope) {
+    /* eslint-disable no-param-reassign */
+    if (typeof scope.cluster === 'string') {
+        scope.cluster = scope.cluster.trim();
+    }
+
+    if (typeof scope.namespace === 'string') {
+        scope.namespace = scope.namespace.trim();
+    }
+
+    // TODO label key and value: make sure about empty string versus undefined.
+    /*
+    if (scope.label) {
+        if (typeof scope.label.key === 'string') {
+            scope.label.key = scope.label.key.trim();
+        }
+
+        if (typeof scope.label.value === 'string') {
+            scope.label.value = scope.label.value.trim();
+        }
+    }
+    */
+
+    return scope;
+}
+
+function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
+    const policyTrimmed = cloneDeep(policyUntrimmed);
+
+    // Policy details
+
+    policyTrimmed.name = policyUntrimmed.name.trim();
+    policyTrimmed.description = policyUntrimmed.description.trim();
+    policyTrimmed.rationale = policyUntrimmed.rationale.trim();
+    policyTrimmed.remediation = policyUntrimmed.remediation.trim();
+
+    // Policy criteria
+
+    if (Array.isArray(policyTrimmed.policySections)) {
+        // for instead of forEach to work around no-param-reassign lint error.
+        for (let iSection = 0; iSection !== policyTrimmed.policySections.length; iSection += 1) {
+            const policySection = policyTrimmed.policySections[iSection];
+
+            policySection.sectionName = policySection.sectionName.trim();
+
+            // TODO value: make sure about empty string versus undefined.
+            /*
+            if (Array.isArray(policySection.policyGroups)) {
+                for (let iGroup = 0; iGroup !== policySection.policyGroups.length; iGroup += 1) {
+                    const policyGroup = policySection.policyGroups[iGroup];
+
+                    if (Array.isArray(policyGroup.values)) {
+                        for (let iValue = 0; iValue !== policyGroup.values.length; iValue += 1) {
+                            const valueObject = policyGroup.values[iValue];
+
+                            if (typeof valueObject.value === 'string') {
+                                // TODO Investigate ValueObj for ClientPolicyValue.
+                                // TS2339 Property does not exist on type never.
+                                valueObject.value = valueObject.value.trim();
+                            }
+                        }
+                    }
+                }
+            }
+            */
+        }
+    }
+
+    // Policy scope
+
+    if (Array.isArray(policyTrimmed.scope)) {
+        // for instead of forEach to work around no-param-reassign lint error.
+        for (let i = 0; i !== policyTrimmed.scope.length; i += 1) {
+            trimPolicyScope(policyTrimmed.scope[i]);
+        }
+    }
+
+    if (Array.isArray(policyTrimmed.excludedDeploymentScopes)) {
+        // for instead of forEach to work around no-param-reassign lint error.
+        for (let i = 0; i !== policyTrimmed.excludedDeploymentScopes.length; i += 1) {
+            const excludedDeploymentScope = policyTrimmed.excludedDeploymentScopes[i];
+
+            if (excludedDeploymentScope.scope) {
+                trimPolicyScope(excludedDeploymentScope.scope);
+            }
+
+            if (typeof excludedDeploymentScope.name === 'string') {
+                excludedDeploymentScope.name = excludedDeploymentScope.name.trim();
+            }
+        }
+    }
+
+    if (Array.isArray(policyTrimmed.excludedImageNames)) {
+        policyTrimmed.excludedImageNames = policyTrimmed.excludedImageNames.map(
+            (excludedImageName) => excludedImageName.trim()
+        );
+    }
+
+    return policyTrimmed;
+}
+
 export function getClientWizardPolicy(policy: Policy): ClientPolicy {
     let formattedPolicy = preFormatExclusionField(policy);
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
@@ -509,8 +612,10 @@ export function getClientWizardPolicy(policy: Policy): ClientPolicy {
     return formattedPolicy;
 }
 
-export function getServerPolicy(policy: ClientPolicy): Policy {
-    let serverPolicy = postFormatExclusionField(policy);
+// Called before POST dryrunjob request and before POST or PUT policies request for Save.
+export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
+    const policyTrimmed = trimClientWizardPolicy(policyUntrimmed);
+    let serverPolicy = postFormatExclusionField(policyTrimmed);
     serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy as ClientPolicy);
     serverPolicy = postFormatNestedPolicyFields(serverPolicy as ClientPolicy);
     return serverPolicy;
