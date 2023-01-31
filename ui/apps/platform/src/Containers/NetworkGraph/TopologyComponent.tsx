@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
@@ -33,6 +33,7 @@ import {
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
 import { EdgeState } from './components/EdgeStateSelect';
+import { deploymentTabs } from './utils/deploymentUtils';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -81,6 +82,7 @@ const TopologyComponent = ({
 }: TopologyComponentProps) => {
     const history = useHistory();
     const controller = useVisualizationController();
+    const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
     function closeSidebar() {
         const queryString = clearSimulationQuery(history.location.search);
@@ -92,7 +94,10 @@ const TopologyComponent = ({
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
         if (selectedNode && !newSelectedId) {
             closeSidebar();
+        } else if (newSelectedEntity?.data.type === 'EXTRANEOUS') {
+            setDefaultDeploymentTab(deploymentTabs.FLOWS);
         } else if (newSelectedEntity) {
+            setDefaultDeploymentTab(deploymentTabs.DETAILS);
             const { data, id } = newSelectedEntity;
             const [newDetailType, newDetailId] = getUrlParamsForEntity(data.type, id);
             const queryString = clearSimulationQuery(history.location.search);
@@ -171,6 +176,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
+                            defaultDeploymentTab={defaultDeploymentTab}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (

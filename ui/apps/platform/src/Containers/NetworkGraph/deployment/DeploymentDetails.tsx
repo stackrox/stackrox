@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+    Button,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -33,6 +34,7 @@ import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-pol
 import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
 import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
+import { deploymentTabs } from '../utils/deploymentUtils';
 
 type DeploymentDetailsProps = {
     deployment: Deployment;
@@ -40,6 +42,7 @@ type DeploymentDetailsProps = {
     numInternalFlows: number;
     listenPorts: ListenPort[];
     networkPolicyState: NetworkPolicyState;
+    onDeploymentTabsSelect: (tab: string) => void;
 };
 
 function DetailSection({ title, children }) {
@@ -72,7 +75,15 @@ function DeploymentDetails({
     numInternalFlows,
     listenPorts,
     networkPolicyState,
+    onDeploymentTabsSelect,
 }: DeploymentDetailsProps) {
+    const labelKeys = Object.keys(deployment.labels);
+    const annotationKeys = Object.keys(deployment.annotations);
+
+    const onNetworkPoliciesTabSelect = () => {
+        onDeploymentTabsSelect(deploymentTabs.NETWORK_POLICIES);
+    };
+
     return (
         <div className="pf-u-h-100 pf-u-p-md">
             <ul>
@@ -113,56 +124,101 @@ function DeploymentDetails({
                                 <DescriptionListTerm>Network policy rules</DescriptionListTerm>
                                 <DescriptionListDescription>
                                     {networkPolicyState === 'both' && (
-                                        <Label
-                                            variant="outline"
-                                            color="blue"
-                                            icon={<BothPolicyRules width="22px" height="22px" />}
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            onClick={onNetworkPoliciesTabSelect}
                                         >
-                                            1 or more policies regulating bidirectional traffic
-                                        </Label>
-                                    )}
-                                    {networkPolicyState === 'egress' && (
-                                        <LabelGroup>
-                                            <Label
-                                                variant="outline"
-                                                color="red"
-                                                icon={<NoPolicyRules width="22px" height="22px" />}
-                                            >
-                                                A missing policy is allowing all ingress traffic
-                                            </Label>
                                             <Label
                                                 variant="outline"
                                                 color="blue"
-                                                icon={<EgressOnly width="22px" height="22px" />}
+                                                icon={
+                                                    <BothPolicyRules width="22px" height="22px" />
+                                                }
                                             >
-                                                1 or more policies regulating egress traffic
+                                                1 or more policies regulating bidirectional traffic
                                             </Label>
+                                        </Button>
+                                    )}
+                                    {networkPolicyState === 'egress' && (
+                                        <LabelGroup>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onNetworkPoliciesTabSelect}
+                                            >
+                                                <Label
+                                                    variant="outline"
+                                                    color="red"
+                                                    icon={
+                                                        <NoPolicyRules width="22px" height="22px" />
+                                                    }
+                                                >
+                                                    A missing policy is allowing all ingress traffic
+                                                </Label>
+                                            </Button>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onNetworkPoliciesTabSelect}
+                                            >
+                                                <Label
+                                                    variant="outline"
+                                                    color="blue"
+                                                    icon={<EgressOnly width="22px" height="22px" />}
+                                                >
+                                                    1 or more policies regulating egress traffic
+                                                </Label>
+                                            </Button>
                                         </LabelGroup>
                                     )}
                                     {networkPolicyState === 'ingress' && (
                                         <LabelGroup>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onNetworkPoliciesTabSelect}
+                                            >
+                                                <Label
+                                                    variant="outline"
+                                                    icon={
+                                                        <NoPolicyRules width="22px" height="22px" />
+                                                    }
+                                                >
+                                                    A missing policy is allowing all egress traffic
+                                                </Label>
+                                            </Button>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onNetworkPoliciesTabSelect}
+                                            >
+                                                <Label
+                                                    variant="outline"
+                                                    color="blue"
+                                                    icon={
+                                                        <IngressOnly width="22px" height="22px" />
+                                                    }
+                                                >
+                                                    1 or more policies regulating ingress traffic
+                                                </Label>
+                                            </Button>
+                                            ;
+                                        </LabelGroup>
+                                    )}
+                                    {networkPolicyState === 'none' && (
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            onClick={onNetworkPoliciesTabSelect}
+                                        >
                                             <Label
                                                 variant="outline"
                                                 icon={<NoPolicyRules width="22px" height="22px" />}
                                             >
-                                                A missing policy is allowing all egress traffic
+                                                A missing policy is allowing all network traffic
                                             </Label>
-                                            <Label
-                                                variant="outline"
-                                                color="blue"
-                                                icon={<IngressOnly width="22px" height="22px" />}
-                                            >
-                                                1 or more policies regulating ingress traffic
-                                            </Label>
-                                        </LabelGroup>
-                                    )}
-                                    {networkPolicyState === 'none' && (
-                                        <Label
-                                            variant="outline"
-                                            icon={<NoPolicyRules width="22px" height="22px" />}
-                                        >
-                                            A missing policy is allowing all network traffic
-                                        </Label>
+                                        </Button>
                                     )}
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
@@ -246,25 +302,32 @@ function DeploymentDetails({
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Labels</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <LabelGroup>
-                                                {Object.keys(deployment.labels).map((labelKey) => {
-                                                    const labelValue = deployment.labels[labelKey];
-                                                    const label = `${labelKey}:${labelValue}`;
-                                                    return (
-                                                        <Label key={label} color="blue">
-                                                            {label}
-                                                        </Label>
-                                                    );
-                                                })}
-                                            </LabelGroup>
+                                            {labelKeys.length === 0 ? (
+                                                'None'
+                                            ) : (
+                                                <LabelGroup>
+                                                    {labelKeys.map((labelKey) => {
+                                                        const labelValue =
+                                                            deployment.labels[labelKey];
+                                                        const label = `${labelKey}:${labelValue}`;
+                                                        return (
+                                                            <Label key={label} color="blue">
+                                                                {label}
+                                                            </Label>
+                                                        );
+                                                    })}
+                                                </LabelGroup>
+                                            )}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Annotations</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <LabelGroup>
-                                                {Object.keys(deployment.annotations).map(
-                                                    (annotationKey) => {
+                                            {annotationKeys.length === 0 ? (
+                                                'None'
+                                            ) : (
+                                                <LabelGroup>
+                                                    {annotationKeys.map((annotationKey) => {
                                                         const annotationValue =
                                                             deployment.annotations[annotationKey];
                                                         const annotation = `${annotationKey}:${annotationValue}`;
@@ -273,9 +336,9 @@ function DeploymentDetails({
                                                                 {annotation}
                                                             </Label>
                                                         );
-                                                    }
-                                                )}
-                                            </LabelGroup>
+                                                    })}
+                                                </LabelGroup>
+                                            )}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </DescriptionList>
