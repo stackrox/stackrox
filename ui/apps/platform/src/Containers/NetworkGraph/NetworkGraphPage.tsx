@@ -220,7 +220,7 @@ function NetworkGraphPage() {
                 <Toolbar data-testid="network-graph-toolbar">
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
-                            <ToolbarItem spacer={{ default: 'spacerMd' }}>
+                            <ToolbarItem>
                                 <EdgeStateSelect
                                     edgeState={edgeState}
                                     setEdgeState={setEdgeState}
@@ -235,6 +235,7 @@ function NetworkGraphPage() {
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
+                        <Divider orientation={{ default: 'vertical' }} />
                         <ToolbarGroup className="pf-u-flex-grow-1">
                             <ToolbarItem className="pf-u-flex-grow-1">
                                 <NetworkSearch
