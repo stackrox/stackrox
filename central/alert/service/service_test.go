@@ -10,6 +10,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/alerttest"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
@@ -384,60 +385,58 @@ type getAlertsCountsTests struct {
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
-	fakeListAlertSlice := []*storage.ListAlert{
+	severityField, _ := mappings.OptionsMap.Get(search.Severity.String())
+	categoryField, _ := mappings.OptionsMap.Get(search.Category.String())
+	clusterField, _ := mappings.OptionsMap.Get(search.Cluster.String())
+
+	fakeSearchResultsSlice := []search.Result{
 		{
-			Id: "id1",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
+			ID: "id1",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"1"},
+				categoryField.GetFieldPath(): {"Image Assurance"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
-			Id: "id2",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Container Configuration"},
-				Name:       "policy2",
-				Severity:   storage.Severity_CRITICAL_SEVERITY,
+			ID: "id2",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"4"},
+				"Category":                   {"Container Configuration"},
+				"Cluster":                    {"test"},
 			},
-			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
-			Id: "id3",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
+			ID: "id3",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"1"},
+				"Category":                   {"Image Assurance"},
+				"Cluster":                    {"prod"},
 			},
-			Time: &types.Timestamp{Seconds: 130},
 		},
 		{
-			Id: "id4",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Privileges Capabilities"},
-				Name:       "policy3",
-				Severity:   storage.Severity_MEDIUM_SEVERITY,
+			ID: "id4",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"2"},
+				"Category":                   {"Privileges Capabilities"},
+				"Cluster":                    {"prod"},
 			},
-			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
-			Id: "id5",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Container Configuration"},
-				Name:       "policy4",
-				Severity:   storage.Severity_HIGH_SEVERITY,
+			ID: "id5",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"3"},
+				"Category":                   {"Image Assurance", "Container Configuration"},
+				"Cluster":                    {"prod"},
 			},
-			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
-			Id: "id6",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Container Configuration"},
-				Name:       "policy4",
-				Severity:   storage.Severity_HIGH_SEVERITY,
+			ID: "id6",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"3"},
+				"Category":                   {"Image Assurance", "Container Configuration"},
+				"Cluster":                    {"test"},
 			},
-			Time: &types.Timestamp{Seconds: 110},
 		},
 	}
 
@@ -467,64 +466,62 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		},
 	}
 
-	s.testGetAlertCounts(fakeListAlertSlice, v1.GetAlertsCountsRequest_UNSET, expected)
+	s.testGetAlertCounts(fakeSearchResultsSlice, v1.GetAlertsCountsRequest_UNSET, expected)
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
-	fakeListAlertSlice := []*storage.ListAlert{
+	severityField, _ := mappings.OptionsMap.Get(search.Severity.String())
+	categoryField, _ := mappings.OptionsMap.Get(search.Category.String())
+	clusterField, _ := mappings.OptionsMap.Get(search.Cluster.String())
+
+	fakeSearchResultsSlice := []search.Result{
 		{
-			Id: "id1",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
+			ID: "id1",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"1"},
+				categoryField.GetFieldPath(): {"Image Assurance"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
-			Id: "id2",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Container Configuration"},
-				Name:       "policy2",
-				Severity:   storage.Severity_CRITICAL_SEVERITY,
+			ID: "id2",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"4"},
+				categoryField.GetFieldPath(): {"Container Configuration"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
-			Id: "id3",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
+			ID: "id3",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"1"},
+				categoryField.GetFieldPath(): {"Image Assurance"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Time: &types.Timestamp{Seconds: 130},
 		},
 		{
-			Id: "id4",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Privileges Capabilities"},
-				Name:       "policy3",
-				Severity:   storage.Severity_MEDIUM_SEVERITY,
+			ID: "id4",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"2"},
+				categoryField.GetFieldPath(): {"Privileges Capabilities"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
-			Id: "id5",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Container Configuration"},
-				Name:       "policy4",
-				Severity:   storage.Severity_HIGH_SEVERITY,
+			ID: "id5",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"3"},
+				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
-			Id: "id6",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Container Configuration"},
-				Name:       "policy4",
-				Severity:   storage.Severity_HIGH_SEVERITY,
+			ID: "id6",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"3"},
+				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Time: &types.Timestamp{Seconds: 110},
 		},
 	}
 
@@ -568,112 +565,62 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		},
 	}
 
-	s.testGetAlertCounts(fakeListAlertSlice, v1.GetAlertsCountsRequest_CATEGORY, expected)
+	s.testGetAlertCounts(fakeSearchResultsSlice, v1.GetAlertsCountsRequest_CATEGORY, expected)
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
-	fakeListAlertSlice := []*storage.ListAlert{
+	severityField, _ := mappings.OptionsMap.Get(search.Severity.String())
+	categoryField, _ := mappings.OptionsMap.Get(search.Category.String())
+	clusterField, _ := mappings.OptionsMap.Get(search.Cluster.String())
+
+	fakeSearchResultsSlice := []search.Result{
 		{
-			Id: "id1",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
+			ID: "id1",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"1"},
+				categoryField.GetFieldPath(): {"Image Assurance"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "test",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "test",
-			},
-			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
-			Id: "id2",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Container Configuration"},
-				Name:       "policy2",
-				Severity:   storage.Severity_CRITICAL_SEVERITY,
+			ID: "id2",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"4"},
+				categoryField.GetFieldPath(): {"Container Configuration"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "test",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "test",
-			},
-			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
-			Id: "id3",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
+			ID: "id3",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"1"},
+				categoryField.GetFieldPath(): {"Image Assurance"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Entity: &storage.ListAlert_Resource{
-				Resource: &storage.ListAlert_ResourceEntity{
-					Name: "blah",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "prod",
-			},
-			Time: &types.Timestamp{Seconds: 130},
 		},
 		{
-			Id: "id4",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Privileges Capabilities"},
-				Name:       "policy3",
-				Severity:   storage.Severity_MEDIUM_SEVERITY,
+			ID: "id4",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"2"},
+				categoryField.GetFieldPath(): {"Privileges Capabilities"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "prod",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "prod",
-			},
-			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
-			Id: "id5",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Container Configuration"},
-				Name:       "policy4",
-				Severity:   storage.Severity_HIGH_SEVERITY,
+			ID: "id5",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"3"},
+				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "prod",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "prod",
-			},
-			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
-			Id: "id6",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Container Configuration"},
-				Name:       "policy4",
-				Severity:   storage.Severity_HIGH_SEVERITY,
+			ID: "id6",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"3"},
+				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "test",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "test",
-			},
-			Time: &types.Timestamp{Seconds: 110},
 		},
 	}
 
@@ -716,15 +663,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 		},
 	}
 
-	s.testGetAlertCounts(fakeListAlertSlice, v1.GetAlertsCountsRequest_CLUSTER, expected)
+	s.testGetAlertCounts(fakeSearchResultsSlice, v1.GetAlertsCountsRequest_CLUSTER, expected)
 }
 
-func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*storage.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
+func (s *getAlertsCountsTests) testGetAlertCounts(fakeSearchResultsSlice []search.Result, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
-		Query:      "",
-		Pagination: maxPagination,
-	}).Return(fakeListAlertSlice, nil)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(fakeSearchResultsSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -736,117 +680,63 @@ func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*storage.
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 	const unknownGroupBy = v1.GetAlertsCountsRequest_RequestGroup(-99)
+	severityField, _ := mappings.OptionsMap.Get(search.Severity.String())
+	categoryField, _ := mappings.OptionsMap.Get(search.Category.String())
+	clusterField, _ := mappings.OptionsMap.Get(search.Cluster.String())
 
-	fakeListAlertSlice := []*storage.ListAlert{
+	fakeSearchResultsSlice := []search.Result{
 		{
-			Id: "id1",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
+			ID: "id1",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"1"},
+				categoryField.GetFieldPath(): {"Image Assurance"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "test",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "test",
-			},
-			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
-			Id: "id2",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Container Configuration"},
-				Name:       "policy2",
-				Severity:   storage.Severity_CRITICAL_SEVERITY,
+			ID: "id2",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"4"},
+				categoryField.GetFieldPath(): {"Container Configuration"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "test",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "test",
-			},
-			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
-			Id: "id3",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
+			ID: "id3",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"1"},
+				categoryField.GetFieldPath(): {"Image Assurance"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "prod",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "prod",
-			},
-			Time: &types.Timestamp{Seconds: 130},
 		},
 		{
-			Id: "id4",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Privileges Capabilities"},
-				Name:       "policy3",
-				Severity:   storage.Severity_MEDIUM_SEVERITY,
+			ID: "id4",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"2"},
+				categoryField.GetFieldPath(): {"Privileges Capabilities"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "prod",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "prod",
-			},
-			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
-			Id: "id5",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Container Configuration"},
-				Name:       "policy4",
-				Severity:   storage.Severity_HIGH_SEVERITY,
+			ID: "id5",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"3"},
+				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "prod",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "prod",
-			},
-			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
-			Id: "id6",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Container Configuration"},
-				Name:       "policy4",
-				Severity:   storage.Severity_HIGH_SEVERITY,
+			ID: "id6",
+			Matches: map[string][]string{
+				severityField.GetFieldPath(): {"3"},
+				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
+				clusterField.GetFieldPath():  {"test"},
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "test",
-				},
-			},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
-				ClusterName: "test",
-			},
-			Time: &types.Timestamp{Seconds: 110},
 		},
 	}
 
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
-		Query:      "",
-		Pagination: maxPagination,
-	}).Return(fakeListAlertSlice, nil)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(fakeSearchResultsSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -858,10 +748,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
-		Query:      "",
-		Pagination: maxPagination,
-	}).Return(nil, errFake)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
