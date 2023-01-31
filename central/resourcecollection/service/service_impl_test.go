@@ -42,15 +42,9 @@ type CollectionServiceTestSuite struct {
 
 func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	suite.T().Setenv(features.ObjectCollections.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip postgres store tests")
-		suite.T().SkipNow()
-	}
-
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("Skip collections tests")
 		suite.T().SkipNow()
 	}
 
