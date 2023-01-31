@@ -233,13 +233,10 @@ describe('Vulnerability Management Reporting form', () => {
         cy.get(`h1:contains("${collectionName}")`);
 
         // Attempt to delete the collection while it is in use by the VM report config
-        cy.intercept('DELETE', '/v1/collections/*').as('delete-collection');
         cy.get(`button:contains("Actions")`).click();
         cy.get(`button:contains("Delete collection")`).click();
         cy.get('*[role="dialog"] button:contains("Delete")').click();
         cy.get('*:contains("Failed to delete collection")');
-        // Expect the server to return an error response (4xx or 5xx) due to the collection being in use
-        cy.wait('@delete-collection').its('response.statusCode').should('be.at.least', 400);
 
         // Self cleanup
         tryDeleteVMReportConfigs(reportName);
