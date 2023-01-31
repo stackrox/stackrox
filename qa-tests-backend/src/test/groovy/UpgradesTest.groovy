@@ -325,8 +325,9 @@ class UpgradesTest extends BaseSpecification {
         "Upgraded policies should match the default policies in code"
         upgradedPolicies.forEach {
             def defaultPolicy = defaultPolicies[it.id]
-            defaultPolicy.categoriesList.sort(false)
-            it.categoriesList.sort(false)
+            // sort category lists in place before comparing
+            defaultPolicy.categoriesList.sort(true)
+            it.categoriesList.sort(true)
             assert it == defaultPolicy
         }
     }
