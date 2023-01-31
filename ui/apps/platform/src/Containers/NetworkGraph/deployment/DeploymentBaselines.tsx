@@ -92,7 +92,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
 
     // derived data
     const numBaselines = getNumFlows(filteredNetworkBaselines);
-    const allUniquePorts = getAllUniquePorts(filteredNetworkBaselines);
+    const allUniquePorts = getAllUniquePorts(networkBaselines);
     const errorMessage = networkPolicyError || fetchError || modifyError || toggleError;
 
     const onSelectFlow = (entityId: string) => {
