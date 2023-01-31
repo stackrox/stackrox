@@ -37,7 +37,7 @@ class VulnReportService extends BaseService {
             String notifierId) {
         def req = ReportConfigurationServiceOuterClass.PostReportConfigurationRequest.newBuilder()
         .setReportConfig(ReportConfigurationOuterClass.ReportConfiguration.newBuilder()
-                .setName("Test Vuln Report")
+                .setName("Test Vuln Report-${UUID.randomUUID()}")
                 .setType(ReportConfigurationOuterClass.ReportConfiguration.ReportType.VULNERABILITY)
                 .setVulnReportFilters(ReportConfigurationOuterClass.VulnerabilityReportFilters.newBuilder()
                     .setFixability(ReportConfigurationOuterClass.VulnerabilityReportFilters.Fixability.BOTH)
