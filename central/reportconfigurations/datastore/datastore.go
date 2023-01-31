@@ -29,6 +29,8 @@ type DataStore interface {
 	AddReportConfiguration(ctx context.Context, reportConfig *storage.ReportConfiguration) (string, error)
 	UpdateReportConfiguration(ctx context.Context, reportConfig *storage.ReportConfiguration) error
 	RemoveReportConfiguration(ctx context.Context, id string) error
+
+	Walk(ctx context.Context, fn func(reportConfig *storage.ReportConfiguration) error) error
 }
 
 // New returns a new DataStore instance.
