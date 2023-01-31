@@ -532,21 +532,21 @@ function trimPolicyScope(scope: PolicyScope) {
 }
 
 function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
-    const policyTrimmed = cloneDeep(policyUntrimmed);
+    const policy = cloneDeep(policyUntrimmed);
 
     // Policy details
 
-    policyTrimmed.name = policyUntrimmed.name.trim();
-    policyTrimmed.description = policyUntrimmed.description.trim();
-    policyTrimmed.rationale = policyUntrimmed.rationale.trim();
-    policyTrimmed.remediation = policyUntrimmed.remediation.trim();
+    policy.name = policy.name.trim();
+    policy.description = policy.description.trim();
+    policy.rationale = policy.rationale.trim();
+    policy.remediation = policy.remediation.trim();
 
     // Policy criteria
 
-    if (Array.isArray(policyTrimmed.policySections)) {
+    if (Array.isArray(policy.policySections)) {
         // for instead of forEach to work around no-param-reassign lint error.
-        for (let iSection = 0; iSection !== policyTrimmed.policySections.length; iSection += 1) {
-            const policySection = policyTrimmed.policySections[iSection];
+        for (let iSection = 0; iSection !== policy.policySections.length; iSection += 1) {
+            const policySection = policy.policySections[iSection];
 
             policySection.sectionName = policySection.sectionName.trim();
 
@@ -575,17 +575,17 @@ function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
 
     // Policy scope
 
-    if (Array.isArray(policyTrimmed.scope)) {
+    if (Array.isArray(policy.scope)) {
         // for instead of forEach to work around no-param-reassign lint error.
-        for (let i = 0; i !== policyTrimmed.scope.length; i += 1) {
-            trimPolicyScope(policyTrimmed.scope[i]);
+        for (let i = 0; i !== policy.scope.length; i += 1) {
+            trimPolicyScope(policy.scope[i]);
         }
     }
 
-    if (Array.isArray(policyTrimmed.excludedDeploymentScopes)) {
+    if (Array.isArray(policy.excludedDeploymentScopes)) {
         // for instead of forEach to work around no-param-reassign lint error.
-        for (let i = 0; i !== policyTrimmed.excludedDeploymentScopes.length; i += 1) {
-            const excludedDeploymentScope = policyTrimmed.excludedDeploymentScopes[i];
+        for (let i = 0; i !== policy.excludedDeploymentScopes.length; i += 1) {
+            const excludedDeploymentScope = policy.excludedDeploymentScopes[i];
 
             if (excludedDeploymentScope.scope) {
                 trimPolicyScope(excludedDeploymentScope.scope);
@@ -597,13 +597,13 @@ function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
         }
     }
 
-    if (Array.isArray(policyTrimmed.excludedImageNames)) {
-        policyTrimmed.excludedImageNames = policyTrimmed.excludedImageNames.map(
-            (excludedImageName) => excludedImageName.trim()
+    if (Array.isArray(policy.excludedImageNames)) {
+        policy.excludedImageNames = policy.excludedImageNames.map((excludedImageName) =>
+            excludedImageName.trim()
         );
     }
 
-    return policyTrimmed;
+    return policy;
 }
 
 export function getClientWizardPolicy(policy: Policy): ClientPolicy {
@@ -615,8 +615,8 @@ export function getClientWizardPolicy(policy: Policy): ClientPolicy {
 
 // Called before POST dryrunjob request and before POST or PUT policies request for Save.
 export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
-    const policyTrimmed = trimClientWizardPolicy(policyUntrimmed);
-    let serverPolicy = postFormatExclusionField(policyTrimmed);
+    const policy = trimClientWizardPolicy(policyUntrimmed);
+    let serverPolicy = postFormatExclusionField(policy);
     serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy as ClientPolicy);
     serverPolicy = postFormatNestedPolicyFields(serverPolicy as ClientPolicy);
     return serverPolicy;
