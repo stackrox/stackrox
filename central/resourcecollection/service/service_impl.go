@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -203,7 +204,8 @@ func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCo
 }
 
 func collectionRequestToCollection(ctx context.Context, request collectionRequest, id string) (*storage.ResourceCollection, error) {
-	if request.GetName() == "" {
+	collectionName := strings.TrimSpace(request.GetName())
+	if collectionName == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
 
@@ -220,7 +222,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 
 	collection := &storage.ResourceCollection{
 		Id:                id,
-		Name:              request.GetName(),
+		Name:              collectionName,
 		Description:       request.GetDescription(),
 		LastUpdated:       timeNow,
 		UpdatedBy:         slimUser,
