@@ -10,7 +10,7 @@ from pre_tests import PreSystemTests
 from ci_tests import PostgresUpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
-# POSTGRES feature flag not needed here
+# Do not set the ROX_POSTGRES_DATASTORE env var here since the job deploys with RocksDB first and then upgrades to postgres.
 ClusterTestRunner(
     cluster=GKECluster("upgrade-test"),
     pre_test=PreSystemTests(),

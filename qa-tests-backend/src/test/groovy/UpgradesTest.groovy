@@ -156,6 +156,7 @@ class UpgradesTest extends BaseSpecification {
                         setScope(ScopeOuterClass.Scope.newBuilder().setNamespace(it[0])).
                         setName(it[1]).
                         build()
+                PolicyOuterClass.Exclusion.newBuilder().
                         setName("Don't alert on ${it[2]}").setDeployment(dep).build()
             }
             return this
@@ -173,7 +174,7 @@ class UpgradesTest extends BaseSpecification {
             return this
         }
 
-        def setCategories(def ArrayList<String> toSet) {
+        def setCategories(def toSet) {
             this.categoriesToSet = toSet
             return this
         }
@@ -258,7 +259,8 @@ class UpgradesTest extends BaseSpecification {
             "f09f8da1-6111-4ca0-8f49-294a76c65115" : new KnownPolicyDiffs().setPolicyAsDisabled() ,
             "a919ccaf-6b43-4160-ac5d-a405e1440a41" : new KnownPolicyDiffs().setPolicyAsEnabled() ,
             "93f4b2dd-ef5a-419e-8371-38aed480fb36" : new KnownPolicyDiffs().setPolicyAsDisabled() ,
-            "fb8f8732-c31d-496b-8fb1-d5abe6056e27": new KnownPolicyDiffs().setCategories(["Security Best Practices", "Privileges"]),
+            "fb8f8732-c31d-496b-8fb1-d5abe6056e27":
+                    new KnownPolicyDiffs().setCategories(["Security Best Practices", "Privileges"]),
         ]
         and:
         "Skip over known differences due to differences in tests"
