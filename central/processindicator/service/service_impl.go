@@ -27,6 +27,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
+			"/v1.ProcessService/CountProcesses",
 			"/v1.ProcessService/GetProcessesByDeployment",
 			"/v1.ProcessService/GetGroupedProcessByDeployment",
 			"/v1.ProcessService/GetGroupedProcessByDeploymentAndContainer",
@@ -55,6 +56,21 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
+}
+
+// CountProcesses counts the number of processes that match the input query.
+func (s *serviceImpl) CountProcesses(ctx context.Context, request *v1.RawQuery) (*v1.CountProcessesResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	numProcesses, err := s.processIndicators.Count(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.CountProcessesResponse{Count: int32(numProcesses)}, nil
 }
 
 // GetDeployment returns the deployment with given id.
