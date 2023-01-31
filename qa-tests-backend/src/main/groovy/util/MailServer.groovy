@@ -25,6 +25,7 @@ class MailServer {
 
     private MailServer() { }
 
+    // Deploys a fake SMTP service that can both receive emails and return the emails it received
     static MailServer createMailServer(OrchestratorMain orchestrator,
                                        boolean authenticated = true,
                                        boolean useTLS = false) {
@@ -105,11 +106,47 @@ class MailServer {
         return "${smtpSvc.getName()}.${deployment.getNamespace()}:${SMTP_PORT}"
     }
 
+    // Find all emails sent FROM the specified email address
     List findEmails(String fromEmail) {
-        def con = (HttpURLConnection) new URL(String.format(
+        return fetchEmailsByUrl(String.format(
                 "http://localhost:%s/email?from.address=%s", webPortForward.getLocalPort(),
-                URLEncoder.encode(fromEmail, "UTF-8"))
-        ).openConnection()
+                URLEncoder.encode(fromEmail, "UTF-8")))
+    }
+
+    // Find all emails sent TO the specified email address
+    List findEmailsByToEmail(String toEmail) {
+        return fetchEmailsByUrl(String.format(
+                "http://localhost:%s/email?to.address=%s", webPortForward.getLocalPort(),
+                URLEncoder.encode(toEmail, "UTF-8")))
+    }
+
+    // Download an attachment with the given file name for the specified email
+    InputStream downloadEmailAttachment(String emailId, String fileName) {
+        def url = String.format(
+                "http://localhost:%s/email/%s/attachment/%s", webPortForward.getLocalPort(),
+                URLEncoder.encode(emailId, "UTF-8"), URLEncoder.encode(fileName, "UTF-8"))
+
+        def con = (HttpURLConnection) new URL(url).openConnection()
+        con.setRequestMethod("GET")
+
+        assert con.getResponseCode() == 200
+        return con.getInputStream()
+    }
+
+    // Delete the specified email from the server
+    def deleteEmail(String emailId) {
+        def url = String.format(
+                "http://localhost:%s/email/%s", webPortForward.getLocalPort(),
+                URLEncoder.encode(emailId, "UTF-8"))
+
+        def con = (HttpURLConnection) new URL(url).openConnection()
+        con.setRequestMethod("DELETE")
+
+        assert con.getResponseCode() == 200
+    }
+
+    private List fetchEmailsByUrl(String formattedUrl) {
+        def con = (HttpURLConnection) new URL(formattedUrl).openConnection()
         con.setRequestMethod("GET")
 
         assert con.getResponseCode() == 200
