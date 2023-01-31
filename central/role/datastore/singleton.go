@@ -106,6 +106,7 @@ var defaultRoles = map[string]roleAttributes{
 		postgresID:  nonePermissionSetID,
 		description: "For users: use it to provide no read and write access to any resource",
 	},
+	// TODO: ROX-14398 Remove ScopeManager default role
 	rolePkg.ScopeManager: {
 		idSuffix:    "scopemanager",
 		postgresID:  scopeManagerPermissionSetID,
@@ -151,6 +152,7 @@ var defaultRoles = map[string]roleAttributes{
 
 // TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
 var vulnReportingDefaultRoles = map[string]roleAttributes{
+	// TODO: ROX-14398 Remove Role permission from default role VulnReporter
 	rolePkg.VulnReporter: {
 		idSuffix:    "vulnreporter",
 		postgresID:  vulnReporterPermissionSetID,
