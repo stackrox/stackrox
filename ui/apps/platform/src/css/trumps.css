@@ -151,6 +151,11 @@ button.pf-c-tree-view__node {
     list-style: decimal;
 }
 
+/* Override the preceding override for PatternFly Wizard */
+.pf-c-page__main-section ol.pf-c-wizard__nav-list {
+    list-style: none;
+}
+
 /*
  * Override disabled checkbox styles when the input element is in a PF table
  */
