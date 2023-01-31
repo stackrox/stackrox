@@ -60,8 +60,9 @@ func init() {
 		&storage.NodeComponentEdge{}:                            resources.Node,
 		&storage.NodeCVE{}:                                      resources.Node,
 		&storage.Notifier{}:                                     resources.Integration,
-		&storage.PermissionSet{}:                                resources.Role,
-		&storage.Pod{}:                                          resources.Deployment,
+		// TODO: ROX-14398 Replace Role with Access
+		&storage.PermissionSet{}: resources.Role,
+		&storage.Pod{}:           resources.Deployment,
 		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 		&storage.Policy{}:                 resources.Policy,
 		&storage.PolicyCategory{}:         resources.Policy,
@@ -73,14 +74,16 @@ func init() {
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		&storage.ReportConfiguration{}: resources.VulnerabilityReports,
 		&storage.Risk{}:                resources.DeploymentExtension,
-		&storage.Role{}:                resources.Role,
+		// TODO: ROX-14398 Replace Role with Access
+		&storage.Role{}: resources.Role,
 		// TODO: ROX-12750 Replace SensorUpgradeConfig with Administration.
 		&storage.SensorUpgradeConfig{}: resources.SensorUpgradeConfig,
 		// TODO: ROX-12750 Replace ServiceIdentity with Administration.
 		&storage.ServiceIdentity{}:      resources.ServiceIdentity,
 		&storage.SignatureIntegration{}: resources.Integration,
-		&storage.SimpleAccessScope{}:    resources.Role,
-		&storage.StoredLicenseKey{}:     resources.Access,
+		// TODO: ROX-14398 Replace Role with Access
+		&storage.SimpleAccessScope{}: resources.Role,
+		&storage.StoredLicenseKey{}:  resources.Access,
 		// TODO: ROX-12750 Replace DebugLogs with Administration.
 		&storage.TelemetryConfiguration{}: resources.DebugLogs,
 		&storage.TokenMetadata{}:          resources.Integration,

@@ -1,4 +1,3 @@
-import { Controller } from '@patternfly/react-topology';
 import { uniq } from 'lodash';
 
 import { EntityType } from 'Containers/Network/networkTypes';
@@ -6,7 +5,13 @@ import { L4Protocol } from 'types/networkFlow.proto';
 import { GroupedDiffFlows } from 'types/networkPolicyService';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
-import { CustomEdgeModel, CustomNodeModel, CustomSingleNodeData } from '../types/topology.type';
+import {
+    CustomEdgeModel,
+    CustomNodeModel,
+    CustomSingleNodeData,
+    CustomSingleNodeModel,
+} from '../types/topology.type';
+import { getNodeById } from './networkGraphUtils';
 
 export const protocolLabel = {
     L4_PROTOCOL_UNKNOWN: 'UNKNOWN',
@@ -117,18 +122,18 @@ function createFlow({
   side panels
 */
 export function getNetworkFlows(
+    nodes: CustomNodeModel[],
     edges: CustomEdgeModel[],
-    controller: Controller,
     id: string
 ): Flow[] {
     const networkFlows: Flow[] = edges.reduce((acc, edge) => {
         const isSourceNodeSelected = edge.source === id;
 
-        const sourceNode = controller.getNodeById(edge.source);
-        const targetNode = controller.getNodeById(edge.target);
+        const sourceNode = getNodeById(nodes, edge.source) as CustomSingleNodeModel;
+        const targetNode = getNodeById(nodes, edge.target) as CustomSingleNodeModel;
 
-        const sourceNodeData: CustomSingleNodeData = sourceNode?.getData();
-        const targetNodeData: CustomSingleNodeData = targetNode?.getData();
+        const sourceNodeData = sourceNode.data;
+        const targetNodeData = targetNode.data;
 
         const newFlows = edge.data.sourceToTargetProperties.map(({ port, protocol }): Flow => {
             const direction: string = isSourceNodeSelected ? 'Egress' : 'Ingress';

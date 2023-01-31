@@ -59,6 +59,9 @@ function NamespaceSelector({
         [namespaces]
     );
 
+    const clusterSelected = Boolean(searchFilter?.Cluster);
+    const isEmptyCluster = clusterSelected && namespaces.length === 0;
+
     const deploymentLookupMap = getDeploymentLookupMap(deploymentsByNamespace);
 
     const onNamespaceSelect = (_, selected) => {
@@ -106,7 +109,9 @@ function NamespaceSelector({
             placeholderText={
                 <span>
                     <NamespaceIcon className="pf-u-mr-xs" />{' '}
-                    <span style={{ position: 'relative', top: '1px' }}>Namespaces</span>
+                    <span style={{ position: 'relative', top: '1px' }}>
+                        {isEmptyCluster ? 'No namespaces' : 'Namespaces'}
+                    </span>
                 </span>
             }
             toggleAriaLabel="Select namespaces"

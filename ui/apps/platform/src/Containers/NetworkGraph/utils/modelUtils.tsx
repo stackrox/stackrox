@@ -335,11 +335,11 @@ function getNetworkPolicyState(
 ): NetworkPolicyState {
     let networkPolicyState: NetworkPolicyState = 'none';
 
-    if (!nonIsolatedIngress && !nonIsolatedEgress) {
+    if (!nonIsolatedEgress && !nonIsolatedIngress) {
         networkPolicyState = 'both';
-    } else if (nonIsolatedEgress) {
+    } else if (nonIsolatedEgress && !nonIsolatedIngress) {
         networkPolicyState = 'ingress';
-    } else if (nonIsolatedIngress) {
+    } else if (!nonIsolatedEgress && nonIsolatedIngress) {
         networkPolicyState = 'egress';
     }
     return networkPolicyState;
@@ -361,7 +361,8 @@ export function transformPolicyData(nodes: Node[]): {
     const policyNodeMap: Record<string, DeploymentNodeModel> = {};
     // to reference edges so we don't double merge bidirectional edges
     const policyEdgeMap: Record<string, CustomEdgeModel> = {};
-    nodes.forEach(({ entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress }) => {
+    nodes.forEach((policyNode) => {
+        const { entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress } = policyNode;
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
         const node = getNodeModel(
             entity,

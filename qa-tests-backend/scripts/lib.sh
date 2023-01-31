@@ -23,3 +23,11 @@ get_ECR_docker_pull_password() {
     pass="$(aws --region="${AWS_ECR_REGISTRY_REGION}" ecr get-login-password)"
     ci_export AWS_ECR_DOCKER_PULL_PASSWORD "${pass}"
 }
+
+deploy_clair_v4() {
+    info "Deploy Clair v4"
+
+    ci_export ROX_CLAIR_V4_SCANNING "${ROX_CLAIR_V4_SCANNING:-true}"
+    ci_export CLAIR_V4_ENDPOINT "http://clairv4.qa-clairv4:8080"
+    "$ROOT/scripts/ci/clairv4/deploy.sh" qa-clairv4
+}

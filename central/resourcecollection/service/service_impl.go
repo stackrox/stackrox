@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -66,9 +68,10 @@ type collectionRequest interface {
 type serviceImpl struct {
 	v1.UnimplementedCollectionServiceServer
 
-	datastore     datastore.DataStore
-	queryResolver datastore.QueryResolver
-	deploymentDS  deploymentDS.DataStore
+	datastore             datastore.DataStore
+	queryResolver         datastore.QueryResolver
+	deploymentDS          deploymentDS.DataStore
+	reportConfigDatastore reportConfigDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -155,6 +158,17 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
 	}
+	// error out if collection is in use by a report config
+	err := s.reportConfigDatastore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
+		if reportConfig.GetScopeId() == request.GetId() {
+			return errors.New("Collection is in use in one or more report configurations")
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to delete collection")
+	}
+
 	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
@@ -203,7 +217,8 @@ func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCo
 }
 
 func collectionRequestToCollection(ctx context.Context, request collectionRequest, id string) (*storage.ResourceCollection, error) {
-	if request.GetName() == "" {
+	collectionName := strings.TrimSpace(request.GetName())
+	if collectionName == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
 
@@ -220,7 +235,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 
 	collection := &storage.ResourceCollection{
 		Id:                id,
-		Name:              request.GetName(),
+		Name:              collectionName,
 		Description:       request.GetDescription(),
 		LastUpdated:       timeNow,
 		UpdatedBy:         slimUser,

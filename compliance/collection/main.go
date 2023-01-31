@@ -10,6 +10,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
+	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/collection/nodeinventorizer"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -185,10 +187,12 @@ func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sens
 	if err != nil {
 		return nil, err
 	}
-	return &sensor.MsgFromCompliance{
+	msg := &sensor.MsgFromCompliance{
 		Node: nodeName,
 		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: result},
-	}, nil
+	}
+	cmetrics.ObserveInventoryProtobufMessage(msg)
+	return msg, nil
 }
 
 func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
@@ -248,6 +252,10 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
+	// Start the prometheus metrics server
+	metrics.NewDefaultHTTPServer().RunForever()
+	metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
+
 	clientconn.SetUserAgent(clientconn.Compliance)
 
 	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
@@ -271,7 +279,9 @@ func main() {
 	go manageReceiveStream(ctx, cli, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		log.Infof("Node Rescan interval: %v", env.NodeRescanInterval.DurationSetting())
+		rescanInterval := env.NodeRescanInterval.DurationSetting()
+		cmetrics.ObserveRescanInterval(rescanInterval, getNode())
+		log.Infof("Node Rescan interval: %s", rescanInterval.String())
 		sensorC := make(chan *sensor.MsgFromCompliance)
 		defer close(sensorC)
 		go manageSendingToSensor(ctx, cli, sensorC)
@@ -284,7 +294,7 @@ func main() {
 			log.Infof("Using NodeInventoryCollector")
 			scanner = &nodeinventorizer.NodeInventoryCollector{}
 		}
-		nodeInventoriesC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), scanner)
+		nodeInventoriesC := manageNodeScanLoop(ctx, rescanInterval, scanner)
 
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
 		go func() {

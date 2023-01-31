@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
@@ -33,6 +33,7 @@ import {
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
 import { EdgeState } from './components/EdgeStateSelect';
+import { deploymentTabs } from './utils/deploymentUtils';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -81,6 +82,7 @@ const TopologyComponent = ({
 }: TopologyComponentProps) => {
     const history = useHistory();
     const controller = useVisualizationController();
+    const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
     function closeSidebar() {
         const queryString = clearSimulationQuery(history.location.search);
@@ -90,7 +92,12 @@ const TopologyComponent = ({
     function onNodeClick(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
-        if (newSelectedEntity) {
+        if (selectedNode && !newSelectedId) {
+            closeSidebar();
+        } else if (newSelectedEntity?.data.type === 'EXTRANEOUS') {
+            setDefaultDeploymentTab(deploymentTabs.FLOWS);
+        } else if (newSelectedEntity) {
+            setDefaultDeploymentTab(deploymentTabs.DETAILS);
             const { data, id } = newSelectedEntity;
             const [newDetailType, newDetailId] = getUrlParamsForEntity(data.type, id);
             const queryString = clearSimulationQuery(history.location.search);
@@ -131,7 +138,14 @@ const TopologyComponent = ({
 
     useEffect(() => {
         controller.fromModel(model);
-    }, [controller, model]);
+        if (selectedNode) {
+            const selectedNodeElement = controller.getNodeById(selectedNode.id);
+            if (selectedNodeElement) {
+                // the offset is to make sure the label also makes it inside the viewport
+                controller.getGraph().panIntoView(selectedNodeElement, { offset: 50 });
+            }
+        }
+    }, [controller, model, selectedNode]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
@@ -162,6 +176,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
+                            defaultDeploymentTab={defaultDeploymentTab}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (

@@ -87,6 +87,36 @@ class ClairScannerIntegration implements ImageIntegration {
     }
 }
 
+class ClairV4ScannerIntegration implements ImageIntegration {
+
+    static String name() { "Clair v4 Scanner" }
+
+    static Boolean isTestable() {
+        return true
+    }
+
+    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
+        Map defaultArgs = [
+                name: "clairv4",
+                endpoint: Env.get("CLAIR_V4_ENDPOINT", ""),
+                insecure: true,
+        ]
+        Map args = defaultArgs + customArgs
+
+        ImageIntegrationOuterClass.ClairV4Config.Builder config =
+                ImageIntegrationOuterClass.ClairV4Config.newBuilder()
+                        .setEndpoint(args.endpoint as String)
+                        .setInsecure(args.insecure as boolean)
+
+        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                .setName(args.name as String)
+                .setType("clairV4")
+                .clearCategories()
+                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
+                .setClairV4(config)
+    }
+}
+
 class ECRRegistryIntegration implements ImageIntegration {
 
     static String name() { "ECR Registry" }

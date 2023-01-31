@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -40,6 +41,16 @@ var (
 			// Number of selector terms on the network policy that triggered the metric update
 			"numSelectors",
 		})
+	receivedNodeInventory = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "node_inventories_received_total",
+		Help:      "Total number of Node Inventories received by this sensor",
+	},
+		[]string{
+			// Name of the node sending an inventory
+			"node_name",
+		})
 )
 
 // ObserveTimeSpentInExponentialBackoff observes the metric.
@@ -61,6 +72,13 @@ func ObserveNetworkPolicyStoreEvent(event, namespace string, numSelectors int) {
 	}).Inc()
 }
 
+// ObserveReceivedNodeInventory observes the metric.
+func ObserveReceivedNodeInventory(inventory *storage.NodeInventory) {
+	receivedNodeInventory.With(prometheus.Labels{
+		"node_name": inventory.GetNodeName(),
+	}).Inc()
+}
+
 func init() {
-	prometheus.MustRegister(timeSpentInExponentialBackoff, networkPoliciesStored, networkPoliciesStoreEvents)
+	prometheus.MustRegister(timeSpentInExponentialBackoff, networkPoliciesStored, networkPoliciesStoreEvents, receivedNodeInventory)
 }

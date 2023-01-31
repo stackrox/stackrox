@@ -200,7 +200,6 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
-    @IgnoreIf({ Env.CI_JOB_NAME.contains("postgres") })
     def "Verify upgraded policies match default policy set"() {
         given:
         "Default policies in code"
@@ -236,24 +235,24 @@ class UpgradesTest extends BaseSpecification {
         }
 
         def knownPolicyDifferences = [
-                "2e90874a-3521-44de-85c6-5720f519a701": new KnownPolicyDiffs()
-                        // this diff is only for the 56.1 upgrade test
-                        .applyToCluster("268c98c6-e983-4f4e-95d2-9793cebddfd7")
-                        .removeExclusions([
-                                ["kube-system", "", ""],
-                                ["istio-system", "", ""]
-                        ])
-                        .addExclusionsWithName([
-                                ["kube-system", "", "kube-system namespace", 0],
-                                ["istio-system", "", "istio-system namespace", 1]
-                        ])
-                        .clearEnforcementActions()
-                        .clearLastUpdated(),
-                "1913283f-ce3c-4134-84ef-195c4cd687ae": new KnownPolicyDiffs().setPolicyAsDisabled(),
-                "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a": new KnownPolicyDiffs().setPolicyAsDisabled(),
-                "f09f8da1-6111-4ca0-8f49-294a76c65115": new KnownPolicyDiffs().setPolicyAsDisabled(),
-                "a919ccaf-6b43-4160-ac5d-a405e1440a41": new KnownPolicyDiffs().setPolicyAsEnabled(),
-                "93f4b2dd-ef5a-419e-8371-38aed480fb36": new KnownPolicyDiffs().setPolicyAsDisabled(),
+            "2e90874a-3521-44de-85c6-5720f519a701" : new KnownPolicyDiffs()
+            // this diff is only for the 56.1 upgrade test
+                .applyToCluster("268c98c6-e983-4f4e-95d2-9793cebddfd7")
+                .removeExclusions([
+                        ["kube-system", "", ""],
+                        ["istio-system", "", ""]
+                ])
+                .addExclusionsWithName([
+                        ["kube-system", "", "kube-system namespace", 0],
+                        ["istio-system", "", "istio-system namespace", 1]
+                ])
+                .clearEnforcementActions()
+                .clearLastUpdated(),
+            "1913283f-ce3c-4134-84ef-195c4cd687ae" : new KnownPolicyDiffs().setPolicyAsDisabled(),
+            "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a" : new KnownPolicyDiffs().setPolicyAsDisabled(),
+            "f09f8da1-6111-4ca0-8f49-294a76c65115" : new KnownPolicyDiffs().setPolicyAsDisabled(),
+            "a919ccaf-6b43-4160-ac5d-a405e1440a41" : new KnownPolicyDiffs().setPolicyAsEnabled(),
+            "93f4b2dd-ef5a-419e-8371-38aed480fb36" : new KnownPolicyDiffs().setPolicyAsDisabled(),
         ]
         and:
         "Skip over known differences due to differences in tests"
@@ -295,7 +294,7 @@ class UpgradesTest extends BaseSpecification {
         }
 
         and:
-        "Ignore ordering for exclusions in policies by resorting them"
+        "Ignore ordering for exclusions and categories in policies by resorting them"
         upgradedPolicies = upgradedPolicies.collect { policy ->
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
             if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
@@ -305,16 +304,19 @@ class UpgradesTest extends BaseSpecification {
                         policy.exclusionsList.sort(false) { it.name }
                 )
             }
+            builder.clearCategories().addAllCategories(policy.categoriesList.sort(false))
             builder.build()
         }
 
         defaultPolicies = defaultPolicies.collectEntries { id, policy ->
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
+
             if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
                 builder.clearExclusions().addAllExclusions(
                         policy.exclusionsList.sort(false) { it.name }
                 )
             }
+            builder.clearCategories().addAllCategories(policy.categoriesList.sort(false))
             [id, builder.build()]
         } as Map<String, PolicyOuterClass.Policy>
 

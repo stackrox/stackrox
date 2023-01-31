@@ -120,3 +120,10 @@ func (d *dataStoreImpl) RemoveReportConfiguration(ctx context.Context, id string
 	}
 	return d.indexer.DeleteReportConfiguration(id)
 }
+
+func (d *dataStoreImpl) Walk(ctx context.Context, fn func(reportConfig *storage.ReportConfiguration) error) error {
+	if ok, err := reportConfigSAC.ReadAllowed(ctx); !ok || err != nil {
+		return err
+	}
+	return d.reportConfigStore.Walk(ctx, fn)
+}

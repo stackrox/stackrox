@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -48,10 +47,6 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, policyID string, categoryNames []string) error {
-	if !features.NewPolicyCategories.Enabled() || !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 

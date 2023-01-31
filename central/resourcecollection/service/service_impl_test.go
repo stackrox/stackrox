@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package service
 
 import (
@@ -7,6 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	reportConfigurationDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -28,18 +32,32 @@ type CollectionServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
+	testDB            *pgtest.TestPostgres
 	dataStore         *datastoreMocks.MockDataStore
 	queryResolver     *datastoreMocks.MockQueryResolver
 	deploymentDS      *deploymentDSMocks.MockDataStore
+	resourceConfigDS  reportConfigurationDS.DataStore
 	collectionService Service
 }
 
 func (suite *CollectionServiceTestSuite) SetupSuite() {
+	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.T().Skip("Skip postgres store tests")
+		suite.T().SkipNow()
+	}
+
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.queryResolver = datastoreMocks.NewMockQueryResolver(suite.mockCtrl)
 	suite.deploymentDS = deploymentDSMocks.NewMockDataStore(suite.mockCtrl)
-	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS)
+
+	var err error
+	suite.testDB = pgtest.ForT(suite.T())
+	suite.resourceConfigDS, err = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.Pool)
+	suite.NoError(err)
+	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS, suite.resourceConfigDS)
 
 	// Collections requires postgres
 	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
@@ -53,6 +71,7 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 }
 
 func (suite *CollectionServiceTestSuite) TearDownSuite() {
+	suite.testDB.Teardown(suite.T())
 	suite.mockCtrl.Finish()
 }
 
@@ -319,8 +338,21 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 	_, err := suite.collectionService.DeleteCollection(allAccessCtx, &v1.ResourceByID{})
 	suite.Error(err)
 
+	// test error when collectionId is in use by report config
+	reportConfig := &storage.ReportConfiguration{
+		Name:    "config0",
+		ScopeId: "col0",
+	}
+	id, err := suite.resourceConfigDS.AddReportConfiguration(allAccessCtx, reportConfig)
+	suite.NoError(err)
+	idRequest := &v1.ResourceByID{Id: "col0"}
+	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
+	suite.Error(err)
+	err = suite.resourceConfigDS.RemoveReportConfiguration(allAccessCtx, id)
+	suite.NoError(err)
+
 	// test successful deletion
-	idRequest := &v1.ResourceByID{Id: "a"}
+	idRequest = &v1.ResourceByID{Id: "a"}
 	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(nil)
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.NoError(err)

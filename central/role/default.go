@@ -32,9 +32,11 @@ const (
 	// VulnMgmtRequester is a role that has the minimal privileges required to request vulnerability deferrals or false positives.
 	VulnMgmtRequester = "Vulnerability Management Requester"
 
+	// TODO: ROX-14398 Remove default role VulnReporter
 	// VulnReporter is a role that has the minimal privileges required to create and manage vulnerability reporting configurations.
 	VulnReporter = "Vulnerability Report Creator"
 
+	// TODO: ROX-14398 Remove ScopeManager default role
 	// ScopeManager is a role that has the minimal privileges to view and modify scopes for use in access control, vulnerability reporting etc.
 	ScopeManager = "Scope Manager"
 )

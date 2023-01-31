@@ -26,3 +26,8 @@
 [data-testid="network-graph-toolbar"] .react-select__menu {
     z-index: 250;
 }
+
+/* Restore grayed out background for disabled checkboxes */
+.network-graph-selector-bar .pf-c-check__input:disabled {
+    background-color: rgba(59, 59, 59, 0.3);
+}

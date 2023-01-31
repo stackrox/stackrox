@@ -13,9 +13,7 @@ type PolicyManagementHeaderProps = {
 function PolicyManagementHeader({ currentTabTitle }: PolicyManagementHeaderProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const tabLinks = [{ title: 'Policies', href: policiesBasePath }];
-    const isPolicyCategoriesEnabled =
-        isFeatureFlagEnabled('ROX_NEW_POLICY_CATEGORIES') &&
-        isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    const isPolicyCategoriesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     if (isPolicyCategoriesEnabled) {
         tabLinks.push({ title: 'Policy categories', href: policyCategoriesPath });
     }
