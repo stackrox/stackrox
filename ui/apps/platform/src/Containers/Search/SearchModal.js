@@ -75,8 +75,12 @@ class SearchModal extends Component {
 
 const SearchModalContainer = (props) => {
     const EnhancedSearchModal = onClickOutside(SearchModal);
+    const { top } = document.getElementById('main-page-container').getBoundingClientRect();
     return (
-        <div className="search-modal w-full z-md-300 pf-u-background-color-100">
+        <div
+            className="search-modal fixed w-full z-sm-200 pf-u-background-color-100"
+            style={{ top, height: `calc(100% - ${top}px)` }}
+        >
             <EnhancedSearchModal {...props} />
         </div>
     );
