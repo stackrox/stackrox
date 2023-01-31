@@ -119,17 +119,17 @@ class VulnReportingTest extends BaseSpecification  {
 
         cleanup:
         "Cleanup resources"
-        if (email) {
-            mailServer.deleteEmail(emailId)
-        }
-        if (notifier) {
-            notifier.deleteNotifier()
+        if (report) {
+            VulnReportService.deleteVulnReportConfig(report.id)
         }
         if (collection) {
             CollectionsService.deleteCollection(collection.id)
         }
-        if (report) {
-            VulnReportService.deleteVulnReportConfig(report.id)
+        if (notifier) {
+            notifier.deleteNotifier()
+        }
+        if (email) {
+            mailServer.deleteEmail(emailId)
         }
     }
 

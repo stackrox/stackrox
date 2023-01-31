@@ -49,7 +49,7 @@ class CollectionsService extends BaseService {
         }
 
         def req = ResourceCollectionService.CreateCollectionRequest.newBuilder()
-                .setName("Test Collections")
+                .setName("Test Collections-${UUID.randomUUID()}")
                 .addResourceSelectors(selector)
         return getClient().createCollection(req.build()).getCollection()
     }
