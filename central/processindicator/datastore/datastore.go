@@ -24,6 +24,8 @@ import (
 // DataStore represents the interface to access data.
 //go:generate mockgen-wrapper
 type DataStore interface {
+	Count(ctx context.Context, q *v1.Query) (int, error)
+
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error)
 
