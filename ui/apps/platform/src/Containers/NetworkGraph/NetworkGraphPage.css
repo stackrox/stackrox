@@ -45,3 +45,7 @@
 .network-graph-selector-bar .pf-c-check__input:disabled {
     background-color: rgba(59, 59, 59, 0.3);
 }
+
+div#topology-resize-panel table td {
+    vertical-align: inherit;
+}
