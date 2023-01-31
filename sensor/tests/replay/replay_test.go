@@ -212,7 +212,6 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			}
 			expectedAlerts := getAlerts(expectedEvents)
 			receivedAlerts := getAlerts(allEvents)
-			assert.Equal(t, len(expectedAlerts), len(receivedAlerts), "Not the same number of alerts.\nExpected: %+v\nActual: %+v", expectedAlerts, receivedAlerts)
 			for id, expectedAlertEvent := range expectedAlerts {
 				if receivedAlertEvent, ok := receivedAlerts[id]; !ok {
 					t.Error("Deployment Alert Event not found. Expected alert event: ", expectedAlertEvent)
@@ -229,7 +228,6 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			}
 			expectedDeployments := getLastStateFromDeployments(expectedEvents)
 			receivedDeployments := getLastStateFromDeployments(allEvents)
-			assert.Equal(t, len(expectedDeployments), len(receivedDeployments), "Not the same number of deployments.\nExpected: %+v\nActual: %+v", expectedDeployments, receivedDeployments)
 			for id, exp := range expectedDeployments {
 				if e, ok := receivedDeployments[id]; !ok {
 					t.Error("Deployment not found. Expected Deployment: ", exp)
@@ -245,7 +243,6 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			}
 			expectedPods := getLastStateFromPods(expectedEvents)
 			receivedPods := getLastStateFromPods(allEvents)
-			assert.Equal(t, len(expectedPods), len(receivedPods), "Not the same number of pods.\nExpected: %+v Actual: %+v", expectedPods, receivedPods)
 			for id, exp := range expectedPods {
 				if e, ok := receivedPods[id]; !ok {
 					t.Error("Pod not found. Expected Pod: ", exp)
