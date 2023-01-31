@@ -294,7 +294,7 @@ class UpgradesTest extends BaseSpecification {
         }
 
         and:
-        "Ignore ordering for exclusions in policies by resorting them"
+        "Ignore ordering for exclusions and categories in policies by resorting them"
         upgradedPolicies = upgradedPolicies.collect { policy ->
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
             if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
@@ -304,16 +304,19 @@ class UpgradesTest extends BaseSpecification {
                         policy.exclusionsList.sort(false) { it.name }
                 )
             }
+            builder.clearCategories().addAllCategories(policy.categoriesList.sort(false))
             builder.build()
         }
 
         defaultPolicies = defaultPolicies.collectEntries { id, policy ->
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
+
             if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
                 builder.clearExclusions().addAllExclusions(
                         policy.exclusionsList.sort(false) { it.name }
                 )
             }
+            builder.clearCategories().addAllCategories(policy.categoriesList.sort(false))
             [id, builder.build()]
         } as Map<String, PolicyOuterClass.Policy>
 
@@ -325,9 +328,6 @@ class UpgradesTest extends BaseSpecification {
         "Upgraded policies should match the default policies in code"
         upgradedPolicies.forEach {
             def defaultPolicy = defaultPolicies[it.id]
-            // sort category lists in place before comparing
-            defaultPolicy.categoriesList.sort(true)
-            it.categoriesList.sort(true)
             assert it == defaultPolicy
         }
     }
