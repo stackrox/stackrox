@@ -208,22 +208,28 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		c := clusters[ix]
 		clustersMap[c.GetId()] = c
 	}
-	log.Info(len(clustersMap))
+	log.Info("Cluster Map size: ", len(clustersMap))
 
 	// Extend cluster list with Clusters belonging to any scope linked to a scoped user permission
 	hasResourceWithFullScope := false
 	targetClusterIDs := make(map[string]struct{}, 0)
-	for _, p := range resources.AllResourcesViewPermissions() {
+	viewPermissions := resources.AllResourcesViewPermissions()
+	log.Info("View Permission size: ", len(viewPermissions))
+	for _, p := range viewPermissions {
+		log.Info(p.Resource.GetResource(), " ", p.Resource.GetScope())
 		if p.Resource.GetScope() == permissions.GlobalScope {
 			continue
 		}
 		scope, err := sac.ForResource(p.Resource).ScopeChecker(ctx, p.Access).EffectiveAccessScope(p)
 		if err != nil {
+			log.Info("Scope error")
 			continue
 		}
 		if scope == nil {
+			log.Info("Nil scope")
 			continue
 		}
+		log.Info("Scope State ", scope.State, "[", effectiveaccessscope.Excluded, ", ", effectiveaccessscope.Partial, ", ", effectiveaccessscope.Included, "]")
 		if scope.State == effectiveaccessscope.Included {
 			hasResourceWithFullScope = true
 			break
