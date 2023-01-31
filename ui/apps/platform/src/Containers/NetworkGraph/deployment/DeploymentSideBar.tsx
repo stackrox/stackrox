@@ -187,13 +187,15 @@ function DeploymentSideBar({
                             id={deploymentTabs.FLOWS}
                             hidden={activeKeyTab !== deploymentTabs.FLOWS}
                         >
-                            <DeploymentFlows
-                                nodes={nodes}
-                                edges={edges}
-                                deploymentId={deploymentId}
-                                edgeState={edgeState}
-                                onNodeSelect={onNodeSelect}
-                            />
+                            {activeKeyTab === deploymentTabs.FLOWS && (
+                                <DeploymentFlows
+                                    nodes={nodes}
+                                    edges={edges}
+                                    deploymentId={deploymentId}
+                                    edgeState={edgeState}
+                                    onNodeSelect={onNodeSelect}
+                                />
+                            )}
                         </TabContent>
                         <TabContent
                             eventKey={deploymentTabs.BASELINES}
@@ -201,11 +203,13 @@ function DeploymentSideBar({
                             hidden={activeKeyTab !== deploymentTabs.BASELINES}
                             className="pf-u-h-100"
                         >
-                            <DeploymentBaselines
-                                deployment={deployment}
-                                deploymentId={deploymentId}
-                                onNodeSelect={onNodeSelect}
-                            />
+                            {activeKeyTab === deploymentTabs.BASELINES && (
+                                <DeploymentBaselines
+                                    deployment={deployment}
+                                    deploymentId={deploymentId}
+                                    onNodeSelect={onNodeSelect}
+                                />
+                            )}
                         </TabContent>
                         <TabContent
                             eventKey={deploymentTabs.NETWORK_POLICIES}
