@@ -192,6 +192,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                         </FlexItem>
                         <FlexItem>
                             <AdvancedFlowsFilter
+                                isBaseline
                                 filters={advancedFilters}
                                 setFilters={setAdvancedFilters}
                                 allUniquePorts={allUniquePorts}
