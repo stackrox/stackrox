@@ -20,7 +20,7 @@ import (
 
 // This file is a partial copy of central/reportconfigurations/store/postgres/store.go
 // in the state it had when the migration was written.
-// Only the relevant functions (UpsertMany, DeleteMany and Walk) are kept.
+// Only the relevant functions (Upsert, UpsertMany, DeleteMany and Walk) are kept.
 // The kept functions are stripped from the scoped access control checks.
 
 const (
@@ -44,6 +44,7 @@ var (
 
 // Store is the interface to interact with the storage for storage.ReportConfiguration
 type Store interface {
+	Upsert(ctx context.Context, obj *storage.ReportConfiguration) error
 	UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
@@ -219,6 +220,13 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfigura
 //// Helper functions - END
 
 //// Interface functions
+
+// Upsert saves the current state of an object in storage.
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ReportConfiguration) error {
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
+}
 
 // UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error {
