@@ -7,6 +7,7 @@ import (
 )
 
 // Store provides storage functionality for images.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	Count(ctx context.Context) (int, error)

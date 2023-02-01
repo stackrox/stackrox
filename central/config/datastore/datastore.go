@@ -13,6 +13,7 @@ import (
 )
 
 // DataStore is the entry point for modifying Config data.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetConfig(context.Context) (*storage.Config, error)

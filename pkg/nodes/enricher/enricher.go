@@ -14,6 +14,7 @@ var (
 )
 
 // NodeEnricher provides functions for enriching nodes with vulnerability data.
+//
 //go:generate mockgen-wrapper
 type NodeEnricher interface {
 	EnrichNode(node *storage.Node) error

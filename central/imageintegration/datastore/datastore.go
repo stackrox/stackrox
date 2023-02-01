@@ -24,6 +24,7 @@ var (
 )
 
 // DataStore is the entry point for modifying Cluster data.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetImageIntegration(ctx context.Context, id string) (*storage.ImageIntegration, bool, error)

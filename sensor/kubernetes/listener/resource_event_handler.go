@@ -256,7 +256,7 @@ func (k *listenerImpl) handleAllEvents() {
 }
 
 // Helper function that creates and adds a handler to an informer.
-//////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////
 func handle(
 	informer cache.SharedIndexInformer,
 	dispatcher resources.Dispatcher,

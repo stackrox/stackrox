@@ -18,6 +18,7 @@ var (
 )
 
 // Indexer is the interface for Compliance Search
+//
 //go:generate mockgen-wrapper
 type Indexer interface {
 	IndexStandard(standard *v1.ComplianceStandard) error

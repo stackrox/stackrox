@@ -16,6 +16,7 @@ var (
 )
 
 // Searcher provides search functionality on existing pods
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)

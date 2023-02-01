@@ -106,7 +106,7 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesCloseError() {
 }
 
 // Mock ReadCloser implementation to function as the http request body.
-///////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////
 func mockReadCloseMessage(message string) *mockReadCloser {
 	byteSlice := []byte(message)
 	return &mockReadCloser{

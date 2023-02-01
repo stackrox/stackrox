@@ -7,6 +7,7 @@ import (
 )
 
 // UndoStore provides storage functionality for undo records.
+//
 //go:generate mockgen-wrapper
 type UndoStore interface {
 	Get(ctx context.Context, clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error)
