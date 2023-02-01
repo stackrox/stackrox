@@ -15,7 +15,7 @@ spec:
       containers:
       - name: clairv4
         # This image is based on registry.redhat.io/quay/clair-rhel8:v3.8.0-10
-        image: us.gcr.io/stackrox-ci/clair:v4.5.1
+        image: quay.io/rhacs-eng/qa:clair-v4.5.1
         env:
         - name: CLAIR_CONF
           value: /clair/config.yaml
@@ -76,7 +76,7 @@ spec:
       - name: postgres
         # Generic PostgreSQL 12 image used for online-mode.
         # image: us.gcr.io/stackrox-ci/postgres:12.13
-        image: us.gcr.io/stackrox-ci/clairv4-postgres:12.13
+        image: quay.io/rhacs-eng/qa:clairv4-postgres-12.13
         env:
         - name: POSTGRES_USER
           value: "postgres"
