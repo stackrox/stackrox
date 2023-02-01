@@ -259,6 +259,11 @@ deploy_sensor_via_operator() {
     kubectl apply -n stackrox -f operator/tests/e2e/secured-cluster-cr.yaml
 
     wait_for_object_to_appear stackrox deploy/sensor 300
+    wait_for_object_to_appear stackrox ds/collector 300
+
+    if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
+       kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+    fi
 }
 
 export_central_basic_auth_creds() {
