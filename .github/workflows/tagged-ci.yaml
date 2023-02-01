@@ -1,0 +1,13 @@
+name: Tagged CI
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+  slack-tagged-notice:
+    name: Slack Tagged Notice
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Ref: ${{ github.ref_name }}"
