@@ -35,7 +35,7 @@ var (
 	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl generate netpol' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
 
 	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
-	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", false)
+	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", true)
 
 	// RHCOSNodeScanning enables phase 1 functions of "Full host level vulnerability scanning for RHCOS nodes" (ROX-10818)
 	RHCOSNodeScanning = registerFeature("Enable RHCOS node scanning of OS and installed packages", "ROX_RHCOS_NODE_SCANNING", false)
