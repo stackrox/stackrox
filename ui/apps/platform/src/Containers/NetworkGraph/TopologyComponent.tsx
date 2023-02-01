@@ -124,9 +124,9 @@ const TopologyComponent = ({
         controller.getGraph().scaleBy(0.75);
     }
 
-    const fitToScreenCallback = useCallback(() => {
+    function fitToScreenCallback() {
         controller.getGraph().fit(80);
-    }, [controller]);
+    }
 
     const resetViewCallback = useCallback(() => {
         controller.getGraph().reset();
@@ -155,7 +155,7 @@ const TopologyComponent = ({
         } else {
             firstRenderRef.current = false;
         }
-    }, [edgeState, resetViewCallback, fitToScreenCallback]);
+    }, [edgeState, resetViewCallback]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
