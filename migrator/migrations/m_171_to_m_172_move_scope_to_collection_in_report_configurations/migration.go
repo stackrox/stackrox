@@ -229,10 +229,8 @@ func moveScopesInReportsToCollections(gormDB *gorm.DB, db *pgxpool.Pool) error {
 	accessScopeStore := accessScopePostgres.New(db)
 	collectionStore := collectionPostgres.New(db)
 
-	allConfigs := make(map[string]*storage.ReportConfiguration)
 	err := reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
 		scopeIDToConfigs[reportConfig.GetScopeId()] = append(scopeIDToConfigs[reportConfig.GetScopeId()], reportConfig)
-		allConfigs[reportConfig.GetId()] = reportConfig
 		return nil
 	})
 	if err != nil {
@@ -260,13 +258,13 @@ func moveScopesInReportsToCollections(gormDB *gorm.DB, db *pgxpool.Pool) error {
 }
 
 func errorWithResolutionMsg(err error, scopeID string) string {
-	var scopeNames []string
+	var configNames []string
 	for _, config := range scopeIDToConfigs[scopeID] {
-		scopeNames = append(scopeNames, config.GetName())
+		configNames = append(configNames, config.GetName())
 	}
 	return err.Error() + "\n" +
 		" The scope is attached to the following report configurations: " +
-		"[" + strings.Join(scopeNames, ", ") + "]; " +
+		"[" + strings.Join(configNames, ", ") + "]; " +
 		"Please manually create an equivalent collection and attach it to the listed report configurations. " +
 		"Note that reports will not function correctly until a collection is attached."
 }
