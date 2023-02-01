@@ -14,7 +14,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - id: is_release_check
+      - name: Slack
+        env:
+          NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK }}
+          RELEASE_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.RELEASE_WORKFLOW_NOTIFY_WEBHOOK }}
+          SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
         run: |
           source scripts/ci/lib.sh
           slack_prow_notice "${{ github.ref_name }}"

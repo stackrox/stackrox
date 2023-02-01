@@ -1465,7 +1465,7 @@ handle_gha_tagged_build() {
 }
 
 slack_prow_notice() {
-    info "Slack a build notice"
+    info "Slack a notice that prow tests have started"
 
     if [[ "$#" -lt 1 ]]; then
         die "missing arg. usage: slack_prow_notice <tag>"
