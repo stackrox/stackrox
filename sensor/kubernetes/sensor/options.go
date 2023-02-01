@@ -4,6 +4,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
@@ -12,12 +13,13 @@ import (
 // CreateOptions represents the custom configuration that can be provided when creating sensor
 // using CreateSensor.
 type CreateOptions struct {
-	workloadManager    *fake.WorkloadManager
-	centralConnFactory centralclient.CentralConnectionFactory
-	localSensor        bool
-	resyncPeriod       time.Duration
-	k8sClient          client.Interface
-	traceWriter        io.Writer
+	workloadManager        *fake.WorkloadManager
+	centralConnFactory     centralclient.CentralConnectionFactory
+	localSensor            bool
+	resyncPeriod           time.Duration
+	k8sClient              client.Interface
+	traceWriter            io.Writer
+	eventPipelineQueueSize int
 }
 
 // ConfigWithDefaults creates a new config object with default properties.
@@ -28,12 +30,13 @@ type CreateOptions struct {
 // before running CreateSensor.
 func ConfigWithDefaults() *CreateOptions {
 	return &CreateOptions{
-		workloadManager:    nil,
-		centralConnFactory: nil,
-		k8sClient:          nil,
-		localSensor:        false,
-		resyncPeriod:       1 * time.Minute,
-		traceWriter:        nil,
+		workloadManager:        nil,
+		centralConnFactory:     nil,
+		k8sClient:              nil,
+		localSensor:            false,
+		resyncPeriod:           1 * time.Minute,
+		traceWriter:            nil,
+		eventPipelineQueueSize: env.EventPipelineQueueSize.IntegerSetting(),
 	}
 }
 
@@ -70,6 +73,13 @@ func (cfg *CreateOptions) WithLocalSensor(flag bool) *CreateOptions {
 // Default: 1 minute
 func (cfg *CreateOptions) WithResyncPeriod(duration time.Duration) *CreateOptions {
 	cfg.resyncPeriod = duration
+	return cfg
+}
+
+// WithEventPipelineQueueSize sets the size of the eventPipeline's queue.
+// Default: 100
+func (cfg *CreateOptions) WithEventPipelineQueueSize(size int) *CreateOptions {
+	cfg.eventPipelineQueueSize = size
 	return cfg
 }
 
