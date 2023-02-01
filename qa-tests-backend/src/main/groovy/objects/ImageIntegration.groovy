@@ -92,7 +92,7 @@ class ClairV4ScannerIntegration implements ImageIntegration {
     static String name() { "Clair v4 Scanner" }
 
     static Boolean isTestable() {
-        return true
+        return Env.get("CLAIR_V4_ENDPOINT") != null
     }
 
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
