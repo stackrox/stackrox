@@ -11,10 +11,10 @@ import {
     visitRiskDeployments,
 } from '../../helpers/risk';
 import {
-    visitNetworkGraph,
-    visitNetworkGraphFromLeftNav,
-    visitNetworkGraphWithMockedData,
-    visitNetworkGraphWithNamespaceFilter,
+    visitOldNetworkGraph,
+    visitOldNetworkGraphFromLeftNav,
+    visitOldNetworkGraphWithMockedData,
+    visitOldNetworkGraphWithNamespaceFilter,
 } from '../../helpers/networkGraph';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
@@ -31,11 +31,11 @@ describe('Network page', () => {
     withAuth();
 
     it('should visit using the left nav', () => {
-        visitNetworkGraphFromLeftNav();
+        visitOldNetworkGraphFromLeftNav();
     });
 
     it('should have selected item in nav bar', () => {
-        visitNetworkGraph();
+        visitOldNetworkGraph();
         cy.get(`${navigationSelectors.navLinks}:contains('Network')`).should(
             'have.class',
             'pf-m-current'
@@ -43,13 +43,13 @@ describe('Network page', () => {
     });
 
     it('should have title', () => {
-        visitNetworkGraph();
+        visitOldNetworkGraph();
 
         cy.title().should('match', getRegExpForTitleWithBranding('Network Graph'));
     });
 
     it('should display a legend', () => {
-        visitNetworkGraphWithMockedData();
+        visitOldNetworkGraphWithMockedData();
 
         const { deployments, namespaces, connections } = networkPageSelectors.legend;
 
@@ -68,7 +68,7 @@ describe('Network page', () => {
     });
 
     it('should handle toggle click on simulator network policy button', () => {
-        visitNetworkGraphWithMockedData();
+        visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         cy.get(networkPageSelectors.buttons.viewActiveYamlButton).should('be.visible');
@@ -78,7 +78,7 @@ describe('Network page', () => {
     });
 
     it('should display expected toast message when uploaded yaml without namespace', () => {
-        visitNetworkGraphWithMockedData();
+        visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadYAMLFile('network/policywithoutnamespace.yaml', 'input[type="file"]');
@@ -90,7 +90,7 @@ describe('Network page', () => {
     });
 
     it('should display display policies processed message when uploaded yaml with namespace', () => {
-        visitNetworkGraphWithMockedData();
+        visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadYAMLFile('network/policywithnamespace.yaml', 'input[type="file"]');
@@ -148,7 +148,7 @@ describe('Network Policy Simulator', () => {
             return deployments;
         }
 
-        visitNetworkGraphWithNamespaceFilter('stackrox');
+        visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
         cy.get(networkPageSelectors.buttons.allowedFilter).click();
         cy.getCytoscape('#cytoscapeContainer').then((cytoscape) => {
