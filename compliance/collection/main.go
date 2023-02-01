@@ -252,9 +252,11 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
-	// Start the prometheus metrics server
-	metrics.NewDefaultHTTPServer().RunForever()
-	metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
+	if features.RHCOSNodeScanning.Enabled() {
+		// Start the prometheus metrics server
+		metrics.NewDefaultHTTPServer().RunForever()
+		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
+	}
 
 	clientconn.SetUserAgent(clientconn.Compliance)
 
