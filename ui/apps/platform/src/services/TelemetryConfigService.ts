@@ -1,8 +1,12 @@
-import { TelemetryConfig } from 'types/telemetryConfigService.proto';
-
 import axios from './instance';
 
 const url = '/v1/telemetry/config';
+
+type TelemetryConfig = {
+    userId: string;
+    endpoint: string;
+    storageKeyV1: string;
+};
 
 /**
  * Fetches telemetry data for analytics.

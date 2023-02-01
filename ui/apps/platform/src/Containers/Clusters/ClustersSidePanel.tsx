@@ -21,7 +21,7 @@ import {
 } from 'services/ClustersService';
 import { Cluster } from 'types/cluster.proto';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
-import { analyticsTrack } from 'utils/analytics';
+import { analyticsTrack, clusterCreated } from 'utils/analytics';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
@@ -257,7 +257,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                     */
                     // TODO After saveCluster returns response without normalize,
                     // something like the preceding commented lines should replace the following:
-                    analyticsTrack('New Cluster');
+                    analyticsTrack(clusterCreated);
                     const newId = response.response.result.cluster; // really is nested like this
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);

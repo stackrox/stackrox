@@ -9,3 +9,5 @@ export function analyticsPageVisit(type: string, name: string, additionalPropert
 export function analyticsTrack(event: string, additionalProperties = {}): void {
     return window.analytics?.track(event, additionalProperties);
 }
+
+export const clusterCreated = 'Cluster Created';
