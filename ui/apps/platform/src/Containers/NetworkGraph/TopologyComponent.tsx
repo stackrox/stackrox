@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
@@ -80,6 +80,7 @@ const TopologyComponent = ({
     applyNetworkPolicyModification,
     edgeState,
 }: TopologyComponentProps) => {
+    const firstRenderRef = useRef(true);
     const history = useHistory();
     const controller = useVisualizationController();
     const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
@@ -123,14 +124,14 @@ const TopologyComponent = ({
         controller.getGraph().scaleBy(0.75);
     }
 
-    function fitToScreenCallback() {
+    const fitToScreenCallback = useCallback(() => {
         controller.getGraph().fit(80);
-    }
+    }, [controller]);
 
-    function resetViewCallback() {
+    const resetViewCallback = useCallback(() => {
         controller.getGraph().reset();
         controller.getGraph().layout();
-    }
+    }, [controller]);
 
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
         onNodeClick(ids);
@@ -146,6 +147,15 @@ const TopologyComponent = ({
             }
         }
     }, [controller, model, selectedNode]);
+
+    useEffect(() => {
+        // we don't want to reset view on init
+        if (!firstRenderRef.current) {
+            resetViewCallback();
+        } else {
+            firstRenderRef.current = false;
+        }
+    }, [edgeState, resetViewCallback, fitToScreenCallback]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
