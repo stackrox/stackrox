@@ -85,10 +85,10 @@ const TopologyComponent = ({
     const controller = useVisualizationController();
     const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
-    function closeSidebar() {
+    const closeSidebar = useCallback(() => {
         const queryString = clearSimulationQuery(history.location.search);
         history.push(`${networkBasePathPF}${queryString}`);
-    }
+    }, [history]);
 
     function onNodeClick(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
@@ -133,29 +133,39 @@ const TopologyComponent = ({
         controller.getGraph().layout();
     }, [controller]);
 
+    const panNodeIntoView = useCallback(
+        (node) => {
+            const selectedNodeElement = controller.getNodeById(node.id);
+            if (selectedNodeElement) {
+                // the offset is to make sure the label also makes it inside the viewport
+                controller.getGraph().panIntoView(selectedNodeElement, { offset: 50 });
+            }
+        },
+        [controller]
+    );
+
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
         onNodeClick(ids);
     });
 
     useEffect(() => {
-        controller.fromModel(model);
-        if (selectedNode) {
-            const selectedNodeElement = controller.getNodeById(selectedNode.id);
-            if (selectedNodeElement) {
-                // the offset is to make sure the label also makes it inside the viewport
-                controller.getGraph().panIntoView(selectedNodeElement, { offset: 50 });
-            }
-        }
-    }, [controller, model, selectedNode]);
-
-    useEffect(() => {
         // we don't want to reset view on init
-        if (!firstRenderRef.current) {
+        if (!firstRenderRef.current && controller.hasGraph()) {
             resetViewCallback();
         } else {
             firstRenderRef.current = false;
         }
-    }, [edgeState, resetViewCallback]);
+    }, [controller, edgeState, resetViewCallback]);
+
+    useEffect(() => {
+        controller.fromModel(model);
+        if (selectedNode) {
+            panNodeIntoView(selectedNode);
+        } else if (history.location.pathname !== networkBasePathPF && !selectedNode) {
+            // if the path does not reflect the selected node state, sync URL to state
+            closeSidebar();
+        }
+    }, [controller, model, selectedNode, history, closeSidebar, panNodeIntoView]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
