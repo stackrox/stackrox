@@ -101,6 +101,14 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
         - name: K8S_NODE_NAME
           valueFrom:
             fieldRef:
