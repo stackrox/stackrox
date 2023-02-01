@@ -96,6 +96,7 @@ function DeploymentBaselinesSimulated({
                         </FlexItem>
                         <FlexItem>
                             <AdvancedFlowsFilter
+                                isBaseline
                                 filters={advancedFilters}
                                 setFilters={setAdvancedFilters}
                                 allUniquePorts={allUniquePorts}

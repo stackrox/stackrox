@@ -1,3 +1,4 @@
+import { uniqBy } from 'lodash';
 import { useEffect, useState } from 'react';
 
 import { fetchNetworkBaselines } from 'services/NetworkService';
@@ -70,9 +71,10 @@ function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
                     );
                     return [...acc, ...newNetworkBaselines];
                 }, [] as Flow[]);
+                const uniqNetworkBaselines = uniqBy(networkBaselines, 'id');
                 setResult({
                     isLoading: false,
-                    data: { networkBaselines, isAlertingOnBaselineViolation },
+                    data: { networkBaselines: uniqNetworkBaselines, isAlertingOnBaselineViolation },
                     error: null,
                 });
             })
