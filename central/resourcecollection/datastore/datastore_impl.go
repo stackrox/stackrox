@@ -593,7 +593,7 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 				if ruleValue.GetMatchType() == storage.MatchType_REGEX {
 					_, err := regexp.Compile(ruleValue.GetValue())
 					if err != nil {
-						return errors.Wrap(errors.Wrap(err, errox.InvalidArgs.Error()), "failed to compile rule value regex")
+						return errors.Wrapf(err, "failed to compile regex on %q rule", selectorRule.GetFieldName())
 					}
 				}
 
