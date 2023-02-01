@@ -188,7 +188,7 @@ function NetworkGraphPage() {
 
     return (
         <>
-            <PageTitle title="Network Graph" />
+            <PageTitle title="Network Graph (2.0 preview)" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Toolbar
                     className="network-graph-selector-bar"
