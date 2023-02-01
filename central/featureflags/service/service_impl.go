@@ -37,7 +37,7 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 	}
 
 	// HACK: Inject in the postgres env var as a feature flag response so that the UI can work as-is without modifications
-	// TODO: When GA'ing postgresm remove this hack (and all conditional checks). https://issues.redhat.com/browse/ROX-12848
+	// TODO: When GA'ing postgres remove this hack (and all conditional checks). https://issues.redhat.com/browse/ROX-12848
 	resp.FeatureFlags = append(resp.FeatureFlags, &v1.FeatureFlag{
 		Name:    "Enable Postgres Datastore",
 		EnvVar:  env.PostgresDatastoreEnabled.EnvVar(),
