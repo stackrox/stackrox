@@ -20,7 +20,7 @@ import {
     TextVariants,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
 import { Deployment } from 'types/deployment.proto';
@@ -114,7 +114,7 @@ function DeploymentDetails({
                                                 <Label
                                                     variant="outline"
                                                     color="gold"
-                                                    icon={<ExclamationCircleIcon />}
+                                                    icon={<ExclamationTriangleIcon />}
                                                 >
                                                     {numInternalFlows} internal{' '}
                                                     {pluralize('flow', numInternalFlows)}
