@@ -91,8 +91,9 @@ function ExternalGroupSideBar({
                     </FlexItem>
                 </Flex>
             </StackItem>
-            <StackItem isFilled style={{ overflow: 'auto' }} className="pf-u-p-md">
-                <Stack hasGutter>
+            <Divider component="hr" />
+            <StackItem isFilled style={{ overflow: 'auto' }}>
+                <Stack className="pf-u-p-md">
                     <StackItem>
                         <Flex>
                             <FlexItem flex={{ default: 'flex_1' }}>
@@ -103,10 +104,10 @@ function ExternalGroupSideBar({
                             </FlexItem>
                         </Flex>
                     </StackItem>
-                    <Divider component="hr" />
-                    <StackItem>
-                        <Toolbar>
-                            <ToolbarContent>
+                    <Divider component="hr" className="pf-u-py-md" />
+                    <StackItem className="pf-u-pb-md">
+                        <Toolbar className="pf-u-p-0">
+                            <ToolbarContent className="pf-u-px-0">
                                 <ToolbarItem>
                                     <TextContent>
                                         <Text component={TextVariants.h3}>
