@@ -27,14 +27,11 @@ func Timeout(duration time.Duration) WaitableChan {
 // duration.
 // The motivation for not triggering the returned waitable when cancelCond is triggered is to allow statements such as
 //
-// select {
-// case <-sig.Done():
-//
-//	... happy path ...
-//
-// case <-TimeoutOr(timeoutDuration, &sig):
-//
-//	  ... oh no, a timeout ...
+//	select {
+//	case <-sig.Done():
+//		... happy path ...
+//	case <-TimeoutOr(timeoutDuration, &sig):
+//		... oh no, a timeout ...
 //	}
 //
 // Due to the non-deterministic nature of select, a trigger might otherwise show up as a timeout, and only checking

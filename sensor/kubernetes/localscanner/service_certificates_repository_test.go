@@ -269,7 +269,7 @@ type certSecretsRepoFixture struct {
 }
 
 // newFixture creates a certSecretsRepoFixture that contains:
-// - A secrets client corresponding to a fake k8s client set such that:
+// 1. A secrets client corresponding to a fake k8s client set such that:
 //   - It is initialized to represent a cluster with sensorDeployment and a secret that contains certificates
 //     on its data, or partial data according to spec.
 //   - The client set will fail all operations on the HTTP verb indicated in spec.

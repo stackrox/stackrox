@@ -2,19 +2,27 @@
 //
 // This package supports runtime configuration via the following
 // environment variables:
-//   - LOGLEVEL supporting the following values (case insensitive), order is indicative of importance:
+//
+// 1. LOGLEVEL supporting the following values (case insensitive), order is indicative of importance:
+//
 //   - fatal
 //   - panic
 //   - error
 //   - warn
 //   - info
 //   - debug
-//   - LOGENCODING supporting the following values:
+//
+// 2. LOGENCODING supporting the following values:
+//
 //   - json
 //   - console
-//   - MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
-//   - MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
-//   - PERSISTENT_LOG supporting the following values for additional log file on persistent storage
+//
+// 3. MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
+//
+// 4. MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
+//
+// 5. PERSISTENT_LOG supporting the following values for additional log file on persistent storage
+//
 //   - true
 //   - false
 //
