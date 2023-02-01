@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -19,27 +20,27 @@ const doc = `check that imports are valid`
 const roxPrefix = "github.com/stackrox/rox/"
 
 var (
-	validRoots = []string{
+	validRoots = set.NewFrozenStringSet(
 		"central",
 		"compliance",
 		"image",
 		"integration-tests",
 		"migrator",
+		"migrator/migrations",
+		"operator",
 		"pkg",
 		"roxctl",
 		"scale",
-		"sensor/common",
-		"sensor/kubernetes",
-		"sensor/kubernetes/sensor",
 		"sensor/admission-control",
-		"sensor/upgrader",
+		"sensor/common",
 		"sensor/debugger",
+		"sensor/kubernetes",
 		"sensor/tests",
 		"sensor/testutils",
+		"sensor/upgrader",
 		"tools",
 		"webhookserver",
-		"operator",
-	}
+	)
 
 	ignoredRoots = []string{
 		"generated",
@@ -99,9 +100,10 @@ func getRoot(packageName string) (root string, valid bool, err error) {
 		return "", false, errors.Errorf("Package %s is not part of %s", packageName, roxPrefix)
 	}
 	unqualifiedPackageName := strings.TrimPrefix(packageName, roxPrefix)
-
-	for _, validRoot := range validRoots {
-		if strings.HasPrefix(unqualifiedPackageName, validRoot) {
+	pathElems := strings.Split(unqualifiedPackageName, string(filepath.Separator))
+	for i := len(pathElems); i > 0; i-- {
+		validRoot := strings.Join(pathElems[:i], string(filepath.Separator))
+		if validRoots.Contains(validRoot) {
 			return validRoot, true, nil
 		}
 	}
@@ -177,14 +179,15 @@ func checkForbidden(impPath, packageName string) error {
 // only import StackRox code from allowedPackages
 func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.ImportSpec, validImportRoot, packageName string) {
 	allowedPackages := []string{validImportRoot, "generated", "image"}
-	// The migrator is NOT allowed to import all code from pkg except process/id as that pkg is isolated.
-	if validImportRoot != "pkg" && validImportRoot != "migrator" {
+	// The migrator is NOT allowed to import all code from pkg except packages isolated.
+	if validImportRoot != "pkg" && !strings.HasPrefix(validImportRoot, "migrator") {
 		allowedPackages = append(allowedPackages, "pkg")
 	}
-	// Specific sub-packages in pkg that the migrator is allowed to import go here.
+
+	// Specific sub-packages in pkg that the migrator and its sub-packages are allowed to import go here.
 	// Please be VERY prudent about adding to this list, since everything that's added to this list
 	// will need to be protected by strict compatibility guarantees.
-	if validImportRoot == "migrator" {
+	if strings.HasPrefix(validImportRoot, "migrator") {
 		allowedPackages = append(allowedPackages,
 			"pkg/auth",
 			"pkg/batcher",
@@ -220,7 +223,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/postgres/pgconfig",
 			"pkg/postgres/pgtest",
 			"pkg/postgres/pgutils",
-			"pkg/postgres/schema",
 			"pkg/postgres/walker",
 			"pkg/process/id",
 			"pkg/protoconv",
@@ -241,6 +243,16 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/uuid",
 			"pkg/version",
 		)
+
+		// Migrations shall not depend on current schemas. Each migration can include a copy of the schema before and
+		// after a specific migration.
+		if validImportRoot == "migrator" {
+			allowedPackages = append(allowedPackages, "pkg/postgres/schema")
+		}
+
+		if validImportRoot == "migrator/migrations" {
+			allowedPackages = append(allowedPackages, "migrator")
+		}
 	}
 
 	if validImportRoot == "sensor/debugger" {
