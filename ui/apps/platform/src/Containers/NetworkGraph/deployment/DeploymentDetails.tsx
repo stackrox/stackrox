@@ -97,26 +97,30 @@ function DeploymentDetails({
                                         direction={{ default: 'row' }}
                                         alignItems={{ default: 'alignItemsCenter' }}
                                     >
-                                        <FlexItem>
-                                            <Label
-                                                variant="outline"
-                                                color="red"
-                                                icon={<ExclamationCircleIcon />}
-                                            >
-                                                {numExternalFlows} external{' '}
-                                                {pluralize('flow', numExternalFlows)}
-                                            </Label>
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Label
-                                                variant="outline"
-                                                color="gold"
-                                                icon={<ExclamationCircleIcon />}
-                                            >
-                                                {numInternalFlows} internal{' '}
-                                                {pluralize('flow', numInternalFlows)}
-                                            </Label>
-                                        </FlexItem>
+                                        {numExternalFlows !== 0 && (
+                                            <FlexItem>
+                                                <Label
+                                                    variant="outline"
+                                                    color="red"
+                                                    icon={<ExclamationCircleIcon />}
+                                                >
+                                                    {numExternalFlows} external{' '}
+                                                    {pluralize('flow', numExternalFlows)}
+                                                </Label>
+                                            </FlexItem>
+                                        )}
+                                        {numInternalFlows !== 0 && (
+                                            <FlexItem>
+                                                <Label
+                                                    variant="outline"
+                                                    color="gold"
+                                                    icon={<ExclamationCircleIcon />}
+                                                >
+                                                    {numInternalFlows} internal{' '}
+                                                    {pluralize('flow', numInternalFlows)}
+                                                </Label>
+                                            </FlexItem>
+                                        )}
                                     </Flex>
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
