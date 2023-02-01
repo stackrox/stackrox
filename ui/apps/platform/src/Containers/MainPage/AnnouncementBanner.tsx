@@ -27,8 +27,9 @@ function AnnouncementBanner(): ReactElement | null {
                 variant={AlertVariant.info}
             >
                 <span className="pf-u-text-align-center">
-                    The next version of this product will switch to using Postgres for its data
-                    store. The version number will increase to 4.0.0.
+                    The next version of this product will be version 4.0.0. Central will be using
+                    Postgres for its data store starting in v4.0.0. You must backup your database
+                    before upgrading to 4.0.0.
                 </span>
                 <Button className="pf-u-ml-md" onClick={handleDismissClick} variant="link" isInline>
                     dismiss
