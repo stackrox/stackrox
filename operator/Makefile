@@ -165,33 +165,11 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 
 ##@ Dependencies download
 include $(PROJECT_DIR)/../make/github.mk
+include $(PROJECT_DIR)/../make/gotools.mk
 
-## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.5
-CONTROLLER_TOOLS_VERSION ?= v0.10.0
-
-## Tool Binaries
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-ENVTEST ?= $(LOCALBIN)/setup-envtest
-
-
-KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
-
-.PHONY: kustomize
-kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
-$(KUSTOMIZE): $(LOCALBIN)
-	test -s $(LOCALBIN)/kustomize || { curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
-
-.PHONY: controller-gen
-controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
-
-.PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+$(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools)
+$(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools)
+$(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v4, tools)
 
 OPERATOR_SDK_VERSION = 1.24.1
 OPERATOR_SDK = $(LOCALBIN)/operator-sdk-$(OPERATOR_SDK_VERSION)
@@ -214,25 +192,6 @@ kuttl: ## Download kuttl.
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(KUTTL) $${KUTTL_URL}
 
-ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
-.PHONY: envtest
-envtest: ## Download envtest-setup locally if necessary.
-	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
-
-# go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
-define go-get-tool
-$(SILENT)[ -x $(1) ] || { \
-set -e ;\
-TMP_DIR=$$(mktemp -d) ;\
-cd $$TMP_DIR ;\
-go mod init tmp ;\
-echo "Downloading $(2)" ;\
-go get -d $(2) ;\
-go build -o $(1) $(firstword $(subst @, ,$(2))) ;\
-rm -rf $$TMP_DIR ;\
-}
-endef
-
 ##@ Development
 
 
@@ -241,11 +200,11 @@ parent-proto-generate: ## Make sure ../generated directory has up-to-date conten
 	$(MAKE) -C .. proto-generated-srcs
 
 .PHONY: manifests
-manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: parent-proto-generate $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: parent-proto-generate $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
 	go fmt ./apis/...
@@ -262,7 +221,7 @@ vet: ## Run go vet against code.
 ENVTEST_K8S_VERSION = 1.24
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet $(ENVTEST) ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: validate-crs
@@ -358,15 +317,15 @@ olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes 
 	$(OPERATOR_SDK) olm uninstall
 
 .PHONY: install
-install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+install: check-ci-setup manifests $(KUSTOMIZE) ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
-uninstall: check-ci-setup manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+uninstall: check-ci-setup manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
+deploy: check-ci-setup manifests $(KUSTOMIZE) ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
 	rm -rf config/local-deploy-versioned && \
 		mkdir config/local-deploy-versioned && \
 		cd config/local-deploy-versioned && \
@@ -375,7 +334,7 @@ deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s c
 	$(KUSTOMIZE) build config/local-deploy-versioned | kubectl create -f -
 
 .PHONY: undeploy
-undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
+undeploy: check-ci-setup $(KUSTOMIZE) ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-via-olm
@@ -414,7 +373,7 @@ ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
-bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
+bundle: manifests $(KUSTOMIZE) operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 # We hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
 	$(OPERATOR_SDK) generate kustomize manifests -q
