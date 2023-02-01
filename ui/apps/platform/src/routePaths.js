@@ -2,9 +2,6 @@
  * Application route paths constants.
  */
 
-import React from 'react';
-import { Badge, Flex, FlexItem } from '@patternfly/react-core';
-
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
 
 export const mainPath = '/main';
