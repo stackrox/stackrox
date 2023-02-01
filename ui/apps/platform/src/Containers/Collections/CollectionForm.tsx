@@ -178,8 +178,8 @@ const validationSchema = yup.object({
             (name) => name?.trim() === name
         )
         .matches(
-            /^[a-zA-Z0-9 .-]*$/,
-            'Only letters, numbers, dot, dash, and space characters are allowed in collection names'
+            /^[a-zA-Z0-9 .-<>]*$/,
+            'Only the following characters are allowed in collection names: a-z A-Z 0-9 < . - >'
         )
         .required(),
     description: yup.string(),
