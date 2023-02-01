@@ -176,7 +176,7 @@ func getCollectionsToEmbed(scope *storage.SimpleAccessScope) ([]*storage.Resourc
 // Adds the embedded and root collections to the collection store.
 func createCollectionsForScope(ctx context.Context, scopeID string,
 	accessScopeStore accessScopePostgres.Store, collectionStore collectionPostgres.Store) (string, bool) {
-	newScopeID, err := getNewRoleAccessScopeID(scopeID)
+	newScopeID, err := getNewAccessScopeID(scopeID)
 	if err != nil {
 		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Report configuration had an invalid scope id %q.", scopeID), scopeID))
 		return "", false
@@ -249,7 +249,10 @@ func moveScopesInReportsToCollections(gormDB *gorm.DB, db *pgxpool.Pool) error {
 				// Do it one at a time even though it's not as performant so that at least some reports will get migrated
 				// even if any fail. It should be rare though.
 				if err := reportConfigStore.Upsert(ctx, config); err != nil {
-					log.Error(errorWithResolutionMsg(errors.Wrap(err, "Failed to update report configuration with collections to new scope"), scopeID))
+					log.Error(errors.Wrapf(err, "Failed to attach collection with id %s to report configuration '%s'. "+
+						"Please manually edit the report configuration to use this collection. "+
+						"Note that reports will not function correctly until a collection is attached.",
+						newScopeID, config.GetName()))
 				}
 			}
 		}
@@ -265,21 +268,21 @@ func errorWithResolutionMsg(err error, scopeID string) string {
 	return err.Error() + "\n" +
 		" The scope is attached to the following report configurations: " +
 		"[" + strings.Join(configNames, ", ") + "]; " +
-		"Please manually create an equivalent collection and attach it to the listed report configurations. " +
+		"Please manually create an equivalent collection and edit the listed report configurations to use this collection. " +
 		"Note that reports will not function correctly until a collection is attached."
 }
 
-// Copied from migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/migration.go
-func getNewRoleAccessScopeID(scopeID string) (string, error) {
-	roleAccessScopeID := strings.TrimPrefix(scopeID, accessScopeIDPrefix)
-	if replacement, found := accessScopeIDMapping[roleAccessScopeID]; found {
-		roleAccessScopeID = replacement
+// Copied and slightly modified func getRoleAccessScopeID from migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/migration.go
+func getNewAccessScopeID(scopeID string) (string, error) {
+	accessScopeID := strings.TrimPrefix(scopeID, accessScopeIDPrefix)
+	if replacement, found := accessScopeIDMapping[accessScopeID]; found {
+		accessScopeID = replacement
 	}
-	_, accessIDParseErr := uuid.FromString(roleAccessScopeID)
+	_, accessIDParseErr := uuid.FromString(accessScopeID)
 	if accessIDParseErr != nil {
 		return "", accessIDParseErr
 	}
-	return roleAccessScopeID, nil
+	return accessScopeID, nil
 }
 
 func init() {

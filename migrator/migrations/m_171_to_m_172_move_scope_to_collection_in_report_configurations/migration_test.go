@@ -145,18 +145,23 @@ var (
 		},
 		"config3": {
 			Id:      "config3",
-			Name:    "unmigratable",
+			Name:    "unmigratable: bad/old scope_id",
 			ScopeId: accessScopeIDPrefix + id2,
 		},
 		"config4": {
 			Id:      "config4",
-			Name:    "unmigratable",
+			Name:    "unmigratable: bad/old scope_id",
 			ScopeId: badID,
 		},
 		"config5": {
 			Id:      "config5",
-			Name:    "unmigratable",
+			Name:    "unmigratable: bad/old scope_id",
 			ScopeId: accessScopeIDPrefix + badID,
+		},
+		"config6": {
+			Id:      "config6",
+			Name:    "unmigratable: complex SAC",
+			ScopeId: id2,
 		},
 	}
 
@@ -443,11 +448,17 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 			s.Equal(fmt.Sprintf(rootCollectionTemplate, scope.GetName()), collection.GetName())
 		} else {
 			s.False(found)
-
-			// If migration fails, the scopeID is not updated at all
+			// If migration fails, scopeID is not updated at all
 			_, scopeFound, err := s.accessScopeStore.Get(ctx, config.GetScopeId())
-			s.Error(err)
-			s.False(scopeFound)
+			if config.GetName() == "unmigratable: bad/old scope_id" {
+				// migration failed due to 1)bad scopeID or 2)old style scopeID that can be converted to uuid, but the SAC is complex
+				s.Error(err)
+				s.False(scopeFound)
+			} else {
+				// report config already has uuid type scopeID but collection generation fails due to complex SAC
+				s.NoError(err)
+				s.True(scopeFound)
+			}
 		}
 		return nil
 	})
