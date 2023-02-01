@@ -9,5 +9,12 @@ jobs:
     name: Slack Tagged Notice
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          echo "Ref: ${{ github.ref_name }}"
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - id: is_release_check
+        run: |
+          source scripts/ci/lib.sh
+          slack_prow_notice "${{ github.ref_name }}"
