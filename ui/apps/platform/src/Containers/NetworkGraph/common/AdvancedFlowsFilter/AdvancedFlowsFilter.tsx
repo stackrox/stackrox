@@ -12,6 +12,7 @@ import { AdvancedFlowsFilterType } from './types';
 import { filtersToSelections, selectionsToFilters } from './advancedFlowsFilterUtils';
 
 export type AdvancedFlowsFilterProps = {
+    isBaseline?: boolean;
     filters: AdvancedFlowsFilterType;
     setFilters: React.Dispatch<React.SetStateAction<AdvancedFlowsFilterType>>;
     allUniquePorts: string[];
@@ -25,6 +26,7 @@ export const defaultAdvancedFlowsFilters: AdvancedFlowsFilterType = {
 };
 
 function AdvancedFlowsFilter({
+    isBaseline = false,
     filters,
     setFilters,
     allUniquePorts,
@@ -82,10 +84,14 @@ function AdvancedFlowsFilter({
             isGrouped
             position={SelectPosition.right}
         >
-            <SelectGroup label="Deployment flows">
-                <SelectOption value="anomalous">Anomalous flows</SelectOption>
-                <SelectOption value="baseline">Baselined flows</SelectOption>
-            </SelectGroup>
+            {!isBaseline ? (
+                <SelectGroup label="Deployment flows">
+                    <SelectOption value="anomalous">Anomalous flows</SelectOption>
+                    <SelectOption value="baseline">Baselined flows</SelectOption>
+                </SelectGroup>
+            ) : (
+                <></>
+            )}
             <SelectGroup label="Flow directionality">
                 <SelectOption value="ingress">Ingress (inbound)</SelectOption>
                 <SelectOption value="egress">Egress (outbound)</SelectOption>

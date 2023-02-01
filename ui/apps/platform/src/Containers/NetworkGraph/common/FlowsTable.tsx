@@ -173,9 +173,9 @@ function FlowsTable({
                         />
                     )}
                     {isBaselineSimulation && <Th />}
-                    <Th width={40}>{columnNames.entity}</Th>
-                    <Th>{columnNames.direction}</Th>
-                    <Th>{columnNames.portAndProtocol}</Th>
+                    <Th>{columnNames.entity}</Th>
+                    <Th modifier="nowrap">{columnNames.direction}</Th>
+                    <Th modifier="nowrap">{columnNames.portAndProtocol}</Th>
                     <Th />
                 </Tr>
             </Thead>

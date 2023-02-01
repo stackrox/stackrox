@@ -203,7 +203,6 @@ function DeploymentDetails({
                                                     1 or more policies regulating ingress traffic
                                                 </Label>
                                             </Button>
-                                            ;
                                         </LabelGroup>
                                     )}
                                     {networkPolicyState === 'none' && (
