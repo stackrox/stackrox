@@ -19,9 +19,11 @@ import (
 )
 
 const (
-	id0 = "A161527B-D34F-42B8-A783-23E39B4DE15A"
-	id1 = "DC04A5F8-6018-46E5-B590-87325FBF1945"
-	id2 = "9C91FA2B-AE95-4C74-98A7-17AF76CC8209"
+	id0   = "A161527B-D34F-42B8-A783-23E39B4DE15A"
+	id1   = "DC04A5F8-6018-46E5-B590-87325FBF1945"
+	id2   = "9C91FA2B-AE95-4C74-98A7-17AF76CC8209"
+	id3   = "DE69BC7B-6331-4125-BC99-23877820DC74"
+	badID = "thisisnotauuid"
 )
 
 var (
@@ -109,23 +111,52 @@ var (
 				},
 			},
 		},
+		{
+			Id:   id3,
+			Name: id3,
+			Rules: &storage.SimpleAccessScope_Rules{
+				IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{
+						ClusterName:   "c9",
+						NamespaceName: "ns9",
+					},
+				},
+			},
+		},
 	}
 
 	configIDToReportConfig = map[string]*storage.ReportConfiguration{
 		"config0": {
-			Id:      "config0",
-			Name:    "migratable",
-			ScopeId: id0,
+			Id:   "config0",
+			Name: "migratable",
+			// Report config should have the un-migrated SAC ID due to the original migration (n52_to_n53) not updating it
+			ScopeId: accessScopeIDPrefix + id0,
 		},
 		"config1": {
 			Id:      "config1",
 			Name:    "migratable",
-			ScopeId: id1,
+			ScopeId: accessScopeIDPrefix + id1,
 		},
 		"config2": {
-			Id:      "config2",
+			Id:   "config2",
+			Name: "migratable",
+			// This is a scope that was created after SAC migration, so it should've always been an UUID
+			ScopeId: id3,
+		},
+		"config3": {
+			Id:      "config3",
 			Name:    "unmigratable",
-			ScopeId: id2,
+			ScopeId: accessScopeIDPrefix + id2,
+		},
+		"config4": {
+			Id:      "config4",
+			Name:    "unmigratable",
+			ScopeId: badID,
+		},
+		"config5": {
+			Id:      "config5",
+			Name:    "unmigratable",
+			ScopeId: accessScopeIDPrefix + badID,
 		},
 	}
 
@@ -303,6 +334,37 @@ var (
 				{Id: fmt.Sprintf(embeddedCollectionTemplate, 5, id1)},
 			},
 		},
+		fmt.Sprintf(embeddedCollectionTemplate, 0, id3): {
+			Id:   fmt.Sprintf(embeddedCollectionTemplate, 0, id3),
+			Name: fmt.Sprintf(embeddedCollectionTemplate, 0, id3),
+			ResourceSelectors: []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: search.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{Value: "c9", MatchType: storage.MatchType_EXACT},
+							},
+						},
+						{
+							FieldName: search.Namespace.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{Value: "ns9", MatchType: storage.MatchType_EXACT},
+							},
+						},
+					},
+				},
+			},
+		},
+		fmt.Sprintf(rootCollectionTemplate, id3): {
+			Id:   id3,
+			Name: fmt.Sprintf(rootCollectionTemplate, id3),
+			EmbeddedCollections: []*storage.ResourceCollection_EmbeddedResourceCollection{
+				{Id: fmt.Sprintf(embeddedCollectionTemplate, 0, id3)},
+			},
+		},
 	}
 )
 
@@ -331,7 +393,7 @@ func (s *reportConfigsMigrationTestSuite) SetupTest() {
 
 func (s *reportConfigsMigrationTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
-	scopeIDToConfigNames = make(map[string][]string)
+	scopeIDToConfigs = make(map[string][]*storage.ReportConfiguration)
 }
 
 func (s *reportConfigsMigrationTestSuite) TestMigration() {
@@ -366,19 +428,26 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 
 	// check all migratable reports have migrated and unmigratable reports remain the same
 	err = s.reportConfigStore.Walk(ctx, func(config *storage.ReportConfiguration) error {
-		// Generated root collection will have the same ID as the scope that was attached to the report before migration.
-		// So, we can use the same config.scopeID to get both the access scope and the collection
-		scope, found, err := s.accessScopeStore.Get(ctx, config.GetScopeId())
-		s.NoError(err)
-		s.True(found)
-
 		collection, found, err := s.collectionStore.Get(ctx, config.GetScopeId())
 		s.NoError(err)
 		if config.GetName() == "migratable" {
 			s.True(found)
+
+			// The scopeId in the report should be updated to remove the prefix and just be a UUID (same as in n52_to_n53).
+			// The generated root collection, original scope and this now converted scopeId should all be the same.
+			// So, we can use the same config.scopeID to get both the access scope and the collection
+			scope, scopeFound, err := s.accessScopeStore.Get(ctx, config.GetScopeId())
+			s.NoError(err)
+			s.True(scopeFound)
+
 			s.Equal(fmt.Sprintf(rootCollectionTemplate, scope.GetName()), collection.GetName())
 		} else {
 			s.False(found)
+
+			// If migration fails, the scopeID is not updated at all
+			_, scopeFound, err := s.accessScopeStore.Get(ctx, config.GetScopeId())
+			s.Error(err)
+			s.False(scopeFound)
 		}
 		return nil
 	})
