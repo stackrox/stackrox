@@ -58,7 +58,7 @@ function DetailSection({ title, children }) {
             onToggle={onToggle}
             toggleContent={
                 <TextContent>
-                    <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                    <Text component={TextVariants.h1} className="pf-u-font-size-lg">
                         {title}
                     </Text>
                 </TextContent>
