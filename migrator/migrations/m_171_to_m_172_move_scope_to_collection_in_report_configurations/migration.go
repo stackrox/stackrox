@@ -26,6 +26,8 @@ import (
 const (
 	startSeqNum = 171
 
+	accessScopeIDPrefix = "io.stackrox.authz.accessscope."
+
 	embeddedCollectionTemplate = "System-generated embedded collection %d for scope <%s>"
 	rootCollectionTemplate     = "System-generated root collection for scope <%s>"
 )
@@ -45,8 +47,14 @@ var (
 		},
 	}
 
-	scopeIDToConfigNames = make(map[string][]string)
-	idGenerator          func(collectionName string) string
+	scopeIDToConfigs = make(map[string][]*storage.ReportConfiguration)
+	idGenerator      func(collectionName string) string
+
+	// Copied from migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/migration.go
+	accessScopeIDMapping = map[string]string{
+		"denyall":      "ffffffff-ffff-fff4-f5ff-fffffffffffe",
+		"unrestricted": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+	}
 )
 
 func buildEmbeddedCollection(scopeName string, index int, rules []*storage.SelectorRule) *storage.ResourceCollection {
@@ -167,26 +175,31 @@ func getCollectionsToEmbed(scope *storage.SimpleAccessScope) ([]*storage.Resourc
 // Creates embedded and root collections for the access scope with ID scopeID.
 // Adds the embedded and root collections to the collection store.
 func createCollectionsForScope(ctx context.Context, scopeID string,
-	accessScopeStore accessScopePostgres.Store, collectionStore collectionPostgres.Store) error {
-	scope, found, err := accessScopeStore.Get(ctx, scopeID)
+	accessScopeStore accessScopePostgres.Store, collectionStore collectionPostgres.Store) (string, bool) {
+	newScopeID, err := getNewAccessScopeID(scopeID)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to fetch scope with id %s. ", scopeID), scopeID))
-		return nil
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Report configuration had an invalid scope id %q.", scopeID), scopeID))
+		return "", false
+	}
+	scope, found, err := accessScopeStore.Get(ctx, newScopeID)
+	if err != nil {
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to fetch scope with id %q. ", scopeID), scopeID))
+		return "", false
 	}
 	if !found {
-		log.Error(errorWithResolutionMsg(errors.Errorf("Scope with id %s not found.", scopeID), scopeID))
-		return nil
+		log.Error(errorWithResolutionMsg(errors.Errorf("Scope with id %q not found.", scopeID), scopeID))
+		return "", false
 	}
 
 	collectionsToEmbed, err := getCollectionsToEmbed(scope)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
-		return nil
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%q>", scope.GetName()), scopeID))
+		return "", false
 	}
 	err = collectionStore.UpsertMany(ctx, collectionsToEmbed)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
-		return nil
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%q>", scope.GetName()), scopeID))
+		return "", false
 	}
 	embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(collectionsToEmbed))
 	for _, collection := range collectionsToEmbed {
@@ -196,16 +209,17 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 	}
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
 	rootCollection := &storage.ResourceCollection{
-		Id:                  scopeID,
+		Id:                  newScopeID,
 		Name:                fmt.Sprintf(rootCollectionTemplate, scope.GetName()),
 		CreatedAt:           timeNow,
 		LastUpdated:         timeNow,
 		EmbeddedCollections: embeddedCollections,
 	}
 	if err := collectionStore.Upsert(ctx, rootCollection); err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%q>", scope.GetName()), scopeID))
+		return "", false
 	}
-	return nil
+	return newScopeID, true
 }
 
 func moveScopesInReportsToCollections(gormDB *gorm.DB, db *pgxpool.Pool) error {
@@ -216,28 +230,59 @@ func moveScopesInReportsToCollections(gormDB *gorm.DB, db *pgxpool.Pool) error {
 	collectionStore := collectionPostgres.New(db)
 
 	err := reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
-		scopeIDToConfigNames[reportConfig.GetScopeId()] = append(scopeIDToConfigNames[reportConfig.GetScopeId()], reportConfig.GetName())
+		scopeIDToConfigs[reportConfig.GetScopeId()] = append(scopeIDToConfigs[reportConfig.GetScopeId()], reportConfig)
 		return nil
 	})
 	if err != nil {
 		return err
 	}
 
-	for scopeID := range scopeIDToConfigNames {
-		err = createCollectionsForScope(ctx, scopeID, accessScopeStore, collectionStore)
-		if err != nil {
-			return err
+	for scopeID := range scopeIDToConfigs {
+		newScopeID, created := createCollectionsForScope(ctx, scopeID, accessScopeStore, collectionStore)
+		if created && newScopeID != scopeID {
+			// Update each of the reports with the new scope id.
+			// This is required since the scope id may have changed between RocksDB and Postgres.
+			// See migration n52_to_n53
+			configs := scopeIDToConfigs[scopeID]
+			for _, config := range configs {
+				config.ScopeId = newScopeID
+				// Do it one at a time even though it's not as performant so that at least some reports will get migrated
+				// even if any fail. It should be rare though.
+				if err := reportConfigStore.Upsert(ctx, config); err != nil {
+					log.Error(errors.Wrapf(err, "Failed to attach collection with id %s to report configuration '%s'. "+
+						"Please manually edit the report configuration to use this collection. "+
+						"Note that reports will not function correctly until a collection is attached.",
+						newScopeID, config.GetName()))
+				}
+			}
 		}
 	}
 	return err
 }
 
 func errorWithResolutionMsg(err error, scopeID string) string {
+	var configNames []string
+	for _, config := range scopeIDToConfigs[scopeID] {
+		configNames = append(configNames, config.GetName())
+	}
 	return err.Error() + "\n" +
 		" The scope is attached to the following report configurations: " +
-		"[" + strings.Join(scopeIDToConfigNames[scopeID], ", ") + "]; " +
-		"Please manually create an equivalent collection and attach it to the listed report configurations. " +
+		"[" + strings.Join(configNames, ", ") + "]; " +
+		"Please manually create an equivalent collection and edit the listed report configurations to use this collection. " +
 		"Note that reports will not function correctly until a collection is attached."
+}
+
+// Copied and slightly modified func getRoleAccessScopeID from migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/migration.go
+func getNewAccessScopeID(scopeID string) (string, error) {
+	accessScopeID := strings.TrimPrefix(scopeID, accessScopeIDPrefix)
+	if replacement, found := accessScopeIDMapping[accessScopeID]; found {
+		accessScopeID = replacement
+	}
+	_, accessIDParseErr := uuid.FromString(accessScopeID)
+	if accessIDParseErr != nil {
+		return "", accessIDParseErr
+	}
+	return accessScopeID, nil
 }
 
 func init() {
