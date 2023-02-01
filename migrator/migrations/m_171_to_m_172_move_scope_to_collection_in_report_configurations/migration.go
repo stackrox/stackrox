@@ -178,27 +178,27 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 	accessScopeStore accessScopePostgres.Store, collectionStore collectionPostgres.Store) (string, bool) {
 	newScopeID, err := getNewRoleAccessScopeID(scopeID)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Report configuration had an invalid scope id %s.", scopeID), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Report configuration had an invalid scope id %q.", scopeID), scopeID))
 		return "", false
 	}
 	scope, found, err := accessScopeStore.Get(ctx, newScopeID)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to fetch scope with id %s. ", scopeID), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to fetch scope with id %q. ", scopeID), scopeID))
 		return "", false
 	}
 	if !found {
-		log.Error(errorWithResolutionMsg(errors.Errorf("Scope with id %s not found.", scopeID), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Errorf("Scope with id %q not found.", scopeID), scopeID))
 		return "", false
 	}
 
 	collectionsToEmbed, err := getCollectionsToEmbed(scope)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%q>", scope.GetName()), scopeID))
 		return "", false
 	}
 	err = collectionStore.UpsertMany(ctx, collectionsToEmbed)
 	if err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%q>", scope.GetName()), scopeID))
 		return "", false
 	}
 	embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(collectionsToEmbed))
@@ -216,7 +216,7 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 		EmbeddedCollections: embeddedCollections,
 	}
 	if err := collectionStore.Upsert(ctx, rootCollection); err != nil {
-		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%s>", scope.GetName()), scopeID))
+		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%q>", scope.GetName()), scopeID))
 		return "", false
 	}
 	return newScopeID, true
