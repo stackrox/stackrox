@@ -27,6 +27,7 @@ const useCaseTypes = {
     VIOLATIONS: 'violations',
     POLICIES: 'policies',
     NETWORK: 'network',
+    NETWORK_GRAPH: 'network-graph',
     USER: 'user',
 };
 

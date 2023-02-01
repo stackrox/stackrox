@@ -1,6 +1,14 @@
 import React, { ReactElement } from 'react';
 import { useLocation, Location } from 'react-router-dom';
-import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core';
+import {
+    Nav,
+    NavList,
+    NavExpandable,
+    PageSidebar,
+    Flex,
+    FlexItem,
+    Badge,
+} from '@patternfly/react-core';
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -80,7 +88,20 @@ function NavigationSidebar({
                     <LeftNavItem
                         isActive={location.pathname.includes(networkBasePathPF)}
                         path={networkBasePathPF}
-                        title={basePathToLabelMap[networkBasePathPF]}
+                        title={
+                            <Flex>
+                                <FlexItem>Network Graph</FlexItem>
+                                <FlexItem>
+                                    <Badge
+                                        style={{
+                                            backgroundColor: 'var(--pf-global--palette--cyan-400)',
+                                        }}
+                                    >
+                                        2.0 preview
+                                    </Badge>
+                                </FlexItem>
+                            </Flex>
+                        }
                     />
                 )}
                 <LeftNavItem
