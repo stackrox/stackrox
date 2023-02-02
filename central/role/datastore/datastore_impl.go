@@ -203,7 +203,7 @@ func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *st
 	return nil
 }
 
-func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
+func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet, requestOrigin storage.Traits_Origin) error {
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
@@ -218,7 +218,11 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 	defer ds.lock.Unlock()
 
 	// Verify storage constraints.
-	if err := ds.verifyPermissionSetIDExists(ctx, permissionSet.GetId()); err != nil {
+	existingPermissionSet, err := ds.verifyPermissionSetIDExists(ctx, permissionSet.GetId())
+	if err != nil {
+		return err
+	}
+	if err := verifyPermissionSetOriginMatches(existingPermissionSet, requestOrigin); err != nil {
 		return err
 	}
 
@@ -231,7 +235,7 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 	return nil
 }
 
-func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) error {
+func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string, requestOrigin storage.Traits_Origin) error {
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
@@ -247,6 +251,9 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 		return errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
 	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
+		return err
+	}
+	if err := verifyPermissionSetOriginMatches(permissionSet, requestOrigin); err != nil {
 		return err
 	}
 
@@ -266,6 +273,14 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 		return err
 	}
 
+	return nil
+}
+
+func verifyPermissionSetOriginMatches(ps *storage.PermissionSet, requestOrigin storage.Traits_Origin) error {
+	if ps.GetTraits().GetOrigin() != requestOrigin {
+		return errors.Wrapf(errox.InvalidArgs, "permission set %q is %s, cannot be modified or deleted in %s manner",
+			ps.GetName(), ps.GetTraits().GetOrigin(), requestOrigin)
+	}
 	return nil
 }
 
@@ -445,7 +460,7 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 
 func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *storage.Role) error {
 	// Verify storage constraints.
-	if err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId()); err != nil {
+	if _, err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId()); err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
 	}
 	if err := ds.verifyAccessScopeIDExists(ctx, role.GetAccessScopeId()); err != nil {
@@ -463,16 +478,16 @@ func verifyNotDefaultRole(role *storage.Role) error {
 }
 
 // Returns errox.NotFound if there is no permission set with the supplied ID.
-func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id string) error {
-	_, found, err := ds.permissionSetStorage.Get(ctx, id)
+func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id string) (*storage.PermissionSet, error) {
+	ps, found, err := ds.permissionSetStorage.Get(ctx, id)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "id = %s", id)
+		return nil, errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
-	return nil
+	return ps, nil
 }
 
 // Returns errox.AlreadyExists if there is a permission set with the same ID.
