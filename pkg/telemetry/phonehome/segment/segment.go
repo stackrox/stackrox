@@ -15,9 +15,8 @@ var (
 )
 
 type segmentTelemeter struct {
-	client segment.Client
-	userID string
-	ctx    *segment.Context
+	client   segment.Client
+	clientID string
 }
 
 func getMessageType(msg segment.Message) string {
@@ -68,7 +67,7 @@ func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Dura
 		return nil
 	}
 
-	return &segmentTelemeter{client: client, userID: clientID}
+	return &segmentTelemeter{client: client, clientID: clientID}
 }
 
 type logWrapper struct {
@@ -95,7 +94,7 @@ func (t *segmentTelemeter) overrideUserID(o *telemeter.CallOptions) string {
 	if o.UserID != "" {
 		return o.UserID
 	}
-	return t.userID
+	return t.clientID
 }
 
 func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
