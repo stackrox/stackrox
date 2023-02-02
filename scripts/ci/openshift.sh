@@ -33,7 +33,7 @@ scale_worker_nodes() {
     while [[ "$(get_running_worker_count)" != "$expected_count" ]]; do
         info "Current machine state does not have the running count we desire ($expected_count)"
         oc  -n openshift-machine-api get machines
-        sleep 60
+        sleep 20
     done
 }
 
