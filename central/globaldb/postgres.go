@@ -62,6 +62,7 @@ SELECT TABLE_NAME
 var (
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
+	postgresConnectTimeout     = 5 * time.Second
 	postgresDB                 *pgxpool.Pool
 	pgSync                     sync.Once
 
@@ -95,6 +96,9 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 		dbConfig.ConnConfig.Database = activeDB
 
 		if err := retry.WithRetry(func() error {
+			ctx, cancel := context.WithTimeout(ctx, postgresConnectTimeout)
+			defer cancel()
+
 			postgresDB, err = pgxpool.NewWithConfig(ctx, dbConfig)
 			return err
 		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
