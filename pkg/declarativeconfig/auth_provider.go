@@ -12,23 +12,38 @@ type ClaimMapping struct {
 	Name string `yaml:"name,omitempty"`
 }
 
-// OIDCConfig contains config values for OIDC auth provider.
-type OIDCConfig struct {
-	Issuer                    string `yaml:"issuer,omitempty"`
-	CallbackMode              string `yaml:"mode,omitempty"`
-	ClientID                  string `yaml:"clientID,omitempty"`
-	ClientSecret              string `yaml:"clientSecret,omitempty"`
-	DisableOfflineAccessScope bool   `yaml:"disableOfflineAccessScope,omitempty"`
-	DontUseClientSecretConfig bool   `yaml:"dontUseClientSecretConfig,omitempty"`
+// Group is representation of storage.Group that supports transformation from YAML.
+type Group struct {
+	AttributeKey   string `yaml:"key,omitempty"`
+	AttributeValue string `yaml:"value,omitempty"`
+	RoleName       string `yaml:"role,omitempty"`
 }
 
-// SAMLConfig contains config values for SAML auth provider.
+// OIDCConfig contains config values for OIDC auth provider.
+type OIDCConfig struct {
+	Issuer string `yaml:"issuer,omitempty"`
+	// Depending on callback mode, different OAuth 2.0 would be preferred.
+	// Possible values are: auto, post, query, fragment.
+	CallbackMode string `yaml:"mode,omitempty"`
+	ClientID     string `yaml:"clientID,omitempty"`
+	ClientSecret string `yaml:"clientSecret,omitempty"`
+	// Disables request for "offline_access" scope from OIDC identity provider.
+	DisableOfflineAccessScope bool `yaml:"disableOfflineAccessScope,omitempty"`
+	// Disables request for "offline_access" scope from OIDC identity provider.
+	DontUseClientSecretConfig bool `yaml:"dontUseClientSecretConfig,omitempty"`
+}
+
+// SAMLConfig contains config values for SAML 2.0 auth provider.
+// There are two ways to configure SAML: static and dynamic.
+// For dynamic configuration, you only need to specify spIssuer and metadataURL.
+// For static configuration, specify spIssuer, certPEM, ssoURL and nameIdFormat.
 type SAMLConfig struct {
-	SpIssuer     string `yaml:"spIssuer,omitempty"`
-	MetadataURL  string `yaml:"metadataURL,omitempty"`
-	CertPEM      string `yaml:"certPEM,omitempty"`
+	SpIssuer    string `yaml:"spIssuer,omitempty"`
+	MetadataURL string `yaml:"metadataURL,omitempty"`
+	// SAML 2.0 IdP Certificate in PEM format
+	Cert         string `yaml:"cert,omitempty"`
 	SsoURL       string `yaml:"ssoURL,omitempty"`
-	NameidFormat string `yaml:"nameIdFormat,omitempty"`
+	NameIDFormat string `yaml:"nameIdFormat,omitempty"`
 }
 
 // IAPConfig contains config values for IAP auth provider.
@@ -38,7 +53,15 @@ type IAPConfig struct {
 
 // UserpkiConfig contains config values for User Certificates auth provider.
 type UserpkiConfig struct {
-	Keys string `yaml:"keys,omitempty"`
+	// Certificate authorities in PEM format
+	CertificateAuthorities string `yaml:"certificateAuthorities,omitempty"`
+}
+
+// OpenshiftConfig contains config values for Openshift auth provider.
+// The only value "enable" is a flag which can only be set to true.
+// If you don't want auth provider to be Openshift auth provider, don't specify "openshift" section.
+type OpenshiftConfig struct {
+	Enable bool `yaml:"enable,omitempty"`
 }
 
 // AuthProvider is representation of storage.AuthProvider that supports transformation from YAML.
@@ -56,12 +79,5 @@ type AuthProvider struct {
 	SAMLConfig         *SAMLConfig         `yaml:"saml,omitempty"`
 	IAPConfig          *IAPConfig          `yaml:"iap,omitempty"`
 	UserpkiConfig      *UserpkiConfig      `yaml:"userpki,omitempty"`
-	EnableOpenshift    bool                `yaml:"enableOpenshift,omitempty"`
-}
-
-// Group is representation of storage.Group that supports transformation from YAML.
-type Group struct {
-	AttributeKey   string `yaml:"key,omitempty"`
-	AttributeValue string `yaml:"value,omitempty"`
-	RoleName       string `yaml:"role,omitempty"`
+	OpenshiftConfig    *OpenshiftConfig    `yaml:"openshift,omitempty"`
 }

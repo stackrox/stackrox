@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestAuthProviderYAMLTransformation(t *testing.T) {
+func TestAuthProviderYAMLTransformation_OIDC(t *testing.T) {
 	data := []byte(`
 name: test-name
 requiredAttributes:
@@ -63,4 +63,145 @@ oidc:
 	assert.Equal(t, "auto select", ap.OIDCConfig.CallbackMode)
 	assert.Equal(t, "https://stackrox.com", ap.OIDCConfig.Issuer)
 	assert.True(t, ap.OIDCConfig.DisableOfflineAccessScope)
+}
+
+func TestAuthProviderYAMLTransformation_SAML(t *testing.T) {
+	// 1. Configure SAML using metadata URL.
+	data := []byte(`
+name: test-name
+saml:
+  spIssuer: "https://stackrox.com"
+  metadataURL: "https://stackrox.com/metadata"
+`)
+	ap := AuthProvider{}
+
+	err := yaml.Unmarshal(data, &ap)
+	assert.NoError(t, err)
+	assert.Equal(t, "test-name", ap.Name)
+	assert.Empty(t, ap.MinimumRoleName)
+	assert.Empty(t, ap.UIEndpoint)
+	assert.Len(t, ap.ExtraUIEndpoints, 0)
+	assert.Len(t, ap.Groups, 0)
+	assert.Len(t, ap.RequiredAttributes, 0)
+
+	assert.NotNil(t, ap.SAMLConfig)
+	assert.Equal(t, "https://stackrox.com", ap.SAMLConfig.SpIssuer)
+	assert.Equal(t, "https://stackrox.com/metadata", ap.SAMLConfig.MetadataURL)
+
+	assert.Nil(t, ap.OIDCConfig)
+	assert.Nil(t, ap.IAPConfig)
+	assert.Nil(t, ap.OpenshiftConfig)
+	assert.Nil(t, ap.UserpkiConfig)
+
+	// 2. Configure SAML without metadata URL.
+	data = []byte(`
+name: test-name
+saml:
+  spIssuer: "https://stackrox.com"
+  ssoURL: "https://auth.stackrox.com"
+  cert: "cert-pem"
+  nameIdFormat: "emailAddress"
+`)
+	ap = AuthProvider{}
+
+	err = yaml.Unmarshal(data, &ap)
+	assert.NoError(t, err)
+	assert.Equal(t, "test-name", ap.Name)
+	assert.Empty(t, ap.MinimumRoleName)
+	assert.Empty(t, ap.UIEndpoint)
+	assert.Len(t, ap.ExtraUIEndpoints, 0)
+	assert.Len(t, ap.Groups, 0)
+	assert.Len(t, ap.RequiredAttributes, 0)
+
+	assert.NotNil(t, ap.SAMLConfig)
+	assert.Equal(t, "https://stackrox.com", ap.SAMLConfig.SpIssuer)
+	assert.Equal(t, "https://auth.stackrox.com", ap.SAMLConfig.SsoURL)
+	assert.Equal(t, "cert-pem", ap.SAMLConfig.Cert)
+	assert.Equal(t, "emailAddress", ap.SAMLConfig.NameIDFormat)
+
+	assert.Nil(t, ap.OIDCConfig)
+	assert.Nil(t, ap.IAPConfig)
+	assert.Nil(t, ap.OpenshiftConfig)
+	assert.Nil(t, ap.UserpkiConfig)
+}
+
+func TestAuthProviderYAMLTransformation_UserCertificates(t *testing.T) {
+	// 1. Configure SAML using metadata URL.
+	data := []byte(`
+name: test-name
+userpki:
+  certificateAuthorities: "certs"
+`)
+	ap := AuthProvider{}
+
+	err := yaml.Unmarshal(data, &ap)
+	assert.NoError(t, err)
+	assert.Equal(t, "test-name", ap.Name)
+	assert.Empty(t, ap.MinimumRoleName)
+	assert.Empty(t, ap.UIEndpoint)
+	assert.Len(t, ap.ExtraUIEndpoints, 0)
+	assert.Len(t, ap.Groups, 0)
+	assert.Len(t, ap.RequiredAttributes, 0)
+
+	assert.NotNil(t, ap.UserpkiConfig)
+	assert.Equal(t, "certs", ap.UserpkiConfig.CertificateAuthorities)
+
+	assert.Nil(t, ap.OIDCConfig)
+	assert.Nil(t, ap.IAPConfig)
+	assert.Nil(t, ap.OpenshiftConfig)
+	assert.Nil(t, ap.SAMLConfig)
+}
+
+func TestAuthProviderYAMLTransformation_IAP(t *testing.T) {
+	// 1. Configure SAML using metadata URL.
+	data := []byte(`
+name: test-name
+iap:
+  audience: stackrox
+`)
+	ap := AuthProvider{}
+
+	err := yaml.Unmarshal(data, &ap)
+	assert.NoError(t, err)
+	assert.Equal(t, "test-name", ap.Name)
+	assert.Empty(t, ap.MinimumRoleName)
+	assert.Empty(t, ap.UIEndpoint)
+	assert.Len(t, ap.ExtraUIEndpoints, 0)
+	assert.Len(t, ap.Groups, 0)
+	assert.Len(t, ap.RequiredAttributes, 0)
+
+	assert.NotNil(t, ap.IAPConfig)
+	assert.Equal(t, "stackrox", ap.IAPConfig.Audience)
+
+	assert.Nil(t, ap.OIDCConfig)
+	assert.Nil(t, ap.SAMLConfig)
+	assert.Nil(t, ap.OpenshiftConfig)
+	assert.Nil(t, ap.UserpkiConfig)
+}
+
+func TestAuthProviderYAMLTransformation_Openshift(t *testing.T) {
+	// 1. Configure SAML using metadata URL.
+	data := []byte(`
+name: test-name
+openshift:
+  enable: true
+`)
+	ap := AuthProvider{}
+
+	err := yaml.Unmarshal(data, &ap)
+	assert.NoError(t, err)
+	assert.Equal(t, "test-name", ap.Name)
+	assert.Empty(t, ap.MinimumRoleName)
+	assert.Empty(t, ap.UIEndpoint)
+	assert.Len(t, ap.ExtraUIEndpoints, 0)
+	assert.Len(t, ap.Groups, 0)
+	assert.Len(t, ap.RequiredAttributes, 0)
+
+	assert.NotNil(t, ap.OpenshiftConfig)
+	assert.True(t, ap.OpenshiftConfig.Enable)
+
+	assert.Nil(t, ap.OIDCConfig)
+	assert.Nil(t, ap.SAMLConfig)
+	assert.Nil(t, ap.IAPConfig)
+	assert.Nil(t, ap.UserpkiConfig)
 }
