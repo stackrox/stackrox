@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
+const securedClusterClient = "Secured Cluster"
+
 func trackClusterRegistered(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		props := map[string]any{
@@ -24,7 +26,7 @@ func trackClusterRegistered(cluster *storage.Cluster) {
 		cfg.Telemeter().GroupUserAs(cluster.GetId(), "", "", cfg.GroupID, nil)
 
 		// Update the secured cluster identity from its name:
-		cfg.Telemeter().IdentifyUserAs(cluster.GetId(), cluster.GetId(), "Secured Cluster",
+		cfg.Telemeter().IdentifyUserAs(cluster.GetId(), cluster.GetId(), securedClusterClient,
 			makeClusterProperties(cluster))
 	}
 }
@@ -45,7 +47,7 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 func trackClusterInitialized(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		// Issue an event that makes the secured cluster identity effective:
-		cfg.Telemeter().TrackUserAs(cluster.GetId(), cluster.GetId(), "Secured Cluster",
+		cfg.Telemeter().TrackUserAs(cluster.GetId(), cluster.GetId(), securedClusterClient,
 			"Secured Cluster Initialized", map[string]any{
 				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 			})
@@ -82,7 +84,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props := makeClusterProperties(cluster)
 		props["Total Nodes"] = metrics.NodeCount
 		props["CPU Capacity"] = metrics.CpuCapacity
-		cfg.Telemeter().IdentifyUserAs(cluster.GetId(), cluster.GetId(), "Secured Cluster", props)
-		cfg.Telemeter().TrackUserAs(cluster.GetId(), cluster.GetId(), "Secured Cluster", "Updated Secured Cluster Identity", nil)
+		cfg.Telemeter().IdentifyUserAs(cluster.GetId(), cluster.GetId(), securedClusterClient, props)
+		cfg.Telemeter().TrackUserAs(cluster.GetId(), cluster.GetId(), securedClusterClient, "Updated Secured Cluster Identity", nil)
 	}
 }
