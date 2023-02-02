@@ -60,7 +60,8 @@ func trackClusterInitialized(cluster *storage.Cluster) {
 				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 			},
 				telemeter.WithUserID(cluster.GetId()),
-				telemeter.WithClient(cluster.GetId(), securedClusterClient))
+				telemeter.WithClient(cluster.GetId(), securedClusterClient),
+				telemeter.WithGroup("Tenant", cfg.GroupID))
 	}
 }
 

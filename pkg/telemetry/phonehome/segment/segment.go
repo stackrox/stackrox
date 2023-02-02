@@ -98,15 +98,28 @@ func (t *segmentTelemeter) overrideUserID(o *telemeter.CallOptions) string {
 }
 
 func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
-	if o.ClientID == "" {
-		return nil
+	var ctx *segment.Context
+
+	if len(o.Groups) > 0 {
+		// Add groups to the context. Requires a mapping configuration for
+		// setting the according Amplitude event field.
+		ctx = &segment.Context{
+			Extra: make(map[string]any),
+		}
+		ctx.Extra["groups"] = o.Groups
 	}
-	return &segment.Context{
-		Device: segment.DeviceInfo{
+	// Segment does not support attaching group properties.
+
+	if o.ClientID != "" {
+		if ctx == nil {
+			ctx = &segment.Context{}
+		}
+		ctx.Device = segment.DeviceInfo{
 			Id:   o.ClientID,
 			Type: o.ClientType,
-		},
+		}
 	}
+	return ctx
 }
 
 func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
