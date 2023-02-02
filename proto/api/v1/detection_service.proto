@@ -16,6 +16,7 @@ message BuildDetectionRequest {
     }
     bool no_external_metadata         = 2;
     bool send_notifications           = 4;
+    bool force                        = 6;
     repeated string policy_categories = 5;
 }
 

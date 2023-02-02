@@ -1483,6 +1483,9 @@
         "sendNotifications": {
           "type": "boolean"
         },
+        "force": {
+          "type": "boolean"
+        },
         "policyCategories": {
           "type": "array",
           "items": {

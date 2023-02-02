@@ -139,6 +139,9 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	if req.GetNoExternalMetadata() {
 		enrichmentContext.FetchOpt = enricher.NoExternalMetadata
 	}
+    if req.GetForce() {
+        enrichmentContext.FetchOpt = enricher.ForceRefetch
+    }
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
 		return nil, err
