@@ -15,6 +15,9 @@ type CompatibilityDetectionMessage struct {
 	Action central.ResourceAction
 }
 
+// DeploymentReference is a message that encapsulates a resource's reference to an ACS deployment object.
+// It has both the reference function (which fetches the deployment) but also the original event action that triggered
+// this deployment reprocessing.
 type DeploymentReference struct {
 	// Reference returns an implementation of a struct that can return a list of deployment ids
 	// that require processing
@@ -52,25 +55,30 @@ type ResourceEvent struct {
 	DeploymentReferences []DeploymentReference
 }
 
+// NewEvent creates a resource event with preset sensor event messages.
 func NewEvent(msg ...*central.SensorEvent) *ResourceEvent {
 	return &ResourceEvent{ForwardMessages: msg}
 }
 
+// AppendMessage appends central sensor events to be bundled with this resource event.
 func (e *ResourceEvent) AppendMessage(event ...*central.SensorEvent) *ResourceEvent {
 	e.ForwardMessages = append(e.ForwardMessages, event...)
 	return e
 }
 
+// AddDetectionDeployment appends detection messages. Used for compatibility reasons, check CompatibilityDetectionMessage docs.
 func (e *ResourceEvent) AddDetectionDeployment(messages ...CompatibilityDetectionMessage) *ResourceEvent {
 	e.CompatibilityDetectionDeployment = append(e.CompatibilityDetectionDeployment, messages...)
 	return e
 }
 
+// AddReprocessDeployments appends one or more deployment ids that require reprocessing. Used for compatibility reasons, check CompatibilityReprocessDeployments docs.
 func (e *ResourceEvent) AddReprocessDeployments(ids ...string) *ResourceEvent {
 	e.CompatibilityReprocessDeployments = append(e.CompatibilityReprocessDeployments, ids...)
 	return e
 }
 
+// DeploymentReferenceUpdate creates and sets a new deployment reference to this resource event.
 func (e *ResourceEvent) DeploymentReferenceUpdate(reference resolver.DeploymentReference, action central.ResourceAction, force bool) {
 	e.DeploymentReferences = append(e.DeploymentReferences, DeploymentReference{
 		Reference:            reference,
@@ -79,6 +87,7 @@ func (e *ResourceEvent) DeploymentReferenceUpdate(reference resolver.DeploymentR
 	})
 }
 
+// MergeResourceEvent appends properties from `ev` into resource event message, without updating resource timing.
 func (e *ResourceEvent) MergeResourceEvent(ev *ResourceEvent) {
 	if ev == nil {
 		return

@@ -51,6 +51,10 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	if msg.DeploymentReferences != nil {
 
 		for _, deploymentReference := range msg.DeploymentReferences {
+			if deploymentReference.Reference == nil {
+				continue
+			}
+
 			referenceIds := deploymentReference.Reference(r.storeProvider.Deployments())
 
 			if deploymentReference.ForceDetection && len(referenceIds) > 0 {
