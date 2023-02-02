@@ -402,40 +402,40 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 			ID: "id2",
 			Matches: map[string][]string{
 				severityField.GetFieldPath(): {"4"},
-				"Category":                   {"Container Configuration"},
-				"Cluster":                    {"test"},
+				categoryField.GetFieldPath(): {"Container Configuration"},
+				clusterField.GetFieldPath():  {"test"},
 			},
 		},
 		{
 			ID: "id3",
 			Matches: map[string][]string{
 				severityField.GetFieldPath(): {"1"},
-				"Category":                   {"Image Assurance"},
-				"Cluster":                    {"prod"},
+				categoryField.GetFieldPath(): {"Image Assurance"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
 		},
 		{
 			ID: "id4",
 			Matches: map[string][]string{
 				severityField.GetFieldPath(): {"2"},
-				"Category":                   {"Privileges Capabilities"},
-				"Cluster":                    {"prod"},
+				categoryField.GetFieldPath(): {"Privileges Capabilities"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
 		},
 		{
 			ID: "id5",
 			Matches: map[string][]string{
 				severityField.GetFieldPath(): {"3"},
-				"Category":                   {"Image Assurance", "Container Configuration"},
-				"Cluster":                    {"prod"},
+				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
+				clusterField.GetFieldPath():  {"prod"},
 			},
 		},
 		{
 			ID: "id6",
 			Matches: map[string][]string{
 				severityField.GetFieldPath(): {"3"},
-				"Category":                   {"Image Assurance", "Container Configuration"},
-				"Cluster":                    {"test"},
+				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
+				clusterField.GetFieldPath():  {"test"},
 			},
 		},
 	}
