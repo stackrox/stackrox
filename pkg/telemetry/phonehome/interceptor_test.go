@@ -45,10 +45,9 @@ type optionsMatcher struct {
 	opts *telemeter.CallOptions
 }
 
-func (m *optionsMatcher) Matches(x interface{}) bool {
+func (m *optionsMatcher) Matches(x any) bool {
 	if o, ok := x.([]telemeter.Option); ok {
-		opts := telemeter.ApplyOptions(o)
-		return opts == m.opts || *opts == *m.opts
+		return gomock.Eq(m.opts).Matches(telemeter.ApplyOptions(o))
 	}
 	return false
 }
