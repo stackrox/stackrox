@@ -181,50 +181,46 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 	}
 
 	request.Request = ensureAllAlertsAreFetched(request.GetRequest())
-	var requestQ *v1.Query
-	if request.GetRequest().GetQuery() == "" {
-		requestQ = search.NewQueryBuilder().AddStringsHighlighted(search.Cluster, search.WildcardString).ProtoQuery()
-	} else {
-		var err error
-		requestQ, err = search.ParseQuery(request.GetRequest().GetQuery())
-		if err != nil {
-			return nil, err
-		}
-		var hasClusterQ, hasSeverityQ, hasCategoryQ bool
-		search.ApplyFnToAllBaseQueries(requestQ, func(bq *v1.BaseQuery) {
-			matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-			if !ok {
-				return
-			}
-
-			if matchFieldQuery.MatchFieldQuery.GetField() == search.Cluster.String() {
-				hasClusterQ = true
-				matchFieldQuery.MatchFieldQuery.Highlight = true
-			}
-			if matchFieldQuery.MatchFieldQuery.GetField() == search.Category.String() {
-				hasCategoryQ = true
-				matchFieldQuery.MatchFieldQuery.Highlight = true
-			}
-			if matchFieldQuery.MatchFieldQuery.GetField() == search.Severity.String() {
-				hasSeverityQ = true
-				matchFieldQuery.MatchFieldQuery.Highlight = true
-			}
-		})
-
-		var conjuncts []*v1.Query
-		if !hasClusterQ {
-			conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Cluster, search.WildcardString).ProtoQuery())
-		}
-		if !hasSeverityQ {
-			conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Severity, search.WildcardString).ProtoQuery())
-		}
-		if !hasCategoryQ {
-			conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Category, search.WildcardString).ProtoQuery())
-		}
-		for _, conjunct := range conjuncts {
-			requestQ = search.ConjunctionQuery(requestQ, conjunct)
-		}
+	requestQ, err := search.ParseQuery(request.GetRequest().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
 	}
+
+	var hasClusterQ, hasSeverityQ, hasCategoryQ bool
+	search.ApplyFnToAllBaseQueries(requestQ, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Cluster.String() {
+			hasClusterQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Category.String() {
+			hasCategoryQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Severity.String() {
+			hasSeverityQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+	})
+
+	var conjuncts []*v1.Query
+	if !hasClusterQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Cluster, search.WildcardString).ProtoQuery())
+	}
+	if !hasSeverityQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Severity, search.WildcardString).ProtoQuery())
+	}
+	if !hasCategoryQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Category, search.WildcardString).ProtoQuery())
+	}
+	for _, conjunct := range conjuncts {
+		requestQ = search.ConjunctionQuery(requestQ, conjunct)
+	}
+
 	alerts, err := s.dataStore.Search(ctx, requestQ)
 	if err != nil {
 		return nil, err
