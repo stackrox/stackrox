@@ -47,22 +47,29 @@ type ResourceEvent struct {
 	ForceDetection bool
 }
 
-// NewResourceEvent wraps the SensorEvents, CompatibilityDetectionMessages, and the CompatibilityReprocessDeployments into a ResourceEvent message
-func NewResourceEvent(sensorMessages []*central.SensorEvent, detectionDeployment []CompatibilityDetectionMessage, reprocessDeploymentsIds []string) *ResourceEvent {
-	return &ResourceEvent{
-		ForwardMessages:                   sensorMessages,
-		CompatibilityDetectionDeployment:  detectionDeployment,
-		CompatibilityReprocessDeployments: reprocessDeploymentsIds,
-	}
+func NewEvent(msg ...*central.SensorEvent) *ResourceEvent {
+	return &ResourceEvent{ForwardMessages: msg}
 }
 
-// NewDeploymentRefEvent returns a resource event given a deployment reference and a resource action.
-func NewDeploymentRefEvent(ref resolver.DeploymentReference, action central.ResourceAction, forceDetection bool) *ResourceEvent {
-	return &ResourceEvent{
-		DeploymentReference:  ref,
-		ParentResourceAction: action,
-		ForceDetection:       forceDetection,
-	}
+func (e *ResourceEvent) AppendMessage(event ...*central.SensorEvent) *ResourceEvent {
+	e.ForwardMessages = append(e.ForwardMessages, event...)
+	return e
+}
+
+func (e *ResourceEvent) AddDetectionDeployment(messages ...CompatibilityDetectionMessage) *ResourceEvent {
+	e.CompatibilityDetectionDeployment = append(e.CompatibilityDetectionDeployment, messages...)
+	return e
+}
+
+func (e *ResourceEvent) AddReprocessDeployments(ids ...string) *ResourceEvent {
+	e.CompatibilityReprocessDeployments = append(e.CompatibilityReprocessDeployments, ids...)
+	return e
+}
+
+func (e *ResourceEvent) DeploymentReferenceUpdate(reference resolver.DeploymentReference, action central.ResourceAction, force bool) {
+	e.DeploymentReference = reference
+	e.ParentResourceAction = action
+	e.ForceDetection = force
 }
 
 // MergeResourceEvents merges two ResourceEvents

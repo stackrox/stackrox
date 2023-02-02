@@ -313,8 +313,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			},
 		},
 	}}
-	events := component.NewResourceEvent(sensorEvents, nil, nil)
-	events = component.MergeResourceEvents(events, secretToSensorEvent(action, protoSecret))
+	events := component.NewEvent(sensorEvents...)
+	events.AppendMessage(secretToSensorEvent(action, protoSecret))
 	return events
 }
 
@@ -329,15 +329,14 @@ func getProtoSecret(secret *v1.Secret) *storage.Secret {
 	}
 }
 
-func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) *component.ResourceEvent {
-	event := &central.SensorEvent{
+func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) *central.SensorEvent {
+	return &central.SensorEvent{
 		Id:     secret.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Secret{
 			Secret: secret,
 		},
 	}
-	return component.NewResourceEvent([]*central.SensorEvent{event}, nil, nil)
 }
 
 // ProcessEvent processes a secret resource event, and returns the sensor events to emit in response.
@@ -359,5 +358,5 @@ func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 
 	protoSecret := getProtoSecret(secret)
 	populateTypeData(protoSecret, secret.Data)
-	return secretToSensorEvent(action, protoSecret)
+	return component.NewEvent(secretToSensorEvent(action, protoSecret))
 }

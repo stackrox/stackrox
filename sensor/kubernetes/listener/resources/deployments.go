@@ -153,18 +153,28 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 					owningDeploymentIDs.AsSlice(), uid, objAsPod.Namespace, objAsPod.Name)
 			}
 		}
+
+		var removeEvents *central.SensorEvent
 		// On removes, we may not get the owning deployment ID if the deployment was deleted before the pod.
 		// This is okay. We still want to send the remove event anyway.
 		if action == central.ResourceAction_REMOVE_RESOURCE || owningDeploymentID != "" {
-			events = component.MergeResourceEvents(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
+			removeEvents = d.processPodEvent(owningDeploymentID, objAsPod, action)
+		}
+
+		if deploymentWrap == nil {
+			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
+			events = d.maybeUpdateParentsOfPod(objAsPod, oldObj, action)
+			if removeEvents != nil {
+				events.AppendMessage(removeEvents)
+			}
+
+			return events
+		} else if removeEvents != nil {
+			events.AppendMessage(removeEvents)
 		}
 	}
 
 	if deploymentWrap == nil {
-		if objAsPod != nil {
-			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
-			events = component.MergeResourceEvents(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action))
-		}
 		return events
 	}
 
@@ -187,19 +197,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
 			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
 			// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
-			events = component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
-				{
-					Object: deploymentWrap.GetDeployment(),
-					Action: action,
-				},
-			}, nil))
-			// if resource is being removed, we can create the remove message here without related resources
-			events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
+			events.AddDetectionDeployment(component.CompatibilityDetectionMessage{
+				Object: deploymentWrap.GetDeployment(),
+				Action: action,
+			}).AppendMessage(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
 		} else {
 			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 			// references up the chain, which will be used to trigger the actual deployment event and detection.
-			events = component.MergeResourceEvents(events,
-				component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false))
+			events.DeploymentReferenceUpdate(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false)
 		}
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
@@ -216,15 +221,11 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		if err := deploymentWrap.updateHash(); err != nil {
 			log.Errorf("UNEXPECTED: could not calculate hash of deployment %s: %v", deploymentWrap.GetId(), err)
 		}
-
-		events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
-		// Compatibility: send detection message directly from here
-		events = component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
-			{
-				Object: deploymentWrap.GetDeployment(),
-				Action: action,
-			},
-		}, nil))
+		events.AppendMessage(deploymentWrap.toEvent(action))
+		events.AddDetectionDeployment(component.CompatibilityDetectionMessage{
+			Object: deploymentWrap.GetDeployment(),
+			Action: action,
+		})
 	}
 
 	return events
@@ -249,7 +250,7 @@ func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	for _, c := range containers {
 		if r := c.GetImage().GetName().GetRegistry(); registries.Add(r) {
 			if e := d.getImageIntegrationEvent(r); e != nil {
-				events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{e}, nil, nil))
+				events.AppendMessage(e)
 			}
 		}
 	}
@@ -326,7 +327,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 }
 
 // processPodEvent returns a SensorEvent indicating a change in a pod's state.
-func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *component.ResourceEvent {
+func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *central.SensorEvent {
 	// Our current search mechanism does not support namespaced IDs, so if this is a top-level pod,
 	// then having the PodID and DeploymentID fields equal will cause errors.
 	// It is best to prevent this case by transforming all PodIDs.
@@ -350,7 +351,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 				},
 			},
 		}
-		return component.NewResourceEvent([]*central.SensorEvent{event}, nil, nil)
+		return event
 	}
 
 	started, err := types.TimestampProto(k8sPod.GetCreationTimestamp().Time)
@@ -384,6 +385,6 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 			Pod: p,
 		},
 	}
-	return component.NewResourceEvent([]*central.SensorEvent{event}, nil, nil)
+	return event
 
 }

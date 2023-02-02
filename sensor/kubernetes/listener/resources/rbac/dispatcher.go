@@ -37,13 +37,10 @@ func NewDispatcher(store Store, k8sAPI kubernetes.Interface) *Dispatcher {
 // ProcessEvent handles RBAC-related events
 func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	update := r.processEvent(obj, action)
-	componentMessage := component.NewResourceEvent(update.events, nil, nil)
+	events := component.NewEvent(update.events...)
 	serviceAccountReferences := mapReference(update.deploymentReference)
-	component.MergeResourceEvents(componentMessage, component.NewDeploymentRefEvent(
-		resolver.ResolveDeploymentsByMultipleServiceAccounts(serviceAccountReferences),
-		central.ResourceAction_UPDATE_RESOURCE, false))
-
-	return componentMessage
+	events.DeploymentReferenceUpdate(resolver.ResolveDeploymentsByMultipleServiceAccounts(serviceAccountReferences), central.ResourceAction_UPDATE_RESOURCE, false)
+	return events
 }
 
 func mapReference(subjects set.Set[namespacedSubject]) []resolver.NamespaceServiceAccount {

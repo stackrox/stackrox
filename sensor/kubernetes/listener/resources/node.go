@@ -55,15 +55,13 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		}
 	}
 
-	return component.NewResourceEvent([]*central.SensorEvent{
-		{
-			Id:     protoNode.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_Node{
-				Node: protoNode,
-			},
+	return component.NewEvent(&central.SensorEvent{
+		Id:     protoNode.GetId(),
+		Action: action,
+		Resource: &central.SensorEvent_Node{
+			Node: protoNode,
 		},
-	}, nil, nil)
+	})
 }
 
 func buildNode(node *v1.Node) *storage.Node {

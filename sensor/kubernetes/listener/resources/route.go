@@ -43,5 +43,5 @@ func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 		return nil
 	}
 	events := r.portExposureReconciler.UpdateExposuresForMatchingDeployments(existingService.Namespace, existingService.selector)
-	return component.NewResourceEvent(events, nil, nil)
+	return component.NewEvent(events...)
 }
