@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     PageSection,
     Title,
@@ -17,12 +17,17 @@ import { timeWindows } from 'constants/timeWindows';
 import useFetchClusters from 'hooks/useFetchClusters';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
-import { fetchNetworkFlowGraph, fetchNetworkPolicyGraph } from 'services/NetworkService';
+import {
+    fetchNetworkFlowGraph,
+    fetchNetworkPolicyGraph,
+    fetchNodeUpdates,
+} from 'services/NetworkService';
 import queryService from 'utils/queryService';
 import timeWindowToDate from 'utils/timeWindows';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 
 import PageTitle from 'Components/PageTitle';
+import useInterval from 'hooks/useInterval';
 import useURLParameter from 'hooks/useURLParameter';
 import NetworkGraphContainer, { Models } from './NetworkGraphContainer';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
@@ -71,6 +76,7 @@ function NetworkGraphPage() {
         undefined
     );
 
+    const [pollEpoch, setPollEpoch] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
@@ -100,6 +106,34 @@ function NetworkGraphPage() {
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
     const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
+    console.log({ deploymentCount });
+
+    const [prevEpochCount, setPrevEpochCount] = useState(0);
+    const [currentEpochCount, setCurrentEpochCount] = useState(0);
+
+    // useEffect(() => {
+    //     if (selectedClusterId) {
+    //         console.log({ selectedClusterId });
+    //         console.log({ prevEpochCount });
+    //     }
+    // }, [selectedClusterId, prevEpochCount]);
+
+    // We will update the poll epoch after 30 seconds to update the node count for a cluster
+    useInterval(() => {
+        setPollEpoch(pollEpoch + 1);
+    }, 30000);
+
+    useEffect(() => {
+        if (selectedClusterId) {
+            fetchNodeUpdates(selectedClusterId)
+                .then((result) => {
+                    setCurrentEpochCount(result?.response?.epoch || 0);
+                })
+                .catch((err) => {
+                    console.warn(err);
+                });
+        }
+    }, [selectedClusterId, pollEpoch]);
 
     useDeepCompareEffect(() => {
         // check that user is finished adding a complete filter
@@ -138,7 +172,7 @@ function NetworkGraphPage() {
                 ])
                     .then((values) => {
                         // get policy nodes from api response
-                        const { nodes: policyNodes } = values[1].response;
+                        const { nodes: policyNodes, epoch } = values[1].response;
                         // transform policy data to DataModel
                         const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
                         // get active nodes from api response
@@ -157,10 +191,12 @@ function NetworkGraphPage() {
                         const newUpdatedTimestamp = new Date();
                         // show only hours and minutes, use options with the default locale - use an empty array
                         const lastUpdatedDisplayTime = newUpdatedTimestamp.toLocaleTimeString([], {
-                            hour: '2-digit',
+                            hour: 'numeric',
                             minute: '2-digit',
                         });
                         setLastUpdatedTime(lastUpdatedDisplayTime);
+                        setPrevEpochCount(epoch);
+                        setCurrentEpochCount(epoch);
 
                         setModels({
                             activeModel: activeDataModel,
