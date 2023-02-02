@@ -211,3 +211,21 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchPolicyCategoryFeatureDisabl
 	s.Len(results, 1)
 	s.Equal(policy.GetId(), results[0].ID)
 }
+
+func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
+	policy := fixtures.GetPolicy()
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.Policy, resources.Cluster),
+	))
+
+	// Add policy.
+	_, err := s.datastore.AddPolicy(ctx, policy)
+	s.NoError(err)
+
+	policies, err := s.datastore.SearchRawPolicies(ctx, pkgSearch.EmptyQuery())
+	s.NoError(err)
+	s.Len(policies, 1)
+	s.Len(policies[0].Categories, 3)
+}
