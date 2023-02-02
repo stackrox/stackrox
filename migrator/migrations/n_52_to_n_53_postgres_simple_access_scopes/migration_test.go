@@ -80,6 +80,7 @@ type postgresMigrationSuite struct {
 
 	legacyDB   *rocksdb.RocksDB
 	postgresDB *pghelper.TestPostgres
+	gormDB     *gorm.DB
 }
 
 var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
@@ -99,12 +100,12 @@ func (s *postgresMigrationSuite) SetupTest() {
 
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.postgresDB = pghelper.ForT(s.T(), true)
-	gormDB := s.postgresDB.GetGormDB()
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	pgutils.CreateTableFromModel(s.ctx, gormDB, frozenSchema.CreateTableReportConfigurationsStmt)
+	s.gormDB = s.postgresDB.GetGormDB()
+	pgutils.CreateTableFromModel(s.ctx, s.gormDB, frozenSchema.CreateTableReportConfigurationsStmt)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 	rocksdbtest.TearDownRocksDB(s.legacyDB)
 	s.postgresDB.Teardown(s.T())
 }
