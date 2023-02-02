@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	postgresStore "github.com/stackrox/rox/central/imagecomponentedge/datastore/internal/store/postgres"
 	dackboxIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/imagecomponentedge/search"

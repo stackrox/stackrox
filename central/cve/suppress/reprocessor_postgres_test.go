@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	cveDS "github.com/stackrox/rox/central/cve/image/datastore"
 	cveSearcher "github.com/stackrox/rox/central/cve/image/datastore/search"
 	cvePG "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
@@ -59,7 +59,7 @@ func (s *ReprocessorPostgresTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := pgxpool.NewWithConfig(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool

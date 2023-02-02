@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/env"
@@ -251,7 +251,7 @@ func getPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
 	var postgresDB *pgxpool.Pool
 
 	err = pgutils.Retry(func() error {
-		postgresDB, err = pgxpool.ConnectConfig(context.Background(), postgresConfig)
+		postgresDB, err = pgxpool.NewWithConfig(context.Background(), postgresConfig)
 		return err
 	})
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
@@ -60,7 +60,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := pgxpool.NewWithConfig(s.ctx, config)
 	s.NoError(err)
 	s.db = pool
 

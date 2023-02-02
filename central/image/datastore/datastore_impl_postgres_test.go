@@ -10,7 +10,7 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
@@ -67,7 +67,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := pgxpool.NewWithConfig(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool

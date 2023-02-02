@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"

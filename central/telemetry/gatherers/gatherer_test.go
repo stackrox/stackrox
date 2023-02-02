@@ -7,7 +7,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	installation "github.com/stackrox/rox/central/installation/store"

@@ -7,7 +7,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"

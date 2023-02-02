@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	policyCategorySearch "github.com/stackrox/rox/central/policycategory/search"
 	"github.com/stackrox/rox/central/policycategory/store/postgres"
 	edgeDataStore "github.com/stackrox/rox/central/policycategoryedge/datastore"
@@ -51,7 +51,7 @@ func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := pgxpool.NewWithConfig(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool

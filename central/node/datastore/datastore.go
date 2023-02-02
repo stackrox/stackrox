@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"

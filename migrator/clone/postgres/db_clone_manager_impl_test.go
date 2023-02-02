@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/clone/metadata"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
@@ -65,7 +65,7 @@ func (s *PostgresCloneManagerSuite) SetupTest() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	s.Require().NoError(err)
 	s.gc = migGorm.SetupAndGetMockConfig(s.T())
 

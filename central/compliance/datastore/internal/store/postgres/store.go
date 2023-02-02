@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"

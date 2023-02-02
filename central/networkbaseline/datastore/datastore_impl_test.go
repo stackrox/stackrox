@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/networkbaseline/store"
 	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
 	rdbStore "github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
@@ -49,7 +49,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
 		source := pgtest.GetConnectionString(suite.T())
 		config, err := pgxpool.ParseConfig(source)
 		suite.NoError(err)
-		suite.pool, err = pgxpool.ConnectConfig(ctx, config)
+		suite.pool, err = pgxpool.NewWithConfig(ctx, config)
 		suite.NoError(err)
 		pgStore.Destroy(ctx, suite.pool)
 		gormDB := pgtest.OpenGormDB(suite.T(), source)

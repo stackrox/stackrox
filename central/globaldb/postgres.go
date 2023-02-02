@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -95,7 +95,7 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 		dbConfig.ConnConfig.Database = activeDB
 
 		if err := retry.WithRetry(func() error {
-			postgresDB, err = pgxpool.ConnectConfig(ctx, dbConfig)
+			postgresDB, err = pgxpool.NewWithConfig(ctx, dbConfig)
 			return err
 		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
 			time.Sleep(postgresTimeBetweenRetries)

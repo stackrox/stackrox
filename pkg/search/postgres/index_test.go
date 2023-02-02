@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -54,7 +54,7 @@ func (s *IndexSuite) SetupTest() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
+	s.pool, err = pgxpool.NewWithConfig(context.Background(), config)
 	s.Require().NoError(err)
 
 	postgres.Destroy(ctx, s.pool)

@@ -3,7 +3,7 @@ package version
 import (
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"

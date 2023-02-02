@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
 	"gopkg.in/yaml.v3"
 )

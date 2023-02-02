@@ -7,7 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"

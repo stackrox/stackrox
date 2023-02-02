@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/random"
@@ -121,7 +121,7 @@ func ForTCustomPool(t testing.TB, dbName string) *pgxpool.Pool {
 	ctx := context.Background()
 
 	// initialize pool to be used
-	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
+	pool, err := pgxpool.New(ctx, sourceWithDatabase)
 	require.NoError(t, err)
 
 	return pool

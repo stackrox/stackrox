@@ -1,7 +1,7 @@
 package clone
 
 import (
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	"github.com/stackrox/rox/pkg/env"

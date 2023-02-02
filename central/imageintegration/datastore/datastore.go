@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"

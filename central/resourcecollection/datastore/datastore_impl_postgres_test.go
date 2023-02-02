@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/heimdalr/dag"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -53,7 +53,7 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := pgxpool.NewWithConfig(s.ctx, config)
 	s.NoError(err)
 	s.db = pool
 

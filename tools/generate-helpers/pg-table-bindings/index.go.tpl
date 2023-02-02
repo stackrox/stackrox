@@ -11,7 +11,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )

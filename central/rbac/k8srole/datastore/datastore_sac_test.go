@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	k8sRoleMappings "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	"github.com/stackrox/rox/central/role/resources"

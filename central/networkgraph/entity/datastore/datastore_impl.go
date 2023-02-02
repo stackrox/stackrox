@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"

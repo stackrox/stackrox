@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	dackboxIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/nodecomponentedge/search"
 	dackboxStore "github.com/stackrox/rox/central/nodecomponentedge/store/dackbox"

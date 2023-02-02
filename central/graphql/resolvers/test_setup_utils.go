@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
@@ -66,7 +66,7 @@ func SetupTestPostgresConn(t testing.TB) (*pgxpool.Pool, *gorm.DB) {
 	config, err := pgxpool.ParseConfig(source)
 	assert.NoError(t, err)
 
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	assert.NoError(t, err)
 
 	gormDB := pgtest.OpenGormDB(t, source)

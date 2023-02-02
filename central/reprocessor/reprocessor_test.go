@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
 	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/node/datastore/index"
 	"github.com/stackrox/rox/central/cve/node/datastore/search"

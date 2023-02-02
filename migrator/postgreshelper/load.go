@@ -1,7 +1,7 @@
 package postgreshelper
 
 import (
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/migrator/log"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"

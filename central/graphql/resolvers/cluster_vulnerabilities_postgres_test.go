@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterCVEEdgePostgres "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"

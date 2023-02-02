@@ -55,7 +55,7 @@ require (
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgtype v1.13.0
-	github.com/jackc/pgx/v4 v4.17.2
+	github.com/jackc/pgx/v5 v5.2.0
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
 	github.com/lib/pq v1.10.7
 	github.com/machinebox/graphql v0.2.2
@@ -134,7 +134,7 @@ require github.com/hashicorp/golang-lru v0.5.4
 require (
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
-	github.com/jackc/pgx/v5 v5.2.0 // indirect
+	github.com/jackc/puddle/v2 v2.1.2 // indirect
 	github.com/pjbgf/sha1cd v0.2.3 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
 )
@@ -246,7 +246,6 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.1 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect

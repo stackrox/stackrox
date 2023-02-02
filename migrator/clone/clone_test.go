@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/migrator/clone/metadata"
 	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"

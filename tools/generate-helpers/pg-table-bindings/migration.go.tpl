@@ -9,7 +9,7 @@ package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/generated/storage"

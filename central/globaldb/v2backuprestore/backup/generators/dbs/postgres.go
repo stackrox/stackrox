@@ -5,7 +5,7 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"

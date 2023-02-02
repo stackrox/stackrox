@@ -8,8 +8,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"

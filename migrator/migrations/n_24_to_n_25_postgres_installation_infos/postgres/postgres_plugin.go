@@ -4,8 +4,8 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/pkg/logging"

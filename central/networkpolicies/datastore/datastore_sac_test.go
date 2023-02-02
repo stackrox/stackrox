@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	boltStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	pgdbStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
@@ -51,7 +51,7 @@ func (s *networkPolicySACSuite) SetupSuite() {
 		src := pgtest.GetConnectionString(s.T())
 		cfg, err := pgxpool.ParseConfig(src)
 		s.Require().NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
+		s.pool, err = pgxpool.NewWithConfig(ctx, cfg)
 		s.Require().NoError(err)
 		pgdbStore.Destroy(ctx, s.pool)
 		gormDB := pgtest.OpenGormDB(s.T(), src)

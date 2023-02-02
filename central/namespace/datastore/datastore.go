@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"

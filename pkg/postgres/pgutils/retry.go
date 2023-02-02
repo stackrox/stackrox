@@ -4,7 +4,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/timeutil"
 )

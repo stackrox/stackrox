@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	postgresStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
@@ -29,7 +29,7 @@ func BenchmarkDBsWithPostgres(b *testing.B) {
 	source := pgtest.GetConnectionString(b)
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(b, err)
-	db, err := pgxpool.ConnectConfig(ctx, config)
+	db, err := pgxpool.NewWithConfig(ctx, config)
 	require.NoError(b, err)
 	gormDB := pgtest.OpenGormDB(b, source)
 	defer pgtest.CloseGormDB(b, gormDB)

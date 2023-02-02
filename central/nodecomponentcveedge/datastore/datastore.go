@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/index"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"

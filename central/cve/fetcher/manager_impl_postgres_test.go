@@ -12,7 +12,7 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
@@ -485,7 +485,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.NoError(err)
 
-	db, err := pgxpool.ConnectConfig(s.ctx, config)
+	db, err := pgxpool.NewWithConfig(s.ctx, config)
 	s.NoError(err)
 	s.db = db
 

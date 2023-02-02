@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/search"
@@ -62,7 +62,7 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := pgxpool.NewWithConfig(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool

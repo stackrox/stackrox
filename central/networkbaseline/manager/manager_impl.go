@@ -7,7 +7,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"

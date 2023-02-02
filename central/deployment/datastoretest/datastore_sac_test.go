@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"

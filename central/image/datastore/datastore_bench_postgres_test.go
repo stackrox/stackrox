@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -35,7 +35,7 @@ func BenchmarkImageGetMany(b *testing.B) {
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(b, err)
 
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	require.NoError(b, err)
 	gormDB := pgtest.OpenGormDB(b, source)
 	defer pgtest.CloseGormDB(b, gormDB)

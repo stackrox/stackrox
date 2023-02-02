@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stretchr/testify/require"
@@ -32,7 +32,7 @@ func ForT(t testing.TB, disableConstraint bool) *TestPostgres {
 	ctx := context.Background()
 
 	// initialize pool to be used
-	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
+	pool, err := pgxpool.New(ctx, sourceWithDatabase)
 	require.NoError(t, err)
 
 	return &TestPostgres{

@@ -3,7 +3,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/sync"
 )

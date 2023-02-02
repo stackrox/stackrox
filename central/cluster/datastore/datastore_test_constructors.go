@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
 	clusterPostgresStore "github.com/stackrox/rox/central/cluster/store/cluster/postgres"

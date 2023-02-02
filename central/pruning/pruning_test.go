@@ -8,7 +8,7 @@ import (
 	"github.com/blevesearch/bleve"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"

@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
