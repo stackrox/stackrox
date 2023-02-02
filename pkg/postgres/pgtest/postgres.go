@@ -127,6 +127,11 @@ func ForTCustomPool(t testing.TB, dbName string) *pgxpool.Pool {
 	return pool
 }
 
+func (tp *TestPostgres) GetGormDB(t testing.TB) *gorm.DB {
+	source := conn.GetConnectionStringWithDatabaseName(t, tp.database)
+	return OpenGormDB(t, source)
+}
+
 // Teardown tears down a Postgres instance used in tests
 func (tp *TestPostgres) Teardown(t testing.TB) {
 	if tp == nil {
