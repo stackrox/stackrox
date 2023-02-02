@@ -92,6 +92,8 @@ func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgx
 		return errors.Wrap(err,
 			"moving roles from rocksdb to postgres")
 	}
+	// This function call was added between 3.73 and 3.74 in order to cover an overlooked reference to access scope IDs.
+	// Users who migrated to postgres with 3.73 may have report configurations relying on incorrect scope IDs.
 	if err := migrateReportConfigurationScopeIDs(postgresDB); err != nil {
 		return errors.Wrap(err, "updating access scope IDs for Report Configuration objects in postgres")
 	}
