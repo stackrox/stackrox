@@ -69,12 +69,12 @@ var (
 	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(result search.Result) []string{
 		v1.GetAlertsCountsRequest_UNSET: func(result search.Result) []string { return []string{""} },
 		v1.GetAlertsCountsRequest_CATEGORY: func(a search.Result) (output []string) {
-			field, _ := mappings.OptionsMap.Get(search.Category.String())
+			field := mappings.OptionsMap.MustGet(search.Category.String())
 			output = append(output, a.Matches[field.GetFieldPath()]...)
 			return
 		},
 		v1.GetAlertsCountsRequest_CLUSTER: func(a search.Result) []string {
-			field, _ := mappings.OptionsMap.Get(search.Cluster.String())
+			field := mappings.OptionsMap.MustGet(search.Cluster.String())
 			return []string{a.Matches[field.GetFieldPath()][0]}
 		},
 	}
@@ -198,7 +198,6 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 			}
 
 			if matchFieldQuery.MatchFieldQuery.GetField() == search.Cluster.String() {
-				hasClusterQ = true
 				hasClusterQ = true
 				matchFieldQuery.MatchFieldQuery.Highlight = true
 			}
@@ -564,25 +563,25 @@ func countAlerts(alerts []search.Result, groupByFunc func(result search.Result) 
 
 func getMapOfAlertCounts(alerts []search.Result, groupByFunc func(alert search.Result) []string) (groups map[string]map[storage.Severity]int) {
 	groups = make(map[string]map[storage.Severity]int)
+	field := mappings.OptionsMap.MustGet(search.Severity.String())
 
 	for _, a := range alerts {
 		for _, g := range groupByFunc(a) {
 			if groups[g] == nil {
 				groups[g] = make(map[storage.Severity]int)
 			}
-			field, _ := mappings.OptionsMap.Get(search.Severity.String())
 			if len(a.Matches[field.GetFieldPath()]) == 0 {
 				continue
 			}
 			// There is a difference in how enum matches are stored in postgres vs rockdb. In postgres they are
 			// stored as string values, in rocksdb as int values. Courtesy: Mandar.
-			var severity int32
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				severity = storage.Severity_value[a.Matches[field.GetFieldPath()][0]]
+				severity := storage.Severity_value[a.Matches[field.GetFieldPath()][0]]
+				groups[g][(storage.Severity(severity))]++
 			} else {
-				severity, _ = strconv.Atoi(a.Matches[field.GetFieldPath()][0])
+				severity, _ := strconv.Atoi(a.Matches[field.GetFieldPath()][0])
+				groups[g][(storage.Severity(severity))]++
 			}
-			groups[g][(storage.Severity(severity))]++
 
 		}
 	}
