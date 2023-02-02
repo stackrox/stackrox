@@ -29,14 +29,12 @@ type OIDCConfig struct {
 	ClientSecret string `yaml:"clientSecret,omitempty"`
 	// Disables request for "offline_access" scope from OIDC identity provider.
 	DisableOfflineAccessScope bool `yaml:"disableOfflineAccessScope,omitempty"`
-	// Disables request for "offline_access" scope from OIDC identity provider.
-	DontUseClientSecretConfig bool `yaml:"dontUseClientSecretConfig,omitempty"`
 }
 
 // SAMLConfig contains config values for SAML 2.0 auth provider.
 // There are two ways to configure SAML: static and dynamic.
 // For dynamic configuration, you only need to specify spIssuer and metadataURL.
-// For static configuration, specify spIssuer, certPEM, ssoURL and nameIdFormat.
+// For static configuration, specify spIssuer, cert, ssoURL and nameIdFormat.
 type SAMLConfig struct {
 	SpIssuer    string `yaml:"spIssuer,omitempty"`
 	MetadataURL string `yaml:"metadataURL,omitempty"`
@@ -68,7 +66,8 @@ type OpenshiftConfig struct {
 // To specify auth provider type, you need to either specify oidc, saml, iap, userpki config or
 // set enableOpenshift variable to true.
 type AuthProvider struct {
-	Name               string              `yaml:"name,omitempty"`
+	Name string `yaml:"name,omitempty"`
+	// TODO: ROX-14148 if left empty, no default group should be created
 	MinimumRoleName    string              `yaml:"minimumRole,omitempty"`
 	UIEndpoint         string              `yaml:"uiEndpoint,omitempty"`
 	ExtraUIEndpoints   []string            `yaml:"extraUIEndpoints,omitempty"`
