@@ -270,7 +270,7 @@ export_central_basic_auth_creds() {
     if [[ -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
         ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
-    elif [[ -z "${ROX_PASSWORD:-}" ]]; then
+    elif [[ -n "${ROX_PASSWORD:-}" ]]; then
         info "Using existing ROX_PASSWORD env"
     else
         echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
