@@ -91,7 +91,7 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 		for _, p := range policies {
 			categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
 			if err != nil {
-				log.Errorf("Failed to find categories associated with policy %s: %q", p.GetId(), p.GetName())
+				log.Errorf("Failed to find categories associated with policy %s: %q. Error: %v", p.GetId(), p.GetName(), err)
 				continue
 			}
 			for _, c := range categories {
