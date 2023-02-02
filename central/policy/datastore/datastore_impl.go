@@ -83,7 +83,23 @@ func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1
 
 // SearchRawPolicies
 func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
-	return ds.searcher.SearchRawPolicies(ctx, q)
+	policies, err := ds.searcher.SearchRawPolicies(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		for _, p := range policies {
+			categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
+			if err != nil {
+				log.Errorf("Failed to find categories associated with policy %s: %q", p.GetId(), p.GetName())
+				continue
+			}
+			for _, c := range categories {
+				p.Categories = append(p.Categories, c.GetName())
+			}
+		}
+	}
+	return policies, nil
 }
 
 func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Policy, bool, error) {
