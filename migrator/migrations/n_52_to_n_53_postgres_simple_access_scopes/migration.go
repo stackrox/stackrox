@@ -262,7 +262,7 @@ func getReportConfigurationScopeID(reportConfiguration *storage.ReportConfigurat
 	}
 	_, accessIDParseErr := uuid.FromString(reportConfigurationScopeID)
 	if accessIDParseErr != nil {
-		log.WriteToStderrf("failed to convert report configuration to postgres format, bad scope ID. Role [%s], error %v", reportConfiguration.GetName(), accessIDParseErr)
+		log.WriteToStderrf("failed to convert report configuration to postgres format, bad scope ID. Report Configuration [%s], error %v", reportConfiguration.GetName(), accessIDParseErr)
 		return "", accessIDParseErr
 	}
 	return reportConfigurationScopeID, nil
