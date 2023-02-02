@@ -1,11 +1,12 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox-monitoring-psp
+  name: stackrox-monitoring
   labels:
     app.kubernetes.io/name: stackrox
     app: monitoring
 rules:
+{{- if .Values.enableMonitoringPSPs }}
   - apiGroups:
       - policy
     resources:
@@ -14,6 +15,7 @@ rules:
       - stackrox-monitoring
     verbs:
       - use
+{{- end }}
   - apiGroups: [""]
     resources:
       - endpoints
@@ -25,7 +27,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: stackrox-monitoring-psp
+  name: stackrox-monitoring
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: stackrox
@@ -33,12 +35,13 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: stackrox-monitoring-psp
+  name: stackrox-monitoring
 subjects:
   - kind: ServiceAccount
     name: monitoring
     namespace: {{ .Release.Namespace }}
 ---
+{{- if .Values.enableMonitoringPSPs }}
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -75,3 +78,4 @@ spec:
     ranges:
       - min: 4000
         max: 4000
+{{- end }}
