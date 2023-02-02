@@ -71,6 +71,27 @@ func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) 
 	}, nil
 }
 
+func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory) (*storage.NodeScan, error) {
+	f.requestedScan = true
+	return &storage.NodeScan{
+		Components: []*storage.EmbeddedNodeScanComponent{
+			{
+				Vulns: []*storage.EmbeddedVulnerability{
+					{
+						Cve: "CVE-2020-1234",
+					},
+					{
+						Cve: "CVE-2021-1234",
+					},
+					{
+						Cve: "CVE-2022-1234",
+					},
+				},
+			},
+		},
+	}, nil
+}
+
 func (*fakeNodeScanner) TestNodeScanner() error {
 	return nil
 }
