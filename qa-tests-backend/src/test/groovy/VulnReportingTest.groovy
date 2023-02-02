@@ -96,9 +96,11 @@ class VulnReportingTest extends BaseSpecification  {
 
         then:
         "the email server should've gotten an email with the report"
-
-        def emails = mailServer.findEmailsByToEmail(Constants.EMAIL_NOTIFER_SENDER)
-        assert emails.size() == 1
+        List emails = []
+        withRetry(4, 3) {
+            emails = mailServer.findEmailsByToEmail(Constants.EMAIL_NOTIFER_SENDER)
+            assert emails.size() == 1
+        }
 
         def email = emails[0]
         def emailId = (String) email["id"]
@@ -121,15 +123,19 @@ class VulnReportingTest extends BaseSpecification  {
         "Cleanup resources"
         if (report) {
             VulnReportService.deleteVulnReportConfig(report.id)
+            log.info "[Cleanup] Deleted vulnerability report config"
         }
         if (collection) {
             CollectionsService.deleteCollection(collection.id)
+            log.info "[Cleanup] Deleted collection"
         }
         if (notifier) {
             notifier.deleteNotifier()
+            log.info "[Cleanup] Deleted email notifier"
         }
         if (email) {
             mailServer.deleteEmail(emailId)
+            log.info "[Cleanup] Deleted email from mail server"
         }
     }
 
