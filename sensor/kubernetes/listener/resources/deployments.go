@@ -129,7 +129,13 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	// because IF the object is a pod, we want to process the pod event.
 	objAsPod, _ := obj.(*v1.Pod)
 
-	var events *component.ResourceEvent
+	events := &component.ResourceEvent{
+		ForwardMessages:                   []*central.SensorEvent{},
+		CompatibilityDetectionDeployment:  []component.CompatibilityDetectionMessage{},
+		CompatibilityReprocessDeployments: []string{},
+		DeploymentTiming:                  nil,
+		DeploymentReferences:              []component.DeploymentReference{},
+	}
 	// If the object is a pod, process the pod event.
 	if objAsPod != nil {
 		var owningDeploymentID string
@@ -163,7 +169,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 		if deploymentWrap == nil {
 			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
-			events = d.maybeUpdateParentsOfPod(objAsPod, oldObj, action)
+			d.maybeUpdateParentsOfPod(objAsPod, oldObj, action, events)
 			if removeEvents != nil {
 				events.AppendMessage(removeEvents)
 			}
@@ -295,22 +301,22 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 
 // maybeUpdateParentsOfPod may return SensorEvents indicating a change in a deployment's state based on updated pod state.
 // We do this to ensure that the image IDs in the deployment are updated based on the actual running images in the pod.
-func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction, rootEvent *component.ResourceEvent) {
 	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
-		return nil
+		return
 	}
 
 	if action != central.ResourceAction_REMOVE_RESOURCE && oldObj != nil {
 		oldPod, ok := oldObj.(*v1.Pod)
 		if !ok {
 			utils.Should(errors.Errorf("previous version of pod is not a pod (got %T)", oldObj))
-			return nil
+			return
 		}
 		// We care when pods are transitioning to running so ensure that the old pod status is not RUNNING
 		// In the cases of CREATES or UPDATES
 		if oldPod.Status.Phase == v1.PodRunning {
-			return nil
+			return
 		}
 	}
 
@@ -318,12 +324,10 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	// We also only track top-level objects (ex we track Deployment resources in favor of the underlying ReplicaSet and Pods)
 	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
 	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
-	var events *component.ResourceEvent
 	for _, owner := range owners {
 		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
-		events = component.MergeResourceEvents(events, ev)
+		rootEvent.MergeResourceEvent(ev)
 	}
-	return events
 }
 
 // processPodEvent returns a SensorEvent indicating a change in a pod's state.
