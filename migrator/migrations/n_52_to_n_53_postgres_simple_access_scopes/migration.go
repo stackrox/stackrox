@@ -92,7 +92,7 @@ func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgx
 		return errors.Wrap(err,
 			"moving roles from rocksdb to postgres")
 	}
-	if err := updateReportConfigurationScopeIDs(postgresDB); err != nil {
+	if err := migrateReportConfigurationScopeIDs(postgresDB); err != nil {
 		return errors.Wrap(err, "updating access scope IDs for Report Configuration objects in postgres")
 	}
 	return nil
@@ -262,27 +262,35 @@ func getReportConfigurationScopeID(reportConfiguration *storage.ReportConfigurat
 	}
 	_, accessIDParseErr := uuid.FromString(reportConfigurationScopeID)
 	if accessIDParseErr != nil {
-		log.WriteToStderrf("failed to convert report configuration to postgres format, bad scope ID. Report Configuration [%s], error %v", reportConfiguration.GetName(), accessIDParseErr)
+		log.WriteToStderrf("failed to convert report configuration to postgres format, bad scope ID. Report Configuration ID: [%s] Name:[%s], error %v", reportConfiguration.GetId(), reportConfiguration.GetName(), accessIDParseErr)
 		return "", accessIDParseErr
 	}
 	return reportConfigurationScopeID, nil
 }
 
-func updateReportConfigurationScopeIDs(postgresDB *pgxpool.Pool) error {
+// This function was added between 3.73 and 3.74 in order to cover an overlooked reference to access scope IDs.
+// Users who migrated to postgres with 3.73 may have report configurations relying on incorrect scope IDs.
+func migrateReportConfigurationScopeIDs(postgresDB *pgxpool.Pool) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgReportConfigurationStore.New(postgresDB)
 	var reportConfigs []*storage.ReportConfiguration
 	err := walkReportConfigurations(ctx, store, func(obj *storage.ReportConfiguration) error {
 		reportConfigurationScopeID, conversionErr := getReportConfigurationScopeID(obj)
 		if conversionErr != nil {
-			return conversionErr
+			// The goal here is to fail open, and to log reports for which the report configuration update failed.
+			// The case where the scope ID update failed is logged in the called function.
+			return nil
 		}
 		obj.ScopeId = reportConfigurationScopeID
 		reportConfigs = append(reportConfigs, obj)
 		if len(reportConfigs) == batchSize {
 			err := store.UpsertMany(ctx, reportConfigs)
 			if err != nil {
-				log.WriteToStderrf("failed to persist report configurations to store %v", err)
+				batchIDs := make([]string, 0, len(reportConfigs))
+				for _, reportConfig := range reportConfigs {
+					batchIDs = append(batchIDs, reportConfig.GetId())
+				}
+				log.WriteToStderrf("failed to persist report configurations IDs [%s] to store %v", strings.Join(batchIDs, " "), err)
 				return err
 			}
 			reportConfigs = reportConfigs[:0]
