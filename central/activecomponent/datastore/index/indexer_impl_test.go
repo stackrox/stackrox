@@ -16,6 +16,8 @@ import (
 )
 
 func TestActiveComponentIndex(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(ActiveComponentIndexTestSuite))
 }
 
@@ -29,8 +31,6 @@ type ActiveComponentIndexTestSuite struct {
 }
 
 func (suite *ActiveComponentIndexTestSuite) SetupTest() {
-	pgtest.SkipIfPostgresEnabled(suite.T())
-
 	var err error
 	suite.bleveIndex, err = globalindex.MemOnlyIndex()
 	suite.Require().NoError(err)

@@ -27,6 +27,8 @@ var (
 )
 
 func TestNodeCVEDataStore(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(NodeCVEDataStoreSuite))
 }
 
@@ -42,7 +44,6 @@ type NodeCVEDataStoreSuite struct {
 }
 
 func (suite *NodeCVEDataStoreSuite) SetupSuite() {
-	pgtest.SkipIfPostgresEnabled(suite.T())
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)

@@ -48,12 +48,12 @@ type PostgresCloneManagerSuite struct {
 }
 
 func TestManagerSuite(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(PostgresCloneManagerSuite))
 }
 
 func (s *PostgresCloneManagerSuite) SetupTest() {
-	pgtest.SkipIfPostgresEnabled(s.T())
-
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())

@@ -22,6 +22,8 @@ var (
 )
 
 func TestIndicatorIndex(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(IndicatorIndexTestSuite))
 }
 
@@ -34,7 +36,6 @@ type IndicatorIndexTestSuite struct {
 }
 
 func (suite *IndicatorIndexTestSuite) SetupSuite() {
-	pgtest.SkipIfPostgresEnabled(suite.T())
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 

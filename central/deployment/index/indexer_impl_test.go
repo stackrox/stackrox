@@ -25,6 +25,8 @@ import (
 )
 
 func TestDeploymentIndex(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(DeploymentIndexTestSuite))
 }
 
@@ -37,8 +39,6 @@ type DeploymentIndexTestSuite struct {
 }
 
 func (suite *DeploymentIndexTestSuite) SetupTest() {
-	pgtest.SkipIfPostgresEnabled(suite.T())
-
 	var err error
 	suite.bleveIndex, err = globalindex.MemOnlyIndex()
 	suite.Require().NoError(err)
@@ -50,9 +50,7 @@ func (suite *DeploymentIndexTestSuite) SetupTest() {
 }
 
 func (suite *DeploymentIndexTestSuite) TearDownTest() {
-	if !suite.T().Skipped() {
-		suite.NoError(suite.bleveIndex.Close())
-	}
+	suite.NoError(suite.bleveIndex.Close())
 }
 
 // TODO(ROX-2986) Re-add unit test once performance hit on negation query is resolved
