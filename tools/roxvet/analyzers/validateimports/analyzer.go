@@ -20,6 +20,7 @@ const doc = `check that imports are valid`
 const roxPrefix = "github.com/stackrox/rox/"
 
 var (
+	// Keep this in alphabetic order.
 	validRoots = set.NewFrozenStringSet(
 		"central",
 		"compliance",
@@ -179,7 +180,7 @@ func checkForbidden(impPath, packageName string) error {
 // only import StackRox code from allowedPackages
 func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.ImportSpec, validImportRoot, packageName string) {
 	allowedPackages := []string{validImportRoot, "generated", "image"}
-	// The migrator is NOT allowed to import all code from pkg except packages isolated.
+	// The migrator is NOT allowed to import all codes from pkg except isolated packages.
 	if validImportRoot != "pkg" && !strings.HasPrefix(validImportRoot, "migrator") {
 		allowedPackages = append(allowedPackages, "pkg")
 	}
@@ -187,6 +188,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	// Specific sub-packages in pkg that the migrator and its sub-packages are allowed to import go here.
 	// Please be VERY prudent about adding to this list, since everything that's added to this list
 	// will need to be protected by strict compatibility guarantees.
+	// Keep this in alphabetic order.
 	if strings.HasPrefix(validImportRoot, "migrator") {
 		allowedPackages = append(allowedPackages,
 			"pkg/auth",
@@ -203,9 +205,8 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/dackbox/crud",
 			"pkg/dackbox/raw",
 			"pkg/dackbox/sortedkeys",
-			"pkg/defaults/policies",
-			"pkg/nodes/converter",
 			"pkg/db",
+			"pkg/defaults/policies",
 			"pkg/env",
 			"pkg/errorhelpers",
 			"pkg/features",
@@ -217,6 +218,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/logging",
 			"pkg/metrics",
 			"pkg/migrations",
+			"pkg/nodes/converter",
 			"pkg/policyutils",
 			"pkg/postgres",
 			"pkg/postgres/pgadmin",
@@ -229,8 +231,8 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/retry",
 			"pkg/rocksdb",
 			"pkg/sac",
-			"pkg/scans",
 			"pkg/scancomponent",
+			"pkg/scans",
 			"pkg/search",
 			"pkg/search/postgres",
 			"pkg/secondarykey",
