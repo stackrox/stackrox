@@ -91,12 +91,18 @@ func (t *segmentTelemeter) Stop() {
 }
 
 func (t *segmentTelemeter) getUserID(o *telemeter.CallOptions) string {
+	if o.AnonymousID != "" {
+		return ""
+	}
 	return o.UserID
 }
 
 func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	if o.UserID != "" {
 		return ""
+	}
+	if o.AnonymousID != "" {
+		return o.AnonymousID
 	}
 	if o.ClientID != "" {
 		return o.ClientID

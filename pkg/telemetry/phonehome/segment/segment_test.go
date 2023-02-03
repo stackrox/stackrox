@@ -36,3 +36,62 @@ func Test_makeDeviceContext(t *testing.T) {
 	groups := ctx.Extra["groups"].(map[string][]string)
 	assert.ElementsMatch(t, []string{"groupA_id1", "groupA_id2"}, groups["groupA"])
 }
+
+func Test_WithAnonymousId(t *testing.T) {
+	type result struct {
+		anonymousID string
+		userID      string
+	}
+
+	cases := []struct {
+		opts     []telemeter.Option
+		expected result
+	}{
+		{opts: []telemeter.Option{
+			telemeter.WithUserID("userID"),
+			telemeter.WithAnonymousID("anonymousID"),
+		}, expected: result{
+			userID:      "",
+			anonymousID: "anonymousID",
+		}},
+		{opts: []telemeter.Option{
+			telemeter.WithAnonymousID("anonymousID"),
+			telemeter.WithUserID("userID"),
+		}, expected: result{
+			userID:      "userID",
+			anonymousID: "",
+		}},
+		{opts: []telemeter.Option{}, expected: result{
+			userID:      "",
+			anonymousID: "clientID",
+		}},
+		{opts: []telemeter.Option{
+			telemeter.WithClient("anotherID", "clientType"),
+		}, expected: result{
+			userID:      "",
+			anonymousID: "anotherID",
+		}},
+		{opts: []telemeter.Option{
+			telemeter.WithUserID("userID"),
+			telemeter.WithClient("anotherID", "clientType"),
+		}, expected: result{
+			userID:      "userID",
+			anonymousID: "",
+		}},
+		{opts: []telemeter.Option{
+			telemeter.WithAnonymousID("anonymousID"),
+			telemeter.WithClient("anotherID", "clientType"),
+		}, expected: result{
+			userID:      "",
+			anonymousID: "anonymousID",
+		}},
+	}
+
+	st := &segmentTelemeter{clientID: "clientID"}
+
+	for _, c := range cases {
+		opts := telemeter.ApplyOptions(c.opts)
+		assert.Equal(t, c.expected.userID, st.getUserID(opts))
+		assert.Equal(t, c.expected.anonymousID, st.getAnonymousID(opts))
+	}
+}

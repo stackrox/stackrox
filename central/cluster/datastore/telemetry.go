@@ -29,11 +29,11 @@ func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 		cfg.Telemeter().Track("Secured Cluster Registered", props, telemeter.WithUserID(userID))
 
 		// Add the secured cluster 'user' to the Tenant group:
-		cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(cluster.GetId()))
+		cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithAnonymousID(cluster.GetId()))
 
 		// Update the secured cluster identity from its name:
 		cfg.Telemeter().Identify(makeClusterProperties(cluster),
-			telemeter.WithUserID(cluster.GetId()),
+			telemeter.WithAnonymousID(cluster.GetId()),
 			telemeter.WithClient(cluster.GetId(), securedClusterClient),
 		)
 	}
@@ -59,7 +59,7 @@ func trackClusterInitialized(cluster *storage.Cluster) {
 			Track("Secured Cluster Initialized", map[string]any{
 				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 			},
-				telemeter.WithUserID(cluster.GetId()),
+				telemeter.WithAnonymousID(cluster.GetId()),
 				telemeter.WithClient(cluster.GetId(), securedClusterClient),
 				telemeter.WithGroups("Tenant", cfg.GroupID))
 	}
@@ -97,7 +97,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props["CPU Capacity"] = metrics.CpuCapacity
 
 		opts := []telemeter.Option{
-			telemeter.WithUserID(cluster.GetId()),
+			telemeter.WithAnonymousID(cluster.GetId()),
 			telemeter.WithClient(cluster.GetId(), securedClusterClient),
 		}
 		cfg.Telemeter().Identify(props, opts...)
