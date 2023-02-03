@@ -92,7 +92,7 @@ func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgx
 		return errors.Wrap(err,
 			"moving roles from rocksdb to postgres")
 	}
-	// This function call was added between 3.73 and 3.74 in order to cover an overlooked reference to access scope IDs.
+	// This function call was added in 3.74 in order to cover an overlooked reference to access scope IDs.
 	// Users who migrated to postgres with 3.73 may have report configurations relying on incorrect scope IDs.
 	if err := migrateReportConfigurationScopeIDs(postgresDB); err != nil {
 		return errors.Wrap(err, "updating access scope IDs for Report Configuration objects in postgres")
@@ -262,15 +262,29 @@ func getReportConfigurationScopeID(reportConfiguration *storage.ReportConfigurat
 	if replacement, found := accessScopeIDMapping[reportConfigurationScopeID]; found {
 		reportConfigurationScopeID = replacement
 	}
-	_, accessIDParseErr := uuid.FromString(reportConfigurationScopeID)
-	if accessIDParseErr != nil {
-		log.WriteToStderrf("failed to convert report configuration to postgres format, bad scope ID. Report Configuration ID: [%s] Name:[%s], error %v", reportConfiguration.GetId(), reportConfiguration.GetName(), accessIDParseErr)
+	if _, accessIDParseErr := uuid.FromString(reportConfigurationScopeID); accessIDParseErr != nil {
+		log.WriteToStderrf("failed to convert report configuration to postgres format, bad scope ID. "+
+			"Report Configuration ID: [%s] Name:[%s], error %v",
+			reportConfiguration.GetId(),
+			reportConfiguration.GetName(),
+			accessIDParseErr)
 		return "", accessIDParseErr
 	}
 	return reportConfigurationScopeID, nil
 }
 
-// This function was added between 3.73 and 3.74 in order to cover an overlooked reference to access scope IDs.
+func storeReportsConfigurationBatch(ctx context.Context, store pgReportConfigurationStore.Store, reportConfigs []*storage.ReportConfiguration) {
+	err := store.UpsertMany(ctx, reportConfigs)
+	if err != nil {
+		batchIDs := make([]string, 0, len(reportConfigs))
+		for _, reportConfig := range reportConfigs {
+			batchIDs = append(batchIDs, reportConfig.GetId())
+		}
+		log.WriteToStderrf("failed to persist report configurations with IDs [%s] to store %v", strings.Join(batchIDs, " "), err)
+	}
+}
+
+// This function was added in 3.74 in order to cover an overlooked reference to access scope IDs.
 // Users who migrated to postgres with 3.73 may have report configurations relying on incorrect scope IDs.
 func migrateReportConfigurationScopeIDs(postgresDB *pgxpool.Pool) error {
 	ctx := sac.WithAllAccess(context.Background())
@@ -285,28 +299,18 @@ func migrateReportConfigurationScopeIDs(postgresDB *pgxpool.Pool) error {
 		}
 		obj.ScopeId = reportConfigurationScopeID
 		reportConfigs = append(reportConfigs, obj)
-		if len(reportConfigs) == batchSize {
-			err := store.UpsertMany(ctx, reportConfigs)
-			if err != nil {
-				batchIDs := make([]string, 0, len(reportConfigs))
-				for _, reportConfig := range reportConfigs {
-					batchIDs = append(batchIDs, reportConfig.GetId())
-				}
-				log.WriteToStderrf("failed to persist report configurations IDs [%s] to store %v", strings.Join(batchIDs, " "), err)
-				return err
-			}
-			reportConfigs = reportConfigs[:0]
+		if len(reportConfigs) < batchSize {
+			return nil
 		}
+		storeReportsConfigurationBatch(ctx, store, reportConfigs)
+		reportConfigs = reportConfigs[:0]
 		return nil
 	})
 	if err != nil {
-		return err
+		log.WriteToStderrf("error while updating scope IDs for report configurations in store %v", err)
 	}
 	if len(reportConfigs) > 0 {
-		err = store.UpsertMany(ctx, reportConfigs)
-		if err != nil {
-			return err
-		}
+		storeReportsConfigurationBatch(ctx, store, reportConfigs)
 	}
 	return nil
 }
