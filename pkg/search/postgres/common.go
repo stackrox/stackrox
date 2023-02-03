@@ -106,7 +106,7 @@ type groupByEntry struct {
 // We don't care about actually reading the values of these fields, they're
 // there to make SQL happy.
 func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
-	if !q.DistinctAppliedOnPrimaryKeySelect() && !q.shouldAggrRows() {
+	if !q.DistinctAppliedOnPrimaryKeySelect() && !q.groupByNonPKFields() {
 		return nil
 	}
 
@@ -141,8 +141,13 @@ func (q *query) populatePrimaryKeySelectFields() {
 	for _, pk := range q.Schema.PrimaryKeys() {
 		q.PrimaryKeyFields = append(q.PrimaryKeyFields, pgsearch.SelectQueryField{
 			SelectPath: qualifyColumn(pk.Schema.Table, pk.ColumnName, ternary.String(pk.SQLType == "uuid", "::text", "")),
-			Alias:      strings.Join([]string{q.Schema.Table, pk.ColumnName}, "_"),
-			FieldType:  pk.DataType,
+			Alias: func() string {
+				if q.QueryType == SELECT {
+					return strings.Join([]string{q.Schema.Table, pk.ColumnName}, "_")
+				}
+				return ""
+			}(),
+			FieldType: pk.DataType,
 		})
 	}
 
@@ -164,7 +169,12 @@ func (q *query) populatePrimaryKeySelectFields() {
 	q.PrimaryKeyFields = q.PrimaryKeyFields[:0]
 	q.PrimaryKeyFields = append(q.PrimaryKeyFields, pgsearch.SelectQueryField{
 		SelectPath: fmt.Sprintf("distinct(%s)", stringutils.JoinNonEmpty(",", outStr...)),
-		Alias:      strings.Join([]string{"distinct", q.Schema.Table, columnName}, "_"),
+		Alias: func() string {
+			if q.QueryType == SELECT {
+				return strings.Join([]string{"distinct", q.Schema.Table, columnName}, "_")
+			}
+			return ""
+		}(),
 	})
 }
 
@@ -204,7 +214,7 @@ func (q *query) getPortionBeforeFromClause() string {
 
 		selectStrs := make([]string, 0, len(allSelectFields))
 		for _, field := range allSelectFields {
-			if q.shouldAggrRows() && field.MustAggregate() {
+			if q.groupByNonPKFields() && !field.FromGroupBy && !field.DerivedField {
 				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) %s", field.SelectPath, field.Alias))
 			} else {
 				selectStrs = append(selectStrs, field.PathForSelectPortion())
@@ -222,7 +232,8 @@ func (q *query) DistinctAppliedOnPrimaryKeySelect() bool {
 	return len(q.InnerJoins) > 0 && len(q.GroupBys) == 0
 }
 
-func (q *query) shouldAggrRows() bool {
+// groupByNonPKFields returns true if a group by clause based on fields other than primary keys is present in the query.
+func (q *query) groupByNonPKFields() bool {
 	return len(q.GroupBys) > 0 && !q.GroupByPrimaryKey
 }
 
@@ -312,7 +323,12 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelect *v1.Qu
 		querySoFar.SelectedFields = append(querySoFar.SelectedFields, pgsearch.SelectQueryField{
 			SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, ternary.String(dbField.SQLType == "uuid", "::text", "")),
 			FieldType:  dbField.DataType,
-			Alias:      strings.Join(strings.Fields(field), ""),
+			Alias: func() string {
+				if querySoFar.QueryType == SELECT {
+					return strings.Join(strings.Fields(field), "")
+				}
+				return ""
+			}(),
 			// TODO(mandar): derived fields as field labels or expand QuerySelect to store user-defined aggr functions?
 			// TODO(mandar): Handle array type and map type.
 		})
@@ -361,9 +377,14 @@ func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker
 		}
 		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{
 			Field: pgsearch.SelectQueryField{
-				SelectPath:  qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
-				FieldType:   dbField.DataType,
-				Alias:       strings.Join(strings.Fields(groupByField), ""),
+				SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
+				FieldType:  dbField.DataType,
+				Alias: func() string {
+					if querySoFar.QueryType == SELECT {
+						return strings.Join(strings.Fields(groupByField), "")
+					}
+					return ""
+				}(),
 				FromGroupBy: true,
 			},
 		})
@@ -896,7 +917,7 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.
 	}
 
 	queryStr := query.AsSQL()
-	
+
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		if !pgutils.IsTransientError(err) {

@@ -52,16 +52,6 @@ func (f *SelectQueryField) PathForSelectPortion() string {
 	return fmt.Sprintf("%s %s", f.SelectPath, f.Alias)
 }
 
-// MustAggregate returns true if the select field needs to aggregated.
-func (f *SelectQueryField) MustAggregate() bool {
-	return !f.FromGroupBy && !f.DerivedField
-}
-
-// AggrAndUnnest returns true if the select field needs to aggregated and unnested.
-func (f *SelectQueryField) AggrAndUnnest() bool {
-	return !f.FromGroupBy && !f.DerivedField
-}
-
 // QueryEntry is an entry with clauses added by portions of the query.
 type QueryEntry struct {
 	Where          WhereClause
