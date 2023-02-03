@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +12,7 @@ import (
 
 func TestWrongConfigurationTypeTransform(t *testing.T) {
 	at := newAccessScopeTransform()
-	msgs, err := at.Transform(context.TODO(), &declarativeconfig.AuthProvider{})
+	msgs, err := at.Transform(&declarativeconfig.AuthProvider{})
 	assert.Nil(t, msgs)
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, errox.InvalidArgs)
@@ -29,7 +28,7 @@ func TestTransformAccessScope(t *testing.T) {
 		Rules:       declarativeconfig.Rules{},
 	}
 
-	msgs, err := at.Transform(context.TODO(), scopeConfig)
+	msgs, err := at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
 	msg := msgs[0]
@@ -54,7 +53,7 @@ func TestTransformAccessScope(t *testing.T) {
 						Operator: 1,
 						Values:   []string{"a", "b", "c"}}}}}},
 	}
-	msgs, err = at.Transform(context.TODO(), scopeConfig)
+	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
 	msg = msgs[0]
@@ -80,7 +79,7 @@ func TestTransformAccessScope(t *testing.T) {
 						Operator: 1,
 						Values:   []string{"a", "b", "c"}}}}}},
 	}
-	msgs, err = at.Transform(context.TODO(), scopeConfig)
+	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
 	msg = msgs[0]
@@ -113,7 +112,7 @@ func TestTransformAccessScope(t *testing.T) {
 						Operator: 1,
 						Values:   []string{"a", "b", "c"}}}}}},
 	}
-	msgs, err = at.Transform(context.TODO(), scopeConfig)
+	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
 	msg = msgs[0]
@@ -139,7 +138,7 @@ func TestTransformAccessScope(t *testing.T) {
 			},
 		},
 	}
-	msgs, err = at.Transform(context.TODO(), scopeConfig)
+	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
 	msg = msgs[0]
@@ -163,7 +162,7 @@ func TestTransformAccessScope(t *testing.T) {
 			},
 		},
 	}
-	msgs, err = at.Transform(context.TODO(), scopeConfig)
+	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
 	msg = msgs[0]
@@ -219,7 +218,7 @@ func TestTransformAccessScope(t *testing.T) {
 						Operator: 1,
 						Values:   []string{"a", "b", "c"}}}}}},
 	}
-	msgs, err = at.Transform(context.TODO(), scopeConfig)
+	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
 	msg = msgs[0]

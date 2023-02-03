@@ -1,8 +1,6 @@
 package transform
 
 import (
-	"context"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -17,7 +15,7 @@ func newAccessScopeTransform() *accessScopeTransform {
 	return &accessScopeTransform{}
 }
 
-func (a *accessScopeTransform) Transform(ctx context.Context, configuration declarativeconfig.Configuration) ([]proto.Message, error) {
+func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configuration) ([]proto.Message, error) {
 	scopeConfig, ok := configuration.(*declarativeconfig.AccessScope)
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for access scope: %T", configuration)
