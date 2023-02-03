@@ -73,14 +73,26 @@ type fieldValue struct {
 	highlighted bool
 }
 
-// NewPagination create a new pagination object
+// NewGroupBy creates a new group by object.
+func NewGroupBy() *GroupBy {
+	return &GroupBy{
+		grpBy: &v1.QueryGroupBy{},
+	}
+}
+
+// GroupBy defines the group by clause to be used with the query.
+type GroupBy struct {
+	grpBy *v1.QueryGroupBy
+}
+
+// NewPagination creates a new pagination object.
 func NewPagination() *Pagination {
 	return &Pagination{
 		qp: &v1.QueryPagination{},
 	}
 }
 
-// Pagination defines the pagination to be used with the query
+// Pagination defines the pagination to be used with the query.
 type Pagination struct {
 	qp *v1.QueryPagination
 }
@@ -144,8 +156,11 @@ type QueryBuilder struct {
 	ids            *[]string
 	linkedFields   [][]fieldValue
 
+	selectFields []FieldLabel
+	// TODO(mandar): Deprecate highlighted and replace with selects.
 	highlightedFields map[FieldLabel]struct{}
 
+	groupBy    *GroupBy
 	pagination *Pagination
 }
 
@@ -155,6 +170,34 @@ func NewQueryBuilder() *QueryBuilder {
 		fieldsToValues:    make(map[FieldLabel][]string),
 		highlightedFields: make(map[FieldLabel]struct{}),
 	}
+}
+
+// WithSelectFields sets fields to select.
+func (qb *QueryBuilder) WithSelectFields(fields ...FieldLabel) *QueryBuilder {
+	qb.selectFields = fields
+	return qb
+}
+
+// AddSelectFields adds fields to select.
+func (qb *QueryBuilder) AddSelectFields(fields ...FieldLabel) *QueryBuilder {
+	qb.selectFields = append(qb.selectFields, fields...)
+	return qb
+}
+
+// WithGroupBy sets query group by.
+func (qb *QueryBuilder) WithGroupBy(grpBy *GroupBy) *QueryBuilder {
+	qb.groupBy = grpBy
+	return qb
+}
+
+// AddGroupBy adds fields to groups query results on.
+func (qb *QueryBuilder) AddGroupBy(fields ...FieldLabel) *QueryBuilder {
+	gb := NewGroupBy()
+	for _, field := range fields {
+		gb.grpBy.Fields = append(gb.grpBy.Fields, field.String())
+	}
+	qb.groupBy = gb
+	return qb
 }
 
 // WithPagination applies pagination to the query
@@ -344,6 +387,14 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	// Sort the queries by field value, to ensure consistency of output.
 	fields := qb.getSortedFields()
 
+	var qSelect *v1.QuerySelect
+	if len(qb.selectFields) > 0 {
+		qSelect = &v1.QuerySelect{}
+	}
+	for _, selectField := range qb.selectFields {
+		qSelect.Fields = append(qSelect.Fields, selectField.String())
+	}
+
 	for _, field := range fields {
 		_, highlighted := qb.highlightedFields[field]
 		queries = append(queries, queryFromFieldValues(field.String(), qb.fieldsToValues[field], highlighted))
@@ -354,6 +405,13 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	}
 
 	cq := ConjunctionQuery(queries...)
+	if qSelect != nil {
+		cq.Select = qSelect
+	}
+
+	if qb.groupBy != nil {
+		cq.GroupBy = qb.groupBy.grpBy
+	}
 	if qb.pagination != nil {
 		cq.Pagination = qb.pagination.qp
 	}

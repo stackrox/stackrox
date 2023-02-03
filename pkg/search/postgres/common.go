@@ -8,7 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/gogo/protobuf/proto"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -48,6 +50,7 @@ const (
 	GET
 	COUNT
 	DELETE
+	SELECT
 )
 
 func replaceVars(s string) string {
@@ -89,7 +92,10 @@ type query struct {
 	Pagination parsedPaginationQuery
 	InnerJoins []innerJoin
 
-	GroupBys []groupByEntry
+	// This indicates if a primary key is present in the group by clause. Unless GROUP BY clause is explicitly provided,
+	// we order the results by the primary key of the schema.
+	GroupByPrimaryKey bool
+	GroupBys          []groupByEntry
 }
 
 type groupByEntry struct {
@@ -100,11 +106,22 @@ type groupByEntry struct {
 // We don't care about actually reading the values of these fields, they're
 // there to make SQL happy.
 func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
-	if !q.DistinctAppliedOnPrimaryKeySelect() {
+	if !q.DistinctAppliedOnPrimaryKeySelect() && !q.shouldAggrRows() {
 		return nil
 	}
 
 	var out []pgsearch.SelectQueryField
+	for _, groupBy := range q.GroupBys {
+		var alreadyExists bool
+		for _, selectedField := range q.SelectedFields {
+			if selectedField.SelectPath == groupBy.Field.SelectPath {
+				alreadyExists = true
+			}
+		}
+		if !alreadyExists {
+			out = append(out, groupBy.Field)
+		}
+	}
 	for _, orderByEntry := range q.Pagination.OrderBys {
 		var alreadyExists bool
 		for _, selectedField := range q.SelectedFields {
@@ -132,6 +149,7 @@ func (q *query) populatePrimaryKeySelectFields() {
 	if len(q.PrimaryKeyFields) == 0 {
 		return
 	}
+
 	// If we do not need to apply distinct clause to the primary keys, then we are done here.
 	if !q.DistinctAppliedOnPrimaryKeySelect() {
 		return
@@ -168,20 +186,31 @@ func (q *query) getPortionBeforeFromClause() string {
 	case GET:
 		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:
+		var selectStrs []string
 		// Always select the primary keys first.
-		var selectPaths []string
-		for _, field := range q.PrimaryKeyFields {
-			selectPaths = append(selectPaths, field.PathForSelectPortion())
+		for _, f := range q.PrimaryKeyFields {
+			selectStrs = append(selectStrs, f.PathForSelectPortion())
 		}
-		for _, field := range q.SelectedFields {
-			selectPaths = append(selectPaths, field.PathForSelectPortion())
+		for _, f := range q.SelectedFields {
+			selectStrs = append(selectStrs, f.PathForSelectPortion())
 		}
+		for _, f := range q.ExtraSelectedFieldPaths() {
+			selectStrs = append(selectStrs, f.PathForSelectPortion())
+		}
+		return "select " + stringutils.JoinNonEmpty(", ", selectStrs...)
+	case SELECT:
+		allSelectFields := q.SelectedFields
+		allSelectFields = append(allSelectFields, q.ExtraSelectedFieldPaths()...)
 
-		// Extra fields are group by fields and order by fields.
-		for _, field := range q.ExtraSelectedFieldPaths() {
-			selectPaths = append(selectPaths, field.PathForSelectPortion())
+		selectStrs := make([]string, 0, len(allSelectFields))
+		for _, field := range allSelectFields {
+			if q.shouldAggrRows() && field.MustAggregate() {
+				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) %s", field.SelectPath, field.Alias))
+			} else {
+				selectStrs = append(selectStrs, field.PathForSelectPortion())
+			}
 		}
-		return "select " + stringutils.JoinNonEmpty(", ", selectPaths...)
+		return "select " + stringutils.JoinNonEmpty(", ", selectStrs...)
 	}
 	panic(fmt.Sprintf("unhandled query type %s", q.QueryType))
 }
@@ -191,6 +220,10 @@ func (q *query) DistinctAppliedOnPrimaryKeySelect() bool {
 	// otherwise there could be multiple rows with the same primary key in the join table.
 	// TODO(viswa): we might be able to do this even more narrowly
 	return len(q.InnerJoins) > 0 && len(q.GroupBys) == 0
+}
+
+func (q *query) shouldAggrRows() bool {
+	return len(q.GroupBys) > 0 && !q.GroupByPrimaryKey
 }
 
 func (q *query) AsSQL() string {
@@ -234,10 +267,6 @@ func (q *query) AsSQL() string {
 	return querySB.String()
 }
 
-func qualifyColumn(table, column, cast string) string {
-	return table + "." + column + cast
-}
-
 type parsedPaginationQuery struct {
 	OrderBys []orderByEntry
 	Limit    int
@@ -268,22 +297,83 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-func populateGroupBy(querySoFar *query, schema *walker.Schema, queryFields map[string]searchFieldMetadata) {
-	// Explicit GROUP BY clauses are not supported yet. If a query field (in select or order by) is a derived field requiring a group by clause,
-	// default to primary key grouping. Note that all fields in the query, including pagination, are in `queryFields`.
-	for _, field := range queryFields {
-		if field.derivedMetadata == nil {
-			continue
-		}
-		switch field.derivedMetadata.DerivationType {
-		case searchPkg.CountDerivationType:
-			applyGroupByPrimaryKeys(querySoFar, schema)
-			return
-		}
+func populateSelect(querySoFar *query, schema *walker.Schema, querySelect *v1.QuerySelect, queryFields map[string]searchFieldMetadata) error {
+	if len(querySelect.GetFields()) == 0 {
+		return nil
 	}
+
+	for _, field := range querySelect.GetFields() {
+		fieldMetadata := queryFields[field]
+		dbField := fieldMetadata.baseField
+		if dbField == nil {
+			return errors.Errorf("field %s in SELECT clause does not exist in table %s or connected tables", field, schema.Table)
+		}
+
+		fmt.Println(strings.Join(strings.Fields(field), ""))
+		querySoFar.SelectedFields = append(querySoFar.SelectedFields, pgsearch.SelectQueryField{
+			SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, ternary.String(dbField.SQLType == "uuid", "::text", "")),
+			FieldType:  dbField.DataType,
+			Alias:      strings.Join(strings.Fields(field), ""),
+			// TODO(mandar): derived fields as field labels or expand QuerySelect to store user-defined aggr functions?
+			// TODO(mandar): Handle array type and map type.
+		})
+	}
+	return nil
+}
+
+func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
+	if querySoFar.QueryType == SEARCH && len(groupBy.GetFields()) > 0 {
+		return errors.New("GROUP BY clause not supported with SEARCH query type; Use SELECT")
+	}
+
+	// If explicit group by clauses are not specified and if a query field (in select or order by) is a derived field requiring a group by clause,
+	// default to primary key grouping. Note that all fields in the query, including pagination, are in `queryFields`.
+	if len(groupBy.GetFields()) == 0 {
+		for _, field := range queryFields {
+			if field.derivedMetadata == nil {
+				continue
+			}
+			switch field.derivedMetadata.DerivationType {
+			case searchPkg.CountDerivationType:
+				applyGroupByPrimaryKeys(querySoFar, schema)
+				return nil
+			}
+		}
+		return nil
+	}
+
+	for _, groupByField := range groupBy.GetFields() {
+		fieldMetadata := queryFields[groupByField]
+		dbField := fieldMetadata.baseField
+		if dbField == nil {
+			return errors.Errorf("field %s in GROUP BY clause does not exist in table %s or connected tables", groupByField, schema.Table)
+		}
+		if fieldMetadata.derivedMetadata != nil {
+			// Aggregate functions are not allowed in GROUP BY clause. SQL constraint.
+			return errors.Errorf("found %s in GROUP BY clause. Derived fields cannot be used in GROUP BY clause", groupByField)
+		}
+		if dbField.Options.PrimaryKey {
+			querySoFar.GroupByPrimaryKey = true
+		}
+
+		var cast string
+		if dbField.SQLType == "uuid" {
+			cast = "::text"
+		}
+		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{
+			Field: pgsearch.SelectQueryField{
+				SelectPath:  qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
+				FieldType:   dbField.DataType,
+				Alias:       strings.Join(strings.Fields(groupByField), ""),
+				FromGroupBy: true,
+			},
+		})
+	}
+	return nil
 }
 
 func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
+	querySoFar.GroupByPrimaryKey = true
 	for _, pk := range schema.PrimaryKeys() {
 		var cast string
 		if pk.SQLType == "uuid" {
@@ -291,8 +381,9 @@ func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
 		}
 		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{
 			Field: pgsearch.SelectQueryField{
-				SelectPath: qualifyColumn(pk.Schema.Table, pk.ColumnName, cast),
-				FieldType:  pk.DataType,
+				SelectPath:  qualifyColumn(pk.Schema.Table, pk.ColumnName, cast),
+				FieldType:   pk.DataType,
+				FromGroupBy: true,
 			},
 		})
 	}
@@ -347,17 +438,19 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			case searchPkg.CountDerivationType:
 				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
 					Field: pgsearch.SelectQueryField{
-						SelectPath: fmt.Sprintf("count(%s)", qualifyColumn(dbField.Schema.Table, dbField.ColumnName, "")),
-						Alias:      strings.Join([]string{"count", dbField.Schema.Table, dbField.ColumnName}, "_"),
-						FieldType:  walker.Integer,
+						SelectPath:   fmt.Sprintf("count(%s)", qualifyColumn(dbField.Schema.Table, dbField.ColumnName, "")),
+						Alias:        strings.Join([]string{"count", dbField.Schema.Table, dbField.ColumnName}, "_"),
+						FieldType:    walker.Integer,
+						DerivedField: true,
 					},
 					Descending: so.GetReversed(),
 				})
 			case searchPkg.SimpleReverseSortDerivationType:
 				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
 					Field: pgsearch.SelectQueryField{
-						SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
-						FieldType:  dbField.DataType,
+						SelectPath:   qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
+						FieldType:    dbField.DataType,
+						DerivedField: true,
 					},
 					Descending: !so.GetReversed(),
 				})
@@ -422,7 +515,10 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 			parsedQuery.Data = append(parsedQuery.Data, queryEntry.Having.Values...)
 		}
 	}
-	populateGroupBy(parsedQuery, schema, dbFields)
+
+	if err := populateGroupBy(parsedQuery, q.GetGroupBy(), schema, dbFields); err != nil {
+		return nil, err
+	}
 	if err := populatePagination(parsedQuery, q.GetPagination(), schema, dbFields); err != nil {
 		return nil, err
 	}
@@ -430,10 +526,61 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 		return nil, err
 	}
 
-	// Populate primary key select fields once so that we do not have to evaluate.
+	// Populate primary key select fields once so that we do not have to evaluate multiple times.
 	parsedQuery.populatePrimaryKeySelectFields()
 
-	// Nothing more to do. Currently, GROUP BY clause is only supported on primary keys.
+	return parsedQuery, nil
+}
+
+func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
+	nowForQuery := time.Now()
+	standardizeFieldNamesInQuery(q)
+	innerJoins, dbFields := getJoinsAndFields(schema, q)
+
+	if q.GetSelect() == nil && q.GetQuery() == nil {
+		return nil, nil
+	}
+	if q.GetSelect() == nil {
+		return nil, errors.New("select portion of the query cannot be empty")
+	}
+
+	parsedQuery := &query{
+		Schema:     schema,
+		QueryType:  queryType,
+		From:       schema.Table,
+		InnerJoins: innerJoins,
+	}
+
+	err := populateSelect(parsedQuery, schema, q.GetSelect(), dbFields)
+	if err != nil {
+		return nil, err
+	}
+
+	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	if queryEntry != nil {
+		parsedQuery.Where = queryEntry.Where.Query
+		parsedQuery.Data = queryEntry.Where.Values
+		// We won't need this once highlights is removed and fields can only be selected when explicitly specified in the query.
+		parsedQuery.SelectedFields = append(parsedQuery.SelectedFields, queryEntry.SelectedFields...)
+		if queryEntry.Having != nil {
+			parsedQuery.Having = queryEntry.Having.Query
+			parsedQuery.Data = append(parsedQuery.Data, queryEntry.Having.Values...)
+		}
+	}
+
+	if err := populateGroupBy(parsedQuery, q.GetGroupBy(), schema, dbFields); err != nil {
+		return nil, err
+	}
+	if err := populatePagination(parsedQuery, q.GetPagination(), schema, dbFields); err != nil {
+		return nil, err
+	}
+	if err := applyPaginationForSearchAfter(parsedQuery); err != nil {
+		return nil, err
+	}
 	return parsedQuery, nil
 }
 
@@ -584,6 +731,10 @@ func valueFromStringPtrInterface(value interface{}) string {
 }
 
 func standardizeFieldNamesInQuery(q *v1.Query) {
+	for idx, field := range q.GetSelect().GetFields() {
+		q.Select.Fields[idx] = strings.ToLower(field)
+	}
+
 	// Lowercase all field names in the query, for standardization.
 	// There are certain places where we operate on the query fields directly as strings,
 	// without access to the options map.
@@ -599,6 +750,9 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 		}
 	})
 
+	for idx, field := range q.GetGroupBy().GetFields() {
+		q.GroupBy.Fields[idx] = strings.ToLower(field)
+	}
 	for _, sortOption := range q.GetPagination().GetSortOptions() {
 		sortOption.Field = strings.ToLower(sortOption.Field)
 	}
@@ -621,6 +775,10 @@ func (t *tracedRows) Next() bool {
 func (t *tracedRows) Close() {
 	t.Rows.Close()
 	t.qe.SetRowsAccessed(t.accessedRows)
+}
+
+func (t *tracedRows) CommandTag() pgconn.CommandTag {
+	return t.Rows.CommandTag()
 }
 
 func tracedQuery(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) (*tracedRows, error) {
@@ -733,6 +891,33 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 	return searchResults, nil
 }
 
+func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, query *query) ([]*T, error) {
+	if len(query.SelectedFields) == 0 {
+		return nil, errors.New("select fields a must for select query")
+	}
+
+	queryStr := query.AsSQL()
+	fmt.Println(queryStr)
+	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
+	if err != nil {
+		if !pgutils.IsTransientError(err) {
+			debug.PrintStack()
+		} else {
+			log.Debugf("%s", debug.Stack())
+		}
+		log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
+		return nil, err
+	}
+	defer rows.Close()
+	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, redactedQueryData(query))
+
+	var scannedRows []*T
+	if err := pgxscan.ScanAll(&scannedRows, rows); err != nil {
+		return nil, err
+	}
+	return scannedRows, nil
+}
+
 // RunSearchRequestForSchema executes a request against the database for given schema
 func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
 	var query *query
@@ -764,6 +949,41 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
 		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
 		return retryableRunSearchRequestForSchema(ctx, query, schema, db)
+	})
+}
+
+// RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
+// explicitly specify select fields.
+func RunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, schema *walker.Schema, q *v1.Query) ([]*T, error) {
+	var query *query
+	var err error
+	// Add this to be safe and convert panics to errors,
+	// since we do a lot of casting and other operations that could potentially panic in this code.
+	// Panics are expected ONLY in the event of a programming error, all foreseeable errors are handled
+	// the usual way.
+	defer func() {
+		if r := recover(); r != nil {
+			if query != nil {
+				log.Errorf("Query issue: %s %+v: %v", query.AsSQL(), redactedQueryData(query), r)
+			} else {
+				log.Errorf("Unexpected error running search request: %v", r)
+			}
+			debug.PrintStack()
+			err = fmt.Errorf("unexpected error running search request: %v", r)
+		}
+	}()
+
+	query, err = standardizeSelectQueryAndPopulatePath(q, schema, SELECT)
+	if err != nil {
+		return nil, err
+	}
+	// A nil-query implies no results.
+	if query == nil {
+		return nil, nil
+	}
+	return pgutils.Retry2(func() ([]*T, error) {
+		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+		return retryableRunSelectRequestForSchema[T](ctx, db, query)
 	})
 }
 
@@ -949,4 +1169,8 @@ func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
 		return nil, err
 	}
 	return msg, nil
+}
+
+func qualifyColumn(table, column, cast string) string {
+	return table + "." + column + cast
 }

@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
@@ -208,6 +209,98 @@ func TestMultiTableQueries(t *testing.T) {
 				}
 				assert.ElementsMatch(t, c.expectedJoinTables, actualJoins)
 			}
+		})
+	}
+}
+
+func TestSelectQueries(t *testing.T) {
+	t.Parallel()
+
+	for _, c := range []struct {
+		desc          string
+		q             *v1.Query
+		expectedError string
+		expectedQuery string
+	}{
+		{
+			desc: "base schema; no select",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedError: "select portion of the query cannot be empty",
+		},
+		{
+			desc: "base schema; select",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.DeploymentName).ProtoQuery(),
+			expectedQuery: "select deployments.Name from deployments",
+		},
+		{
+			desc: "base schema; select w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.DeploymentName).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select deployments.Name from deployments where deployments.Name = $1",
+		},
+		{
+			desc: "child schema; multiple select w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.Privileged, search.ImageName).
+				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			expectedQuery: "select deployments_containers.SecurityContext_Privileged, deployments_containers.Image_Name_FullName " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName = $1",
+		},
+		{
+			desc: "child schema; multiple select w/ where & group by",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.Privileged, search.ImageName).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddGroupBy(search.Cluster, search.Namespace).ProtoQuery(),
+			expectedQuery: "select jsonb_agg(deployments_containers.SecurityContext_Privileged), " +
+				"jsonb_agg(deployments_containers.Image_Name_FullName), deployments.ClusterName, deployments.Namespace " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName = $1 " +
+				"group by deployments.ClusterName, deployments.Namespace",
+		},
+		{
+			desc: "base schema and child schema; select",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.DeploymentName, search.ImageName).ProtoQuery(),
+			expectedQuery: "select deployments.Name, deployments_containers.Image_Name_FullName " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id",
+		},
+		{
+			desc: "base schema and child schema conjunction query; select w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.DeploymentName, search.ImageName).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select deployments.Name, deployments_containers.Image_Name_FullName " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+		},
+		{
+			desc: "nil query",
+			q:    nil,
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			actualQ, err := standardizeSelectQueryAndPopulatePath(c.q, schema.DeploymentsSchema, SELECT)
+			if c.expectedError != "" {
+				assert.Error(t, err, c.expectedError)
+				return
+			}
+			if c.q == nil {
+				assert.Nil(t, actualQ)
+				return
+			}
+
+			actual := actualQ.AsSQL()
+			assert.Equal(t, c.expectedQuery, actual)
 		})
 	}
 }
