@@ -36,7 +36,9 @@ var transientPGCodes = set.NewFrozenStringSet(
 
 	// Class 57 — Operator Intervention
 	"57000", // operator_intervention
-	"57014", // query_canceled
+
+	// "57014", // query_canceled - this means there is a statement timeout and retrying will most likely not result in greater success
+
 	"57P01", // admin_shutdown
 	"57P02", // crash_shutdown
 	"57P03", // cannot_connect_now
