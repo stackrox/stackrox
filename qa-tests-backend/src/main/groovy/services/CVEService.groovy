@@ -29,7 +29,7 @@ class CVEService extends BaseService {
     }
 
     static suppressImageCVE(String cve) {
-        if (! Env.CI_JOBNAME.contains("postgres")) {
+        if (Env.get("ROX_POSTGRES_DATASTORE", null) != "true") {
             return suppressCVE(cve)
         }
         return getImageCVEClient().suppressCVEs(CveService.SuppressCVERequest.newBuilder()
@@ -39,7 +39,7 @@ class CVEService extends BaseService {
     }
 
     static unsuppressImageCVE(String cve) {
-        if (! Env.CI_JOBNAME.contains("postgres")) {
+        if (Env.get("ROX_POSTGRES_DATASTORE", null) != "true") {
             return unsuppressCVE(cve)
         }
         return getImageCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addCves(cve).build())
