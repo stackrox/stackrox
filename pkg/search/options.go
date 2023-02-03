@@ -352,6 +352,8 @@ var (
 	TestParent1Count        = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
 	TestChild1Count         = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
 	TestGrandParentPriority = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
+	TestNestedStringCount   = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
+	TestNestedString2Count  = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
 )
 
 func init() {

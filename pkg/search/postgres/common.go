@@ -113,8 +113,10 @@ func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
 	var out []pgsearch.SelectQueryField
 	for _, groupBy := range q.GroupBys {
 		var alreadyExists bool
-		for _, selectedField := range q.SelectedFields {
-			if selectedField.SelectPath == groupBy.Field.SelectPath {
+		for idx := range q.SelectedFields {
+			field := &q.SelectedFields[idx]
+			if field.SelectPath == groupBy.Field.SelectPath {
+				field.FromGroupBy = true
 				alreadyExists = true
 			}
 		}
@@ -138,17 +140,10 @@ func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
 
 func (q *query) populatePrimaryKeySelectFields() {
 	// Note that DB framework version prior to adding this func assumes all primary key fields in Go to be string type.
-	for _, pk := range q.Schema.PrimaryKeys() {
-		q.PrimaryKeyFields = append(q.PrimaryKeyFields, pgsearch.SelectQueryField{
-			SelectPath: qualifyColumn(pk.Schema.Table, pk.ColumnName, ternary.String(pk.SQLType == "uuid", "::text", "")),
-			Alias: func() string {
-				if q.QueryType == SELECT {
-					return strings.Join([]string{q.Schema.Table, pk.ColumnName}, "_")
-				}
-				return ""
-			}(),
-			FieldType: pk.DataType,
-		})
+	pks := q.Schema.PrimaryKeys()
+	for idx := range pks {
+		pk := &pks[idx]
+		q.PrimaryKeyFields = append(q.PrimaryKeyFields, selectQueryField(pk.Search.FieldName, pk, "", pk.DataType))
 	}
 
 	if len(q.PrimaryKeyFields) == 0 {
@@ -165,16 +160,16 @@ func (q *query) populatePrimaryKeySelectFields() {
 	for _, f := range q.PrimaryKeyFields {
 		outStr = append(outStr, f.SelectPath)
 	}
-	columnName := ternary.String(len(q.PrimaryKeyFields) > 1, "pks", q.PrimaryKeyFields[0].Alias)
+
+	alias := q.PrimaryKeyFields[0].Alias
+	if len(q.PrimaryKeyFields) > 1 {
+		alias = q.Schema.Table + "pks" // this will result in distinct(id, name) as tablepks
+	}
+
 	q.PrimaryKeyFields = q.PrimaryKeyFields[:0]
 	q.PrimaryKeyFields = append(q.PrimaryKeyFields, pgsearch.SelectQueryField{
 		SelectPath: fmt.Sprintf("distinct(%s)", stringutils.JoinNonEmpty(",", outStr...)),
-		Alias: func() string {
-			if q.QueryType == SELECT {
-				return strings.Join([]string{"distinct", q.Schema.Table, columnName}, "_")
-			}
-			return ""
-		}(),
+		Alias:      alias,
 	})
 }
 
@@ -215,7 +210,7 @@ func (q *query) getPortionBeforeFromClause() string {
 		selectStrs := make([]string, 0, len(allSelectFields))
 		for _, field := range allSelectFields {
 			if q.groupByNonPKFields() && !field.FromGroupBy && !field.DerivedField {
-				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) %s", field.SelectPath, field.Alias))
+				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) as %s", field.SelectPath, field.Alias))
 			} else {
 				selectStrs = append(selectStrs, field.PathForSelectPortion())
 			}
@@ -317,27 +312,46 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelect *v1.Qu
 		fieldMetadata := queryFields[field]
 		dbField := fieldMetadata.baseField
 		if dbField == nil {
-			return errors.Errorf("field %s in SELECT clause does not exist in table %s or connected tables", field, schema.Table)
+			return errors.Errorf("field %s in select portion of query does not exist in table %s or connected tables", field, schema.Table)
+		}
+		// TODO(mandar): Add support for the following.
+		if dbField.DataType == walker.StringArray || dbField.DataType == walker.IntArray ||
+			dbField.DataType == walker.EnumArray || dbField.DataType == walker.Map {
+			return errors.Errorf("field %s in select portion of query is unsupported", field)
 		}
 
-		querySoFar.SelectedFields = append(querySoFar.SelectedFields, pgsearch.SelectQueryField{
-			SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, ternary.String(dbField.SQLType == "uuid", "::text", "")),
-			FieldType:  dbField.DataType,
-			Alias: func() string {
-				if querySoFar.QueryType == SELECT {
-					return strings.Join(strings.Fields(field), "")
-				}
-				return ""
-			}(),
-			// TODO(mandar): derived fields as field labels or expand QuerySelect to store user-defined aggr functions?
-			// TODO(mandar): Handle array type and map type.
-		})
+		if fieldMetadata.derivedMetadata != nil {
+			populateDerivedFieldSelect(querySoFar, field, fieldMetadata)
+			continue
+		}
+		querySoFar.SelectedFields = append(querySoFar.SelectedFields,
+			selectQueryField(field, dbField, "", dbField.DataType),
+		)
 	}
 	return nil
 }
 
+func populateDerivedFieldSelect(querySoFar *query, field string, fieldMetadata searchFieldMetadata) {
+	dbField := fieldMetadata.baseField
+
+	// TODO(mandar): derived fields as search field labels or add a field to QuerySelect to store user-defined aggr functions?
+
+	var selectField pgsearch.SelectQueryField
+	switch fieldMetadata.derivedMetadata.DerivationType {
+	case searchPkg.CountDerivationType:
+		selectField = selectQueryField(field, dbField, "count", walker.Integer)
+	case searchPkg.SimpleReverseSortDerivationType:
+		selectField = selectQueryField(field, dbField, "", dbField.DataType)
+	default:
+		log.Errorf("Unsupported derived field %s found in query", field)
+		return
+	}
+	selectField.DerivedField = true
+	querySoFar.SelectedFields = append(querySoFar.SelectedFields, selectField)
+}
+
 func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
-	if querySoFar.QueryType == SEARCH && len(groupBy.GetFields()) > 0 {
+	if querySoFar.QueryType != SELECT && len(groupBy.GetFields()) > 0 {
 		return errors.New("GROUP BY clause not supported with SEARCH query type; Use SELECT")
 	}
 
@@ -371,41 +385,21 @@ func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker
 			querySoFar.GroupByPrimaryKey = true
 		}
 
-		var cast string
-		if dbField.SQLType == "uuid" {
-			cast = "::text"
-		}
-		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{
-			Field: pgsearch.SelectQueryField{
-				SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
-				FieldType:  dbField.DataType,
-				Alias: func() string {
-					if querySoFar.QueryType == SELECT {
-						return strings.Join(strings.Fields(groupByField), "")
-					}
-					return ""
-				}(),
-				FromGroupBy: true,
-			},
-		})
+		selectField := selectQueryField(groupByField, dbField, "", dbField.DataType)
+		selectField.FromGroupBy = true
+		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
 	}
 	return nil
 }
 
 func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
 	querySoFar.GroupByPrimaryKey = true
-	for _, pk := range schema.PrimaryKeys() {
-		var cast string
-		if pk.SQLType == "uuid" {
-			cast = "::text"
-		}
-		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{
-			Field: pgsearch.SelectQueryField{
-				SelectPath:  qualifyColumn(pk.Schema.Table, pk.ColumnName, cast),
-				FieldType:   pk.DataType,
-				FromGroupBy: true,
-			},
-		})
+	pks := schema.PrimaryKeys()
+	for idx := range pks {
+		pk := &pks[idx]
+		selectField := selectQueryField("", pk, "", pk.DataType)
+		selectField.FromGroupBy = true
+		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
 	}
 }
 
@@ -439,42 +433,32 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			return errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
 		}
 
-		var cast string
-		if dbField.SQLType == "uuid" {
-			cast = "::text"
-		}
-
 		if fieldMetadata.derivedMetadata == nil {
 			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-				Field: pgsearch.SelectQueryField{
-					SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
-					FieldType:  dbField.DataType,
-				},
+				Field:       selectQueryField(so.GetField(), dbField, "", dbField.DataType),
 				Descending:  so.GetReversed(),
 				SearchAfter: so.GetSearchAfter(),
 			})
 		} else {
+			var selectField pgsearch.SelectQueryField
+			var descending bool
 			switch fieldMetadata.derivedMetadata.DerivationType {
 			case searchPkg.CountDerivationType:
-				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-					Field: pgsearch.SelectQueryField{
-						SelectPath:   fmt.Sprintf("count(%s)", qualifyColumn(dbField.Schema.Table, dbField.ColumnName, "")),
-						Alias:        strings.Join([]string{"count", dbField.Schema.Table, dbField.ColumnName}, "_"),
-						FieldType:    walker.Integer,
-						DerivedField: true,
-					},
-					Descending: so.GetReversed(),
-				})
+				selectField = selectQueryField(so.GetField(), dbField, "count", walker.Integer)
+				descending = so.GetReversed()
 			case searchPkg.SimpleReverseSortDerivationType:
-				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-					Field: pgsearch.SelectQueryField{
-						SelectPath:   qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
-						FieldType:    dbField.DataType,
-						DerivedField: true,
-					},
-					Descending: !so.GetReversed(),
-				})
+				selectField = selectQueryField(so.GetField(), dbField, "", dbField.DataType)
+				descending = !so.GetReversed()
+			default:
+				log.Errorf("Unsupported derived field %s found in query", so.GetField())
+				continue
 			}
+
+			selectField.DerivedField = true
+			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+				Field:      selectField,
+				Descending: descending,
+			})
 		}
 	}
 	querySoFar.Pagination.Limit = int(pagination.GetLimit())
@@ -1193,4 +1177,21 @@ func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
 
 func qualifyColumn(table, column, cast string) string {
 	return table + "." + column + cast
+}
+
+func selectQueryField(searchField string, field *walker.Field, aggrFunc string, dataType walker.DataType) pgsearch.SelectQueryField {
+	var cast string
+	if field.SQLType == "uuid" {
+		cast = "::text"
+	}
+
+	selectPath := qualifyColumn(field.Schema.Table, field.ColumnName, cast)
+	if aggrFunc != "" {
+		selectPath = fmt.Sprintf("%s(%s)", aggrFunc, selectPath)
+	}
+	return pgsearch.SelectQueryField{
+		SelectPath: selectPath,
+		Alias:      stringutils.JoinNonEmpty("", strings.Fields(searchField)...),
+		FieldType:  dataType,
+	}
 }
