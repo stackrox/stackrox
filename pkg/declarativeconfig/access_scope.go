@@ -13,6 +13,11 @@ type AccessScope struct {
 	Rules       Rules  `yaml:"rules,omitempty"`
 }
 
+// Type returns the AccessScopeConfiguration type.
+func (a *AccessScope) Type() ConfigurationType {
+	return AccessScopeConfiguration
+}
+
 // Operator is representation of storage.SetBasedLabelSelector_Operator that supports transformation from YAML.
 type Operator storage.SetBasedLabelSelector_Operator
 
