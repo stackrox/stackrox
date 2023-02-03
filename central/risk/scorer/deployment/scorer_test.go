@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/risk/scorer/image"
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -100,16 +101,17 @@ func TestScore(t *testing.T) {
 		},
 	}
 
-	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
+	}
 	actualRisk := scorer.Score(ctx, deployment, getMockImagesRisk())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
 	expectedRiskScore = 12.1794405
-
-	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
+	}
 	actualRisk = scorer.Score(ctx, deployment, getMockImagesRisk())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)

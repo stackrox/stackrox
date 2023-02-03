@@ -28,6 +28,8 @@ func TestVulnerabilitiesScore(t *testing.T) {
 	// Set both severity ratings to unknown and then there should be a nil RiskResult
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 	nodes[0].GetScan().GetComponents()[1].GetVulns()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	nodes[0].GetScan().GetComponents()[0].GetVulnerabilities()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	nodes[0].GetScan().GetComponents()[1].GetVulnerabilities()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 	result = mult.Score(ctx, nodes[0])
 	assert.Nil(t, result)
 }
