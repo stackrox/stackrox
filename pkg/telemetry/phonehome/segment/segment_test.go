@@ -37,7 +37,7 @@ func Test_makeDeviceContext(t *testing.T) {
 	assert.ElementsMatch(t, []string{"groupA_id1", "groupA_id2"}, groups["groupA"])
 }
 
-func Test_WithAnonymousId(t *testing.T) {
+func Test_getIDs(t *testing.T) {
 	type result struct {
 		anonymousID string
 		userID      string
@@ -48,14 +48,6 @@ func Test_WithAnonymousId(t *testing.T) {
 		expected result
 	}{
 		{opts: []telemeter.Option{
-			telemeter.WithUserID("userID"),
-			telemeter.WithAnonymousID("anonymousID"),
-		}, expected: result{
-			userID:      "",
-			anonymousID: "anonymousID",
-		}},
-		{opts: []telemeter.Option{
-			telemeter.WithAnonymousID("anonymousID"),
 			telemeter.WithUserID("userID"),
 		}, expected: result{
 			userID:      "userID",
@@ -79,11 +71,11 @@ func Test_WithAnonymousId(t *testing.T) {
 			anonymousID: "",
 		}},
 		{opts: []telemeter.Option{
-			telemeter.WithAnonymousID("anonymousID"),
 			telemeter.WithClient("anotherID", "clientType"),
+			telemeter.WithUserID("userID"),
 		}, expected: result{
-			userID:      "",
-			anonymousID: "anonymousID",
+			userID:      "userID",
+			anonymousID: "",
 		}},
 	}
 

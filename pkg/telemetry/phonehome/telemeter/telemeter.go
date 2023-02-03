@@ -31,17 +31,12 @@ func WithUserID(userID string) Option {
 	}
 }
 
-// WithAnonymousID allows for modifying the AnonymousID call option.
-func WithAnonymousID(id string) Option {
-	return func(o *CallOptions) {
-		o.UserID = ""
-		o.AnonymousID = id
-	}
-}
-
 // WithClient allows for modifying the ClientID and ClientType call options.
 func WithClient(clientID string, clientType string) Option {
 	return func(o *CallOptions) {
+		if o.UserID == "" {
+			o.AnonymousID = clientID
+		}
 		o.ClientID = clientID
 		o.ClientType = clientType
 	}

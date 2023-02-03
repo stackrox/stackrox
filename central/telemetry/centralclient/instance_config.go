@@ -130,7 +130,7 @@ func RegisterCentralClient(config grpc.Config, basicAuthProviderID string) {
 	}
 	registerInterceptors(config)
 	// Central adds itself to the tenant group, with no group properties:
-	cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithAnonymousID(cfg.ClientID))
+	cfg.Telemeter().Group(cfg.GroupID, nil)
 	registerAdminUser(basicAuthProviderID)
 }
 
