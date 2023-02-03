@@ -204,7 +204,7 @@
 #      connectionString: null
 #      minConns: 10
 #      maxConns: 90
-#      statementTimeoutMs: 60000
+#      statementTimeoutMs: 120000
 #
 #  # The admin password setting for communication with Central's DB.
 #  # When a value is set explicitly, this is always used, even on upgrade.

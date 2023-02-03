@@ -269,7 +269,7 @@
 #     connectionString: "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full"
 #     minConns: 10
 #     maxConns: 90
-#     statementTimeoutMs: 60000
+#     statementTimeoutMs: 120000
 #
 #   # Configures the Central DB image to be used. Most users will only need to configure a
 #   # custom registry (if any) at the global scope, and do not require any settings here.

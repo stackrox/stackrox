@@ -46,7 +46,7 @@ defaults:
       source:
         minConns: 10
         maxConns: 90
-        statementTimeoutMs: 60000
+        statementTimeoutMs: 120000
 
       postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
       hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
