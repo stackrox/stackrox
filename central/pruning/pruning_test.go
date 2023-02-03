@@ -1171,10 +1171,6 @@ func (s *PruningTestSuite) TestAlertPruning() {
 	}
 }
 
-func timestampNowMinus(t time.Duration) *protoTypes.Timestamp {
-	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
-}
-
 func timeBeforeDays(days int) *protoTypes.Timestamp {
 	return timestampNowMinus(24 * time.Duration(days) * time.Hour)
 }
