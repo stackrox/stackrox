@@ -19,12 +19,13 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/legacyroles"
 	"github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/legacysimpleaccessscopes"
 	pgPermissionSetStore "github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/postgrespermissionsets"
+	pgReportConfigurationStore "github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/postgresreportconfigurations"
 	pgRoleStore "github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/postgresroles"
 	pgSimpleAccessScopeStore "github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/postgressimpleaccessscopes"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	rocksdb "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
@@ -90,6 +91,11 @@ func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgx
 	if err := migrateRoles(gormDB, postgresDB, legacyRoleStore); err != nil {
 		return errors.Wrap(err,
 			"moving roles from rocksdb to postgres")
+	}
+	// This function call was added in 3.74 in order to cover an overlooked reference to access scope IDs.
+	// Users who migrated to postgres with 3.73 may have report configurations relying on incorrect scope IDs.
+	if err := migrateReportConfigurationScopeIDs(postgresDB); err != nil {
+		return errors.Wrap(err, "updating access scope IDs for Report Configuration objects in postgres")
 	}
 	return nil
 }
@@ -251,6 +257,64 @@ func migrateRoles(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacyr
 	return nil
 }
 
+func getReportConfigurationScopeID(reportConfiguration *storage.ReportConfiguration) (string, error) {
+	reportConfigurationScopeID := strings.TrimPrefix(reportConfiguration.GetScopeId(), accessScopeIDPrefix)
+	if replacement, found := accessScopeIDMapping[reportConfigurationScopeID]; found {
+		reportConfigurationScopeID = replacement
+	}
+	if _, accessIDParseErr := uuid.FromString(reportConfigurationScopeID); accessIDParseErr != nil {
+		log.WriteToStderrf("failed to convert report configuration to postgres format, bad scope ID. "+
+			"Report Configuration ID: [%s] Name:[%s], error %v",
+			reportConfiguration.GetId(),
+			reportConfiguration.GetName(),
+			accessIDParseErr)
+		return "", accessIDParseErr
+	}
+	return reportConfigurationScopeID, nil
+}
+
+func storeReportsConfigurationBatch(ctx context.Context, store pgReportConfigurationStore.Store, reportConfigs []*storage.ReportConfiguration) {
+	err := store.UpsertMany(ctx, reportConfigs)
+	if err != nil {
+		batchIDs := make([]string, 0, len(reportConfigs))
+		for _, reportConfig := range reportConfigs {
+			batchIDs = append(batchIDs, reportConfig.GetId())
+		}
+		log.WriteToStderrf("failed to persist report configurations with IDs [%s] to store %v", strings.Join(batchIDs, " "), err)
+	}
+}
+
+// This function was added in 3.74 in order to cover an overlooked reference to access scope IDs.
+// Users who migrated to postgres with 3.73 may have report configurations relying on incorrect scope IDs.
+func migrateReportConfigurationScopeIDs(postgresDB *pgxpool.Pool) error {
+	ctx := sac.WithAllAccess(context.Background())
+	store := pgReportConfigurationStore.New(postgresDB)
+	var reportConfigs []*storage.ReportConfiguration
+	err := walkReportConfigurations(ctx, store, func(obj *storage.ReportConfiguration) error {
+		reportConfigurationScopeID, conversionErr := getReportConfigurationScopeID(obj)
+		if conversionErr != nil {
+			// The goal here is to fail open, and to log reports for which the report configuration update failed.
+			// The case where the scope ID update failed is logged in the called function.
+			return nil
+		}
+		obj.ScopeId = reportConfigurationScopeID
+		reportConfigs = append(reportConfigs, obj)
+		if len(reportConfigs) < batchSize {
+			return nil
+		}
+		storeReportsConfigurationBatch(ctx, store, reportConfigs)
+		reportConfigs = reportConfigs[:0]
+		return nil
+	})
+	if err != nil {
+		log.WriteToStderrf("error while updating scope IDs for report configurations in store %v", err)
+	}
+	if len(reportConfigs) > 0 {
+		storeReportsConfigurationBatch(ctx, store, reportConfigs)
+	}
+	return nil
+}
+
 func walkAccessScopes(ctx context.Context, s legacysimpleaccessscopes.Store, fn func(obj *storage.SimpleAccessScope) error) error {
 	return s.Walk(ctx, fn)
 }
@@ -260,6 +324,10 @@ func walkPermissionSets(ctx context.Context, s legacypermissionsets.Store, fn fu
 }
 
 func walkRoles(ctx context.Context, s legacyroles.Store, fn func(obj *storage.Role) error) error {
+	return s.Walk(ctx, fn)
+}
+
+func walkReportConfigurations(ctx context.Context, s pgReportConfigurationStore.Store, fn func(obj *storage.ReportConfiguration) error) error {
 	return s.Walk(ctx, fn)
 }
 
