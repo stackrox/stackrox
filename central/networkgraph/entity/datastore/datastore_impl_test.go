@@ -25,10 +25,13 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var (
+const (
 	cluster1 = "cluster1"
 	cluster2 = "cluster2"
-	trees    = map[string]tree.NetworkTree{
+)
+
+var (
+	trees = map[string]tree.NetworkTree{
 		"":       tree.NewDefaultNetworkTreeWrapper(),
 		cluster1: tree.NewDefaultNetworkTreeWrapper(),
 		cluster2: tree.NewDefaultNetworkTreeWrapper(),
@@ -58,7 +61,8 @@ type NetworkEntityDataStoreTestSuite struct {
 
 func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.elevatedCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 	suite.noAccessCtx = sac.WithNoAccess(context.Background())
 	suite.globalReadAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
