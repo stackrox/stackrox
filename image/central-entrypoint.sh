@@ -24,4 +24,5 @@ fi
 restore-all-dir-contents
 import-additional-cas
 
+export ROX_POSTGRES_DATASTORE=true
 exec /stackrox/start-central.sh "$@"
