@@ -60,7 +60,7 @@ reuse_config_part_1() {
     get_ECR_docker_pull_password
 
     wait_for_api
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 }

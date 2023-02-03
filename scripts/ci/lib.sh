@@ -490,13 +490,18 @@ poll_for_system_test_images() {
         *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
             ;;
-        *-postgres-*)
-            reqd_images=("main" "roxctl" "central-db")
-            ;;
         *)
             reqd_images=("main" "roxctl")
             ;;
     esac
+
+    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]] && [[ ! " ${reqd_images[*]} " =~ " central-db " ]]; then
+        reqd_images+=("central-db")
+    fi
+
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
+        reqd_images+=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
+    fi
 
     info "Will poll for: ${reqd_images[*]}"
 
