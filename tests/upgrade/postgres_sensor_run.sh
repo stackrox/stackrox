@@ -55,7 +55,7 @@ test_upgrade() {
 
     info "Deploying central"
     "$TEST_ROOT/$DEPLOY_DIR/central.sh"
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs
 

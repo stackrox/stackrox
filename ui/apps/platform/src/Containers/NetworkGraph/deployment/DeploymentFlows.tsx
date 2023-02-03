@@ -129,7 +129,7 @@ function DeploymentFlows({
                     className="pf-u-mb-sm"
                 />
             )}
-            <Stack hasGutter>
+            <Stack>
                 <StackItem>
                     <Flex>
                         <FlexItem flex={{ default: 'flex_1' }}>
@@ -147,10 +147,10 @@ function DeploymentFlows({
                         </FlexItem>
                     </Flex>
                 </StackItem>
-                <Divider component="hr" />
+                <Divider component="hr" className="pf-u-py-md" />
                 <StackItem>
-                    <Toolbar>
-                        <ToolbarContent>
+                    <Toolbar className="pf-u-p-0">
+                        <ToolbarContent className="pf-u-px-0">
                             <ToolbarItem>
                                 <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
                             </ToolbarItem>

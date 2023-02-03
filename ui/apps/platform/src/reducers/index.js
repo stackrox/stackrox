@@ -23,6 +23,7 @@ import network, { selectors as networkSelectors } from './network/reducer';
 import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
 import systemConfig, { selectors as systemConfigSelectors } from './systemConfig';
+import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
 
 // Reducers
 
@@ -46,6 +47,7 @@ const appReducer = combineReducers({
     groups,
     attributes,
     systemConfig,
+    telemetryConfig,
 });
 
 const createRootReducer = (history) => {
@@ -81,6 +83,7 @@ const getNetwork = (state) => getApp(state).network;
 const getRuleGroups = (state) => getApp(state).groups;
 const getAttributes = (state) => getApp(state).attributes;
 const getSystemConfig = (state) => getApp(state).systemConfig;
+const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 
 const boundSelectors = {
     ...bindSelectors(getAPITokens, apiTokenSelectors),
@@ -103,6 +106,7 @@ const boundSelectors = {
     ...bindSelectors(getRuleGroups, groupsSelectors),
     ...bindSelectors(getAttributes, attributesSelectors),
     ...bindSelectors(getSystemConfig, systemConfigSelectors),
+    ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
 };
 
 export const selectors = {

@@ -11,6 +11,20 @@
     height: calc(100vh - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight));
 }
 
+/* simple solution to prevent user from making sidebar too narrow */
+.pf-c-drawer__panel.pf-m-resizable {
+    min-width: 420px !important;
+}
+
+/* minimize the space used by the kabob menu as much as possible so that other columns do not become squished / truncated */
+.pf-c-drawer__panel .pf-c-table.pf-m-compact tr:not(.pf-c-table__expandable-row)>*:last-child {
+    padding-right: 0 !important;
+}
+.pf-c-drawer__panel .pf-c-dropdown__toggle.pf-m-plain:not(.pf-m-text) {
+    padding-left: var(--pf-global--spacer--xs) !important;
+    padding-right: var(--pf-global--spacer--xs) !important;
+}
+
 /* Create a stacking context that is higher than the context for the network-graph-toolbar component
    that is rendered below this toolbar, so that the hierarchy dropdowns will render above everything when open */
 .network-graph-selector-bar {
@@ -30,4 +44,8 @@
 /* Restore grayed out background for disabled checkboxes */
 .network-graph-selector-bar .pf-c-check__input:disabled {
     background-color: rgba(59, 59, 59, 0.3);
+}
+
+div#topology-resize-panel table td {
+    vertical-align: inherit;
 }

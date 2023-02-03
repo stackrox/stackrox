@@ -23,7 +23,7 @@ var (
 	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", true)
 
 	// SearchPageUI enables search page instead of search modal in UI. Frontend only.
-	SearchPageUI = registerFeature("Enable search page instead of search modal in UI", "ROX_SEARCH_PAGE_UI", false)
+	SearchPageUI = registerFeature("Enable search page instead of search modal in UI", "ROX_SEARCH_PAGE_UI", true)
 
 	// DecommissionedClusterRetention enables the setting in System Configuration.
 	DecommissionedClusterRetention = registerFeature("Enable Decommissioned Cluster Retention in System Configuration", "ROX_DECOMMISSIONED_CLUSTER_RETENTION", true)
@@ -35,7 +35,7 @@ var (
 	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl generate netpol' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
 
 	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
-	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", false)
+	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", true)
 
 	// RHCOSNodeScanning enables phase 1 functions of "Full host level vulnerability scanning for RHCOS nodes" (ROX-10818)
 	RHCOSNodeScanning = registerFeature("Enable RHCOS node scanning of OS and installed packages", "ROX_RHCOS_NODE_SCANNING", false)

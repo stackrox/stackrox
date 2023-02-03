@@ -20,7 +20,7 @@ import {
     TextVariants,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
 import { Deployment } from 'types/deployment.proto';
@@ -58,7 +58,7 @@ function DetailSection({ title, children }) {
             onToggle={onToggle}
             toggleContent={
                 <TextContent>
-                    <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                    <Text component={TextVariants.h1} className="pf-u-font-size-lg">
                         {title}
                     </Text>
                 </TextContent>
@@ -97,26 +97,30 @@ function DeploymentDetails({
                                         direction={{ default: 'row' }}
                                         alignItems={{ default: 'alignItemsCenter' }}
                                     >
-                                        <FlexItem>
-                                            <Label
-                                                variant="outline"
-                                                color="red"
-                                                icon={<ExclamationCircleIcon />}
-                                            >
-                                                {numExternalFlows} external{' '}
-                                                {pluralize('flow', numExternalFlows)}
-                                            </Label>
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Label
-                                                variant="outline"
-                                                color="gold"
-                                                icon={<ExclamationCircleIcon />}
-                                            >
-                                                {numInternalFlows} internal{' '}
-                                                {pluralize('flow', numInternalFlows)}
-                                            </Label>
-                                        </FlexItem>
+                                        {numExternalFlows !== 0 && (
+                                            <FlexItem>
+                                                <Label
+                                                    variant="outline"
+                                                    color="red"
+                                                    icon={<ExclamationCircleIcon />}
+                                                >
+                                                    {numExternalFlows} external{' '}
+                                                    {pluralize('flow', numExternalFlows)}
+                                                </Label>
+                                            </FlexItem>
+                                        )}
+                                        {numInternalFlows !== 0 && (
+                                            <FlexItem>
+                                                <Label
+                                                    variant="outline"
+                                                    color="gold"
+                                                    icon={<ExclamationTriangleIcon />}
+                                                >
+                                                    {numInternalFlows} internal{' '}
+                                                    {pluralize('flow', numInternalFlows)}
+                                                </Label>
+                                            </FlexItem>
+                                        )}
                                     </Flex>
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
@@ -203,7 +207,6 @@ function DeploymentDetails({
                                                     1 or more policies regulating ingress traffic
                                                 </Label>
                                             </Button>
-                                            ;
                                         </LabelGroup>
                                     )}
                                     {networkPolicyState === 'none' && (

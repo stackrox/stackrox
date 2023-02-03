@@ -92,7 +92,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
 
     // derived data
     const numBaselines = getNumFlows(filteredNetworkBaselines);
-    const allUniquePorts = getAllUniquePorts(filteredNetworkBaselines);
+    const allUniquePorts = getAllUniquePorts(networkBaselines);
     const errorMessage = networkPolicyError || fetchError || modifyError || toggleError;
 
     const onSelectFlow = (entityId: string) => {
@@ -147,7 +147,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
     }
 
     return (
-        <div className="pf-u-h-100">
+        <div className="pf-u-h-100 pf-u-p-md">
             {errorMessage && (
                 <Alert
                     isInline
@@ -156,8 +156,8 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                     className="pf-u-mb-sm"
                 />
             )}
-            <Stack hasGutter className="pf-u-p-md">
-                <StackItem>
+            <Stack>
+                <StackItem className="pf-u-pb-md">
                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                         <FlexItem>
                             <Switch
@@ -181,7 +181,6 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                         </FlexItem>
                     </Flex>
                 </StackItem>
-                <Divider component="hr" />
                 <StackItem>
                     <Flex>
                         <FlexItem flex={{ default: 'flex_1' }}>
@@ -192,6 +191,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                         </FlexItem>
                         <FlexItem>
                             <AdvancedFlowsFilter
+                                isBaseline
                                 filters={advancedFilters}
                                 setFilters={setAdvancedFilters}
                                 allUniquePorts={allUniquePorts}
@@ -199,10 +199,10 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                         </FlexItem>
                     </Flex>
                 </StackItem>
-                <Divider component="hr" />
-                <StackItem>
-                    <Toolbar>
-                        <ToolbarContent>
+                <Divider component="hr" className="pf-u-py-md" />
+                <StackItem className="pf-u-pb-md">
+                    <Toolbar className="pf-u-p-0">
+                        <ToolbarContent className="pf-u-px-0">
                             <ToolbarItem>
                                 <FlowsTableHeaderText type="baseline" numFlows={numBaselines} />
                             </ToolbarItem>
@@ -218,7 +218,6 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                         </ToolbarContent>
                     </Toolbar>
                 </StackItem>
-                <Divider component="hr" />
                 <StackItem>
                     <FlowsTable
                         label="Deployment baselines"
@@ -234,7 +233,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                         onSelectFlow={onSelectFlow}
                     />
                 </StackItem>
-                <StackItem>
+                <StackItem className="pf-u-pt-md">
                     <Flex
                         className="pf-u-pb-md"
                         direction={{ default: 'column' }}

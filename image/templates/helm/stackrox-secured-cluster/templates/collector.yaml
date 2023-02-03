@@ -92,7 +92,11 @@ spec:
         - stackrox/compliance
         env:
         - name: ROX_METRICS_PORT
+        {{- if ._rox.collector.exposeMonitoring }}
           value: ":9091"
+        {{- else}}
+          value: "disabled"
+        {{- end }}
         - name: ROX_NODE_NAME
           valueFrom:
             fieldRef:

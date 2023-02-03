@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
@@ -41,7 +41,7 @@ export const UrlDetailType = {
     DEPLOYMENT: 'deployment',
     CIDR_BLOCK: 'cidr',
     EXTERNAL_ENTITIES: 'internet',
-    EXTERNAL: 'external',
+    EXTERNAL_GROUP: 'external',
 } as const;
 export type UrlDetailTypeKey = keyof typeof UrlDetailType;
 export type UrlDetailTypeValue = typeof UrlDetailType[UrlDetailTypeKey];
@@ -80,14 +80,15 @@ const TopologyComponent = ({
     applyNetworkPolicyModification,
     edgeState,
 }: TopologyComponentProps) => {
+    const firstRenderRef = useRef(true);
     const history = useHistory();
     const controller = useVisualizationController();
     const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
-    function closeSidebar() {
+    const closeSidebar = useCallback(() => {
         const queryString = clearSimulationQuery(history.location.search);
         history.push(`${networkBasePathPF}${queryString}`);
-    }
+    }, [history]);
 
     function onNodeClick(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
@@ -127,25 +128,44 @@ const TopologyComponent = ({
         controller.getGraph().fit(80);
     }
 
-    function resetViewCallback() {
+    const resetViewCallback = useCallback(() => {
         controller.getGraph().reset();
         controller.getGraph().layout();
-    }
+    }, [controller]);
+
+    const panNodeIntoView = useCallback(
+        (node) => {
+            const selectedNodeElement = controller.getNodeById(node.id);
+            if (selectedNodeElement) {
+                // the offset is to make sure the label also makes it inside the viewport
+                controller.getGraph().panIntoView(selectedNodeElement, { offset: 50 });
+            }
+        },
+        [controller]
+    );
 
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
         onNodeClick(ids);
     });
 
     useEffect(() => {
+        // we don't want to reset view on init
+        if (!firstRenderRef.current && controller.hasGraph()) {
+            resetViewCallback();
+        } else {
+            firstRenderRef.current = false;
+        }
+    }, [controller, edgeState, resetViewCallback]);
+
+    useEffect(() => {
         controller.fromModel(model);
         if (selectedNode) {
-            const selectedNodeElement = controller.getNodeById(selectedNode.id);
-            if (selectedNodeElement) {
-                // the offset is to make sure the label also makes it inside the viewport
-                controller.getGraph().panIntoView(selectedNodeElement, { offset: 50 });
-            }
+            panNodeIntoView(selectedNode);
+        } else if (history.location.pathname !== networkBasePathPF && !selectedNode) {
+            // if the path does not reflect the selected node state, sync URL to state
+            closeSidebar();
         }
-    }, [controller, model, selectedNode]);
+    }, [controller, model, selectedNode, history, closeSidebar, panNodeIntoView]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 

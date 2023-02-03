@@ -99,7 +99,7 @@ deploy_earlier_central() {
     SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
     ./deploy/k8s/central.sh
 
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
 }
 
 restore_backup_test() {

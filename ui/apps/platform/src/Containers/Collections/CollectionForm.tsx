@@ -106,10 +106,10 @@ function yupLabelRuleObject({ field }: ByLabelResourceSelector) {
                         yup.object().shape({
                             value: yup
                                 .string()
-                                .required()
+                                .required('This field can not be empty')
                                 .test(
                                     'label-value-k8s-format',
-                                    'Label values must be valid k8s labels',
+                                    'Labels must be valid k8s labels in the form: key=value',
                                     (val) => {
                                         const parts = val.split('=');
                                         if (parts.length !== 2) {
@@ -142,7 +142,7 @@ function yupNameRuleObject({ field }: ByNameResourceSelector) {
                 .of(
                     yup.object().shape({
                         // TODO Add validation for k8s cluster, namespace, and deployment name characters
-                        value: yup.string().trim().required(),
+                        value: yup.string().trim().required('This field can not be empty'),
                         matchType: yup
                             .string()
                             .required()
@@ -178,8 +178,8 @@ const validationSchema = yup.object({
             (name) => name?.trim() === name
         )
         .matches(
-            /^[a-zA-Z0-9 .-]*$/,
-            'Only letters, numbers, dot, dash, and space characters are allowed in collection names'
+            /^[a-zA-Z0-9 <>.-]*$/,
+            'Only the following characters are allowed in collection names: a-z A-Z 0-9 < . - >'
         )
         .required(),
     description: yup.string(),

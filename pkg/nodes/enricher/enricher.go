@@ -16,6 +16,7 @@ var (
 // NodeEnricher provides functions for enriching nodes with vulnerability data.
 //go:generate mockgen-wrapper
 type NodeEnricher interface {
+	EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error
 	EnrichNode(node *storage.Node) error
 	CreateNodeScanner(integration *storage.NodeIntegration) (types.NodeScannerWithDataSource, error)
 	UpsertNodeIntegration(integration *storage.NodeIntegration) error

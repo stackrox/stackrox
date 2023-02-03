@@ -167,7 +167,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -536,14 +535,7 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
-		config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
-		// Central adds itself to the tenant group, with no group properties:
-		cfg.Telemeter().GroupUserAs(cfg.ClientID, "", "", cfg.GroupID, nil)
-		// Add the local admin user as well, with no extra group properties:
-		cfg.Telemeter().GroupUserAs(cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), "", "", cfg.GroupID, nil)
-	}
+	centralclient.RegisterCentralClient(config, basicAuthProvider.ID())
 
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
