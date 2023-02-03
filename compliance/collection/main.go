@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
+	"github.com/gogo/protobuf/proto"
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
 	"github.com/stackrox/rox/compliance/collection/intervals"
@@ -183,17 +185,76 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 	return sensorC
 }
 
-func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
-	result, err := scanner.Scan(nodeName)
+func runCachedScan(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*storage.NodeInventory, error) {
+	inventory, err := scanner.Scan(nodeName)
 	if err != nil {
 		return nil, err
 	}
-	msg := &sensor.MsgFromCompliance{
-		Node: nodeName,
-		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: result},
+	inv, err := proto.Marshal(inventory)
+	if err != nil {
+		return nil, err
 	}
-	cmetrics.ObserveInventoryProtobufMessage(msg)
-	return msg, nil
+	if err := os.WriteFile("/cache/last_scan", inv, 0600); err != nil {
+		return nil, err
+	}
+
+	return inventory, nil
+}
+
+func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
+	var inventory *storage.NodeInventory
+
+	diskInv, err := os.ReadFile("/cache/last_scan")
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// If the file doesn't exist, we're in the first run, this is expected
+			log.Debug("No cache file found, running a new scan")
+			inventory, _ = runCachedScan(nodeName, scanner) // FIXME: Error checking
+			msg := &sensor.MsgFromCompliance{
+				Node: nodeName,
+				Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inventory},
+			}
+			cmetrics.ObserveInventoryProtobufMessage(msg)
+			return msg, nil
+		}
+		log.Errorf("error reading inventory cache file: %v", err)
+		return nil, err
+
+	}
+	diskInvMsg := &storage.NodeInventory{}
+	if err := proto.Unmarshal(diskInv, diskInvMsg); err != nil {
+		log.Warnf("Unable to read inventory cache")
+	} else {
+		scanTime := diskInvMsg.GetScanTime()
+		if scanTime != nil {
+			if scanTime.GetSeconds() > timestamp.TimestampNow().GetSeconds()-int64(60*time.Second.Seconds()) {
+				log.Debugf("Using cached scan from %v", diskInvMsg.GetScanTime())
+				inventory = diskInvMsg
+				msg := &sensor.MsgFromCompliance{
+					Node: nodeName,
+					Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inventory},
+				}
+				cmetrics.ObserveInventoryProtobufMessage(msg)
+				return msg, nil
+			}
+		}
+		log.Debugf("Cached scan too old with timestamp %v - running new inventory", diskInvMsg.GetScanTime())
+		inventory, _ = runCachedScan(nodeName, scanner) // FIXME: Error checking
+		msg := &sensor.MsgFromCompliance{
+			Node: nodeName,
+			Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inventory},
+		}
+		cmetrics.ObserveInventoryProtobufMessage(msg)
+		return msg, nil
+	}
+
+	return nil, errors.New("Unexpected error")
+	// msg := &sensor.MsgFromCompliance{
+	//	Node: nodeName,
+	//	Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inventory},
+	//}
+	// cmetrics.ObserveInventoryProtobufMessage(msg)
+	// return msg, nil
 }
 
 func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
