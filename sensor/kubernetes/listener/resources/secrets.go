@@ -314,7 +314,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 		},
 	}}
 	events := component.NewEvent(sensorEvents...)
-	events.AppendMessage(secretToSensorEvent(action, protoSecret))
+	events.AddSensorEvent(secretToSensorEvent(action, protoSecret))
 	return events
 }
 

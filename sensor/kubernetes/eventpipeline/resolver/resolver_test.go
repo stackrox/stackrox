@@ -300,7 +300,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(1)
 
-	detectionObject := []component.CompatibilityDetectionMessage{
+	detectionObject := []component.DetectorMessage{
 		{
 			Object: &storage.Deployment{Id: "1234"},
 			Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -312,7 +312,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 	})
 
 	s.resolver.Send(&component.ResourceEvent{
-		CompatibilityDetectionDeployment: detectionObject,
+		DetectorMessages: detectionObject,
 	})
 
 	messageReceived.Wait()
@@ -585,7 +585,7 @@ func (m *deploymentMatcher) String() string {
 }
 
 type detectionObjectMatcher struct {
-	expected []component.CompatibilityDetectionMessage
+	expected []component.DetectorMessage
 	error    string
 }
 
@@ -596,8 +596,8 @@ func (m *detectionObjectMatcher) Matches(target interface{}) bool {
 		return false
 	}
 
-	if !cmp.Equal(m.expected, event.CompatibilityDetectionDeployment) {
-		m.error = fmt.Sprintf("received detection deployment doesn't match expected: %s", cmp.Diff(m.expected, event.CompatibilityReprocessDeployments))
+	if !cmp.Equal(m.expected, event.DetectorMessages) {
+		m.error = fmt.Sprintf("received detection deployment doesn't match expected: %s", cmp.Diff(m.expected, event.ReprocessDeployments))
 		return false
 	}
 

@@ -39,7 +39,7 @@ func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 	update := r.processEvent(obj, action)
 	events := component.NewEvent(update.events...)
 	serviceAccountReferences := mapReference(update.deploymentReference)
-	events.DeploymentReferenceUpdate(resolver.ResolveDeploymentsByMultipleServiceAccounts(serviceAccountReferences), central.ResourceAction_UPDATE_RESOURCE, false)
+	events.AddDeploymentReference(resolver.ResolveDeploymentsByMultipleServiceAccounts(serviceAccountReferences), central.ResourceAction_UPDATE_RESOURCE, false)
 	return events
 }
 

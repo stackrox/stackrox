@@ -130,11 +130,11 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	objAsPod, _ := obj.(*v1.Pod)
 
 	events := &component.ResourceEvent{
-		ForwardMessages:                   []*central.SensorEvent{},
-		CompatibilityDetectionDeployment:  []component.CompatibilityDetectionMessage{},
-		CompatibilityReprocessDeployments: []string{},
-		DeploymentTiming:                  nil,
-		DeploymentReferences:              []component.DeploymentReference{},
+		ForwardMessages:      []*central.SensorEvent{},
+		DetectorMessages:     []component.DetectorMessage{},
+		ReprocessDeployments: []string{},
+		DeploymentTiming:     nil,
+		DeploymentReferences: []component.DeploymentReference{},
 	}
 	// If the object is a pod, process the pod event.
 	if objAsPod != nil {
@@ -160,26 +160,23 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			}
 		}
 
-		var removeEvents *central.SensorEvent
 		// On removes, we may not get the owning deployment ID if the deployment was deleted before the pod.
 		// This is okay. We still want to send the remove event anyway.
 		if action == central.ResourceAction_REMOVE_RESOURCE || owningDeploymentID != "" {
-			removeEvents = d.processPodEvent(owningDeploymentID, objAsPod, action)
+			removeEvents := d.processPodEvent(owningDeploymentID, objAsPod, action)
+			if removeEvents != nil {
+				events.AddSensorEvent(removeEvents)
+			}
 		}
 
 		if deploymentWrap == nil {
 			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
 			d.maybeUpdateParentsOfPod(objAsPod, oldObj, action, events)
-			if removeEvents != nil {
-				events.AppendMessage(removeEvents)
-			}
-
 			return events
-		} else if removeEvents != nil {
-			events.AppendMessage(removeEvents)
 		}
 	}
 
+	// If it's an object we don't generate an event for (e.g. ReplicaSets) processing should stop here.
 	if deploymentWrap == nil {
 		return events
 	}
@@ -203,14 +200,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
 			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
 			// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
-			events.AddDetectionDeployment(component.CompatibilityDetectionMessage{
+			events.AddDeploymentForDetection(component.DetectorMessage{
 				Object: deploymentWrap.GetDeployment(),
 				Action: action,
-			}).AppendMessage(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
+			}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
 		} else {
 			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 			// references up the chain, which will be used to trigger the actual deployment event and detection.
-			events.DeploymentReferenceUpdate(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false)
+			events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false)
 		}
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
@@ -227,8 +224,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		if err := deploymentWrap.updateHash(); err != nil {
 			log.Errorf("UNEXPECTED: could not calculate hash of deployment %s: %v", deploymentWrap.GetId(), err)
 		}
-		events.AppendMessage(deploymentWrap.toEvent(action))
-		events.AddDetectionDeployment(component.CompatibilityDetectionMessage{
+		events.AddSensorEvent(deploymentWrap.toEvent(action))
+		events.AddDeploymentForDetection(component.DetectorMessage{
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
 		})
@@ -256,7 +253,7 @@ func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	for _, c := range containers {
 		if r := c.GetImage().GetName().GetRegistry(); registries.Add(r) {
 			if e := d.getImageIntegrationEvent(r); e != nil {
-				events.AppendMessage(e)
+				events.AddSensorEvent(e)
 			}
 		}
 	}

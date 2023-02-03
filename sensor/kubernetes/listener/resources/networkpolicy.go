@@ -47,8 +47,8 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 		}
 
 		if env.ResyncDisabled.BooleanSetting() {
-			events.DeploymentReferenceUpdate(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel), central.ResourceAction_UPDATE_RESOURCE, true)
-			events.AppendMessage(&central.SensorEvent{
+			events.AddDeploymentReference(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel), central.ResourceAction_UPDATE_RESOURCE, true)
+			events.AddSensorEvent(&central.SensorEvent{
 				Id:     string(np.UID),
 				Action: action,
 				Resource: &central.SensorEvent_NetworkPolicy{
@@ -57,13 +57,13 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 			})
 		} else {
 			reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
-			events.AppendMessage(&central.SensorEvent{
+			events.AddSensorEvent(&central.SensorEvent{
 				Id:     string(np.UID),
 				Action: action,
 				Resource: &central.SensorEvent_NetworkPolicy{
 					NetworkPolicy: roxNetpol,
 				},
-			}).AddReprocessDeployments(reprocessingIds...)
+			}).AddDeploymentForReprocessing(reprocessingIds...)
 		}
 	}
 	return &events

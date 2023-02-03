@@ -59,7 +59,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 
 			if deploymentReference.ForceDetection && len(referenceIds) > 0 {
 				// We append the referenceIds to the msg to be reprocessed
-				msg.AddReprocessDeployments(referenceIds...)
+				msg.AddDeploymentForReprocessing(referenceIds...)
 			}
 
 			for _, id := range referenceIds {
@@ -87,8 +87,8 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 					continue
 				}
 
-				msg.AppendMessage(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
-					AddDetectionDeployment(component.CompatibilityDetectionMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+				msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
+					AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
 			}
 		}
 
