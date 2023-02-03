@@ -195,12 +195,6 @@ jobs:
             "$CFG_DIR/stackrox-stackrox-master.yaml" \
             > "$CFG_DIR/stackrox-$BRANCH.yaml"
 
-          # Duplicate the opensource images config and keep only postsubmit jobs.
-          yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) |
-              .promotion.tag=\"$RELEASE-stackrox-branding\" |
-              .zz_generated_metadata.branch=\"release-$RELEASE\"" \
-            "$CFG_DIR/stackrox-stackrox-master__stackrox_branding.yaml" \
-            > "$CFG_DIR/stackrox-${BRANCH}__stackrox_branding.yaml"
       - name: Make update
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
