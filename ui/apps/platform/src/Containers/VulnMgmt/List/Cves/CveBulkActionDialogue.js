@@ -9,6 +9,7 @@ import CustomDialogue from 'Components/CustomDialogue';
 import InfoList from 'Components/InfoList';
 import Loader from 'Components/Loader';
 import { POLICY_ENTITY_ALL_FIELDS_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import entityTypes from 'constants/entityTypes';
 import queryService from 'utils/queryService';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { truncate } from 'utils/textUtils';
@@ -30,7 +31,7 @@ const findCVEField = (policySections) => {
     return { policySectionIdx, policyGroupIdx };
 };
 
-const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
+const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
     const [messageObj, setMessageObj] = useState(null);
     const dialogueRef = useRef(null);
 
@@ -46,37 +47,92 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const [policies, setPolicies] = useState([]);
 
     // use GraphQL to get the (hopefully cached) cve summaries to display in the dialog
-    const CVES_QUERY = gql`
-        query getCves($query: String) {
-            results: vulnerabilities(query: $query) {
-                id
-                cve
-                summary
-                vulnerabilityTypes
-            }
+    let cveQuery = '';
+
+    switch (cveType) {
+        case entityTypes.NODE_CVE: {
+            cveQuery = gql`
+                query getNodeCves($query: String) {
+                    results: nodeVulnerabilities(query: $query) {
+                        id
+                        cve
+                        summary
+                    }
+                }
+            `;
+            break;
         }
-    `;
-    const cvesObj = {
-        cve: cvesStr,
-    };
+        case entityTypes.CLUSTER_CVE: {
+            cveQuery = gql`
+                query getClusterCves($query: String) {
+                    results: clusterVulnerabilities(query: $query) {
+                        id
+                        cve
+                        summary
+                    }
+                }
+            `;
+            break;
+        }
+        case entityTypes.IMAGE_CVE: {
+            cveQuery = gql`
+                query getImageCves($query: String) {
+                    results: imageVulnerabilities(query: $query) {
+                        id
+                        cve
+                        summary
+                    }
+                }
+            `;
+            break;
+        }
+        case entityTypes.CVE:
+        default: {
+            cveQuery = gql`
+                query getCves($query: String) {
+                    results: vulnerabilities(query: $query) {
+                        id
+                        cve
+                        summary
+                        vulnerabilityTypes
+                    }
+                }
+            `;
+            break;
+        }
+    }
+
+    const cvesObj =
+        cveType === entityTypes.CVE
+            ? {
+                  cve: cvesStr,
+              }
+            : {
+                  id: cvesStr,
+              };
     const cveQueryOptions = {
         variables: {
             query: queryService.objectToWhereClause(cvesObj),
         },
     };
-    const { loading: cveLoading, data: cveData } = useQuery(CVES_QUERY, cveQueryOptions);
+    const { loading: cveLoading, data: cveData } = useQuery(cveQuery, cveQueryOptions);
     const cveItems =
         !cveLoading && cveData && cveData.results && cveData.results.length ? cveData.results : [];
 
+    // split on vulnerabilityType is only for legacy RockDB support
     const {
         IMAGE_CVE: allowedCves,
         K8S_CVE: k8sCves,
         OPENSHIFT_CVE: openShiftCves,
     } = splitCvesByType(cveItems);
-    const disallowedCves = k8sCves.concat(openShiftCves);
+    const disallowedCves = cveType === entityTypes.CVE ? k8sCves.concat(openShiftCves) : [];
 
     // only the allowed CVEs are combined for use in the policy
-    const allowedCvesValues = allowedCves.map((cve) => ({ value: cve.cve }));
+    const allowedCvesValues =
+        cveType === entityTypes.CVE
+            ? allowedCves.map((cve) => ({ value: cve.cve }))
+            : cveItems.map((cve) => ({ value: cve.cve }));
+    const cvesToDisplay = cveType === entityTypes.CVE ? allowedCves : cveItems;
 
     // use GraphQL to get existing vulnerability-related policies
     const POLICIES_QUERY = gql`
@@ -220,7 +276,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2"
             title="Add To Policy"
             text=""
-            onConfirm={allowedCves.length > 0 ? addToPolicy : null}
+            onConfirm={cvesToDisplay.length > 0 ? addToPolicy : null}
             confirmText="Save Policy"
             confirmDisabled={
                 messageObj ||
@@ -231,7 +287,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             onCancel={closeWithoutSaving}
         >
             <div className="overflow-auto p-4" ref={dialogueRef}>
-                {!cveLoading && allowedCves.length === 0 ? (
+                {!cveLoading && cveType === entityTypes.CVE && cvesToDisplay.length === 0 ? (
                     <p>The selected CVEs cannot be added to a policy.</p>
                 ) : (
                     <>
@@ -246,11 +302,11 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                             setSelectedPolicy={setSelectedPolicy}
                         />
                         <div className="pt-2">
-                            <h3 className="mb-2">{`${allowedCves.length} CVEs listed below will be added to this policy:`}</h3>
+                            <h3 className="mb-2">{`${cvesToDisplay.length} CVEs listed below will be added to this policy:`}</h3>
                             {cveLoading && <Loader />}
                             {!cveLoading && (
                                 <InfoList
-                                    items={allowedCves}
+                                    items={cvesToDisplay}
                                     renderItem={renderCve}
                                     extraClassNames="h-48"
                                 />
@@ -278,6 +334,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
 CveBulkActionDialogue.propTypes = {
     closeAction: PropTypes.func.isRequired,
     bulkActionCveIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+    cveType: PropTypes.string.isRequired,
 };
 
 export default CveBulkActionDialogue;

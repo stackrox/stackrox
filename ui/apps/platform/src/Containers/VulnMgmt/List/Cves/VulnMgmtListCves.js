@@ -586,6 +586,7 @@ const VulnMgmtCves = ({
                 <CveBulkActionDialogue
                     closeAction={closeDialog}
                     bulkActionCveIds={bulkActionCveIds}
+                    cveType={cveType}
                 />
             )}
         </>
