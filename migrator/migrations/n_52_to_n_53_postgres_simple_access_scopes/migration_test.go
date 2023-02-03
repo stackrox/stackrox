@@ -13,20 +13,25 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/legacypermissionsets"
 	"github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/legacyroles"
 	"github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/legacysimpleaccessscopes"
 	pgPermissionSetStore "github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/postgrespermissionsets"
+	pgReportConfigurationStore "github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/postgresreportconfigurations"
 	pgRoleStore "github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/postgresroles"
 	pgSimpleAccessScopeStore "github.com/stackrox/rox/migrator/migrations/n_52_to_n_53_postgres_simple_access_scopes/postgressimpleaccessscopes"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 )
 
 const (
@@ -76,6 +81,7 @@ type postgresMigrationSuite struct {
 
 	legacyDB   *rocksdb.RocksDB
 	postgresDB *pghelper.TestPostgres
+	gormDB     *gorm.DB
 }
 
 var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
@@ -95,9 +101,12 @@ func (s *postgresMigrationSuite) SetupTest() {
 
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.postgresDB = pghelper.ForT(s.T(), true)
+	s.gormDB = s.postgresDB.GetGormDB()
+	pgutils.CreateTableFromModel(s.ctx, s.gormDB, frozenSchema.CreateTableReportConfigurationsStmt)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 	rocksdbtest.TearDownRocksDB(s.legacyDB)
 	s.postgresDB.Teardown(s.T())
 }
@@ -212,6 +221,7 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 	newScopeStore := pgSimpleAccessScopeStore.New(s.postgresDB.Pool)
 	newPermissionStore := pgPermissionSetStore.New(s.postgresDB.Pool)
 	newRoleStore := pgRoleStore.New(s.postgresDB.Pool)
+	postgresReportConfigStore := pgReportConfigurationStore.New(s.postgresDB.Pool)
 	legacyScopeStore, scopeErr := legacysimpleaccessscopes.New(s.legacyDB)
 	s.NoError(scopeErr)
 	legacyPermissionStore, permissionSetErr := legacypermissionsets.New(s.legacyDB)
@@ -624,9 +634,55 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		},
 	}
 
+	reportConfigurations := []*storage.ReportConfiguration{
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "Report1",
+			Description: "Report with prefixed named scope",
+			Type:        storage.ReportConfiguration_VULNERABILITY,
+			ScopeId:     prefixedNamedAccessScopeID,
+		},
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "Report2",
+			Description: "Report with prefixless named scope",
+			Type:        storage.ReportConfiguration_VULNERABILITY,
+			ScopeId:     prefixlessNamedAccessScopeID,
+		},
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "Report3",
+			Description: "Report with default unrestricted scope",
+			Type:        storage.ReportConfiguration_VULNERABILITY,
+			ScopeId:     defaultUnrestrictedAccessScopeID,
+		},
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "Report4",
+			Description: "Report with default deny all scope",
+			Type:        storage.ReportConfiguration_VULNERABILITY,
+			ScopeId:     defaultDenyAllAccessScopeID,
+		},
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "Report5",
+			Description: "Report with prefixed UUID scope",
+			Type:        storage.ReportConfiguration_VULNERABILITY,
+			ScopeId:     prefixedUUIDAccessScopeID,
+		},
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "Report6",
+			Description: "Report with prefixless UUID scope",
+			Type:        storage.ReportConfiguration_VULNERABILITY,
+			ScopeId:     prefixlessUUIDAccessScopeID,
+		},
+	}
+
 	s.NoError(legacyScopeStore.UpsertMany(s.ctx, scopesToInsert))
 	s.NoError(legacyPermissionStore.UpsertMany(s.ctx, permissionSetsToInsert))
 	s.NoError(legacyRoleStore.UpsertMany(s.ctx, roles))
+	s.NoError(postgresReportConfigStore.UpsertMany(s.ctx, reportConfigurations))
 
 	// Move
 	s.NoError(migrateAll(s.legacyDB, s.postgresDB.GetGormDB(), s.postgresDB.Pool))
@@ -708,5 +764,17 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		accessScopeName := accessScopeOldIDToNameMapping[role.GetAccessScopeId()]
 		expectedRole.AccessScopeId = accessScopeNameToNewIDMapping[accessScopeName]
 		s.Equal(expectedRole, fetched)
+	}
+	reportConfigurationCount, err := postgresReportConfigStore.Count(s.ctx)
+	s.NoError(err)
+	s.Equal(len(reportConfigurations), reportConfigurationCount)
+	for _, reportConfiguration := range reportConfigurations {
+		fetched, exists, err := postgresReportConfigStore.Get(s.ctx, reportConfiguration.GetId())
+		s.NoError(err)
+		s.True(exists)
+		expectedReportConfiguration := reportConfiguration.Clone()
+		scopeName := accessScopeOldIDToNameMapping[reportConfiguration.GetScopeId()]
+		expectedReportConfiguration.ScopeId = accessScopeNameToNewIDMapping[scopeName]
+		s.Equal(expectedReportConfiguration, fetched)
 	}
 }
