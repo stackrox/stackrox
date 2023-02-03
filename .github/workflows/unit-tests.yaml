@@ -16,6 +16,7 @@ jobs:
     strategy:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        race: [ '', 'RACE=true' ]
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
@@ -34,12 +35,13 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: ${{ matrix.gotags }} ${{ matrix.race }} make go-unit-tests
 
   go-postgres:
     strategy:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        race: [ '', 'RACE=true' ]
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
@@ -66,7 +68,7 @@ jobs:
       run: pg_isready -h 127.0.0.1
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-postgres-unit-tests
+      run: ${{ matrix.gotags }} ${{ matrix.race }} make go-postgres-unit-tests
 
   ui:
     runs-on: ubuntu-latest
