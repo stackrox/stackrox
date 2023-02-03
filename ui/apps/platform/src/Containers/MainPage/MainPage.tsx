@@ -23,12 +23,13 @@ import VersionOutOfDate from './VersionOutOfDate';
 import DatabaseBanner from './DatabaseBanner';
 import AnnouncementBanner from './AnnouncementBanner';
 import Masthead from './Header/Masthead';
+import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
+import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
 import NavigationSidebar from './Sidebar/NavigationSidebar';
 
 const mainPageSelector = createStructuredSelector({
     isGlobalSearchView: selectors.getGlobalSearchView,
     metadata: selectors.getMetadata,
-    publicConfig: selectors.getPublicConfig,
     serverState: selectors.getServerState,
 });
 
@@ -48,7 +49,6 @@ function MainPage(): ReactElement {
         metadata = {
             stale: false,
         },
-        publicConfig,
         serverState,
     } = useSelector(mainPageSelector);
 
@@ -87,7 +87,8 @@ function MainPage(): ReactElement {
     const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
 
     return (
-        <AppWrapper publicConfig={publicConfig}>
+        <AppWrapper>
+            <PublicConfigHeader />
             <div className="flex flex-1 flex-col h-full relative">
                 <AnnouncementBanner />
                 <UnreachableWarning serverState={serverState} />
@@ -120,6 +121,7 @@ function MainPage(): ReactElement {
                 </Page>
                 {isGlobalSearchView && <SearchModal onClose={onCloseGlobalSearchModal} />}
             </div>
+            <PublicConfigFooter />
         </AppWrapper>
     );
 }

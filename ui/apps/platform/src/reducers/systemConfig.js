@@ -30,7 +30,7 @@ export const fetchPublicConfigThunk = () => {
 
 // Reducers
 
-const publicConfig = (state = {}, action) => {
+const publicConfig = (state = { footer: null, header: null, loginNotice: null }, action) => {
     if (action.type === types.FETCH_PUBLIC_CONFIG.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
     }
@@ -75,11 +75,15 @@ const reducer = combineReducers({
 // Selectors
 
 const getPublicConfig = (state) => state.publicConfig;
+const getPublicConfigFooter = (state) => state.publicConfig.footer;
+const getPublicConfigHeader = (state) => state.publicConfig.header;
 const getPublicConfigError = (state) => state.error;
 const getIsLoadingPublicConfig = (state) => state.isLoading;
 
 export const selectors = {
     getPublicConfig,
+    getPublicConfigFooter,
+    getPublicConfigHeader,
     getPublicConfigError,
     getIsLoadingPublicConfig,
 };
