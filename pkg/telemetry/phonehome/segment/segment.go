@@ -114,10 +114,10 @@ func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
 		ctx = &segment.Context{
 			Extra: map[string]any{
 				"groups": groups,
+				// Segment does not support attaching group properties.
 			},
 		}
 	}
-	// Segment does not support attaching group properties.
 
 	if o.ClientID != "" {
 		if ctx == nil {
