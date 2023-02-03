@@ -27,5 +27,6 @@ func CheckForbiddenNamespacesExtension(forbiddenNamespacePredicate func(namespac
 
 // IsSystemNamespace checks if the given namespace is a system namespace.
 func IsSystemNamespace(ns string) bool {
+	
 	return kubernetes.IsSystemNamespace(ns) || strings.HasPrefix(ns, "openshift-")
 }
