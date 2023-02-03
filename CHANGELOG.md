@@ -9,6 +9,18 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [3.74.0]
+
+
+
+### Added Features
+
 - ROX-13814: A new "Public Kubernetes Registry" image integration is now available as a replacement
   for the (now deprecated) "Public Kubernetes GCR" image integration.
 
