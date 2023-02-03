@@ -6,10 +6,8 @@ type CallOptions struct {
 	ClientID   string
 	ClientType string
 
-	// [group name: group id]
-	Groups map[string][]string
-	// [group id: [key: value]]
-	GroupProperties map[string]map[string]any
+	// [group name: [group id: [key: value]]]
+	GroupProperties map[string]map[string]map[string]any
 }
 
 // Option modifies the provided CallOptions structure.
@@ -39,23 +37,19 @@ func WithClient(clientID string, clientType string) Option {
 	}
 }
 
-// WithGroup appends a group association to an event.
-func WithGroup(groupName string, groupID string) Option {
-	return func(o *CallOptions) {
-		if o.Groups == nil {
-			o.Groups = make(map[string][]string, 1)
-		}
-		o.Groups[groupName] = append(o.Groups[groupName], groupID)
-	}
-}
-
-// WithGroupProperties sets the group properties of an event.
-func WithGroupProperties(groupID string, groupProperties map[string]any) Option {
+// WithGroupProperties appends the groups and sets the optional group properties
+// for an event.
+func WithGroupProperties(groupName string, groupID string, groupProperties map[string]any) Option {
 	return func(o *CallOptions) {
 		if o.GroupProperties == nil {
-			o.GroupProperties = make(map[string]map[string]any)
+			o.GroupProperties = make(map[string]map[string]map[string]any)
 		}
-		o.GroupProperties[groupID] = groupProperties
+		gn, ok := o.GroupProperties[groupName]
+		if !ok {
+			gn = make(map[string]map[string]any)
+			o.GroupProperties[groupName] = gn
+		}
+		gn[groupID] = groupProperties
 	}
 }
 

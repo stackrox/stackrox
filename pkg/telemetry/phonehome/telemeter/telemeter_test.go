@@ -10,21 +10,24 @@ func TestWith(t *testing.T) {
 	opts := ApplyOptions([]Option{
 		WithUserID("userID"),
 		WithClient("clientID", "clientType"),
-		WithGroup("groupA", "groupA_id1"),
-		WithGroup("groupA", "groupA_id2"),
-		WithGroupProperties("groupA_id", map[string]any{"key1": "value1"}),
-		WithGroupProperties("groupB_id", map[string]any{"key2": "value2"}),
+		WithGroupProperties("groupA", "groupA_id1", map[string]any{"key1": "value1"}),
+		WithGroupProperties("groupA", "groupA_id2", map[string]any{"key-": "value-"}),
+		WithGroupProperties("groupA", "groupA_id2", map[string]any{"key2": "value2"}),
+		WithGroupProperties("groupB", "groupB_id", map[string]any{"key3": "value3"}),
 	},
 	)
 	assert.Equal(t, "userID", opts.UserID)
 	assert.Equal(t, "clientID", opts.ClientID)
 	assert.Equal(t, "clientType", opts.ClientType)
-	assert.Len(t, opts.Groups, 1)
-	assert.Len(t, opts.Groups["groupA"], 2)
-	assert.Equal(t, "groupA_id1", opts.Groups["groupA"][0])
-	assert.Equal(t, "groupA_id2", opts.Groups["groupA"][1])
-	assert.Len(t, opts.GroupProperties["groupA_id"], 1)
-	assert.Len(t, opts.GroupProperties["groupB_id"], 1)
-	assert.Equal(t, "value1", opts.GroupProperties["groupA_id"]["key1"])
-	assert.Equal(t, "value2", opts.GroupProperties["groupB_id"]["key2"])
+
+	props := map[string]map[string]map[string]any{
+		"groupA": {
+			"groupA_id1": {"key1": "value1"},
+			"groupA_id2": {"key2": "value2"},
+		},
+		"groupB": {
+			"groupB_id": {"key3": "value3"},
+		},
+	}
+	assert.Equal(t, props, opts.GroupProperties)
 }

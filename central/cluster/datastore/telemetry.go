@@ -61,7 +61,7 @@ func trackClusterInitialized(cluster *storage.Cluster) {
 			},
 				telemeter.WithUserID(cluster.GetId()),
 				telemeter.WithClient(cluster.GetId(), securedClusterClient),
-				telemeter.WithGroup("Tenant", cfg.GroupID))
+				telemeter.WithGroupProperties("Tenant", cfg.GroupID, nil))
 	}
 }
 
