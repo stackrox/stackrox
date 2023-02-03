@@ -18,6 +18,7 @@ import (
 )
 
 func TestExpiredVulnReqsPruning(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
 	db := rocksdbtest.RocksDBForT(t)
 	defer rocksdbtest.TearDownRocksDB(db)
 

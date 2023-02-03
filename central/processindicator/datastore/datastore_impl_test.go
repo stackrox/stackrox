@@ -63,6 +63,8 @@ type IndicatorDataStoreTestSuite struct {
 }
 
 func (suite *IndicatorDataStoreTestSuite) SetupTest() {
+	pgtest.SkipIfPostgresEnabled(suite.T())
+
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

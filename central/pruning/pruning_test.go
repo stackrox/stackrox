@@ -121,6 +121,7 @@ type PruningTestSuite struct {
 }
 
 func (s *PruningTestSuite) SetupSuite() {
+	pgtest.SkipIfPostgresEnabled(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {

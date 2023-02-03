@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -41,6 +42,7 @@ type NodeCVEDataStoreSuite struct {
 }
 
 func (suite *NodeCVEDataStoreSuite) SetupSuite() {
+	pgtest.SkipIfPostgresEnabled(suite.T())
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)

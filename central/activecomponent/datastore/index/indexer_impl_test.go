@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/activecomponent/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -28,6 +29,8 @@ type ActiveComponentIndexTestSuite struct {
 }
 
 func (suite *ActiveComponentIndexTestSuite) SetupTest() {
+	pgtest.SkipIfPostgresEnabled(suite.T())
+
 	var err error
 	suite.bleveIndex, err = globalindex.MemOnlyIndex()
 	suite.Require().NoError(err)
