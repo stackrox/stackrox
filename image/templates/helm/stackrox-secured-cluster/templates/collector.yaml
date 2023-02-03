@@ -91,9 +91,11 @@ spec:
       - command:
         - stackrox/compliance
         env:
-        {{- if ._rox.collector.exposeMonitoring }}
         - name: ROX_METRICS_PORT
+        {{- if ._rox.collector.exposeMonitoring }}
           value: ":9091"
+        {{- else}}
+          value: "disabled"
         {{- end }}
         - name: ROX_NODE_NAME
           valueFrom:
