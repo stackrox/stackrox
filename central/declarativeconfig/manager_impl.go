@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/stackrox/rox/central/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -15,13 +16,16 @@ const (
 
 type managerImpl struct {
 	once sync.Once
+	t    transform.Transformer
 }
 
 // New creates a new instance of Manager.
 // Note that it will not watch the declarative configuration directories when created, only after
 // WatchDeclarativeConfigDir has been called.
 func New() Manager {
-	return &managerImpl{}
+	return &managerImpl{
+		t: transform.New(),
+	}
 }
 
 func (m *managerImpl) WatchDeclarativeConfigDir() {
