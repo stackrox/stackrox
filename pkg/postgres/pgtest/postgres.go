@@ -163,5 +163,6 @@ func CloseGormDB(t testing.TB, db *gorm.DB) {
 func SkipIfPostgresEnabled(t testing.TB) {
 	if pkgEnv.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skipping test because Postgres is enabled")
+		t.SkipNow()
 	}
 }
