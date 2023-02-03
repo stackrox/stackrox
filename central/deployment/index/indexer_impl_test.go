@@ -50,7 +50,9 @@ func (suite *DeploymentIndexTestSuite) SetupTest() {
 }
 
 func (suite *DeploymentIndexTestSuite) TearDownTest() {
-	suite.NoError(suite.bleveIndex.Close())
+	if !suite.T().Skipped() {
+		suite.NoError(suite.bleveIndex.Close())
+	}
 }
 
 // TODO(ROX-2986) Re-add unit test once performance hit on negation query is resolved
