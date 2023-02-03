@@ -190,7 +190,6 @@ jobs:
         run: |
           # Duplicate the main config and keep only postsubmit jobs.
           yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) |
-              .promotion.tag=\"$RELEASE\" |
               .zz_generated_metadata.branch=\"release-$RELEASE\"" \
             "$CFG_DIR/stackrox-stackrox-master.yaml" \
             > "$CFG_DIR/stackrox-$BRANCH.yaml"
