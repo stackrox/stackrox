@@ -82,7 +82,7 @@ func TestSelectQueryResults(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.TestString).ProtoQuery(),
 			resultStruct:  Struct1{},
-			expectedQuery: "select test_multi_key_structs.String_ from test_multi_key_structs",
+			expectedQuery: "select test_multi_key_structs.String_ teststring from test_multi_key_structs",
 			expectedResult: []*Struct1{
 				{"acs"},
 				{"acs"},
@@ -96,7 +96,7 @@ func TestSelectQueryResults(t *testing.T) {
 				AddSelectFields(search.TestString).
 				AddExactMatches(search.TestString, "acs").ProtoQuery(),
 			resultStruct:  Struct1{},
-			expectedQuery: "select test_multi_key_structs.String_ from test_multi_key_structs where test_multi_key_structs.String_ = $1",
+			expectedQuery: "select test_multi_key_structs.String_ teststring from test_multi_key_structs where test_multi_key_structs.String_ = $1",
 			expectedResult: []*Struct1{
 				{"acs"},
 				{"acs"},
@@ -108,11 +108,11 @@ func TestSelectQueryResults(t *testing.T) {
 				AddSelectFields(search.TestNestedString, search.TestNestedBool).
 				AddExactMatches(search.TestNestedString, "nested_acs").ProtoQuery(),
 			resultStruct: Struct2{},
-			expectedQuery: "select test_multi_key_structs_nesteds.Nested, test_multi_key_structs_nesteds.IsNested " +
+			expectedQuery: "select test_multi_key_structs_nesteds.Nested testnestedstring, test_multi_key_structs_nesteds.IsNested testnestedbool " +
 				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
 				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
 				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
-				"where test_multi_key_structs_nesteds.Nested = $1\n",
+				"where test_multi_key_structs_nesteds.Nested = $",
 			expectedResult: []*Struct2{
 				{
 					TestNestedString: "nested_acs",
@@ -127,12 +127,12 @@ func TestSelectQueryResults(t *testing.T) {
 				AddExactMatches(search.TestNestedString, "nested_acs").
 				AddGroupBy(search.TestString).ProtoQuery(),
 			resultStruct: Struct2GrpBy1{},
-			expectedQuery: "select jsonb_agg(test_multi_key_structs_nesteds.Nested), jsonb_agg(test_multi_key_structs_nesteds.IsNested), test_multi_key_structs.String_ " +
+			expectedQuery: "select jsonb_agg(test_multi_key_structs_nesteds.Nested) testnestedstring, jsonb_agg(test_multi_key_structs_nesteds.IsNested) testnestedbool, test_multi_key_structs.String_ teststring " +
 				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
 				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
 				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
 				"where test_multi_key_structs_nesteds.Nested = $1 " +
-				"group by test_multi_key_structs.String_\n",
+				"group by test_multi_key_structs.String_",
 			expectedResult: []*Struct2GrpBy1{
 				{
 					TestNestedString: []string{"nested_acs"},
@@ -147,11 +147,11 @@ func TestSelectQueryResults(t *testing.T) {
 				AddSelectFields(search.TestNestedString, search.TestNestedBool).
 				AddGroupBy(search.TestString).ProtoQuery(),
 			resultStruct: Struct2GrpBy1{},
-			expectedQuery: "select jsonb_agg(test_multi_key_structs_nesteds.Nested), jsonb_agg(test_multi_key_structs_nesteds.IsNested), test_multi_key_structs.String_ " +
+			expectedQuery: "select jsonb_agg(test_multi_key_structs_nesteds.Nested) testnestedstring, jsonb_agg(test_multi_key_structs_nesteds.IsNested) testnestedbool, test_multi_key_structs.String_ teststring " +
 				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
 				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
 				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
-				"group by test_multi_key_structs.String_\n",
+				"group by test_multi_key_structs.String_",
 			expectedResult: []*Struct2GrpBy1{
 				{
 					TestNestedString: []string{"nested_acs"},
@@ -172,12 +172,13 @@ func TestSelectQueryResults(t *testing.T) {
 				AddExactMatches(search.TestNestedString, "nested_acs").
 				AddGroupBy(search.TestString, search.TestBool).ProtoQuery(),
 			resultStruct: Struct2GrpBy2{},
-			expectedQuery: "select jsonb_agg(test_multi_key_structs_nesteds.Nested), jsonb_agg(test_multi_key_structs_nesteds.IsNested), test_multi_key_structs.String_, test_multi_key_structs.Bool " +
+			expectedQuery: "select jsonb_agg(test_multi_key_structs_nesteds.Nested) testnestedstring, jsonb_agg(test_multi_key_structs_nesteds.IsNested) testnestedbool, " +
+				"test_multi_key_structs.String_ teststring, test_multi_key_structs.Bool testbool " +
 				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
 				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
 				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
 				"where test_multi_key_structs_nesteds.Nested = $1 " +
-				"group by test_multi_key_structs.String_, test_multi_key_structs.Bool\n",
+				"group by test_multi_key_structs.String_, test_multi_key_structs.Bool",
 			expectedResult: []*Struct2GrpBy2{
 				{
 					TestNestedString: []string{"nested_acs"},
@@ -192,10 +193,10 @@ func TestSelectQueryResults(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.TestString, search.TestNestedString).ProtoQuery(),
 			resultStruct: Struct3{},
-			expectedQuery: "select test_multi_key_structs.String_, test_multi_key_structs_nesteds.Nested " +
+			expectedQuery: "select test_multi_key_structs.String_ teststring, test_multi_key_structs_nesteds.Nested testnestedstring " +
 				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
 				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
-				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2\n",
+				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2",
 			expectedResult: []*Struct3{
 				{
 					TestString:       "acs",
@@ -214,11 +215,11 @@ func TestSelectQueryResults(t *testing.T) {
 				AddExactMatches(search.TestString, "acs").
 				AddExactMatches(search.TestNestedString, "nested_acs").ProtoQuery(),
 			resultStruct: Struct3{},
-			expectedQuery: "select test_multi_key_structs.String_, test_multi_key_structs_nesteds.Nested " +
+			expectedQuery: "select test_multi_key_structs.String_ teststring, test_multi_key_structs_nesteds.Nested testnestedstring " +
 				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
 				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
 				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
-				"where (test_multi_key_structs_nesteds.Nested = $1 and test_multi_key_structs.String_ = $2)\n",
+				"where (test_multi_key_structs_nesteds.Nested = $1 and test_multi_key_structs.String_ = $2)",
 			expectedResult: []*Struct3{
 				{
 					TestString:       "acs",

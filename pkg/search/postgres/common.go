@@ -309,7 +309,6 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelect *v1.Qu
 			return errors.Errorf("field %s in SELECT clause does not exist in table %s or connected tables", field, schema.Table)
 		}
 
-		fmt.Println(strings.Join(strings.Fields(field), ""))
 		querySoFar.SelectedFields = append(querySoFar.SelectedFields, pgsearch.SelectQueryField{
 			SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, ternary.String(dbField.SQLType == "uuid", "::text", "")),
 			FieldType:  dbField.DataType,
@@ -897,7 +896,7 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.
 	}
 
 	queryStr := query.AsSQL()
-	fmt.Println(queryStr)
+	
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		if !pgutils.IsTransientError(err) {
