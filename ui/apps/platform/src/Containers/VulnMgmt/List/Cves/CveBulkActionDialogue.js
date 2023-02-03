@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import get from 'lodash/get';
 import set from 'lodash/set';
+import uniqBy from 'lodash/uniqBy';
 import { Message } from '@stackrox/ui-components';
 
 import CustomDialogue from 'Components/CustomDialogue';
@@ -36,7 +37,10 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
     const dialogueRef = useRef(null);
 
     // the combined CVEs are used for the GraphQL query var
-    const cvesStr = bulkActionCveIds.join(',');
+    const cvesStr =
+        cveType === entityTypes.CVE
+            ? bulkActionCveIds.join(',')
+            : bulkActionCveIds.map((cve) => cve.split('#')[0]).join(','); // only use the cve name, not the OS after the hash
 
     // prepare policy object
     const [policyIdentifer, setPolicyIdentifier] = useState('');
@@ -102,14 +106,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
         }
     }
 
-    const cvesObj =
-        cveType === entityTypes.CVE
-            ? {
-                  cve: cvesStr,
-              }
-            : {
-                  id: cvesStr,
-              };
+    const cvesObj = {
+        cve: cvesStr,
+    };
     const cveQueryOptions = {
         variables: {
             query: queryService.objectToWhereClause(cvesObj),
@@ -132,7 +131,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
         cveType === entityTypes.CVE
             ? allowedCves.map((cve) => ({ value: cve.cve }))
             : cveItems.map((cve) => ({ value: cve.cve }));
-    const cvesToDisplay = cveType === entityTypes.CVE ? allowedCves : cveItems;
+    const cvesToDisplay = cveType === entityTypes.CVE ? allowedCves : uniqBy(cveItems, 'cve');
 
     // use GraphQL to get existing vulnerability-related policies
     const POLICIES_QUERY = gql`
