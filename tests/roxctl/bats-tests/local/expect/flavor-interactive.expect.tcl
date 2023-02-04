@@ -128,11 +128,9 @@ expect "Enter external volume name for Central*:" { send "\n" }
 expect "Enter external volume size in Gi for Central*:" { send "\n" }
 expect "Enter storage class name for Central (optional if you have a default StorageClass configured):" { send "\n" }
 
-if {[info exists ::env(ROX_POSTGRES_DATASTORE)] && [string equal "$env(ROX_POSTGRES_DATASTORE)" true]} {
-  expect "Enter external volume name for Central DB*:" { send "\n" }
-  expect "Enter external volume size in Gi for Central DB*:" { send "\n" }
-  expect "Enter storage class name for Central DB (optional if you have a default StorageClass configured):" { send "\n" }
-}
+expect "Enter external volume name for Central DB*:" { send "\n" }
+expect "Enter external volume size in Gi for Central DB*:" { send "\n" }
+expect "Enter storage class name for Central DB (optional if you have a default StorageClass configured):" { send "\n" }
 
 # Setting a generous timeout, as generating files may take >3 seconds
 expect -timeout 20 "Generating deployment bundle..."
