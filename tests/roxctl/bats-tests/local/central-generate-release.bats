@@ -85,7 +85,10 @@ teardown() {
   run_image_defaults_registry_test roxctl-release openshift \
     'example.com' \
     'example.com' \
-    '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3'
+    '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
+    '--scanner-image' 'example.com/scanner:1.2.3' \
+    '--scanner-db-image' 'example.com/scanner-db:1.2.3'
 }
 
 @test "roxctl-release central generate openshift should work when main and scanner are from different registries" {

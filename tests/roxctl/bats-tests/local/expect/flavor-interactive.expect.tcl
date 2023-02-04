@@ -6,6 +6,9 @@
 # https://man7.org/linux/man-pages/man1/expect.1.html
 # O'reilly Book about Expect: https://www.oreilly.com/library/view/exploring-expect/9781565920903/
 
+# This test can be run locally with:
+# expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- <path-to-roxctl> <flavor-name> "$(mktemp -d -u)" <expected-prefix-of-image-registry-in-prompt>
+
 # exp_internal 1 # uncomment for debug mode
 # wait at most 10 seconds for a question to appear - applies for each question
 set timeout 10
