@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"math/rand"
 	"os"
@@ -10,15 +11,16 @@ import (
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	gracePeriod int64
 )
 
 func applyJitter(t time.Duration) time.Duration {
@@ -26,7 +28,82 @@ func applyJitter(t time.Duration) time.Duration {
 	return time.Duration(multiplier * float32(t))
 }
 
+type killFunc func(client *kubernetes.Clientset, config *rest.Config, pods []corev1.Pod)
+
+func execKill(client *kubernetes.Clientset, config *rest.Config, pods []corev1.Pod) {
+	signals := []string{"-9", "-15"}
+	signal := signals[rand.Intn(len(signals))]
+	cmd := []string{"kill", signal, "1"}
+	for _, pod := range pods {
+		log.Infof("Exec'ing into pod %s and running %+v", pod.Name, cmd)
+
+		req := client.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).
+			Namespace("stackrox").SubResource("exec")
+		option := &corev1.PodExecOptions{
+			Command: cmd,
+			Stdin:   false,
+			Stdout:  true,
+			Stderr:  true,
+			TTY:     true,
+		}
+		req.VersionedParams(
+			option,
+			scheme.ParameterCodec,
+		)
+		exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+		if err != nil {
+			log.Errorf("error executing spdy: %v", err)
+			return
+		}
+		var stdout, stderr bytes.Buffer
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:  nil,
+			Stdout: &stdout,
+			Stderr: &stderr,
+		})
+		if err != nil {
+			log.Errorf("Streaming: %v", err)
+			return
+		}
+		log.Infof("Output: %s %s", stdout.Bytes(), stderr.Bytes())
+	}
+}
+
+func getPods(client *kubernetes.Clientset, labelSelector string) []corev1.Pod {
+	ctx := context.Background()
+	podList, err := client.CoreV1().Pods("stackrox").List(ctx, v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		log.Panicf("error listing pods: %v", err)
+	}
+	return podList.Items
+}
+
+func podKill(client *kubernetes.Clientset, _ *rest.Config, pods []corev1.Pod) {
+	for _, pod := range pods {
+		gracePeriod := rand.Int63n(60)
+		log.Infof("Deleting pod %s", pod.Name)
+		err := client.CoreV1().Pods("stackrox").Delete(context.Background(), pod.Name, v1.DeleteOptions{
+			GracePeriodSeconds: &gracePeriod,
+		})
+		if err != nil {
+			log.Errorf("error deleting pod %s: %v", pod.Name, err)
+		}
+	}
+}
+
+func selectOption() bool {
+	return rand.Float32() < 0.5
+}
+
 func main() {
+	// kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	//config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	//if err != nil {
+	//	panic(err.Error())
+	//}
+
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Panicf("obtaining in-cluster Kubernetes config: %v", err)
@@ -46,8 +123,6 @@ func main() {
 	nextInterval := applyJitter(interval)
 	log.Infof("Will attempt to terminate Central in %0.2f seconds", nextInterval.Seconds())
 
-	ctx := context.Background()
-
 	for {
 		select {
 		case sig := <-signalsC:
@@ -57,25 +132,20 @@ func main() {
 		case <-time.After(nextInterval):
 			nextInterval = applyJitter(interval)
 
-			podList, err := client.CoreV1().Pods("stackrox").List(ctx, v1.ListOptions{
-				LabelSelector: "app=central",
-			})
-			if err != nil {
-				log.Panicf("error listing pods: %v", err)
+			var killFn killFunc
+			if selectOption() {
+				killFn = execKill
+			} else {
+				killFn = podKill
 			}
-			if len(podList.Items) == 0 {
-				log.Info("No Central pods in this iteration. Will try again")
-				continue
+			var selector string
+			if selectOption() {
+				selector = "app=central"
+			} else {
+				selector = "app=central-db"
 			}
-			for _, pod := range podList.Items {
-				log.Infof("Deleting pod %s", pod.Name)
-				err := client.CoreV1().Pods("stackrox").Delete(ctx, pod.Name, v1.DeleteOptions{
-					GracePeriodSeconds: &gracePeriod,
-				})
-				if err != nil {
-					log.Errorf("error deleting pod %s: %v", pod.Name, err)
-				}
-			}
+			pods := getPods(client, selector)
+			killFn(client, config, pods)
 		}
 	}
 }

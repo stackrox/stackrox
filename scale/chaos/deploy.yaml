@@ -19,7 +19,7 @@ spec:
     spec:
       serviceAccount: chaos
       containers:
-      - image: stackrox/scale:${TAG}
+      - image: quay.io/rhacs-eng/sandbox:chaos-test
         imagePullPolicy: IfNotPresent
         name: chaos
         command:
