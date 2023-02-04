@@ -31,7 +31,20 @@ teardown() {
   run_image_defaults_registry_test roxctl-development k8s \
     'example.com' \
     'example.com' \
-    '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3' '--central-db-image' 'example.com/central-db:1.2.5'
+    '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
+    '--scanner-image' 'example.com/scanner:1.2.3' \
+    '--scanner-db-image' 'example.com/scanner-db:1.2.3'
+}
+
+@test "roxctl-development central generate k8s should work when main and scanner are from different registries" {
+  run_image_defaults_registry_test roxctl-development k8s \
+    'example.com' \
+    'example2.com' \
+    '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
+    '--scanner-image' 'example2.com/scanner:1.2.3' \
+    '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
 }
 
 @test "roxctl-development central generate k8s should work when main is from custom registry and --image-defaults are used" {
@@ -41,6 +54,10 @@ teardown() {
     '--main-image' 'example.com/main:1.2.3' \
     '--central-db-image' 'example.com/central-db:1.2.3' \
     '--image-defaults' 'stackrox.io'
+}
+
+@test "roxctl-development roxctl central generate k8s should not support --rhacs flag" {
+  run_no_rhacs_flag_test roxctl-development k8s
 }
 
 @test "roxctl-development roxctl central generate k8s --image-defaults=stackrox.io should use stackrox.io registry" {
@@ -70,9 +87,19 @@ teardown() {
     'example.com' \
     'example.com' \
     '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
     '--scanner-image' 'example.com/scanner:1.2.3' \
-    '--scanner-db-image' 'example.com/scanner-db:1.2.3' \
-    '--central-db-image' 'example.com/central-db:1.2.3'
+    '--scanner-db-image' 'example.com/scanner-db:1.2.3'
+}
+
+@test "roxctl-development central generate openshift should work when main and scanner are from different registries" {
+  run_image_defaults_registry_test roxctl-development openshift \
+    'example.com' \
+    'example2.com' \
+    '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
+    '--scanner-image' 'example2.com/scanner:1.2.3' \
+    '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
 }
 
 @test "roxctl-development central generate openshift should work when main is from custom registry and --image-defaults are used" {
@@ -82,6 +109,10 @@ teardown() {
     '--main-image' 'example.com/main:1.2.3' \
     '--central-db-image' 'example.com/central-db:1.2.3' \
     '--image-defaults' 'stackrox.io'
+}
+
+@test "roxctl-development roxctl central generate openshift should not support --rhacs flag" {
+  run_no_rhacs_flag_test roxctl-development openshift
 }
 
 @test "roxctl-development roxctl central generate openshift --image-defaults=stackrox.io should use stackrox.io registry" {
@@ -98,4 +129,23 @@ teardown() {
 
 @test "roxctl-development roxctl central generate openshift --image-defaults=opensource should use quay.io/stackrox-io registry" {
   run_image_defaults_registry_test roxctl-development openshift 'quay.io/stackrox-io' 'quay.io/stackrox-io' '--image-defaults' 'opensource'
+}
+
+@test "roxctl-development central generate k8s --debug should use the local directory" {
+  run_with_debug_flag_test roxctl-development central generate k8s none --output-dir "$out_dir"
+  assert_success
+  assert_debug_templates_exist "$out_dir/helm/chart/templates"
+}
+
+@test "roxctl-development central generate k8s --debug should fail when debug dir does not exist" {
+  run roxctl-development central generate k8s none --output-dir "$out_dir" --debug --debug-path "/non-existing-dir"
+  assert_failure
+  assert_output --partial "no such file or directory"
+}
+
+@test "roxctl-development central generate k8s --declarative-config should contain correct mounts" {
+  run_image_defaults_registry_test roxctl-development k8s 'quay.io/rhacs-eng' 'quay.io/rhacs-eng' \
+    '--declarative-config-config-maps' 'config-map-1,config-map-2' \
+    '--declarative-config-secrets' 'secret-1,secret-2'
+  assert_declarative_config_mount_exist "${out_dir}/central" 'config-map-1' 'config-map-2' 'secret-1' 'secret-2'
 }

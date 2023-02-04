@@ -71,9 +71,15 @@ assert_prompts_rhacs() {
   assert_line --regexp 'Enter scanner .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:'
 }
 
+@test "roxctl-development central generate interactive flavor=dummy should ask for valid value" {
+  roxctl_bin="$(roxctl-development-cmd)"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive-dummy.expect.tcl" -- "$roxctl_bin" "$out_dir"
+  assert_success
+}
+
 @test "roxctl-development central generate interactive flavor=development_build" {
   roxctl_bin="$(roxctl-development-cmd)"
-  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive-postgres.expect.tcl" -- "$roxctl_bin" development_build "$out_dir" "quay.io/rhacs-eng"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" development_build "$out_dir" "quay.io/rhacs-eng"
   bitfield_to_failure "$status"
   assert_success
   assert_prompts_development
@@ -85,7 +91,7 @@ assert_prompts_rhacs() {
 
 @test "roxctl-development central generate interactive flavor=stackrox.io" {
   roxctl_bin="$(roxctl-development-cmd)"
-  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive-postgres.expect.tcl" -- "$roxctl_bin" stackrox.io "$out_dir" "stackrox.io"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" stackrox.io "$out_dir" "stackrox.io"
   bitfield_to_failure "$status"
   assert_success
   assert_prompts_stackrox
@@ -97,11 +103,43 @@ assert_prompts_rhacs() {
 
 @test "roxctl-development central generate interactive flavor=rhacs" {
   roxctl_bin="$(roxctl-development-cmd)"
-  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive-postgres.expect.tcl" -- "$roxctl_bin" rhacs "$out_dir" "registry.redhat.io/advanced-cluster-security"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" rhacs "$out_dir" "registry.redhat.io/advanced-cluster-security"
   bitfield_to_failure "$status"
   assert_success
   assert_prompts_rhacs
   assert_flavor_prompt_development
+  sleep 2 # due to frequent flakes of missing yaml files
+  assert_components_registry "$out_dir/central" "registry.redhat.io" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "registry.redhat.io" "$any_version" 'scanner' 'scanner-db'
+}
+
+# RELEASE
+
+@test "roxctl-release central generate interactive flavor=dummy should ask for valid value" {
+  roxctl_bin="$(roxctl-release-cmd)"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive-dummy.expect.tcl" -- "$roxctl_bin" "$out_dir"
+  assert_success
+}
+
+@test "roxctl-release central generate interactive flavor=stackrox.io" {
+  roxctl_bin="$(roxctl-release-cmd)"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" stackrox.io "$out_dir" "stackrox.io"
+  bitfield_to_failure "$status"
+  assert_success
+  assert_prompts_stackrox
+  assert_flavor_prompt_release
+  sleep 2 # due to frequent flakes of missing yaml files
+  assert_components_registry "$out_dir/central" "stackrox.io" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "stackrox.io" "$any_version" 'scanner' 'scanner-db'
+}
+
+@test "roxctl-release central generate interactive flavor=rhacs" {
+  roxctl_bin="$(roxctl-release-cmd)"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" rhacs "$out_dir" "registry.redhat.io/advanced-cluster-security"
+  bitfield_to_failure "$status"
+  assert_success
+  assert_prompts_rhacs
+  assert_flavor_prompt_release
   sleep 2 # due to frequent flakes of missing yaml files
   assert_components_registry "$out_dir/central" "registry.redhat.io" "$any_version" 'main'
   assert_components_registry "$out_dir/scanner" "registry.redhat.io" "$any_version" 'scanner' 'scanner-db'
