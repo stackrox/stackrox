@@ -3,11 +3,13 @@
 """
 Run operator e2e tests in a openshift 4 cluster provided via a hive cluster_claim.
 """
+import os
 from runners import ClusterTestRunner
 from ci_tests import OperatorE2eTest
 from pre_tests import PreSystemTests
 from post_tests import PostClusterTest, FinalPost
 
+os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 ClusterTestRunner(
     pre_test=PreSystemTests(),
