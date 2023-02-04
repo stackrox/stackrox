@@ -11,9 +11,12 @@ import objects.K8sRole
 import objects.K8sRoleBinding
 import objects.K8sServiceAccount
 import objects.K8sSubject
+import orchestratormanager.OrchestratorTypes
 import services.RbacService
 import services.ServiceAccountService
+import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import spock.lang.Tag
 
@@ -51,6 +54,8 @@ class K8sRbacTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
+    // TODO(ROX-14666): This test times out under openshift
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
