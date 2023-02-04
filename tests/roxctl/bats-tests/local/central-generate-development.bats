@@ -31,7 +31,10 @@ teardown() {
   run_image_defaults_registry_test roxctl-development k8s \
     'example.com' \
     'example.com' \
-    '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3'
+    '--main-image' 'example.com/main:1.2.3' \
+    '--scanner-image' 'example.com/scanner:1.2.3' \
+    '--scanner-db-image' 'example.com/scanner-db:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.5'
 }
 
 @test "roxctl-development central generate k8s should work when main and scanner are from different registries" {
@@ -40,7 +43,8 @@ teardown() {
     'example2.com' \
     '--main-image' 'example.com/main:1.2.3' \
     '--scanner-image' 'example2.com/scanner:1.2.3' \
-    '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
+    '--scanner-db-image' 'example2.com/scanner-db:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.5'
 }
 
 @test "roxctl-development central generate k8s should work when main is from custom registry and --image-defaults are used" {
@@ -48,6 +52,7 @@ teardown() {
     'example.com' \
     'stackrox.io' \
     '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
     '--image-defaults' 'stackrox.io'
 }
 
@@ -96,7 +101,8 @@ teardown() {
     'example2.com' \
     '--main-image' 'example.com/main:1.2.3' \
     '--scanner-image' 'example2.com/scanner:1.2.3' \
-    '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
+    '--scanner-db-image' 'example2.com/scanner-db:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3'
 }
 
 @test "roxctl-development central generate openshift should work when main is from custom registry and --image-defaults are used" {
@@ -104,6 +110,7 @@ teardown() {
     'example.com' \
     'stackrox.io' \
     '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
     '--image-defaults' 'stackrox.io'
 }
 
