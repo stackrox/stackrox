@@ -2,7 +2,6 @@
 
 # Allow to run the tests locally provided that bats-helpers are installed in $HOME/bats-core
 bats_helpers_root="${HOME}/bats-core"
-bats_helpers_root="/usr/share/toolbox/test/system/libs"
 if [[ ! -f "${bats_helpers_root}/bats-support/load.bash" ]]; then
   # Location of bats-helpers in the CI image
   bats_helpers_root="/usr/lib/node_modules"
