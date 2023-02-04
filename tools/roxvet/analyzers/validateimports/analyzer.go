@@ -94,6 +94,30 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
+type allowedPackage struct {
+	path            string
+	excludeChildren bool
+}
+
+func appendPackage(list []*allowedPackage, excludeChildren bool, pkgs ...string) []*allowedPackage {
+	if list == nil {
+		list = make([]*allowedPackage, len(pkgs))
+	}
+
+	for _, pkg := range pkgs {
+		list = append(list, &allowedPackage{path: pkg, excludeChildren: excludeChildren})
+	}
+	return list
+}
+
+func appendPackageWithChildren(list []*allowedPackage, pkgs ...string) []*allowedPackage {
+	return appendPackage(list, false, pkgs...)
+}
+
+func appendPackageWithoutChildren(list []*allowedPackage, pkgs ...string) []*allowedPackage {
+	return appendPackage(list, true, pkgs...)
+}
+
 // Given the package name, get the root directory of the service.
 // (The directory boundary that imports should not cross.)
 func getRoot(packageName string) (root string, valid bool, err error) {
@@ -125,7 +149,7 @@ func getRoot(packageName string) (root string, valid bool, err error) {
 
 // verifySingleImportFromAllowedPackagesOnly returns true if the given import statement is allowed from the respective
 // source package.
-func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, importRoot string, allowedPackages ...string) error {
+func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, importRoot string, allowedPackages ...*allowedPackage) error {
 	impPath, err := strconv.Unquote(spec.Path.Value)
 	if err != nil {
 		return err
@@ -141,12 +165,19 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 
 	trimmed := strings.TrimPrefix(impPath, roxPrefix)
 
-	for _, allowedPrefix := range allowedPackages {
-		if strings.HasPrefix(trimmed, allowedPrefix) {
-			return nil
+	packagePaths := make([]string, 0, len(allowedPackages))
+	for _, allowedPackage := range allowedPackages {
+		if strings.HasPrefix(trimmed+"/", allowedPackage.path+"/") {
+			if allowedPackage.excludeChildren && trimmed == allowedPackage.path {
+				return nil
+			}
+			if !allowedPackage.excludeChildren {
+				return nil
+			}
 		}
+		packagePaths = append(packagePaths, allowedPackage.path)
 	}
-	return fmt.Errorf("%s cannot import from %s; only allowed roots are %+v", importRoot, trimmed, allowedPackages)
+	return fmt.Errorf("%s cannot import from %s; only allowed roots are %+v", importRoot, trimmed, packagePaths)
 }
 
 // checkForbidden returns an error if an import has been forbidden and the importing package isn't in the allowlist
@@ -179,10 +210,10 @@ func checkForbidden(impPath, packageName string) error {
 // verifyImportsFromAllowedPackagesOnly verifies that all Go files in (subdirectories of) root
 // only import StackRox code from allowedPackages
 func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.ImportSpec, validImportRoot, packageName string) {
-	allowedPackages := []string{validImportRoot, "generated", "image"}
+	allowedPackages := []*allowedPackage{{path: validImportRoot}, {path: "generated"}, {path: "image"}}
 	// The migrator is NOT allowed to import all codes from pkg except isolated packages.
 	if validImportRoot != "pkg" && !strings.HasPrefix(validImportRoot, "migrator") {
-		allowedPackages = append(allowedPackages, "pkg")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "pkg")
 	}
 
 	// Specific sub-packages in pkg that the migrator and its sub-packages are allowed to import go here.
@@ -190,7 +221,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	// will need to be protected by strict compatibility guarantees.
 	// Keep this in alphabetic order.
 	if strings.HasPrefix(validImportRoot, "migrator") {
-		allowedPackages = append(allowedPackages,
+		allowedPackages = appendPackageWithChildren(allowedPackages,
 			"pkg/auth",
 			"pkg/batcher",
 			"pkg/bolthelper",
@@ -206,6 +237,8 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/dackbox/raw",
 			"pkg/dackbox/sortedkeys",
 			"pkg/db",
+			"pkg/dberrors",
+			"pkg/dbhelper",
 			"pkg/defaults/policies",
 			"pkg/env",
 			"pkg/errorhelpers",
@@ -220,7 +253,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/migrations",
 			"pkg/nodes/converter",
 			"pkg/policyutils",
-			"pkg/postgres",
 			"pkg/postgres/pgadmin",
 			"pkg/postgres/pgconfig",
 			"pkg/postgres/pgtest",
@@ -246,38 +278,40 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/version",
 		)
 
+		allowedPackages = appendPackageWithoutChildren(allowedPackages, "pkg/postgres")
+
 		// Migrations shall not depend on current schemas. Each migration can include a copy of the schema before and
 		// after a specific migration.
 		if validImportRoot == "migrator" {
-			allowedPackages = append(allowedPackages, "pkg/postgres/schema")
+			allowedPackages = appendPackageWithChildren(allowedPackages, "pkg/postgres/schema")
 		}
 
 		if validImportRoot == "migrator/migrations" {
-			allowedPackages = append(allowedPackages, "migrator")
+			allowedPackages = appendPackageWithChildren(allowedPackages, "migrator")
 		}
 	}
 
 	if validImportRoot == "sensor/debugger" {
-		allowedPackages = append(allowedPackages, "sensor/kubernetes/listener/resources", "sensor/kubernetes/client")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/kubernetes/listener/resources", "sensor/kubernetes/client")
 	}
 
 	if validImportRoot == "tools" {
-		allowedPackages = append(allowedPackages, "central/globaldb", "central/metrics", "central/postgres", "central/role/resources",
+		allowedPackages = appendPackageWithChildren(allowedPackages, "central/globaldb", "central/metrics", "central/postgres", "central/role/resources",
 			"sensor/kubernetes/client", "sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {
-		allowedPackages = append(allowedPackages, "sensor/common")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/common")
 	}
 
 	// Allow scale tests to import some constants from central, to be more DRY.
 	// This is not a problem since none of this code is used in prod anyway.
 	if validImportRoot == "scale" {
-		allowedPackages = append(allowedPackages, "central")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "central")
 	}
 
 	if validImportRoot == "sensor/tests" {
-		allowedPackages = append(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
 	}
 
 	for _, imp := range imports {
