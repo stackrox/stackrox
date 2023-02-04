@@ -8,20 +8,18 @@ setup_file() {
   # remove binaries from the previous runs
   [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
 
-  echo "Testing roxctl version: '$(roxctl-development version)' with ROX_POSTGRES_DATASTORE=true" >&3
+  echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
   command -v expect || skip "Tests in this file require expect"
 }
 
 setup() {
   export out_dir="$(mktemp -d -u)"
-  export ROX_POSTGRES_DATASTORE=true
   sleep 1
 }
 
 teardown() {
   rm -rf "$out_dir"
-  unset ROX_POSTGRES_DATASTORE
   true
 }
 
