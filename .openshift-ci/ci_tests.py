@@ -110,14 +110,14 @@ class OperatorE2eTest(BaseTest):
             OperatorE2eTest.DEPLOY_TIMEOUT_SEC,
         )
 
-        # print("Executing operator upgrade test")
-        # self.run_with_graceful_kill(
-        #     ["operator/hack/junit_wrap.sh", "test-upgrade",
-        #      "Test operator upgrade from previously released version to the current one.",
-        #      "See log and/or kuttl JUnit output for error details.",
-        #      "make", "-C", "operator", "test-upgrade"],
-        #     OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
-        # )
+        print("Executing operator upgrade test")
+        self.run_with_graceful_kill(
+            ["operator/hack/junit_wrap.sh", "test-upgrade",
+             "Test operator upgrade from previously released version to the current one.",
+             "See log and/or kuttl JUnit output for error details.",
+             "make", "-C", "operator", "test-upgrade"],
+            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
+        )
 
         print("Executing operator e2e tests")
         self.run_with_graceful_kill(
