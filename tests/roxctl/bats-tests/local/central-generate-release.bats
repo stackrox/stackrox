@@ -30,7 +30,10 @@ teardown() {
   run_image_defaults_registry_test roxctl-release k8s \
     'example.com' \
     'example.com' \
-    '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3'
+    '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
+    '--scanner-image' 'example.com/scanner:1.2.3' \
+    '--scanner-db-image' 'example.com/scanner-db:1.2.3'
 }
 
 @test "roxctl-release central generate k8s should work when main and scanner are from different registries" {
@@ -38,6 +41,7 @@ teardown() {
     'example.com' \
     'example2.com' \
     '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
     '--scanner-image' 'example2.com/scanner:1.2.3' \
     '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
 }
@@ -46,7 +50,8 @@ teardown() {
   run_image_defaults_registry_test roxctl-release k8s \
     'example.com' \
     'stackrox.io' \
-    '--main-image' 'example.com/main:1.2.3' \
+    '--main-image' 'example.com/main:1.2.3'  \
+    '--central-db-image' 'example.com/central-db:1.2.3'\
     '--image-defaults' 'stackrox.io'
 }
 
@@ -88,14 +93,9 @@ teardown() {
     'example.com' \
     'example2.com' \
     '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
     '--scanner-image' 'example2.com/scanner:1.2.3' \
     '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
-}
-
-@test "roxctl-release central generate k8s should not support --central-db-image" {
-  run roxctl-release central generate k8s pvc --output-dir "$out_dir" --central-db-image example.com/central-db:1.2.5
-  assert_failure
-  assert_output --partial "unknown flag: --central-db-image"
 }
 
 @test "roxctl-release central generate openshift should work when main is from custom registry and --image-defaults are used" {
@@ -103,6 +103,7 @@ teardown() {
     'example.com' \
     'stackrox.io' \
     '--main-image' 'example.com/main:1.2.3' \
+    '--central-db-image' 'example.com/central-db:1.2.3' \
     '--image-defaults' 'stackrox.io'
 }
 
