@@ -8,26 +8,24 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	"github.com/stackrox/rox/central/ranking"
-	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestDeploymentDataStoreWithPostgres(t *testing.T) {
@@ -38,12 +36,10 @@ type DeploymentPostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	mockCtrl            *gomock.Controller
+	testDB              *pgtest.TestPostgres
 	ctx                 context.Context
-	db                  *postgres.DB
-	gormDB              *gorm.DB
 	imageDatastore      imageDataStore.DataStore
 	deploymentDatastore DataStore
-	riskDataStore       *riskMocks.MockDataStore
 }
 
 func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
@@ -56,35 +52,19 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.ctx = context.Background()
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
+	s.testDB = pgtest.ForT(s.T())
+
+	imageDS, err := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.Pool)
 	s.Require().NoError(err)
+	s.imageDatastore = imageDS
 
-	pool, err := postgres.New(s.ctx, config)
-	s.NoError(err)
-	s.db = pool
-
-	imagePostgres.Destroy(s.ctx, s.db)
-	deploymentPostgres.Destroy(s.ctx, s.db)
-
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	ds := imageDataStore.NewWithPostgres(imagePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), imagePostgres.NewIndexer(s.db), s.riskDataStore, ranking.ImageRanker(), ranking.ComponentRanker())
-	s.imageDatastore = ds
-
-	s.mockCtrl = gomock.NewController(s.T())
-	s.riskDataStore = riskMocks.NewMockDataStore(s.mockCtrl)
-
-	s.deploymentDatastore, err = newDataStore(
-		deploymentPostgres.NewFullTestStore(s.T(), deploymentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)),
-		nil, s.db, nil, nil, s.imageDatastore, nil, nil, s.riskDataStore,
-		nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+	deploymentDS, err := GetTestPostgresDataStore(s.T(), s.testDB.Pool)
 	s.Require().NoError(err)
+	s.deploymentDatastore = deploymentDS
 }
 
 func (s *DeploymentPostgresDataStoreTestSuite) TearDownSuite() {
-	s.db.Close()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.mockCtrl.Finish()
+	s.testDB.Teardown(s.T())
 }
 
 func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
@@ -355,4 +335,67 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			}
 		})
 	}
+}
+
+func TestSelectQueryOnDeployments(t *testing.T) {
+	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("Skip postgres store tests")
+		t.SkipNow()
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	deploymentDS, err := GetTestPostgresDataStore(t, testDB.Pool)
+	assert.NoError(t, err)
+
+	for _, deployment := range []*storage.Deployment{
+		{
+			Id:   uuid.NewV4().String(),
+			Name: "dep1",
+			Type: "pod",
+		},
+		{
+			Id:   uuid.NewV4().String(),
+			Name: "dep2",
+			Type: "daemonset",
+		},
+		{
+			Id:   uuid.NewV4().String(),
+			Name: "dep3",
+			Type: "daemonset",
+		},
+		{
+			Id:   uuid.NewV4().String(),
+			Name: "dep4",
+			Type: "replicaset",
+		},
+	} {
+		require.NoError(t, deploymentDS.UpsertDeployment(ctx, deployment))
+	}
+
+	q := pkgSearch.NewQueryBuilder().
+		AddSelectFields(
+			&v1.QueryField{
+				Field:         pkgSearch.DeploymentID.String(),
+				AggregateFunc: postgres.Count.String(),
+			},
+		).
+		AddGroupBy(pkgSearch.DeploymentType).ProtoQuery()
+
+	type deploymentCountByType struct {
+		DeploymentIDCount int    `db:"deploymentidcount"`
+		DeploymentType    string `db:"deploymenttype"`
+	}
+
+	expected := []*deploymentCountByType{
+		{1, "pod"},
+		{2, "daemonset"},
+		{1, "replicaset"},
+	}
+	results, err := postgres.RunSelectRequestForSchema[deploymentCountByType](ctx, testDB.Pool, schema.DeploymentsSchema, q)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, expected, results)
 }

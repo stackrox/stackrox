@@ -160,6 +160,7 @@ var (
 	TolerationValue               = newFieldLabel("Toleration Value")
 	TolerationEffect              = newFieldLabel("Taint Effect")
 
+	AlertID        = newFieldLabel("Alert ID")
 	Violation      = newFieldLabel("Violation")
 	ViolationState = newFieldLabel("Violation State")
 	ViolationTime  = newFieldLabel("Violation Time")
