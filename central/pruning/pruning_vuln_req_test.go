@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	protoTypes "github.com/gogo/protobuf/types"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/cache"
@@ -11,13 +12,20 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func timestampNowMinus(t time.Duration) *protoTypes.Timestamp {
+	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
 func TestExpiredVulnReqsPruning(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	db := rocksdbtest.RocksDBForT(t)
 	defer rocksdbtest.TearDownRocksDB(db)
 

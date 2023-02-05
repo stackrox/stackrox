@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/migrator/clone/metadata"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	migVer "github.com/stackrox/rox/migrator/version"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -49,17 +48,12 @@ type PostgresCloneManagerSuite struct {
 }
 
 func TestManagerSuite(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(PostgresCloneManagerSuite))
 }
 
 func (s *PostgresCloneManagerSuite) SetupTest() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())

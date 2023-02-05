@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -56,6 +57,8 @@ func TestAnalystRoleDoesNotContainDebugLogs(t *testing.T) {
 }
 
 func TestRoleDataStore(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	t.Parallel()
 	suite.Run(t, new(roleDataStoreTestSuite))
 }

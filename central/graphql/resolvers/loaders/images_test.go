@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -35,6 +36,7 @@ func (suite *ImageLoaderTestSuite) SetupTest() {
 	suite.ctx = context.Background()
 
 	suite.mockCtrl = gomock.NewController(suite.T())
+	pgtest.SkipIfPostgresEnabled(suite.T())
 	suite.mockDataStore = mocks.NewMockDataStore(suite.mockCtrl)
 }
 

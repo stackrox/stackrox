@@ -9,6 +9,7 @@ import (
 	storeMock "github.com/stackrox/rox/central/processindicator/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -57,6 +58,7 @@ func (suite *IndicatorSearchTestSuite) TearDownSuite() {
 }
 
 func (suite *IndicatorSearchTestSuite) TestEnforcesSearch() {
+	pgtest.SkipIfPostgresEnabled(suite.T())
 	suite.indexer.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
 	processIndicators, err := suite.searcher.Search(suite.hasNoneCtx, search.EmptyQuery())
