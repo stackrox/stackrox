@@ -23,8 +23,8 @@ type DataStore interface {
 	GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error)
 	CountPermissionSets(ctx context.Context) (int, error)
 	AddPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error
-	UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet, requestOrigin storage.Traits_Origin) error
-	RemovePermissionSet(ctx context.Context, id string, requestOrigin storage.Traits_Origin) error
+	UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error
+	RemovePermissionSet(ctx context.Context, id string) error
 
 	GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
 	GetAllAccessScopes(ctx context.Context) ([]*storage.SimpleAccessScope, error)

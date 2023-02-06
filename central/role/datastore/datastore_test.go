@@ -11,6 +11,7 @@ import (
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -72,9 +73,10 @@ func TestRoleDataStore(t *testing.T) {
 type roleDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasNoneCtx             context.Context
+	hasReadCtx             context.Context
+	hasWriteCtx            context.Context
+	hasWriteDeclarativeCtx context.Context
 
 	dataStore DataStore
 	boltDB    *bolt.DB
@@ -97,6 +99,7 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			// TODO: ROX-14398 Replace Role with Access
 			sac.ResourceScopeKeys(resources.Role)))
+	s.hasWriteDeclarativeCtx = declarativeconfig.WithAllowOnlyDeclarativeOperations(s.hasWriteCtx)
 
 	s.initDataStore()
 }
@@ -304,22 +307,22 @@ func (s *roleDataStoreTestSuite) TestPermissionSetPermissions() {
 	err = s.dataStore.AddPermissionSet(s.hasReadCtx, badPermissionSet)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error for invalid permissionSet")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasNoneCtx, s.existingPermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasNoneCtx, s.existingPermissionSet)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Update*() yields a permission error")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasReadCtx, s.existingPermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasReadCtx, s.existingPermissionSet)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Update*() yields a permission error")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasReadCtx, goodPermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasReadCtx, goodPermissionSet)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 
-	err = s.dataStore.RemovePermissionSet(s.hasNoneCtx, s.existingPermissionSet.GetId(), storage.Traits_IMPERATIVE)
+	err = s.dataStore.RemovePermissionSet(s.hasNoneCtx, s.existingPermissionSet.GetId())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Remove*() yields a permission error")
 
-	err = s.dataStore.RemovePermissionSet(s.hasReadCtx, s.existingPermissionSet.GetId(), storage.Traits_IMPERATIVE)
+	err = s.dataStore.RemovePermissionSet(s.hasReadCtx, s.existingPermissionSet.GetId())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Remove*() yields a permission error")
 
-	err = s.dataStore.RemovePermissionSet(s.hasReadCtx, goodPermissionSet.GetId(), storage.Traits_IMPERATIVE)
+	err = s.dataStore.RemovePermissionSet(s.hasReadCtx, goodPermissionSet.GetId())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 }
 
@@ -361,13 +364,13 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, mimicPermissionSet)
 	s.ErrorIs(err, errox.AlreadyExists, "adding permission set with an existing name yields an error")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.ErrorIs(err, errox.NotFound, "updating non-existing permission set yields an error")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, updatedAdminPermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, updatedAdminPermissionSet)
 	s.ErrorIs(err, errox.InvalidArgs, "updating a default permission set yields an error")
 
-	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId(), storage.Traits_IMPERATIVE)
+	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId())
 	s.ErrorIs(err, errox.NotFound, "removing non-existing permission set yields an error")
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, goodPermissionSet)
@@ -376,16 +379,16 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	permissionSets, _ := s.dataStore.GetAllPermissionSets(s.hasReadCtx)
 	s.Len(permissionSets, 2, "added permission set should be visible in the subsequent Get*()")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, badPermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, badPermissionSet)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid permission set for Update*() yields an error")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, mimicPermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, mimicPermissionSet)
 	s.ErrorIs(err, errox.AlreadyExists, "introducing a name collision with Update*() yields an error")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.NoError(err)
 
-	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId(), storage.Traits_IMPERATIVE)
+	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId())
 	s.NoError(err)
 
 	permissionSets, _ = s.dataStore.GetAllPermissionSets(s.hasReadCtx)
@@ -397,16 +400,16 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, declarativePermissionSet)
 	s.NoError(err, "adding a permission set declaratively is not an error")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, declarativePermissionSet, storage.Traits_IMPERATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, declarativePermissionSet)
 	s.ErrorIs(err, errox.InvalidArgs, "attempting to modify imperatively declarative permission set is an error")
 
-	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, declarativePermissionSet, storage.Traits_DECLARATIVE)
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet)
 	s.NoError(err, "attempting to modify declaratively declarative permission set is not an error")
 
-	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, declarativePermissionSet.GetId(), storage.Traits_IMPERATIVE)
+	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, declarativePermissionSet.GetId())
 	s.ErrorIs(err, errox.InvalidArgs, "attempting to delete imperatively declarative permission set is an error")
 
-	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, declarativePermissionSet.GetId(), storage.Traits_DECLARATIVE)
+	err = s.dataStore.RemovePermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet.GetId())
 	s.NoError(err, "attempting to delete declaratively declarative permission set is not an error")
 
 	s.Len(permissionSets, 1, "removed permission set should be absent in the subsequent Get*()")
@@ -573,14 +576,14 @@ func (s *roleDataStoreTestSuite) TestForeignKeyConstraints() {
 	s.NoError(s.dataStore.AddAccessScope(s.hasWriteCtx, scope))
 	s.NoError(s.dataStore.AddRole(s.hasWriteCtx, role))
 
-	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId(), 0)
+	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId())
 	s.ErrorIs(err, errox.ReferencedByAnotherObject, "cannot delete a PermissionSet referred to by a Role")
 
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId())
 	s.ErrorIs(err, errox.ReferencedByAnotherObject, "cannot delete an Access Scope referred to by a Role")
 
 	s.NoError(s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName()))
-	s.NoError(s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId(), 0))
+	s.NoError(s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId()))
 	s.NoError(s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId()))
 }
 

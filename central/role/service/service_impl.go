@@ -230,7 +230,7 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 }
 
 func (s *serviceImpl) PutPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*v1.Empty, error) {
-	err := s.roleDataStore.UpdatePermissionSet(ctx, permissionSet, storage.Traits_IMPERATIVE)
+	err := s.roleDataStore.UpdatePermissionSet(ctx, permissionSet)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to update permission set %s", permissionSet.GetId())
 	}
@@ -239,7 +239,7 @@ func (s *serviceImpl) PutPermissionSet(ctx context.Context, permissionSet *stora
 }
 
 func (s *serviceImpl) DeletePermissionSet(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
-	err := s.roleDataStore.RemovePermissionSet(ctx, id.GetId(), storage.Traits_IMPERATIVE)
+	err := s.roleDataStore.RemovePermissionSet(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to delete permission set %s", id.GetId())
 	}

@@ -246,7 +246,7 @@ func (mr *MockDataStoreMockRecorder) RemoveAccessScope(ctx, id interface{}) *gom
 }
 
 // RemovePermissionSet mocks base method.
-func (m *MockDataStore) RemovePermissionSet(ctx context.Context, id string, requestOrigin storage.Traits_Origin) error {
+func (m *MockDataStore) RemovePermissionSet(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemovePermissionSet", ctx, id)
 	ret0, _ := ret[0].(error)
@@ -288,7 +288,7 @@ func (mr *MockDataStoreMockRecorder) UpdateAccessScope(ctx, scope interface{}) *
 }
 
 // UpdatePermissionSet mocks base method.
-func (m *MockDataStore) UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet, requestOrigin storage.Traits_Origin) error {
+func (m *MockDataStore) UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePermissionSet", ctx, permissionSet)
 	ret0, _ := ret[0].(error)

@@ -9,6 +9,7 @@ import (
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -203,7 +204,7 @@ func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *st
 	return nil
 }
 
-func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet, requestOrigin storage.Traits_Origin) error {
+func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
@@ -222,7 +223,7 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 	if err != nil {
 		return err
 	}
-	if err := verifyPermissionSetOriginMatches(existingPermissionSet, requestOrigin); err != nil {
+	if err := verifyPermissionSetOriginMatches(ctx, existingPermissionSet); err != nil {
 		return err
 	}
 
@@ -235,7 +236,7 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 	return nil
 }
 
-func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string, requestOrigin storage.Traits_Origin) error {
+func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) error {
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
@@ -253,7 +254,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string, req
 	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
 	}
-	if err := verifyPermissionSetOriginMatches(permissionSet, requestOrigin); err != nil {
+	if err := verifyPermissionSetOriginMatches(ctx, permissionSet); err != nil {
 		return err
 	}
 
@@ -276,10 +277,10 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string, req
 	return nil
 }
 
-func verifyPermissionSetOriginMatches(ps *storage.PermissionSet, requestOrigin storage.Traits_Origin) error {
-	if ps.GetTraits().GetOrigin() != requestOrigin {
-		return errors.Wrapf(errox.InvalidArgs, "permission set %q is %s, cannot be modified or deleted in %s manner",
-			ps.GetName(), ps.GetTraits().GetOrigin(), requestOrigin)
+func verifyPermissionSetOriginMatches(ctx context.Context, ps *storage.PermissionSet) error {
+	if !declarativeconfig.IsOriginModifiable(ctx, ps.GetTraits().GetOrigin()) {
+		return errors.Wrapf(errox.InvalidArgs, "permission set %q's origin is %s, cannot be modified or deleted within this context",
+			ps.GetName(), ps.GetTraits().GetOrigin())
 	}
 	return nil
 }
