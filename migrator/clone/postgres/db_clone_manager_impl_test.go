@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package postgres
 
 import (
@@ -48,8 +50,6 @@ type PostgresCloneManagerSuite struct {
 }
 
 func TestManagerSuite(t *testing.T) {
-	pgtest.SkipIfPostgresEnabled(t)
-
 	suite.Run(t, new(PostgresCloneManagerSuite))
 }
 
