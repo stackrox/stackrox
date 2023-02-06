@@ -3,6 +3,7 @@ package phonehome
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"testing"
@@ -11,7 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	idmocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome/mocks"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -39,6 +41,25 @@ type testRequest struct {
 	value string
 }
 
+type optionsMatcher struct {
+	opts *telemeter.CallOptions
+}
+
+func (m *optionsMatcher) Matches(x any) bool {
+	if o, ok := x.([]telemeter.Option); ok {
+		return gomock.Eq(m.opts).Matches(telemeter.ApplyOptions(o))
+	}
+	return false
+}
+
+func (m *optionsMatcher) String() string {
+	return fmt.Sprint(m.opts)
+}
+
+func matchOptions(opts ...telemeter.Option) gomock.Matcher {
+	return &optionsMatcher{telemeter.ApplyOptions(opts)}
+}
+
 func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 	testRP := &RequestParams{
 		Path:      "/v1.Abc",
@@ -63,9 +84,9 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		return true
 	})
 
-	s.mockTelemeter.EXPECT().TrackUserAs(cfg.HashUserAuthID(nil), "", "", "TestEvent", map[string]any{
+	s.mockTelemeter.EXPECT().Track("TestEvent", map[string]any{
 		"Property": "test value",
-	}).Times(1)
+	}, matchOptions(telemeter.WithUserID(cfg.HashUserAuthID(nil)))).Times(1)
 
 	cfg.track(testRP)
 }
@@ -95,9 +116,9 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 
 	mockID.EXPECT().ExternalAuthProvider().Return(nil).Times(2)
 	mockID.EXPECT().UID().Return("id").Times(2)
-	s.mockTelemeter.EXPECT().TrackUserAs(cfg.HashUserAuthID(mockID), "", "", "TestEvent", map[string]any{
+	s.mockTelemeter.EXPECT().Track("TestEvent", map[string]any{
 		"Property": "test_value",
-	}).Times(1)
+	}, matchOptions(telemeter.WithUserID(cfg.HashUserAuthID(mockID)))).Times(1)
 
 	cfg.track(testRP)
 }
