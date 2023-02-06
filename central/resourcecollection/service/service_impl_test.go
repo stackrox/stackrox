@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package service
 
 import (
@@ -7,13 +9,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	reportConfigurationDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -28,33 +32,50 @@ type CollectionServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
+	testDB            *pgtest.TestPostgres
 	dataStore         *datastoreMocks.MockDataStore
 	queryResolver     *datastoreMocks.MockQueryResolver
 	deploymentDS      *deploymentDSMocks.MockDataStore
+	resourceConfigDS  reportConfigurationDS.DataStore
 	collectionService Service
 }
 
 func (suite *CollectionServiceTestSuite) SetupSuite() {
+	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.T().Skip("Skip postgres store tests")
+		suite.T().SkipNow()
+	}
+
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.queryResolver = datastoreMocks.NewMockQueryResolver(suite.mockCtrl)
 	suite.deploymentDS = deploymentDSMocks.NewMockDataStore(suite.mockCtrl)
-	suite.T().Setenv(features.ObjectCollections.EnvVar(), "true")
-	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS)
+
+	var err error
+	suite.testDB = pgtest.ForT(suite.T())
+	suite.resourceConfigDS, err = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.Pool)
+	suite.NoError(err)
+	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS, suite.resourceConfigDS)
+
+	// Collections requires postgres
+	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	// Release builds might not respect the flag (depending on default value), so skip
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.T().Skip("skipping because env var is not set")
+	}
 
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
 
 func (suite *CollectionServiceTestSuite) TearDownSuite() {
+	suite.testDB.Teardown(suite.T())
 	suite.mockCtrl.Finish()
 }
 
 func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("skipping because env var is not set")
-	}
-
 	selectorsResponse, err := suite.collectionService.ListCollectionSelectors(context.Background(), &v1.Empty{})
 	suite.NoError(err)
 
@@ -73,10 +94,6 @@ func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
 }
 
 func (suite *CollectionServiceTestSuite) TestGetCollection() {
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("skipping because env var is not set")
-	}
-
 	request := &v1.GetCollectionRequest{
 		Id: "a",
 		Options: &v1.CollectionDeploymentMatchOptions{
@@ -115,10 +132,6 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestGetCollectionCount() {
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("skipping because env var is not set")
-	}
-
 	allAccessCtx := sac.WithAllAccess(context.Background())
 	request := &v1.GetCollectionCountRequest{
 		Query: &v1.RawQuery{},
@@ -141,9 +154,6 @@ func (suite *CollectionServiceTestSuite) TestGetCollectionCount() {
 }
 
 func (suite *CollectionServiceTestSuite) TestCreateCollection() {
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	// test error when collection name is empty
@@ -227,9 +237,6 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	// test error when collection Id is empty
@@ -325,17 +332,27 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	// test error when ID is empty
 	_, err := suite.collectionService.DeleteCollection(allAccessCtx, &v1.ResourceByID{})
 	suite.Error(err)
 
+	// test error when collectionId is in use by report config
+	reportConfig := &storage.ReportConfiguration{
+		Name:    "config0",
+		ScopeId: "col0",
+	}
+	id, err := suite.resourceConfigDS.AddReportConfiguration(allAccessCtx, reportConfig)
+	suite.NoError(err)
+	idRequest := &v1.ResourceByID{Id: "col0"}
+	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
+	suite.Error(err)
+	err = suite.resourceConfigDS.RemoveReportConfiguration(allAccessCtx, id)
+	suite.NoError(err)
+
 	// test successful deletion
-	idRequest := &v1.ResourceByID{Id: "a"}
+	idRequest = &v1.ResourceByID{Id: "a"}
 	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(nil)
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.NoError(err)
@@ -347,9 +364,6 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 }
 
 func (suite *CollectionServiceTestSuite) TestListCollections() {
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	expectedResp := &v1.ListCollectionsResponse{
@@ -377,9 +391,6 @@ func (suite *CollectionServiceTestSuite) TestListCollections() {
 }
 
 func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
-	if !features.ObjectCollections.Enabled() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	expectedResp := &v1.DryRunCollectionResponse{

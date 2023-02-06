@@ -8,15 +8,15 @@ import {
     selectDeploymentFilter,
     selectNamespaceFilter,
     selectNamespaceFilterWithNetworkGraphResponse,
-    visitNetworkGraph,
-    visitNetworkGraphWithNamespaceFilter,
+    visitOldNetworkGraph,
+    visitOldNetworkGraphWithNamespaceFilter,
 } from '../../helpers/networkGraph';
 
 describe('Network Deployment Details', () => {
     withAuth();
 
     it('should open up the Deployments Side Panel when a deployment is clicked', () => {
-        visitNetworkGraphWithNamespaceFilter('stackrox');
+        visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             clickOnNodeByName(cytoscape, {
@@ -32,7 +32,7 @@ describe('Network Graph Search', () => {
     withAuth();
 
     it('should filter to show only the deployments from the stackrox namespace and deployments connected to them', () => {
-        visitNetworkGraphWithNamespaceFilter('stackrox');
+        visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const deployments = cytoscape.nodes().filter(filterDeployments);
@@ -43,7 +43,7 @@ describe('Network Graph Search', () => {
     });
 
     it('should filter to show only the stackrox namespace and deployments connected to stackrox namespace', () => {
-        visitNetworkGraphWithNamespaceFilter('stackrox');
+        visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const namespaces = cytoscape.nodes().filter(filterNamespaces);
@@ -55,7 +55,7 @@ describe('Network Graph Search', () => {
     });
 
     it('should filter to show only a specific deployment and deployments connected to it', () => {
-        visitNetworkGraphWithNamespaceFilter('stackrox');
+        visitOldNetworkGraphWithNamespaceFilter('stackrox');
         selectDeploymentFilter('sensor');
 
         const deploymentsExpected = ['admission-control', 'central', 'collector'];
@@ -70,7 +70,7 @@ describe('Network Graph Search', () => {
     });
 
     it('should render an error message when the server fails to return a successful response', () => {
-        visitNetworkGraph();
+        visitOldNetworkGraph();
 
         // Stub out an error response from the server
         const error =

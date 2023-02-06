@@ -59,6 +59,11 @@ body {
     opacity: inherit;
 }
 
+/* SimpleListItem in policy categories: specify color instead of depending on opacity. */
+.pf-c-simple-list button:disabled {
+    color: var(--pf-global--disabled-color--100);
+}
+
 .pf-c-select__toggle:not(.pf-m-plain)::before {
     position: absolute;
     top: 0;
@@ -149,6 +154,11 @@ button.pf-c-tree-view__node {
 .pf-c-modal-box ol,
 .pf-c-page__main-section ol {
     list-style: decimal;
+}
+
+/* Override the preceding override for PatternFly Wizard */
+.pf-c-page__main-section ol.pf-c-wizard__nav-list {
+    list-style: none;
 }
 
 /*

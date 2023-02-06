@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,9 +33,13 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage store.Store
+	// ProcessListeningOnPort storage is needed for correct pruning. It
+	// logically belongs to the datastore implementation of PLOP, but this way
+	// it would be an import cycle, so call the Store directly.
+	plopStorage plopStore.Store
+	indexer     index.Indexer
+	searcher    search.Searcher
 
 	prunerFactory         pruner.Factory
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
@@ -44,6 +49,10 @@ type datastoreImpl struct {
 
 func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error) {
 	return deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(indicator).IsAllowed(), nil
+}
+
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.searcher.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -143,6 +152,21 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return err
 	}
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		// Clean up correlated ProcessListeningOnPort objects. Probably could be
+		// done using a proper FK and CASCADE, but it's usually a thing you would
+		// not like to do automatically. search.ProcessID is not a PID, but UUID of
+		// the record in the table
+		deleteQuery := pkgSearch.NewQueryBuilder().
+			AddStrings(pkgSearch.ProcessID, ids...).
+			ProtoQuery()
+
+		if err := ds.plopStorage.DeleteByQuery(ctx, deleteQuery); err != nil {
+			return err
+		}
+	}
+
 	if err := ds.indexer.DeleteProcessIndicators(ids); err != nil {
 		return err
 	}

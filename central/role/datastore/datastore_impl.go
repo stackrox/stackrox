@@ -17,6 +17,7 @@ import (
 )
 
 var (
+	// TODO: ROX-14398 Replace Role with Access
 	roleSAC = sac.ForResource(resources.Role)
 
 	log = logging.LoggerForModule()

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
@@ -33,6 +33,7 @@ import {
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
 import { EdgeState } from './components/EdgeStateSelect';
+import { deploymentTabs } from './utils/deploymentUtils';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -40,7 +41,7 @@ export const UrlDetailType = {
     DEPLOYMENT: 'deployment',
     CIDR_BLOCK: 'cidr',
     EXTERNAL_ENTITIES: 'internet',
-    EXTERNAL: 'external',
+    EXTERNAL_GROUP: 'external',
 } as const;
 export type UrlDetailTypeKey = keyof typeof UrlDetailType;
 export type UrlDetailTypeValue = typeof UrlDetailType[UrlDetailTypeKey];
@@ -79,19 +80,25 @@ const TopologyComponent = ({
     applyNetworkPolicyModification,
     edgeState,
 }: TopologyComponentProps) => {
+    const firstRenderRef = useRef(true);
     const history = useHistory();
     const controller = useVisualizationController();
-    controller.fromModel(model, true);
+    const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
-    function closeSidebar() {
+    const closeSidebar = useCallback(() => {
         const queryString = clearSimulationQuery(history.location.search);
         history.push(`${networkBasePathPF}${queryString}`);
-    }
+    }, [history]);
 
-    function onSelect(ids: string[]) {
+    function onNodeClick(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
-        if (newSelectedEntity) {
+        if (selectedNode && !newSelectedId) {
+            closeSidebar();
+        } else if (newSelectedEntity?.data.type === 'EXTRANEOUS') {
+            setDefaultDeploymentTab(deploymentTabs.FLOWS);
+        } else if (newSelectedEntity) {
+            setDefaultDeploymentTab(deploymentTabs.DETAILS);
             const { data, id } = newSelectedEntity;
             const [newDetailType, newDetailId] = getUrlParamsForEntity(data.type, id);
             const queryString = clearSimulationQuery(history.location.search);
@@ -103,6 +110,10 @@ const TopologyComponent = ({
                 history.push(`${networkBasePathPF}${queryString}`);
             }
         }
+    }
+
+    function onNodeSelect(id: string) {
+        onNodeClick([id]);
     }
 
     function zoomInCallback() {
@@ -117,14 +128,44 @@ const TopologyComponent = ({
         controller.getGraph().fit(80);
     }
 
-    function resetViewCallback() {
+    const resetViewCallback = useCallback(() => {
         controller.getGraph().reset();
         controller.getGraph().layout();
-    }
+    }, [controller]);
+
+    const panNodeIntoView = useCallback(
+        (node) => {
+            const selectedNodeElement = controller.getNodeById(node.id);
+            if (selectedNodeElement) {
+                // the offset is to make sure the label also makes it inside the viewport
+                controller.getGraph().panIntoView(selectedNodeElement, { offset: 50 });
+            }
+        },
+        [controller]
+    );
 
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
-        onSelect(ids);
+        onNodeClick(ids);
     });
+
+    useEffect(() => {
+        // we don't want to reset view on init
+        if (!firstRenderRef.current && controller.hasGraph()) {
+            resetViewCallback();
+        } else {
+            firstRenderRef.current = false;
+        }
+    }, [controller, edgeState, resetViewCallback]);
+
+    useEffect(() => {
+        controller.fromModel(model);
+        if (selectedNode) {
+            panNodeIntoView(selectedNode);
+        } else if (history.location.pathname !== networkBasePathPF && !selectedNode) {
+            // if the path does not reflect the selected node state, sync URL to state
+            closeSidebar();
+        }
+    }, [controller, model, selectedNode, history, closeSidebar, panNodeIntoView]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
@@ -145,6 +186,7 @@ const TopologyComponent = ({
                             namespaceId={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'DEPLOYMENT' && (
@@ -153,6 +195,8 @@ const TopologyComponent = ({
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
                             edgeState={edgeState}
+                            onNodeSelect={onNodeSelect}
+                            defaultDeploymentTab={defaultDeploymentTab}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (
@@ -160,6 +204,7 @@ const TopologyComponent = ({
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'CIDR_BLOCK' && (
@@ -167,6 +212,7 @@ const TopologyComponent = ({
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_ENTITIES' && (
@@ -174,6 +220,7 @@ const TopologyComponent = ({
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
                         />
                     )}
                 </TopologySideBar>

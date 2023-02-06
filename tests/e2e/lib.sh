@@ -16,9 +16,11 @@ export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 deploy_stackrox() {
     setup_podsecuritypolicies_config
 
+    deploy_stackrox_operator
+
     deploy_central
 
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${1:-}"
 
@@ -44,7 +46,7 @@ deploy_stackrox_with_custom_sensor() {
 
     deploy_central
 
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${2:-}"
 
@@ -77,6 +79,7 @@ export_test_environment() {
     ci_export ADMISSION_CONTROLLER_UPDATES "${ADMISSION_CONTROLLER_UPDATES:-true}"
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
+    ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
@@ -85,12 +88,23 @@ export_test_environment() {
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
     ci_export ROX_DECOMMISSIONED_CLUSTER_RETENTION "${ROX_DECOMMISSIONED_CLUSTER_RETENTION:-true}"
-    # TODO: @ksanchet turn this feature flag on
-    #ci_export ROX_NEW_POLICY_CATEGORIES "${ROX_NEW_POLICY_CATEGORIES:-true}"
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SEARCH_PAGE_UI "${ROX_SEARCH_PAGE_UI:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
+}
+
+deploy_stackrox_operator() {
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "false" ]]; then
+        return
+    fi
+
+    info "Deploying ACS operator"
+
+    export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
+    export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
+
+    ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
 }
 
 deploy_central() {
@@ -106,14 +120,74 @@ deploy_central() {
         ci_export IS_RACE_BUILD "true"
     fi
 
-    if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
-        if pr_has_label ci-helm-deploy; then
-            ci_export OUTPUT_FORMAT helm
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
+        deploy_central_via_operator
+    else
+        if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
+            if pr_has_label ci-helm-deploy; then
+                ci_export OUTPUT_FORMAT helm
+            fi
         fi
-    fi
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-    "$ROOT/${DEPLOY_DIR}/central.sh"
+        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+        "$ROOT/${DEPLOY_DIR}/central.sh"
+    fi
+}
+
+deploy_central_via_operator() {
+    info "Deploying central via operator"
+
+    make -C operator stackrox-image-pull-secret
+
+    ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
+    centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
+
+    centralDefaultTlsSecretKeyBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_KEY_FILE}")"
+    centralDefaultTlsSecretCertBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_CERT_FILE}")"
+
+    case "${ROX_POSTGRES_DATASTORE}" in
+    "true") central_db_isEnabled="Enabled" ;;
+    *) central_db_isEnabled="Default" ;;
+    esac
+
+    central_exposure_loadBalancer_enabled="false"
+    central_exposure_route_enabled="false"
+    case "${LOAD_BALANCER}" in
+    "lb") central_exposure_loadBalancer_enabled="true" ;;
+    "route") central_exposure_route_enabled="true" ;;
+    esac
+
+    customize_envVars=""
+    if [[ "${CGO_CHECKS:-}" == "true" ]]; then
+        customize_envVars+=$'\n      - name: GODEBUG'
+        customize_envVars+=$'\n        value: 2'
+        customize_envVars+=$'\n      - name: MUTEX_WATCHDOG_TIMEOUT_SECS'
+        customize_envVars+=$'\n        value: 15'
+    fi
+    customize_envVars+=$'\n      - name: ROX_BASELINE_GENERATION_DURATION'
+    customize_envVars+=$'\n        value: '"${ROX_BASELINE_GENERATION_DURATION}"
+    customize_envVars+=$'\n      - name: ROX_DEVELOPMENT_BUILD'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_NETWORK_BASELINE_OBSERVATION_PERIOD'
+    customize_envVars+=$'\n        value: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
+    customize_envVars+=$'\n      - name: ROX_POSTGRES_DATASTORE'
+    customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
+
+    env - \
+      centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+      centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
+      centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
+      central_db_isEnabled="$central_db_isEnabled" \
+      central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
+      central_exposure_route_enabled="$central_exposure_route_enabled" \
+      customize_envVars="$customize_envVars" \
+    envsubst \
+      < operator/tests/e2e/central-cr.envsubst.yaml \
+      > /tmp/central-cr.yaml
+
+    kubectl apply -n stackrox -f /tmp/central-cr.yaml
+
+    wait_for_object_to_appear stackrox deploy/central 300
 }
 
 deploy_sensor_from_helm_charts() {
@@ -123,7 +197,6 @@ deploy_sensor_from_helm_charts() {
 
     chart_version="$1"
     init_bundle="$2"
-
 
     info "Deploying secured cluster (v$chart_version) from Helm Charts (init bundle $init_bundle)"
 
@@ -143,21 +216,26 @@ deploy_sensor() {
     info "Deploying sensor"
 
     ci_export ROX_AFTERGLOW_PERIOD "15"
-    if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
-        echo "Deploying Sensor using Helm ..."
-        ci_export SENSOR_HELM_DEPLOY "true"
-        ci_export ADMISSION_CONTROLLER "true"
-    else
-        echo "Deploying sensor using kubectl ... "
-        if [[ -n "${IS_RACE_BUILD:-}" ]]; then
-            # builds with -race are slow at generating the sensor bundle
-            # https://stack-rox.atlassian.net/browse/ROX-6987
-            ci_export ROXCTL_TIMEOUT "60s"
-        fi
-    fi
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-    "$ROOT/${DEPLOY_DIR}/sensor.sh"
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
+        deploy_sensor_via_operator
+    else
+        if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
+            echo "Deploying Sensor using Helm ..."
+            ci_export SENSOR_HELM_DEPLOY "true"
+            ci_export ADMISSION_CONTROLLER "true"
+        else
+            echo "Deploying sensor using kubectl ... "
+            if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+                # builds with -race are slow at generating the sensor bundle
+                # https://stack-rox.atlassian.net/browse/ROX-6987
+                ci_export ROXCTL_TIMEOUT "60s"
+            fi
+        fi
+
+        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+        "$ROOT/${DEPLOY_DIR}/sensor.sh"
+    fi
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
         # Sensor is CPU starved under OpenShift causing all manner of test failures:
@@ -168,14 +246,38 @@ deploy_sensor() {
     fi
 }
 
-get_central_basic_auth_creds() {
-    info "Getting central basic auth creds"
+deploy_sensor_via_operator() {
+    info "Deploying sensor via operator"
 
-    require_environment "TEST_ROOT"
-    require_environment "DEPLOY_DIR"
+    kubectl -n stackrox exec deploy/central -- \
+    roxctl central init-bundles generate my-test-bundle \
+        --insecure-skip-tls-verify \
+        --password "$ROX_PASSWORD" \
+        --output-secrets - \
+    | kubectl -n stackrox apply -f -
 
-    source "$TEST_ROOT/scripts/k8s/export-basic-auth-creds.sh" "$DEPLOY_DIR"
+    kubectl apply -n stackrox -f operator/tests/e2e/secured-cluster-cr.yaml
 
+    wait_for_object_to_appear stackrox deploy/sensor 300
+    wait_for_object_to_appear stackrox ds/collector 300
+
+    if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
+       kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+    fi
+}
+
+export_central_basic_auth_creds() {
+    if [[ -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
+        info "Getting central basic auth creds from central-deploy/password"
+        ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
+    elif [[ -n "${ROX_PASSWORD:-}" ]]; then
+        info "Using existing ROX_PASSWORD env"
+    else
+        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
+        exit 1
+    fi
+
+    ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
@@ -389,10 +491,6 @@ remove_existing_stackrox_resources() {
     ) 2>&1 | sed -e 's/^/out: /' || true
 }
 
-# When working as expected it takes less than one minute for the API server to
-# reach ready. Often times out on OSD. If this call fails in CI we need to
-# identify the source of pull/scheduling latency, request throttling, etc.
-# I tried increasing the timeout from 5m to 20m for OSD but it did not help.
 wait_for_api() {
     info "Waiting for Central to be ready"
 
@@ -617,6 +715,31 @@ wait_for_central_db() {
     done
 
     info "Central DB deployment is ready."
+}
+
+wait_for_object_to_appear() {
+    if [[ "$#" -lt 2 ]]; then
+        die "missing args. usage: wait_for_object_to_appear <namespace> <object> [<delay>]"
+    fi
+
+    local namespace="$1"
+    local object="$2"
+    local delay="${3:-300}"
+    local waitInterval=20
+    local tries=$(( delay / waitInterval ))
+    local count=0
+    until kubectl -n "$namespace" get "$object" > /dev/null 2>&1; do
+        count=$((count + 1))
+        if [[ $count -ge "$tries" ]]; then
+            info "$namespace $object did not appear after $count tries"
+            kubectl -n "$namespace" get "$object"
+            return 1
+        fi
+        info "Waiting for $namespace $object to appear"
+        sleep "$waitInterval"
+    done
+
+    return 0
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

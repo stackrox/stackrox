@@ -287,28 +287,28 @@ export function interactAndVisitNetworkGraphWithDeploymentSelected(
     waitForResponses(routeMatcherMapToVisitNetworkGraphWithDeploymentSelected, staticResponseMap);
 }
 
-export function visitNetworkGraphFromLeftNav() {
-    visitFromLeftNav('Network', routeMatcherMapToVisitNetworkGraph);
+export function visitOldNetworkGraphFromLeftNav() {
+    visitFromLeftNav('Network Graph (1.0)', routeMatcherMapToVisitNetworkGraph);
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
 
-export function visitNetworkGraph(staticResponseMap) {
+export function visitOldNetworkGraph(staticResponseMap) {
     visit(basePath, routeMatcherMapToVisitNetworkGraph, staticResponseMap);
 
     cy.get(`h1:contains("${title}")`);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
 
-export function visitNetworkGraphWithNamespaceFilter(namespace) {
-    visitNetworkGraph();
+export function visitOldNetworkGraphWithNamespaceFilter(namespace) {
+    visitOldNetworkGraph();
     selectNamespaceFilter(namespace);
 }
 
-export function visitNetworkGraphWithMockedData() {
-    visitNetworkGraph();
+export function visitOldNetworkGraphWithMockedData() {
+    visitOldNetworkGraph();
     selectNamespaceFilterWithGraphAndPoliciesFixtures(
         'stackrox',
         'network/networkGraph.json',

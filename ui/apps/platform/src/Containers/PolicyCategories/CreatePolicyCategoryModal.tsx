@@ -20,7 +20,6 @@ type CreatePolicyCategoryModalType = {
     onClose: () => void;
     addToast: (toast) => void;
     refreshPolicyCategories: () => void;
-    setSelectedCategory: (category: PolicyCategory) => void;
 };
 
 const emptyPolicyCategory = {
@@ -34,15 +33,13 @@ function CreatePolicyCategoryModal({
     onClose,
     addToast,
     refreshPolicyCategories,
-    setSelectedCategory,
 }: CreatePolicyCategoryModalType) {
     const formik = useFormik({
         initialValues: emptyPolicyCategory as PolicyCategory,
         onSubmit: (values, { setSubmitting, resetForm }) => {
             setSubmitting(false);
             postPolicyCategory(values)
-                .then((response) => {
-                    setSelectedCategory(response);
+                .then(() => {
                     setTimeout(refreshPolicyCategories, 200);
                     addToast('Successfully added category');
                 })

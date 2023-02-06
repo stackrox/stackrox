@@ -64,7 +64,6 @@ var (
 	NetworkPolicy  = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	Node           = newResourceMetadata("Node", permissions.ClusterScope)
 
-	Role                             = newResourceMetadata("Role", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
 	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals",
@@ -98,6 +97,8 @@ var (
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ProbeUpload = newDeprecatedResourceMetadata("ProbeUpload", permissions.GlobalScope,
 		Administration)
+	// To-be-deprecated in 3.76 with ROX-14398 (deprecation notice in 3.74).
+	Role = newDeprecatedResourceMetadata("Role", permissions.GlobalScope, Access)
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ScannerBundle = newDeprecatedResourceMetadata("ScannerBundle",
 		permissions.GlobalScope, Administration)

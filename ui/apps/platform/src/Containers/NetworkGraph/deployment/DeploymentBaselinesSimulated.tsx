@@ -27,10 +27,14 @@ import EntityNameSearchInput from '../common/EntityNameSearchInput';
 
 type DeploymentBaselinesSimulatedProps = {
     deploymentId: string;
+    onNodeSelect: (id: string) => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimulatedProps) {
+function DeploymentBaselinesSimulated({
+    deploymentId,
+    onNodeSelect,
+}: DeploymentBaselinesSimulatedProps) {
     // component state
     const {
         isLoading,
@@ -58,6 +62,10 @@ function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimul
     // derived data
     const numBaselines = getNumFlows(filteredSimulatedBaselines);
     const allUniquePorts = getAllUniquePorts(filteredSimulatedBaselines);
+
+    const onSelectFlow = (entityId: string) => {
+        onNodeSelect(entityId);
+    };
 
     if (isLoading) {
         return (
@@ -88,6 +96,7 @@ function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimul
                         </FlexItem>
                         <FlexItem>
                             <AdvancedFlowsFilter
+                                isBaseline
                                 filters={advancedFilters}
                                 setFilters={setAdvancedFilters}
                                 allUniquePorts={allUniquePorts}
@@ -120,6 +129,7 @@ function DeploymentBaselinesSimulated({ deploymentId }: DeploymentBaselinesSimul
                         setSelectedRows={setSelectedRows}
                         isEditable={false}
                         isBaselineSimulation
+                        onSelectFlow={onSelectFlow}
                     />
                 </StackItem>
             </Stack>

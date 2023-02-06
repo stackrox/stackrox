@@ -139,7 +139,11 @@ function CollectionSelection({
                             onToggle={onToggle}
                             onTypeaheadInputChanged={setSearch}
                             loadingVariant={selectLoadingVariant}
-                            isInputValuePersisted
+                            onBlur={() => setSearch('')}
+                            style={{
+                                maxHeight: '275px',
+                                overflowY: 'auto',
+                            }}
                             validated={
                                 isLegacyReportScopeSelected
                                     ? ValidatedOptions.error

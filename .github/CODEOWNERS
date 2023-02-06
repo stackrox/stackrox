@@ -32,3 +32,5 @@ tests/upgrade/*     @stackrox/data-shepherds
 .github/**/* @stackrox/ci
 .openshift-ci/**/* @stackrox/ci
 scripts/ci/** @stackrox/ci
+
+operator/**/* @stackrox/draco

@@ -1,4 +1,4 @@
-import { EdgeStyle, EdgeTerminalType } from '@patternfly/react-topology';
+import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
 import {
     DeploymentNetworkEntityInfo,
@@ -30,7 +30,7 @@ import { protocolLabel } from './flowUtils';
 export const graphModel = {
     id: 'stackrox-active-graph',
     type: 'graph',
-    layout: 'ColaGroups',
+    layout: 'ColaNoForce',
 };
 
 function getBaseNode(id: string): CustomNodeModel {
@@ -112,12 +112,14 @@ function getExternalNodeModel(
         case 'INTERNET':
             return {
                 ...baseNode,
+                shape: NodeShape.rect,
                 label: 'External Entities',
                 data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges },
             };
         case 'EXTERNAL_SOURCE':
             return {
                 ...baseNode,
+                shape: NodeShape.rect,
                 label: entity.externalSource.name,
                 data: { ...entity, type: 'CIDR_BLOCK', outEdges },
             };
@@ -333,11 +335,11 @@ function getNetworkPolicyState(
 ): NetworkPolicyState {
     let networkPolicyState: NetworkPolicyState = 'none';
 
-    if (!nonIsolatedIngress && !nonIsolatedEgress) {
+    if (!nonIsolatedEgress && !nonIsolatedIngress) {
         networkPolicyState = 'both';
-    } else if (nonIsolatedEgress) {
+    } else if (nonIsolatedEgress && !nonIsolatedIngress) {
         networkPolicyState = 'ingress';
-    } else if (nonIsolatedIngress) {
+    } else if (!nonIsolatedEgress && nonIsolatedIngress) {
         networkPolicyState = 'egress';
     }
     return networkPolicyState;
@@ -359,7 +361,8 @@ export function transformPolicyData(nodes: Node[]): {
     const policyNodeMap: Record<string, DeploymentNodeModel> = {};
     // to reference edges so we don't double merge bidirectional edges
     const policyEdgeMap: Record<string, CustomEdgeModel> = {};
-    nodes.forEach(({ entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress }) => {
+    nodes.forEach((policyNode) => {
+        const { entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress } = policyNode;
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
         const node = getNodeModel(
             entity,

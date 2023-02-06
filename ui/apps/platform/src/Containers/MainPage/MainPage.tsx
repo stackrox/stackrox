@@ -21,6 +21,7 @@ import { clustersBasePath } from 'routePaths';
 import CredentialExpiryBanner from './CredentialExpiryBanner';
 import VersionOutOfDate from './VersionOutOfDate';
 import DatabaseBanner from './DatabaseBanner';
+import AnnouncementBanner from './AnnouncementBanner';
 import Masthead from './Header/Masthead';
 import NavigationSidebar from './Sidebar/NavigationSidebar';
 
@@ -88,6 +89,7 @@ function MainPage(): ReactElement {
     return (
         <AppWrapper publicConfig={publicConfig}>
             <div className="flex flex-1 flex-col h-full relative">
+                <AnnouncementBanner />
                 <UnreachableWarning serverState={serverState} />
                 <Notifications />
                 <CredentialExpiryBanner

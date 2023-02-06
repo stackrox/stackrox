@@ -16,10 +16,6 @@ import (
 func TestFeatureFlagSettings(t *testing.T) {
 	t.Parallel()
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip for legacy databases")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -49,10 +45,8 @@ func TestFeatureFlagSettings(t *testing.T) {
 		actualFlagVals[flag.GetEnvVar()] = flag.GetEnabled()
 	}
 
-	// TODO(ROX-12848): Remove this with environment variable
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		delete(actualFlagVals, env.PostgresDatastoreEnabled.EnvVar())
-	}
+	// TODO(ROX-12848 and ROX-12848): Remove this with environment variable
+	delete(actualFlagVals, env.PostgresDatastoreEnabled.EnvVar())
 
 	assert.Equal(t, expectedFlagVals, actualFlagVals, "mismatch between expected and actual feature flag settings")
 }

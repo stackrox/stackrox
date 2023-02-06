@@ -2,18 +2,20 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -66,9 +68,10 @@ type collectionRequest interface {
 type serviceImpl struct {
 	v1.UnimplementedCollectionServiceServer
 
-	datastore     datastore.DataStore
-	queryResolver datastore.QueryResolver
-	deploymentDS  deploymentDS.DataStore
+	datastore             datastore.DataStore
+	queryResolver         datastore.QueryResolver
+	deploymentDS          deploymentDS.DataStore
+	reportConfigDatastore reportConfigDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -88,8 +91,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // ListCollectionSelectors returns all supported selectors
 func (s *serviceImpl) ListCollectionSelectors(_ context.Context, _ *v1.Empty) (*v1.ListCollectionSelectorsResponse, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
 	}
 	selectors := datastore.GetSupportedFieldLabels()
 	selectorStrings := make([]string, 0, len(selectors))
@@ -103,8 +106,8 @@ func (s *serviceImpl) ListCollectionSelectors(_ context.Context, _ *v1.Empty) (*
 
 // GetCollection returns a collection for the given request
 func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollectionRequest) (*v1.GetCollectionResponse, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
 	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
@@ -131,8 +134,8 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 
 // GetCollectionCount returns count of collections matching the query in the request
 func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCollectionCountRequest) (*v1.GetCollectionCountResponse, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
 	}
 
 	query, err := resolveQuery(request.GetQuery(), false)
@@ -149,12 +152,23 @@ func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCol
 
 // DeleteCollection deletes the collection with the given ID
 func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
 	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
 	}
+	// error out if collection is in use by a report config
+	err := s.reportConfigDatastore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
+		if reportConfig.GetScopeId() == request.GetId() {
+			return errors.New("Collection is in use in one or more report configurations")
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to delete collection")
+	}
+
 	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
@@ -163,8 +177,8 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 
 // CreateCollection creates a new collection from the given request
 func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
 	}
 
 	collection, err := collectionRequestToCollection(ctx, request, "")
@@ -181,8 +195,8 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 }
 
 func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCollectionRequest) (*v1.UpdateCollectionResponse, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
 	}
 
 	if request.GetId() == "" {
@@ -203,7 +217,8 @@ func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCo
 }
 
 func collectionRequestToCollection(ctx context.Context, request collectionRequest, id string) (*storage.ResourceCollection, error) {
-	if request.GetName() == "" {
+	collectionName := strings.TrimSpace(request.GetName())
+	if collectionName == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
 
@@ -220,7 +235,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 
 	collection := &storage.ResourceCollection{
 		Id:                id,
-		Name:              request.GetName(),
+		Name:              collectionName,
 		Description:       request.GetDescription(),
 		LastUpdated:       timeNow,
 		UpdatedBy:         slimUser,
@@ -257,8 +272,8 @@ func resolveQuery(rawQuery *v1.RawQuery, withPagination bool) (*v1.Query, error)
 }
 
 func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListCollectionsRequest) (*v1.ListCollectionsResponse, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
 	}
 
 	query, err := resolveQuery(request.GetQuery(), true)
@@ -277,8 +292,8 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 }
 
 func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
 	}
 
 	collection, err := collectionRequestToCollection(ctx, request, request.GetId())

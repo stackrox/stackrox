@@ -30,9 +30,10 @@ type NamespaceSideBarProps = {
     namespaceId: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    onNodeSelect: (id: string) => void;
 };
 
-function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) {
+function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: NamespaceSideBarProps) {
     // component state
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'Deployments',
@@ -46,6 +47,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
     const deployments = deploymentNodes.map((deploymentNode) => {
         const numFlows = getNumDeploymentFlows(edges, deploymentNode.id);
         return {
+            id: deploymentNode.id,
             name: deploymentNode.label as string,
             numFlows,
         };
@@ -102,7 +104,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
                     id="Deployments"
                     hidden={activeKeyTab !== 'Deployments'}
                 >
-                    <NamespaceDeployments deployments={deployments} />
+                    <NamespaceDeployments deployments={deployments} onNodeSelect={onNodeSelect} />
                 </TabContent>
                 <TabContent
                     eventKey="Network policies"

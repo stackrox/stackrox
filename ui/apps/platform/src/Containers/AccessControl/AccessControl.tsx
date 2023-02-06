@@ -51,6 +51,9 @@ function AccessControl(): ReactElement {
                         </p>
                         <List>
                             <ListItem>
+                                <b>Access</b> will replace <b>Role</b>
+                            </ListItem>
+                            <ListItem>
                                 <b>Administration</b> will replace{' '}
                                 <b>
                                     AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,

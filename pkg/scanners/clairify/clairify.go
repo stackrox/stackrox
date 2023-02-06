@@ -176,13 +176,16 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 
 	pingServiceClient := clairGRPCV1.NewPingServiceClient(gRPCConnection)
 	scanServiceClient := clairGRPCV1.NewNodeScanServiceClient(gRPCConnection)
+	// required as RHCOS scanning uses ImageScan API
+	imageScanServiceClient := clairGRPCV1.NewImageScanServiceClient(gRPCConnection)
 
 	return &clairify{
-		NodeScanSemaphore:     scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
-		conf:                  conf,
-		pingServiceClient:     pingServiceClient,
-		nodeScanServiceClient: scanServiceClient,
-		protoNodeIntegration:  protoNodeIntegration,
+		NodeScanSemaphore:      scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
+		conf:                   conf,
+		pingServiceClient:      pingServiceClient,
+		nodeScanServiceClient:  scanServiceClient,
+		imageScanServiceClient: imageScanServiceClient,
+		protoNodeIntegration:   protoNodeIntegration,
 	}, nil
 }
 
@@ -408,15 +411,16 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 	return convertImageToImageScan(image.GetMetadata(), resp.GetImage()), nil
 }
 
-// GetNodeScan retrieves the most recent node scan
-func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
-	req := convertNodeToVulnRequest(node)
+func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error) {
+	req := convertNodeToVulnRequest(node, inv)
 	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
 	defer cancel()
+	log.Debugf("Calling GetNodeVulnerabilities with node inventory: %v", req.GetComponents())
 	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("Got reply GetNodeVulnerabilities with features: %v", resp.GetFeatures())
 
 	scan := convertVulnResponseToNodeScan(req, resp)
 	if scan == nil {
@@ -424,6 +428,11 @@ func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
 	}
 
 	return scan, nil
+}
+
+// GetNodeScan retrieves the most recent node scan
+func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
+	return c.GetNodeInventoryScan(node, nil)
 }
 
 // Match decides if the image is contained within this scanner

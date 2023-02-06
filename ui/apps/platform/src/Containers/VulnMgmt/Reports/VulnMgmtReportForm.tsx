@@ -109,7 +109,7 @@ function VulnMgmtReportForm({
     const [message, setMessage] = useState<FormResponseMessage>(null);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasRoleWriteAccess = hasReadWriteAccess('Role');
@@ -193,12 +193,15 @@ function VulnMgmtReportForm({
     }
 
     function onScheduledRepeatChange(_id, selection) {
-        // zero out the days selected list if changing interval type
-        if (selection !== values.schedule.intervalType) {
-            void setFieldValue('schedule.interval.days', []);
-        }
+        const intervalDayKey = selection === 'WEEKLY' ? 'daysOfWeek' : 'daysOfMonth';
+        const nextSchedule = {
+            hour: values.schedule.hour,
+            minute: values.schedule.minute,
+            intervalType: selection,
+            [intervalDayKey]: {},
+        };
 
-        void setFieldValue('schedule.intervalType', selection);
+        void setFieldValue('schedule', nextSchedule);
     }
 
     function onScheduledDaysChange(id, selection) {

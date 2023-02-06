@@ -12679,6 +12679,78 @@
             "fields": [
               {
                 "id": 1,
+                "name": "endpoint",
+                "type": "Endpoint"
+              },
+              {
+                "id": 2,
+                "name": "deployment_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "container_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "pod_id",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "pod_uid",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "signal",
+                "type": "ProcessSignal"
+              },
+              {
+                "id": 7,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "container_start_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "image_id",
+                "type": "string"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Endpoint",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "port",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 2,
+                    "name": "protocol",
+                    "type": "L4Protocol"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ProcessListeningOnPortFromSensor",
+            "fields": [
+              {
+                "id": 1,
                 "name": "port",
                 "type": "uint32"
               },
@@ -12696,6 +12768,81 @@
                 "id": 4,
                 "name": "close_timestamp",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "cluster_id",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ProcessListeningOnPortStorage",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "port",
+                "type": "uint32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Port,store\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "protocol",
+                "type": "L4Protocol",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Port Protocol,store\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "close_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "process_indicator_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Process ID,store\"sql:\"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "closed",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Closed,store\"sql:\"index=btree\""
+                  }
+                ]
+              },
+              {
+                "id": 7,
+                "name": "process",
+                "type": "ProcessIndicatorUniqueKey"
               }
             ]
           }
@@ -12703,6 +12850,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "gogoproto/gogo.proto"
           },
           {
             "path": "storage/network_flow.proto"
