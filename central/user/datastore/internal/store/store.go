@@ -8,6 +8,7 @@ import (
 )
 
 // Store is the storage and tracking mechanism for users.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	GetUser(id string) (*storage.User, error)

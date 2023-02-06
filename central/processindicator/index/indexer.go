@@ -11,6 +11,7 @@ import (
 )
 
 // Indexer is the process indicator indexer.
+//
 //go:generate mockgen-wrapper
 type Indexer interface {
 	AddProcessIndicator(processindicator *storage.ProcessIndicator) error

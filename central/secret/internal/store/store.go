@@ -7,6 +7,7 @@ import (
 )
 
 // Store provides access and update functions for secrets.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	Count(ctx context.Context) (int, error)

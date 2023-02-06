@@ -21,6 +21,7 @@ var (
 )
 
 // Searcher provides search functionality on existing cves.
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
