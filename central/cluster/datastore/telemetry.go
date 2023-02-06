@@ -26,7 +26,7 @@ func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 			"Cluster ID":   cluster.GetId(),
 			"Managed By":   cluster.GetManagedBy().String(),
 		}
-		cfg.Telemeter().TrackUserAs(userID, "", "", "Secured Cluster Registered", props)
+		cfg.Telemeter().Track("Secured Cluster Registered", props, telemeter.WithUserID(userID))
 
 		// Add the secured cluster 'user' to the Tenant group:
 		cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(cluster.GetId()))
