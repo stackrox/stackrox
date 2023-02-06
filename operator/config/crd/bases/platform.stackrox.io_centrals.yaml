@@ -60,8 +60,8 @@ spec:
                     - name
                     type: object
                   db:
-                    description: 'NOTE: Central DB is in Technology Preview. Settings
-                      for Central DB, which is responsible for data persistence.'
+                    description: Settings for Central DB, which is responsible for
+                      data persistence.
                     properties:
                       connectionString:
                         description: Specify a connection string that corresponds
@@ -72,10 +72,9 @@ spec:
                         type: string
                       isEnabled:
                         default: Default
-                        description: Specify whether central-db is enabled, Default
-                          configures central to use rocksdb. If IsEnabled the operator
-                          will provision the Central DB or use an external DB if a
-                          connection string is provided.
+                        description: Deprecated field. It is no longer necessary to
+                          specify it. This field will be removed in a future release.
+                          Central is configured to use PostgreSQL by default.
                         enum:
                         - Default
                         - Enabled

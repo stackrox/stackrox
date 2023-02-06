@@ -4,3 +4,14 @@ metadata:
   name: central-db-password
 data:
   password: c2VjcmV0 # "secret" (no trailing newline)
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: central-db
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
