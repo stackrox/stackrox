@@ -125,6 +125,7 @@ $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tool
 ###########
 .PHONY: style
 style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
+	$(SILENT)$(MAKE) -C operator/ style
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCILINT_BIN)
