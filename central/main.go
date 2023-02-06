@@ -374,7 +374,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
-		processListeningOnPorts.Singleton(),
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
 		reportService.Singleton(),
@@ -398,6 +397,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
+		servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}

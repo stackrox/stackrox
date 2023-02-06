@@ -6,14 +6,9 @@ import (
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
-// Service provides the interface to the microservice that serves alert data.
+// Service provides the interface to the microservice that serves process listening on ports data.
 type Service interface {
 	grpc.APIService
 
