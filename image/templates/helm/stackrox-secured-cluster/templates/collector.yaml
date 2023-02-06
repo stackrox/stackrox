@@ -99,7 +99,6 @@ spec:
           valueFrom:
             resourceFieldRef:
               resource: limits.cpu
-        {{- if ._rox.collector.exposeMonitoring }}
         - name: ROX_METRICS_PORT
         {{- if ._rox.collector.exposeMonitoring }}
           value: ":9091"
