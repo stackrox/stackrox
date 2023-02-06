@@ -3,6 +3,7 @@ package db
 import "github.com/gogo/protobuf/proto"
 
 // Crud provides a simple crud layer on top of a DB supporting proto messages
+//
 //go:generate mockgen-wrapper
 type Crud interface {
 	// Read functions

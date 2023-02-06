@@ -11,6 +11,7 @@ import (
 )
 
 // Searcher provides search functionality on existing alerts
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)

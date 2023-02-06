@@ -8,7 +8,7 @@ be used by your own Go applications to do anything the command-line interface do
 For more information about the Engine API, see the documentation:
 https://docs.docker.com/engine/reference/api/
 
-Usage
+# Usage
 
 You use the library by creating a client object and calling methods on it. The
 client can be created either from environment variables with NewEnvClient, or
@@ -41,7 +41,6 @@ For example, to list running containers (the equivalent of "docker ps"):
 			fmt.Printf("%s %s\n", container.ID[:10], container.Image)
 		}
 	}
-
 */
 package client
 

@@ -18,6 +18,7 @@ import (
 )
 
 // Searcher provides search functionality on existing CVEs (for the attributes pertaining to direct image-cve relationship).
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)

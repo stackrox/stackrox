@@ -7,6 +7,7 @@ import (
 )
 
 // AuditNotifier is the notifier for audit logs
+//
 //go:generate mockgen-wrapper AuditNotifier
 type AuditNotifier interface {
 	Notifier

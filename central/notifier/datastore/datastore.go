@@ -8,6 +8,7 @@ import (
 )
 
 // DataStore provides storage functionality for notifiers.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error)

@@ -14,6 +14,7 @@ var (
 )
 
 // Enricher enriches images with data from registries and scanners.
+//
 //go:generate mockgen-wrapper
 type Enricher interface {
 	// EnrichDeployment enriches the deployment and images only if they have IDs

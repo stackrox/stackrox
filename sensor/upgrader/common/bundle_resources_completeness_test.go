@@ -28,13 +28,13 @@ var (
 // If you see this test failing, the right course of action is most likely to extend the OrderedBundleResourceTypes
 // list. However, if you are convinced that one of the reported GVKs is a false positive, you have the following
 // options:
-// - If the GVK in question can never appear in YAML bundle mode, use meta-templating ([< if not .KubectlOutput >])
-//   blocks to exclude the resources from the chart.
-// - If the GVK is reported due to the approximative nature of the GVK from chart extractor, often small reformatting
-//   of the chart can be helpful. It's often sufficient to include an extra "---" document separator before the
-//   start of the object definition.
-// - If the false positive cannot be suppressed using the above methods, you can add it to the above
-//   ExcludedFromCompletenessTest list to explicitly suppress it in this test.
+//   - If the GVK in question can never appear in YAML bundle mode, use meta-templating ([< if not .KubectlOutput >])
+//     blocks to exclude the resources from the chart.
+//   - If the GVK is reported due to the approximative nature of the GVK from chart extractor, often small reformatting
+//     of the chart can be helpful. It's often sufficient to include an extra "---" document separator before the
+//     start of the object definition.
+//   - If the false positive cannot be suppressed using the above methods, you can add it to the above
+//     ExcludedFromCompletenessTest list to explicitly suppress it in this test.
 func TestBundleResourcesComplete(t *testing.T) {
 	featureFlags := make(map[string]interface{})
 	for _, ff := range features.Flags {
