@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	NginxDeployment = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
-	NetpolAllow443  = resource.YamlTestFile{Kind: "NetworkPolicy", File: "netpol-allow-443.yaml"}
+	NginxDeployment = resource.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
+	NetpolAllow443  = resource.K8sResourceInfo{Kind: "NetworkPolicy", YamlFile: "netpol-allow-443.yaml"}
 )
 
 type NetworkPolicySuite struct {
@@ -61,31 +61,37 @@ func checkIfAlertsHaveViolation(result *central.AlertResults, name string) bool 
 }
 
 func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
-	s.testContext.RunWithResources([]resource.YamlTestFile{
-		NginxDeployment, NetpolAllow443,
-	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		// There's a caveat to this test: the state HAS a violation at the beginning, but
-		// it disappears once re-sync kicks-in and processes the relationship betwee the network policy
-		// and this deployment. Therefore, this test passes as is, but the opposite assertion would also
-		// pass. e.g. "check if there IS an alert", because there will be a state where the alert is there.
-		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
-			if checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
-				return errors.Errorf("violation found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
-			}
-			return nil
-		}, "Should not have a violation")
-	})
+	s.testContext.NewRun(
+		resource.WithResources([]resource.K8sResourceInfo{
+			NginxDeployment, NetpolAllow443,
+		}),
+		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+			// There's a caveat to this test: the state HAS a violation at the beginning, but
+			// it disappears once re-sync kicks-in and processes the relationship betwee the network policy
+			// and this deployment. Therefore, this test passes as is, but the opposite assertion would also
+			// pass. e.g. "check if there IS an alert", because there will be a state where the alert is there.
+			testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
+				if checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
+					return errors.Errorf("violation found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
+				}
+				return nil
+			}, "Should not have a violation")
+		}),
+	)
 }
 
 func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
-	s.testContext.RunWithResources([]resource.YamlTestFile{
-		NginxDeployment,
-	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
-			if !checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
-				return errors.Errorf("violation not found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
-			}
-			return nil
-		}, "Should have a violation")
-	})
+	s.testContext.NewRun(
+		resource.WithResources([]resource.K8sResourceInfo{
+			NginxDeployment,
+		}),
+		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+			testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
+				if !checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
+					return errors.Errorf("violation not found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
+				}
+				return nil
+			}, "Should have a violation")
+		}),
+	)
 }
