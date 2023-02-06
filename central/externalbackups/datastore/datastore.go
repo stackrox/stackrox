@@ -8,6 +8,7 @@ import (
 )
 
 // DataStore is the entry point for modifying External Backup data.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	ListBackups(ctx context.Context) ([]*storage.ExternalBackup, error)

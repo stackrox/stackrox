@@ -7,6 +7,7 @@ import (
 )
 
 // Store provides storage functionality for alerts.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	Walk(ctx context.Context, fn func(*storage.Alert) error) error
