@@ -1,10 +1,13 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { AlertVariant, Banner, Button } from '@patternfly/react-core';
 
+import { fetchDatabaseStatus } from 'services/DatabaseService';
+
 const ANNOUNCEMENT_BANNER_KEY = 'postgresAnnouncementBannerDismissed';
 
 function AnnouncementBanner(): ReactElement | null {
     const [isDisplayed, setIsDisplayed] = useState(false);
+    const [databaseType, setDatabaseType] = useState('');
 
     useEffect(() => {
         const localStorageValue = localStorage.getItem(ANNOUNCEMENT_BANNER_KEY);
@@ -12,6 +15,16 @@ function AnnouncementBanner(): ReactElement | null {
             ? Boolean(JSON.parse(localStorageValue))
             : false;
         setIsDisplayed(!isBannerDismissed);
+
+        if (!isBannerDismissed) {
+            fetchDatabaseStatus()
+                .then((response) => {
+                    setDatabaseType(response?.databaseType || '');
+                })
+                .catch(() => {
+                    setDatabaseType('');
+                });
+        }
     }, []);
 
     function handleDismissClick() {
@@ -19,17 +32,18 @@ function AnnouncementBanner(): ReactElement | null {
         setIsDisplayed(false);
     }
 
-    if (isDisplayed) {
+    if (isDisplayed && databaseType !== 'PostgresDB') {
         return (
             <Banner
                 className="pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center"
                 isSticky
                 variant={AlertVariant.info}
+                style={{ whiteSpace: 'normal' }}
             >
                 <span className="pf-u-text-align-center">
-                    The next version of this product will be version 4.0.0. Central will be using
-                    Postgres for its data store starting in v4.0.0. You must backup your database
-                    before upgrading to 4.0.0.
+                    Red Hat Advanced Cluster Security plans to change its database to PostgreSQL in
+                    an upcoming major release. This change will require you to back up your database
+                    before upgrading.
                 </span>
                 <Button className="pf-u-ml-md" onClick={handleDismissClick} variant="link" isInline>
                     dismiss
