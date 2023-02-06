@@ -166,3 +166,11 @@ func SkipIfPostgresEnabled(t testing.TB) {
 		t.SkipNow()
 	}
 }
+
+// SkipIfPostgresDisabled skips the tests if the Postgres flag is off
+func SkipIfPostgresDisabled(t testing.TB) {
+	if !pkgEnv.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("Skipping test because Postgres is disabled")
+		t.SkipNow()
+	}
+}
