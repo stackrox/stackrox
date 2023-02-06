@@ -61,7 +61,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-// // Helper functions
+// Helper functions
 func insertIntoSimpleAccessScopes(ctx context.Context, batch *pgx.Batch, obj *storage.SimpleAccessScope) error {
 
 	serialized, marshalErr := obj.Marshal()
