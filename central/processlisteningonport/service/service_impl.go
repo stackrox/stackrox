@@ -51,7 +51,7 @@ func (s *serviceImpl) GetProcessesListeningOnPorts(
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
-		return nil, errors.Errorf("Postgres env var is not enabled, PLOP APIs are disabled")
+		return nil, errors.New("Postgres env var is not enabled, PLOP APIs are disabled")
 	}
 
 	deployment := req.GetDeploymentId()
