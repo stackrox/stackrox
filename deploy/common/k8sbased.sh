@@ -569,7 +569,7 @@ function launch_sensor {
     fi
 
     # TODO(ROX-14310): Remove this patch when re-sync is disabled unconditionally
-    if [[ -n "$ROX_RESYNC_DISABLED" ]]; then
+    if [[ "$ROX_RESYNC_DISABLED" == "true" ]]; then
         kubectl -n stackrox set env deploy/sensor ROX_RESYNC_DISABLED="true"
     fi
 

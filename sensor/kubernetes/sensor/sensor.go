@@ -58,7 +58,7 @@ var (
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if env.ResyncDisabled.BooleanSetting() {
-		log.Infof("Running sensor with Kubernetes re-sync disabled!")
+		log.Infof("Running sensor with Kubernetes re-sync disabled")
 	} else {
 		log.Infof("Running sesnor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
 	}
