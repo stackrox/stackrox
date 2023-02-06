@@ -41,8 +41,8 @@ var (
 	node string
 	once sync.Once
 
-	inventoryCachePath     = "/cache"
-	inventoryCacheDuration = 60 * time.Second
+	inventoryCachePath    = "/cache"
+	inventoryCacheSeconds = 60 * time.Second.Seconds()
 )
 
 func getNode() string {
@@ -233,12 +233,13 @@ func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sens
 			log.Infof("Unable to deserialize inventory cache - running new inventory. Error: %v", e)
 		} else {
 			scanTime := diskInvMsg.GetScanTime()
-			if scanTime != nil && scanTime.GetSeconds() > timestamp.TimestampNow().GetSeconds()-int64(inventoryCacheDuration) {
+			now := timestamp.TimestampNow().GetSeconds()
+			if scanTime != nil && scanTime.GetSeconds() > now-int64(inventoryCacheSeconds) {
 				log.Debugf("Using cached scan from %v", diskInvMsg.GetScanTime())
-				inventory = diskInvMsg
-				return createAndObserveMessage(nodeName, inventory), nil
+				// The NodeName should not change, but we want to use the cached message exclusively
+				return createAndObserveMessage(diskInvMsg.GetNodeName(), diskInvMsg), nil
 			}
-			log.Debugf("Cached scan oder than threshold of %v with timestamp %v - running new inventory", inventoryCacheDuration, diskInvMsg.GetScanTime())
+			log.Debugf("Cached scan oder than threshold of %v with timestamp %v - running new inventory", inventoryCacheSeconds, diskInvMsg.GetScanTime())
 		}
 	}
 
