@@ -5,9 +5,7 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
 DOCKER_VERSION=$(shell docker --version)
-ifeq ($(findstring podman,$(DOCKER_VERSION)),podman)
-DOCKER_USER=--user "$(shell id -u)" --userns=keep-id
-else
+ifeq (,$(findstring podman,$(DOCKER_VERSION)))
 DOCKER_USER=--user "$(shell id -u)"
 endif
 
@@ -377,6 +375,7 @@ build-volumes:
 	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
 	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
+	$(SILENT)docker run $(DOCKER_USER) --rm $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) chown -R "$(shell id -u)" /linux-gocache /go
 
 .PHONY: main-builder-image
 main-builder-image: build-volumes
