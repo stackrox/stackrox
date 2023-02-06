@@ -190,7 +190,12 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 	processesListeningOnPorts, err = ds.storage.GetProcessListeningOnPort(ctx, deploymentID)
 
 	if err != nil {
+		log.Warnf("In GetProcessListeningOnPort. Query for deployment %s returned err: %+v", deploymentID, err)
 		return nil, err
+	}
+
+	if processesListeningOnPorts == nil {
+		log.Warnf("In GetProcessListeningOnPort. Query for deployment %s returned nil", deploymentID)
 	}
 
 	return processesListeningOnPorts, nil

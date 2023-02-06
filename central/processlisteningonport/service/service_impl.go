@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -43,13 +43,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func emptyProcessesListeningOnPortsResponse() (*v1.GetProcessesListeningOnPortsResponse, error) {
-	result := &v1.GetProcessesListeningOnPortsResponse{
-		ListeningEndpoints: make([]*storage.ProcessListeningOnPort, 0),
-	}
-	return result, nil
-}
-
+// GetProcessesListeningOnPorts returns the result of querying processes listening on ports to the API
 func (s *serviceImpl) GetProcessesListeningOnPorts(
 	ctx context.Context,
 	req *v1.GetProcessesListeningOnPortsRequest,
@@ -57,24 +51,17 @@ func (s *serviceImpl) GetProcessesListeningOnPorts(
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
-		log.Warnf("Tried to request PLOP not on Postgres, ignore: %s", req.GetDeploymentId())
-		return emptyProcessesListeningOnPortsResponse()
+		return nil, errors.Errorf("Postgres env var is not enabled, PLOP APIs are disabled")
 	}
 
 	deployment := req.GetDeploymentId()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, deployment)
 
 	if err != nil {
-		log.Warnf("In processlisteningonport service query return err: %+v", err)
-		return emptyProcessesListeningOnPortsResponse()
-	}
-
-	if processesListeningOnPorts == nil {
-		log.Debug("In processlisteningonport service query return nil")
-		return emptyProcessesListeningOnPortsResponse()
+		return nil, err
 	}
 
 	return &v1.GetProcessesListeningOnPortsResponse{
 		ListeningEndpoints: processesListeningOnPorts,
-	}, err
+	}, nil
 }
