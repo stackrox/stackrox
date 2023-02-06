@@ -45,7 +45,7 @@ func TestFeatureFlagSettings(t *testing.T) {
 		actualFlagVals[flag.GetEnvVar()] = flag.GetEnabled()
 	}
 
-	// TODO(ROX-12848 and ROX-12848): Remove this with environment variable
+	// TODO(ROX-14939): Remove this with environment variable
 	delete(actualFlagVals, env.PostgresDatastoreEnabled.EnvVar())
 
 	assert.Equal(t, expectedFlagVals, actualFlagVals, "mismatch between expected and actual feature flag settings")

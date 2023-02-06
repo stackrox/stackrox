@@ -10,6 +10,9 @@ from pre_tests import PreSystemTests
 from ci_tests import NonGroovyE2e
 from post_tests import PostClusterTest, FinalPost
 
+# Postgres is on by default
+exit(0)
+
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 

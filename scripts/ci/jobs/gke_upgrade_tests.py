@@ -10,6 +10,9 @@ from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
+# Postgres is on by default
+exit(0)
+
 # don't use postgres
 os.environ["ROX_POSTGRES_DATASTORE"] = "false"
 
