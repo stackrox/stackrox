@@ -1,6 +1,8 @@
 package transform
 
 import (
+	"reflect"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -15,7 +17,7 @@ func newAccessScopeTransform() *accessScopeTransform {
 	return &accessScopeTransform{}
 }
 
-func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configuration) ([]proto.Message, error) {
+func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
 	scopeConfig, ok := configuration.(*declarativeconfig.AccessScope)
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for access scope: %T", configuration)
@@ -29,22 +31,30 @@ func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configu
 			Origin: storage.Traits_DECLARATIVE,
 		},
 	}
-	return []proto.Message{scopeProto}, nil
+
+	return map[reflect.Type][]proto.Message{
+		reflect.TypeOf((*storage.SimpleAccessScope)(nil)): {scopeProto},
+	}, nil
 }
 
 func rulesFromScopeConfig(scope *declarativeconfig.AccessScope) *storage.SimpleAccessScope_Rules {
 	return &storage.SimpleAccessScope_Rules{
 		IncludedClusters:        includedClustersFromScopeConfig(scope),
 		IncludedNamespaces:      includedNamespacesFromScopeConfig(scope),
-		ClusterLabelSelectors:   clusterLabelSelectorsFromScopeConfig(scope),
-		NamespaceLabelSelectors: namespaceLabelSelectorsFromScopeConfig(scope),
+		ClusterLabelSelectors:   labelSelectorsFromScopeConfig(scope.Rules.ClusterLabelSelectors),
+		NamespaceLabelSelectors: labelSelectorsFromScopeConfig(scope.Rules.NamespaceLabelSelectors),
 	}
 }
 
 func includedClustersFromScopeConfig(scope *declarativeconfig.AccessScope) []string {
 	clusters := make([]string, 0, len(scope.Rules.IncludedObjects))
 	for _, obj := range scope.Rules.IncludedObjects {
-		clusters = append(clusters, obj.Cluster)
+		// An access scope should specify included clusters when there is no namespace set for them.
+		// If a namespace is set, the key value pair of cluster/namespace should be a part of the included namespaces
+		// instead.
+		if len(obj.Namespaces) == 0 {
+			clusters = append(clusters, obj.Cluster)
+		}
 	}
 	return clusters
 }
@@ -62,38 +72,20 @@ func includedNamespacesFromScopeConfig(scope *declarativeconfig.AccessScope) []*
 	return namespaces
 }
 
-func clusterLabelSelectorsFromScopeConfig(scope *declarativeconfig.AccessScope) []*storage.SetBasedLabelSelector {
-	var clusterLabelSelectors []*storage.SetBasedLabelSelector
-	for _, cl := range scope.Rules.ClusterLabelSelectors {
-		reqs := make([]*storage.SetBasedLabelSelector_Requirement, 0, len(cl.Requirements))
-		for _, req := range cl.Requirements {
+func labelSelectorsFromScopeConfig(labelSelectors []declarativeconfig.LabelSelector) []*storage.SetBasedLabelSelector {
+	var setBasedLabelSelectors []*storage.SetBasedLabelSelector
+	for _, ls := range labelSelectors {
+		reqs := make([]*storage.SetBasedLabelSelector_Requirement, 0, len(ls.Requirements))
+		for _, req := range ls.Requirements {
 			reqs = append(reqs, &storage.SetBasedLabelSelector_Requirement{
 				Key:    req.Key,
 				Op:     storage.SetBasedLabelSelector_Operator(req.Operator),
 				Values: req.Values,
 			})
 		}
-		clusterLabelSelectors = append(clusterLabelSelectors, &storage.SetBasedLabelSelector{
+		setBasedLabelSelectors = append(setBasedLabelSelectors, &storage.SetBasedLabelSelector{
 			Requirements: reqs,
 		})
 	}
-	return clusterLabelSelectors
-}
-
-func namespaceLabelSelectorsFromScopeConfig(scope *declarativeconfig.AccessScope) []*storage.SetBasedLabelSelector {
-	var namespaceLabelSelector []*storage.SetBasedLabelSelector
-	for _, nl := range scope.Rules.NamespaceLabelSelectors {
-		reqs := make([]*storage.SetBasedLabelSelector_Requirement, 0, len(nl.Requirements))
-		for _, req := range nl.Requirements {
-			reqs = append(reqs, &storage.SetBasedLabelSelector_Requirement{
-				Key:    req.Key,
-				Op:     storage.SetBasedLabelSelector_Operator(req.Operator),
-				Values: req.Values,
-			})
-		}
-		namespaceLabelSelector = append(namespaceLabelSelector, &storage.SetBasedLabelSelector{
-			Requirements: reqs,
-		})
-	}
-	return namespaceLabelSelector
+	return setBasedLabelSelectors
 }

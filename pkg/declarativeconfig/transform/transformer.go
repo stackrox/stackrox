@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 )
 
-var _ Transformer = (*defaultTransformer)(nil)
+var _ Transformer = (*universalTransformer)(nil)
 
 // Transformer transforms a declarativeconfig.Configuration to proto.Message(s).
 type Transformer interface {

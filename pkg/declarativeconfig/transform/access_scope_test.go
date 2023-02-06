@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -21,6 +22,8 @@ func TestWrongConfigurationTypeTransform(t *testing.T) {
 func TestTransformAccessScope(t *testing.T) {
 	at := newAccessScopeTransform()
 
+	simpleAccessScopeType := reflect.TypeOf((*storage.SimpleAccessScope)(nil))
+
 	// 1. Access scope with empty rules mimicking an unrestricted scope.
 	scopeConfig := &declarativeconfig.AccessScope{
 		Name:        "test-scope",
@@ -31,13 +34,16 @@ func TestTransformAccessScope(t *testing.T) {
 	msgs, err := at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
-	msg := msgs[0]
-	scopeProto, ok := msg.(*storage.SimpleAccessScope)
+	assert.Contains(t, msgs, simpleAccessScopeType)
+	msg := msgs[simpleAccessScopeType]
+	require.Len(t, msg, 1)
+	scopeProto, ok := msg[0].(*storage.SimpleAccessScope)
 	require.True(t, ok)
 	assert.Equal(t, scopeConfig.Name, scopeProto.GetName())
 	assert.Equal(t, scopeConfig.Description, scopeProto.GetDescription())
 	assert.Equal(t, storage.Traits_DECLARATIVE, scopeProto.GetTraits().GetOrigin())
 	assert.Empty(t, scopeProto.GetRules().GetIncludedClusters())
+	assert.Empty(t, scopeProto.GetRules().GetIncludedNamespaces())
 	assert.Empty(t, scopeProto.GetRules().GetNamespaceLabelSelectors())
 	assert.Empty(t, scopeProto.GetRules().GetClusterLabelSelectors())
 
@@ -50,14 +56,16 @@ func TestTransformAccessScope(t *testing.T) {
 				{Requirements: []declarativeconfig.Requirement{
 					{
 						Key:      "a",
-						Operator: 1,
+						Operator: declarativeconfig.Operator(storage.LabelSelector_IN),
 						Values:   []string{"a", "b", "c"}}}}}},
 	}
 	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
-	msg = msgs[0]
-	scopeProto, ok = msg.(*storage.SimpleAccessScope)
+	assert.Contains(t, msgs, simpleAccessScopeType)
+	msg = msgs[simpleAccessScopeType]
+	require.Len(t, msg, 1)
+	scopeProto, ok = msg[0].(*storage.SimpleAccessScope)
 	require.True(t, ok)
 	assert.Equal(t, scopeConfig.Name, scopeProto.GetName())
 	assert.Equal(t, scopeConfig.Description, scopeProto.GetDescription())
@@ -76,14 +84,16 @@ func TestTransformAccessScope(t *testing.T) {
 				{Requirements: []declarativeconfig.Requirement{
 					{
 						Key:      "a",
-						Operator: 1,
+						Operator: declarativeconfig.Operator(storage.LabelSelector_IN),
 						Values:   []string{"a", "b", "c"}}}}}},
 	}
 	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
-	msg = msgs[0]
-	scopeProto, ok = msg.(*storage.SimpleAccessScope)
+	assert.Contains(t, msgs, simpleAccessScopeType)
+	msg = msgs[simpleAccessScopeType]
+	require.Len(t, msg, 1)
+	scopeProto, ok = msg[0].(*storage.SimpleAccessScope)
 	require.True(t, ok)
 	assert.Equal(t, scopeConfig.Name, scopeProto.GetName())
 	assert.Equal(t, scopeConfig.Description, scopeProto.GetDescription())
@@ -101,7 +111,7 @@ func TestTransformAccessScope(t *testing.T) {
 			ClusterLabelSelectors: []declarativeconfig.LabelSelector{
 				{Requirements: []declarativeconfig.Requirement{{
 					Key:      "a",
-					Operator: 1,
+					Operator: declarativeconfig.Operator(storage.LabelSelector_IN),
 					Values:   []string{"a", "b", "c"},
 				}}},
 			},
@@ -109,14 +119,16 @@ func TestTransformAccessScope(t *testing.T) {
 				{Requirements: []declarativeconfig.Requirement{
 					{
 						Key:      "a",
-						Operator: 1,
+						Operator: declarativeconfig.Operator(storage.LabelSelector_IN),
 						Values:   []string{"a", "b", "c"}}}}}},
 	}
 	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
-	msg = msgs[0]
-	scopeProto, ok = msg.(*storage.SimpleAccessScope)
+	assert.Contains(t, msgs, simpleAccessScopeType)
+	msg = msgs[simpleAccessScopeType]
+	require.Len(t, msg, 1)
+	scopeProto, ok = msg[0].(*storage.SimpleAccessScope)
 	require.True(t, ok)
 	assert.Equal(t, scopeConfig.Name, scopeProto.GetName())
 	assert.Equal(t, scopeConfig.Description, scopeProto.GetDescription())
@@ -141,8 +153,10 @@ func TestTransformAccessScope(t *testing.T) {
 	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
-	msg = msgs[0]
-	scopeProto, ok = msg.(*storage.SimpleAccessScope)
+	assert.Contains(t, msgs, simpleAccessScopeType)
+	msg = msgs[simpleAccessScopeType]
+	require.Len(t, msg, 1)
+	scopeProto, ok = msg[0].(*storage.SimpleAccessScope)
 	require.True(t, ok)
 	assert.Equal(t, scopeConfig.Name, scopeProto.GetName())
 	assert.Equal(t, scopeConfig.Description, scopeProto.GetDescription())
@@ -165,15 +179,17 @@ func TestTransformAccessScope(t *testing.T) {
 	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
-	msg = msgs[0]
-	scopeProto, ok = msg.(*storage.SimpleAccessScope)
+	assert.Contains(t, msgs, simpleAccessScopeType)
+	msg = msgs[simpleAccessScopeType]
+	require.Len(t, msg, 1)
+	scopeProto, ok = msg[0].(*storage.SimpleAccessScope)
 	require.True(t, ok)
 	assert.Equal(t, scopeConfig.Name, scopeProto.GetName())
 	assert.Equal(t, scopeConfig.Description, scopeProto.GetDescription())
 	assert.Equal(t, storage.Traits_DECLARATIVE, scopeProto.GetTraits().GetOrigin())
 	assert.Empty(t, scopeProto.GetRules().GetClusterLabelSelectors())
 	assert.Empty(t, scopeProto.GetRules().GetNamespaceLabelSelectors())
-	assert.Equal(t, []string{"clusterA", "clusterB"}, scopeProto.GetRules().GetIncludedClusters())
+	assert.Empty(t, scopeProto.GetRules().GetIncludedClusters())
 	expectedNamespaces := []*storage.SimpleAccessScope_Rules_Namespace{
 		{
 			ClusterName:   "clusterA",
@@ -203,11 +219,12 @@ func TestTransformAccessScope(t *testing.T) {
 			IncludedObjects: []declarativeconfig.IncludedObject{
 				{Cluster: "clusterA", Namespaces: []string{"NamespaceA", "NamespaceB"}},
 				{Cluster: "clusterB", Namespaces: []string{"NamespaceC", "NamespaceD"}},
+				{Cluster: "clusterC"},
 			},
 			ClusterLabelSelectors: []declarativeconfig.LabelSelector{
 				{Requirements: []declarativeconfig.Requirement{{
 					Key:      "a",
-					Operator: 1,
+					Operator: declarativeconfig.Operator(storage.LabelSelector_IN),
 					Values:   []string{"a", "b", "c"},
 				}}},
 			},
@@ -215,21 +232,23 @@ func TestTransformAccessScope(t *testing.T) {
 				{Requirements: []declarativeconfig.Requirement{
 					{
 						Key:      "a",
-						Operator: 1,
+						Operator: declarativeconfig.Operator(storage.LabelSelector_IN),
 						Values:   []string{"a", "b", "c"}}}}}},
 	}
 	msgs, err = at.Transform(scopeConfig)
 	assert.NoError(t, err)
 	require.Len(t, msgs, 1)
-	msg = msgs[0]
-	scopeProto, ok = msg.(*storage.SimpleAccessScope)
+	assert.Contains(t, msgs, simpleAccessScopeType)
+	msg = msgs[simpleAccessScopeType]
+	require.Len(t, msg, 1)
+	scopeProto, ok = msg[0].(*storage.SimpleAccessScope)
 	require.True(t, ok)
 	assert.Equal(t, scopeConfig.Name, scopeProto.GetName())
 	assert.Equal(t, scopeConfig.Description, scopeProto.GetDescription())
 	assert.Equal(t, storage.Traits_DECLARATIVE, scopeProto.GetTraits().GetOrigin())
 	compareNamespaceLabelSelectors(t, scopeConfig, scopeProto)
 	compareClusterLabelSelectors(t, scopeConfig, scopeProto)
-	assert.Equal(t, []string{"clusterA", "clusterB"}, scopeProto.GetRules().GetIncludedClusters())
+	assert.Equal(t, []string{"clusterC"}, scopeProto.GetRules().GetIncludedClusters())
 	expectedNamespaces = []*storage.SimpleAccessScope_Rules_Namespace{
 		{
 			ClusterName:   "clusterA",
