@@ -9,10 +9,10 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -39,7 +39,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.PermissionSetsSchema
+	schema = frozenSchema.PermissionSetsSchema
 )
 
 // Store is the interface for interactions with the database storage
@@ -222,7 +222,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	return conn, conn.Release, nil
 }
 
-// Delete removes the specified IDs from the store
+// DeleteMany removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	var sacQueryFilter *v1.Query
 

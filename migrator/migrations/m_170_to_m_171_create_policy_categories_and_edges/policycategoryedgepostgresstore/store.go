@@ -9,10 +9,10 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -34,7 +34,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.PolicyCategoryEdgesSchema
+	schema = frozenSchema.PolicyCategoryEdgesSchema
 )
 
 // Store is the interface to interact with the storage for storage.PolicyCategoryEdge
