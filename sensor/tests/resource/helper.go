@@ -152,6 +152,41 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	}, nil
 }
 
+// WithName sets the name of test
+func WithName(name string) TestRunFunc {
+	return func(t *testRun) {
+		t.name = name
+	}
+}
+
+// WithPermutation sets whether the test should run with permutations
+func WithPermutation() TestRunFunc {
+	return func(t *testRun) {
+		t.permutation = true
+	}
+}
+
+// WithResources sets the resources to be created by the test
+func WithResources(resources []K8sResourceInfo) TestRunFunc {
+	return func(t *testRun) {
+		t.resources = resources
+	}
+}
+
+// WithTestCase sets the TestCallback function to be run
+func WithTestCase(test TestCallback) TestRunFunc {
+	return func(t *testRun) {
+		t.testCase = test
+	}
+}
+
+// WithRetryCallback sets the RetryCallback function
+func WithRetryCallback(retryCallback RetryCallback) TestRunFunc {
+	return func(t *testRun) {
+		t.retryCallback = retryCallback
+	}
+}
+
 // NewRun runs a test case. Fails the test if the testRun cannot be created.
 func (c *TestContext) NewRun(options ...TestRunFunc) {
 	tr, err := newTestRun(options...)
@@ -725,36 +760,6 @@ type testRun struct {
 	testCase      TestCallback
 	retryCallback RetryCallback
 	permutation   bool
-}
-
-func WithName(name string) TestRunFunc {
-	return func(t *testRun) {
-		t.name = name
-	}
-}
-
-func WithPermutation() TestRunFunc {
-	return func(t *testRun) {
-		t.permutation = true
-	}
-}
-
-func WithResources(resources []K8sResourceInfo) TestRunFunc {
-	return func(t *testRun) {
-		t.resources = resources
-	}
-}
-
-func WithTestCase(test TestCallback) TestRunFunc {
-	return func(t *testRun) {
-		t.testCase = test
-	}
-}
-
-func WithRetryCallback(retryCallback RetryCallback) TestRunFunc {
-	return func(t *testRun) {
-		t.retryCallback = retryCallback
-	}
 }
 
 func (t *testRun) validate() error {
