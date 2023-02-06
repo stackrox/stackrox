@@ -73,5 +73,5 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 			},
 		},
 	}
-	return component.NewResourceEvent(events, nil, nil)
+	return component.NewEvent(events...)
 }

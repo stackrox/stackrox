@@ -402,10 +402,10 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			require.NotNil(t, events)
 			if !env.ResyncDisabled.BooleanSetting() {
 				// If re-sync is disabled we don't send the CompatibilityReprocess in the dispatcher
-				deps.AddAll(events.CompatibilityReprocessDeployments...)
+				deps.AddAll(events.ReprocessDeployments...)
 				for _, d := range c.expectedDeployments {
 					_, ok := deps[d.GetId()]
-					assert.Truef(t, ok, "Expected Id %s not found in the CompatibilityReprocessDeployments slice", d.GetId())
+					assert.Truef(t, ok, "Expected Id %s not found in the ReprocessDeployments slice", d.GetId())
 				}
 
 			}

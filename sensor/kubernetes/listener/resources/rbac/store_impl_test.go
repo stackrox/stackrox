@@ -525,7 +525,9 @@ func TestStore_DeploymentRelationship(t *testing.T) {
 			var ref []resolver.DeploymentReference
 			for _, update := range testCase.orderedUpdates {
 				event := dispatcher.ProcessEvent(update, nil, central.ResourceAction_CREATE_RESOURCE)
-				ref = append(ref, event.DeploymentReference)
+				if len(event.DeploymentReferences) == 1 {
+					ref = append(ref, event.DeploymentReferences[0].Reference)
+				}
 			}
 
 			var orderedServiceAccounts []string

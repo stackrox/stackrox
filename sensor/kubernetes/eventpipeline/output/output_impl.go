@@ -56,8 +56,8 @@ func (q *outputQueueImpl) runOutputQueue() {
 		}
 
 		// The order here is important. We rely on the ReprocessDeployment being called before ProcessDeployment to remove the deployments from the deduper.
-		q.detector.ReprocessDeployments(msg.CompatibilityReprocessDeployments...)
-		for _, detectorRequest := range msg.CompatibilityDetectionDeployment {
+		q.detector.ReprocessDeployments(msg.ReprocessDeployments...)
+		for _, detectorRequest := range msg.DetectorMessages {
 			q.detector.ProcessDeployment(detectorRequest.Object, detectorRequest.Action)
 		}
 	}

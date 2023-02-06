@@ -129,7 +129,13 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	// because IF the object is a pod, we want to process the pod event.
 	objAsPod, _ := obj.(*v1.Pod)
 
-	var events *component.ResourceEvent
+	events := &component.ResourceEvent{
+		ForwardMessages:      []*central.SensorEvent{},
+		DetectorMessages:     []component.DetectorMessage{},
+		ReprocessDeployments: []string{},
+		DeploymentTiming:     nil,
+		DeploymentReferences: []component.DeploymentReference{},
+	}
 	// If the object is a pod, process the pod event.
 	if objAsPod != nil {
 		var owningDeploymentID string
@@ -153,18 +159,25 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 					owningDeploymentIDs.AsSlice(), uid, objAsPod.Namespace, objAsPod.Name)
 			}
 		}
+
 		// On removes, we may not get the owning deployment ID if the deployment was deleted before the pod.
 		// This is okay. We still want to send the remove event anyway.
 		if action == central.ResourceAction_REMOVE_RESOURCE || owningDeploymentID != "" {
-			events = component.MergeResourceEvents(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
+			removeEvents := d.processPodEvent(owningDeploymentID, objAsPod, action)
+			if removeEvents != nil {
+				events.AddSensorEvent(removeEvents)
+			}
+		}
+
+		if deploymentWrap == nil {
+			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
+			d.maybeUpdateParentsOfPod(objAsPod, oldObj, action, events)
+			return events
 		}
 	}
 
+	// If it's an object we don't generate an event for (e.g. ReplicaSets) processing should stop here.
 	if deploymentWrap == nil {
-		if objAsPod != nil {
-			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
-			events = component.MergeResourceEvents(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action))
-		}
 		return events
 	}
 
@@ -187,19 +200,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
 			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
 			// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
-			events = component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
-				{
-					Object: deploymentWrap.GetDeployment(),
-					Action: action,
-				},
-			}, nil))
-			// if resource is being removed, we can create the remove message here without related resources
-			events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
+			events.AddDeploymentForDetection(component.DetectorMessage{
+				Object: deploymentWrap.GetDeployment(),
+				Action: action,
+			}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
 		} else {
 			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 			// references up the chain, which will be used to trigger the actual deployment event and detection.
-			events = component.MergeResourceEvents(events,
-				component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false))
+			events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false)
 		}
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
@@ -216,15 +224,11 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		if err := deploymentWrap.updateHash(); err != nil {
 			log.Errorf("UNEXPECTED: could not calculate hash of deployment %s: %v", deploymentWrap.GetId(), err)
 		}
-
-		events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
-		// Compatibility: send detection message directly from here
-		events = component.MergeResourceEvents(events, component.NewResourceEvent(nil, []component.CompatibilityDetectionMessage{
-			{
-				Object: deploymentWrap.GetDeployment(),
-				Action: action,
-			},
-		}, nil))
+		events.AddSensorEvent(deploymentWrap.toEvent(action))
+		events.AddDeploymentForDetection(component.DetectorMessage{
+			Object: deploymentWrap.GetDeployment(),
+			Action: action,
+		})
 	}
 
 	return events
@@ -249,7 +253,7 @@ func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	for _, c := range containers {
 		if r := c.GetImage().GetName().GetRegistry(); registries.Add(r) {
 			if e := d.getImageIntegrationEvent(r); e != nil {
-				events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{e}, nil, nil))
+				events.AddSensorEvent(e)
 			}
 		}
 	}
@@ -294,22 +298,22 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 
 // maybeUpdateParentsOfPod may return SensorEvents indicating a change in a deployment's state based on updated pod state.
 // We do this to ensure that the image IDs in the deployment are updated based on the actual running images in the pod.
-func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction, rootEvent *component.ResourceEvent) {
 	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
-		return nil
+		return
 	}
 
 	if action != central.ResourceAction_REMOVE_RESOURCE && oldObj != nil {
 		oldPod, ok := oldObj.(*v1.Pod)
 		if !ok {
 			utils.Should(errors.Errorf("previous version of pod is not a pod (got %T)", oldObj))
-			return nil
+			return
 		}
 		// We care when pods are transitioning to running so ensure that the old pod status is not RUNNING
 		// In the cases of CREATES or UPDATES
 		if oldPod.Status.Phase == v1.PodRunning {
-			return nil
+			return
 		}
 	}
 
@@ -317,16 +321,14 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	// We also only track top-level objects (ex we track Deployment resources in favor of the underlying ReplicaSet and Pods)
 	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
 	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
-	var events *component.ResourceEvent
 	for _, owner := range owners {
 		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
-		events = component.MergeResourceEvents(events, ev)
+		rootEvent.MergeResourceEvent(ev)
 	}
-	return events
 }
 
 // processPodEvent returns a SensorEvent indicating a change in a pod's state.
-func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *component.ResourceEvent {
+func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *central.SensorEvent {
 	// Our current search mechanism does not support namespaced IDs, so if this is a top-level pod,
 	// then having the PodID and DeploymentID fields equal will cause errors.
 	// It is best to prevent this case by transforming all PodIDs.
@@ -350,7 +352,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 				},
 			},
 		}
-		return component.NewResourceEvent([]*central.SensorEvent{event}, nil, nil)
+		return event
 	}
 
 	started, err := types.TimestampProto(k8sPod.GetCreationTimestamp().Time)
@@ -384,6 +386,6 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 			Pod: p,
 		},
 	}
-	return component.NewResourceEvent([]*central.SensorEvent{event}, nil, nil)
+	return event
 
 }
