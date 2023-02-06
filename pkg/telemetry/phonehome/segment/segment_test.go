@@ -21,9 +21,9 @@ func Test_makeDeviceContext(t *testing.T) {
 	opts := telemeter.ApplyOptions([]telemeter.Option{
 		telemeter.WithUserID("userID"),
 		telemeter.WithClient("clientID", "clientType"),
-		telemeter.WithGroupProperties("groupA", "groupA_id1", map[string]any{"key1": "value1"}),
-		telemeter.WithGroupProperties("groupA", "groupA_id2", map[string]any{"key2": "value2"}),
-		telemeter.WithGroupProperties("groupB", "groupB_id", map[string]any{"key3": "value3"}),
+		telemeter.WithGroups("groupA", "groupA_id1"),
+		telemeter.WithGroups("groupA", "groupA_id2"),
+		telemeter.WithGroups("groupB", "groupB_id"),
 	})
 
 	ctx := makeDeviceContext(opts)

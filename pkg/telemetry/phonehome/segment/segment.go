@@ -100,22 +100,11 @@ func (t *segmentTelemeter) overrideUserID(o *telemeter.CallOptions) string {
 func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
 	var ctx *segment.Context
 
-	if len(o.GroupProperties) > 0 {
-		// [group name: [group id...]]
-		groups := make(map[string][]string)
-		for gname, gprops := range o.GroupProperties {
-			for gid := range gprops {
-				groups[gname] = append(groups[gname], gid)
-			}
-		}
-
+	if len(o.Groups) > 0 {
 		// Add groups to the context. Requires a mapping configuration for
 		// setting the according Amplitude event field.
 		ctx = &segment.Context{
-			Extra: map[string]any{
-				"groups": groups,
-				// Segment does not support attaching group properties.
-			},
+			Extra: map[string]any{"groups": o.Groups},
 		}
 	}
 
