@@ -4491,6 +4491,11 @@
   resolved "https://registry.yarnpkg.com/@types/scheduler/-/scheduler-0.16.1.tgz#18845205e86ff0038517aab7a18a62a6b9f71275"
   integrity sha512-EaCxbanVeyxDRTQBkdLb3Bvl/HK7PBK6UJjsSixB0iHKoWxE5uu2Q/DgtpOhPIojN0Zl1whvOd7PoHs2P0s5eA==
 
+"@types/segment-analytics@^0.0.34":
+  version "0.0.34"
+  resolved "https://registry.yarnpkg.com/@types/segment-analytics/-/segment-analytics-0.0.34.tgz#e88fd5286e27eefafbc1b98c8c7e143b9aab5fb5"
+  integrity sha512-fiOyEgyqJY2Mv9k72WG4XoY4fVE31byiSUrEFcNh+MgHcH3HuJmoz2J7ktO3YizBrN6/RuaH1tY5J/5I5BJHJQ==
+
 "@types/serve-index@^1.9.1":
   version "1.9.1"
   resolved "https://registry.yarnpkg.com/@types/serve-index/-/serve-index-1.9.1.tgz#1b5e85370a192c01ec6cec4735cf2917337a6278"
@@ -7327,10 +7332,10 @@ cyclist@^1.0.1:
   resolved "https://registry.yarnpkg.com/cyclist/-/cyclist-1.0.1.tgz#596e9698fd0c80e12038c2b82d6eb1b35b6224d9"
   integrity sha1-WW6WmP0MgOEgOMK4LW6xs1tiJNk=
 
-cypress@^12.3.0:
-  version "12.3.0"
-  resolved "https://registry.yarnpkg.com/cypress/-/cypress-12.3.0.tgz#ae3fb0540aef4b5eab1ef2bcd0760caf2992b8bf"
-  integrity sha512-ZQNebibi6NBt51TRxRMYKeFvIiQZ01t50HSy7z/JMgRVqBUey3cdjog5MYEbzG6Ktti5ckDt1tfcC47lmFwXkw==
+cypress@^12.4.1:
+  version "12.4.1"
+  resolved "https://registry.yarnpkg.com/cypress/-/cypress-12.4.1.tgz#6121b49fd7d833d1f4a0f486034f063467f433af"
+  integrity sha512-IFMPzc1RJ22Fac+YbdqywtpcuqZXqQJh+JqZDXn+A15zG/dw99njfv8f0bTvD+WAHhP118+xWG/VwilkFg1rnA==
   dependencies:
     "@cypress/request" "^2.88.10"
     "@cypress/xvfb" "^1.2.4"

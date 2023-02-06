@@ -9,9 +9,7 @@ import { PolicyCategory } from 'types/policy.proto';
 
 function PolicyCategoriesSelectField(): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPolicyCategoriesEnabled =
-        isFeatureFlagEnabled('ROX_NEW_POLICY_CATEGORIES') &&
-        isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    const isPolicyCategoriesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const [policyCategories, setPolicyCategories] = useState<PolicyCategory[]>([]);
     // manage state for Categories select below

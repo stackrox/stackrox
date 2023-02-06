@@ -24,6 +24,7 @@ import '@patternfly/react-styles/css/utilities/Flex/flex.css';
 import '@patternfly/react-styles/css/utilities/Sizing/sizing.css';
 import '@patternfly/react-styles/css/utilities/Spacing/spacing.css';
 import '@patternfly/react-styles/css/utilities/Text/text.css';
+import { configure as mobxConfigure } from 'mobx';
 
 // Advanced Cluster Security extensions to PatternFly styles
 import 'css/acs.css';
@@ -38,7 +39,14 @@ import installRaven from 'installRaven';
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
 import { fetchPublicConfigThunk } from './reducers/systemConfig';
+import { fetchTelemetryConfigThunk } from './reducers/telemetryConfig';
 import configureApollo from './configureApolloClient';
+
+// We need to call this MobX utility function, to prevent the error
+//   Uncaught Error: [MobX] There are multiple, different versions of MobX active. Make sure MobX is loaded only once or use `configure({ isolateGlobalState: true })`
+// which occurs because both the PatternFly react-topology component and the Redoc API viewer library
+// both load their own versions of MobX
+mobxConfigure({ isolateGlobalState: true });
 
 installRaven();
 
@@ -54,6 +62,7 @@ const dispatch = (action) =>
 
 dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
+dispatch(fetchTelemetryConfigThunk());
 
 ReactDOM.render(
     <Provider store={store}>

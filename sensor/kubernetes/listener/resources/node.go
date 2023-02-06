@@ -12,11 +12,11 @@ import (
 
 type nodeDispatcher struct {
 	deploymentStore *DeploymentStore
-	nodeStore       *nodeStore
+	nodeStore       nodeStore
 	endpointManager endpointManager
 }
 
-func newNodeDispatcher(deploymentStore *DeploymentStore, nodeStore *nodeStore, endpointManager endpointManager) *nodeDispatcher {
+func newNodeDispatcher(deploymentStore *DeploymentStore, nodeStore nodeStore, endpointManager endpointManager) *nodeDispatcher {
 	return &nodeDispatcher{
 		deploymentStore: deploymentStore,
 		nodeStore:       nodeStore,
@@ -38,8 +38,9 @@ func convertTaints(taints []v1.Taint) []*storage.Taint {
 
 func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	node := obj.(*v1.Node)
+	protoNode := buildNode(node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		h.nodeStore.removeNode(node)
+		h.nodeStore.removeNode(protoNode)
 		h.endpointManager.OnNodeUpdateOrRemove()
 	} else {
 		wrap := wrapNode(node)
@@ -54,6 +55,18 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		}
 	}
 
+	return component.NewResourceEvent([]*central.SensorEvent{
+		{
+			Id:     protoNode.GetId(),
+			Action: action,
+			Resource: &central.SensorEvent_Node{
+				Node: protoNode,
+			},
+		},
+	}, nil, nil)
+}
+
+func buildNode(node *v1.Node) *storage.Node {
 	var internal, external []string
 
 	for _, entry := range node.Status.Addresses {
@@ -66,7 +79,7 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 	}
 
 	creation := node.CreationTimestamp.ProtoTime()
-	nodeResource := &storage.Node{
+	return &storage.Node{
 		Id:                      string(node.UID),
 		Name:                    node.Name,
 		Taints:                  convertTaints(node.Spec.Taints),
@@ -84,16 +97,4 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		KubeProxyVersion:        node.Status.NodeInfo.KubeProxyVersion,
 		K8SUpdated:              types.TimestampNow(),
 	}
-
-	events := []*central.SensorEvent{
-		{
-			Id:     nodeResource.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_Node{
-				Node: nodeResource,
-			},
-		},
-	}
-
-	return component.NewResourceEvent(events, nil, nil)
 }

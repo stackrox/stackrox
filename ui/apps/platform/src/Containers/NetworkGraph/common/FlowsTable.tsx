@@ -10,10 +10,18 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { Flex, FlexItem, Text, TextContent, TextVariants } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    Text,
+    TextContent,
+    TextVariants,
+    Tooltip,
+} from '@patternfly/react-core';
+import { ExclamationCircleIcon, MinusIcon, PlusIcon } from '@patternfly/react-icons';
 
-import { Flow } from '../types/flow.type';
+import { BaselineSimulationDiffState, Flow, FlowEntityType } from '../types/flow.type';
 import { protocolLabel } from '../utils/flowUtils';
 
 type FlowsTableProps = {
@@ -27,6 +35,10 @@ type FlowsTableProps = {
     isEditable?: boolean;
     addToBaseline?: (flow: Flow) => void;
     markAsAnomalous?: (flow: Flow) => void;
+    isBaselineSimulation?: boolean;
+    numExtraneousEgressFlows?: number;
+    numExtraneousIngressFlows?: number;
+    onSelectFlow: (entityId: string) => void;
 };
 
 const columnNames = {
@@ -35,6 +47,68 @@ const columnNames = {
     // @TODO: This would be a good point to update with i18n translation ability
     portAndProtocol: 'Port / protocol',
 };
+
+function getBaselineSimulatedRowStyle(
+    baselineSimulationDiffState: BaselineSimulationDiffState | undefined
+): React.CSSProperties {
+    let customStyle: React.CSSProperties;
+    if (baselineSimulationDiffState === 'ADDED') {
+        customStyle = { backgroundColor: 'var(--pf-global--palette--green-50)' };
+    } else if (baselineSimulationDiffState === 'REMOVED') {
+        customStyle = { backgroundColor: 'var(--pf-global--palette--red-50)' };
+    } else {
+        customStyle = {};
+    }
+    return customStyle;
+}
+
+function ExtraneousFlowsRow({
+    isEditable,
+    numExtraneousEgressFlows,
+    direction,
+}: {
+    isEditable: boolean;
+    numExtraneousEgressFlows: number;
+    direction: 'Ingress' | 'Egress';
+}) {
+    return (
+        <Tbody>
+            <Tr>
+                <Td />
+                {isEditable && <Td />}
+                <Td dataLabel={columnNames.entity}>
+                    <Flex direction={{ default: 'row' }}>
+                        <FlexItem>
+                            <div>+ {numExtraneousEgressFlows} allowed flows</div>
+                            <div>
+                                <TextContent>
+                                    <Text component={TextVariants.small}>Across this cluster</Text>
+                                </TextContent>
+                            </div>
+                        </FlexItem>
+                    </Flex>
+                </Td>
+                <Td dataLabel={columnNames.direction}>{direction}</Td>
+                <Td dataLabel={columnNames.portAndProtocol}>Any / Any</Td>
+            </Tr>
+        </Tbody>
+    );
+}
+
+function AnomalousIcon({ type }: { type: FlowEntityType }) {
+    if (type === 'CIDR_BLOCK' || type === 'EXTERNAL_ENTITIES') {
+        return (
+            <Tooltip content={<div>Anomalous external flow</div>}>
+                <ExclamationCircleIcon className="pf-u-danger-color-100" />
+            </Tooltip>
+        );
+    }
+    return (
+        <Tooltip content={<div>Anomalous internal flow</div>}>
+            <ExclamationCircleIcon className="pf-u-warning-color-100" />
+        </Tooltip>
+    );
+}
 
 function FlowsTable({
     label,
@@ -47,6 +121,10 @@ function FlowsTable({
     isEditable = false,
     addToBaseline,
     markAsAnomalous,
+    isBaselineSimulation = false,
+    numExtraneousEgressFlows = 0,
+    numExtraneousIngressFlows = 0,
+    onSelectFlow,
 }: FlowsTableProps): ReactElement {
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows?.includes(row.id);
@@ -77,6 +155,10 @@ function FlowsTable({
         return setSelectedRows?.([]);
     };
 
+    const onSelectFlowHandler = (flow: Flow) => () => {
+        onSelectFlow(flow.entityId);
+    };
+
     return (
         <TableComposable aria-label={label} variant="compact">
             <Thead>
@@ -90,9 +172,10 @@ function FlowsTable({
                             }}
                         />
                     )}
-                    <Th width={40}>{columnNames.entity}</Th>
-                    <Th>{columnNames.direction}</Th>
-                    <Th>{columnNames.portAndProtocol}</Th>
+                    {isBaselineSimulation && <Th />}
+                    <Th>{columnNames.entity}</Th>
+                    <Th modifier="nowrap">{columnNames.direction}</Th>
+                    <Th modifier="nowrap">{columnNames.portAndProtocol}</Th>
                     <Th />
                 </Tr>
             </Thead>
@@ -118,9 +201,12 @@ function FlowsTable({
                                     },
                           ]
                         : [];
+                const baselineSimulatedRowStyle = getBaselineSimulatedRowStyle(
+                    row.baselineSimulationDiffState
+                );
 
                 return (
-                    <Tbody key={row.id} isExpanded={isExpanded}>
+                    <Tbody key={row.id} isExpanded={isExpanded} style={baselineSimulatedRowStyle}>
                         <Tr>
                             <Td
                                 expand={
@@ -149,10 +235,38 @@ function FlowsTable({
                                     }
                                 />
                             )}
+                            {isBaselineSimulation && (
+                                <Td dataLabel={columnNames.direction}>
+                                    {row.baselineSimulationDiffState === 'ADDED' && (
+                                        <Tooltip content={<div>Baseline added</div>}>
+                                            <PlusIcon
+                                                size="sm"
+                                                className="pf-u-success-color-200"
+                                            />
+                                        </Tooltip>
+                                    )}
+                                    {row.baselineSimulationDiffState === 'REMOVED' && (
+                                        <Tooltip content={<div>Baseline removed</div>}>
+                                            <MinusIcon
+                                                size="sm"
+                                                className="pf-u-danger-color-200"
+                                            />
+                                        </Tooltip>
+                                    )}
+                                </Td>
+                            )}
                             <Td dataLabel={columnNames.entity}>
                                 <Flex direction={{ default: 'row' }}>
                                     <FlexItem>
-                                        <div>{row.entity}</div>
+                                        <div>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onSelectFlowHandler(row)}
+                                            >
+                                                {row.entity}
+                                            </Button>
+                                        </div>
                                         <div>
                                             <TextContent>
                                                 <Text component={TextVariants.small}>
@@ -165,7 +279,7 @@ function FlowsTable({
                                     </FlexItem>
                                     {row.isAnomalous && (
                                         <FlexItem>
-                                            <ExclamationCircleIcon className="pf-u-danger-color-100" />
+                                            <AnomalousIcon type={row.type} />
                                         </FlexItem>
                                     )}
                                 </Flex>
@@ -219,10 +333,18 @@ function FlowsTable({
                                         <Td>
                                             <ExpandableRowContent>
                                                 <Flex direction={{ default: 'row' }}>
-                                                    <FlexItem>{child.entity}</FlexItem>
-                                                    {row.isAnomalous && (
+                                                    <FlexItem>
+                                                        <Button
+                                                            variant="link"
+                                                            isInline
+                                                            onClick={onSelectFlowHandler(child)}
+                                                        >
+                                                            {child.entity}
+                                                        </Button>
+                                                    </FlexItem>
+                                                    {child.isAnomalous && (
                                                         <FlexItem>
-                                                            <ExclamationCircleIcon className="pf-u-danger-color-100" />
+                                                            <AnomalousIcon type={child.type} />
                                                         </FlexItem>
                                                     )}
                                                 </Flex>
@@ -249,6 +371,20 @@ function FlowsTable({
                     </Tbody>
                 );
             })}
+            {numExtraneousEgressFlows > 0 && (
+                <ExtraneousFlowsRow
+                    isEditable
+                    numExtraneousEgressFlows={numExtraneousEgressFlows}
+                    direction="Egress"
+                />
+            )}
+            {numExtraneousIngressFlows > 0 && (
+                <ExtraneousFlowsRow
+                    isEditable
+                    numExtraneousEgressFlows={numExtraneousIngressFlows}
+                    direction="Ingress"
+                />
+            )}
         </TableComposable>
     );
 }

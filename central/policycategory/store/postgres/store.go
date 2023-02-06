@@ -60,6 +60,7 @@ type Store interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.PolicyCategory, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.PolicyCategory, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
+	GetAll(ctx context.Context) ([]*storage.PolicyCategory, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error
 
@@ -500,6 +501,18 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	}
 
 	return identifiers, nil
+}
+
+// GetAll retrieves all objects from the store.
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.PolicyCategory, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "PolicyCategory")
+
+	var objs []*storage.PolicyCategory
+	err := s.Walk(ctx, func(obj *storage.PolicyCategory) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 // Walk iterates over all of the objects in the store and applies the closure.

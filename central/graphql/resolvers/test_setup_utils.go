@@ -60,7 +60,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func setupPostgresConn(t testing.TB) (*pgxpool.Pool, *gorm.DB) {
+// SetupTestPostgresConn sets up postgres db for testing
+func SetupTestPostgresConn(t testing.TB) (*pgxpool.Pool, *gorm.DB) {
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
 	assert.NoError(t, err)
@@ -73,7 +74,8 @@ func setupPostgresConn(t testing.TB) (*pgxpool.Pool, *gorm.DB) {
 	return pool, gormDB
 }
 
-func setupResolver(t testing.TB, datastores ...interface{}) (*Resolver, *graphql.Schema) {
+// SetupTestResolver creates a graphQL resolver and schema for testing
+func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *graphql.Schema) {
 	resolver := &Resolver{}
 	for _, datastoreI := range datastores {
 		switch ds := datastoreI.(type) {
@@ -122,7 +124,8 @@ func setupResolver(t testing.TB, datastores ...interface{}) (*Resolver, *graphql
 	return resolver, schema
 }
 
-func createImageDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) imageDS.DataStore {
+// CreateTestImageDatastore creates image datastore for testing
+func CreateTestImageDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) imageDS.DataStore {
 	ctx := context.Background()
 	imagePostgres.Destroy(ctx, db)
 
@@ -135,7 +138,8 @@ func createImageDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl 
 	)
 }
 
-func createImageComponentDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) imageComponentDS.DataStore {
+// CreateTestImageComponentDatastore creates imageComponent datastore for testing
+func CreateTestImageComponentDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) imageComponentDS.DataStore {
 	ctx := context.Background()
 	imageComponentPostgres.Destroy(ctx, db)
 
@@ -149,7 +153,8 @@ func createImageComponentDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.
 	)
 }
 
-func createImageCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) imageCVEDS.DataStore {
+// CreateTestImageCVEDatastore creates imageCVE datastore for testing
+func CreateTestImageCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) imageCVEDS.DataStore {
 	ctx := context.Background()
 	imageCVEPostgres.Destroy(ctx, db)
 
@@ -162,7 +167,8 @@ func createImageCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) im
 	return datastore
 }
 
-func createImageComponentCVEEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) imageComponentCVEEdgeDS.DataStore {
+// CreateTestImageComponentCVEEdgeDatastore creates edge datastore for edge table between imageComponent and imageCVE
+func CreateTestImageComponentCVEEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) imageComponentCVEEdgeDS.DataStore {
 	ctx := context.Background()
 	imageComponentCVEEdgePostgres.Destroy(ctx, db)
 
@@ -173,7 +179,8 @@ func createImageComponentCVEEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB
 	return imageComponentCVEEdgeDS.New(nil, storage, indexer, searcher)
 }
 
-func createImageCVEEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) imageCVEEdgeDS.DataStore {
+// CreateTestImageCVEEdgeDatastore creates edge datastore for edge table between image and imageCVE
+func CreateTestImageCVEEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) imageCVEEdgeDS.DataStore {
 	ctx := context.Background()
 	imageCVEEdgePostgres.Destroy(ctx, db)
 
@@ -183,7 +190,8 @@ func createImageCVEEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB
 	return imageCVEEdgeDS.New(nil, storage, searcher)
 }
 
-func createDeploymentDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller, imageDatastore imageDS.DataStore) deploymentDatastore.DataStore {
+// CreateTestDeploymentDatastore creates deployment datastore for testing
+func CreateTestDeploymentDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller, imageDatastore imageDS.DataStore) deploymentDatastore.DataStore {
 	ctx := context.Background()
 	deploymentPostgres.Destroy(ctx, db)
 
@@ -194,7 +202,8 @@ func createDeploymentDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, 
 	return ds
 }
 
-func createClusterCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) clusterCVEDataStore.DataStore {
+// CreateTestClusterCVEDatastore creates clusterCVE datastore for testing
+func CreateTestClusterCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) clusterCVEDataStore.DataStore {
 	ctx := context.Background()
 	clusterCVEPostgres.Destroy(ctx, db)
 
@@ -206,7 +215,8 @@ func createClusterCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) 
 	return datastore
 }
 
-func createClusterCVEEdgeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) clusterCVEEdgeDataStore.DataStore {
+// CreateTestClusterCVEEdgeDatastore creates edge datastore for edge table between cluster and clusterCVE
+func CreateTestClusterCVEEdgeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) clusterCVEEdgeDataStore.DataStore {
 	ctx := context.Background()
 	clusterCVEEdgePostgres.Destroy(ctx, db)
 
@@ -218,7 +228,8 @@ func createClusterCVEEdgeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.
 	return datastore
 }
 
-func createNamespaceDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) namespaceDataStore.DataStore {
+// CreateTestNamespaceDatastore creates namespace datastore for testing
+func CreateTestNamespaceDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) namespaceDataStore.DataStore {
 	ctx := context.Background()
 	namespacePostgres.Destroy(ctx, db)
 
@@ -229,7 +240,8 @@ func createNamespaceDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) n
 	return datastore
 }
 
-func createClusterDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller,
+// CreateTestClusterDatastore creates cluster datastore for testing
+func CreateTestClusterDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller,
 	clusterCVEDS clusterCVEDataStore.DataStore, namespaceDS namespaceDataStore.DataStore, nodeDataStore nodeDS.DataStore) clusterDataStore.DataStore {
 	ctx := context.Background()
 	clusterPostgres.Destroy(ctx, db)
@@ -250,7 +262,8 @@ func createClusterDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctr
 	return datastore
 }
 
-func createNodeCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) nodeCVEDataStore.DataStore {
+// CreateTestNodeCVEDatastore creates nodeCVE datastore for testing
+func CreateTestNodeCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) nodeCVEDataStore.DataStore {
 	ctx := context.Background()
 	nodeCVEPostgres.Destroy(ctx, db)
 
@@ -262,7 +275,8 @@ func createNodeCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) nod
 	return datastore
 }
 
-func createNodeComponentDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) nodeComponentDataStore.DataStore {
+// CreateTestNodeComponentDatastore creates nodeComponent datastore for testing
+func CreateTestNodeComponentDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) nodeComponentDataStore.DataStore {
 	ctx := context.Background()
 	nodeComponentPostgres.Destroy(ctx, db)
 
@@ -273,7 +287,8 @@ func createNodeComponentDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.D
 	return nodeComponentDataStore.New(storage, indexer, searcher, mockRisk, ranking.NewRanker())
 }
 
-func createNodeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) nodeDS.DataStore {
+// CreateTestNodeDatastore creates node datastore for testing
+func CreateTestNodeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *gomock.Controller) nodeDS.DataStore {
 	ctx := context.Background()
 	nodePostgres.Destroy(ctx, db)
 
@@ -284,7 +299,8 @@ func createNodeDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, ctrl *
 	return nodeDS.NewWithPostgres(storage, indexer, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 }
 
-func createNodeComponentCveEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) nodeComponentCVEEdgeDataStore.DataStore {
+// CreateTestNodeComponentCveEdgeDatastore creates edge datastore for edge table between nodeComponent and nodeCVE
+func CreateTestNodeComponentCveEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) nodeComponentCVEEdgeDataStore.DataStore {
 	ctx := context.Background()
 	nodeComponentCVEEdgePostgres.Destroy(ctx, db)
 

@@ -69,7 +69,7 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.5')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.8')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
@@ -89,7 +89,7 @@ dependencies {
 
     implementation 'io.kubernetes:client-java:17.0.0'
 
-    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.2.13'
+    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.2.14'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'

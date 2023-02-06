@@ -70,6 +70,10 @@ func (*fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
 	panic("implement me")
 }
 
+func (*fakeNodeScanner) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error) {
+	panic("implement me")
+}
+
 func (*fakeNodeScanner) TestNodeScanner() error {
 	return nil
 }

@@ -3,6 +3,7 @@ import {
     Alert,
     AlertVariant,
     Bullseye,
+    Button,
     Checkbox,
     Divider,
     Flex,
@@ -18,6 +19,9 @@ import {
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
+import download from 'utils/download';
+import { Deployment } from 'types/deployment.proto';
+import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { filterNetworkFlows, getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 
@@ -32,13 +36,15 @@ import useFetchNetworkBaselines from '../api/useFetchNetworkBaselines';
 import { Flow } from '../types/flow.type';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
-import SimulateBaselinesButton from './SimulateBaselinesButton';
+import useFetchBaselineNetworkPolicy from '../api/useFetchBaselineNetworkPolicy';
 
 type DeploymentBaselinesProps = {
+    deployment: Deployment;
     deploymentId: string;
+    onNodeSelect: (id: string) => void;
 };
 
-function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
+function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: DeploymentBaselinesProps) {
     // component state
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
@@ -63,6 +69,15 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
         error: toggleError,
         toggleAlertingOnBaselineViolation,
     } = useToggleAlertingOnBaselineViolation(deploymentId);
+    const {
+        isLoading: isLoadingNetworkPolicy,
+        error: networkPolicyError,
+        fetchBaselineNetworkPolicy,
+    } = useFetchBaselineNetworkPolicy({
+        deploymentId,
+        includePorts: !isExcludingPortsAndProtocols,
+    });
+
     const filteredNetworkBaselines = filterNetworkFlows(
         networkBaselines,
         entityNameFilter,
@@ -77,7 +92,12 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
 
     // derived data
     const numBaselines = getNumFlows(filteredNetworkBaselines);
-    const allUniquePorts = getAllUniquePorts(filteredNetworkBaselines);
+    const allUniquePorts = getAllUniquePorts(networkBaselines);
+    const errorMessage = networkPolicyError || fetchError || modifyError || toggleError;
+
+    const onSelectFlow = (entityId: string) => {
+        onNodeSelect(entityId);
+    };
 
     function addToBaseline(flow: Flow) {
         modifyBaselineStatuses([flow], 'BASELINE', refetchBaselines);
@@ -105,6 +125,19 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
         toggleAlertingOnBaselineViolation(!isAlertingOnBaselineViolation, refetchBaselines);
     }
 
+    function downloadBaselineNetworkPolicy(baselineModification: NetworkPolicyModification) {
+        const currentDateString = new Date().toISOString();
+        download(
+            `${deployment.name}-network-policy-${currentDateString}.yaml`,
+            baselineModification.applyYaml,
+            'yaml'
+        );
+    }
+
+    function downloadBaselineNetworkPolicyHandler() {
+        fetchBaselineNetworkPolicy(downloadBaselineNetworkPolicy);
+    }
+
     if (isLoading || isModifying || isToggling) {
         return (
             <Bullseye>
@@ -114,17 +147,17 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
     }
 
     return (
-        <div className="pf-u-h-100">
-            {(fetchError || modifyError || toggleError) && (
+        <div className="pf-u-h-100 pf-u-p-md">
+            {errorMessage && (
                 <Alert
                     isInline
                     variant={AlertVariant.danger}
-                    title={fetchError || modifyError || toggleError}
+                    title={errorMessage}
                     className="pf-u-mb-sm"
                 />
             )}
-            <Stack hasGutter className="pf-u-p-md">
-                <StackItem>
+            <Stack>
+                <StackItem className="pf-u-pb-md">
                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                         <FlexItem>
                             <Switch
@@ -148,7 +181,6 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                         </FlexItem>
                     </Flex>
                 </StackItem>
-                <Divider component="hr" />
                 <StackItem>
                     <Flex>
                         <FlexItem flex={{ default: 'flex_1' }}>
@@ -159,6 +191,7 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                         </FlexItem>
                         <FlexItem>
                             <AdvancedFlowsFilter
+                                isBaseline
                                 filters={advancedFilters}
                                 setFilters={setAdvancedFilters}
                                 allUniquePorts={allUniquePorts}
@@ -166,10 +199,10 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                         </FlexItem>
                     </Flex>
                 </StackItem>
-                <Divider component="hr" />
-                <StackItem>
-                    <Toolbar>
-                        <ToolbarContent>
+                <Divider component="hr" className="pf-u-py-md" />
+                <StackItem className="pf-u-pb-md">
+                    <Toolbar className="pf-u-p-0">
+                        <ToolbarContent className="pf-u-px-0">
                             <ToolbarItem>
                                 <FlowsTableHeaderText type="baseline" numFlows={numBaselines} />
                             </ToolbarItem>
@@ -185,7 +218,6 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                         </ToolbarContent>
                     </Toolbar>
                 </StackItem>
-                <Divider component="hr" />
                 <StackItem>
                     <FlowsTable
                         label="Deployment baselines"
@@ -198,9 +230,10 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                         addToBaseline={addToBaseline}
                         markAsAnomalous={markAsAnomalous}
                         isEditable
+                        onSelectFlow={onSelectFlow}
                     />
                 </StackItem>
-                <StackItem>
+                <StackItem className="pf-u-pt-md">
                     <Flex
                         className="pf-u-pb-md"
                         direction={{ default: 'column' }}
@@ -217,7 +250,13 @@ function DeploymentBaselines({ deploymentId }: DeploymentBaselinesProps) {
                             />
                         </FlexItem>
                         <FlexItem>
-                            <SimulateBaselinesButton />
+                            <Button
+                                variant="primary"
+                                onClick={downloadBaselineNetworkPolicyHandler}
+                                isLoading={isLoadingNetworkPolicy}
+                            >
+                                Download baseline as network policy
+                            </Button>
                         </FlexItem>
                     </Flex>
                 </StackItem>

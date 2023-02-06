@@ -22,6 +22,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
+		// TODO: ROX-14398 Replace Role with Access
 		user.With(permissions.View(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role), permissions.View(resources.Image)): {
 			"/v1.ReportService/RunReport",
 		},

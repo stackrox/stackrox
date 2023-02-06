@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -107,6 +106,7 @@ var defaultRoles = map[string]roleAttributes{
 		postgresID:  nonePermissionSetID,
 		description: "For users: use it to provide no read and write access to any resource",
 	},
+	// TODO: ROX-14398 Remove ScopeManager default role
 	rolePkg.ScopeManager: {
 		idSuffix:    "scopemanager",
 		postgresID:  scopeManagerPermissionSetID,
@@ -152,12 +152,13 @@ var defaultRoles = map[string]roleAttributes{
 
 // TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
 var vulnReportingDefaultRoles = map[string]roleAttributes{
+	// TODO: ROX-14398 Remove Role permission from default role VulnReporter
 	rolePkg.VulnReporter: {
 		idSuffix:    "vulnreporter",
 		postgresID:  vulnReporterPermissionSetID,
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
-			if !features.ObjectCollections.Enabled() {
+			if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				return []permissions.ResourceWithAccess{
 					permissions.View(resources.Role),                   // required for scopes
 					permissions.View(resources.Integration),            // required for vuln report configurations

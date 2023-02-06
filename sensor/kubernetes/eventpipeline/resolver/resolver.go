@@ -6,10 +6,10 @@ import (
 )
 
 // New instantiates a Resolver component
-func New(outputQueue component.OutputQueue, provider store.Provider) component.Resolver {
+func New(outputQueue component.OutputQueue, provider store.Provider, queueSize int) component.Resolver {
 	return &resolverImpl{
 		outputQueue:   outputQueue,
-		innerQueue:    make(chan *component.ResourceEvent),
+		innerQueue:    make(chan *component.ResourceEvent, queueSize),
 		storeProvider: provider,
 	}
 }

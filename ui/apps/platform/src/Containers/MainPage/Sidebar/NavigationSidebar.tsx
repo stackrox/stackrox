@@ -1,6 +1,14 @@
 import React, { ReactElement } from 'react';
 import { useLocation, Location } from 'react-router-dom';
-import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core';
+import {
+    Nav,
+    NavList,
+    NavExpandable,
+    PageSidebar,
+    Flex,
+    FlexItem,
+    Badge,
+} from '@patternfly/react-core';
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -59,18 +67,13 @@ function NavigationSidebar({
         systemHealthPath,
     ];
 
-    if (isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS') && hasReadAccess('WorkflowAdministration')) {
+    if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE') && hasReadAccess('WorkflowAdministration')) {
         // Insert 'Collections' after 'Policy Management'
         platformConfigurationPaths.splice(
             platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,
             0,
             collectionsBasePath
         );
-    }
-
-    // TODO remove this temporary extra config menu item when the PF network graph goes live in the main menu
-    if (isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY')) {
-        platformConfigurationPaths.push(networkBasePathPF);
     }
 
     const Navigation = (
@@ -81,6 +84,26 @@ function NavigationSidebar({
                     path={dashboardPath}
                     title={basePathToLabelMap[dashboardPath]}
                 />
+                {isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY') && (
+                    <LeftNavItem
+                        isActive={location.pathname.includes(networkBasePathPF)}
+                        path={networkBasePathPF}
+                        title={
+                            <Flex>
+                                <FlexItem>Network Graph</FlexItem>
+                                <FlexItem>
+                                    <Badge
+                                        style={{
+                                            backgroundColor: 'var(--pf-global--palette--cyan-400)',
+                                        }}
+                                    >
+                                        2.0 preview
+                                    </Badge>
+                                </FlexItem>
+                            </Flex>
+                        }
+                    />
+                )}
                 <LeftNavItem
                     isActive={
                         location.pathname.includes(networkBasePath) &&

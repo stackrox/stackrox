@@ -1,7 +1,10 @@
 package nodeinventorizer
 
 import (
+	"time"
+
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/scanner/database"
@@ -21,21 +24,30 @@ type NodeInventoryCollector struct {
 
 // Scan scans the current node and returns the results as storage.NodeInventory object
 func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, error) {
-	log.Info("Started node inventory")
+	metrics.ObserveScansTotal(nodeName)
+	startTime := time.Now()
+
 	// uncertifiedRHEL is set to false, as scans are only supported on RHCOS for now,
 	// which only exists in certified versions
 	componentsHost, err := nodes.Analyze(nodeName, "/host/", nodes.AnalyzeOpts{UncertifiedRHEL: false, IsRHCOSRequired: true})
+
+	scanDuration := time.Since(startTime)
+	metrics.ObserveScanDuration(scanDuration, nodeName, err)
+	log.Debugf("Collecting Node Inventory took %f seconds", scanDuration.Seconds())
+
 	if err != nil {
 		log.Errorf("Error scanning node /host inventory: %v", err)
 		return nil, err
 	}
-	log.Info("Finished node inventory")
 	log.Debugf("Components found under /host: %v", componentsHost)
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
 	if protoComponents == nil {
 		log.Warn("Empty components returned from NodeInventory")
+	} else {
+		log.Infof("Node inventory has been built with %d packages and %d content sets",
+			len(protoComponents.GetRhelComponents()), len(protoComponents.GetRhelContentSets()))
 	}
 
 	// uncertifiedRHEL is false since scanning is only supported on RHCOS for now,
@@ -49,6 +61,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 		Notes:      []storage.NodeInventory_Note{storage.NodeInventory_LANGUAGE_CVES_UNAVAILABLE},
 	}
 
+	metrics.ObserveNodeInventoryScan(m)
 	return m, nil
 }
 
@@ -66,11 +79,17 @@ func protoComponentsFromScanComponents(c *nodes.Components) *storage.NodeInvento
 	}
 
 	// For now, we only care about RHEL components, but this must be extended once we support non-RHCOS
-	rhelComponents := convertAndDedupRHELComponents(c.CertifiedRHELComponents)
+	var rhelComponents []*storage.NodeInventory_Components_RHELComponent
+	var contentSets []string
+	if c.CertifiedRHELComponents != nil {
+		rhelComponents = convertAndDedupRHELComponents(c.CertifiedRHELComponents)
+		contentSets = c.CertifiedRHELComponents.ContentSets
+	}
 
 	protoComponents := &storage.NodeInventory_Components{
-		Namespace:      namespace,
-		RhelComponents: rhelComponents,
+		Namespace:       namespace,
+		RhelComponents:  rhelComponents,
+		RhelContentSets: contentSets,
 	}
 	return protoComponents
 }

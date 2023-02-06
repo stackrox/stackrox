@@ -48,7 +48,6 @@ export const systemHealthPath = `${mainPath}/system-health`;
 export const systemHealthPathPF = `${mainPath}/system-health-pf`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const productDocsPath = '/docs/product';
 
 // Configuration Management
 
@@ -148,15 +147,14 @@ const vulnManagementPathToLabelMap = {
 
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
-    [networkBasePath]: 'Network Graph',
-    [networkBasePathPF]: 'Network Graph-Patternfly',
+    [networkBasePath]: 'Network Graph (1.0)',
+    [networkBasePathPF]: 'Network Graph (2.0 preview)',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
     [riskBasePath]: 'Risk',
     [apidocsPath]: 'API Reference',
-    [productDocsPath]: 'Help Center',
     [clustersBasePath]: 'Clusters',
     [policyManagementBasePath]: 'Policy Management',
     [policiesBasePath]: 'Policy Management',

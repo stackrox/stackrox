@@ -132,7 +132,7 @@ create_cluster() {
         gcloud config set compute/zone "${zone}"
         status=0
         # shellcheck disable=SC2153
-        timeout 630 gcloud beta container clusters create \
+        timeout 830 gcloud beta container clusters create \
             --machine-type "${MACHINE_TYPE}" \
             --num-nodes "${NUM_NODES}" \
             --disk-type=pd-standard \

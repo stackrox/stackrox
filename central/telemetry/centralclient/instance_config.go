@@ -9,6 +9,9 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -46,7 +49,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	trackedPaths = strings.Split(apiWhiteList.Setting(), ",")
 
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
-	if env.OpenshiftAPI.BooleanSetting() {
+	if env.Openshift.BooleanSetting() {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
@@ -79,6 +82,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,
 			"Kubernetes version": v.GitVersion,
+			"Managed":            env.ManagedCentral.BooleanSetting(),
 		}, nil
 }
 
@@ -114,4 +118,41 @@ func InstanceConfig() *phonehome.Config {
 		})
 	})
 	return config
+}
+
+// RegisterCentralClient adds call interceptors, adds central and admin user
+// to the tenant group.
+func RegisterCentralClient(config grpc.Config, basicAuthProviderID string) {
+	cfg := InstanceConfig()
+	if !cfg.Enabled() {
+		return
+	}
+	registerInterceptors(config)
+	// Central adds itself to the tenant group, with no group properties:
+	cfg.Telemeter().GroupUserAs(cfg.ClientID, "", "", cfg.GroupID, nil)
+	registerAdminUser(basicAuthProviderID)
+}
+
+func registerInterceptors(config grpc.Config) {
+	cfg := InstanceConfig()
+	config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
+	config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
+}
+
+// registerAdminUser adds the local admin user to the tenant group.
+// This user is not added to the datastore like other users, so we need to add
+// it to the tenant group specifically.
+func registerAdminUser(basicAuthProviderID string) {
+	cfg := InstanceConfig()
+
+	// Add the basic authorization ID form ('admin'):
+	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
+	cfg.Telemeter().GroupUserAs(adminHash, "", "", cfg.GroupID, nil)
+
+	// Add the token based ID form ('sso:<provider id>:admin'):
+	adminTokenHash := cfg.HashUserID(
+		tokenbased.FormatUserID(basic.DefaultUsername, basicAuthProviderID),
+		basicAuthProviderID,
+	)
+	cfg.Telemeter().GroupUserAs(adminTokenHash, "", "", cfg.GroupID, nil)
 }

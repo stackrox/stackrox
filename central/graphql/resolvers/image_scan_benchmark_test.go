@@ -81,15 +81,15 @@ func BenchmarkImageResolver(b *testing.B) {
 
 	mockCtrl := gomock.NewController(b)
 	defer mockCtrl.Finish()
-	db, gormDB := setupPostgresConn(b)
+	db, gormDB := SetupTestPostgresConn(b)
 	defer pgtest.CloseGormDB(b, gormDB)
 	defer db.Close()
 
-	resolver, schema := setupResolver(b,
-		createImageDatastore(b, db, gormDB, mockCtrl),
-		createImageComponentDatastore(b, db, gormDB, mockCtrl),
-		createImageCVEDatastore(b, db, gormDB),
-		createImageComponentCVEEdgeDatastore(b, db, gormDB),
+	resolver, schema := SetupTestResolver(b,
+		CreateTestImageDatastore(b, db, gormDB, mockCtrl),
+		CreateTestImageComponentDatastore(b, db, gormDB, mockCtrl),
+		CreateTestImageCVEDatastore(b, db, gormDB),
+		CreateTestImageComponentCVEEdgeDatastore(b, db, gormDB),
 	)
 	ctx := contextWithImagePerm(b, mockCtrl)
 

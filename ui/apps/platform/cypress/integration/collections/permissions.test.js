@@ -11,13 +11,13 @@ describe('Collection permission checks', () => {
     const collectionName = 'Permission test collection';
 
     beforeEach(function beforeHook() {
-        if (!hasFeatureFlag('ROX_OBJECT_COLLECTIONS')) {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
     });
 
     // Ensure a collection exists in the system for permission tests
-    if (hasFeatureFlag('ROX_OBJECT_COLLECTIONS')) {
+    if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
         before(() => {
             const rules = [
                 { fieldName: 'Namespace', values: [{ value: 'stackrox' }], operator: 'OR' },

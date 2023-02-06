@@ -2,6 +2,8 @@ import React from 'react';
 import {
     Flex,
     FlexItem,
+    Stack,
+    StackItem,
     Tab,
     TabContent,
     Tabs,
@@ -12,7 +14,12 @@ import {
 } from '@patternfly/react-core';
 
 import useTabs from 'hooks/patternfly/useTabs';
-import { getDeploymentNodesInNamespace, getNumDeploymentFlows } from '../utils/networkGraphUtils';
+import { uniq } from 'lodash';
+import {
+    getDeploymentNodesInNamespace,
+    getNodeById,
+    getNumDeploymentFlows,
+} from '../utils/networkGraphUtils';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
@@ -23,20 +30,24 @@ type NamespaceSideBarProps = {
     namespaceId: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    onNodeSelect: (id: string) => void;
 };
 
-function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) {
+function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: NamespaceSideBarProps) {
     // component state
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'Deployments',
     });
 
     // derived state
+    const namespaceNode = getNodeById(nodes, namespaceId);
     const deploymentNodes = getDeploymentNodesInNamespace(nodes, namespaceId);
+    const cluster = namespaceNode?.data.type === 'NAMESPACE' ? namespaceNode.data.cluster : '';
 
     const deployments = deploymentNodes.map((deploymentNode) => {
         const numFlows = getNumDeploymentFlows(edges, deploymentNode.id);
         return {
+            id: deploymentNode.id,
             name: deploymentNode.label as string,
             numFlows,
         };
@@ -45,30 +56,35 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
         const policyIds: string[] = curr?.data?.policyIds || [];
         return [...acc, ...policyIds];
     }, [] as string[]);
+    const uniqueNamespacePolicyIds = uniq(namespacePolicyIds);
 
     return (
-        <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
-            <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
-                <FlexItem>
-                    <NamespaceIcon />
-                </FlexItem>
-                <FlexItem>
-                    <TextContent>
-                        <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                            stackrox
-                        </Text>
-                    </TextContent>
-                    <TextContent>
-                        <Text
-                            component={TextVariants.h2}
-                            className="pf-u-font-size-sm pf-u-color-200"
-                        >
-                            in &quot;remote&quot;
-                        </Text>
-                    </TextContent>
-                </FlexItem>
-            </Flex>
-            <FlexItem flex={{ default: 'flex_1' }}>
+        <Stack>
+            <StackItem>
+                <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                    <FlexItem>
+                        <NamespaceIcon />
+                    </FlexItem>
+                    <FlexItem>
+                        <TextContent>
+                            <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                                {namespaceNode?.label}
+                            </Text>
+                        </TextContent>
+                        <TextContent>
+                            <Text
+                                component={TextVariants.h2}
+                                className="pf-u-font-size-sm pf-u-color-200"
+                            >
+                                in &quot;
+                                {cluster}
+                                &quot;
+                            </Text>
+                        </TextContent>
+                    </FlexItem>
+                </Flex>
+            </StackItem>
+            <StackItem>
                 <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
                     <Tab
                         eventKey="Deployments"
@@ -81,12 +97,14 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
                         title={<TabTitleText>Network policies</TabTitleText>}
                     />
                 </Tabs>
+            </StackItem>
+            <StackItem isFilled style={{ overflow: 'auto' }}>
                 <TabContent
                     eventKey="Deployments"
                     id="Deployments"
                     hidden={activeKeyTab !== 'Deployments'}
                 >
-                    <NamespaceDeployments deployments={deployments} />
+                    <NamespaceDeployments deployments={deployments} onNodeSelect={onNodeSelect} />
                 </TabContent>
                 <TabContent
                     eventKey="Network policies"
@@ -94,10 +112,10 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
                     hidden={activeKeyTab !== 'Network policies'}
                     className="pf-u-h-100"
                 >
-                    <NetworkPolicies policyIds={namespacePolicyIds} />
+                    <NetworkPolicies policyIds={uniqueNamespacePolicyIds} />
                 </TabContent>
-            </FlexItem>
-        </Flex>
+            </StackItem>
+        </Stack>
     );
 }
 

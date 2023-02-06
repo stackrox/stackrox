@@ -45,6 +45,7 @@ import (
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
+	"github.com/stackrox/rox/central/declarativeconfig"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -166,7 +167,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -394,17 +394,10 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
-
-		if features.ObjectCollections.Enabled() {
-			servicesToRegister = append(servicesToRegister, collectionService.Singleton())
-		}
-
+		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
+		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
-	}
-
-	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
-		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -486,6 +479,10 @@ func startGRPCServer() {
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
+	if features.DeclarativeConfiguration.Enabled() {
+		declarativeconfig.ManagerSingleton().WatchDeclarativeConfigDir()
+	}
+
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
 	if err != nil {
@@ -538,14 +535,7 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
-		config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
-		// Central adds itself to the tenant group, with no group properties:
-		cfg.Telemeter().Group(cfg.GroupID, cfg.ClientID, nil)
-		// Add the local admin user as well, with no extra group properties:
-		cfg.Telemeter().Group(cfg.GroupID, cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), nil)
-	}
+	centralclient.RegisterCentralClient(config, basicAuthProvider.ID())
 
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,

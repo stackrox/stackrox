@@ -20,20 +20,29 @@ import {
     TextVariants,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
 import { Deployment } from 'types/deployment.proto';
 import { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
+import { NetworkPolicyState } from 'Containers/NetworkGraph/types/topology.type';
 
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
+
+import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
+import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
+import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
+import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
+import { deploymentTabs } from '../utils/deploymentUtils';
 
 type DeploymentDetailsProps = {
     deployment: Deployment;
     numExternalFlows: number;
     numInternalFlows: number;
     listenPorts: ListenPort[];
+    networkPolicyState: NetworkPolicyState;
+    onDeploymentTabsSelect: (tab: string) => void;
 };
 
 function DetailSection({ title, children }) {
@@ -49,7 +58,7 @@ function DetailSection({ title, children }) {
             onToggle={onToggle}
             toggleContent={
                 <TextContent>
-                    <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                    <Text component={TextVariants.h1} className="pf-u-font-size-lg">
                         {title}
                     </Text>
                 </TextContent>
@@ -65,7 +74,16 @@ function DeploymentDetails({
     numExternalFlows,
     numInternalFlows,
     listenPorts,
+    networkPolicyState,
+    onDeploymentTabsSelect,
 }: DeploymentDetailsProps) {
+    const labelKeys = Object.keys(deployment.labels);
+    const annotationKeys = Object.keys(deployment.annotations);
+
+    const onNetworkPoliciesTabSelect = () => {
+        onDeploymentTabsSelect(deploymentTabs.NETWORK_POLICIES);
+    };
+
     return (
         <div className="pf-u-h-100 pf-u-p-md">
             <ul>
@@ -79,51 +97,132 @@ function DeploymentDetails({
                                         direction={{ default: 'row' }}
                                         alignItems={{ default: 'alignItemsCenter' }}
                                     >
-                                        <FlexItem>
-                                            <Label
-                                                variant="outline"
-                                                color="red"
-                                                icon={<ExclamationCircleIcon />}
-                                            >
-                                                {numExternalFlows} external{' '}
-                                                {pluralize('flow', numExternalFlows)}
-                                            </Label>
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Label
-                                                variant="outline"
-                                                color="gold"
-                                                icon={<ExclamationCircleIcon />}
-                                            >
-                                                {numInternalFlows} internal{' '}
-                                                {pluralize('flow', numInternalFlows)}
-                                            </Label>
-                                        </FlexItem>
+                                        {numExternalFlows !== 0 && (
+                                            <FlexItem>
+                                                <Label
+                                                    variant="outline"
+                                                    color="red"
+                                                    icon={<ExclamationCircleIcon />}
+                                                >
+                                                    {numExternalFlows} external{' '}
+                                                    {pluralize('flow', numExternalFlows)}
+                                                </Label>
+                                            </FlexItem>
+                                        )}
+                                        {numInternalFlows !== 0 && (
+                                            <FlexItem>
+                                                <Label
+                                                    variant="outline"
+                                                    color="gold"
+                                                    icon={<ExclamationTriangleIcon />}
+                                                >
+                                                    {numInternalFlows} internal{' '}
+                                                    {pluralize('flow', numInternalFlows)}
+                                                </Label>
+                                            </FlexItem>
+                                        )}
                                     </Flex>
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Network policy rules</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    <Flex
-                                        direction={{ default: 'row' }}
-                                        alignItems={{ default: 'alignItemsCenter' }}
-                                    >
-                                        <FlexItem>
+                                    {networkPolicyState === 'both' && (
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            onClick={onNetworkPoliciesTabSelect}
+                                        >
                                             <Label
                                                 variant="outline"
-                                                color="gold"
-                                                icon={<ExclamationCircleIcon />}
+                                                color="blue"
+                                                icon={
+                                                    <BothPolicyRules width="22px" height="22px" />
+                                                }
                                             >
-                                                0 egress, allowing 325 flows
+                                                1 or more policies regulating bidirectional traffic
                                             </Label>
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Label variant="outline" color="blue">
-                                                1 egress
+                                        </Button>
+                                    )}
+                                    {networkPolicyState === 'egress' && (
+                                        <LabelGroup>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onNetworkPoliciesTabSelect}
+                                            >
+                                                <Label
+                                                    variant="outline"
+                                                    color="red"
+                                                    icon={
+                                                        <NoPolicyRules width="22px" height="22px" />
+                                                    }
+                                                >
+                                                    A missing policy is allowing all ingress traffic
+                                                </Label>
+                                            </Button>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onNetworkPoliciesTabSelect}
+                                            >
+                                                <Label
+                                                    variant="outline"
+                                                    color="blue"
+                                                    icon={<EgressOnly width="22px" height="22px" />}
+                                                >
+                                                    1 or more policies regulating egress traffic
+                                                </Label>
+                                            </Button>
+                                        </LabelGroup>
+                                    )}
+                                    {networkPolicyState === 'ingress' && (
+                                        <LabelGroup>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onNetworkPoliciesTabSelect}
+                                            >
+                                                <Label
+                                                    variant="outline"
+                                                    icon={
+                                                        <NoPolicyRules width="22px" height="22px" />
+                                                    }
+                                                >
+                                                    A missing policy is allowing all egress traffic
+                                                </Label>
+                                            </Button>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                onClick={onNetworkPoliciesTabSelect}
+                                            >
+                                                <Label
+                                                    variant="outline"
+                                                    color="blue"
+                                                    icon={
+                                                        <IngressOnly width="22px" height="22px" />
+                                                    }
+                                                >
+                                                    1 or more policies regulating ingress traffic
+                                                </Label>
+                                            </Button>
+                                        </LabelGroup>
+                                    )}
+                                    {networkPolicyState === 'none' && (
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            onClick={onNetworkPoliciesTabSelect}
+                                        >
+                                            <Label
+                                                variant="outline"
+                                                icon={<NoPolicyRules width="22px" height="22px" />}
+                                            >
+                                                A missing policy is allowing all network traffic
                                             </Label>
-                                        </FlexItem>
-                                    </Flex>
+                                        </Button>
+                                    )}
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
@@ -141,7 +240,10 @@ function DeploymentDetails({
                                                         ''
                                                     );
                                                     return (
-                                                        <Label variant="outline">
+                                                        <Label
+                                                            variant="outline"
+                                                            key={`${port}-${protocol}`}
+                                                        >
                                                             {protocol}: {port}
                                                         </Label>
                                                     );
@@ -163,9 +265,7 @@ function DeploymentDetails({
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Name</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.name}
-                                            </Button>
+                                            {deployment.name}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
@@ -177,33 +277,25 @@ function DeploymentDetails({
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Cluster</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.clusterName}
-                                            </Button>
+                                            {deployment.clusterName}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Namespace</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.namespace}
-                                            </Button>
+                                            {deployment.namespace}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Replicas</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.replicas}
-                                            </Button>
+                                            {deployment.replicas}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Service account</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                {deployment.serviceAccount}
-                                            </Button>
+                                            {deployment.serviceAccount}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </DescriptionList>
@@ -213,25 +305,32 @@ function DeploymentDetails({
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Labels</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <LabelGroup>
-                                                {Object.keys(deployment.labels).map((labelKey) => {
-                                                    const labelValue = deployment.labels[labelKey];
-                                                    const label = `${labelKey}:${labelValue}`;
-                                                    return (
-                                                        <Label key={label} color="blue">
-                                                            {label}
-                                                        </Label>
-                                                    );
-                                                })}
-                                            </LabelGroup>
+                                            {labelKeys.length === 0 ? (
+                                                'None'
+                                            ) : (
+                                                <LabelGroup>
+                                                    {labelKeys.map((labelKey) => {
+                                                        const labelValue =
+                                                            deployment.labels[labelKey];
+                                                        const label = `${labelKey}:${labelValue}`;
+                                                        return (
+                                                            <Label key={label} color="blue">
+                                                                {label}
+                                                            </Label>
+                                                        );
+                                                    })}
+                                                </LabelGroup>
+                                            )}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Annotations</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <LabelGroup>
-                                                {Object.keys(deployment.annotations).map(
-                                                    (annotationKey) => {
+                                            {annotationKeys.length === 0 ? (
+                                                'None'
+                                            ) : (
+                                                <LabelGroup>
+                                                    {annotationKeys.map((annotationKey) => {
                                                         const annotationValue =
                                                             deployment.annotations[annotationKey];
                                                         const annotation = `${annotationKey}:${annotationValue}`;
@@ -240,9 +339,9 @@ function DeploymentDetails({
                                                                 {annotation}
                                                             </Label>
                                                         );
-                                                    }
-                                                )}
-                                            </LabelGroup>
+                                                    })}
+                                                </LabelGroup>
+                                            )}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </DescriptionList>
@@ -257,7 +356,7 @@ function DeploymentDetails({
                             <Stack hasGutter>
                                 {deployment.ports.map((port) => {
                                     return (
-                                        <StackItem>
+                                        <StackItem key={port.name}>
                                             <DeploymentPortConfig port={port} />
                                         </StackItem>
                                     );

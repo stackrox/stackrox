@@ -1,10 +1,17 @@
-import { Controller } from '@patternfly/react-topology';
-import { EntityType } from 'Containers/Network/networkTypes';
 import { uniq } from 'lodash';
+
+import { EntityType } from 'Containers/Network/networkTypes';
 import { L4Protocol } from 'types/networkFlow.proto';
+import { GroupedDiffFlows } from 'types/networkPolicyService';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow, Peer } from '../types/flow.type';
-import { CustomEdgeModel, CustomSingleNodeData } from '../types/topology.type';
+import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
+import {
+    CustomEdgeModel,
+    CustomNodeModel,
+    CustomSingleNodeData,
+    CustomSingleNodeModel,
+} from '../types/topology.type';
+import { getNodeById } from './networkGraphUtils';
 
 export const protocolLabel = {
     L4_PROTOCOL_UNKNOWN: 'UNKNOWN',
@@ -35,7 +42,7 @@ export function getNumFlows(flows: Flow[]): number {
     return numFlows;
 }
 
-function createUniqueFlowId({
+export function createUniqueFlowId({
     entityId,
     direction,
     port,
@@ -115,23 +122,18 @@ function createFlow({
   side panels
 */
 export function getNetworkFlows(
+    nodes: CustomNodeModel[],
     edges: CustomEdgeModel[],
-    controller: Controller,
     id: string
 ): Flow[] {
     const networkFlows: Flow[] = edges.reduce((acc, edge) => {
-        // filter out edges not connected to node with selected id
-        if ((edge.source !== id && edge.target !== id) || !edge.source || !edge.target) {
-            return acc;
-        }
-
         const isSourceNodeSelected = edge.source === id;
 
-        const sourceNode = controller.getNodeById(edge.source);
-        const targetNode = controller.getNodeById(edge.target);
+        const sourceNode = getNodeById(nodes, edge.source) as CustomSingleNodeModel;
+        const targetNode = getNodeById(nodes, edge.target) as CustomSingleNodeModel;
 
-        const sourceNodeData: CustomSingleNodeData = sourceNode?.getData();
-        const targetNodeData: CustomSingleNodeData = targetNode?.getData();
+        const sourceNodeData = sourceNode.data;
+        const targetNodeData = targetNode.data;
 
         const newFlows = edge.data.sourceToTargetProperties.map(({ port, protocol }): Flow => {
             const direction: string = isSourceNodeSelected ? 'Egress' : 'Ingress';
@@ -260,4 +262,75 @@ export function transformFlowsToPeers(flows: Flow[]): Peer[] {
         };
         return peer;
     });
+}
+
+export function createFlowsFromGroupedDiffFlows(
+    groupedDiffFlow: GroupedDiffFlows,
+    baselineSimulationDiffState: BaselineSimulationDiffState
+): Flow[] {
+    const { entity, properties } = groupedDiffFlow;
+    const flows = properties.map(({ ingress, port, protocol }) => {
+        const direction = ingress ? 'Ingress' : 'Egress';
+        let entityName = '';
+        let namespace = '';
+        let type: FlowEntityType = 'DEPLOYMENT';
+        if (entity.type === 'DEPLOYMENT') {
+            entityName = entity.deployment.name;
+            namespace = entity.deployment.namespace;
+            type = 'DEPLOYMENT';
+        } else if (entity.type === 'INTERNET') {
+            entityName = 'External entities';
+            type = 'EXTERNAL_ENTITIES';
+        } else if (entity.type === 'EXTERNAL_SOURCE') {
+            entityName = entity.externalSource.name;
+            type = 'CIDR_BLOCK';
+        }
+        const id = createUniqueFlowId({
+            entityId: entity.id,
+            direction,
+            port: String(port),
+            protocol,
+        });
+        const flow: Flow = {
+            id,
+            type,
+            entity: entityName,
+            entityId: entity.id,
+            namespace,
+            direction,
+            port: String(port),
+            protocol,
+            isAnomalous: false,
+            children: [],
+            baselineSimulationDiffState,
+        };
+        return flow;
+    });
+    return flows;
+}
+
+export function getNumExtraneousEgressFlows(nodes: CustomNodeModel[]): number {
+    const extraneousEgressNode = nodes.find((node) => {
+        return node.id === 'extraneous-egress-flows';
+    });
+    if (!extraneousEgressNode || extraneousEgressNode.visible === false) {
+        return 0;
+    }
+    const numAllowedEgressFlows =
+        extraneousEgressNode?.data.type === 'EXTRANEOUS' ? extraneousEgressNode?.data.numFlows : 0;
+    return numAllowedEgressFlows;
+}
+
+export function getNumExtraneousIngressFlows(nodes: CustomNodeModel[]): number {
+    const extraneousIngressNode = nodes.find((node) => {
+        return node.id === 'extraneous-ingress-flows';
+    });
+    if (!extraneousIngressNode || extraneousIngressNode.visible === false) {
+        return 0;
+    }
+    const numAllowedIngressFlows =
+        extraneousIngressNode?.data.type === 'EXTRANEOUS'
+            ? extraneousIngressNode?.data.numFlows
+            : 0;
+    return numAllowedIngressFlows;
 }

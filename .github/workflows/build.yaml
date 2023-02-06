@@ -12,15 +12,16 @@ on:
     - reopened
     - synchronize
 
-env:
-  ROX_PRODUCT_BRANDING: RHACS_BRANDING
-
 jobs:
-
   pre-build-ui:
+    strategy:
+      matrix:
+        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -47,7 +48,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: ui-build
+          name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: |
             ui/build
             ui/monorepo.lock
@@ -55,7 +56,7 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -87,7 +88,7 @@ jobs:
   pre-build-go-binaries:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -126,7 +127,7 @@ jobs:
   pre-build-go-binaries-rcd:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -168,7 +169,7 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -208,8 +209,13 @@ jobs:
       - pre-build-cli
       - pre-build-go-binaries
       - pre-build-docs
+    strategy:
+      matrix:
+        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -237,7 +243,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ui-build
+          name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: ui
 
       - uses: actions/download-artifact@v3
@@ -305,8 +311,13 @@ jobs:
     - pre-build-cli
     - pre-build-go-binaries-rcd
     - pre-build-docs
+    strategy:
+      matrix:
+        branding: [ RHACS_BRANDING ]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -327,7 +338,7 @@ jobs:
 
     - uses: actions/download-artifact@v3
       with:
-        name: ui-build
+        name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
         path: ui
 
     - uses: actions/download-artifact@v3
@@ -387,10 +398,15 @@ jobs:
   build-and-push-operator:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+    strategy:
+      matrix:
+        branding: [ RHACS_BRANDING ]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -448,7 +464,7 @@ jobs:
   build-and-push-mock-grpc-server:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -498,7 +514,7 @@ jobs:
     needs:
       - build-and-push-main
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
       env:
         STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}

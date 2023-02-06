@@ -1,10 +1,10 @@
-import { useVisualizationController } from '@patternfly/react-topology';
 import { useEffect, useState } from 'react';
 
 import { fetchNetworkBaselineStatuses } from 'services/NetworkService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { EdgeState } from '../components/EdgeStateSelect';
 import { BaselineStatus, BaselineStatusType, Flow } from '../types/flow.type';
-import { CustomEdgeModel } from '../types/topology.type';
+import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import {
     getNetworkFlows,
     getUniqueIdFromFlow,
@@ -19,8 +19,10 @@ type Result = {
 };
 
 type FetchNetworkFlowsParams = {
+    nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
     deploymentId: string;
+    edgeState: EdgeState;
 };
 
 type FetchNetworkFlowsResult = {
@@ -34,14 +36,16 @@ const defaultResultState = {
 };
 
 function useFetchNetworkFlows({
+    nodes,
     edges,
     deploymentId,
+    edgeState,
 }: FetchNetworkFlowsParams): FetchNetworkFlowsResult {
-    const controller = useVisualizationController();
     const [result, setResult] = useState<Result>(defaultResultState);
 
     function fetchFlows() {
-        const flows = getNetworkFlows(edges, controller, deploymentId);
+        setResult({ data: { networkFlows: [] }, isLoading: true, error: '' });
+        const flows = getNetworkFlows(nodes, edges, deploymentId);
         const peers = transformFlowsToPeers(flows);
         fetchNetworkBaselineStatuses({ deploymentId, peers })
             .then((response: { statuses: BaselineStatus[] }) => {
@@ -79,8 +83,9 @@ function useFetchNetworkFlows({
 
     useEffect(() => {
         fetchFlows();
+        return () => setResult(defaultResultState);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deploymentId]);
+    }, [deploymentId, edgeState]);
 
     return { ...result, refetchFlows: fetchFlows };
 }

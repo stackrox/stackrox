@@ -1,4 +1,4 @@
-import { EdgeStyle, EdgeTerminalType } from '@patternfly/react-topology';
+import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
 import {
     DeploymentNetworkEntityInfo,
@@ -30,7 +30,7 @@ import { protocolLabel } from './flowUtils';
 export const graphModel = {
     id: 'stackrox-active-graph',
     type: 'graph',
-    layout: 'ColaGroups',
+    layout: 'ColaNoForce',
 };
 
 function getBaseNode(id: string): CustomNodeModel {
@@ -42,11 +42,17 @@ function getBaseNode(id: string): CustomNodeModel {
     } as CustomNodeModel;
 }
 
-function getNamespaceNode(namespace: string, deploymentId: string): NamespaceNodeModel {
+function getNamespaceNode(
+    namespace: string,
+    cluster: string,
+    deploymentId: string
+): NamespaceNodeModel {
     const namespaceData: NamespaceData = {
         collapsible: true,
         showContextMenu: false,
         type: 'NAMESPACE',
+        namespace,
+        cluster,
     };
     return {
         id: namespace,
@@ -106,12 +112,14 @@ function getExternalNodeModel(
         case 'INTERNET':
             return {
                 ...baseNode,
+                shape: NodeShape.rect,
                 label: 'External Entities',
                 data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges },
             };
         case 'EXTERNAL_SOURCE':
             return {
                 ...baseNode,
+                shape: NodeShape.rect,
                 label: entity.externalSource.name,
                 data: { ...entity, type: 'CIDR_BLOCK', outEdges },
             };
@@ -190,7 +198,6 @@ export function transformActiveData(
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
-        updateCount: 0,
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
@@ -198,22 +205,23 @@ export function transformActiveData(
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
 
-    nodes.forEach(({ entity, policyIds, outEdges }) => {
+    nodes.forEach(({ entity, outEdges }) => {
         const { type, id } = entity;
         const { networkPolicyState } = policyNodeMap[id]?.data || {};
         const isExternallyConnected = Object.keys(outEdges).some((nodeIdx) => {
             const { entity: targetEntity } = nodes[nodeIdx];
             return targetEntity.type === 'EXTERNAL_SOURCE' || targetEntity.type === 'INTERNET';
         });
+        const policyIds = policyNodeMap[id]?.data.policyIds || [];
 
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
-            const { namespace } = entity.deployment;
+            const { namespace, cluster } = entity.deployment;
             const namespaceNode = namespaceNodes[namespace];
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, id);
+                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
             }
 
             // creating deployment nodes
@@ -327,11 +335,11 @@ function getNetworkPolicyState(
 ): NetworkPolicyState {
     let networkPolicyState: NetworkPolicyState = 'none';
 
-    if (!nonIsolatedIngress && !nonIsolatedEgress) {
+    if (!nonIsolatedEgress && !nonIsolatedIngress) {
         networkPolicyState = 'both';
-    } else if (nonIsolatedEgress) {
+    } else if (nonIsolatedEgress && !nonIsolatedIngress) {
         networkPolicyState = 'ingress';
-    } else if (nonIsolatedIngress) {
+    } else if (!nonIsolatedEgress && nonIsolatedIngress) {
         networkPolicyState = 'egress';
     }
     return networkPolicyState;
@@ -340,21 +348,21 @@ function getNetworkPolicyState(
 // external connections can only be active, so this is hard coded to false
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
-export function transformPolicyData(
-    nodes: Node[],
-    flows: number
-): { policyDataModel: CustomModel; policyNodeMap: Record<string, DeploymentNodeModel> } {
+export function transformPolicyData(nodes: Node[]): {
+    policyDataModel: CustomModel;
+    policyNodeMap: Record<string, DeploymentNodeModel>;
+} {
     const policyDataModel: CustomModel = {
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
-        updateCount: 0,
     };
     // set policyNodeMap to be able to cross reference nodes by id to enhance active node data
     const policyNodeMap: Record<string, DeploymentNodeModel> = {};
     // to reference edges so we don't double merge bidirectional edges
     const policyEdgeMap: Record<string, CustomEdgeModel> = {};
-    nodes.forEach(({ entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress }) => {
+    nodes.forEach((policyNode) => {
+        const { entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress } = policyNode;
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
         const node = getNodeModel(
             entity,
@@ -420,9 +428,6 @@ export function transformPolicyData(
             }
         });
     });
-    const { extraneousEgressNode, extraneousIngressNode } = createExtraneousNodes(flows);
-    policyDataModel.nodes.push(extraneousEgressNode);
-    policyDataModel.nodes.push(extraneousIngressNode);
     policyDataModel.edges.push(...Object.values(policyEdgeMap));
     return { policyDataModel, policyNodeMap };
 }
@@ -436,7 +441,6 @@ export function createExtraneousFlowsModel(
         graph: graphModel,
         nodes: [] as CustomNodeModel[],
         edges: [] as CustomEdgeModel[],
-        updateCount: 0,
     };
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     let externalNode: ExternalGroupNodeModel | null = null;
@@ -460,7 +464,7 @@ export function createExtraneousFlowsModel(
     // only add to extraneous flows model when policy edge is not in the active graph
     policyDataModel.edges?.forEach((policyEdge) => {
         const { id: policyEdgeId, source, target } = policyEdge;
-        const reversePolicyEdgeId = `${target as string}-${source as string}`;
+        const reversePolicyEdgeId = `${target}-${source}`;
         const activeEdge = activeEdgeMap[policyEdgeId];
         const activeReverseEdge = activeEdgeMap[reversePolicyEdgeId];
 
@@ -503,12 +507,12 @@ export function createExtraneousFlowsModel(
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
             const { deployment, id } = data;
-            const { namespace } = deployment;
+            const { namespace, cluster } = deployment;
             const namespaceNode = namespaceNodes[namespace];
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, id);
+                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
             }
         }
 
@@ -535,11 +539,11 @@ export function createExtraneousFlowsModel(
 }
 
 export function createExtraneousNodes(numFlows: number): {
-    extraneousEgressNode: ExtraneousNodeModel;
-    extraneousIngressNode: ExtraneousNodeModel;
+    egressFlowsNode: ExtraneousNodeModel;
+    ingressFlowsNode: ExtraneousNodeModel;
 } {
-    const extraneousEgressNode: ExtraneousNodeModel = {
-        id: 'extraneous-egress',
+    const egressFlowsNode: ExtraneousNodeModel = {
+        id: 'extraneous-egress-flows',
         type: 'fakeGroup',
         width: 75,
         height: 75,
@@ -552,8 +556,8 @@ export function createExtraneousNodes(numFlows: number): {
             numFlows,
         },
     };
-    const extraneousIngressNode: ExtraneousNodeModel = {
-        id: 'extraneous-ingress',
+    const ingressFlowsNode: ExtraneousNodeModel = {
+        id: 'extraneous-ingress-flows',
         type: 'fakeGroup',
         width: 75,
         height: 75,
@@ -566,7 +570,7 @@ export function createExtraneousNodes(numFlows: number): {
             numFlows,
         },
     };
-    return { extraneousEgressNode, extraneousIngressNode };
+    return { egressFlowsNode, ingressFlowsNode };
 }
 
 export function createExtraneousEdges(selectedNodeId: string): {
@@ -577,7 +581,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
         id: 'extraneous-egress-edge',
         type: 'edge',
         source: selectedNodeId,
-        target: 'extraneous-egress',
+        target: 'extraneous-egress-flows',
         visible: true,
         edgeStyle: EdgeStyle.dashed,
         data: {
@@ -589,7 +593,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
     const extraneousIngressEdge = {
         id: 'extraneous-ingress-edge',
         type: 'edge',
-        source: 'extraneous-ingress',
+        source: 'extraneous-ingress-flows',
         target: selectedNodeId,
         visible: true,
         edgeStyle: EdgeStyle.dashed,

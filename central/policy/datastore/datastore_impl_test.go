@@ -18,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -48,10 +47,9 @@ type PolicyDatastoreTestSuite struct {
 }
 
 func (s *PolicyDatastoreTestSuite) SetupTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() || features.NewPolicyCategories.Enabled() {
-		s.T().Skip()
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("Tests are not applicable when ROX_POSTGRES_DATASTORE is set to true")
 	}
-
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
@@ -140,7 +138,7 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy).Return(nil).Times(1)
 	s.store.EXPECT().GetAll(s.hasReadWritePolicyAccess).Return(nil, nil).Times(1)
 	s.store.EXPECT().Delete(s.hasReadWritePolicyAccess, policy.GetId()).Return(nil).Times(1)
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWritePolicyAccess, policy.GetId(), policy.GetCategories()).Return(nil)
+
 	s.indexer.EXPECT().DeletePolicy(policy.GetId()).Return(nil).Times(1)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil).Times(1)
 
@@ -153,7 +151,7 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policy).Return(nil).Times(1)
 	s.store.EXPECT().GetAll(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil).Times(1)
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil).Times(1)
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId(), policy.GetCategories()).Return(nil)
+
 	s.indexer.EXPECT().DeletePolicy(policy.GetId()).Return(nil).Times(1)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil).Times(1)
 
@@ -364,9 +362,6 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 	s.indexer.EXPECT().DeletePolicy(existingPolicy2.GetId()).Return(nil)
 	s.store.EXPECT().Upsert(s.hasReadWritePolicyAccess, policy2).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy2).Return(nil)
-
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWritePolicyAccess, policy1.GetId(), policy1.GetCategories()).Return(nil)
-	s.categoriesDatastore.EXPECT().SetPolicyCategoriesForPolicy(s.hasReadWritePolicyAccess, policy2.GetId(), policy2.GetCategories()).Return(nil)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWritePolicyAccess, []*storage.Policy{policy1.Clone(), policy2.Clone()}, true)
 

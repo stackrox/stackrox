@@ -11,6 +11,63 @@
     "application/json"
   ],
   "paths": {
+    "/v1/processcount": {
+      "get": {
+        "summary": "CountProcesses returns the count of processes.",
+        "operationId": "ProcessService_CountProcesses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CountProcessesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ProcessService"
+        ]
+      }
+    },
     "/v1/processes/deployment/{deploymentId}": {
       "get": {
         "summary": "GetProcessesByDeployment returns the processes executed in the given deployment.",
@@ -257,6 +314,15 @@
         }
       }
     },
+    "v1CountProcessesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v1GetGroupedProcessesResponse": {
       "type": "object",
       "properties": {
@@ -287,6 +353,22 @@
           "items": {
             "$ref": "#/definitions/storageProcessIndicator"
           }
+        }
+      }
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
         }
       }
     },
@@ -343,6 +425,17 @@
           "items": {
             "$ref": "#/definitions/v1ProcessGroup"
           }
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
         }
       }
     }

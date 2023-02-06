@@ -56,16 +56,16 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = setupPostgresConn(s.T())
+	s.db, s.gormDB = SetupTestPostgresConn(s.T())
 
-	clusterCVEDS := createClusterCVEDatastore(s.T(), s.db, s.gormDB)
-	nodeDS := createNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	namespaceDS := createNamespaceDatastore(s.T(), s.db, s.gormDB)
-	resolver, _ := setupResolver(s.T(),
+	clusterCVEDS := CreateTestClusterCVEDatastore(s.T(), s.db, s.gormDB)
+	nodeDatastore := CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	namespaceDS := CreateTestNamespaceDatastore(s.T(), s.db, s.gormDB)
+	resolver, _ := SetupTestResolver(s.T(),
 		clusterCVEDS,
-		createClusterCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		CreateTestClusterCVEEdgeDatastore(s.T(), s.db, s.gormDB),
 		namespaceDS,
-		createClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, clusterCVEDS, namespaceDS, nodeDS),
+		CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, clusterCVEDS, namespaceDS, nodeDatastore),
 	)
 	s.resolver = resolver
 

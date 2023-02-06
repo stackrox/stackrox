@@ -490,13 +490,18 @@ poll_for_system_test_images() {
         *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
             ;;
-        *-postgres-*)
-            reqd_images=("main" "roxctl" "central-db")
-            ;;
         *)
             reqd_images=("main" "roxctl")
             ;;
     esac
+
+    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]] && [[ ! " ${reqd_images[*]} " =~ " central-db " ]]; then
+        reqd_images+=("central-db")
+    fi
+
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
+        reqd_images+=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
+    fi
 
     info "Will poll for: ${reqd_images[*]}"
 
@@ -660,7 +665,7 @@ is_tagged() {
 }
 
 is_nightly_run() {
-    [[ "${CIRCLE_TAG:-}" =~ -nightly- ]]
+    [[ "${CIRCLE_TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
 }
 
 is_in_PR_context() {
@@ -1462,6 +1467,51 @@ handle_gha_tagged_build() {
     else
         echo "This is not a tagged build"
     fi
+}
+
+slack_prow_notice() {
+    info "Slack a notice that prow tests have started"
+
+    if [[ "$#" -lt 1 ]]; then
+        die "missing arg. usage: slack_prow_notice <tag>"
+    fi
+
+    local tag="$1"
+
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || is_nightly_run || {
+        info "Skipping step as this is not a release, RC or nightly build"
+        return 0
+    }
+
+    local build_url
+    local webhook_url
+    if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
+        local release
+        release="$(get_release_stream "$tag")"
+        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-$release*"
+        if is_release_test_stream "$tag"; then
+            # send to #slack-test when testing the release process
+            webhook_url="${SLACK_MAIN_WEBHOOK}"
+        else
+            # send to #eng-release
+            webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
+        fi
+    elif is_nightly_run; then
+        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*night*"
+        # send to #nightly-ci-runs
+        webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
+    else
+        die "unexpected"
+    fi
+
+    local github_url="https://github.com/stackrox/stackrox/releases/tag/$tag"
+
+    jq -n \
+    --arg build_url "$build_url" \
+    --arg tag "$tag" \
+    --arg github_url "$github_url" \
+    '{"text": ":prow: Prow CI for tag <\($github_url)|\($tag)> started! Check the status of the tests under the following URL: \($build_url)"}' \
+| curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

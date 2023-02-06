@@ -1,0 +1,81 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-monitoring
+  labels:
+    app.kubernetes.io/name: stackrox
+    app: monitoring
+rules:
+{{- if .Values.enableMonitoringPSPs }}
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - stackrox-monitoring
+    verbs:
+      - use
+{{- end }}
+  - apiGroups: [""]
+    resources:
+      - endpoints
+      - nodes
+      - pods
+      - services
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+    app: monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stackrox-monitoring
+subjects:
+  - kind: ServiceAccount
+    name: monitoring
+    namespace: {{ .Release.Namespace }}
+---
+{{- if .Values.enableMonitoringPSPs }}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stackrox-monitoring
+  labels:
+    app.kubernetes.io/name: stackrox
+    app: monitoring
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+    - 'hostPath'
+  {{ if eq .Values.persistence.type "hostpath" -}}
+  allowedHostPaths:
+    - pathPrefix: {{ .Values.persistence.hostPath }}
+  {{- end }}
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+{{- end }}

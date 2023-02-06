@@ -106,7 +106,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), resources.ServiceAccountStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
-	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider)
+	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(imageCache, registry.Singleton())
@@ -135,7 +135,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
 	}
 	if features.RHCOSNodeScanning.Enabled() {
-		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories()))
+		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
+		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher))
 	}
 
 	if !cfg.localSensor {

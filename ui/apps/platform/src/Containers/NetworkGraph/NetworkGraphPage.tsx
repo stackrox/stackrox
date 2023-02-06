@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
     PageSection,
     Title,
@@ -24,6 +24,7 @@ import { isCompleteSearchFilter } from 'utils/searchUtils';
 
 import PageTitle from 'Components/PageTitle';
 import useURLParameter from 'hooks/useURLParameter';
+import NetworkGraphContainer, { Models } from './NetworkGraphContainer';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import NetworkSearch from './components/NetworkSearch';
@@ -31,30 +32,24 @@ import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButto
 import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
 import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
 import TimeWindowSelector from './components/TimeWindowSelector';
-import NetworkGraph from './NetworkGraph';
 import {
     transformPolicyData,
     transformActiveData,
     createExtraneousFlowsModel,
     graphModel,
 } from './utils/modelUtils';
-import getScopeHierarchy from './utils/getScopeHierarchy';
+import { getScopeHierarchyFromSearch } from './utils/hierarchyUtils';
 import getSimulation from './utils/getSimulation';
-import {
-    CustomEdgeModel,
-    CustomModel,
-    CustomNodeModel,
-    DeploymentData,
-} from './types/topology.type';
 
 import './NetworkGraphPage.css';
+import CIDRFormModal from './components/CIDRFormModal';
 
 const emptyModel = {
     graph: graphModel,
     nodes: [],
     edges: [],
-    updateCount: 0,
 };
+
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
@@ -68,23 +63,36 @@ function NetworkGraphPage() {
         'externalBadge',
         'edgeLabel',
     ]);
-    const [activeModel, setActiveModel] = useState<CustomModel>(emptyModel);
-    const [extraneousFlowsModel, setExtraneousFlowsModel] = useState<CustomModel>(emptyModel);
-    const [model, setModel] = useState<CustomModel>(emptyModel);
+    const [models, setModels] = useState<Models>({
+        activeModel: emptyModel,
+        extraneousModel: emptyModel,
+    });
+    const [previouslySelectedCluster, setPreviouslySelectedCluster] = useState<string | undefined>(
+        undefined
+    );
+
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
+    const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
 
     const { searchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
+    const simulation = getSimulation(simulationQueryValue);
 
     const {
         cluster: clusterFromUrl,
         namespaces: namespacesFromUrl,
         deployments: deploymentsFromUrl,
         remainingQuery,
-    } = getScopeHierarchy(searchFilter);
-    const simulation = getSimulation(simulationQueryValue);
+    } = getScopeHierarchyFromSearch(searchFilter);
+    if (clusterFromUrl !== previouslySelectedCluster) {
+        setModels({
+            activeModel: emptyModel,
+            extraneousModel: emptyModel,
+        });
+        setPreviouslySelectedCluster(clusterFromUrl);
+    }
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
@@ -132,10 +140,7 @@ function NetworkGraphPage() {
                         // get policy nodes from api response
                         const { nodes: policyNodes } = values[1].response;
                         // transform policy data to DataModel
-                        const { policyDataModel, policyNodeMap } = transformPolicyData(
-                            policyNodes,
-                            deploymentCount || 0
-                        );
+                        const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
                         // get active nodes from api response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
@@ -148,8 +153,6 @@ function NetworkGraphPage() {
                             activeNodeMap,
                             activeEdgeMap
                         );
-                        setActiveModel(activeDataModel);
-                        setExtraneousFlowsModel(extraneousFlowsDataModel);
 
                         const newUpdatedTimestamp = new Date();
                         // show only hours and minutes, use options with the default locale - use an empty array
@@ -158,6 +161,11 @@ function NetworkGraphPage() {
                             minute: '2-digit',
                         });
                         setLastUpdatedTime(lastUpdatedDisplayTime);
+
+                        setModels({
+                            activeModel: activeDataModel,
+                            extraneousModel: extraneousFlowsDataModel,
+                        });
                     })
                     .catch(() => {
                         // TODO
@@ -169,81 +177,18 @@ function NetworkGraphPage() {
         clusterFromUrl,
         namespacesFromUrl,
         deploymentsFromUrl,
-        deploymentCount,
         remainingQuery,
         timeWindow,
+        deploymentCount,
     ]);
 
-    const setModelByEdgeState = useCallback(() => {
-        if (edgeState === 'active') {
-            setModel({ ...activeModel, updateCount: model.updateCount + 1 });
-        } else if (edgeState === 'extraneous') {
-            setModel({ ...extraneousFlowsModel, updateCount: model.updateCount + 1 });
-        }
-    }, [edgeState, activeModel, extraneousFlowsModel]);
-
-    useEffect(() => {
-        setModelByEdgeState();
-    }, [setModelByEdgeState]);
-
-    useEffect(() => {
-        const showPolicyState = !!displayOptions.includes('policyStatusBadge');
-        const showExternalState = !!displayOptions.includes('externalBadge');
-        const showEdgeLabels = !!displayOptions.includes('edgeLabel');
-        let updatedNodes: CustomNodeModel[] = model.nodes;
-        let updatedEdges: CustomEdgeModel[] = model.edges;
-
-        // if all display options are true, set back to existing default data model
-        if (showPolicyState && showExternalState && showEdgeLabels) {
-            setModelByEdgeState();
-        } else {
-            // this is to update the display options visually for deployment nodes on the graph
-            if (model.nodes?.length) {
-                // need to improve perf to only perform this if policyStatusBadge OR externalBadge has changed
-                updatedNodes = model.nodes.map((node) => {
-                    const { data } = node;
-                    if (data.type === 'DEPLOYMENT') {
-                        return {
-                            ...node,
-                            data: {
-                                ...data,
-                                showPolicyState,
-                                showExternalState,
-                            } as DeploymentData,
-                        };
-                    }
-                    return node;
-                });
-            }
-
-            if (model.edges?.length) {
-                // need to improve perf to only perform this if edgeLabel has changed
-                updatedEdges = model.edges.map((edge) => {
-                    const { data } = edge;
-                    return {
-                        ...edge,
-                        data: {
-                            ...data,
-                            tag: showEdgeLabels ? data.portProtocolLabel : undefined,
-                        },
-                    };
-                });
-            }
-
-            const updatedModel: CustomModel = {
-                ...model,
-                nodes: updatedNodes,
-                edges: updatedEdges,
-                updateCount: model.updateCount + 1,
-            };
-            setModel(updatedModel);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [displayOptions]);
+    function toggleCIDRBlockForm() {
+        setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
+    }
 
     return (
         <>
-            <PageTitle title="Network Graph" />
+            <PageTitle title="Network Graph (2.0 preview)" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Toolbar
                     className="network-graph-selector-bar"
@@ -263,10 +208,19 @@ function NetworkGraphPage() {
                         </ToolbarGroup>
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem spacer={{ default: 'spacerMd' }}>
-                                <Button variant="secondary">Manage CIDR blocks</Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={toggleCIDRBlockForm}
+                                    isDisabled={!selectedClusterId}
+                                >
+                                    Manage CIDR blocks
+                                </Button>
                             </ToolbarItem>
                             <ToolbarItem spacer={{ default: 'spacerNone' }}>
-                                <SimulateNetworkPolicyButton simulation={simulation} />
+                                <SimulateNetworkPolicyButton
+                                    simulation={simulation}
+                                    isDisabled={!hasClusterNamespaceSelected}
+                                />
                             </ToolbarItem>
                         </ToolbarGroup>
                     </ToolbarContent>
@@ -277,32 +231,36 @@ function NetworkGraphPage() {
                 <Toolbar data-testid="network-graph-toolbar">
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
-                            <ToolbarItem spacer={{ default: 'spacerMd' }}>
+                            <ToolbarItem>
                                 <EdgeStateSelect
                                     edgeState={edgeState}
                                     setEdgeState={setEdgeState}
+                                    isDisabled={!hasClusterNamespaceSelected}
                                 />
                             </ToolbarItem>
                             <ToolbarItem>
                                 <TimeWindowSelector
                                     activeTimeWindow={timeWindow}
                                     setActiveTimeWindow={setTimeWindow}
-                                    isDisabled={isLoading}
+                                    isDisabled={isLoading || !hasClusterNamespaceSelected}
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
+                        <Divider orientation={{ default: 'vertical' }} />
                         <ToolbarGroup className="pf-u-flex-grow-1">
                             <ToolbarItem className="pf-u-flex-grow-1">
                                 <NetworkSearch
                                     selectedCluster={clusterFromUrl}
                                     selectedNamespaces={namespacesFromUrl}
                                     selectedDeployments={deploymentsFromUrl}
+                                    isDisabled={!hasClusterNamespaceSelected}
                                 />
                             </ToolbarItem>
                             <ToolbarItem>
                                 <DisplayOptionsSelect
                                     selectedOptions={displayOptions}
                                     setSelectedOptions={setDisplayOptions}
+                                    isDisabled={!hasClusterNamespaceSelected}
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
@@ -322,19 +280,28 @@ function NetworkGraphPage() {
                 padding={{ default: 'noPadding' }}
             >
                 {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
-                {model.nodes.length > 0 && !isLoading && (
-                    <NetworkGraph
-                        model={model}
-                        edgeState={edgeState}
-                        simulation={simulation}
-                        selectedClusterId={selectedClusterId || ''}
-                    />
-                )}
+                {models.activeModel.nodes.length > 0 &&
+                    models.extraneousModel.nodes.length > 0 &&
+                    !isLoading && (
+                        <NetworkGraphContainer
+                            models={models}
+                            edgeState={edgeState}
+                            displayOptions={displayOptions}
+                            simulation={simulation}
+                            selectedClusterId={selectedClusterId || ''}
+                            clusterDeploymentCount={deploymentCount || 0}
+                        />
+                    )}
                 {isLoading && (
                     <Bullseye>
                         <Spinner isSVG />
                     </Bullseye>
                 )}
+                <CIDRFormModal
+                    selectedClusterId={selectedClusterId || ''}
+                    isOpen={isCIDRBlockFormOpen}
+                    onClose={toggleCIDRBlockForm}
+                />
             </PageSection>
         </>
     );

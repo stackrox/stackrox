@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -67,6 +66,8 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 	// GetNodeMetadata gets the node without scan/component data.
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
+	// GetManyNodeMetadata returns nodes without scan/component data.
+	GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 }
 
 type storeImpl struct {
@@ -684,10 +685,8 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
-		utils.Should(
-			errors.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
-				len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId()),
-		)
+		log.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
+			len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId())
 	}
 	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
 	if err != nil {
@@ -923,10 +922,70 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 	return &msg, true, nil
 }
 
+// GetManyNodeMetadata returns nodes without scan/component data.
+func (s *storeImpl) GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Node")
+
+	return pgutils.Retry3(func() ([]*storage.Node, []int, error) {
+		return s.retryableGetManyNodeMetadata(ctx, ids)
+	})
+}
+
+func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddExactMatches(search.NodeID, ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema[storage.Node](ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	resultsByID := make(map[string]*storage.Node, len(rows))
+	for _, msg := range rows {
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.Node, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
+
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
+func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)

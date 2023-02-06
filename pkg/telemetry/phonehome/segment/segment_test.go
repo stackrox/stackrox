@@ -8,7 +8,7 @@ import (
 )
 
 func Test_getMessageType(t *testing.T) {
-	track := &segment.Track{
+	track := segment.Track{
 		Type: "Track",
 	}
 

@@ -3,7 +3,7 @@ import withAuth from '../../helpers/basicAuth';
 import {
     mouseOverEdgeByNames,
     ensureEdgeNotPresent,
-    visitNetworkGraphWithMockedData,
+    visitOldNetworkGraphWithMockedData,
 } from '../../helpers/networkGraph';
 import selectors from '../../selectors/index';
 
@@ -20,7 +20,7 @@ describe('Network Graph connections filter', () => {
     const allowedSubstring = 'allowed connection';
 
     it('active appears in namespace edge tooltip', () => {
-        visitNetworkGraphWithMockedData();
+        visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.activeFilter).click();
 
@@ -34,7 +34,7 @@ describe('Network Graph connections filter', () => {
     });
 
     it('allowed appears in namespace edge tooltip', () => {
-        visitNetworkGraphWithMockedData();
+        visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allowedFilter).click();
 
@@ -48,7 +48,7 @@ describe('Network Graph connections filter', () => {
     });
 
     it('active and allowed both appear for all in namespace edge tooltip', () => {
-        visitNetworkGraphWithMockedData();
+        visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allFilter).click();
 
@@ -62,7 +62,7 @@ describe('Network Graph connections filter', () => {
     });
 
     it('should not show namespace edges when user hides them', () => {
-        visitNetworkGraphWithMockedData();
+        visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allFilter).click();
         cy.get(networkPageSelectors.buttons.hideNsEdgesFilter).click();

@@ -9,6 +9,16 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [3.74.0]
+
+### Added Features
+
 - ROX-13814: A new "Public Kubernetes Registry" image integration is now available as a replacement
   for the (now deprecated) "Public Kubernetes GCR" image integration.
 
@@ -20,6 +30,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 - ROX-12620: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
   - The permission `WorkflowAdministration` will deprecate the permissions `Policy, VulnerabilityReports`.
+- ROX-14398: We continue to simplify access control management by grouping some permissions in permission sets. As a result:
+  - The permission `Access` will deprecate the permissions `Role`.
+  - The default role `Scope Manager` will be removed.
 
 - ROX-14400: product `BuildDate` attribute is deprecated and will be removed in `3.75` release. It won't be returned by
 `/debug/versions.json` endpoint and `roxctl version --json` command.
@@ -30,13 +43,27 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   During the migration of the permission sets within the 3.76, the `WorfklowAdministration` permission will have the lowest access permission granted for either `Policy` or `VulnerabilityReports`.
   As an example, a permission set with `WRITE Policy` and `READ VulnerabilityReports` access will have `READ WorkflowAdministration` access after the migration within the 3.76 release, leading to
   potentially unwanted side-effects and missing access if you did not update your permission sets beforehand.
+- The permission `Access` will replace `Role` in permission sets starting with the 3.76 release. You should preemptively start replacing
+  the `Role` resource within your permission sets in favor of `Access`. During the migration of the permission sets within the 3.76, the
+  `Access` permission will have the lowest access permission granted for either `Access` or `Role`. As an example, a permission set with
+  `READ Access` and `WRITE Role` will have `READ Access` after the migration, leading to potentially unwanted side-effects and missing access
+  if the permission sets were not updated beforehand.
+- The default `ScopeManager` role will be removed starting with release 3.76. During the migration, Authentication provider rules referencing that role
+  will be updated to use the `None` role. Should Authentication Provider rules reference the `ScopeManager` role for other purposes than
+  Vulnerability Report management, a similar role should be manually created and referenced in the Authentication provider rules instead of `ScopeManager`.
 
 - ROX-13814: The "Public Kubernetes GCR" image integration is now deprecated in line with
   [upstream](https://kubernetes.io/blog/2022/11/28/registry-k8s-io-faster-cheaper-ga/).
 
 ### Technical Changes
-- ROX-12967: Re-introduce `rpm` to the main image in order to be able parse installed packages on RHCOS nodes (from Compliance container)
-- ROX-14280: ACS operator default channel changes from `latest` to `stable`. Users of older versions must follow the upgrade procedure in order to preserve ACS data in case of issues with the upgrade.
+- ROX-12967: Re-introduce `rpm` to the main image in order to be able to parse installed packages on RHCOS nodes (from Compliance container)
+
+### Major Upcoming Changes
+- The 3.74.z set of releases will be the last major release in the 3.x series. The next release will be 4.0.
+- Postgres will become the backing database as of 4.0.
+- Restoring a backup taken on a 3.y release will no longer be supported starting from 4.1.
+- The stackrox-db PVC will no longer be used starting from 4.1. All users must upgrade from a 3.y release to 4.0 prior to
+  upgrading to a later release in order to properly migrate to Postgres.
 
 ## [3.73.1]
 

@@ -1,71 +1,75 @@
 import React, { ReactElement } from 'react';
-import { Button, ButtonVariant, Spinner } from '@patternfly/react-core';
+import { useHistory } from 'react-router-dom';
+import { Alert, Button, ButtonVariant } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getEntityPath } from 'Containers/AccessControl/accessControlPaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import useFetchScopes from 'hooks/useFetchScopes';
-import useCollection from 'Containers/Collections/hooks/useCollection';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { collectionsBasePath } from 'routePaths';
+import { ReportScope } from 'hooks/useFetchReport';
 
 type ScopeNameProps = {
-    scopeId: string;
+    reportScope: ReportScope | null;
+    // TODO This isn't a prop-type, and it -is- used. Not sure why the lint error needs to be suppressed
+    // eslint-disable-next-line react/no-unused-prop-types
+    canWriteReports: boolean;
 };
 
-function AccessScopeName({ scopeId }: ScopeNameProps): ReactElement {
-    const scopesResult = useFetchScopes();
-
-    if (!scopeId) {
+function AccessScopeName({ reportScope }: ScopeNameProps): ReactElement {
+    if (!reportScope) {
         return <em>No resource scope specified</em>;
     }
 
-    const fullScope = scopesResult.scopes.find((scope) => scope.id === scopeId);
-
-    if (scopesResult.isLoading) {
-        return <Spinner isSVG size="md" />;
-    }
-
-    if (scopesResult.error) {
-        return <span>Error getting scope info. {getAxiosErrorMessage(scopesResult.error)}</span>;
-    }
-
-    const url = getEntityPath('ACCESS_SCOPE', scopeId);
+    const url = getEntityPath('ACCESS_SCOPE', reportScope.id);
 
     return (
         <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
-            {fullScope?.name || scopeId}
+            {reportScope.name}
         </Button>
     );
 }
 
-function CollectionScopeName({ scopeId }: ScopeNameProps): ReactElement {
-    const { data, loading, error } = useCollection(scopeId);
+function CollectionScopeName({ reportScope, canWriteReports }: ScopeNameProps): ReactElement {
+    const history = useHistory();
 
-    if (!scopeId) {
+    if (!reportScope) {
         return <em>No report scope specified</em>;
     }
 
-    if (loading) {
-        return <Spinner isSVG size="md" />;
+    if (reportScope.type === 'AccessControlScope') {
+        return (
+            <Alert
+                isInline
+                variant="danger"
+                title="The report scope for this configuration could not be migrated to a collection"
+                actionLinks={
+                    canWriteReports && (
+                        <Button
+                            variant={ButtonVariant.link}
+                            isInline
+                            component={LinkShim}
+                            href={`${history.location.pathname as string}?action=edit`}
+                        >
+                            Edit this report
+                        </Button>
+                    )
+                }
+            />
+        );
     }
 
-    if (error) {
-        return <span>Error getting scope info. {getAxiosErrorMessage(error)}</span>;
-    }
-
-    const url = `${collectionsBasePath}/${scopeId}`;
+    const url = `${collectionsBasePath}/${reportScope.id}`;
 
     return (
         <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
-            {data?.collection?.name || scopeId}
+            {reportScope.name}
         </Button>
     );
 }
 
 function ScopeName(props: ScopeNameProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     return isCollectionsEnabled ? (
         <CollectionScopeName {...props} />

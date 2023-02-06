@@ -1,5 +1,5 @@
-import React, { ReactElement } from 'react';
-import { Redirect, Route, Switch } from 'react-router-dom';
+import React, { ReactElement, useEffect } from 'react';
+import { Redirect, Route, Switch, useLocation } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
 import {
@@ -37,6 +37,7 @@ import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import { analyticsPageVisit } from 'utils/analytics';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -95,11 +96,16 @@ type BodyProps = {
 };
 
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
+    const location = useLocation();
+    useEffect(() => {
+        analyticsPageVisit('visit', location.pathname);
+    }, [location]);
+
     const { isDarkMode } = useTheme();
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
     const isSearchPageEnabled = isFeatureFlagEnabled('ROX_SEARCH_PAGE_UI');
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');

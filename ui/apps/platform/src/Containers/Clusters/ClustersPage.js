@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { useQuery } from '@apollo/client';
 import { HashLink } from 'react-router-hash-link';
@@ -11,6 +11,7 @@ import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { integrationsPath } from 'routePaths';
 import useURLSearch from 'hooks/useURLSearch';
 import parseURL from 'utils/URLParser';
+import { analyticsPageVisit } from 'utils/analytics';
 
 import ClustersTablePanel from './ClustersTablePanel';
 import ClustersSidePanel from './ClustersSidePanel';
@@ -22,6 +23,10 @@ const ClustersPage = ({
         params: { clusterId: selectedClusterId },
     },
 }) => {
+    useEffect(() => {
+        analyticsPageVisit('Visit', 'Clusters');
+    }, []);
+
     const { searchFilter, setSearchFilter } = useURLSearch();
     const workflowState = parseURL({ pathname, search });
 

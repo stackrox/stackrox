@@ -158,28 +158,11 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
 	// Otherwise we roll with Postgres->Postgres
-	if d.rocksExists(rocksVersion) {
+	if d.versionExists(rocksVersion) {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
-		if !currExists || currClone.GetMigVersion() == nil {
+		if !currExists || !d.versionExists(currClone.GetMigVersion()) {
 			return CurrentClone, true, nil
 		}
-
-		// Rocks more recently updated than Postgres so need to migrate from there.  Otherwise, Postgres is more recent
-		// so just fall through to the rest of the processing.
-		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) {
-			// We want to start fresh as we are migrating from Rocks->Postgres.  So any data that exists in
-			// Postgres from a previous upgrade followed by a rollback needs to be ignored.  So just drop current
-			// and let it create anew.
-			log.Infof("To start with a clean Postgres, dropping database %q", CurrentClone)
-			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, CurrentClone)
-			if err != nil {
-				log.Errorf("Unable to drop current clone: %v", err)
-				return "", true, err
-			}
-
-			return CurrentClone, true, nil
-		}
-		log.Info("Postgres is the more recent version so we will process that.")
 	}
 
 	prevClone, prevExists := d.cloneMap[PreviousClone]
@@ -227,11 +210,10 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	return CurrentClone, false, nil
 }
 
-func (d *dbCloneManagerImpl) rocksExists(rocksVersion *migrations.MigrationVersion) bool {
-	if rocksVersion != nil &&
-		!rocksVersion.LastPersisted.IsZero() &&
-		rocksVersion.SeqNum != 0 &&
-		rocksVersion.MainVersion != "0" {
+func (d *dbCloneManagerImpl) versionExists(dbVersion *migrations.MigrationVersion) bool {
+	if dbVersion != nil &&
+		dbVersion.SeqNum != 0 &&
+		dbVersion.MainVersion != "0" {
 		return true
 	}
 

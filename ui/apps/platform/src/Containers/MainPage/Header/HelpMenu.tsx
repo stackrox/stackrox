@@ -9,7 +9,8 @@ import {
 import { QuestionCircleIcon } from '@patternfly/react-icons';
 
 import useMetadata from 'hooks/useMetadata';
-import { apidocsPath, productDocsPath } from 'routePaths';
+import { apidocsPath } from 'routePaths';
+import { getVersionedDocs } from 'utils/versioning';
 
 function HelpMenu(): ReactElement {
     const { releaseBuild, version } = useMetadata();
@@ -32,7 +33,7 @@ function HelpMenu(): ReactElement {
             {version && (
                 <>
                     <ApplicationLauncherItem
-                        href={productDocsPath}
+                        href={getVersionedDocs(version)}
                         isExternal
                         target="_blank"
                         rel="noopener noreferrer"

@@ -217,7 +217,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Suppress CVE and check that the deployment can now launch"
 
         def cve = "CVE-2019-3462"
-        if (Env.CI_JOBNAME.contains("postgres")) {
+        if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
             CVEService.suppressImageCVE(cve)
         } else {
             CVEService.suppressCVE(cve)
@@ -235,7 +235,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Unsuppress CVE"
-        if (Env.CI_JOBNAME.contains("postgres")) {
+        if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
             CVEService.unsuppressImageCVE(cve)
         } else {
             CVEService.unsuppressCVE(cve)

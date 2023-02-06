@@ -25,7 +25,7 @@ const getTitleFromWorkflowState = (workflowState): string => {
 const getPageTitleText = (location: Location): string | null => {
     if (basePathToLabelMap[location.pathname]) {
         const topPageLabel = basePathToLabelMap[location.pathname];
-        return topPageLabel;
+        return topPageLabel.toString();
     }
     const workflowState = parseURL(location);
     const useCase = workflowState.getUseCase();
