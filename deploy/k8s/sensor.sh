@@ -25,6 +25,6 @@ if [[ -z "$ROX_ADMIN_PASSWORD" && -f "${K8S_DIR}/central-deploy/password" ]]; th
 fi
 
 # Enable new event pipeline without re-sync for k8s deployments
-ROX_RESYNC_DISABLED="true"
+export ROX_RESYNC_DISABLED="true"
 
 launch_sensor "$K8S_DIR"
