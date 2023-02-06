@@ -12,6 +12,7 @@ import spock.lang.Stepwise
 import services.ProcessesListeningOnPortsService
 
 @Stepwise
+@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     // Deployment names
@@ -110,10 +111,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         "Two deployments that listen on ports are started up"
-
-        if (! Env.CI_JOBNAME.contains("postgres")) {
-                return
-        }
 
         rebuildForRetries()
         def clusterId = ClusterService.getClusterId()
