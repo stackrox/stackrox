@@ -11,9 +11,8 @@
 # The most notable exception is the `imagePullSecrets` section, which needs to be configured
 # according to the registry access in your environment.
 #
-# Other than that, the following are sections that are the most likely to require custom
-# configuration:
-# - `image.registry`: if you are pulling images from a registry other than `stackrox.io`.
+# Other than that, the following are sections most likely require custom configuration:
+# - `image.registry`: if you are pulling images from a registry other than `[< required "" .MainRegistry >]`.
 # - `env.offlineMode`: if you want to run StackRox in offline mode.
 # - `central.endpointsConfig`: if you want to expose additional endpoints (such as endpoints
 #   without TLS) in Central.
@@ -44,12 +43,12 @@
 #   useFromDefaultServiceAccount: true
 #
 # image:
-#   # The registry relative to which all image references are resolved, if no more
-#   # specify registry is specified for the workloads (see `central.image`, `db.image`, ``scanner.image`,
-#   # and `scanner.dbImage` below).
+#   # The registry relative to which all image references are resolved, unless
+#   # a specific registry is provided for particular workloads which takes precedence
+#   # (see `central.image`, `db.image`, `scanner.image`, and `scanner.dbImage` below).
 #   # This can be just a registry hostname such as `stackrox.io`, or a registry hostname with
 #   # a "remote" component such as `us.gcr.io/my-stackrox-mirror`.
-#   registry: stackrox.io
+#   registry: us.gcr.io/my-stackrox-mirror
 #
 # env:
 #   # Treat the environment as an OpenShift cluster. Leave this unset to use auto-detection

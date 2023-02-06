@@ -24,7 +24,7 @@ image:
   main:
     registry: {{ ._rox.image.registry }}
   collector:
-    registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
+    registry: {{ ._rox.image.registry }}
   [< if (not .KubectlOutput) >]
   scanner:
     registry: {{ ._rox.image.registry }}
