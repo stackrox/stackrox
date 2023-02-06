@@ -55,16 +55,18 @@ const (
 	defaultTicker = 500 * time.Millisecond
 )
 
-// YamlTestFile is a test file in YAML
-type YamlTestFile struct {
-	Kind string
-	File string
+// K8sResourceInfo is a test file in YAML or a struct
+type K8sResourceInfo struct {
+	Kind     string
+	YamlFile string
+	Obj      interface{}
+	Name     string
 }
 
 // requiredWaitResources slice of resources that need to be awaited
 var requiredWaitResources = []string{"Service"}
 
-func shouldWaitForResource(kind string) bool {
+func shouldRetryResource(kind string) bool {
 	for _, k := range requiredWaitResources {
 		if k == kind {
 			return true
@@ -74,7 +76,7 @@ func shouldWaitForResource(kind string) bool {
 }
 
 // objByKind returns the supported dynamic k8s resources that can be created
-// add new ones here to support adding new resource files
+// add new ones here to support adding new resource types
 func objByKind(kind string) k8s.Object {
 	switch kind {
 	case "Deployment":
@@ -150,6 +152,15 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	}, nil
 }
 
+// NewRun runs a test case. Fails the test if the testRun cannot be created.
+func (c *TestContext) NewRun(options ...TestRunFunc) {
+	tr, err := newTestRun(options...)
+	if err != nil {
+		c.t.Fatal(err)
+	}
+	c.run(tr)
+}
+
 // Stop test context and sensor.
 func (c *TestContext) Stop() {
 	c.stopFn()
@@ -194,23 +205,39 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 	return c.fakeCentral
 }
 
-// RunWithResources runs the test case applying files in `files` slice in order.
-func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallback) {
+// run handles the run of a testRun case
+func (c *TestContext) run(t *testRun) {
+	if t.resources == nil {
+		c.runBare(t.name, t.testCase)
+	} else {
+		if t.permutation {
+			c.runWithResourcesPermutation(t)
+		} else {
+			if err := c.runWithResources(t.resources, t.testCase, t.retryCallback); err != nil {
+				c.t.Fatalf(err.Error())
+			}
+		}
+	}
+}
+
+// runWithResources runs the test case applying resources in `resources` slice in order.
+// If it is set, the RetryCallback will be called if the application of a resource fails.
+func (c *TestContext) runWithResources(resources []K8sResourceInfo, testCase TestCallback, retryFn RetryCallback) error {
 	_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
 	defer utils.IgnoreError(removeNamespace)
 	if err != nil {
-		c.t.Fatalf("failed to create namespace: %s", err)
+		return errors.Errorf("failed to create namespace: %s", err)
 	}
 	var removeFunctions []func() error
 	fileToObj := map[string]k8s.Object{}
-	for _, file := range files {
-		obj := objByKind(file.Kind)
-		removeFn, err := c.ApplyFile(context.Background(), DefaultNamespace, file, obj)
+	for i := range resources {
+		obj := objByKind(resources[i].Kind)
+		removeFn, err := c.ApplyResource(context.Background(), DefaultNamespace, &resources[i], obj, retryFn)
 		if err != nil {
-			c.t.Fatalf("fail to apply resource: %s", err)
+			return errors.Errorf("fail to apply resource: %s", err)
 		}
 		removeFunctions = append(removeFunctions, removeFn)
-		fileToObj[file.File] = obj
+		fileToObj[resources[i].Name] = obj
 	}
 	defer func() {
 		for _, fn := range removeFunctions {
@@ -218,10 +245,11 @@ func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallba
 		}
 	}()
 	testCase(c.t, c, fileToObj)
+	return nil
 }
 
-// RunBare runs a test case without applying any resources to the cluster.
-func (c *TestContext) RunBare(name string, testCase TestCallback) {
+// runBare runs a test case without applying any resources to the cluster.
+func (c *TestContext) runBare(name string, testCase TestCallback) {
 	c.t.Run(name, func(t *testing.T) {
 		_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
 		defer utils.IgnoreError(removeNamespace)
@@ -232,19 +260,23 @@ func (c *TestContext) RunBare(name string, testCase TestCallback) {
 	})
 }
 
-// RunWithResourcesPermutation runs the test cases using `files` similarly to `RunWithResources` but it will run the
-// test case for each possible permutation of `files` slice.
-func (c *TestContext) RunWithResourcesPermutation(files []YamlTestFile, name string, testCase TestCallback) {
-	runPermutation(files, 0, func(f []YamlTestFile) {
-		newF := make([]YamlTestFile, len(f))
+// runWithResourcesPermutation runs the test cases using `resources` similarly to `runWithResources` but it will run the
+// test case for each possible permutation of `resources` slice.
+func (c *TestContext) runWithResourcesPermutation(t *testRun) {
+	runPermutation(t.resources, 0, func(f []K8sResourceInfo) {
+		newF := make([]K8sResourceInfo, len(f))
 		copy(newF, f)
-		c.t.Run(fmt.Sprintf("%s_Permutation_%s", name, permutationKind(newF)), func(t *testing.T) {
-			c.RunWithResources(newF, testCase)
+		newTestRun := t.copy()
+		newTestRun.resources = newF
+		c.t.Run(fmt.Sprintf("%s_Permutation_%s", t.name, permutationKind(newF)), func(_ *testing.T) {
+			if err := c.runWithResources(t.resources, t.testCase, t.retryCallback); err != nil {
+				c.t.Fatal(err.Error())
+			}
 		})
 	})
 }
 
-func permutationKind(perm []YamlTestFile) string {
+func permutationKind(perm []K8sResourceInfo) string {
 	kinds := make([]string, len(perm))
 	for i, p := range perm {
 		kinds[i] = p.Kind
@@ -252,16 +284,16 @@ func permutationKind(perm []YamlTestFile) string {
 	return strings.Join(kinds, "_")
 }
 
-func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
-	if i > len(files) {
-		cb(files)
+func runPermutation(resources []K8sResourceInfo, i int, cb func([]K8sResourceInfo)) {
+	if i > len(resources) {
+		cb(resources)
 		return
 	}
-	runPermutation(files, i+1, cb)
-	for j := i + 1; j < len(files); j++ {
-		files[i], files[j] = files[j], files[i]
-		runPermutation(files, i+1, cb)
-		files[i], files[j] = files[j], files[i]
+	runPermutation(resources, i+1, cb)
+	for j := i + 1; j < len(resources); j++ {
+		resources[i], resources[j] = resources[j], resources[i]
+		runPermutation(resources, i+1, cb)
+		resources[i], resources[j] = resources[j], resources[i]
 	}
 }
 
@@ -513,27 +545,45 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, fakeCentral, closeF
 }
 
-// ApplyFileNoObject - apply a file without an object
-func (c *TestContext) ApplyFileNoObject(ctx context.Context, ns string, file YamlTestFile) (func() error, error) {
-	obj := objByKind(file.Kind)
-	return c.ApplyFile(ctx, ns, file, obj)
+// ApplyResourceNoObject - apply a resource without an object
+// If it is set, the RetryCallback will be called if the application of a resource fails.
+func (c *TestContext) ApplyResourceNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
+	obj := objByKind(resource.Kind)
+	return c.ApplyResource(ctx, ns, &resource, obj, retryFn)
 }
 
-// ApplyFile - applies a file
-func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFile, obj k8s.Object) (func() error, error) {
-	d := os.DirFS("yaml")
-	if err := decoder.DecodeFile(
-		d,
-		file.File,
-		obj,
-		decoder.MutateNamespace(ns),
-	); err != nil {
-		return nil, err
+// ApplyResource - applies a resource
+// If it is set, the RetryCallback will be called if the application of a resource fails.
+func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
+	if resource.Obj != nil {
+		var ok bool
+		obj, ok = resource.Obj.(k8s.Object)
+		if !ok {
+			return nil, errors.New("invalid k8s.Object")
+		}
+		resource.Name = obj.GetName()
+	} else {
+		d := os.DirFS("yaml")
+		if err := decoder.DecodeFile(
+			d,
+			resource.YamlFile,
+			obj,
+			decoder.MutateNamespace(ns),
+		); err != nil {
+			return nil, err
+		}
+		resource.Name = resource.YamlFile
 	}
 
-	if shouldWaitForResource(file.Kind) {
-		if err := execWithRetry(5*time.Minute, 5*time.Second, func() error {
-			return c.r.Create(ctx, obj)
+	if shouldRetryResource(resource.Kind) || retryFn != nil {
+		if err := execWithRetry(defaultCreationTimeout, 5*time.Second, func() error {
+			err := c.r.Create(ctx, obj)
+			if err != nil && retryFn != nil {
+				if retryErr := retryFn(err, obj); retryErr != nil {
+					c.t.Fatal(errors.Wrapf(err, "error in retry callback: %s", retryErr)) // TODO: check this wrap
+				}
+			}
+			return err
 		}); err != nil {
 			return nil, err
 		}
@@ -543,14 +593,14 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 		}
 	}
 
-	if file.Kind == "Deployment" || file.Kind == "Pod" {
+	if resource.Kind == "Deployment" || resource.Kind == "Pod" {
 		if err := c.waitForResource(defaultCreationTimeout, deploymentName(obj.GetName())); err != nil {
 			return nil, err
 		}
 	}
 
 	return func() error {
-		if shouldWaitForResource(file.Kind) {
+		if shouldRetryResource(resource.Kind) {
 			err := c.r.Delete(ctx, obj)
 			if err != nil {
 				return err
@@ -660,4 +710,86 @@ func GetUniqueDeploymentNames(messages []*central.MsgFromSensor, ns string) []st
 		}
 	}
 	return uniqueNames.AsSlice()
+}
+
+// RetryCallback callback function that will run if the creation of the resources fails.
+type RetryCallback func(error, k8s.Object) error
+
+// TestRunFunc options function for the testRun struct.
+type TestRunFunc func(*testRun)
+
+// testRun holds all the information about a specific test run. It requires a TestCallback
+type testRun struct {
+	name          string
+	resources     []K8sResourceInfo
+	testCase      TestCallback
+	retryCallback RetryCallback
+	permutation   bool
+}
+
+func WithName(name string) TestRunFunc {
+	return func(t *testRun) {
+		t.name = name
+	}
+}
+
+func WithPermutation() TestRunFunc {
+	return func(t *testRun) {
+		t.permutation = true
+	}
+}
+
+func WithResources(resources []K8sResourceInfo) TestRunFunc {
+	return func(t *testRun) {
+		t.resources = resources
+	}
+}
+
+func WithTestCase(test TestCallback) TestRunFunc {
+	return func(t *testRun) {
+		t.testCase = test
+	}
+}
+
+func WithRetryCallback(retryCallback RetryCallback) TestRunFunc {
+	return func(t *testRun) {
+		t.retryCallback = retryCallback
+	}
+}
+
+func (t *testRun) validate() error {
+	if t.testCase == nil {
+		return errors.New("The testRun needs a TestCallback function")
+	}
+	return nil
+}
+
+func (t *testRun) copy() *testRun {
+	newTestRun := &testRun{}
+	newTestRun.name = t.name
+	newTestRun.resources = make([]K8sResourceInfo, len(t.resources))
+	copy(newTestRun.resources, t.resources)
+	newTestRun.testCase = t.testCase
+	newTestRun.retryCallback = t.retryCallback
+	newTestRun.permutation = t.permutation
+	return newTestRun
+}
+
+func newTestRun(options ...TestRunFunc) (*testRun, error) {
+	t := &testRun{
+		name:          "",
+		resources:     nil,
+		testCase:      nil,
+		retryCallback: nil,
+		permutation:   false,
+	}
+	for _, o := range options {
+		o(t)
+	}
+
+	if err := t.validate(); err != nil {
+		return nil, err
+	}
+
+	return t, nil
 }
