@@ -10,6 +10,7 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/nodeinventorizer"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,9 +36,10 @@ func (s *TestComplianceCachingSuite) TestCaching() {
 	tmpDir := s.T().TempDir()
 	// these two vars are set in the module and directly effect the tested code
 	inventoryCachePath = tmpDir
-	inventoryCacheSeconds = 60 * time.Second.Seconds()
+	s.T().Setenv(env.NodeInventoryCacheDuration.EnvVar(), "1m")
 
 	unix42, _ := timestamp.TimestampProto(time.Unix(42, 0))
+	twoMinutesBefore, _ := timestamp.TimestampProto(time.Now().Add(-time.Minute * 2))
 	testCases := map[string]struct {
 		inputInventory   *storage.NodeInventory
 		expectedNodeName string
@@ -50,6 +52,13 @@ func (s *TestComplianceCachingSuite) TestCaching() {
 			expectedNodeName: "cachedNode",
 		},
 		"cacheTooOld": {
+			inputInventory: &storage.NodeInventory{
+				NodeName: "cachedNode",
+				ScanTime: twoMinutesBefore,
+			},
+			expectedNodeName: "newNode",
+		},
+		"cacheVeryOld": {
 			inputInventory: &storage.NodeInventory{
 				NodeName: "cachedNode",
 				ScanTime: unix42,
