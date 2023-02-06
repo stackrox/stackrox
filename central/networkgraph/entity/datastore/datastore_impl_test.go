@@ -401,12 +401,12 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster1).Return(trees[cluster1])
 	pushSig := suite.expectPushExternalNetworkEntitiesToSensor(cluster1)
 	suite.ds.RegisterCluster(context.Background(), cluster1)
-	// TODO: wait for pushSig
+	suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
 
 	suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster2).Return(trees[cluster2])
 	pushSig = suite.expectPushExternalNetworkEntitiesToSensor(cluster2)
 	suite.ds.RegisterCluster(context.Background(), cluster2)
-	// TODO: wait for pushSig
+	suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
 
 	// Success-upsert default
 	suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), "").Return(trees[""])
