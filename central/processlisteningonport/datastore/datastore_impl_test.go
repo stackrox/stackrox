@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -21,8 +23,6 @@ import (
 )
 
 func TestPLOPDataStore(t *testing.T) {
-	pgtest.SkipIfPostgresEnabled(t)
-
 	suite.Run(t, new(PLOPDataStoreTestSuite))
 }
 
