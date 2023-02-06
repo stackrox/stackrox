@@ -1,6 +1,8 @@
 package transform
 
 import (
+	"reflect"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
@@ -8,12 +10,12 @@ import (
 
 // Transformer transforms a declarativeconfig.Configuration to proto.Message(s).
 type Transformer interface {
-	Transform(config declarativeconfig.Configuration) ([]proto.Message, error)
+	Transform(config declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error)
 }
 
 // New creates a Transformer that can handle transforming all currently supported declarativeconfig.Configuration.
 func New() Transformer {
-	return &defaultTransformer{configurationTransformers: map[string]Transformer{
+	return &universalTransformer{configurationTransformers: map[string]Transformer{
 		declarativeconfig.AuthProviderConfiguration:  nil,
 		declarativeconfig.AccessScopeConfiguration:   nil,
 		declarativeconfig.RoleConfiguration:          nil,
@@ -21,14 +23,15 @@ func New() Transformer {
 	}}
 }
 
-type defaultTransformer struct {
+type universalTransformer struct {
 	configurationTransformers map[string]Transformer
 }
 
-func (t *defaultTransformer) Transform(config declarativeconfig.Configuration) ([]proto.Message, error) {
+func (t *universalTransformer) Transform(config declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
 	ct, exists := t.configurationTransformers[config.Type()]
 	if !exists {
-		return nil, errox.NotFound.Newf("no transformation logic for declarative config type %s found", config.Type())
+		return nil, errox.InvariantViolation.Newf("no transformation logic for declarative config type %s found",
+			config.Type())
 	}
 	return ct.Transform(config)
 }
