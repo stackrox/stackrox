@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package pruning
 
 import (
@@ -1167,10 +1169,6 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			require.NoError(t, err)
 		})
 	}
-}
-
-func timestampNowMinus(t time.Duration) *protoTypes.Timestamp {
-	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
 }
 
 func timeBeforeDays(days int) *protoTypes.Timestamp {

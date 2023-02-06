@@ -7,6 +7,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -17,6 +18,8 @@ var (
 )
 
 func TestNamespaceIndex(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(NamespaceIndexTestSuite))
 }
 

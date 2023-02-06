@@ -13,13 +13,10 @@ import (
 )
 
 func TestSplitAndMergeNode(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skip postgres tests")
 		t.SkipNow()
 	}
-
 	ts := timestamp.TimestampNow()
 	node := &storage.Node{
 		Id:   "id",

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,8 @@ var (
 )
 
 func TestIndicatorIndex(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(IndicatorIndexTestSuite))
 }
 
