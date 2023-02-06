@@ -246,24 +246,24 @@ jobs:
     needs: [variables]
     runs-on: ubuntu-latest
     steps:
-      - name: Create ${{needs.variables.outputs.milestone}} milestone
+      - name: Create ${{needs.variables.outputs.next-milestone}} milestone
         if: env.DRY_RUN == 'false'
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
-            -f title="${{needs.variables.outputs.milestone}}" \
+            -f title="${{needs.variables.outputs.next-milestone}}" \
             2>&1); then
 
             if grep "HTTP 422" <<< "$http_code"; then
-              echo ":arrow_right: Milestone ${{needs.variables.outputs.milestone}} already exists." \
+              echo ":arrow_right: Milestone ${{needs.variables.outputs.next-milestone}} already exists." \
                 "**Close it once it's finished.**" >> "$GITHUB_STEP_SUMMARY"
             else
-              echo "::error::Couldn't create milestone ${{needs.variables.outputs.milestone}}: $http_code"
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $http_code"
               exit 1
             fi
           else
-            echo ":arrow_right: Milestone ${{needs.variables.outputs.milestone}} has been created." \
+            echo ":arrow_right: Milestone ${{needs.variables.outputs.next-milestone}} has been created." \
               "**Close it once it's finished.**" >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -289,7 +289,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "Branch `${{needs.variables.outputs.branch}}`
-            and milestone `${{needs.variables.outputs.milestone}}`
+            and milestone `${{needs.variables.outputs.next-milestone}}`
             have been created.\n\nPRs merged to the ${{env.main_branch}} branch
             and assigned to RC milestones will be cherry-picked when closing the respective milestones.
             For the urgent fixes that must go exclusively to this release
@@ -317,7 +317,7 @@ jobs:
             has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            "Milestone `${{needs.variables.outputs.milestone}}`
+            "Milestone `${{needs.variables.outputs.next-milestone}}`
             has been created.\n\nPRs merged to the ${{env.main_branch}} branch
             and assigned to RC milestones will be cherry-picked when closing the respective milestones.
             For the urgent fixes that must go exclusively to this release
