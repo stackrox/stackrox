@@ -56,5 +56,5 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 			},
 		},
 	}
-	return component.NewResourceEvent(events, nil, nil)
+	return component.NewEvent(events...)
 }

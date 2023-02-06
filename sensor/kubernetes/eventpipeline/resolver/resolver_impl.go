@@ -48,44 +48,50 @@ func (r *resolverImpl) runResolver() {
 
 // processMessage resolves the dependencies and forwards the message to the outputQueue
 func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
-	if msg.DeploymentReference != nil {
-		referenceIds := msg.DeploymentReference(r.storeProvider.Deployments())
+	if msg.DeploymentReferences != nil {
 
-		if msg.ForceDetection && len(referenceIds) > 0 {
-			// We append the referenceIds to the msg to be reprocessed
-			msg = component.MergeResourceEvents(msg, component.NewResourceEvent(nil, nil, referenceIds))
-		}
-
-		for _, id := range referenceIds {
-			preBuiltDeployment := r.storeProvider.Deployments().Get(id)
-			if preBuiltDeployment == nil {
-				log.Warnf("Deployment with id %s not found", id)
+		for _, deploymentReference := range msg.DeploymentReferences {
+			if deploymentReference.Reference == nil {
 				continue
 			}
 
-			// Remove actions are done at the handler level. This is not ideal but for now it allows us to be able to fetch deployments from the store
-			// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdate here.
-			r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(id)
+			referenceIds := deploymentReference.Reference(r.storeProvider.Deployments())
 
-			permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
-			exposureInfo := r.storeProvider.Services().
-				GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
-
-			d, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
-				PermissionLevel: permissionLevel,
-				Exposures:       exposureInfo,
-			})
-
-			if err != nil {
-				log.Warnf("Failed to build deployment dependency: %s", err)
-				continue
+			if deploymentReference.ForceDetection && len(referenceIds) > 0 {
+				// We append the referenceIds to the msg to be reprocessed
+				msg.AddDeploymentForReprocessing(referenceIds...)
 			}
 
-			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(msg.ParentResourceAction, d, msg.DeploymentTiming)},
-				[]component.CompatibilityDetectionMessage{{Object: d, Action: msg.ParentResourceAction}}, nil)
+			for _, id := range referenceIds {
+				preBuiltDeployment := r.storeProvider.Deployments().Get(id)
+				if preBuiltDeployment == nil {
+					log.Warnf("Deployment with id %s not found", id)
+					continue
+				}
 
-			component.MergeResourceEvents(msg, event)
+				// Remove actions are done at the handler level. This is not ideal but for now it allows us to be able to fetch deployments from the store
+				// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdate here.
+				r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(id)
+
+				permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
+				exposureInfo := r.storeProvider.Services().
+					GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
+
+				d, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
+					PermissionLevel: permissionLevel,
+					Exposures:       exposureInfo,
+				})
+
+				if err != nil {
+					log.Warnf("Failed to build deployment dependency: %s", err)
+					continue
+				}
+
+				msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
+					AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+			}
 		}
+
 	}
 
 	r.outputQueue.Send(msg)
