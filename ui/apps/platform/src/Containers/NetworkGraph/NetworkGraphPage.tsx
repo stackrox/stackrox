@@ -32,6 +32,7 @@ import useURLParameter from 'hooks/useURLParameter';
 import NetworkGraphContainer, { Models } from './NetworkGraphContainer';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
+import NodeUpdateSection from './components/NodeUpdateSection';
 import NetworkSearch from './components/NetworkSearch';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
@@ -79,7 +80,7 @@ function NetworkGraphPage() {
     const [pollEpoch, setPollEpoch] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
-    const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('never');
+    const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
 
     const { searchFilter } = useURLSearch();
@@ -106,17 +107,9 @@ function NetworkGraphPage() {
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
     const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
-    console.log({ deploymentCount });
 
     const [prevEpochCount, setPrevEpochCount] = useState(0);
     const [currentEpochCount, setCurrentEpochCount] = useState(0);
-
-    // useEffect(() => {
-    //     if (selectedClusterId) {
-    //         console.log({ selectedClusterId });
-    //         console.log({ prevEpochCount });
-    //     }
-    // }, [selectedClusterId, prevEpochCount]);
 
     // We will update the poll epoch after 30 seconds to update the node count for a cluster
     useInterval(() => {
@@ -124,16 +117,16 @@ function NetworkGraphPage() {
     }, 30000);
 
     useEffect(() => {
-        if (selectedClusterId) {
+        if (selectedClusterId && namespacesFromUrl.length > 0) {
             fetchNodeUpdates(selectedClusterId)
                 .then((result) => {
                     setCurrentEpochCount(result?.response?.epoch || 0);
                 })
-                .catch((err) => {
-                    console.warn(err);
+                .catch(() => {
+                    // failure to update the node count is not critical
                 });
         }
-    }, [selectedClusterId, pollEpoch]);
+    }, [selectedClusterId, namespacesFromUrl.length, pollEpoch]);
 
     useDeepCompareEffect(() => {
         // check that user is finished adding a complete filter
@@ -143,8 +136,8 @@ function NetworkGraphPage() {
         const isClusterNamespaceSelected =
             clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
 
-        if (isQueryFilterComplete && isClusterNamespaceSelected) {
-            if (selectedClusterId) {
+        if (isQueryFilterComplete && selectedClusterId && isClusterNamespaceSelected) {
+            if (currentEpochCount === 0) {
                 setIsLoading(true);
 
                 const queryToUse = queryService.objectToWhereClause(remainingQuery);
@@ -171,11 +164,11 @@ function NetworkGraphPage() {
                     ),
                 ])
                     .then((values) => {
-                        // get policy nodes from api response
+                        // get policy nodes, and the starting epoch, from policy graph API response
                         const { nodes: policyNodes, epoch } = values[1].response;
                         // transform policy data to DataModel
                         const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
-                        // get active nodes from api response
+                        // get active nodes from network flow graph API response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
                         const { activeDataModel, activeEdgeMap, activeNodeMap } =
@@ -216,11 +209,19 @@ function NetworkGraphPage() {
         remainingQuery,
         timeWindow,
         deploymentCount,
+        prevEpochCount,
+        currentEpochCount,
     ]);
 
     function toggleCIDRBlockForm() {
         setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
     }
+
+    function updateNetworkNodes() {
+        setCurrentEpochCount(0);
+    }
+
+    const nodeUpdatesCount = currentEpochCount - prevEpochCount;
 
     return (
         <>
@@ -303,7 +304,12 @@ function NetworkGraphPage() {
                         <ToolbarGroup alignment={{ default: 'alignRight' }}>
                             <Divider component="div" orientation={{ default: 'vertical' }} />
                             <ToolbarItem className="pf-u-color-200">
-                                <em>Last updated at {lastUpdatedTime}</em>
+                                <NodeUpdateSection
+                                    isLoading={isLoading}
+                                    lastUpdatedTime={lastUpdatedTime}
+                                    nodeUpdatesCount={nodeUpdatesCount}
+                                    updateNetworkNodes={updateNetworkNodes}
+                                />
                             </ToolbarItem>
                         </ToolbarGroup>
                     </ToolbarContent>
