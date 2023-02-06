@@ -193,10 +193,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		cv.AddChild("exposure", &exposure)
 	}
 
-	if c.CentralDBEnabled() {
-		cv.AddChild("db", getCentralDBComponentValues(c.DB))
-	}
-
+	cv.AddChild("db", getCentralDBComponentValues(c.DB))
 	cv.AddChild("telemetry", getTelemetryValues(c.Telemetry))
 
 	cv.AddChild("declarativeConfiguration", getDeclarativeConfigurationValues(c.DeclarativeConfiguration))
@@ -206,6 +203,10 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 
 func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
+	if c == nil {
+		return &cv
+	}
+
 	cv.SetBoolValue("enabled", true)
 
 	if c.ConnectionStringOverride != nil {

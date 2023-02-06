@@ -1,3 +1,4 @@
+# Default specs.central.db behaviour is to use an internal central-db instance
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:
@@ -5,6 +6,5 @@ metadata:
 spec:
   central:
     db:
-      isEnabled: "Enabled"
       connectionString: null
       passwordSecret: null
