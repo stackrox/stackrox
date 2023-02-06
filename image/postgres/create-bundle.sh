@@ -37,9 +37,9 @@ if [[ $(uname -m) == "arm64" ]]; then
   dnf_list_args=('--nogpgcheck')
 fi
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
-postgres_major="13"
+postgres_major="15"
 pg_rhel_major="8"
-pg_rhel_minor="6"
+pg_rhel_minor="7"
 pg_rhel_version="${pg_rhel_major}.${pg_rhel_minor}"
 
 if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
