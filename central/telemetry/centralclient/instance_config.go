@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/version"
 	k8sVersion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
@@ -129,7 +130,7 @@ func RegisterCentralClient(config grpc.Config, basicAuthProviderID string) {
 	}
 	registerInterceptors(config)
 	// Central adds itself to the tenant group, with no group properties:
-	cfg.Telemeter().GroupUserAs(cfg.ClientID, "", "", cfg.GroupID, nil)
+	cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(cfg.ClientID))
 	registerAdminUser(basicAuthProviderID)
 }
 
@@ -147,12 +148,12 @@ func registerAdminUser(basicAuthProviderID string) {
 
 	// Add the basic authorization ID form ('admin'):
 	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	cfg.Telemeter().GroupUserAs(adminHash, "", "", cfg.GroupID, nil)
+	cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(adminHash))
 
 	// Add the token based ID form ('sso:<provider id>:admin'):
 	adminTokenHash := cfg.HashUserID(
 		tokenbased.FormatUserID(basic.DefaultUsername, basicAuthProviderID),
 		basicAuthProviderID,
 	)
-	cfg.Telemeter().GroupUserAs(adminTokenHash, "", "", cfg.GroupID, nil)
+	cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(adminTokenHash))
 }

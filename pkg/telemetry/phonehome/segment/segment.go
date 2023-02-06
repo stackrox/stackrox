@@ -6,15 +6,17 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                     = logging.LoggerForModule()
+	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
 )
 
 type segmentTelemeter struct {
-	client segment.Client
-	userID string
+	client   segment.Client
+	clientID string
 }
 
 func getMessageType(msg segment.Message) string {
@@ -65,7 +67,7 @@ func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Dura
 		return nil
 	}
 
-	return &segmentTelemeter{client: client, userID: clientID}
+	return &segmentTelemeter{client: client, clientID: clientID}
 }
 
 type logWrapper struct {
@@ -88,39 +90,38 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func (t *segmentTelemeter) overwriteID(id string) string {
-	if id == "" {
-		return t.userID
+func (t *segmentTelemeter) overrideUserID(o *telemeter.CallOptions) string {
+	if o.UserID != "" {
+		return o.UserID
 	}
-	return id
+	return t.clientID
 }
 
-func makeDeviceContext(clientID, clientType string) *segment.Context {
-	if clientID == "" {
+func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
+	if o.ClientID == "" {
 		return nil
 	}
 	return &segment.Context{
 		Device: segment.DeviceInfo{
-			Id:   clientID,
-			Type: clientType,
+			Id:   o.ClientID,
+			Type: o.ClientType,
 		},
 	}
 }
 
-func (t *segmentTelemeter) Identify(props map[string]any) {
-	t.IdentifyUserAs("", "", "", props)
-}
-
-func (t *segmentTelemeter) IdentifyUserAs(userID, clientID, clientType string, props map[string]any) {
+func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
 	if t == nil {
 		return
 	}
+
+	options := telemeter.ApplyOptions(opts)
+
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
-		UserId:  t.overwriteID(userID),
+		UserId:  t.overrideUserID(options),
 		Traits:  traits,
-		Context: makeDeviceContext(clientID, clientType),
+		Context: makeDeviceContext(options),
 	}
 
 	for k, v := range props {
@@ -131,20 +132,18 @@ func (t *segmentTelemeter) IdentifyUserAs(userID, clientID, clientType string, p
 	}
 }
 
-func (t *segmentTelemeter) Group(groupID string, props map[string]any) {
-	t.GroupUserAs("", "", "", groupID, props)
-}
-
-func (t *segmentTelemeter) GroupUserAs(userID, clientID, clientType, groupID string, props map[string]any) {
+func (t *segmentTelemeter) Group(groupID string, props map[string]any, opts ...telemeter.Option) {
 	if t == nil {
 		return
 	}
 
+	options := telemeter.ApplyOptions(opts)
+
 	group := segment.Group{
 		GroupId: groupID,
-		UserId:  t.overwriteID(userID),
+		UserId:  t.overrideUserID(options),
 		Traits:  props,
-		Context: makeDeviceContext(clientID, clientType),
+		Context: makeDeviceContext(options),
 	}
 
 	if err := t.client.Enqueue(group); err != nil {
@@ -152,20 +151,18 @@ func (t *segmentTelemeter) GroupUserAs(userID, clientID, clientType, groupID str
 	}
 }
 
-func (t *segmentTelemeter) Track(event string, props map[string]any) {
-	t.TrackUserAs("", "", "", event, props)
-}
-
-func (t *segmentTelemeter) TrackUserAs(userID, clientID, clientType, event string, props map[string]any) {
+func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
 	if t == nil {
 		return
 	}
 
+	options := telemeter.ApplyOptions(opts)
+
 	track := segment.Track{
-		UserId:     t.overwriteID(userID),
+		UserId:     t.overrideUserID(options),
 		Event:      event,
 		Properties: props,
-		Context:    makeDeviceContext(clientID, clientType),
+		Context:    makeDeviceContext(options),
 	}
 
 	if err := t.client.Enqueue(track); err != nil {

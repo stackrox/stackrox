@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 // GatherFunc returns properties gathered by a data source.
@@ -28,7 +29,7 @@ func (*nilGatherer) AddGatherer(GatherFunc) {}
 
 type gatherer struct {
 	clientType  string
-	telemeter   Telemeter
+	telemeter   telemeter.Telemeter
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
@@ -38,7 +39,7 @@ type gatherer struct {
 	lastData    map[string]any
 }
 
-func newGatherer(clientType string, t Telemeter, p time.Duration) *gatherer {
+func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
 		clientType: clientType,
 		telemeter:  t,
