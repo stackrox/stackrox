@@ -124,28 +124,33 @@ func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
 //
 // Example:
 // Assuming you have a multi-path query such as:
-// {result.deployments.#.depName,result.deployments.#.images.#.imgName,result.deployments.#.images.#.components.#.compName,result.deployments.#.images.#.components.#.vulns.#.vulnName}
+//
+//	{result.deployments.#.depName,result.deployments.#.images.#.imgName,result.deployments.#.images.#.components.#.compName,result.deployments.#.images.#.components.#.vulns.#.vulnName}
+//
 // which is used against the following JSON object:
-// {"result":{"deployments":[{"name":"dep1","images":[{"name":"image1","components":[{"name":"comp11","vulns":[{"name":"cve1"}]},{"name":"comp12"}]},{"name":"image2","components":[{"name":"comp21","vulns":[{"name":"cve1"}]},{"name":"comp22","vulns":[{"name":"cve2"}]}]}]}]}}
+//
+//	{"result":{"deployments":[{"name":"dep1","images":[{"name":"image1","components":[{"name":"comp11","vulns":[{"name":"cve1"}]},{"name":"comp12"}]},{"name":"image2","components":[{"name":"comp21","vulns":[{"name":"cve1"}]},{"name":"comp22","vulns":[{"name":"cve2"}]}]}]}]}}
 //
 // The yielded gjson.Result would look like this:
-// {"depName":["dep1"],"imgName":[["image1","image2"]],"compName":[[["comp11","comp12"],["comp21","comp22"]]],"vulnName":[[[["cve1"],[]],[["cve1"],["cve2"]]]]}
+//
+//	{"depName":["dep1"],"imgName":[["image1","image2"]],"compName":[[["comp11","comp12"],["comp21","comp22"]]],"vulnName":[[[["cve1"],[]],[["cve1"],["cve2"]]]]}
 //
 // When constructing the column tree, the query will be sorted for "dimension". A dimension is the depth of arrays
 // available per result.
 //
 // The constructed tree would look like the following:
+//
 //	dep1
-//	- image1
+//	 - image1
 //	  - comp11
-//      - cve1
-//    - comp12
-//      - -
-//  - image2
-//    - comp21
-//      - cve1
-//    - comp22
-//      - cve2
+//		- cve1
+//	  - comp12
+//	     - -
+//	 - image2
+//	  - comp21
+//	  	- cve1
+//	  - comp22
+//	    - cve2
 //
 // Each children is representing a related data. Now, when constructing the column, we are aware of
 // related data and can expand the column values.

@@ -86,7 +86,7 @@ func (suite *ResourceEventHandlerImplTestSuite) newHandlerImpl() *resourceEventH
 	}
 }
 
-//// Test that when a message is handled by an unsynced resourceEventHandlerImpl it's ID is added to the seedIDs set
+// Test that when a message is handled by an unsynced resourceEventHandlerImpl it's ID is added to the seedIDs set
 func (suite *ResourceEventHandlerImplTestSuite) TestIDsAddedToSyncSet() {
 	handler := suite.newHandlerImpl()
 

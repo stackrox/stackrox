@@ -69,7 +69,7 @@ type Egress struct {
 }
 
 // ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.
-//+kubebuilder:validation:Enum=Online;Offline
+// +kubebuilder:validation:Enum=Online;Offline
 type ConnectivityPolicy string
 
 const (
@@ -207,7 +207,7 @@ type CentralDBSpec struct {
 }
 
 // CentralDBEnabled is a type for values of spec.central.db.enabled.
-//+kubebuilder:validation:Enum=Default;Enabled
+// +kubebuilder:validation:Enum=Default;Enabled
 type CentralDBEnabled string
 
 const (
@@ -490,7 +490,7 @@ func (s *ScannerComponentSpec) IsEnabled() bool {
 }
 
 // ScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
-//+kubebuilder:validation:Enum=Enabled;Disabled
+// +kubebuilder:validation:Enum=Enabled;Disabled
 type ScannerComponentPolicy string
 
 const (

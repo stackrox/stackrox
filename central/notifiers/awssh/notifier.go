@@ -337,8 +337,9 @@ func (n *notifier) ProtoNotifier() *storage.Notifier {
 }
 
 // Test checks if:
-//   * n is running, i.e., exactly one go routine is executing n.run(...)
-//   * AWS SecurityHub is reachable
+//   - n is running, i.e., exactly one go routine is executing n.run(...)
+//   - AWS SecurityHub is reachable
+//
 // If either of the checks fails, an error is returned.
 func (n *notifier) Test(ctx context.Context) error {
 	if n.stoppedSig.IsDone() {

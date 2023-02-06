@@ -86,8 +86,8 @@ class AdmissionControllerTest extends BaseSpecification {
 
     def setup() {
         // https://stack-rox.atlassian.net/browse/ROX-7026 - Disable ChaosMonkey
-        // // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
-        // // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
+        // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
+        // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
         // chaosMonkey = new ChaosMonkey(orchestrator, 1, 10L)
         // chaosMonkey.waitForEffect()
     }

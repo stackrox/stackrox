@@ -10,6 +10,7 @@ import (
 )
 
 // DataStore is the interface for accessing stored compliance data
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error)

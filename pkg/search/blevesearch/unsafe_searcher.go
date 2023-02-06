@@ -8,6 +8,7 @@ import (
 )
 
 // UnsafeSearcher is a searcher that does not take in a context to perform SAC enforcement.
+//
 //go:generate mockgen-wrapper
 type UnsafeSearcher interface {
 	Search(ctx context.Context, q *v1.Query, opts ...SearchOption) ([]search.Result, error)

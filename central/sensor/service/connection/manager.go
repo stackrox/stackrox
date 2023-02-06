@@ -11,6 +11,7 @@ import (
 )
 
 // Manager is responsible for managing all active connections from sensors.
+//
 //go:generate mockgen-wrapper
 type Manager interface {
 	// Need to register cluster manager to avoid cyclic dependencies with cluster datastore

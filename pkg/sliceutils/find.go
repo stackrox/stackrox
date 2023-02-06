@@ -13,9 +13,11 @@ func Find[T comparable](slice []T, elem T) int {
 // FindMatching returns the first index of slice where the passed predicate returns true, or -1 if it doesn't return
 // true for any element.
 // Example usage:
-// FindMatching([]string{"a", "b", "cd"}, func(s string) bool {
-//   return len(s) > 1
-// })
+//
+//	FindMatching([]string{"a", "b", "cd"}, func(s string) bool {
+//	  return len(s) > 1
+//	})
+//
 // will return 2.
 func FindMatching[T any](slice []T, predicate func(T) bool) int {
 	for i, v := range slice {

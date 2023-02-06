@@ -8,6 +8,7 @@ import (
 )
 
 // GRPCMetrics provides an grpc interceptor which monitors API calls and recovers from panics and provides a method to get the metrics
+//
 //go:generate mockgen-wrapper
 type GRPCMetrics interface {
 	UnaryMonitoringInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error)
