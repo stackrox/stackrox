@@ -132,6 +132,7 @@ require (
 require (
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
+	github.com/hashicorp/golang-lru v1.0.1 // indirect
 	github.com/jackc/pgx/v5 v5.2.0 // indirect
 	github.com/pjbgf/sha1cd v0.2.3 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
