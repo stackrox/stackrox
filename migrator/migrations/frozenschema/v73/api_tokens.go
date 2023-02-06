@@ -4,7 +4,6 @@ package schema
 
 import (
 	"reflect"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -31,9 +30,6 @@ const (
 
 // ApiTokens holds the Gorm model for Postgres table `api_tokens`.
 type ApiTokens struct {
-	Id                   string     `gorm:"column:id;type:varchar;primaryKey"`
-	Expiration           *time.Time `gorm:"column:expiration;type:timestamp"`
-	ExpirationNotifiedAt *time.Time `gorm:"column:expirationnotifiedat;type:timestamp"`
-	Revoked              bool       `gorm:"column:revoked;type:bool"`
-	Serialized           []byte     `gorm:"column:serialized;type:bytea"`
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

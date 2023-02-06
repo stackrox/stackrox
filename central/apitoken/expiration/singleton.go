@@ -7,12 +7,12 @@ import (
 )
 
 var (
-	notifier ExpiryNotifier
+	notifier ExpirationNotifier
 	once     sync.Once
 )
 
 // Singleton ...
-func Singleton() ExpiryNotifier {
+func Singleton() ExpirationNotifier {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}

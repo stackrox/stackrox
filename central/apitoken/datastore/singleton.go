@@ -12,15 +12,11 @@ var (
 )
 
 func initialize() {
-	// var storage store.Store
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// storage = postgres.New(globaldb.GetPostgres())
 		svc = NewPostgres(globaldb.GetPostgres())
 	} else {
-		// storage = rocksdb.New(globaldb.GetRocksDB())
 		svc = NewRocks(globaldb.GetRocksDB())
 	}
-	// svc = New(storage)
 }
 
 // Singleton returns the API token singleton.

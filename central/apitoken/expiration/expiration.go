@@ -17,17 +17,12 @@ import (
 )
 
 const (
-	// nofiticationInterval = 6 * time.Hour
-	nofiticationInterval = 1 * time.Minute
-
-	// staleNotificationAge = 24 * time.Hour     // 1 day
-	staleNotificationAge = 6 * time.Minute // 1 day
-	// expiryWindow         = 7 * 24 * time.Hour // 1 week
-	expiryWindow = 24 * time.Minute // 1 week
+	nofiticationInterval = 12 * time.Hour     // 12 hours
+	staleNotificationAge = 24 * time.Hour     // 1 day
+	expirationWindow     = 7 * 24 * time.Hour // 1 week
 
 	// The timestamp format / layout is borrowed from `pkg/search/postgres/query/time_query.go`. It would be worth exporting.
 	timestampLayout = "2006-01-02 15:04:05 -07:00"
-	//timestampLayout = "YYYY-MM-DD HH24:MI:SS -07:00"
 )
 
 var (
@@ -47,11 +42,14 @@ var (
 	)
 )
 
-type ExpiryNotifier interface {
+// ExpirationNotifier is the interface for a background task that notifies about API token expiration
+type ExpirationNotifier interface {
 	Start()
 	Stop()
 }
 
+// ExpiringItemNotifier is the interface to list the tokens about to expire, and to send notifications
+// for items about to expire.
 type ExpiringItemNotifier interface {
 	ListItemsAboutToExpire() ([]search.Result, error)
 	Notify(identifiersToNotify []string) error
@@ -102,7 +100,7 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 	}
 
 	now := time.Now()
-	aboutToExpireDate := now.Add(expiryWindow)
+	aboutToExpireDate := now.Add(expirationWindow)
 	staleNotificationDate := now.Add(-staleNotificationAge)
 
 	expiringTokenIDs, err := n.listItemsToNotify(now, aboutToExpireDate, staleNotificationDate)
@@ -136,7 +134,6 @@ func (n *expirationNotifierImpl) listItemsToNotify(now time.Time, expiresUntil t
 	formattedNow := now.Format(timestampLayout)
 	formattedExpiresUntil := expiresUntil.Format(timestampLayout)
 	formattedNotifiedUntil := notifiedUntil.Format(timestampLayout)
-	log.Infof("Expiration < %q LastNotified < %q", formattedExpiresUntil, formattedNotifiedUntil)
 	// Search tokens that expire before expiresUntil, that have not expired yet,
 	// and that have not been notified since notifiedUntil.
 	// That is Expiration < expiresUntil and LastNotified < notifiedUntil.

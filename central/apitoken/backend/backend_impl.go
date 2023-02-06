@@ -70,6 +70,7 @@ func (c *backendImpl) RevokeToken(ctx context.Context, tokenID string) (bool, er
 func metadataFromTokenInfo(name string, info *tokens.TokenInfo) *storage.TokenMetadata {
 	var singleRole string
 	if len(info.RoleNames) == 1 {
+		singleRole = info.RoleNames[0]
 	}
 	return &storage.TokenMetadata{
 		Id:         info.ID,
