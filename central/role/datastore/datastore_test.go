@@ -403,11 +403,17 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, declarativePermissionSet)
 	s.ErrorIs(err, errox.InvalidArgs, "attempting to modify imperatively declarative permission set is an error")
 
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteDeclarativeCtx, goodPermissionSet)
+	s.ErrorIs(err, errox.InvalidArgs, "attempting to modify declaratively imperative permission set is an error")
+
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet)
 	s.NoError(err, "attempting to modify declaratively declarative permission set is not an error")
 
 	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, declarativePermissionSet.GetId())
 	s.ErrorIs(err, errox.InvalidArgs, "attempting to delete imperatively declarative permission set is an error")
+
+	err = s.dataStore.RemovePermissionSet(s.hasWriteDeclarativeCtx, goodPermissionSet.GetId())
+	s.ErrorIs(err, errox.InvalidArgs, "attempting to delete declaratively imperative permission set is an error")
 
 	err = s.dataStore.RemovePermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet.GetId())
 	s.NoError(err, "attempting to delete declaratively declarative permission set is not an error")
