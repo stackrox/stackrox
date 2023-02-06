@@ -105,7 +105,7 @@ class OperatorE2eTest(BaseTest):
         self.run_with_graceful_kill(
             ["operator/hack/junit_wrap.sh", "deploy-previous-operator",
              "Deploy previously released version of the operator.",
-             "See log for error details.",
+             "See log for error details. Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
              "make", "-C", "operator", "deploy-previous-via-olm"],
             OperatorE2eTest.DEPLOY_TIMEOUT_SEC,
         )
@@ -114,7 +114,8 @@ class OperatorE2eTest(BaseTest):
         self.run_with_graceful_kill(
             ["operator/hack/junit_wrap.sh", "test-upgrade",
              "Test operator upgrade from previously released version to the current one.",
-             "See log and/or kuttl JUnit output for error details.",
+             "See log and/or kuttl JUnit output for error details. "
+             "Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
              "make", "-C", "operator", "test-upgrade"],
             OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
         )
@@ -123,7 +124,8 @@ class OperatorE2eTest(BaseTest):
         self.run_with_graceful_kill(
             ["operator/hack/junit_wrap.sh", "test-e2e",
              "Run operator E2E tests.",
-             "See log and/or kuttl JUnit output for error details.",
+             "See log and/or kuttl JUnit output for error details. "
+             "Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
              "make", "-C", "operator", "test-e2e-deployed"],
             OperatorE2eTest.E2E_TEST_TIMEOUT_SEC,
         )
