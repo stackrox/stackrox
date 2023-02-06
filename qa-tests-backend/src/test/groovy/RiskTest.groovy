@@ -74,7 +74,7 @@ class RiskTest extends BaseSpecification {
 
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.deleteDeployment(deployment)
+            orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
         }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
