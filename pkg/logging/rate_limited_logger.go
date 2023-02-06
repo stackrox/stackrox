@@ -3,7 +3,7 @@ package logging
 import (
 	"time"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"golang.org/x/time/rate"
 )
 
@@ -12,12 +12,12 @@ type RateLimitedLogger struct {
 	*Logger
 	frequency    float64
 	burst        int
-	rateLimiters *lru.Cache
+	rateLimiters *lru.Cache[string, *rate.Limiter]
 }
 
 // NewRateLimitLogger returns a rate limited logger
 func NewRateLimitLogger(l *Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
-	cache, err := lru.New(size)
+	cache, err := lru.New[string, *rate.Limiter](size)
 	if err != nil {
 		l.Errorf("unable to create rate limiter cache for logger in module %q: %v", l.module.name, err)
 		return nil
@@ -62,7 +62,7 @@ func (rl *RateLimitedLogger) allowLog(limiter string) bool {
 	_, _ = rl.rateLimiters.ContainsOrAdd(limiter, rate.NewLimiter(rate.Limit(rl.frequency), rl.burst))
 
 	if lim, ok := rl.rateLimiters.Get(limiter); ok {
-		return lim.(*rate.Limiter).Allow()
+		return lim.Allow()
 	}
 	return false
 }
