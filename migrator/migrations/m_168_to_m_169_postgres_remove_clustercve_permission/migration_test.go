@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
 	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission/permissionsetpostgresstore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -89,7 +90,7 @@ func TestMigration(t *testing.T) {
 func (s *psMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
 	s.store = permissionSetPostgresStore.New(s.db.Pool)
-	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.PermissionSetsTableName)
+	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePermissionSetsStmt)
 }
 
 func (s *psMigrationTestSuite) TearDownTest() {

@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
-	migSchema "github.com/stackrox/rox/migrator/migrations/postgreshelper/schema"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -40,7 +39,7 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 		return &ver, nil
 	}
 
-	protoVersion, err := migSchema.ConvertVersionToProto(&modelVersion)
+	protoVersion, err := ConvertVersionToProto(&modelVersion)
 	if err != nil {
 		return &ver, nil
 	}
@@ -68,7 +67,7 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 	if ensureSchema {
 		pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	}
-	modelVersion, err := migSchema.ConvertVersionFromProto(updatedVersion)
+	modelVersion, err := ConvertVersionFromProto(updatedVersion)
 	if err != nil {
 		utils.Must(errors.Wrapf(err, "failed to write migration version to %s", "name"))
 	}
