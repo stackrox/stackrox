@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/authprovider/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -59,7 +60,11 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 
 	// Currently, the data store does not support forcing updates.
 	// If we want to add a force flag to the respective API methods, we might need to revisit this.
-	if err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), false); err != nil {
+	ap, err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), false)
+	if err != nil {
+		return err
+	}
+	if err = verifyAuthProviderOriginMatches(ctx, ap); err != nil {
 		return err
 	}
 	return b.storage.Upsert(ctx, authProvider)
@@ -73,33 +78,45 @@ func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string, force
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.verifyExistsAndMutable(ctx, id, force); err != nil {
+	ap, err := b.verifyExistsAndMutable(ctx, id, force)
+	if err != nil {
+		return err
+	}
+	if err = verifyAuthProviderOriginMatches(ctx, ap); err != nil {
 		return err
 	}
 	return b.storage.Delete(ctx, id)
 }
 
-func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, force bool) error {
+func verifyAuthProviderOriginMatches(ctx context.Context, ap *storage.AuthProvider) error {
+	if !declarativeconfig.IsOriginModifiable(ctx, ap.GetTraits().GetOrigin()) {
+		return errors.Wrapf(errox.InvalidArgs, "auth provider %q's origin is %s, cannot be modified or deleted within this context",
+			ap.GetName(), ap.GetTraits().GetOrigin())
+	}
+	return nil
+}
+
+func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, force bool) (*storage.AuthProvider, error) {
 	provider, exists, err := b.storage.Get(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !exists {
-		return errox.NotFound.Newf("auth provider with id %q was not found", id)
+		return nil, errox.NotFound.Newf("auth provider with id %q was not found", id)
 	}
 
 	switch provider.GetTraits().GetMutabilityMode() {
 	case storage.Traits_ALLOW_MUTATE:
-		return nil
+		return provider, nil
 	case storage.Traits_ALLOW_MUTATE_FORCED:
 		if force {
-			return nil
+			return provider, nil
 		}
-		return errox.InvalidArgs.Newf("auth provider %q is immutable and can only be removed"+
+		return nil, errox.InvalidArgs.Newf("auth provider %q is immutable and can only be removed"+
 			" via API and specifying the force flag", id)
 	default:
 		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
 			provider.GetTraits().GetMutabilityMode()))
 	}
-	return errox.InvalidArgs.Newf("auth provider %q is immutable", id)
+	return nil, errox.InvalidArgs.Newf("auth provider %q is immutable", id)
 }
