@@ -654,7 +654,7 @@ class ImageScanningTest extends BaseSpecification {
 
         where:
         image                                              | registry
-        "registry.k8s.io/ip-masq-agent-amd64:v2.4.1"       | "gcr registry"
+        "k8s.gcr.io/ip-masq-agent-amd64:v2.4.1"            | "gcr registry"
         "quay.io/rhacs-eng/qa:alpine-3.16.0"               | "quay registry"
         "quay.io/stackrox-io/scanner:2.27.3"               | "quay registry"
         "gke.gcr.io/heapster:v1.7.2"                       | "one from gke"
