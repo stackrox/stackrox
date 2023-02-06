@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -624,6 +625,8 @@ func mustParseTime(timeStr string) time.Time {
 }
 
 func TestViolations(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, &violationsTestSuite{})
 }
 

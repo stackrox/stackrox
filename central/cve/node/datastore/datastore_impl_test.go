@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -26,6 +27,8 @@ var (
 )
 
 func TestNodeCVEDataStore(t *testing.T) {
+	pgtest.SkipIfPostgresDisabled(t)
+
 	suite.Run(t, new(NodeCVEDataStoreSuite))
 }
 
@@ -129,7 +132,7 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	// No apply these to the image
 	node := getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
-	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
+	suite.verifySuppressionStateNode(node, []string{"CVE-ABC#", "CVE-DEF#"}, []string{"CVE-GHI#"})
 
 	start := types.TimestampNow()
 	duration := types.DurationProto(10 * time.Minute)
@@ -162,7 +165,7 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	err = suite.datastore.Suppress(testAllAccessContext, start, duration, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
-	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF", "CVE-GHI"}, nil)
+	suite.verifySuppressionStateNode(node, []string{"CVE-ABC#", "CVE-DEF#", "CVE-GHI#"}, nil)
 
 	// Clear image before unsupressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
@@ -173,5 +176,5 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
-	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
+	suite.verifySuppressionStateNode(node, []string{"CVE-ABC#", "CVE-DEF#"}, []string{"CVE-GHI#"})
 }

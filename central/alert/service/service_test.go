@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"math"
+	"strconv"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -393,7 +395,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		{
 			ID: "id1",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"1"},
+				severityField.GetFieldPath(): {flagAwareSeverity(1)},
 				categoryField.GetFieldPath(): {"Image Assurance"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -401,7 +403,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		{
 			ID: "id2",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"4"},
+				severityField.GetFieldPath(): {flagAwareSeverity(4)},
 				categoryField.GetFieldPath(): {"Container Configuration"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -409,7 +411,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		{
 			ID: "id3",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"1"},
+				severityField.GetFieldPath(): {flagAwareSeverity(1)},
 				categoryField.GetFieldPath(): {"Image Assurance"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -417,7 +419,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		{
 			ID: "id4",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"2"},
+				severityField.GetFieldPath(): {flagAwareSeverity(2)},
 				categoryField.GetFieldPath(): {"Privileges Capabilities"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -425,7 +427,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		{
 			ID: "id5",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"3"},
+				severityField.GetFieldPath(): {flagAwareSeverity(3)},
 				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -433,7 +435,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		{
 			ID: "id6",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"3"},
+				severityField.GetFieldPath(): {flagAwareSeverity(3)},
 				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -469,6 +471,13 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 	s.testGetAlertCounts(fakeSearchResultsSlice, v1.GetAlertsCountsRequest_UNSET, expected)
 }
 
+func flagAwareSeverity(i int) string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return storage.Severity_name[int32(i)]
+	}
+	return strconv.Itoa(i)
+}
+
 func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 	severityField, _ := mappings.OptionsMap.Get(search.Severity.String())
 	categoryField, _ := mappings.OptionsMap.Get(search.Category.String())
@@ -478,7 +487,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		{
 			ID: "id1",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"1"},
+				severityField.GetFieldPath(): {flagAwareSeverity(1)},
 				categoryField.GetFieldPath(): {"Image Assurance"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -486,7 +495,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		{
 			ID: "id2",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"4"},
+				severityField.GetFieldPath(): {flagAwareSeverity(4)},
 				categoryField.GetFieldPath(): {"Container Configuration"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -494,7 +503,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		{
 			ID: "id3",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"1"},
+				severityField.GetFieldPath(): {flagAwareSeverity(1)},
 				categoryField.GetFieldPath(): {"Image Assurance"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -502,7 +511,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		{
 			ID: "id4",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"2"},
+				severityField.GetFieldPath(): {flagAwareSeverity(2)},
 				categoryField.GetFieldPath(): {"Privileges Capabilities"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -510,7 +519,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		{
 			ID: "id5",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"3"},
+				severityField.GetFieldPath(): {flagAwareSeverity(3)},
 				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -518,7 +527,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		{
 			ID: "id6",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"3"},
+				severityField.GetFieldPath(): {flagAwareSeverity(3)},
 				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -577,7 +586,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 		{
 			ID: "id1",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"1"},
+				severityField.GetFieldPath(): {flagAwareSeverity(1)},
 				categoryField.GetFieldPath(): {"Image Assurance"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -585,7 +594,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 		{
 			ID: "id2",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"4"},
+				severityField.GetFieldPath(): {flagAwareSeverity(4)},
 				categoryField.GetFieldPath(): {"Container Configuration"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -593,7 +602,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 		{
 			ID: "id3",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"1"},
+				severityField.GetFieldPath(): {flagAwareSeverity(1)},
 				categoryField.GetFieldPath(): {"Image Assurance"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -601,7 +610,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 		{
 			ID: "id4",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"2"},
+				severityField.GetFieldPath(): {flagAwareSeverity(2)},
 				categoryField.GetFieldPath(): {"Privileges Capabilities"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -609,7 +618,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 		{
 			ID: "id5",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"3"},
+				severityField.GetFieldPath(): {flagAwareSeverity(3)},
 				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -617,7 +626,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 		{
 			ID: "id6",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"3"},
+				severityField.GetFieldPath(): {flagAwareSeverity(3)},
 				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -688,7 +697,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		{
 			ID: "id1",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"1"},
+				severityField.GetFieldPath(): {flagAwareSeverity(1)},
 				categoryField.GetFieldPath(): {"Image Assurance"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -696,7 +705,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		{
 			ID: "id2",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"4"},
+				severityField.GetFieldPath(): {flagAwareSeverity(4)},
 				categoryField.GetFieldPath(): {"Container Configuration"},
 				clusterField.GetFieldPath():  {"test"},
 			},
@@ -704,7 +713,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		{
 			ID: "id3",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"1"},
+				severityField.GetFieldPath(): {flagAwareSeverity(1)},
 				categoryField.GetFieldPath(): {"Image Assurance"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -712,7 +721,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		{
 			ID: "id4",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"2"},
+				severityField.GetFieldPath(): {flagAwareSeverity(2)},
 				categoryField.GetFieldPath(): {"Privileges Capabilities"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -720,7 +729,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		{
 			ID: "id5",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"3"},
+				severityField.GetFieldPath(): {flagAwareSeverity(3)},
 				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
 				clusterField.GetFieldPath():  {"prod"},
 			},
@@ -728,7 +737,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		{
 			ID: "id6",
 			Matches: map[string][]string{
-				severityField.GetFieldPath(): {"3"},
+				severityField.GetFieldPath(): {flagAwareSeverity(3)},
 				categoryField.GetFieldPath(): {"Image Assurance", "Container Configuration"},
 				clusterField.GetFieldPath():  {"test"},
 			},

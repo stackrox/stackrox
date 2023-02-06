@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/scanners/clairify/mock"
 	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -265,6 +266,7 @@ func TestConvertNodeVulnerabilities(t *testing.T) {
 }
 
 func TestConvertFeatures(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
 	// metadata is based on the fixture used below.
 	metadata := &storage.ImageMetadata{
 		V1: &storage.V1Metadata{

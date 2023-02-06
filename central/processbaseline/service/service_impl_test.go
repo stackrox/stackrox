@@ -20,6 +20,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -78,6 +79,8 @@ func getIndicators(key *storage.ProcessBaselineKey) []*storage.ProcessIndicator 
 }
 
 func TestProcessBaselineService(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(ProcessBaselineServiceTestSuite))
 }
 
