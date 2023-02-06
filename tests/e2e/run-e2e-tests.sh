@@ -211,14 +211,8 @@ get_options() {
     esac
 
     case "$DATABASE" in
-        postgres)
-            export ROX_POSTGRES_DATASTORE="true"
-            ;;
-        rocksdb)
-            export ROX_POSTGRES_DATASTORE="false"
-            ;;
         *)
-            die "database $DATABASE not supported"
+            export ROX_POSTGRES_DATASTORE="true"
             ;;
     esac
 
@@ -323,7 +317,7 @@ _EOWARNING_
     export ORCHESTRATOR_FLAVOR="$ORCHESTRATOR"
 
     # required to get a running central
-    export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
+    export ROX_POSTGRES_DATASTORE="true"
 
     case "$FLAVOR" in
         qa)

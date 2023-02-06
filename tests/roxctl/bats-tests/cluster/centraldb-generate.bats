@@ -5,13 +5,12 @@ load "../helpers.bash"
 output_dir=""
 
 setup_file() {
-  echo "Testing roxctl version: '$(roxctl-development version)' with ROX_POSTGRES_DATASTORE=true" >&3
+  echo "Testing roxctl version: '$(roxctl-development version)'" >&3
 
   command -v cat || skip "Command 'cat' required."
   command -v grep || skip "Command 'grep' required."
   [[ -n "${API_ENDPOINT}" ]] || fail "Environment variable 'API_ENDPOINT' required"
   [[ -n "${ROX_PASSWORD}" ]] || fail "Environment variable 'ROX_PASSWORD' required"
-  export ROX_POSTGRES_DATASTORE=true
 }
 
 setup() {

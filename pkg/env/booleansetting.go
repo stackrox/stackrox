@@ -9,6 +9,7 @@ import (
 type BooleanSetting struct {
 	envVar         string
 	defaultBoolean bool
+	unchangeable   bool
 }
 
 // EnvVar returns the string name of the environment variable
@@ -23,6 +24,9 @@ func (d *BooleanSetting) Setting() string {
 
 // BooleanSetting returns the bool object represented by the environment variable
 func (d *BooleanSetting) BooleanSetting() bool {
+	if d.unchangeable {
+		return d.defaultBoolean
+	}
 	val := os.Getenv(d.envVar)
 	if val == "" {
 		return d.defaultBoolean
@@ -36,6 +40,18 @@ func RegisterBooleanSetting(envVar string, defaultBoolean bool) *BooleanSetting 
 	s := &BooleanSetting{
 		envVar:         envVar,
 		defaultBoolean: defaultBoolean,
+	}
+
+	Settings[s.EnvVar()] = s
+	return s
+}
+
+// RegisterPermanentBooleanSetting global registers and returns a new boolean setting that is always locked to the default value
+func RegisterPermanentBooleanSetting(envVar string, defaultBoolean bool) *BooleanSetting {
+	s := &BooleanSetting{
+		envVar:         envVar,
+		defaultBoolean: defaultBoolean,
+		unchangeable:   true,
 	}
 
 	Settings[s.EnvVar()] = s
