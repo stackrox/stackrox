@@ -129,8 +129,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/hashicorp/golang-lru v0.5.4
-
 require (
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
