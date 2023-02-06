@@ -13,6 +13,11 @@ type PermissionSet struct {
 	Resources   []ResourceWithAccess `yaml:"resources,omitempty"`
 }
 
+// Type returns the PermissionSetConfiguration type.
+func (p *PermissionSet) Type() ConfigurationType {
+	return PermissionSetConfiguration
+}
+
 // Access is representation of storage.Access that supports transformation from YAML.
 type Access storage.Access
 

@@ -80,3 +80,8 @@ type AuthProvider struct {
 	UserpkiConfig      *UserpkiConfig      `yaml:"userpki,omitempty"`
 	OpenshiftConfig    *OpenshiftConfig    `yaml:"openshift,omitempty"`
 }
+
+// Type returns the AuthProviderConfiguration type.
+func (a *AuthProvider) Type() ConfigurationType {
+	return AuthProviderConfiguration
+}
