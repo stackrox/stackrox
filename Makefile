@@ -4,8 +4,7 @@ ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
-DOCKER_VERSION=$(shell docker --version)
-ifeq (,$(findstring podman,$(DOCKER_VERSION)))
+ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
 DOCKER_USER=--user "$(shell id -u)"
 endif
 
