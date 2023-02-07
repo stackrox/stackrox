@@ -13,14 +13,57 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
 
-const deploymentsUrl = '/v1/deploymentswithprocessinfo';
-const deploymentByIdUrl = '/v1/deployments';
+const deploymentUrl = '/v1/deployments';
+const deploymentsWithProcessUrl = '/v1/deploymentswithprocessinfo';
 const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
 
 function shouldHideOrchestratorComponents() {
     // for openshift filtering toggle
     return localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
+}
+
+function fillDeploymentSearchQuery(
+    searchFilter: SearchFilter,
+    sortOption: Record<string, string>,
+    page: number,
+    pageSize: number
+): string {
+    const offset = page * pageSize;
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const queryObject: Record<
+        string,
+        string | Record<string, number | string | Record<string, string>>
+    > = {
+        pagination: {
+            offset,
+            limit: pageSize,
+            sortOption,
+        },
+    };
+    if (query) {
+        queryObject.query = query;
+    }
+    return queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
+}
+
+/**
+ * Fetches list of registered deployments.
+ *
+ * Changes from the 'fetchDeploymentsLegacy' function:
+ * - uses the new `SearchFilter` type instead of `RestSearchOption`
+ * - Does not fetch process information linked to the deployment
+ */
+export function listDeployments(
+    searchFilter: SearchFilter,
+    sortOption: Record<string, string>,
+    page: number,
+    pageSize: number
+): Promise<ListDeployment[]> {
+    const params = fillDeploymentSearchQuery(searchFilter, sortOption, page, pageSize);
+    return axios
+        .get<{ deployments: ListDeployment[] }>(`${deploymentUrl}?${params}`)
+        .then((response) => response?.data?.deployments ?? []);
 }
 
 /**
@@ -37,25 +80,10 @@ export function fetchDeployments(
     page: number,
     pageSize: number
 ): CancellableRequest<ListDeploymentWithProcessInfo[]> {
-    const offset = page * pageSize;
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const queryObject: Record<
-        string,
-        string | Record<string, number | string | Record<string, string>>
-    > = {
-        pagination: {
-            offset,
-            limit: pageSize,
-            sortOption,
-        },
-    };
-    if (query) {
-        queryObject.query = query;
-    }
-    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
+    const params = fillDeploymentSearchQuery(searchFilter, sortOption, page, pageSize);
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`, {
+            .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsWithProcessUrl}?${params}`, {
                 signal,
             })
             .then((response) => response?.data?.deployments ?? [])
@@ -92,7 +120,7 @@ export function fetchDeploymentsLegacy(
     }
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`)
+        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsWithProcessUrl}?${params}`)
         .then((response) => response?.data?.deployments ?? []);
 }
 
@@ -129,7 +157,7 @@ export function fetchDeployment(id: string): Promise<Deployment> {
     if (!id) {
         throw new Error('Deployment ID must be specified');
     }
-    return axios.get<Deployment>(`${deploymentByIdUrl}/${id}`).then((response) => response.data);
+    return axios.get<Deployment>(`${deploymentUrl}/${id}`).then((response) => response.data);
 }
 
 /**
