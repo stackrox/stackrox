@@ -42,8 +42,8 @@ var (
 	)
 )
 
-// ExpirationNotifier is the interface for a background task that notifies about API token expiration
-type ExpirationNotifier interface {
+// Notifier is the interface for a background task that notifies about API token expiration
+type Notifier interface {
 	Start()
 	Stop()
 }
