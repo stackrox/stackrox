@@ -45,7 +45,7 @@ func initialize() {
 
 // GetGlobalIndex provides the global bleve index to use for indexing.
 func GetGlobalIndex() bleve.Index {
-	postgres.LogCallerOnPostgres("GetGlobalIndex")
+	postgres.DeprecatedCall("GetGlobalIndex")
 	once.Do(initialize)
 
 	return globalIndex
@@ -53,26 +53,26 @@ func GetGlobalIndex() bleve.Index {
 
 // GetGlobalTmpIndex is used for objects that are rebuilt every Central startup
 func GetGlobalTmpIndex() bleve.Index {
-	postgres.LogCallerOnPostgres("GetGlobalTmpIndex")
+	postgres.DeprecatedCall("GetGlobalTmpIndex")
 	once.Do(initialize)
 	return globalTmpIndex
 }
 
 // GetAlertIndex returns the alert index on a separate index path
 func GetAlertIndex() bleve.Index {
-	postgres.LogCallerOnPostgres("GetAlertIndex")
+	postgres.DeprecatedCall("GetAlertIndex")
 	return getSeparateIndex("alert", v1.SearchCategory_ALERTS)
 }
 
 // GetPodIndex returns the pod index in a separate index
 func GetPodIndex() bleve.Index {
-	postgres.LogCallerOnPostgres("GetPodIndex")
+	postgres.DeprecatedCall("GetPodIndex")
 	return getSeparateIndex("pod", v1.SearchCategory_PODS)
 }
 
 // GetProcessIndex returns the process index in a separate index
 func GetProcessIndex() bleve.Index {
-	postgres.LogCallerOnPostgres("GetProcessIndex")
+	postgres.DeprecatedCall("GetProcessIndex")
 	return getSeparateIndex("process", v1.SearchCategory_PROCESS_INDICATORS)
 }
 
