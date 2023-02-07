@@ -136,9 +136,9 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	img := types.ToImage(image)
 
 	enrichmentContext := enricher.EnrichmentContext{}
-    if req.GetNoExternalMetadata() && req.GetForce() {
-        return nil, errox.InvalidArgs.CausedBy("Force option is incompatible with GetNoExternalMetadata")
-    }
+	if req.GetNoExternalMetadata() && req.GetForce() {
+		return nil, errox.InvalidArgs.CausedBy("Force option is incompatible with GetNoExternalMetadata")
+	}
 	if req.GetNoExternalMetadata() {
 		enrichmentContext.FetchOpt = enricher.NoExternalMetadata
 	}
