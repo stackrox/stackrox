@@ -5,16 +5,23 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
 	rocksdbStore "github.com/stackrox/rox/central/risk/datastore/internal/store/rocksdb"
+	"github.com/stackrox/rox/central/risk/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -35,25 +42,41 @@ type RiskDataStoreTestSuite struct {
 	storage   store.Store
 	datastore DataStore
 
+	pool *pgxpool.Pool
+
+	optionsMap searchPkg.OptionsMap
+
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 }
 
 func (suite *RiskDataStoreTestSuite) SetupSuite() {
 	var err error
-	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
-	suite.Require().NoError(err)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		pgtestbase := pgtest.ForT(suite.T())
+		suite.Require().NotNil(pgtestbase)
+		suite.pool = pgtestbase.Pool
+		suite.datastore, err = GetTestPostgresDataStore(suite.T(), suite.pool)
+		suite.Require().NoError(err)
 
-	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
-	suite.Require().NoError(err)
+		suite.optionsMap = schema.RisksSchema.OptionsMap
+	} else {
+		suite.bleveIndex, err = globalindex.TempInitializeIndices("")
+		suite.Require().NoError(err)
 
-	suite.db = db
+		db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
+		suite.Require().NoError(err)
 
-	suite.storage = rocksdbStore.New(db)
-	suite.indexer = index.New(suite.bleveIndex)
-	suite.searcher = search.New(suite.storage, suite.indexer)
-	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
-	suite.Require().NoError(err)
+		suite.db = db
+
+		suite.storage = rocksdbStore.New(db)
+		suite.indexer = index.New(suite.bleveIndex)
+		suite.searcher = search.New(suite.storage, suite.indexer)
+		suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
+		suite.Require().NoError(err)
+
+		suite.optionsMap = mappings.OptionsMap
+	}
 
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -61,13 +84,17 @@ func (suite *RiskDataStoreTestSuite) SetupSuite() {
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 }
 
 func (suite *RiskDataStoreTestSuite) TearDownSuite() {
-	suite.NoError(suite.bleveIndex.Close())
-	rocksdbtest.TearDownRocksDB(suite.db)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.pool.Close()
+	} else {
+		suite.NoError(suite.bleveIndex.Close())
+		rocksdbtest.TearDownRocksDB(suite.db)
+	}
 }
 
 func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
@@ -103,6 +130,7 @@ func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
 			suite.Require().NoError(err)
 			suite.Require().False(found)
 			suite.Require().Nil(result)
+
 		})
 	}
 
@@ -110,14 +138,14 @@ func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
-			sac.ClusterScopeKeys("FakeClusterID"),
-			sac.NamespaceScopeKeys("FakeNS")))
+			sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+			sac.NamespaceScopeKeys(fixtureconsts.Namespace1)))
 
 	scopedAccessForDifferentNamespace := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
-			sac.ClusterScopeKeys("FakeClusterID"),
+			sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 			sac.NamespaceScopeKeys("DifferentNS")))
 
 	suite.Run("GetRiskForDeployment with scoped access", func() {

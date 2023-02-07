@@ -43,41 +43,50 @@ func TestGetActiveImageIDs(t *testing.T) {
 
 	testCtx := sac.WithAllAccess(context.Background())
 
-	rocksDB := rocksdbtest.RocksDBForT(t)
+	var (
+		pool          *pgxpool.Pool
+		imageDS       imageDatastore.DataStore
+		deploymentsDS deploymentDatastore.DataStore
+		indexingQ     queue.WaitableQueue
+		err           error
+	)
 
-	indexingQ := queue.NewWaitableQueue()
-	dacky, err := dackbox.NewRocksDBDackBox(rocksDB, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-	require.NoError(t, err)
-
-	bleveIndex, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
-
-	reg := indexer.NewWrapperRegistry()
-	lazy := indexer.NewLazy(indexingQ, reg, bleveIndex, dacky.AckIndexed)
-	lazy.Start()
-
-	reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
-	reg.RegisterWrapper(indexDackbox.Bucket, imageIndex.Wrapper{})
-	reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-	reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
-	reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
-	reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
-
-	var pool *pgxpool.Pool
-	var imageDS imageDatastore.DataStore
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testingDB := pgtest.ForT(t)
 		pool = testingDB.Pool
 		defer pool.Close()
 
 		imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, dackboxConcurrency.NewKeyFence()), imagePG.NewIndexer(pool), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+		deploymentsDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), pool, nil, nil, nil, nil, nil, nil,
+			nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+		require.NoError(t, err)
 	} else {
-		imageDS = imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
-	}
+		rocksDB := rocksdbtest.RocksDBForT(t)
 
-	deploymentsDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, nil, nil, nil,
-		nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(t, err)
+		indexingQ = queue.NewWaitableQueue()
+		dacky, err := dackbox.NewRocksDBDackBox(rocksDB, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
+		require.NoError(t, err)
+
+		bleveIndex, err := globalindex.MemOnlyIndex()
+		require.NoError(t, err)
+
+		reg := indexer.NewWrapperRegistry()
+		lazy := indexer.NewLazy(indexingQ, reg, bleveIndex, dacky.AckIndexed)
+		lazy.Start()
+
+		reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
+		reg.RegisterWrapper(indexDackbox.Bucket, imageIndex.Wrapper{})
+		reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
+		reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
+		reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
+		reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
+
+		imageDS = imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
+
+		deploymentsDS, err = deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, nil, nil, nil,
+			nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+		require.NoError(t, err)
+	}
 
 	loop := NewLoop(nil, nil, nil, deploymentsDS, imageDS, nil, nil, nil, nil, queue.NewWaitableQueue()).(*loopImpl)
 
@@ -95,9 +104,11 @@ func TestGetActiveImageIDs(t *testing.T) {
 		imageIDs = append(imageIDs, image.GetId())
 	}
 
-	newSig := concurrency.NewSignal()
-	indexingQ.PushSignal(&newSig)
-	newSig.Wait()
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		newSig := concurrency.NewSignal()
+		indexingQ.PushSignal(&newSig)
+		newSig.Wait()
+	}
 
 	ids, err = loop.getActiveImageIDs()
 	require.NoError(t, err)
