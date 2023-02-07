@@ -8,6 +8,7 @@ import (
 )
 
 // Store provides storage functionality.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ProcessListeningOnPortStorage) error
