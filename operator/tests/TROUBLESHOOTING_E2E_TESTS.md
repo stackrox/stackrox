@@ -268,6 +268,8 @@ Keeping in mind the name of the failing test (`basic` in this example) and ignor
 test (`basic-sc` in this example), scroll up from the final `FAIL: kuttl` until you find the message about
 the condition that caused the step to fail.
 
+In the example above, the failing step is `10-central-cr`.
+
 ### Identify why it failed
 
 Try to understand from the step name what it intended to assert.
@@ -276,6 +278,17 @@ Look at the comments inside the step's files if there are any.
 Once you understand that, try to figure out what went wrong by looking at the events and pod log messages.
 
 In the example above, the step tried to assert that the `central` deployment had exactly one healthy replica.
+
+The exact piece of the `10-assert.yaml` file is:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+status:
+  availableReplicas: 1
+```
+
 However, in the resource on the cluster the `status.availableReplicas` field never appeared.
 
 We see in the diff that `status.unavailableReplicas` is `1` which means the central pod never became healthy.
