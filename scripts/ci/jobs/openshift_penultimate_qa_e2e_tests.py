@@ -11,7 +11,7 @@ from clusters import OpenShiftScaleWorkersCluster
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["OPENSHIFT_CI_CLUSTER_CLAIM"] = "openshift-4"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
-os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 # Scale up the cluster to support postgres
 cluster = OpenShiftScaleWorkersCluster(increment=1)
