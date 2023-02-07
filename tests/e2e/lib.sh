@@ -146,11 +146,6 @@ deploy_central_via_operator() {
     centralDefaultTlsSecretKeyBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_KEY_FILE}")"
     centralDefaultTlsSecretCertBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_CERT_FILE}")"
 
-    case "${ROX_POSTGRES_DATASTORE}" in
-    "true") central_db_isEnabled="Enabled" ;;
-    *) central_db_isEnabled="Default" ;;
-    esac
-
     central_exposure_loadBalancer_enabled="false"
     central_exposure_route_enabled="false"
     case "${LOAD_BALANCER}" in
@@ -178,7 +173,6 @@ deploy_central_via_operator() {
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
       centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
       centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
-      central_db_isEnabled="$central_db_isEnabled" \
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
