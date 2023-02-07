@@ -10,6 +10,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 ### Removed Features
+- ROX-14336: product `BuildDate` attribute was removed. It won't be returned by
+`/debug/versions.json` endpoint and `roxctl version --json` command.
 
 ### Deprecated Fatures
 
