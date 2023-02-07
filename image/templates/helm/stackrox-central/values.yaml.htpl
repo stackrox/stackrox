@@ -58,7 +58,7 @@
 #image:
 #  # The image registry to use. Unless overridden in the more specific configs, this
 #  # determines the base registry for each image referenced in this config file.
-#  registry: stackrox.io
+#  registry: [< required "" .MainRegistry >]
 #
 ## Settings regarding the installation environment
 #env:
