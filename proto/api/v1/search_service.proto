@@ -78,7 +78,7 @@ enum SearchDataType {
 // "Deployment:central,sensor+Namespace:stackrox"
 // RawQuery is used in ListAPIs to search for a particular object.
 message RawQuery {
-    string query          = 1;
+    string     query      = 1;
     Pagination pagination = 2;
 }
 
@@ -100,6 +100,14 @@ message QuerySortOption {
     }
 }
 
+message QuerySelect {
+    repeated string fields = 1;
+}
+
+message QueryGroupBy {
+    repeated string fields = 1;
+}
+
 message QueryPagination {
     int32 limit = 1;
     int32 offset = 2;
@@ -111,14 +119,17 @@ message BooleanQuery {
     DisjunctionQuery must_not = 2;
 }
 
+// next tag: 9
 message Query {
     oneof query {
-        ConjunctionQuery conjunction   = 1;
-        DisjunctionQuery disjunction   = 2;
-        BaseQuery        base_query    = 3;
-        BooleanQuery     boolean_query = 6;
+        ConjunctionQuery    conjunction   = 1;
+        DisjunctionQuery    disjunction   = 2;
+        BaseQuery           base_query    = 3;
+        BooleanQuery        boolean_query = 6;
     }
-    QueryPagination pagination       = 4;
+    QuerySelect             select        = 8;
+    QueryGroupBy            group_by      = 7;
+    QueryPagination         pagination    = 4;
     reserved 5; // previously SearchOptions
 }
 
