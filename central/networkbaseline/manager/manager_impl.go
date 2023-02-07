@@ -818,6 +818,12 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 
 	// If we have flows then process them.  If we don't persist an empty baseline
 	if len(flows) > 0 {
+
+		log.Infof("Printing all Network Flows for deployment %s", deploymentID)
+		for _, flow := range flows {
+			log.Info(flow.String())
+		}
+
 		// package them into a map of flows like comes in
 		// when packaging the flows up in that map, I think the timestamp has to be now
 		flowMap := m.putFlowsInMap(flows)
