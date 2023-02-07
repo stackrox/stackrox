@@ -20,8 +20,8 @@ func New() Transformer {
 	return &universalTransformer{configurationTransformers: map[string]Transformer{
 		declarativeconfig.AccessScopeConfiguration:   newAccessScopeTransform(),
 		declarativeconfig.AuthProviderConfiguration:  newAuthProviderTransformer(),
-		declarativeconfig.RoleConfiguration:          nil,
 		declarativeconfig.PermissionSetConfiguration: newPermissionSetTransform(),
+		declarativeconfig.RoleConfiguration:          newRoleTransform(),
 	}}
 }
 
