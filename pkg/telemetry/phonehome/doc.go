@@ -6,6 +6,7 @@ The package provides the following entities:
 
   - client configuration;
   - Telemeter interface, and its [segment] implementation;
+  - Options, which can be provided to Telemeter methods;
   - API interceptors;
   - periodic data gatherer.
 
@@ -25,12 +26,22 @@ via the following methods:
 
   - [Telemeter.Track] for live events, which describe something that has
     happened after a user action or triggered by other means;
-  - [Telemeter.Identify] for reporting client properties, which represent
-    some client traits;
-  - [Telemeter.Group] for adding the client to some group and providing the
-    group related traits, if any;
+  - [Telemeter.Identify] for reporting client or user properties;
+  - [Telemeter.Group] for adding the client or a user to some group, providing
+    the group related traits, if any;
   - [Telemeter.Stop] gracefully shutdowns the implementation, which may flush
     the collected messages.
+
+## Options
+
+  - [WithUserID] sets the ID of the user for the call. If not provided,
+    anonymous ID is set equal to client ID (and device ID);
+  - [WithClient] overrides the client ID and type to send messages from the name
+    of another client;
+  - [WithGroups] adds a list of groups, associated to an event. This may be
+    helpful in the case when a user or client may belong to several groups, and
+    some particular event concerns only some of these groups. Amplitude will
+    inject according groups properties to the events.
 
 ## API Interceptors
 
