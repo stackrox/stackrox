@@ -163,11 +163,13 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
         policyData.results.length &&
         policies.length === 0
     ) {
-        const existingPolicies = policyData.results.map((pol, idx) => ({
-            ...pol,
-            value: idx,
-            label: pol.name,
-        }));
+        const existingPolicies = policyData.results
+            .filter((policyToFilter) => !policyToFilter?.isDefault)
+            .map((policyToMap, idx) => ({
+                ...policyToMap,
+                value: idx,
+                label: policyToMap.name,
+            }));
         setPolicies(existingPolicies);
     }
 
