@@ -306,12 +306,6 @@ function launch_central {
         )
       fi
 
-      if [[ "$ROX_POSTGRES_DATASTORE" == "true" ]]; then
-        helm_args+=(
-          --set central.db.enabled=true
-        )
-      fi
-
       if [[ -n "$CI" ]]; then
         helm lint "$unzip_dir/chart"
         helm lint "$unzip_dir/chart" -n stackrox
