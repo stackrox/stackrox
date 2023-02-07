@@ -21,6 +21,16 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// All configuration keys the auth provider exposes within the auth provider config map.
+const (
+	SpIssuerConfigKey        = "sp_issuer"
+	IDPMetadataURLConfigKey  = "idp_metadata_url"
+	IDPIssuerConfigKey       = "idp_issuer"
+	IDPCertPemConfigKey      = "idp_cert_pem"
+	IDPSSOUrlConfigKey       = "idp_sso_url"
+	IDPNameIDFormatConfigKey = "idp_nameid_format"
+)
+
 type backendImpl struct {
 	factory    *factory
 	acsURLPath string
@@ -66,35 +76,35 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 	}
 	p.sp.AssertionConsumerServiceURL = acsURL.String()
 
-	spIssuer := config["sp_issuer"]
+	spIssuer := config[SpIssuerConfigKey]
 	if spIssuer == "" {
 		return nil, errors.New("no ServiceProvider issuer specified")
 	}
 	p.sp.ServiceProviderIssuer = spIssuer
 
 	effectiveConfig := map[string]string{
-		"sp_issuer": spIssuer,
+		SpIssuerConfigKey: spIssuer,
 	}
 
-	if config["idp_metadata_url"] != "" {
-		if !stringutils.AllEmpty(config["idp_issuer"], config["idp_cert_pem"], config["idp_sso_url"], config["idp_nameid_format"]) {
+	if config[IDPMetadataURLConfigKey] != "" {
+		if !stringutils.AllEmpty(config[IDPIssuerConfigKey], config[IDPCertPemConfigKey], config[IDPSSOUrlConfigKey], config[IDPNameIDFormatConfigKey]) {
 			return nil, errors.New("if IdP metadata URL is set, IdP issuer, SSO URL, certificate data and Name/ID format must be left blank")
 		}
-		if err := configureIDPFromMetadataURL(ctx, &p.sp, config["idp_metadata_url"]); err != nil {
+		if err := configureIDPFromMetadataURL(ctx, &p.sp, config[IDPMetadataURLConfigKey]); err != nil {
 			return nil, errors.Wrap(err, "could not configure auth provider from IdP metadata URL")
 		}
-		effectiveConfig["idp_metadata_url"] = config["idp_metadata_url"]
+		effectiveConfig[IDPMetadataURLConfigKey] = config[IDPMetadataURLConfigKey]
 	} else {
-		if !stringutils.AllNotEmpty(config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"]) {
+		if !stringutils.AllNotEmpty(config[IDPIssuerConfigKey], config[IDPSSOUrlConfigKey], config[IDPCertPemConfigKey]) {
 			return nil, errors.New("if IdP metadata URL is not set, IdP issuer, SSO URL, and certificate data must be specified")
 		}
-		if err := configureIDPFromSettings(&p.sp, config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"], config["idp_nameid_format"]); err != nil {
+		if err := configureIDPFromSettings(&p.sp, config[IDPIssuerConfigKey], config[IDPSSOUrlConfigKey], config[IDPCertPemConfigKey], config[IDPNameIDFormatConfigKey]); err != nil {
 			return nil, errors.Wrap(err, "could not configure auth provider from settings")
 		}
-		effectiveConfig["idp_issuer"] = config["idp_issuer"]
-		effectiveConfig["idp_sso_url"] = config["idp_sso_url"]
-		effectiveConfig["idp_cert_pem"] = config["idp_cert_pem"]
-		effectiveConfig["idp_nameid_format"] = config["idp_nameid_format"]
+		effectiveConfig[IDPIssuerConfigKey] = config[IDPIssuerConfigKey]
+		effectiveConfig[IDPSSOUrlConfigKey] = config[IDPSSOUrlConfigKey]
+		effectiveConfig[IDPCertPemConfigKey] = config[IDPCertPemConfigKey]
+		effectiveConfig[IDPNameIDFormatConfigKey] = config[IDPNameIDFormatConfigKey]
 	}
 
 	p.config = effectiveConfig
