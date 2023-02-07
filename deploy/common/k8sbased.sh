@@ -179,10 +179,16 @@ function launch_central {
 
     if [[ -n $STORAGE_CLASS ]]; then
         add_storage_args "--storage-class=$STORAGE_CLASS"
+        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+            add_storage_args "--db-storage-class=$STORAGE_CLASS"
+        fi
     fi
 
     if [[ "${STORAGE}" == "pvc" && -n "${STORAGE_SIZE}" ]]; then
 	      add_storage_args "--size=${STORAGE_SIZE}"
+        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+            add_storage_args "--db-size=${STORAGE_SIZE}"
+        fi
     fi
 
     if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
