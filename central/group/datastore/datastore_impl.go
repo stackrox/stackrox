@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -285,8 +286,11 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
-	err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), force)
+	existingGroup, err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), force)
 	if err != nil {
+		return err
+	}
+	if err = verifyGroupOriginMatches(ctx, existingGroup); err != nil {
 		return err
 	}
 
@@ -313,7 +317,11 @@ func (ds *dataStoreImpl) validateAndPrepGroupForDeleteNoLock(ctx context.Context
 
 	propsID := props.GetId()
 
-	if err := ds.validateMutableGroupIDNoLock(ctx, propsID, force); err != nil {
+	group, err := ds.validateMutableGroupIDNoLock(ctx, propsID, force)
+	if err != nil {
+		return "", err
+	}
+	if err = verifyGroupOriginMatches(ctx, group); err != nil {
 		return "", err
 	}
 
@@ -401,26 +409,35 @@ func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *sto
 
 // validateMutableGroupIDNoLock validates whether a group allows changes or not based on the mutability mode set.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id string, force bool) error {
+func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id string, force bool) (*storage.Group, error) {
 	group, err := ds.validateGroupExists(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	switch group.GetProps().GetTraits().GetMutabilityMode() {
 	case storage.Traits_ALLOW_MUTATE:
-		return nil
+		return group, nil
 	case storage.Traits_ALLOW_MUTATE_FORCED:
 		if force {
-			return nil
+			return group, nil
 		}
-		return errox.InvalidArgs.Newf("group %q is immutable and can only be removed"+
+		return nil, errox.InvalidArgs.Newf("group %q is immutable and can only be removed"+
 			" via API and specifying the force flag", id)
 	default:
 		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
 			group.GetProps().GetTraits().GetMutabilityMode().String()))
 	}
-	return errox.InvalidArgs.Newf("group %q is immutable", id)
+	return nil, errox.InvalidArgs.Newf("group %q is immutable", id)
+}
+
+func verifyGroupOriginMatches(ctx context.Context, group *storage.Group) error {
+	origin := group.GetProps().GetTraits().GetOrigin()
+	if !declarativeconfig.IsOriginModifiable(ctx, origin) {
+		return errors.Wrapf(errox.InvalidArgs, "group %q's origin is %s, cannot be modified or deleted within this context",
+			group.GetProps().GetId(), origin)
+	}
+	return nil
 }
 
 func (ds *dataStoreImpl) validateGroupExists(ctx context.Context, id string) (*storage.Group, error) {
