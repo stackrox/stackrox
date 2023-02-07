@@ -13,7 +13,7 @@ import spock.lang.Stepwise
 import services.ProcessesListeningOnPortsService
 
 @Stepwise
-@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+@IgnoreIf({ !Env.CI_JOBNAME.contains("postgres") })
 class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     // Deployment names
