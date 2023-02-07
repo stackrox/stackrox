@@ -288,8 +288,8 @@ func TestDeclarativeConfigDuplicateValues(t *testing.T) {
 
 	expectedVolumes := []string{"cm-1", "cm-3", "cm-4", "sec-1", "sec-2", "sec-3"}
 
-	assert.Equal(t, volumes, len(expectedVolumes))
-	assert.Equal(t, mounts, len(expectedVolumes))
+	assert.Len(t, volumes, len(expectedVolumes))
+	assert.Len(t, mounts, len(expectedVolumes))
 	for _, mount := range mounts {
 		assert.Contains(t, expectedVolumes, mount.Name)
 	}
