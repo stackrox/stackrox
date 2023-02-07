@@ -69,6 +69,8 @@ var (
 		allow.Anonymous(): {
 			"/v1.RoleService/GetResources",
 			"/v1.RoleService/GetMyPermissions",
+			"/v1.RoleService/GetClustersForPermissions",
+			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
 		},
 	})
 )
