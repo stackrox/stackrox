@@ -137,6 +137,7 @@ func (m *manager) maybeAddPeer(deploymentID string, p *networkbaseline.Peer, mod
 	if alreadyInBaseline {
 		return
 	}
+	log.Infof("adding peer for %s: %+v", deploymentID, p)
 	m.baselinesByDeploymentID[deploymentID].BaselinePeers[*p] = struct{}{}
 	modifiedDeploymentIDs.Add(deploymentID)
 }
@@ -820,6 +821,8 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		// package them into a map of flows like comes in
 		// when packaging the flows up in that map, I think the timestamp has to be now
 		flowMap := m.putFlowsInMap(flows)
+
+		log.Infof("flows for %s (%s): %+v", deploymentName, deploymentID, flowMap)
 
 		// then simply call processFlowUpdate with the map of flows.
 		modifiedDeployments, err := m.processFlowUpdate(flowMap, true)
