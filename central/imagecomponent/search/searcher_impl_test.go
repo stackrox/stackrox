@@ -39,6 +39,7 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -49,6 +50,8 @@ import (
 )
 
 func TestImageComponentDataStore(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(ImageComponentSearchTestSuite))
 }
 
