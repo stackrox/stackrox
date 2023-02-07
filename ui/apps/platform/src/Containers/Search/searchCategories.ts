@@ -127,6 +127,11 @@ export const searchResultCategoryMap: Record<
             },
         ],
     },
+    POLICY_CATEGORIES: {
+        resourceName: 'Policy',
+        filterOn: null,
+        viewLinks: [],
+    },
     ROLES: {
         resourceName: 'K8sRole',
         filterOn: null,
@@ -182,6 +187,7 @@ export const searchNavMap: Record<SearchNavCategory, string> = {
     NAMESPACES: 'Namespaces',
     NODES: 'Nodes',
     POLICIES: 'Policies',
+    POLICY_CATEGORIES: 'Policy categories',
     ROLES: 'Roles',
     ROLEBINDINGS: 'Role bindings',
     SECRETS: 'Secrets',

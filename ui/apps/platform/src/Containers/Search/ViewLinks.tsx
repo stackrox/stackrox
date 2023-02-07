@@ -13,9 +13,9 @@ type ViewLinksProps = {
 };
 
 function ViewLinks({ id, resultCategory }: ViewLinksProps): ReactElement {
-    const { viewLinks } = searchResultCategoryMap[resultCategory];
+    const { viewLinks } = searchResultCategoryMap[resultCategory] ?? {};
 
-    if (viewLinks.length !== 0) {
+    if (viewLinks?.length) {
         return (
             <Flex spaceItems={{ default: 'spaceItemsMd' }}>
                 {viewLinks.map(({ basePath, linkText }) => (
