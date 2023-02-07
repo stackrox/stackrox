@@ -7,8 +7,6 @@ spec:
   central:
     adminPasswordSecret:
       name: central-admin-pass
-    db:
-      isEnabled: $central_db_isEnabled
     defaultTLSSecret:
       name: central-default-tls-secret
     exposure:
