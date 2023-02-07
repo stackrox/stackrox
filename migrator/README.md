@@ -7,7 +7,8 @@ are in the `migrations` subdirectory.
 
 Migrations are organized with sequence numbers and executed in sequence. Each migration is provided
 with a pointer to `types.Databases` where the pointed object contains all necessary database instances,
-including `Bolt`, `RocksDB`, `Postgres` and `GormDB` (datamodel for postgres).
+including `Bolt`, `RocksDB`, `Postgres` and `GormDB` (datamodel for postgres). Depending on the version
+a migration is operating on, some database instances may be nil.
 
 A migration can read from any of the databases, make changes to the data or to the datamodel
 (database schema when working with postgres), then persist these changes to the database.
@@ -18,17 +19,17 @@ A migration can read from any of the databases, make changes to the data or to t
 
    All migrations were of the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}` .
 
-2. Release 3.73 brought the database `Postgres` as Technical preview. This had the consequence that 
+2. Release 3.73 and 3.74 brought the database `Postgres` as Technical preview. This had the consequence that
 `Postgres` was a new potential datastore targeted by the migrator.
 
-   In 3.73, two sets of data migrations were possible: key-value store migrations, and data move migrations
+   In these versions, two sets of data migrations were possible: key-value store migrations, and data move migrations
    (from `BoltDB` and `RocksDB` to `Postgres`). The migration sequence is the following: first all key-value
    data migrations are applied, then all data move migrations are applied.
 
     - Key-value store data migrations have the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}` .
     - Data move migrations have the form `n_{postgresSchemaVersion}_to_n_{postgresSchemaVersion+1}_{moved_data_type}` .
     
-3. After 3.73, the key-value stores are deprecated and `Postgres` becomes the only data store.  
+3. After 4.0, the key-value stores are deprecated and `Postgres` becomes the only data store.
 
    The migration returns to the old scheme, restarting from the database version after all data moves to `Postgres`.
 
@@ -132,7 +133,7 @@ it manipulates and for converting it.
 #### Create or upgrade the schema of a table.
 
 ```go
-pkgSchema.ApplySchemaForTable(context.Background(), databases.PostgresDB, <schema>)
+pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableCollectionsStmt)
 ```
 
 Note: the schema should be the Postgres schema at the version of migration. It does not evolve with the latest version
