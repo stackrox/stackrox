@@ -77,13 +77,13 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 	return &v1.NetworkBaselineStatusResponse{Statuses: statuses}, nil
 }
 
-// GetNetworkBaseline -- gets the network baseline assocated with the deployment.
+// GetNetworkBaseline gets the network baseline associated with the deployment.
 func (s *serviceImpl) GetNetworkBaseline(
 	ctx context.Context,
 	request *v1.ResourceByID,
 ) (*storage.NetworkBaseline, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Deployment id for the network baseline must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "deployment id for the network baseline must be provided")
 	}
 	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetId())
 	if err != nil {

@@ -270,6 +270,14 @@ func (m *networkFlowManager) enrichAndSend() {
 		Time:             types.TimestampNow(),
 	}
 
+	for _, conn := range protoToSend.Updated {
+		log.Debugw("debug_updated_conn", conn.Props)
+	}
+
+	for _, endpoint := range protoToSend.UpdatedEndpoints {
+		log.Debugw("debug_updated_endpoint", endpoint.Props)
+	}
+
 	// Before sending, run the flows through policies asynchronously
 	for _, flow := range updatedConns {
 		m.policyDetector.ProcessNetworkFlow(flow)
