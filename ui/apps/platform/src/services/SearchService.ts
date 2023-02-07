@@ -73,6 +73,7 @@ export type SearchResultCategory =
     | 'NAMESPACES'
     | 'NODES'
     | 'POLICIES'
+    | 'POLICY_CATEGORIES'
     | 'ROLES'
     | 'ROLEBINDINGS'
     | 'SECRETS'

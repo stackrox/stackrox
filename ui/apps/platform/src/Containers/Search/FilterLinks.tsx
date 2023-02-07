@@ -20,9 +20,9 @@ function FilterLinks({
     resultCategory,
     searchFilter,
 }: FilterLinksProps): ReactElement {
-    const { filterOn } = searchResultCategoryMap[resultCategory];
+    const { filterOn } = searchResultCategoryMap[resultCategory] ?? {};
 
-    if (filterOn !== null) {
+    if (filterOn) {
         const { filterCategory, filterLinks } = filterOn;
 
         const queryString = getUrlQueryStringForSearchFilter({
