@@ -16,5 +16,5 @@ var (
 	NodeScanningMaxInitialWait = registerDurationSetting("ROX_NODE_SCANNING_MAX_INITIAL_WAIT", 5*time.Minute)
 
 	// NodeInventoryCacheDuration defines the time after which a cached inventory is considered outdated
-	NodeInventoryCacheDuration = registerDurationSetting("ROX_NODE_INVENTORY_CACHE", 10*time.Minute)
+	NodeInventoryCacheDuration = registerDurationSetting("ROX_NODE_INVENTORY_CACHE_TIME", 10*time.Minute)
 )

@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -42,7 +43,6 @@ var (
 	once sync.Once
 
 	inventoryCachePath = "/cache"
-	// inventoryCacheSeconds = 60 * time.Second.Seconds()
 )
 
 func getNode() string {
@@ -212,6 +212,57 @@ func createAndObserveMessage(nodeName string, inventory *storage.NodeInventory) 
 	}
 	cmetrics.ObserveInventoryProtobufMessage(msg)
 	return msg
+}
+
+func scanNodeBacked(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
+	backoffInterval := 30
+	backoffIncrement := 5
+	backoffFile, err := os.ReadFile(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// If the file doesn't exist, we're likely in the first run, or the last one succeeded
+			log.Debug("No backoff found, running new inventory")
+		} else {
+			return nil, err
+		}
+	} else {
+		// We have an existing backoff counter
+		backoffInterval, err = strconv.Atoi(string(backoffFile[:]))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", backoffInterval+backoffIncrement)), 0600)
+	if err != nil {
+		return nil, err
+	}
+	eb := backoff.NewExponentialBackOff()
+	eb.MaxInterval = 30 * time.Second
+	eb.MaxElapsedTime = 3 * time.Minute
+	eb.InitialInterval = time.Duration(backoffInterval) * time.Second
+
+	var message *sensor.MsgFromCompliance
+	operation := func() error {
+		var err error
+		message, err = scanNode(nodeName, scanner)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
+		return err
+	}
+	err = backoff.RetryNotify(operation, eb, func(err error, t time.Duration) {
+		log.Infof("Sleeping for %0.2f seconds between scans", t.Seconds())
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to run Node Inventory")
+	}
+	log.Infof("Successfully run inventory")
+	err = os.Remove(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	if err != nil {
+		return nil, err
+	}
+	return message, nil
 }
 
 func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
