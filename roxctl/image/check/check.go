@@ -85,7 +85,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	pkgUtils.Must(c.MarkFlagRequired("image"))
 	c.Flags().IntVarP(&imageCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds.")
 	c.Flags().IntVarP(&imageCheckCmd.retryCount, "retries", "r", 3, "number of retries before exiting as error.")
-	c.Flags().BoolVarP(&imageCheckCmd.force, "force", "f", false, "the --force flag ignores Central's cache for the check and forces a fresh re-pull from Scanner")
+	c.Flags().BoolVarP(&imageCheckCmd.force, "force", "f", false, "the --force flag ignores Central's cache for the image and forces a fresh re-pull from Scanner")
 	c.Flags().BoolVar(&imageCheckCmd.sendNotifications, "send-notifications", false,
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
@@ -297,7 +297,7 @@ func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string, sendNotifications bool, force bool, policyCategories []string) (*v1.BuildDetectionRequest, error) {
+func buildRequest(image string, sendNotifications, force bool, policyCategories []string) (*v1.BuildDetectionRequest, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
