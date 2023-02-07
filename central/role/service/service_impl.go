@@ -56,6 +56,8 @@ var (
 		allow.Anonymous(): {
 			"/v1.RoleService/GetResources",
 			"/v1.RoleService/GetMyPermissions",
+			"/v1.RoleService/GetClustersForPermissions",
+			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
 		},
 	})
 )
@@ -344,6 +346,14 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 	}
 
 	return response, nil
+}
+
+func (s *serviceImpl) GetClustersForPermissions(ctx context.Context, req *v1.GetClustersForPermissionsRequest) (*v1.GetClustersForPermissionsResponse, error) {
+	return nil, errors.Errorf("method GetClustersForPermissions not implemented")
+}
+
+func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context, req *v1.GetNamespaceForClusterAndPermissionsRequest) (*v1.GetNamespacesForClusterAndPermissionsResponse, error) {
+	return nil, errors.Errorf("method GetNamespacesForClusterAndPermissions not implemented")
 }
 
 ////////////////////////////////////////////////////////////////////////////////

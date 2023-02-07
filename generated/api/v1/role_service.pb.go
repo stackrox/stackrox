@@ -52,7 +52,7 @@ func (x ComputeEffectiveAccessScopeRequest_Detail) String() string {
 }
 
 func (ComputeEffectiveAccessScopeRequest_Detail) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_f2751be16bbd500c, []int{6, 0}
+	return fileDescriptor_f2751be16bbd500c, []int{9, 0}
 }
 
 type Permission struct {
@@ -453,6 +453,212 @@ func (m *ListSimpleAccessScopesResponse) Clone() *ListSimpleAccessScopesResponse
 	return cloned
 }
 
+// ScopeElementForPermission represents an ID, name pair, which can apply to any
+// entity that takes part in an access scope (so far Cluster and Namespace).
+type ScopeElementForPermission struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ScopeElementForPermission) Reset()         { *m = ScopeElementForPermission{} }
+func (m *ScopeElementForPermission) String() string { return proto.CompactTextString(m) }
+func (*ScopeElementForPermission) ProtoMessage()    {}
+func (*ScopeElementForPermission) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f2751be16bbd500c, []int{6}
+}
+func (m *ScopeElementForPermission) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ScopeElementForPermission) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ScopeElementForPermission.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ScopeElementForPermission) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScopeElementForPermission.Merge(m, src)
+}
+func (m *ScopeElementForPermission) XXX_Size() int {
+	return m.Size()
+}
+func (m *ScopeElementForPermission) XXX_DiscardUnknown() {
+	xxx_messageInfo_ScopeElementForPermission.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ScopeElementForPermission proto.InternalMessageInfo
+
+func (m *ScopeElementForPermission) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ScopeElementForPermission) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ScopeElementForPermission) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ScopeElementForPermission) Clone() *ScopeElementForPermission {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ScopeElementForPermission)
+	*cloned = *m
+
+	return cloned
+}
+
+type GetClustersForPermissionsResponse struct {
+	Clusters             []*ScopeElementForPermission `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *GetClustersForPermissionsResponse) Reset()         { *m = GetClustersForPermissionsResponse{} }
+func (m *GetClustersForPermissionsResponse) String() string { return proto.CompactTextString(m) }
+func (*GetClustersForPermissionsResponse) ProtoMessage()    {}
+func (*GetClustersForPermissionsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f2751be16bbd500c, []int{7}
+}
+func (m *GetClustersForPermissionsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetClustersForPermissionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetClustersForPermissionsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetClustersForPermissionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetClustersForPermissionsResponse.Merge(m, src)
+}
+func (m *GetClustersForPermissionsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetClustersForPermissionsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetClustersForPermissionsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetClustersForPermissionsResponse proto.InternalMessageInfo
+
+func (m *GetClustersForPermissionsResponse) GetClusters() []*ScopeElementForPermission {
+	if m != nil {
+		return m.Clusters
+	}
+	return nil
+}
+
+func (m *GetClustersForPermissionsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetClustersForPermissionsResponse) Clone() *GetClustersForPermissionsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetClustersForPermissionsResponse)
+	*cloned = *m
+
+	if m.Clusters != nil {
+		cloned.Clusters = make([]*ScopeElementForPermission, len(m.Clusters))
+		for idx, v := range m.Clusters {
+			cloned.Clusters[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type GetNamespacesForClusterAndPermissionsResponse struct {
+	Namespaces           []*ScopeElementForPermission `protobuf:"bytes,1,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *GetNamespacesForClusterAndPermissionsResponse) Reset() {
+	*m = GetNamespacesForClusterAndPermissionsResponse{}
+}
+func (m *GetNamespacesForClusterAndPermissionsResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*GetNamespacesForClusterAndPermissionsResponse) ProtoMessage() {}
+func (*GetNamespacesForClusterAndPermissionsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f2751be16bbd500c, []int{8}
+}
+func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetNamespacesForClusterAndPermissionsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNamespacesForClusterAndPermissionsResponse.Merge(m, src)
+}
+func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNamespacesForClusterAndPermissionsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetNamespacesForClusterAndPermissionsResponse proto.InternalMessageInfo
+
+func (m *GetNamespacesForClusterAndPermissionsResponse) GetNamespaces() []*ScopeElementForPermission {
+	if m != nil {
+		return m.Namespaces
+	}
+	return nil
+}
+
+func (m *GetNamespacesForClusterAndPermissionsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetNamespacesForClusterAndPermissionsResponse) Clone() *GetNamespacesForClusterAndPermissionsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetNamespacesForClusterAndPermissionsResponse)
+	*cloned = *m
+
+	if m.Namespaces != nil {
+		cloned.Namespaces = make([]*ScopeElementForPermission, len(m.Namespaces))
+		for idx, v := range m.Namespaces {
+			cloned.Namespaces[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
 type ComputeEffectiveAccessScopeRequest struct {
 	Detail               ComputeEffectiveAccessScopeRequest_Detail   `protobuf:"varint,1,opt,name=detail,proto3,enum=v1.ComputeEffectiveAccessScopeRequest_Detail" json:"detail,omitempty"`
 	AccessScope          *ComputeEffectiveAccessScopeRequest_Payload `protobuf:"bytes,2,opt,name=access_scope,json=accessScope,proto3" json:"access_scope,omitempty"`
@@ -465,7 +671,7 @@ func (m *ComputeEffectiveAccessScopeRequest) Reset()         { *m = ComputeEffec
 func (m *ComputeEffectiveAccessScopeRequest) String() string { return proto.CompactTextString(m) }
 func (*ComputeEffectiveAccessScopeRequest) ProtoMessage()    {}
 func (*ComputeEffectiveAccessScopeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f2751be16bbd500c, []int{6}
+	return fileDescriptor_f2751be16bbd500c, []int{9}
 }
 func (m *ComputeEffectiveAccessScopeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -542,7 +748,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) String() string {
 }
 func (*ComputeEffectiveAccessScopeRequest_Payload) ProtoMessage() {}
 func (*ComputeEffectiveAccessScopeRequest_Payload) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f2751be16bbd500c, []int{6, 0}
+	return fileDescriptor_f2751be16bbd500c, []int{9, 0}
 }
 func (m *ComputeEffectiveAccessScopeRequest_Payload) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -646,7 +852,7 @@ func (m *CreateRoleRequest) Reset()         { *m = CreateRoleRequest{} }
 func (m *CreateRoleRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateRoleRequest) ProtoMessage()    {}
 func (*CreateRoleRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f2751be16bbd500c, []int{7}
+	return fileDescriptor_f2751be16bbd500c, []int{10}
 }
 func (m *CreateRoleRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -703,6 +909,164 @@ func (m *CreateRoleRequest) Clone() *CreateRoleRequest {
 	return cloned
 }
 
+type GetClustersForPermissionsRequest struct {
+	Pagination           *Pagination `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	Permissions          []string    `protobuf:"bytes,2,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *GetClustersForPermissionsRequest) Reset()         { *m = GetClustersForPermissionsRequest{} }
+func (m *GetClustersForPermissionsRequest) String() string { return proto.CompactTextString(m) }
+func (*GetClustersForPermissionsRequest) ProtoMessage()    {}
+func (*GetClustersForPermissionsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f2751be16bbd500c, []int{11}
+}
+func (m *GetClustersForPermissionsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetClustersForPermissionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetClustersForPermissionsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetClustersForPermissionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetClustersForPermissionsRequest.Merge(m, src)
+}
+func (m *GetClustersForPermissionsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetClustersForPermissionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetClustersForPermissionsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetClustersForPermissionsRequest proto.InternalMessageInfo
+
+func (m *GetClustersForPermissionsRequest) GetPagination() *Pagination {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+func (m *GetClustersForPermissionsRequest) GetPermissions() []string {
+	if m != nil {
+		return m.Permissions
+	}
+	return nil
+}
+
+func (m *GetClustersForPermissionsRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetClustersForPermissionsRequest) Clone() *GetClustersForPermissionsRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetClustersForPermissionsRequest)
+	*cloned = *m
+
+	cloned.Pagination = m.Pagination.Clone()
+	if m.Permissions != nil {
+		cloned.Permissions = make([]string, len(m.Permissions))
+		copy(cloned.Permissions, m.Permissions)
+	}
+	return cloned
+}
+
+type GetNamespaceForClusterAndPermissionsRequest struct {
+	Pagination           *Pagination `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	ClusterId            string      `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Permissions          []string    `protobuf:"bytes,3,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) Reset() {
+	*m = GetNamespaceForClusterAndPermissionsRequest{}
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*GetNamespaceForClusterAndPermissionsRequest) ProtoMessage() {}
+func (*GetNamespaceForClusterAndPermissionsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f2751be16bbd500c, []int{12}
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetNamespaceForClusterAndPermissionsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNamespaceForClusterAndPermissionsRequest.Merge(m, src)
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNamespaceForClusterAndPermissionsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetNamespaceForClusterAndPermissionsRequest proto.InternalMessageInfo
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) GetPagination() *Pagination {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) GetClusterId() string {
+	if m != nil {
+		return m.ClusterId
+	}
+	return ""
+}
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) GetPermissions() []string {
+	if m != nil {
+		return m.Permissions
+	}
+	return nil
+}
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) Clone() *GetNamespaceForClusterAndPermissionsRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetNamespaceForClusterAndPermissionsRequest)
+	*cloned = *m
+
+	cloned.Pagination = m.Pagination.Clone()
+	if m.Permissions != nil {
+		cloned.Permissions = make([]string, len(m.Permissions))
+		copy(cloned.Permissions, m.Permissions)
+	}
+	return cloned
+}
+
 func init() {
 	proto.RegisterEnum("v1.ComputeEffectiveAccessScopeRequest_Detail", ComputeEffectiveAccessScopeRequest_Detail_name, ComputeEffectiveAccessScopeRequest_Detail_value)
 	proto.RegisterType((*Permission)(nil), "v1.Permission")
@@ -712,82 +1076,102 @@ func init() {
 	proto.RegisterType((*GetResourcesResponse)(nil), "v1.GetResourcesResponse")
 	proto.RegisterType((*ListPermissionSetsResponse)(nil), "v1.ListPermissionSetsResponse")
 	proto.RegisterType((*ListSimpleAccessScopesResponse)(nil), "v1.ListSimpleAccessScopesResponse")
+	proto.RegisterType((*ScopeElementForPermission)(nil), "v1.ScopeElementForPermission")
+	proto.RegisterType((*GetClustersForPermissionsResponse)(nil), "v1.GetClustersForPermissionsResponse")
+	proto.RegisterType((*GetNamespacesForClusterAndPermissionsResponse)(nil), "v1.GetNamespacesForClusterAndPermissionsResponse")
 	proto.RegisterType((*ComputeEffectiveAccessScopeRequest)(nil), "v1.ComputeEffectiveAccessScopeRequest")
 	proto.RegisterType((*ComputeEffectiveAccessScopeRequest_Payload)(nil), "v1.ComputeEffectiveAccessScopeRequest.Payload")
 	proto.RegisterType((*CreateRoleRequest)(nil), "v1.CreateRoleRequest")
+	proto.RegisterType((*GetClustersForPermissionsRequest)(nil), "v1.GetClustersForPermissionsRequest")
+	proto.RegisterType((*GetNamespaceForClusterAndPermissionsRequest)(nil), "v1.GetNamespaceForClusterAndPermissionsRequest")
 }
 
 func init() { proto.RegisterFile("api/v1/role_service.proto", fileDescriptor_f2751be16bbd500c) }
 
 var fileDescriptor_f2751be16bbd500c = []byte{
-	// 1058 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x56, 0x5d, 0x6f, 0x1a, 0x47,
-	0x14, 0xf5, 0x62, 0x62, 0xc3, 0x05, 0xdb, 0xeb, 0xb1, 0xc1, 0x78, 0x6d, 0x13, 0x32, 0x51, 0x53,
-	0xcb, 0x52, 0x96, 0x42, 0x5b, 0xb5, 0xf2, 0x43, 0x2b, 0x6c, 0x90, 0x3f, 0x14, 0x5b, 0x64, 0x71,
-	0xa5, 0xb6, 0x91, 0x8b, 0x36, 0x78, 0x62, 0xad, 0x02, 0xcc, 0x76, 0x77, 0x41, 0x45, 0x55, 0x5e,
-	0x2a, 0xf5, 0x17, 0xf4, 0xa5, 0x52, 0xff, 0x50, 0x1f, 0xfa, 0x50, 0xa9, 0x6f, 0x7d, 0xaa, 0xdc,
-	0xfe, 0x90, 0x6a, 0x3e, 0x16, 0x86, 0x8f, 0xc5, 0xce, 0x1b, 0x3b, 0x33, 0xe7, 0x9c, 0x7b, 0xcf,
-	0x9d, 0x7b, 0x07, 0xd8, 0xb6, 0x5d, 0xa7, 0xd8, 0x2f, 0x15, 0x3d, 0xda, 0x26, 0x4d, 0x9f, 0x78,
-	0x7d, 0xa7, 0x45, 0x4c, 0xd7, 0xa3, 0x01, 0x45, 0xb1, 0x7e, 0xc9, 0xd8, 0xbd, 0xa5, 0xf4, 0xb6,
-	0x4d, 0x8a, 0xec, 0x94, 0xdd, 0xed, 0xd2, 0xc0, 0x0e, 0x1c, 0xda, 0xf5, 0xc5, 0x09, 0x63, 0x43,
-	0x82, 0x5b, 0xb4, 0xd3, 0xa1, 0x5d, 0xb9, 0x88, 0xe4, 0x22, 0xe9, 0xb8, 0xc1, 0x20, 0x5c, 0xf3,
-	0x03, 0xea, 0xd9, 0xb7, 0x84, 0xcb, 0x88, 0x35, 0xfc, 0x12, 0xa0, 0x4e, 0xbc, 0x8e, 0xe3, 0xfb,
-	0x0e, 0xed, 0x22, 0x03, 0x12, 0x1e, 0xf1, 0x69, 0xcf, 0x6b, 0x91, 0x9c, 0x56, 0xd0, 0xf6, 0x93,
-	0xd6, 0xf0, 0x1b, 0x7d, 0x08, 0x4b, 0x76, 0xab, 0x45, 0x7c, 0x3f, 0x17, 0x2b, 0x68, 0xfb, 0xab,
-	0xe5, 0x35, 0x53, 0xd2, 0x99, 0x15, 0xbe, 0x6c, 0xc9, 0x6d, 0xfc, 0x19, 0xe8, 0x27, 0x24, 0xb0,
-	0x68, 0x9b, 0xf8, 0x16, 0xf1, 0x5d, 0xda, 0xf5, 0x09, 0x7a, 0x0a, 0x8f, 0x98, 0xa8, 0x9f, 0xd3,
-	0x0a, 0x8b, 0xfb, 0xa9, 0xf2, 0xca, 0x10, 0xcb, 0x8e, 0x59, 0x62, 0x0f, 0xff, 0xad, 0x41, 0xf6,
-	0x84, 0x04, 0xa3, 0x78, 0x46, 0xf8, 0xef, 0x00, 0x85, 0x81, 0x34, 0x03, 0xda, 0x94, 0x81, 0x2c,
-	0x72, 0xb2, 0x8f, 0xcc, 0x7e, 0xc9, 0x9c, 0x8d, 0x33, 0x2d, 0x09, 0xba, 0xa2, 0x22, 0xc8, 0x5a,
-	0x37, 0xf0, 0x06, 0x96, 0xee, 0x4d, 0x2c, 0x1b, 0x57, 0x90, 0x99, 0x79, 0x14, 0xe9, 0xb0, 0xf8,
-	0x96, 0x0c, 0xa4, 0x19, 0xec, 0x27, 0xfa, 0x00, 0x1e, 0xf5, 0xed, 0x76, 0x8f, 0x44, 0xd9, 0x20,
-	0x76, 0x0f, 0x63, 0x9f, 0x6b, 0xe7, 0xf1, 0x84, 0xa6, 0xc7, 0xce, 0xe3, 0x89, 0x98, 0xbe, 0x88,
-	0x3f, 0x81, 0x4d, 0xe6, 0x8a, 0x14, 0x19, 0x65, 0xb6, 0x0b, 0xc9, 0x30, 0x1a, 0xe1, 0x4e, 0xd2,
-	0x1a, 0x2d, 0xe0, 0x6b, 0x30, 0x5e, 0x38, 0xbe, 0x92, 0x5a, 0x83, 0x04, 0x23, 0xec, 0x97, 0xb0,
-	0xe6, 0x0e, 0x77, 0x9a, 0x3e, 0x09, 0x42, 0x7f, 0xb3, 0xc3, 0xa0, 0xc6, 0x90, 0xd6, 0xaa, 0x3b,
-	0x46, 0x84, 0x6d, 0xc8, 0x33, 0xfa, 0x86, 0xd3, 0x71, 0xdb, 0x44, 0xc4, 0xdf, 0x68, 0x51, 0x97,
-	0xa8, 0x12, 0x2b, 0xc2, 0xec, 0xa6, 0xcf, 0x37, 0xa4, 0x80, 0x31, 0x14, 0x98, 0xc2, 0x5a, 0x69,
-	0x5b, 0x21, 0xc2, 0x7f, 0xc4, 0x00, 0x1f, 0xd3, 0x8e, 0xdb, 0x0b, 0x48, 0xed, 0xcd, 0x1b, 0xd2,
-	0x0a, 0x9c, 0xfe, 0xd8, 0x69, 0xf2, 0x7d, 0x8f, 0xf8, 0x01, 0xaa, 0xc1, 0xd2, 0x0d, 0x09, 0x6c,
-	0xa7, 0xcd, 0xad, 0x5e, 0x2d, 0x3f, 0x67, 0x45, 0xbd, 0x1f, 0x67, 0x56, 0x39, 0xc8, 0x92, 0x60,
-	0xf4, 0x12, 0xd2, 0x6a, 0xb8, 0xbc, 0x46, 0xa9, 0xb2, 0xf9, 0x40, 0xb2, 0xba, 0x3d, 0x68, 0x53,
-	0xfb, 0xc6, 0x4a, 0x29, 0x19, 0x18, 0xd7, 0xb0, 0x2c, 0xd7, 0x51, 0x0d, 0xd2, 0x3e, 0x4f, 0xb7,
-	0xe9, 0xf5, 0xc4, 0x65, 0x66, 0xec, 0x85, 0x68, 0x2f, 0x4c, 0x8b, 0x9d, 0x3b, 0x5d, 0xb0, 0x52,
-	0x02, 0xc7, 0x3f, 0x8f, 0x52, 0x90, 0xe4, 0xf8, 0x26, 0x75, 0x03, 0xfc, 0x1c, 0x96, 0x44, 0x0e,
-	0x28, 0x0d, 0x89, 0xc6, 0x55, 0xe5, 0xb2, 0x5a, 0xb1, 0xaa, 0xfa, 0x02, 0x4a, 0xc1, 0xf2, 0xc5,
-	0xd9, 0xe5, 0xd9, 0x45, 0xe5, 0x85, 0xae, 0xa1, 0x04, 0xc4, 0x4f, 0xcf, 0x4e, 0x4e, 0xf5, 0x18,
-	0x3e, 0x87, 0xf5, 0x63, 0x8f, 0xd8, 0x01, 0xe1, 0x8d, 0x23, 0xcd, 0x43, 0x10, 0xef, 0xda, 0x9d,
-	0xb0, 0x65, 0xf9, 0x6f, 0xf4, 0x04, 0xe2, 0xac, 0xab, 0xa4, 0x03, 0x13, 0x0d, 0xc7, 0xb7, 0xca,
-	0x3f, 0xaf, 0x40, 0x8a, 0x7d, 0x36, 0xc4, 0xc0, 0x41, 0x5f, 0x40, 0x22, 0x6c, 0x5c, 0x94, 0x64,
-	0x96, 0xd5, 0xd8, 0xf0, 0x30, 0x36, 0x65, 0x7f, 0x8d, 0x75, 0x34, 0x5e, 0xff, 0xe9, 0xaf, 0xff,
-	0x7e, 0x89, 0xa5, 0x50, 0x32, 0x9c, 0x5b, 0x3e, 0x3a, 0x82, 0x65, 0x79, 0x0c, 0xe9, 0x0c, 0x13,
-	0x5e, 0xf6, 0xa3, 0xc1, 0x59, 0xd5, 0x18, 0x8f, 0x00, 0x67, 0x39, 0x5c, 0x47, 0xab, 0x43, 0x78,
-	0xf1, 0x47, 0xe7, 0xe6, 0x1d, 0xba, 0xe2, 0xc3, 0xe3, 0x62, 0xa0, 0x34, 0xb3, 0x1a, 0x8b, 0x11,
-	0xdd, 0xeb, 0x78, 0x9b, 0x53, 0x6e, 0xa0, 0x75, 0x46, 0xd9, 0x19, 0xb8, 0x0a, 0xc3, 0x25, 0xc0,
-	0xc8, 0x35, 0x94, 0xe1, 0xd7, 0x61, 0xd2, 0x45, 0x63, 0x24, 0x83, 0xf3, 0x9c, 0x2a, 0x87, 0x75,
-	0x25, 0x3a, 0xe6, 0xea, 0xbb, 0x43, 0xee, 0x1c, 0x3a, 0x06, 0xf8, 0xca, 0xbd, 0x09, 0xf9, 0xc6,
-	0x53, 0x53, 0x79, 0x76, 0x38, 0x4f, 0xc6, 0x98, 0xe6, 0xd1, 0x0e, 0x50, 0x05, 0xa0, 0x4a, 0xda,
-	0x44, 0x92, 0x4c, 0x3b, 0xa6, 0xf0, 0x48, 0xb7, 0x0e, 0x26, 0xdd, 0x3a, 0x87, 0xb4, 0x3a, 0x54,
-	0x54, 0xa7, 0x72, 0x61, 0xd5, 0x26, 0x27, 0x0e, 0xce, 0x70, 0xb2, 0x35, 0xb4, 0xc2, 0xc9, 0x86,
-	0xd8, 0x6b, 0xee, 0xfc, 0xd8, 0xbc, 0x98, 0x11, 0x54, 0xc4, 0x64, 0xc1, 0x8f, 0x39, 0xe9, 0x36,
-	0xda, 0x62, 0xa4, 0x8a, 0xf5, 0x24, 0x90, 0xa1, 0xbe, 0x02, 0x34, 0x3d, 0xc9, 0xd4, 0x80, 0xf3,
-	0xec, 0x67, 0xf4, 0xb0, 0xc3, 0x06, 0x57, 0xd8, 0x44, 0x68, 0x5a, 0x01, 0xbd, 0x86, 0xf5, 0x3a,
-	0x9d, 0x40, 0xa2, 0x88, 0x50, 0x23, 0x53, 0xd8, 0xe3, 0x02, 0x5b, 0x78, 0x86, 0x00, 0x2b, 0xd7,
-	0x37, 0xa0, 0xd7, 0x7b, 0x0f, 0x94, 0x50, 0x4a, 0x87, 0x39, 0xeb, 0xae, 0x11, 0x65, 0x0c, 0xa3,
-	0x6e, 0xc0, 0x86, 0xb8, 0x09, 0xf7, 0xb9, 0xaf, 0xf0, 0x4a, 0xc3, 0x0f, 0x22, 0x0d, 0x77, 0xf8,
-	0x83, 0x33, 0x35, 0x92, 0x66, 0xb0, 0xce, 0x19, 0xe6, 0xf8, 0x29, 0x97, 0xd9, 0x43, 0x3b, 0x4c,
-	0x46, 0x0c, 0x31, 0x31, 0x1c, 0xc5, 0x73, 0x20, 0xa4, 0x6e, 0x21, 0x3b, 0xfb, 0x19, 0x51, 0xeb,
-	0x8b, 0xc3, 0xfa, 0x46, 0xbf, 0x36, 0x61, 0xdf, 0xa1, 0xec, 0x6c, 0x35, 0xe4, 0x41, 0x86, 0xd5,
-	0x79, 0x3a, 0xa9, 0x39, 0x29, 0xcc, 0x4d, 0xef, 0x09, 0x17, 0xdc, 0xc1, 0x11, 0x82, 0xac, 0x38,
-	0x04, 0x36, 0xeb, 0xbd, 0xf7, 0x94, 0x54, 0xea, 0xf4, 0x8c, 0x2b, 0x14, 0x8c, 0x79, 0x06, 0x32,
-	0x99, 0x57, 0xb0, 0x25, 0xee, 0xc0, 0x43, 0x2a, 0xa6, 0xf0, 0xcb, 0x02, 0x1d, 0xcc, 0x2d, 0xd0,
-	0x6f, 0x1a, 0xec, 0xcc, 0x79, 0xff, 0xd0, 0xb3, 0x87, 0x3d, 0x90, 0xc6, 0xde, 0x30, 0xe7, 0x59,
-	0xa7, 0xf0, 0xa7, 0x3c, 0x96, 0x22, 0x7e, 0x2c, 0xff, 0x8e, 0x32, 0x3a, 0x12, 0x1e, 0x54, 0xa2,
-	0x3a, 0x1c, 0x7b, 0xa4, 0x8f, 0xcc, 0xdf, 0xef, 0xf2, 0xda, 0x9f, 0x77, 0x79, 0xed, 0x9f, 0xbb,
-	0xbc, 0xf6, 0xeb, 0xbf, 0xf9, 0x05, 0xc8, 0x39, 0xd4, 0xf4, 0x03, 0xbb, 0xf5, 0xd6, 0xa3, 0x3f,
-	0x88, 0x3f, 0xaa, 0xa6, 0xed, 0x3a, 0x66, 0xbf, 0xf4, 0x6d, 0xac, 0x5f, 0xfa, 0x7a, 0xe1, 0xf5,
-	0x12, 0x5f, 0xfb, 0xf8, 0xff, 0x00, 0x00, 0x00, 0xff, 0xff, 0x22, 0x86, 0x4e, 0xec, 0x38, 0x0b,
-	0x00, 0x00,
+	// 1304 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x57, 0x4d, 0x6f, 0xdb, 0x46,
+	0x13, 0x36, 0x65, 0xc7, 0x91, 0x46, 0x8e, 0x2d, 0x4f, 0xfc, 0x21, 0xd3, 0xb1, 0xa2, 0x6c, 0xde,
+	0xe4, 0x35, 0x5c, 0x84, 0x8a, 0xdd, 0x16, 0x6d, 0x03, 0xb4, 0x81, 0xbf, 0xea, 0xd8, 0x48, 0x0c,
+	0x87, 0x76, 0x81, 0xb6, 0x41, 0x22, 0x30, 0xd2, 0xc6, 0x20, 0x22, 0x71, 0x59, 0x72, 0x25, 0x54,
+	0x08, 0x72, 0xc9, 0x5f, 0xe8, 0xa5, 0x40, 0x81, 0xfe, 0x93, 0xde, 0x8b, 0xa2, 0x87, 0x02, 0xbd,
+	0xf5, 0x54, 0xb8, 0xfd, 0x21, 0xc5, 0x2e, 0x97, 0xe2, 0xea, 0x83, 0xb2, 0xda, 0x1b, 0x35, 0x9c,
+	0x79, 0x9e, 0xd9, 0x67, 0x86, 0x33, 0x2b, 0x58, 0x71, 0x7c, 0xb7, 0xd2, 0xde, 0xac, 0x04, 0xac,
+	0x41, 0xab, 0x21, 0x0d, 0xda, 0x6e, 0x8d, 0x5a, 0x7e, 0xc0, 0x38, 0xc3, 0x4c, 0x7b, 0xd3, 0xbc,
+	0x71, 0xce, 0xd8, 0x79, 0x83, 0x56, 0x84, 0x97, 0xe3, 0x79, 0x8c, 0x3b, 0xdc, 0x65, 0x5e, 0x18,
+	0x79, 0x98, 0xd7, 0x55, 0x70, 0x8d, 0x35, 0x9b, 0xcc, 0x53, 0x46, 0x54, 0x46, 0xda, 0xf4, 0x79,
+	0x47, 0xd9, 0x96, 0x95, 0xcd, 0x77, 0xce, 0x5d, 0x4f, 0x42, 0xc4, 0xce, 0x21, 0x67, 0x81, 0x73,
+	0x4e, 0x25, 0x7f, 0x64, 0x23, 0x4f, 0x01, 0x4e, 0x68, 0xd0, 0x74, 0xc3, 0xd0, 0x65, 0x1e, 0x9a,
+	0x90, 0x0d, 0x68, 0xc8, 0x5a, 0x41, 0x8d, 0x16, 0x8d, 0xb2, 0xb1, 0x9e, 0xb3, 0xbb, 0xbf, 0xf1,
+	0xff, 0x30, 0xed, 0xd4, 0x6a, 0x34, 0x0c, 0x8b, 0x99, 0xb2, 0xb1, 0x3e, 0xbb, 0x35, 0x67, 0x29,
+	0x38, 0x6b, 0x5b, 0x9a, 0x6d, 0xf5, 0x9a, 0x7c, 0x04, 0x85, 0x03, 0xca, 0x6d, 0xd6, 0xa0, 0xa1,
+	0x4d, 0x43, 0x9f, 0x79, 0x21, 0xc5, 0xdb, 0x70, 0x45, 0x90, 0x86, 0x45, 0xa3, 0x3c, 0xb9, 0x9e,
+	0xdf, 0xba, 0xd6, 0x8d, 0x15, 0x6e, 0x76, 0xf4, 0x8e, 0xfc, 0x61, 0xc0, 0xd2, 0x01, 0xe5, 0x49,
+	0x3e, 0x49, 0xfc, 0x0b, 0xc0, 0x38, 0x91, 0x2a, 0x67, 0x55, 0x95, 0xc8, 0xa4, 0x04, 0xbb, 0x6f,
+	0xb5, 0x37, 0xad, 0xe1, 0x71, 0x96, 0xad, 0x82, 0xce, 0x58, 0x94, 0xe4, 0xbe, 0xc7, 0x83, 0x8e,
+	0x5d, 0x08, 0xfa, 0xcc, 0xe6, 0x19, 0x2c, 0x0e, 0x75, 0xc5, 0x02, 0x4c, 0xbe, 0xa6, 0x1d, 0x25,
+	0x86, 0x78, 0xc4, 0x3b, 0x70, 0xa5, 0xed, 0x34, 0x5a, 0x34, 0x4d, 0x86, 0xe8, 0xed, 0x83, 0xcc,
+	0xc7, 0xc6, 0xd1, 0x54, 0xd6, 0x28, 0x64, 0x8e, 0xa6, 0xb2, 0x99, 0xc2, 0x24, 0xf9, 0x00, 0x16,
+	0x84, 0x2a, 0x8a, 0x24, 0x39, 0xd9, 0x0d, 0xc8, 0xc5, 0xd9, 0x44, 0xea, 0xe4, 0xec, 0xc4, 0x40,
+	0x9e, 0x83, 0xf9, 0xd8, 0x0d, 0xb5, 0xa3, 0x9d, 0x52, 0x9e, 0xc4, 0x3e, 0x84, 0x39, 0xbf, 0xfb,
+	0xa6, 0x1a, 0x52, 0x1e, 0xeb, 0xbb, 0xd4, 0x4d, 0xaa, 0x27, 0xd2, 0x9e, 0xf5, 0x7b, 0x80, 0x88,
+	0x03, 0x25, 0x01, 0x7f, 0xea, 0x36, 0xfd, 0x06, 0x8d, 0xf2, 0x3f, 0xad, 0x31, 0x9f, 0xea, 0x14,
+	0xd7, 0x22, 0xb1, 0xab, 0xa1, 0x7c, 0xa1, 0x08, 0xcc, 0x2e, 0xc1, 0x40, 0xac, 0x3d, 0xe3, 0x68,
+	0x40, 0xe4, 0x21, 0xac, 0xc8, 0xa7, 0xfd, 0x06, 0x6d, 0x52, 0x8f, 0x7f, 0xce, 0x02, 0xad, 0xdf,
+	0x66, 0x21, 0xe3, 0xd6, 0x95, 0xb8, 0x19, 0xb7, 0x8e, 0x08, 0x53, 0x9e, 0xd3, 0x8c, 0xa4, 0xcd,
+	0xd9, 0xf2, 0x99, 0xbc, 0x80, 0x5b, 0x07, 0x94, 0xef, 0x36, 0x5a, 0x21, 0xa7, 0x41, 0xd8, 0x13,
+	0x9f, 0xa4, 0xf9, 0x09, 0x64, 0x6b, 0xca, 0x43, 0x65, 0xb8, 0x26, 0xba, 0x22, 0x95, 0xd9, 0xee,
+	0xba, 0x13, 0x0f, 0xee, 0x1d, 0x50, 0x7e, 0xec, 0x34, 0x69, 0xe8, 0x3b, 0x35, 0x2a, 0x18, 0x14,
+	0xd9, 0xb6, 0x57, 0x1f, 0xc6, 0xf5, 0x29, 0x80, 0xd7, 0xf5, 0x1e, 0x8f, 0x4d, 0x0b, 0x20, 0xbf,
+	0x66, 0x80, 0xec, 0xb2, 0xa6, 0xdf, 0xe2, 0x74, 0xff, 0xd5, 0x2b, 0x5a, 0xe3, 0x6e, 0xbb, 0x47,
+	0x3e, 0xfa, 0x4d, 0x8b, 0x86, 0x1c, 0xf7, 0x61, 0xba, 0x4e, 0xb9, 0xe3, 0x36, 0xa4, 0x3c, 0xb3,
+	0x5b, 0xf7, 0x04, 0xc3, 0xe5, 0x71, 0xd6, 0x9e, 0x0c, 0xb2, 0x55, 0x30, 0x3e, 0x85, 0x19, 0xbd,
+	0x7e, 0x52, 0xd9, 0xfc, 0x96, 0x35, 0x26, 0xd8, 0x89, 0xd3, 0x69, 0x30, 0xa7, 0x6e, 0xe7, 0xb5,
+	0x92, 0x9a, 0xcf, 0xe1, 0xaa, 0xb2, 0xe3, 0x3e, 0xcc, 0x84, 0xb2, 0xfe, 0xd5, 0xa0, 0x15, 0x7d,
+	0xdd, 0x02, 0xbd, 0x9c, 0xde, 0x1c, 0x96, 0x2d, 0xfc, 0x1e, 0x4d, 0xd8, 0xf9, 0x28, 0x4e, 0xfe,
+	0xdc, 0xc9, 0x43, 0x4e, 0xc6, 0x57, 0x99, 0xcf, 0xc9, 0x3d, 0x98, 0x8e, 0xce, 0x80, 0x33, 0x90,
+	0x3d, 0x3d, 0xdb, 0x3e, 0xde, 0xdb, 0xb6, 0xf7, 0x0a, 0x13, 0x98, 0x87, 0xab, 0x4f, 0x0e, 0x8f,
+	0x0f, 0x9f, 0x6c, 0x3f, 0x2e, 0x18, 0x98, 0x85, 0xa9, 0x47, 0x87, 0x07, 0x8f, 0x0a, 0x19, 0x72,
+	0x04, 0xf3, 0xbb, 0x01, 0x75, 0x38, 0x95, 0x93, 0x44, 0x89, 0x17, 0xf7, 0x91, 0x91, 0xf4, 0x11,
+	0xde, 0x82, 0x29, 0x31, 0x66, 0x94, 0x02, 0x7d, 0x13, 0x48, 0xbe, 0x22, 0x1c, 0xca, 0x23, 0x5a,
+	0x2d, 0x82, 0xb6, 0x00, 0x92, 0xc1, 0xaa, 0x0e, 0x3c, 0x2b, 0xe4, 0x3c, 0xe9, 0x5a, 0x6d, 0xcd,
+	0x03, 0xcb, 0x90, 0x4f, 0x3e, 0x3a, 0x31, 0x3b, 0xc5, 0x17, 0xae, 0x9b, 0xc8, 0x8f, 0x06, 0xbc,
+	0xa7, 0x77, 0x60, 0x7a, 0x03, 0xfe, 0xb7, 0x0c, 0xd6, 0x00, 0x54, 0xb3, 0x57, 0xdd, 0xba, 0xfa,
+	0xb4, 0x72, 0xca, 0x72, 0x58, 0xef, 0x4f, 0x70, 0x72, 0x20, 0xc1, 0xad, 0x5f, 0xe6, 0x20, 0x2f,
+	0x54, 0x3a, 0x8d, 0x36, 0x16, 0x7e, 0x06, 0xd9, 0x78, 0xc0, 0x63, 0x4e, 0x10, 0xef, 0x8b, 0xed,
+	0x63, 0x2e, 0xa8, 0x39, 0xdc, 0x33, 0xf9, 0xc9, 0xfc, 0xbb, 0xdf, 0xff, 0xfe, 0x2e, 0x93, 0xc7,
+	0x5c, 0xbc, 0xf8, 0x42, 0xdc, 0x81, 0xab, 0xca, 0x0d, 0x0b, 0x22, 0x26, 0x1e, 0x8a, 0x3b, 0x9d,
+	0xc3, 0x3d, 0xb3, 0xb7, 0x30, 0x64, 0x49, 0x86, 0x17, 0x70, 0xb6, 0x1b, 0x5e, 0x79, 0xe3, 0xd6,
+	0xdf, 0xe2, 0x99, 0x5c, 0x32, 0x4f, 0x3a, 0x9a, 0x3e, 0x7a, 0x2e, 0x66, 0xfa, 0x4e, 0x20, 0x2b,
+	0x12, 0xf2, 0x3a, 0xce, 0x0b, 0xc8, 0x66, 0x47, 0x3b, 0x29, 0x1e, 0x03, 0x24, 0xcd, 0x84, 0x8b,
+	0xf2, 0x2b, 0xe9, 0x6f, 0x2e, 0x33, 0xa1, 0x21, 0x25, 0x09, 0x55, 0x24, 0x05, 0x2d, 0x3b, 0xd1,
+	0x6c, 0x6f, 0x1f, 0xc8, 0x86, 0xc2, 0x5d, 0x80, 0x2f, 0xfc, 0x7a, 0x8c, 0xd7, 0x7b, 0x34, 0x1d,
+	0x67, 0x55, 0xe2, 0x2c, 0x9a, 0x83, 0x38, 0xc6, 0x06, 0x6e, 0x03, 0xec, 0xd1, 0x06, 0x55, 0x20,
+	0x83, 0x8a, 0x69, 0x38, 0x4a, 0xad, 0x8d, 0x7e, 0xb5, 0x8e, 0x60, 0x46, 0x5f, 0x3e, 0xba, 0x52,
+	0xc5, 0xb8, 0x6a, 0xfd, 0x9b, 0x89, 0x2c, 0x4a, 0xb0, 0x39, 0xbc, 0x26, 0xc1, 0xba, 0xb1, 0xcf,
+	0xa5, 0xf2, 0x3d, 0x7b, 0x65, 0x48, 0x52, 0x29, 0x1b, 0x88, 0xdc, 0x94, 0xa0, 0x2b, 0xb8, 0x2c,
+	0x6f, 0x28, 0x89, 0xf4, 0x94, 0xab, 0x54, 0x9f, 0x01, 0x0e, 0x6e, 0x3c, 0x3d, 0xe1, 0x92, 0x78,
+	0x4c, 0x5f, 0x8a, 0xc4, 0x94, 0x0c, 0x0b, 0x88, 0x83, 0x0c, 0xf8, 0x12, 0xe6, 0x4f, 0x58, 0x5f,
+	0x24, 0xa6, 0xa4, 0x9a, 0x7a, 0x84, 0x35, 0x49, 0xb0, 0x4c, 0x86, 0x10, 0x88, 0x72, 0x7d, 0x05,
+	0x85, 0x93, 0xd6, 0x98, 0x14, 0x5a, 0xe9, 0x88, 0x44, 0xbd, 0x61, 0xa6, 0x09, 0x23, 0xa0, 0x4f,
+	0xe1, 0x7a, 0xd4, 0x09, 0x97, 0xa9, 0xaf, 0xe1, 0x2a, 0xc1, 0x37, 0x52, 0x05, 0x77, 0xe5, 0xc5,
+	0x64, 0x60, 0x52, 0x0f, 0x41, 0x1d, 0xb1, 0xf4, 0xc9, 0x6d, 0x49, 0xb3, 0x86, 0xab, 0x82, 0x26,
+	0x9a, 0xed, 0xd1, 0xce, 0x88, 0xae, 0x0d, 0x11, 0xd5, 0x39, 0x2c, 0x0d, 0xbf, 0x6e, 0xe8, 0xf5,
+	0x25, 0x71, 0x7d, 0xd3, 0x6f, 0x25, 0xf1, 0x77, 0x87, 0x4b, 0xc3, 0xd9, 0x30, 0x80, 0x45, 0x51,
+	0xe7, 0xc1, 0x43, 0x8d, 0x38, 0xc2, 0xc8, 0xe3, 0xdd, 0x92, 0x84, 0xab, 0x24, 0x85, 0x50, 0x14,
+	0x87, 0xc2, 0xc2, 0x49, 0xeb, 0x5f, 0x52, 0x6a, 0x75, 0xba, 0x2b, 0x19, 0xca, 0xe6, 0x28, 0x01,
+	0x05, 0xcd, 0x33, 0x58, 0x8e, 0x7a, 0x60, 0x9c, 0x8a, 0x69, 0xf8, 0xaa, 0x40, 0x1b, 0x23, 0x0b,
+	0xf4, 0x83, 0x01, 0xab, 0x23, 0xae, 0x05, 0x78, 0x77, 0xbc, 0x7b, 0x83, 0xb9, 0xd6, 0x3d, 0xf3,
+	0x30, 0x2f, 0xf2, 0xa1, 0xcc, 0xa5, 0x42, 0x6e, 0xaa, 0xff, 0x33, 0x02, 0x8e, 0xc6, 0x8e, 0x5a,
+	0x56, 0x0f, 0x7a, 0xee, 0x2e, 0xf8, 0xce, 0x80, 0x95, 0xd4, 0xfd, 0x8c, 0xff, 0x53, 0x83, 0x6c,
+	0xe4, 0xfa, 0x36, 0xef, 0x5c, 0xe2, 0xa5, 0x1a, 0xac, 0x28, 0x33, 0x44, 0x94, 0x03, 0x39, 0x74,
+	0x6a, 0x95, 0xf8, 0xba, 0x88, 0x3f, 0x19, 0x70, 0x67, 0xac, 0xfb, 0x22, 0x56, 0x14, 0xd5, 0xb8,
+	0x8b, 0xdd, 0xdc, 0xec, 0x0f, 0xb8, 0xf4, 0x2e, 0x4a, 0xee, 0xcb, 0x3c, 0x37, 0x70, 0xbd, 0x3f,
+	0xcf, 0xca, 0x9b, 0x64, 0xe7, 0xbf, 0xad, 0x24, 0xd7, 0xcf, 0x1d, 0xeb, 0xe7, 0x8b, 0x92, 0xf1,
+	0xdb, 0x45, 0xc9, 0xf8, 0xf3, 0xa2, 0x64, 0x7c, 0xff, 0x57, 0x69, 0x02, 0x8a, 0x2e, 0xb3, 0x42,
+	0xee, 0xd4, 0x5e, 0x07, 0xec, 0xdb, 0xe8, 0x5f, 0xa1, 0xe5, 0xf8, 0xae, 0xd5, 0xde, 0xfc, 0x3a,
+	0xd3, 0xde, 0xfc, 0x72, 0xe2, 0xe5, 0xb4, 0xb4, 0xbd, 0xff, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0xde, 0xae, 0xa7, 0x15, 0xbe, 0x0e, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -854,6 +1238,31 @@ type RoleServiceClient interface {
 	//
 	//   * High, when every cluster and namespace is augmented with metadata.
 	ComputeEffectiveAccessScope(ctx context.Context, in *ComputeEffectiveAccessScopeRequest, opts ...grpc.CallOption) (*storage.EffectiveAccessScope, error)
+	// GetClustersForPermissions
+	//
+	// Returns the list of cluster ID and cluster name pairs that have at least read allowed
+	// by the scope of the requesting user for the list of requested permissions.
+	// Effective access scopes are only considered for input permissions that have
+	// cluster scope or narrower (i.e. global permissions from the input are ignored).
+	//
+	// If the input only contains permissions at global level, the output will be an empty list.
+	//
+	// If no permission is given in input, all clusters allowed by the requester scope for
+	// any permission with cluster scope or narrower will be part of the response.
+	GetClustersForPermissions(ctx context.Context, in *GetClustersForPermissionsRequest, opts ...grpc.CallOption) (*GetClustersForPermissionsResponse, error)
+	// GetNamespacesForClusterAndPermissions
+	//
+	// Returns the list of namespace ID and namespace name pairs that belong to the requested
+	// cluster and for which the user has at least read access granted for the list of
+	// requested permissions that have namespace scope or narrower (i.e. global and cluster
+	// permissions from the input are ignored).
+	//
+	// If the input only contains permissions at global or cluster level, the output will be
+	// an empty list.
+	//
+	// If no permission is given in input, all namespaces allowed by the requester scope for
+	// any permission with namespace scope or narrower will be part of the response.
+	GetNamespacesForClusterAndPermissions(ctx context.Context, in *GetNamespaceForClusterAndPermissionsRequest, opts ...grpc.CallOption) (*GetNamespacesForClusterAndPermissionsResponse, error)
 }
 
 type roleServiceClient struct {
@@ -1026,6 +1435,24 @@ func (c *roleServiceClient) ComputeEffectiveAccessScope(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *roleServiceClient) GetClustersForPermissions(ctx context.Context, in *GetClustersForPermissionsRequest, opts ...grpc.CallOption) (*GetClustersForPermissionsResponse, error) {
+	out := new(GetClustersForPermissionsResponse)
+	err := c.cc.Invoke(ctx, "/v1.RoleService/GetClustersForPermissions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *roleServiceClient) GetNamespacesForClusterAndPermissions(ctx context.Context, in *GetNamespaceForClusterAndPermissionsRequest, opts ...grpc.CallOption) (*GetNamespacesForClusterAndPermissionsResponse, error) {
+	out := new(GetNamespacesForClusterAndPermissionsResponse)
+	err := c.cc.Invoke(ctx, "/v1.RoleService/GetNamespacesForClusterAndPermissions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RoleServiceServer is the server API for RoleService service.
 type RoleServiceServer interface {
 	GetRoles(context.Context, *Empty) (*GetRolesResponse, error)
@@ -1080,6 +1507,31 @@ type RoleServiceServer interface {
 	//
 	//   * High, when every cluster and namespace is augmented with metadata.
 	ComputeEffectiveAccessScope(context.Context, *ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error)
+	// GetClustersForPermissions
+	//
+	// Returns the list of cluster ID and cluster name pairs that have at least read allowed
+	// by the scope of the requesting user for the list of requested permissions.
+	// Effective access scopes are only considered for input permissions that have
+	// cluster scope or narrower (i.e. global permissions from the input are ignored).
+	//
+	// If the input only contains permissions at global level, the output will be an empty list.
+	//
+	// If no permission is given in input, all clusters allowed by the requester scope for
+	// any permission with cluster scope or narrower will be part of the response.
+	GetClustersForPermissions(context.Context, *GetClustersForPermissionsRequest) (*GetClustersForPermissionsResponse, error)
+	// GetNamespacesForClusterAndPermissions
+	//
+	// Returns the list of namespace ID and namespace name pairs that belong to the requested
+	// cluster and for which the user has at least read access granted for the list of
+	// requested permissions that have namespace scope or narrower (i.e. global and cluster
+	// permissions from the input are ignored).
+	//
+	// If the input only contains permissions at global or cluster level, the output will be
+	// an empty list.
+	//
+	// If no permission is given in input, all namespaces allowed by the requester scope for
+	// any permission with namespace scope or narrower will be part of the response.
+	GetNamespacesForClusterAndPermissions(context.Context, *GetNamespaceForClusterAndPermissionsRequest) (*GetNamespacesForClusterAndPermissionsResponse, error)
 }
 
 // UnimplementedRoleServiceServer can be embedded to have forward compatible implementations.
@@ -1139,6 +1591,12 @@ func (*UnimplementedRoleServiceServer) DeleteSimpleAccessScope(ctx context.Conte
 }
 func (*UnimplementedRoleServiceServer) ComputeEffectiveAccessScope(ctx context.Context, req *ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ComputeEffectiveAccessScope not implemented")
+}
+func (*UnimplementedRoleServiceServer) GetClustersForPermissions(ctx context.Context, req *GetClustersForPermissionsRequest) (*GetClustersForPermissionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClustersForPermissions not implemented")
+}
+func (*UnimplementedRoleServiceServer) GetNamespacesForClusterAndPermissions(ctx context.Context, req *GetNamespaceForClusterAndPermissionsRequest) (*GetNamespacesForClusterAndPermissionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNamespacesForClusterAndPermissions not implemented")
 }
 
 func RegisterRoleServiceServer(s *grpc.Server, srv RoleServiceServer) {
@@ -1469,6 +1927,42 @@ func _RoleService_ComputeEffectiveAccessScope_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RoleService_GetClustersForPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClustersForPermissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoleServiceServer).GetClustersForPermissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.RoleService/GetClustersForPermissions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoleServiceServer).GetClustersForPermissions(ctx, req.(*GetClustersForPermissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RoleService_GetNamespacesForClusterAndPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNamespaceForClusterAndPermissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoleServiceServer).GetNamespacesForClusterAndPermissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.RoleService/GetNamespacesForClusterAndPermissions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoleServiceServer).GetNamespacesForClusterAndPermissions(ctx, req.(*GetNamespaceForClusterAndPermissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _RoleService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.RoleService",
 	HandlerType: (*RoleServiceServer)(nil),
@@ -1544,6 +2038,14 @@ var _RoleService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ComputeEffectiveAccessScope",
 			Handler:    _RoleService_ComputeEffectiveAccessScope_Handler,
+		},
+		{
+			MethodName: "GetClustersForPermissions",
+			Handler:    _RoleService_GetClustersForPermissions_Handler,
+		},
+		{
+			MethodName: "GetNamespacesForClusterAndPermissions",
+			Handler:    _RoleService_GetNamespacesForClusterAndPermissions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1792,6 +2294,129 @@ func (m *ListSimpleAccessScopesResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
+func (m *ScopeElementForPermission) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ScopeElementForPermission) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ScopeElementForPermission) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintRoleService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintRoleService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetClustersForPermissionsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetClustersForPermissionsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetClustersForPermissionsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Clusters) > 0 {
+		for iNdEx := len(m.Clusters) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Clusters[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRoleService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetNamespacesForClusterAndPermissionsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetNamespacesForClusterAndPermissionsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetNamespacesForClusterAndPermissionsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Namespaces) > 0 {
+		for iNdEx := len(m.Namespaces) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Namespaces[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRoleService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *ComputeEffectiveAccessScopeRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1939,6 +2564,109 @@ func (m *CreateRoleRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *GetClustersForPermissionsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetClustersForPermissionsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetClustersForPermissionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Permissions) > 0 {
+		for iNdEx := len(m.Permissions) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Permissions[iNdEx])
+			copy(dAtA[i:], m.Permissions[iNdEx])
+			i = encodeVarintRoleService(dAtA, i, uint64(len(m.Permissions[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintRoleService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Permissions) > 0 {
+		for iNdEx := len(m.Permissions) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Permissions[iNdEx])
+			copy(dAtA[i:], m.Permissions[iNdEx])
+			i = encodeVarintRoleService(dAtA, i, uint64(len(m.Permissions[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.ClusterId) > 0 {
+		i -= len(m.ClusterId)
+		copy(dAtA[i:], m.ClusterId)
+		i = encodeVarintRoleService(dAtA, i, uint64(len(m.ClusterId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintRoleService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintRoleService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovRoleService(v)
 	base := offset
@@ -2061,6 +2789,62 @@ func (m *ListSimpleAccessScopesResponse) Size() (n int) {
 	return n
 }
 
+func (m *ScopeElementForPermission) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovRoleService(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovRoleService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetClustersForPermissionsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Clusters) > 0 {
+		for _, e := range m.Clusters {
+			l = e.Size()
+			n += 1 + l + sovRoleService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetNamespacesForClusterAndPermissionsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Namespaces) > 0 {
+		for _, e := range m.Namespaces {
+			l = e.Size()
+			n += 1 + l + sovRoleService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *ComputeEffectiveAccessScopeRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2120,6 +2904,54 @@ func (m *CreateRoleRequest) Size() (n int) {
 	if m.Role != nil {
 		l = m.Role.Size()
 		n += 1 + l + sovRoleService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetClustersForPermissionsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovRoleService(uint64(l))
+	}
+	if len(m.Permissions) > 0 {
+		for _, s := range m.Permissions {
+			l = len(s)
+			n += 1 + l + sovRoleService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetNamespaceForClusterAndPermissionsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovRoleService(uint64(l))
+	}
+	l = len(m.ClusterId)
+	if l > 0 {
+		n += 1 + l + sovRoleService(uint64(l))
+	}
+	if len(m.Permissions) > 0 {
+		for _, s := range m.Permissions {
+			l = len(s)
+			n += 1 + l + sovRoleService(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2737,6 +3569,291 @@ func (m *ListSimpleAccessScopesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *ScopeElementForPermission) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRoleService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ScopeElementForPermission: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ScopeElementForPermission: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRoleService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetClustersForPermissionsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRoleService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetClustersForPermissionsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetClustersForPermissionsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Clusters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Clusters = append(m.Clusters, &ScopeElementForPermission{})
+			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRoleService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetNamespacesForClusterAndPermissionsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRoleService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetNamespacesForClusterAndPermissionsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetNamespacesForClusterAndPermissionsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespaces", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Namespaces = append(m.Namespaces, &ScopeElementForPermission{})
+			if err := m.Namespaces[len(m.Namespaces)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRoleService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *ComputeEffectiveAccessScopeRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3025,6 +4142,276 @@ func (m *CreateRoleRequest) Unmarshal(dAtA []byte) error {
 			if err := m.Role.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRoleService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetClustersForPermissionsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRoleService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetClustersForPermissionsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetClustersForPermissionsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Permissions", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Permissions = append(m.Permissions, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRoleService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRoleService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetNamespaceForClusterAndPermissionsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetNamespaceForClusterAndPermissionsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Permissions", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRoleService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRoleService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Permissions = append(m.Permissions, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
