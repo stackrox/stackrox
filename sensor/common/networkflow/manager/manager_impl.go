@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -270,14 +271,6 @@ func (m *networkFlowManager) enrichAndSend() {
 		Time:             types.TimestampNow(),
 	}
 
-	for _, conn := range protoToSend.Updated {
-		log.Debugw("debug_updated_conn", conn.Props)
-	}
-
-	for _, endpoint := range protoToSend.UpdatedEndpoints {
-		log.Debugw("debug_updated_endpoint", endpoint.Props)
-	}
-
 	// Before sending, run the flows through policies asynchronously
 	for _, flow := range updatedConns {
 		m.policyDetector.ProcessNetworkFlow(flow)
@@ -285,7 +278,12 @@ func (m *networkFlowManager) enrichAndSend() {
 
 	metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 	metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
-	log.Debugf("Flow update : %v", protoToSend)
+
+	jsonContent, err := json.Marshal(protoToSend)
+	if err != nil {
+		log.Debugf("Flow update : %s", jsonContent)
+	}
+
 	select {
 	case <-m.done.Done():
 		return
