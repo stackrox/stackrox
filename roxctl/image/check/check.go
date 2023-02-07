@@ -305,7 +305,7 @@ func buildRequest(image string, sendNotifications bool, force bool, policyCatego
 	return &v1.BuildDetectionRequest{
 		Resource:          &v1.BuildDetectionRequest_Image{Image: img},
 		SendNotifications: sendNotifications,
-        Force: force,
+		Force:             force,
 		PolicyCategories:  policyCategories,
 	}, nil
 }
