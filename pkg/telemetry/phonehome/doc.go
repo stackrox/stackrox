@@ -5,8 +5,8 @@ collection.
 The package provides the following entities:
 
   - client configuration;
-  - Telemeter interface, and its [segment] implementation;
-  - Options, which can be provided to Telemeter methods;
+  - [telemeter.Telemeter] interface, and its [segment] implementation;
+  - [telemeter.Option], which can be provided to Telemeter methods;
   - API interceptors;
   - periodic data gatherer.
 
@@ -21,8 +21,8 @@ periodic gatherer.
 
 ## Telemeter interface
 
-The [Telemeter] interface allows for sending messages to the configured service
-via the following methods:
+The [telemeter.Telemeter] interface allows for sending messages to the
+configured service via the following methods:
 
   - [Telemeter.Track] for live events, which describe something that has
     happened after a user action or triggered by other means;
