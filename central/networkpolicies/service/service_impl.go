@@ -20,6 +20,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -95,6 +96,8 @@ type serviceImpl struct {
 	networkPolicies  npDS.DataStore
 	notifierStore    notifierDataStore.DataStore
 	graphEvaluator   graph.Evaluator
+
+	sacHelper sachelper.SacHelper
 
 	policyGenerator generator.Generator
 }
@@ -1126,7 +1129,8 @@ func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error
 	if clusterID == "" {
 		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
-	exists, err := s.clusterStore.Exists(ctx, clusterID)
+	requestedResourcesWithAccess := []permissions.ResourceWithAccess{permissions.View(resources.NetworkPolicy)}
+	exists, err := s.sacHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
 	if err != nil {
 		return err
 	}

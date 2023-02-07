@@ -9,6 +9,7 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -48,5 +49,6 @@ func newService(store nfDS.ClusterDataStore,
 		deployments:    deployments,
 		clusters:       clusters,
 		graphConfig:    graphConfigDS,
+		sacHelper:      sachelper.NewSacHelper(clusters, nil),
 	}
 }
