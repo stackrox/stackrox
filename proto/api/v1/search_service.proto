@@ -105,7 +105,7 @@ message QuerySelect {
 }
 
 message QueryGroupBy {
-    repeated string fields     = 1;
+    repeated string fields = 1;
 }
 
 message QueryPagination {
@@ -127,7 +127,6 @@ message Query {
         BaseQuery           base_query    = 3;
         BooleanQuery        boolean_query = 6;
     }
-
     QuerySelect             select        = 8;
     QueryGroupBy            group_by      = 7;
     QueryPagination         pagination    = 4;

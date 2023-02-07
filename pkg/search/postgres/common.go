@@ -584,7 +584,7 @@ func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, q
 	if queryEntry != nil {
 		parsedQuery.Where = queryEntry.Where.Query
 		parsedQuery.Data = queryEntry.Where.Values
-		// We won't need this once highlights is removed and fields can only be selected when explicitly specified in the query.
+		// TODO(ROX-14940): We won't need this once highlights is removed and fields can only be selected when explicitly specified in the query.
 		parsedQuery.SelectedFields = append(parsedQuery.SelectedFields, queryEntry.SelectedFields...)
 		if queryEntry.Having != nil {
 			parsedQuery.Having = queryEntry.Having.Query
