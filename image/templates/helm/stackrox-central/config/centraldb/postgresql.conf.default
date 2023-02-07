@@ -252,7 +252,7 @@ dynamic_shared_memory_type = posix	# the default is the first option
 #checkpoint_flush_after = 256kB		# measured in pages, 0 disables
 #checkpoint_warning = 30s		# 0 disables
 #max_wal_size = 1GB
-max_wal_size = 5GB			# StackRox customized
+max_wal_size = 4GB			# StackRox customized
 min_wal_size = 80MB
 
 # - Archiving -

@@ -141,7 +141,7 @@ spec:
         emptyDir:
           medium: Memory
           {{- /* Keep this in sync with shared_buffers in config/centraldb/postgresql.conf */}}
-          sizeLimit: 2Gi
+          sizeLimit: 2GB
 ---
 apiVersion: v1
 kind: Service
