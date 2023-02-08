@@ -209,13 +209,7 @@ get_options() {
             die "flavor $FLAVOR not supported"
             ;;
     esac
-
-    case "$DATABASE" in
-        *)
-            export ROX_POSTGRES_DATASTORE="true"
-            ;;
-    esac
-
+    export ROX_POSTGRES_DATASTORE="true"
     export SUITE="${2:-}"
     export CASE="${3:-}"
 
