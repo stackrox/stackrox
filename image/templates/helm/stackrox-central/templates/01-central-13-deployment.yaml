@@ -73,6 +73,9 @@ spec:
       securityContext:
         fsGroup: 4000
         runAsUser: 4000
+      {{- if ._rox.central.podPriorityClassName }}
+      priorityClassName: {{- ._rox.central.podPriorityClassName }}
+      {{- end }}
       containers:
       - name: central
         image: {{ ._rox.central.image.fullRef | quote }}

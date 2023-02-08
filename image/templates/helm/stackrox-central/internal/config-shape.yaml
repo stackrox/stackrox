@@ -51,6 +51,7 @@ central:
     generate: null # bool
     htpasswd: null # string
   resources: null # string | dict
+  podPriorityClassName: null # string
   persistence:
     hostPath: null # string
     persistentVolumeClaim:
