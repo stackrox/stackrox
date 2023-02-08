@@ -77,6 +77,7 @@ sensor:
     # sensor reaching out to a scanner instance.
     # This setting does not relate to the scanner deployment configuration which configures whether scanner should be deployed.
     enabled: null # bool
+  podPriorityClassName: null # string
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
@@ -95,6 +96,7 @@ admissionControl:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  podPriorityClassName: null # string
 collector:
   collectionMethod: null # string
   disableTaintTolerations: null # bool
@@ -110,6 +112,7 @@ collector:
   nodeSelector: null # string | dict
   disableSELinuxOptions: null # bool
   seLinuxOptionsType: null # string
+  podPriorityClassName: null # string
 auditLogs:
   disableCollection: null # bool
 customize:

@@ -74,6 +74,9 @@ spec:
         runAsUser: 4000
         fsGroup: 4000
       {{- end }}
+      {{- if ._rox.sensor.podPriorityClassName }}
+      priorityClassName: {{- ._rox.sensor.podPriorityClassName }}
+      {{- end }}
       serviceAccountName: sensor
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
