@@ -37,6 +37,14 @@ export function getNodeById(
 
 /* edge helper functions */
 
+export function getNumFlowsFromEdge(edge: CustomEdgeModel): number {
+    let numFlows = edge.data.sourceToTargetProperties.length;
+    if (edge.data.isBidirectional) {
+        numFlows += edge.data.targetToSourceProperties?.length || 0;
+    }
+    return numFlows;
+}
+
 export function getNumInternalFlows(
     nodes: CustomNodeModel[],
     edges: CustomEdgeModel[],
@@ -49,7 +57,8 @@ export function getNumInternalFlows(
                 (edge.source === deploymentId && !externalNodeIds.includes(edge.target || '')) ||
                 (edge.target === deploymentId && !externalNodeIds.includes(edge.source || ''))
             ) {
-                return acc + 1;
+                const numFlows = getNumFlowsFromEdge(edge);
+                return acc + numFlows;
             }
             return acc;
         }, 0) || 0;
@@ -68,7 +77,8 @@ export function getNumExternalFlows(
                 (edge.source === deploymentId && externalNodeIds.includes(edge.target || '')) ||
                 (edge.target === deploymentId && externalNodeIds.includes(edge.source || ''))
             ) {
-                return acc + 1;
+                const numFlows = getNumFlowsFromEdge(edge);
+                return acc + numFlows;
             }
             return acc;
         }, 0) || 0;
