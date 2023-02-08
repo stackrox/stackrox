@@ -100,7 +100,6 @@ func matchBinding(namespace, id string) resource.MatchResource {
 
 func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
 	s.testContext.NewRun(
-		resource.WithName("Binding should get an update if role gets created after"),
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)
@@ -163,7 +162,6 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
 	s.testContext.NewRun(
-		resource.WithName("Update permission level"),
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)

@@ -136,7 +136,6 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 
 func (s *PodHierarchySuite) Test_DeleteDeployment() {
 	s.testContext.NewRun(
-		resource.WithName("Removing a deployment should send empty violation"),
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			var id string
 			k8sDeployment := &appsv1.Deployment{}
@@ -170,7 +169,6 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 
 func (s *PodHierarchySuite) Test_DeletePod() {
 	s.testContext.NewRun(
-		resource.WithName("Removing a rogue pod should send empty violation"),
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			var id string
 			k8sPod := &v1.Pod{}

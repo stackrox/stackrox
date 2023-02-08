@@ -363,7 +363,6 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
 	// Adding retries on creation helped a lot, but it's still not enough.
 	s.testContext.NewRun(
-		resource.WithName("Update Port Exposure"),
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), resource.DefaultNamespace, NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)

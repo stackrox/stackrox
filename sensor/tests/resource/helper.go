@@ -152,13 +152,6 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	}, nil
 }
 
-// WithName sets the name of test
-func WithName(name string) TestRunFunc {
-	return func(t *testRun) {
-		t.name = name
-	}
-}
-
 // WithPermutation sets whether the test should run with permutations
 func WithPermutation() TestRunFunc {
 	return func(t *testRun) {
@@ -243,7 +236,7 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 // run handles the run of a testRun case
 func (c *TestContext) run(t *testRun) {
 	if t.resources == nil {
-		c.runBare(t.name, t.testCase)
+		c.runBare(t.testCase)
 	} else {
 		if t.permutation {
 			c.runWithResourcesPermutation(t)
@@ -284,15 +277,13 @@ func (c *TestContext) runWithResources(resources []K8sResourceInfo, testCase Tes
 }
 
 // runBare runs a test case without applying any resources to the cluster.
-func (c *TestContext) runBare(name string, testCase TestCallback) {
-	c.t.Run(name, func(t *testing.T) {
-		_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
-		defer utils.IgnoreError(removeNamespace)
-		if err != nil {
-			t.Fatalf("failed to create namespace: %s", err)
-		}
-		testCase(t, c, nil)
-	})
+func (c *TestContext) runBare(testCase TestCallback) {
+	_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
+	defer utils.IgnoreError(removeNamespace)
+	if err != nil {
+		c.t.Fatalf("failed to create namespace: %s", err)
+	}
+	testCase(c.t, c, nil)
 }
 
 // runWithResourcesPermutation runs the test cases using `resources` similarly to `runWithResources` but it will run the
@@ -303,7 +294,7 @@ func (c *TestContext) runWithResourcesPermutation(t *testRun) {
 		copy(newF, f)
 		newTestRun := t.copy()
 		newTestRun.resources = newF
-		c.t.Run(fmt.Sprintf("%s_Permutation_%s", t.name, permutationKind(newF)), func(_ *testing.T) {
+		c.t.Run(fmt.Sprintf("Permutation_%s", permutationKind(newF)), func(_ *testing.T) {
 			if err := c.runWithResources(t.resources, t.testCase, t.retryCallback); err != nil {
 				c.t.Fatal(err.Error())
 			}
@@ -755,7 +746,6 @@ type TestRunFunc func(*testRun)
 
 // testRun holds all the information about a specific test run. It requires a TestCallback
 type testRun struct {
-	name          string
 	resources     []K8sResourceInfo
 	testCase      TestCallback
 	retryCallback RetryCallback
@@ -771,7 +761,6 @@ func (t *testRun) validate() error {
 
 func (t *testRun) copy() *testRun {
 	newTestRun := &testRun{}
-	newTestRun.name = t.name
 	newTestRun.resources = make([]K8sResourceInfo, len(t.resources))
 	copy(newTestRun.resources, t.resources)
 	newTestRun.testCase = t.testCase
@@ -782,7 +771,6 @@ func (t *testRun) copy() *testRun {
 
 func newTestRun(options ...TestRunFunc) (*testRun, error) {
 	t := &testRun{
-		name:          "",
 		resources:     nil,
 		testCase:      nil,
 		retryCallback: nil,
