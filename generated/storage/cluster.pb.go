@@ -2268,12 +2268,15 @@ type CollectorHealthInfo struct {
 	// This is the version of the collector deamonset as returned by k8s API
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Types that are valid to be assigned to TotalDesiredPodsOpt:
+	//
 	//	*CollectorHealthInfo_TotalDesiredPods
 	TotalDesiredPodsOpt isCollectorHealthInfo_TotalDesiredPodsOpt `protobuf_oneof:"total_desired_pods_opt"`
 	// Types that are valid to be assigned to TotalReadyPodsOpt:
+	//
 	//	*CollectorHealthInfo_TotalReadyPods
 	TotalReadyPodsOpt isCollectorHealthInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
 	// Types that are valid to be assigned to TotalRegisteredNodesOpt:
+	//
 	//	*CollectorHealthInfo_TotalRegisteredNodes
 	TotalRegisteredNodesOpt isCollectorHealthInfo_TotalRegisteredNodesOpt `protobuf_oneof:"total_registered_nodes_opt"`
 	// Collection of errors that occurred while trying to obtain collector health info.
@@ -2471,9 +2474,11 @@ func (m *CollectorHealthInfo) Clone() *CollectorHealthInfo {
 // first reports AdmissionControlHealthInfo (sensor).
 type AdmissionControlHealthInfo struct {
 	// Types that are valid to be assigned to TotalDesiredPodsOpt:
+	//
 	//	*AdmissionControlHealthInfo_TotalDesiredPods
 	TotalDesiredPodsOpt isAdmissionControlHealthInfo_TotalDesiredPodsOpt `protobuf_oneof:"total_desired_pods_opt"`
 	// Types that are valid to be assigned to TotalReadyPodsOpt:
+	//
 	//	*AdmissionControlHealthInfo_TotalReadyPods
 	TotalReadyPodsOpt isAdmissionControlHealthInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
 	// Collection of errors that occurred while trying to obtain admission control health info.
@@ -2631,15 +2636,19 @@ func (m *AdmissionControlHealthInfo) Clone() *AdmissionControlHealthInfo {
 // first reports ScannerHealthInfo (sensor).
 type ScannerHealthInfo struct {
 	// Types that are valid to be assigned to TotalDesiredAnalyzerPodsOpt:
+	//
 	//	*ScannerHealthInfo_TotalDesiredAnalyzerPods
 	TotalDesiredAnalyzerPodsOpt isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt `protobuf_oneof:"total_desired_analyzer_pods_opt"`
 	// Types that are valid to be assigned to TotalReadyAnalyzerPodsOpt:
+	//
 	//	*ScannerHealthInfo_TotalReadyAnalyzerPods
 	TotalReadyAnalyzerPodsOpt isScannerHealthInfo_TotalReadyAnalyzerPodsOpt `protobuf_oneof:"total_ready_analyzer_pods_opt"`
 	// Types that are valid to be assigned to TotalDesiredDbPodsOpt:
+	//
 	//	*ScannerHealthInfo_TotalDesiredDbPods
 	TotalDesiredDbPodsOpt isScannerHealthInfo_TotalDesiredDbPodsOpt `protobuf_oneof:"total_desired_db_pods_opt"`
 	// Types that are valid to be assigned to TotalReadyDbPodsOpt:
+	//
 	//	*ScannerHealthInfo_TotalReadyDbPods
 	TotalReadyDbPodsOpt isScannerHealthInfo_TotalReadyDbPodsOpt `protobuf_oneof:"total_ready_db_pods_opt"`
 	// Collection of errors that occurred while trying to obtain scanner health info.
