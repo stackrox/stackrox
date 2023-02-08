@@ -237,9 +237,9 @@ endef
 
 .PHONY: style
 style: generate manifests bundle ## Make sure generated files are up to date
-	echo 'Checking for diffs after making bundle, generate and manifests...'
-	echo 'If this fails, check if the invocation of the normalize-metadata.py script in Makefile'
-	echo 'needs to change due to formatting changes in the generated files.'
+	@echo 'Checking for diffs after making bundle, generate and manifests...'
+	@echo 'If this fails, check if the invocation of the normalize-metadata.py script in Makefile'
+	@echo 'needs to change due to formatting changes in the generated files.'
 	git diff --exit-code HEAD
 
 .PHONY: parent-proto-generate
