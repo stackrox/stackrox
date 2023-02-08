@@ -93,21 +93,6 @@ kind: ClusterRole
 metadata:
   name: stackrox:view-cluster
 ---
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: stackrox-admission-control
----
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: stackrox-collector
----
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: stackrox-sensor
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
