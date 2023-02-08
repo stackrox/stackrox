@@ -9,7 +9,7 @@ import orchestratormanager.OrchestratorMain
 class SyslogServer {
     public static final Integer SYSLOG_PORT = 514
     private Service syslogSvc
-    private Deployment  deployment
+    private Deployment deployment
 
     static SyslogServer createRsyslog(OrchestratorMain orchestrator, String namespace) {
         def deploymentName = "syslog-${UUID.randomUUID()}"
@@ -32,9 +32,9 @@ class SyslogServer {
                                             .setTargetPort(SYSLOG_PORT)
                                             .setType(Service.Type.CLUSTERIP)
             orchestrator.createService(rsyslog.syslogSvc)
-        } catch (Exception e) {
+        }   catch (Exception e) {
             log.info("error creating syslog deployment or service", e)
-           tearDown(orchestrator)
+            tearDown(orchestrator)
             throw e
         }
         return rsyslog

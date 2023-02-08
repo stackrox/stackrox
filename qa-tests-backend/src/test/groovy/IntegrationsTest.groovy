@@ -759,15 +759,15 @@ class IntegrationsTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify syslog notifier"() {
        given:
-       "the some syslog receiver is created"
+       "syslog server is created"
        def syslog = SyslogServer.createRsyslog(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
 
         when:
-        "call the grpc API for the syslog integration."
+        "call the grpc API for the syslog notifier integration."
         SyslogNotifier notifier = new SyslogNotifier(syslog.syslogSvc.name, syslog.SYSLOG_PORT)
 
         then:
-        "Verify syslog connecion is successful"
+        "Verify syslog connection is successful"
         assert notifier.testNotifier()
 
         cleanup:
