@@ -166,7 +166,10 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, error) {
 		}
 
 		d.safeRemove(PreviousClone)
-		if d.hasSpaceForRollback() {
+
+		// If the current DB is in the last RocksDB version, then we would not upgrade it further.
+		// We do not need to create a temp clone. The current won't be modified anyway.
+		if d.hasSpaceForRollback() && currClone.GetSeqNum() < migrations.LastRocksDBVersionSeqNum() {
 			tempDir := ".db-" + uuid.NewV4().String()
 			log.Info("Database rollback enabled. Copying database files and migrate it to current version.")
 			// Copy directory: not following link, do not overwrite
