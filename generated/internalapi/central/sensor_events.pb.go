@@ -334,7 +334,6 @@ type SensorEvent struct {
 	//	*SensorEvent_ImageIntegration
 	//	*SensorEvent_ReprocessDeployment
 	//	*SensorEvent_AlertResults
-	//	*SensorEvent_ProcessListeningOnPort
 	//	*SensorEvent_ComplianceOperatorResult
 	//	*SensorEvent_ComplianceOperatorProfile
 	//	*SensorEvent_ComplianceOperatorRule
@@ -436,9 +435,6 @@ type SensorEvent_ReprocessDeployment struct {
 }
 type SensorEvent_AlertResults struct {
 	AlertResults *AlertResults `protobuf:"bytes,18,opt,name=alert_results,json=alertResults,proto3,oneof" json:"alert_results,omitempty"`
-}
-type SensorEvent_ProcessListeningOnPort struct {
-	ProcessListeningOnPort *storage.ProcessListeningOnPort `protobuf:"bytes,26,opt,name=process_listening_on_port,json=processListeningOnPort,proto3,oneof" json:"process_listening_on_port,omitempty"`
 }
 type SensorEvent_ComplianceOperatorResult struct {
 	ComplianceOperatorResult *storage.ComplianceOperatorCheckResult `protobuf:"bytes,20,opt,name=compliance_operator_result,json=complianceOperatorResult,proto3,oneof" json:"compliance_operator_result,omitempty"`
@@ -641,17 +637,6 @@ func (m *SensorEvent_AlertResults) Clone() isSensorEvent_Resource {
 	*cloned = *m
 
 	cloned.AlertResults = m.AlertResults.Clone()
-	return cloned
-}
-func (*SensorEvent_ProcessListeningOnPort) isSensorEvent_Resource() {}
-func (m *SensorEvent_ProcessListeningOnPort) Clone() isSensorEvent_Resource {
-	if m == nil {
-		return nil
-	}
-	cloned := new(SensorEvent_ProcessListeningOnPort)
-	*cloned = *m
-
-	cloned.ProcessListeningOnPort = m.ProcessListeningOnPort.Clone()
 	return cloned
 }
 func (*SensorEvent_ComplianceOperatorResult) isSensorEvent_Resource() {}
@@ -857,13 +842,6 @@ func (m *SensorEvent) GetAlertResults() *AlertResults {
 	return nil
 }
 
-func (m *SensorEvent) GetProcessListeningOnPort() *storage.ProcessListeningOnPort {
-	if x, ok := m.GetResource().(*SensorEvent_ProcessListeningOnPort); ok {
-		return x.ProcessListeningOnPort
-	}
-	return nil
-}
-
 func (m *SensorEvent) GetComplianceOperatorResult() *storage.ComplianceOperatorCheckResult {
 	if x, ok := m.GetResource().(*SensorEvent_ComplianceOperatorResult); ok {
 		return x.ComplianceOperatorResult
@@ -919,7 +897,6 @@ func (*SensorEvent) XXX_OneofWrappers() []interface{} {
 		(*SensorEvent_ImageIntegration)(nil),
 		(*SensorEvent_ReprocessDeployment)(nil),
 		(*SensorEvent_AlertResults)(nil),
-		(*SensorEvent_ProcessListeningOnPort)(nil),
 		(*SensorEvent_ComplianceOperatorResult)(nil),
 		(*SensorEvent_ComplianceOperatorProfile)(nil),
 		(*SensorEvent_ComplianceOperatorRule)(nil),
@@ -2437,6 +2414,9 @@ func init() {
 
 var fileDescriptor_6ea3082f8d4cc74c = []byte{
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> b222a6eb05 (make proto-generated-srcs)
 	// 1776 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x58, 0xbd, 0x73, 0x23, 0x49,
 	0x15, 0x1f, 0x49, 0x96, 0x64, 0x3f, 0x7d, 0xd8, 0x6e, 0x5b, 0xf6, 0x58, 0xe7, 0xf3, 0xfa, 0xb4,
@@ -2549,6 +2529,7 @@ var fileDescriptor_6ea3082f8d4cc74c = []byte{
 	0x27, 0x39, 0xb4, 0x70, 0xbc, 0xf5, 0xf7, 0x0f, 0x3b, 0xa5, 0x7f, 0x7c, 0xd8, 0x29, 0xfd, 0xf3,
 	0xc3, 0x4e, 0xe9, 0x4f, 0xff, 0xda, 0xb1, 0xbe, 0x49, 0xff, 0x57, 0x7a, 0x5b, 0x93, 0xff, 0x54,
 	0xbc, 0xf8, 0x5f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x64, 0x63, 0xcd, 0xd4, 0x92, 0x12, 0x00, 0x00,
+<<<<<<< HEAD
 =======
 	// 1802 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x58, 0x4f, 0x6f, 0x23, 0x49,
@@ -2665,6 +2646,8 @@ var fileDescriptor_6ea3082f8d4cc74c = []byte{
 	0xd7, 0xfa, 0x3a, 0xfd, 0xd7, 0xea, 0x4d, 0x4d, 0xfe, 0x0f, 0xf2, 0xec, 0xff, 0x01, 0x00, 0x00,
 	0xff, 0xff, 0x33, 0x1f, 0xff, 0xbf, 0xf0, 0x12, 0x00, 0x00,
 >>>>>>> 6db6e07896 (Internal API support for PLOP)
+=======
+>>>>>>> b222a6eb05 (make proto-generated-srcs)
 }
 
 func (m *ReprocessDeploymentRisk) Marshal() (dAtA []byte, err error) {
@@ -3344,29 +3327,6 @@ func (m *SensorEvent_NodeInventory) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0xca
-	}
-	return len(dAtA) - i, nil
-}
-func (m *SensorEvent_ProcessListeningOnPort) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SensorEvent_ProcessListeningOnPort) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.ProcessListeningOnPort != nil {
-		{
-			size, err := m.ProcessListeningOnPort.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintSensorEvents(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xd2
 	}
 	return len(dAtA) - i, nil
 }
@@ -4639,18 +4599,6 @@ func (m *SensorEvent_NodeInventory) Size() (n int) {
 	_ = l
 	if m.NodeInventory != nil {
 		l = m.NodeInventory.Size()
-		n += 2 + l + sovSensorEvents(uint64(l))
-	}
-	return n
-}
-func (m *SensorEvent_ProcessListeningOnPort) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ProcessListeningOnPort != nil {
-		l = m.ProcessListeningOnPort.Size()
 		n += 2 + l + sovSensorEvents(uint64(l))
 	}
 	return n
@@ -6355,41 +6303,6 @@ func (m *SensorEvent) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			m.Resource = &SensorEvent_NodeInventory{v}
-			iNdEx = postIndex
-		case 26:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProcessListeningOnPort", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSensorEvents
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSensorEvents
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthSensorEvents
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			v := &storage.ProcessListeningOnPort{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.Resource = &SensorEvent_ProcessListeningOnPort{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
