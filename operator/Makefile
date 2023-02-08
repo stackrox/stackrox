@@ -236,11 +236,20 @@ endef
 ##@ Development
 
 .PHONY: style
-style: generate manifests bundle ## Make sure generated files are up to date
+style: check-manifest check-bundle ## Make sure generated files are up to date
 	@echo 'Checking for diffs after making bundle, generate and manifests...'
-	@echo 'If this fails, check if the invocation of the normalize-metadata.py script in Makefile'
-	@echo 'needs to change due to formatting changes in the generated files.'
-	git diff --exit-code HEAD
+
+
+.PHONY: check-manifest
+check-manifest: manifests generate ## Make sure generated files are up to date
+	@git diff --exit-code HEAD || \
+	 (echo 'If this fails, check generated sources and commit them.' && false)
+
+.PHONY: check-bundle
+check-bundle: bundle ## Make sure generated files are up to date
+	@git diff --exit-code HEAD || \
+	 (echo 'If this fails, check if the invocation of the normalize-metadata.py script in Makefile \n \
+	 needs to change due to formatting changes in the generated files.' && false)
 
 .PHONY: parent-proto-generate
 parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
