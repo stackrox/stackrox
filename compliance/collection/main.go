@@ -250,7 +250,6 @@ func scanNodeBacked(nodeName string, scanner nodeinventorizer.NodeInventorizer) 
 		return nil, err
 	}
 
-	log.Infof("Successfully run inventory")
 	err = os.Remove(fmt.Sprintf("%s/backoff", inventoryCachePath))
 	if err != nil {
 		return nil, err
