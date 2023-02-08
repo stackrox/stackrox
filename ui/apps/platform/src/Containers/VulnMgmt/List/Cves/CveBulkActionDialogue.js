@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
+import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
 import uniqBy from 'lodash/uniqBy';
@@ -186,7 +187,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
     function setSelectedPolicy(selectedPolicy) {
         // checking if the policy already exists or has already been added to the policy list
         const policyExists = policies && policies.find((pol) => pol.value === selectedPolicy.value);
-        const newPolicy = { ...selectedPolicy };
+        const newPolicy = cloneDeep(selectedPolicy);
         const newCveSection = {
             sectionName: 'CVEs',
             policyGroups: [{ fieldName: 'CVE', values: allowedCvesValues }],
@@ -194,11 +195,11 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
 
         if (policyExists) {
             // find policySection and policyGroup with CVEs
-            const { policySectionIdx, policyGroupIdx } = findCVEField(
-                selectedPolicy.policySections
-            );
+            const { policySectionIdx, policyGroupIdx } = findCVEField(newPolicy.policySections);
+
             // it matches an existing policy's ID, so must have been selected from existing list
-            const newPolicySections = [...selectedPolicy.policySections];
+            const newPolicySections = [...newPolicy.policySections];
+
             if (policySectionIdx !== null) {
                 newPolicySections[policySectionIdx].policyGroups[policyGroupIdx].values.push(
                     ...allowedCvesValues
@@ -279,12 +280,12 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
             text=""
             onConfirm={cvesToDisplay.length > 0 ? addToPolicy : null}
             confirmText="Save Policy"
-            confirmDisabled={
+            confirmDisabled={Boolean(
                 messageObj ||
-                policy.name.length < 6 ||
-                !policy.severity ||
-                !policy.lifecycleStages.length
-            }
+                    policy.name.length < 6 ||
+                    !policy.severity ||
+                    !policy.lifecycleStages.length
+            )}
             onCancel={closeWithoutSaving}
         >
             <div className="overflow-auto p-4" ref={dialogueRef}>

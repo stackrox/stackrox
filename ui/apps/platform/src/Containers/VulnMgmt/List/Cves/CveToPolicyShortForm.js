@@ -238,14 +238,14 @@ CveToPolicyShortForm.propTypes = {
     policies: PropTypes.arrayOf(
         PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })
     ),
-    selectedPolicy: PropTypes.string,
+    selectedPolicy: PropTypes.number,
     setSelectedPolicy: PropTypes.func.isRequired,
     handleChange: PropTypes.func.isRequired,
 };
 
 CveToPolicyShortForm.defaultProps = {
     policies: [],
-    selectedPolicy: '',
+    selectedPolicy: null,
 };
 
 export default CveToPolicyShortForm;
