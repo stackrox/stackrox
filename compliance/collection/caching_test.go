@@ -142,3 +142,18 @@ func (s *TestComplianceCachingSuite) TestBackoffFailedRun() {
 	_, err := os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
 	s.ErrorIs(err, os.ErrNotExist)
 }
+
+func (s *TestComplianceCachingSuite) TestBackoffUpperBoundary() {
+	s.T().Setenv(env.NodeInventoryMaxBackoff.EnvVar(), fmt.Sprintf("%d", 4221))
+	m := mockSleeper{callCount: 0}
+	inventorySleeper = m.Sleep
+	tmpDir := s.T().TempDir()
+	inventoryCachePath = tmpDir
+	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", 4200001)), 0600)
+	s.NoError(err)
+
+	_, _ = scanNodeWithBackoff("testname", &nodeinventorizer.FakeNodeInventorizer{})
+
+	s.Equal(1, m.callCount)
+	s.Equal(m.receivedDuration, time.Duration(4221)*time.Second)
+}

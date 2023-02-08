@@ -234,6 +234,10 @@ func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventori
 		if err != nil {
 			return nil, err
 		}
+		if backoffInterval > env.NodeInventoryMaxBackoff.IntegerSetting() {
+			log.Warnf("Backoff interval hit upper boundary. Cutting from %d to %d", backoffInterval, env.NodeInventoryMaxBackoff.IntegerSetting())
+			backoffInterval = env.NodeInventoryMaxBackoff.IntegerSetting()
+		}
 		log.Debugf("Found existing backoff. Waiting %v seconds before running next inventory", backoffInterval)
 		inventorySleeper(time.Duration(backoffInterval) * time.Second)
 	}

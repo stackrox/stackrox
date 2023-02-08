@@ -23,4 +23,7 @@ var (
 
 	// NodeInventoryBackoffIncrement sets the seconds that are added on each interrupted run
 	NodeInventoryBackoffIncrement = RegisterIntegerSetting("ROX_NODE_INVENTORY_BACKOFF_INCREMENT", 5)
+
+	// NodeInventoryMaxBackoff is the upper boundary of backoff. Defaults to 3h50m in seconds
+	NodeInventoryMaxBackoff = RegisterIntegerSetting("ROX_NODE_INVENTORY_MAX_BACKOFF", 13800)
 )
