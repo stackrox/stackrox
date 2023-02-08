@@ -606,7 +606,7 @@ func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8
 			err := c.r.Create(ctx, obj)
 			if err != nil && retryFn != nil {
 				if retryErr := retryFn(err, obj); retryErr != nil {
-					c.t.Fatal(errors.Wrapf(err, "error in retry callback: %s", retryErr)) // TODO: check this wrap
+					c.t.Fatal(errors.Wrapf(err, "error in retry callback: %s", retryErr))
 				}
 			}
 			return err
