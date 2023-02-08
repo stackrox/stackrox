@@ -89,7 +89,6 @@ func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
 func (d *testDataStore) teardown(t *testing.T) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		d.testDB.Teardown(t)
-		d.testDB.Pool.Close()
 	} else {
 		d.rocksDB.Close()
 		err := d.index.Close()
