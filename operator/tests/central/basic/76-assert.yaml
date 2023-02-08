@@ -18,6 +18,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central
+  annotations:
+    test-step: "76"
 status:
   availableReplicas: 1
 ---
@@ -40,8 +42,9 @@ spec:
       storage: 100Gi
 ---
 apiVersion: v1
-kind: Secret
+kind: Pod
 metadata:
-  name: central-db-password
-data:
-  password: c2VjcmV0 # "secret" (no trailing newline)
+  annotations:
+    test-step: "76"
+  labels:
+    app: central

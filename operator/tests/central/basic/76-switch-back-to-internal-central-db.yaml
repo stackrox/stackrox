@@ -4,6 +4,9 @@ kind: Central
 metadata:
   name: stackrox-central-services
 spec:
+  customize:
+    annotations:
+      test-step: "76"
   central:
     db:
       connectionString: null
