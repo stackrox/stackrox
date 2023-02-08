@@ -52,11 +52,11 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
     const [policies, setPolicies] = useState([]);
 
     // use GraphQL to get the (hopefully cached) cve summaries to display in the dialog
-    let cveQuery = '';
+    let CVE_QUERY = '';
 
     switch (cveType) {
         case entityTypes.NODE_CVE: {
-            cveQuery = gql`
+            CVE_QUERY = gql`
                 query getNodeCves($query: String) {
                     results: nodeVulnerabilities(query: $query) {
                         id
@@ -68,7 +68,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
             break;
         }
         case entityTypes.CLUSTER_CVE: {
-            cveQuery = gql`
+            CVE_QUERY = gql`
                 query getClusterCves($query: String) {
                     results: clusterVulnerabilities(query: $query) {
                         id
@@ -80,7 +80,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
             break;
         }
         case entityTypes.IMAGE_CVE: {
-            cveQuery = gql`
+            CVE_QUERY = gql`
                 query getImageCves($query: String) {
                     results: imageVulnerabilities(query: $query) {
                         id
@@ -93,7 +93,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
         }
         case entityTypes.CVE:
         default: {
-            cveQuery = gql`
+            CVE_QUERY = gql`
                 query getCves($query: String) {
                     results: vulnerabilities(query: $query) {
                         id
@@ -110,12 +110,12 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
     const cvesObj = {
         cve: cvesStr,
     };
-    const cveQueryOptions = {
+    const CVE_QUERY_OPTIONS = {
         variables: {
             query: queryService.objectToWhereClause(cvesObj),
         },
     };
-    const { loading: cveLoading, data: cveData } = useQuery(cveQuery, cveQueryOptions);
+    const { loading: cveLoading, data: cveData } = useQuery(CVE_QUERY, CVE_QUERY_OPTIONS);
     const cveItems =
         !cveLoading && cveData && cveData.results && cveData.results.length ? cveData.results : [];
 
