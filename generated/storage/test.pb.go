@@ -2099,19 +2099,20 @@ func (m *TestMultiKeyStruct_OneOfNested_Nested2) Clone() *TestMultiKeyStruct_One
 // The test graph is as below. The numbers next to the edges
 // indicate the cardinality of the relationship, either n-1, 1-n or n-n.
 // The first element is the child and second is the parent.
-//             TestGrandparent
-//        (n-1) /      (n-1) |   (n-1) \          \ (n-1) (namespaced search)
-//       TestParent1  TestParent2   TestParent3   TestParent4
-//       (n-n) |           | (n-1)                   \ (n-1)
-//       TestChild1    TestChild2                TestChild1P4
-//         (1-n)  |
-//       TestGrandChild1
-//         (n-1)  |
-//       TestGGrandChild1
-//         (1-n)   |
-//       TestG2GrandChild1
-//        (n-1)   |
-//        TestG3GrandChild1
+//
+//	      TestGrandparent
+//	 (n-1) /      (n-1) |   (n-1) \          \ (n-1) (namespaced search)
+//	TestParent1  TestParent2   TestParent3   TestParent4
+//	(n-n) |           | (n-1)                   \ (n-1)
+//	TestChild1    TestChild2                TestChild1P4
+//	  (1-n)  |
+//	TestGrandChild1
+//	  (n-1)  |
+//	TestGGrandChild1
+//	  (1-n)   |
+//	TestG2GrandChild1
+//	 (n-1)   |
+//	 TestG3GrandChild1
 type TestGrandparent struct {
 	Id                   string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Grandparent ID" sql:"pk"`
 	Val                  string                      `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty" search:"Test Grandparent Val"`
