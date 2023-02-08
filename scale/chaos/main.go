@@ -83,7 +83,7 @@ func getPods(client *kubernetes.Clientset, labelSelector string) []corev1.Pod {
 func podKill(client *kubernetes.Clientset, _ *rest.Config, pods []corev1.Pod) {
 	for _, pod := range pods {
 		gracePeriod := rand.Int63n(10)
-		log.Infof("Deleting pod %s", pod.Name)
+		log.Infof("Deleting pod %s with grace period %d", pod.Name, gracePeriod)
 		err := client.CoreV1().Pods("stackrox").Delete(context.Background(), pod.Name, v1.DeleteOptions{
 			GracePeriodSeconds: &gracePeriod,
 		})
