@@ -16,7 +16,7 @@ test_ui_e2e() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
 
@@ -31,6 +31,12 @@ test_ui_e2e() {
 
 run_ui_e2e_tests() {
     info "Running UI e2e tests"
+
+    touch /tmp/hold
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
 
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
         local hostname
