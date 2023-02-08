@@ -653,10 +653,10 @@ func execWithRetry(timeout, interval time.Duration, fn backoff.Operation) error 
 	if backoffErr := backoff.RetryNotify(fn, exponential, func(err error, d time.Duration) {
 		notifyErr = errors.Wrap(err, "timeout reached waiting for resource")
 	}); backoffErr != nil {
+		if notifyErr != nil {
+			return notifyErr
+		}
 		return backoffErr
-	}
-	if notifyErr != nil {
-		return notifyErr
 	}
 	return nil
 }
