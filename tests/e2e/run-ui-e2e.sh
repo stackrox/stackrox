@@ -32,18 +32,20 @@ test_ui_e2e() {
 run_ui_e2e_tests() {
     info "Running UI e2e tests"
 
-    touch /tmp/hold
-    while [[ -e /tmp/hold ]]; do
-        info "Holding this job for debug"
-        sleep 60
-    done
-
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
         local hostname
-        hostname=$("$ROOT/tests/e2e/get_hostname.py" "${API_HOSTNAME}")
+        if [[ "${API_HOSTNAME}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            info "Getting hostname from IP: ${API_HOSTNAME}"
+            hostname=$("$ROOT/tests/e2e/get_hostname.py" "${API_HOSTNAME}")
+        else
+            hostname="${API_HOSTNAME}"
+        fi
+        info "Hostname for central-lb alias: ${hostname}"
         echo "central-lb ${hostname}" > /tmp/hostaliases
         export HOSTALIASES=/tmp/hostaliases
         export UI_BASE_URL="https://central-lb:443"
+    elif [[ "${LOAD_BALANCER}" == "route" ]]; then
+        die "unsupported LOAD_BALANCER ${LOAD_BALANCER}"
     else
         export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
     fi
