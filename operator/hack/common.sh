@@ -114,6 +114,42 @@ function approve_install_plan() {
   retry 3 5 kubectl -n "${operator_ns}" patch installplan "${install_plan_name}" --type merge -p '{"spec":{"approved":true}}'
 }
 
+function csv_version_tag() {
+  local -r operator_ns="$1"
+  echo $(kubectl -n "${operator_ns}" get csv  -l operators.coreos.com/rhacs-operator.operators -o json | jq -r '.items[].spec.version' | sort | tail -n 1)
+}
+
+function nurse_olm_upgrade() {
+  local -r operator_ns="$1"
+  local -r initial_version_tag="$2"
+  local -r desired_version_tag="$3"
+
+  echo current_version_tag
+  local current_version_tag="$(csv_version_tag ${operator_ns})"
+  echo ${current_version_tag}
+
+  # Wait until a new CSV has been created
+  while [[ "${current_version_tag}" == "${initial_version_tag}" ]]; do
+      sleep 1
+      current_version_tag="$(csv_version_tag ${operator_ns})"
+  done
+
+  # Nurse the deployment for each intermediate CSV
+  while [[ "${current_version_tag}" != "${desired_version_tag}" ]]; do
+      echo Current: ${current_version_tag}
+      echo Desired: ${desired_version_tag}
+      nurse_deployment_until_available ${operator_ns} ${current_version_tag}
+      while [[ "$(csv_version_tag ${operator_ns})" == "${current_version_tag}" ]]; do
+          # Wait until the new CSV is created
+          sleep 10
+      done
+      current_version_tag="$(csv_version_tag ${operator_ns})"
+  done
+
+  # Nurse the deployment for the final CSV
+  nurse_deployment_until_available ${operator_ns} ${desired_version_tag}
+}
+
 function nurse_deployment_until_available() {
   local -r operator_ns="$1"
   local -r version_tag="$2"
@@ -122,6 +158,9 @@ function nurse_deployment_until_available() {
   retry 30 10 kubectl -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
     "rhacs-operator.v${version_tag}" --type json \
     -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "'"${pull_secret}"'"}] } ]'
+
+  retry 30 10 kubectl -n "${operator_ns}" patch deploy rhacs-operator-controller-manager --type json \
+    -p '[ { "op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "'"${pull_secret}"'"}] } ]'
 
   # Just waiting turns out to be the quickest and most reliable way of propagating the change.
   # Deleting the deployment sometimes tends to never get reconciled, with evidence of the
