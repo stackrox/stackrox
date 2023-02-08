@@ -42,10 +42,8 @@ var (
 	node string
 	once sync.Once
 
-	inventoryCachePath        = "/cache"
-	inventoryInitialBackoff   = 30
-	inventoryBackoffIncrement = 5
-	inventorySleeper          = time.Sleep // used for testing more efficiently
+	inventoryCachePath = "/cache"
+	inventorySleeper   = time.Sleep // used for testing more efficiently
 )
 
 func getNode() string {
@@ -217,14 +215,16 @@ func createAndObserveMessage(nodeName string, inventory *storage.NodeInventory) 
 	return msg
 }
 
-func scanNodeBacked(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
-	backoffInterval := inventoryInitialBackoff
+// scanNodeWithBackoff runs scans with a linear backoff based on a file to not overstrain a Node if the container keeps restarting.
+// The backoff file will only be encountered if the previous container is killed during a call to scanNodeWithBackoff.
+// Note: This does not prevent strain in case of repeated pod recreation, as it is based on an EmptyDir.
+func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
+	backoffInterval := env.NodeInventoryInitialBackoff.IntegerSetting()
 
 	backoffFile, err := os.ReadFile(fmt.Sprintf("%s/backoff", inventoryCachePath))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			// If the file doesn't exist, we're likely in the first run, or the last one succeeded
-			log.Debug("No backoff found, running new inventory")
+			log.Debug("No backoff found, continuing without pause")
 		} else {
 			return nil, err
 		}
@@ -234,19 +234,16 @@ func scanNodeBacked(nodeName string, scanner nodeinventorizer.NodeInventorizer) 
 		if err != nil {
 			return nil, err
 		}
+		log.Debugf("Found existing backoff. Waiting %v seconds before running next inventory", backoffInterval)
+		inventorySleeper(time.Duration(backoffInterval) * time.Second)
 	}
 
-	err = os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", backoffInterval+inventoryBackoffIncrement)), 0600)
+	err = os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", backoffInterval+env.NodeInventoryBackoffIncrement.IntegerSetting())), 0600)
 	if err != nil {
 		return nil, err
 	}
 
-	if backoffInterval != inventoryInitialBackoff {
-		log.Debugf("Waiting %v seconds before running next inventory", backoffInterval)
-		inventorySleeper(time.Duration(backoffInterval) * time.Second)
-	}
-
-	message, err := scanNode(nodeName, scanner)
+	message, err := cachedScanNode(nodeName, scanner)
 	e := os.Remove(fmt.Sprintf("%s/backoff", inventoryCachePath))
 	if e != nil {
 		log.Warnf("Could not remove backoff state file: %v", err)
@@ -257,32 +254,31 @@ func scanNodeBacked(nodeName string, scanner nodeinventorizer.NodeInventorizer) 
 	return message, nil
 }
 
-func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
+// cachedScanNode checks for a cached inventory before running a new scan
+func cachedScanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
 	var inventory *storage.NodeInventory
 
-	diskInv, err := os.ReadFile(fmt.Sprintf("%s/last_scan", inventoryCachePath))
+	cachedInv, err := os.ReadFile(fmt.Sprintf("%s/last_scan", inventoryCachePath))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			// If the file doesn't exist, we're likely in the first run
 			log.Debug("No cache file found, running new inventory")
 		}
-		// Running into any other error than ErrNotExist falls through to a fresh inventory
+		// Running into any other error than ErrNotExist continues to a fresh inventory
 		log.Infof("Unable to read inventory cache, running new inventory. Error: %v", err)
 	} else {
 		// try reading the inventory cached from disk and check whether it is new enough to send
-		diskInvMsg := &storage.NodeInventory{}
-		if e := proto.Unmarshal(diskInv, diskInvMsg); e != nil {
+		cachedInvMsg := &storage.NodeInventory{}
+		if e := proto.Unmarshal(cachedInv, cachedInvMsg); e != nil {
 			// in this case, also collect a fresh inventory
 			log.Infof("Unable to deserialize inventory cache - running new inventory. Error: %v", e)
 		} else {
-			scanTime := diskInvMsg.GetScanTime()
-			now := timestamp.TimestampNow().GetSeconds()
-			if scanTime != nil && scanTime.GetSeconds() > now-int64(env.NodeInventoryCacheDuration.DurationSetting().Seconds()) {
-				log.Debugf("Using cached scan from %v", diskInvMsg.GetScanTime())
-				// The NodeName should not change, but we want to use the cached message exclusively
-				return createAndObserveMessage(diskInvMsg.GetNodeName(), diskInvMsg), nil
+			scanTime := cachedInvMsg.GetScanTime()
+			cacheThreshold := timestamp.TimestampNow().GetSeconds() - int64(env.NodeInventoryCacheDuration.DurationSetting().Seconds())
+			if scanTime != nil && scanTime.GetSeconds() > cacheThreshold {
+				log.Debugf("Using cached scan from %v", cachedInvMsg.GetScanTime())
+				return createAndObserveMessage(cachedInvMsg.GetNodeName(), cachedInvMsg), nil
 			}
-			log.Debugf("Cached scan oder than threshold of %v with timestamp %v - running new inventory", env.NodeInventoryCacheDuration.DurationSetting(), diskInvMsg.GetScanTime())
+			log.Debugf("Cached scan older than threshold of %v with timestamp %v - running new inventory", env.NodeInventoryCacheDuration.DurationSetting(), cachedInvMsg.GetScanTime())
 		}
 	}
 

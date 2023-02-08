@@ -73,7 +73,7 @@ func (s *TestComplianceCachingSuite) TestCaching() {
 			err := os.WriteFile(fmt.Sprintf("%s/last_scan", inventoryCachePath), minv, 0600)
 			s.NoError(err)
 
-			actual, e := scanNode("newNode", &nodeinventorizer.FakeNodeInventorizer{})
+			actual, e := cachedScanNode("newNode", &nodeinventorizer.FakeNodeInventorizer{})
 			s.NoError(e)
 			s.Equal(testCase.expectedNodeName, actual.GetNode())
 		})
@@ -96,7 +96,7 @@ func (s *TestComplianceCachingSuite) TestBackoffNoFile() {
 	tmpDir := s.T().TempDir()
 	inventoryCachePath = tmpDir
 
-	_, _ = scanNodeBacked("testname", &nodeinventorizer.FakeNodeInventorizer{})
+	_, _ = scanNodeWithBackoff("testname", &nodeinventorizer.FakeNodeInventorizer{})
 
 	// This file mustn't exist after a successful run
 	_, err := os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
@@ -115,7 +115,7 @@ func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
 	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", 421)), 0600)
 	s.NoError(err)
 
-	_, _ = scanNodeBacked("testname", &nodeinventorizer.FakeNodeInventorizer{})
+	_, _ = scanNodeWithBackoff("testname", &nodeinventorizer.FakeNodeInventorizer{})
 
 	// This file mustn't exist after a successful run
 	_, err = os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
@@ -135,9 +135,8 @@ func (mi *mockInventoryErr) Scan(nodeName string) (*storage.NodeInventory, error
 func (s *TestComplianceCachingSuite) TestBackoffFailedRun() {
 	tmpDir := s.T().TempDir()
 	inventoryCachePath = tmpDir
-	inventoryInitialBackoff = 4221
 
-	_, _ = scanNodeBacked("testname", &mockInventoryErr{})
+	_, _ = scanNodeWithBackoff("testname", &mockInventoryErr{})
 
 	// Even if a scan fails, it should still leave no state file behind
 	_, err := os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
