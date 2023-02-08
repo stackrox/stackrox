@@ -280,7 +280,7 @@ func (m *networkFlowManager) enrichAndSend() {
 	metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
 
 	jsonContent, err := json.Marshal(protoToSend)
-	if err != nil {
+	if err == nil {
 		log.Debugf("Flow update : %s", jsonContent)
 	}
 

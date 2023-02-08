@@ -23,9 +23,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
+	"github.com/stackrox/rox/sensor/debugger/networkflow"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -70,23 +72,24 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 }
 
 type localSensorConfig struct {
-	Duration           time.Duration
-	OutputFormat       string
-	CentralOutput      string
-	RecordK8sEnabled   bool
-	RecordK8sFile      string
-	ReplayK8sEnabled   bool
-	ReplayK8sTraceFile string
-	Verbose            bool
-	ResyncPeriod       time.Duration
-	CreateMode         k8s.CreateMode
-	Delay              time.Duration
-	PoliciesFile       string
-	FakeWorkloadFile   string
-	WithMetrics        bool
-	NoCPUProfile       bool
-	NoMemProfile       bool
-	PprofServer        bool
+	Duration            time.Duration
+	OutputFormat        string
+	CentralOutput       string
+	RecordK8sEnabled    bool
+	RecordK8sFile       string
+	ReplayK8sEnabled    bool
+	ReplayK8sTraceFile  string
+	Verbose             bool
+	ResyncPeriod        time.Duration
+	CreateMode          k8s.CreateMode
+	Delay               time.Duration
+	PoliciesFile        string
+	FakeWorkloadFile    string
+	WithMetrics         bool
+	NoCPUProfile        bool
+	NoMemProfile        bool
+	PprofServer         bool
+	FakeNetworkFlowFile string
 }
 
 const (
@@ -138,23 +141,24 @@ func isValidOutputFormat(format string) bool {
 
 func mustGetCommandLineArgs() localSensorConfig {
 	sensorConfig := localSensorConfig{
-		Verbose:            false,
-		Duration:           0,
-		OutputFormat:       "json",
-		CentralOutput:      "central-out.json",
-		RecordK8sEnabled:   false,
-		RecordK8sFile:      "k8s-trace.jsonl",
-		ReplayK8sEnabled:   false,
-		ReplayK8sTraceFile: "k8s-trace.jsonl",
-		ResyncPeriod:       1 * time.Minute,
-		Delay:              5 * time.Second,
-		CreateMode:         k8s.Delay,
-		PoliciesFile:       "",
-		FakeWorkloadFile:   "",
-		WithMetrics:        false,
-		NoCPUProfile:       false,
-		NoMemProfile:       false,
-		PprofServer:        false,
+		Verbose:             false,
+		Duration:            0,
+		OutputFormat:        "json",
+		CentralOutput:       "central-out.json",
+		RecordK8sEnabled:    false,
+		RecordK8sFile:       "k8s-trace.jsonl",
+		ReplayK8sEnabled:    false,
+		ReplayK8sTraceFile:  "k8s-trace.jsonl",
+		ResyncPeriod:        1 * time.Minute,
+		Delay:               5 * time.Second,
+		CreateMode:          k8s.Delay,
+		PoliciesFile:        "",
+		FakeWorkloadFile:    "",
+		WithMetrics:         false,
+		NoCPUProfile:        false,
+		NoMemProfile:        false,
+		PprofServer:         false,
+		FakeNetworkFlowFile: "",
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -173,6 +177,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
+	flag.StringVar(&sensorConfig.FakeNetworkFlowFile, "debug-flow-file", sensorConfig.FakeWorkloadFile, "inject network flows as a binary file")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
@@ -309,6 +314,13 @@ func main() {
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
+
+	if localConfig.FakeNetworkFlowFile != "" {
+		log.Printf("[LOCAL SENSOR] Using fake network flow file: %s", localConfig.FakeNetworkFlowFile)
+		injector := networkflow.NewFlowInjector(localConfig.FakeNetworkFlowFile)
+		go injector.RunInjector()
+		service.SetInjector(injector)
+	}
 
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).

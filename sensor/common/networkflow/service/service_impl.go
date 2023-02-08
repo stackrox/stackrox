@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -42,6 +43,8 @@ type serviceImpl struct {
 	manager manager.Manager
 
 	fileOutput chan *sensor.NetworkConnectionInfoMessage
+
+	injector CollectorFlowInjector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -94,6 +97,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 
 	s.fileOutput = make(chan *sensor.NetworkConnectionInfoMessage, 1000)
 	go s.runRecorder()
+	go s.runInjection(recvdMsgC)
 
 	var publicIPsIterator concurrency.ValueStreamIter[*sensor.IPAddressList]
 	if capsSet.Contains(publicIPsUpdateCap) {
@@ -163,24 +167,30 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	}
 }
 
+func (s *serviceImpl) runInjection(inputChan chan<- *sensor.NetworkConnectionInfoMessage) {
+	log.Infof("runInjection()")
+	s.injector = GetInjector()
+	for {
+		msg, more := <-s.injector.ReaderC()
+		if !more {
+			return
+		}
+		// feed injected message into sensor pipeline
+		inputChan <- msg
+	}
+}
+
 func (s *serviceImpl) runRecorder() {
-	bytesWrittenCurrFile := 0
 	filesWrittenCount := 1
 
+	networkFilesWritten := 0
+
 	fileNameString := fmt.Sprintf("collector_output_%d", filesWrittenCount)
-	fileNameBytes := fmt.Sprintf("collector_output_bytes_%d", filesWrittenCount)
 
 	fullPathString := path.Join("/var/log/stackrox", fileNameString)
 	stringFile, err := os.OpenFile(fullPathString, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Warnf("failed to open file %s", fullPathString)
-		return
-	}
-
-	fullPathBytes := path.Join("/var/log/stackrox", fileNameBytes)
-	byteFile, err := os.OpenFile(fullPathBytes, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Warnf("failed to open file %s", fullPathBytes)
 		return
 	}
 
@@ -194,53 +204,17 @@ func (s *serviceImpl) runRecorder() {
 			log.Warnf("failed to write string to collector recorder: %s", err)
 		}
 
-		byteContent, err := content.Marshal()
+		byteContent, err := proto.Marshal(content)
 		if err != nil {
 			log.Warnf("failed to marshal message into bytes; %s", err)
 			continue
 		}
 
-		byteContent = append(byteContent, 0xFA, 0xFB, 0xFC, 0xFD)
-		written, err := byteFile.Write(byteContent)
+		err = os.WriteFile(path.Join("/var/log/stackrox", fmt.Sprintf("network_flow_%d.bin", networkFilesWritten)), byteContent, 0644)
 		if err != nil {
-			log.Warnf("failed to write string to collector recorder: %s", err)
+			log.Warnf("failed to write networkflow to file")
 		}
-
-		bytesWrittenCurrFile += written
-
-		if written >= 10_000_000 {
-			bytesWrittenCurrFile = 0
-			filesWrittenCount++
-			err := stringFile.Close()
-			if err != nil {
-				log.Warnf("failed to close file %s: %s", fullPathString, err)
-				return
-			}
-
-			err = byteFile.Close()
-			if err != nil {
-				log.Warnf("failed to close file %s: %s", fullPathBytes, err)
-				return
-			}
-
-			fileNameString = fmt.Sprintf("collector_output_%d", filesWrittenCount)
-			fileNameBytes = fmt.Sprintf("collector_output_bytes_%d", filesWrittenCount)
-
-			fullPathString = path.Join("/var/log/stackrox", fileNameString)
-			stringFile, err = os.OpenFile(fullPathString, os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				log.Warnf("failed to open file %s", fullPathString)
-				return
-			}
-
-			fullPathBytes = path.Join("/var/log/stackrox", fileNameBytes)
-			byteFile, err = os.OpenFile(fullPathBytes, os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				log.Warnf("failed to open file %s", fullPathBytes)
-				return
-			}
-
-		}
+		networkFilesWritten++
 	}
 }
 
