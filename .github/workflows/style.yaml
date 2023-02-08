@@ -15,6 +15,62 @@ env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
 jobs:
+  check-generated-files:
+    env:
+      ARTIFACT_DIR: junit-reports/
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Create artifacts dir
+      run: mkdir -p "$ARTIFACT_DIR"
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Check Generated
+      run: scripts/ci/jobs/check-generated.sh
+
+  misc-checks:
+    env:
+      ARTIFACT_DIR: junit-reports/
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Create artifacts dir
+      run: mkdir -p "$ARTIFACT_DIR"
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Check PR fixes
+      run: scripts/ci/jobs/check-pr-fixes.sh
+
+    - name: Check TODOs
+      run: scripts/ci/jobs/check-todos.sh
+
+    - name: Check Policies
+      run: scripts/ci/jobs/policy-checks.sh
 
   style-check:
     runs-on: ubuntu-latest
