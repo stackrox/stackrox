@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -101,6 +102,15 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 			return err
 		}
 	}
+
+	// Currently, when the K8S config is generated through interactive mode, the configuration flags will be called twice.
+	// This doesn't affect single value configurations, like booleans and strings, but slices.
+	// TODO(ROX-14956):Once the duplication of flag values is removed, this can be removed.
+	c.K8sConfig.DeclarativeConfigMounts.ConfigMaps = sliceutils.Unique(c.K8sConfig.DeclarativeConfigMounts.ConfigMaps)
+	c.K8sConfig.DeclarativeConfigMounts.Secrets = sliceutils.Unique(c.K8sConfig.DeclarativeConfigMounts.Secrets)
+	// Additionally, the default value used by the configuration for empty arrays is "[]", which we will have to remove.
+	c.K8sConfig.DeclarativeConfigMounts.ConfigMaps = sliceutils.Without(c.K8sConfig.DeclarativeConfigMounts.ConfigMaps, []string{"[]"})
+	c.K8sConfig.DeclarativeConfigMounts.Secrets = sliceutils.Without(c.K8sConfig.DeclarativeConfigMounts.Secrets, []string{"[]"})
 
 	return nil
 }
