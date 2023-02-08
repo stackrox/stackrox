@@ -38,13 +38,13 @@ expect {
   "Unexpected value 'dummy', allowed values are*" {
     send "rhacs\n"
     # ensure that the next question is correct after providing a valid answer
-    expect "Enter list*" {
+    expect "Enter the method of exposing Central*" {
       exit 0
     }
     send_user "\nERROR: roxctl accepted 'rhacs' as flavor and generated unexpected question afterwards\n"
     exit 2
   }
-  "Enter list*" {
+  "Enter the method of exposing Central*" {
     send_user "\nERROR: roxctl accepted 'dummy' as flavor and did not ask for correction immediately\n"
     exit 1
   }
