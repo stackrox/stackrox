@@ -177,7 +177,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
     envsubst \
-      < operator/tests/e2e/central-cr.envsubst.yaml \
+      < tests/e2e/yaml/central-cr.envsubst.yaml \
       > /tmp/central-cr.yaml
 
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
@@ -251,7 +251,7 @@ deploy_sensor_via_operator() {
         --output-secrets - \
     | kubectl -n stackrox apply -f -
 
-    kubectl apply -n stackrox -f operator/tests/e2e/secured-cluster-cr.yaml
+    kubectl apply -n stackrox -f tests/e2e/yaml/secured-cluster-cr.yaml
 
     wait_for_object_to_appear stackrox deploy/sensor 300
     wait_for_object_to_appear stackrox ds/collector 300

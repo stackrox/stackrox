@@ -42,10 +42,6 @@ expect "Enter administrator password*" { send "\n" }
 expect "Enter orchestrator (k8s, openshift)*" { send "k8s\n" }
 expect "Enter the directory to output the deployment bundle to*" { send "$out_dir\n" }
 expect "Enter default container images settings*" { send "$flavor\n" }
-# Enter list of config maps for declarative configuration.
-# Enter list of secrets for declarative configuration
-expect "Enter list of config maps*" { send "\n"}
-expect "Enter list of secrets*" { send "\n"}
 expect "Enter the method of exposing Central*" { send "none\n" }
 
 # Enter main image to use (default: "docker.io/stackrox/main:3.67.x-296-g56df6a892d"):

@@ -77,41 +77,41 @@ var (
 	// Policy, VulnerabilityReports.
 	WorkflowAdministration = newResourceMetadata("WorkflowAdministration", permissions.GlobalScope)
 
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
 		Administration)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	Config = newDeprecatedResourceMetadata("Config", permissions.GlobalScope,
 		Administration)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	DebugLogs = newDeprecatedResourceMetadata("DebugLogs", permissions.GlobalScope,
 		Administration)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	NetworkGraphConfig = newDeprecatedResourceMetadata("NetworkGraphConfig",
 		permissions.GlobalScope, Administration)
-	// To-be-deprecated in 3.76 with ROX-13888 (deprecation notice in 3.74).
+	// To-be-deprecated in 4.1 with ROX-13888 (deprecation notice in 3.74).
 	Policy = newDeprecatedResourceMetadata("Policy", permissions.GlobalScope, WorkflowAdministration)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	ProbeUpload = newDeprecatedResourceMetadata("ProbeUpload", permissions.GlobalScope,
 		Administration)
-	// To-be-deprecated in 3.76 with ROX-14398 (deprecation notice in 3.74).
+	// To-be-deprecated in 4.1 with ROX-14398 (deprecation notice in 3.74).
 	Role = newDeprecatedResourceMetadata("Role", permissions.GlobalScope, Access)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	ScannerBundle = newDeprecatedResourceMetadata("ScannerBundle",
 		permissions.GlobalScope, Administration)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	ScannerDefinitions = newDeprecatedResourceMetadata("ScannerDefinitions",
 		permissions.GlobalScope, Administration)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	SensorUpgradeConfig = newDeprecatedResourceMetadata("SensorUpgradeConfig",
 		permissions.GlobalScope, Administration)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	ServiceIdentity = newDeprecatedResourceMetadata("ServiceIdentity",
 		permissions.GlobalScope, Administration)
-	// To-be-deprecated in 3.76 with ROX-13888 (deprecation notice in 3.74).
+	// To-be-deprecated in 4.1 with ROX-13888 (deprecation notice in 3.74).
 	VulnerabilityReports = newDeprecatedResourceMetadata("VulnerabilityReports", permissions.GlobalScope,
 		WorkflowAdministration)
 
