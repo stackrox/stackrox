@@ -78,5 +78,68 @@ func (s *TestComplianceCachingSuite) TestCaching() {
 			s.Equal(testCase.expectedNodeName, actual.GetNode())
 		})
 	}
+}
 
+type mockSleeper struct {
+	receivedDuration time.Duration
+	callCount        int
+}
+
+func (ms *mockSleeper) Sleep(d time.Duration) {
+	ms.receivedDuration = d
+	ms.callCount++
+}
+
+func (s *TestComplianceCachingSuite) TestBackoffNoFile() {
+	m := mockSleeper{callCount: 0}
+	inventorySleeper = m.Sleep
+	tmpDir := s.T().TempDir()
+	inventoryCachePath = tmpDir
+
+	_, _ = scanNodeBacked("testname", &nodeinventorizer.FakeNodeInventorizer{})
+
+	// This file mustn't exist after a successful run
+	_, err := os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	s.ErrorIs(err, os.ErrNotExist)
+
+	// No sleep should have been called
+	s.Equal(0, m.callCount)
+}
+
+func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
+	m := mockSleeper{callCount: 0}
+	inventorySleeper = m.Sleep
+	tmpDir := s.T().TempDir()
+	inventoryCachePath = tmpDir
+
+	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", 421)), 0600)
+	s.NoError(err)
+
+	_, _ = scanNodeBacked("testname", &nodeinventorizer.FakeNodeInventorizer{})
+
+	// This file mustn't exist after a successful run
+	_, err = os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	s.ErrorIs(err, os.ErrNotExist)
+
+	s.Equal(1, m.callCount)
+	s.Equal(m.receivedDuration, time.Duration(421)*time.Second)
+}
+
+type mockInventoryErr struct {
+}
+
+func (mi *mockInventoryErr) Scan(nodeName string) (*storage.NodeInventory, error) {
+	return nil, fmt.Errorf("This is a failure on node %s", nodeName)
+}
+
+func (s *TestComplianceCachingSuite) TestBackoffFailedRun() {
+	tmpDir := s.T().TempDir()
+	inventoryCachePath = tmpDir
+	inventoryInitialBackoff = 4221
+
+	_, _ = scanNodeBacked("testname", &mockInventoryErr{})
+
+	// Even if a scan fails, it should still leave no state file behind
+	_, err := os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	s.ErrorIs(err, os.ErrNotExist)
 }

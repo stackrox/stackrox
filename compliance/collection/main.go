@@ -45,6 +45,7 @@ var (
 	inventoryCachePath        = "/cache"
 	inventoryInitialBackoff   = 30
 	inventoryBackoffIncrement = 5
+	inventorySleeper          = time.Sleep // used for testing more efficiently
 )
 
 func getNode() string {
@@ -242,15 +243,14 @@ func scanNodeBacked(nodeName string, scanner nodeinventorizer.NodeInventorizer) 
 
 	if backoffInterval != inventoryInitialBackoff {
 		log.Debugf("Waiting %v seconds before running next inventory", backoffInterval)
-		time.Sleep(time.Duration(backoffInterval) * time.Second)
+		inventorySleeper(time.Duration(backoffInterval) * time.Second)
 	}
 
 	message, err := scanNode(nodeName, scanner)
-	if err != nil {
-		return nil, err
+	e := os.Remove(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	if e != nil {
+		log.Warnf("Could not remove backoff state file: %v", err)
 	}
-
-	err = os.Remove(fmt.Sprintf("%s/backoff", inventoryCachePath))
 	if err != nil {
 		return nil, err
 	}
