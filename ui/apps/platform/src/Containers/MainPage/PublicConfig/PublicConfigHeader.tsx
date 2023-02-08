@@ -1,22 +1,21 @@
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 
-import { selectors } from 'reducers';
-import { BannerConfig } from 'types/config.proto';
+import { publicConfigHeaderSelector } from 'reducers/selectors';
 
 import { getPublicConfigStyle } from './PublicConfig.utils';
 
 function PublicConfigHeader(): ReactElement | null {
-    const header = useSelector<unknown, BannerConfig | null>(selectors.getPublicConfigHeader);
+    const publicConfigHeader = useSelector(publicConfigHeaderSelector);
 
-    if (header?.enabled) {
+    if (publicConfigHeader?.enabled) {
         return (
             <div
                 className="pf-c-banner pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center"
-                style={getPublicConfigStyle(header)}
+                style={getPublicConfigStyle(publicConfigHeader)}
                 data-testid="public-config-header"
             >
-                {header.text}
+                {publicConfigHeader.text}
             </div>
         );
     }

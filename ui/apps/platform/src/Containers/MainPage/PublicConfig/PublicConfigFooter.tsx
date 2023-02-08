@@ -1,22 +1,21 @@
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 
-import { selectors } from 'reducers';
-import { BannerConfig } from 'types/config.proto';
+import { publicConfigFooterSelector } from 'reducers/selectors';
 
 import { getPublicConfigStyle } from './PublicConfig.utils';
 
 function PublicConfigFooter(): ReactElement | null {
-    const footer = useSelector<unknown, BannerConfig | null>(selectors.getPublicConfigFooter);
+    const publicConfigFooter = useSelector(publicConfigFooterSelector);
 
-    if (footer?.enabled) {
+    if (publicConfigFooter?.enabled) {
         return (
             <div
                 className="pf-c-banner pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center"
-                style={getPublicConfigStyle(footer)}
+                style={getPublicConfigStyle(publicConfigFooter)}
                 data-testid="public-config-footer"
             >
-                {footer.text}
+                {publicConfigFooter.text}
             </div>
         );
     }
