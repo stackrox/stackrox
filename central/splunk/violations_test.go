@@ -15,7 +15,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
@@ -23,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -613,26 +611,8 @@ var (
 	}
 )
 
-func makeTimestamp(timeStr string) *types.Timestamp {
-	ts, err := types.TimestampProto(mustParseTime(timeStr))
-	utils.CrashOnError(err)
-	return ts
-}
-
-func mustParseTime(timeStr string) time.Time {
-	ts, err := time.Parse(time.RFC3339Nano, timeStr)
-	utils.CrashOnError(err)
-	return ts
-}
-
 func TestViolations(t *testing.T) {
 	suite.Run(t, &violationsTestSuite{})
-}
-
-type violationsTestSuite struct {
-	suite.Suite
-	deployAlert, processAlert, k8sAlert, networkAlert, resourceAlert *storage.Alert
-	allowCtx                                                         context.Context
 }
 
 func (s *violationsTestSuite) SetupTest() {
