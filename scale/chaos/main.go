@@ -31,7 +31,7 @@ func applyJitter(t time.Duration) time.Duration {
 type killFunc func(client *kubernetes.Clientset, config *rest.Config, pods []corev1.Pod)
 
 func execKill(client *kubernetes.Clientset, config *rest.Config, pods []corev1.Pod) {
-	signals := []string{"-9", "-15"}
+	signals := []string{"-15"}
 	signal := signals[rand.Intn(len(signals))]
 	cmd := []string{"kill", signal, "1"}
 	for _, pod := range pods {
@@ -82,7 +82,7 @@ func getPods(client *kubernetes.Clientset, labelSelector string) []corev1.Pod {
 
 func podKill(client *kubernetes.Clientset, _ *rest.Config, pods []corev1.Pod) {
 	for _, pod := range pods {
-		gracePeriod := rand.Int63n(60)
+		gracePeriod := rand.Int63n(10)
 		log.Infof("Deleting pod %s", pod.Name)
 		err := client.CoreV1().Pods("stackrox").Delete(context.Background(), pod.Name, v1.DeleteOptions{
 			GracePeriodSeconds: &gracePeriod,
@@ -132,12 +132,7 @@ func main() {
 		case <-time.After(nextInterval):
 			nextInterval = applyJitter(interval)
 
-			var killFn killFunc
-			if selectOption() {
-				killFn = execKill
-			} else {
-				killFn = podKill
-			}
+			var killFn = podKill
 			var selector string
 			if selectOption() {
 				selector = "app=central"

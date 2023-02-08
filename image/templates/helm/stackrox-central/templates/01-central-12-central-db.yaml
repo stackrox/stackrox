@@ -71,6 +71,7 @@ spec:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
       serviceAccountName: central-db
+      terminationGracePeriodSeconds: 120
       initContainers:
       - name: init-db
         image: {{ ._rox.central.db.image.fullRef | quote }}
