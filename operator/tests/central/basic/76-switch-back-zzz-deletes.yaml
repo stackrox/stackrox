@@ -7,7 +7,7 @@ delete:
   name: my-central-db-password
 # The previous step (75-switch-to-external-central-db) has caused the initially generated
 # central-db-password secret to be overwritten with a manually specified "external" password.
-# The DB PCV was left behind, but it's difficult to extract the password from there.
+# The DB PVC was left behind, but it's difficult to extract the password from there.
 # Instead, we now remove the central DB PVC, to cause the operator create a new one such that
 # it can be populated with a freshly generated DB password.
 - apiVersion: v1
