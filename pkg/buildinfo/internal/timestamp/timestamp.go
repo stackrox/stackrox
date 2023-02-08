@@ -9,11 +9,11 @@ var (
 	buildTimestampUnixSecs string //XDef:BUILD_TIMESTAMP
 
 	// BuildTimestamp is the time when this binary was built.
-	// Deprecated: It will be removed in 3.75. Please do not use it.
+	// Deprecated: It will be removed in 4.0. Please do not use it.
 	// TODO(ROX-14336): delete it
 	BuildTimestamp time.Time
 	// BuildTimestampParsingErr is the error encountered when parsing the build timestamp (if any).
-	// Deprecated: It will be removed in 3.75. Please do not use it.
+	// Deprecated: It will be removed in 4.0. Please do not use it.
 	// TODO(ROX-14336): delete it
 	BuildTimestampParsingErr error
 )
