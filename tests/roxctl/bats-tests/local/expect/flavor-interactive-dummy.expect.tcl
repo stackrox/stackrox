@@ -38,13 +38,13 @@ expect {
   "Unexpected value 'dummy', allowed values are*" {
     send "rhacs\n"
     # ensure that the next question is correct after providing a valid answer
-    expect "Enter the directory to output the deployment bundle to*" {
+    expect "Enter central-db image to use*" {
       exit 0
     }
     send_user "\nERROR: roxctl accepted 'rhacs' as flavor and generated unexpected question afterwards\n"
     exit 2
   }
-  "Enter the directory to output the deployment bundle to*" {
+  "Enter central-db image to use*" {
     send_user "\nERROR: roxctl accepted 'dummy' as flavor and did not ask for correction immediately\n"
     exit 1
   }

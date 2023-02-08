@@ -40,8 +40,8 @@ expect "Enter PEM cert bundle file*" { send "\n" }
 expect "Enter Create PodSecurityPolicy resources*" { send "\n" }
 expect "Enter administrator password*" { send "\n" }
 expect "Enter orchestrator (k8s, openshift)*" { send "k8s\n" }
-expect "Enter default container images settings*" { send "$flavor\n" }
 expect "Enter the directory to output the deployment bundle to*" { send "$out_dir\n" }
+expect "Enter default container images settings*" { send "$flavor\n" }
 
 # Enter central-db image to use (default: "docker.io/stackrox/central-db:2.21.0-15-g448f2dc8fa"):
 # Enter central-db image to use (default: "stackrox.io/central-db:3.67.x-296-g56df6a892d"):

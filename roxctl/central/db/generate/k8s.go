@@ -56,7 +56,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flags.AddImageDefaults(c.PersistentFlags(), &k8sConfig.ImageFlavorName)
 
 	defaultImageHelp := fmt.Sprintf("(if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
-	c.PersistentFlags().StringVarP(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "", "central-db image to use"+defaultImageHelp)
+	c.PersistentFlags().StringVarP(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "", "central-db image to use "+defaultImageHelp)
 	k8sConfig.EnableCentralDB = true
 
 	return c
