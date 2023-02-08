@@ -77,6 +77,7 @@ const reducer = combineReducers({
 const getPublicConfig = (state) => state.publicConfig;
 const getPublicConfigFooter = (state) => state.publicConfig.footer;
 const getPublicConfigHeader = (state) => state.publicConfig.header;
+const getPublicConfigLoginNotice = (state) => state.publicConfig.loginNotice;
 const getPublicConfigError = (state) => state.error;
 const getIsLoadingPublicConfig = (state) => state.isLoading;
 
@@ -84,6 +85,7 @@ export const selectors = {
     getPublicConfig,
     getPublicConfigFooter,
     getPublicConfigHeader,
+    getPublicConfigLoginNotice,
     getPublicConfigError,
     getIsLoadingPublicConfig,
 };

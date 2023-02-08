@@ -1,5 +1,5 @@
 import { Metadata } from 'types/metadataService.proto';
-import { BannerConfig } from 'types/config.proto';
+import { BannerConfig, LoginNotice } from 'types/config.proto';
 
 import { selectors } from './index';
 
@@ -17,8 +17,12 @@ export const serverStatusSelector = selectors.getServerState as (state: unknown)
 
 export const publicConfigFooterSelector = selectors.getPublicConfigFooter as (
     state: unknown
-) => BannerConfig;
+) => BannerConfig | null;
 
 export const publicConfigHeaderSelector = selectors.getPublicConfigHeader as (
     state: unknown
-) => BannerConfig;
+) => BannerConfig | null;
+
+export const publicConfigLoginNoticeSelector = selectors.getPublicConfigLoginNotice as (
+    state: unknown
+) => LoginNotice | null;
