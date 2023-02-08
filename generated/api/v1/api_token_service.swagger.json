@@ -198,10 +198,6 @@
           "type": "string",
           "format": "date-time"
         },
-        "expirationNotifiedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
         "revoked": {
           "type": "boolean"
         },

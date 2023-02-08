@@ -9,16 +9,15 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message TokenMetadata {
-    string id                                        = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string name                                      = 2;
-    repeated string roles                            = 7;
-    google.protobuf.Timestamp issued_at              = 4;
-    google.protobuf.Timestamp expiration             = 5 [(gogoproto.moretags) = 'search:"Expiration,store"'];
-    google.protobuf.Timestamp expiration_notified_at = 8 [(gogoproto.moretags) = 'search:"Last Notified,store"'];
-    bool revoked                                     = 6 [(gogoproto.moretags) = 'search:"Revoked,store"'];
+    string id                            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string name                          = 2;
+    repeated string roles                = 7;
+    google.protobuf.Timestamp issued_at  = 4;
+    google.protobuf.Timestamp expiration = 5 [(gogoproto.moretags) = 'search:"Expiration,store"'];
+    bool revoked                         = 6 [(gogoproto.moretags) = 'search:"Revoked,store"'];
 
 
     string role = 3 [deprecated = true];
-    // Next available tag: 9
+    // Next available tag: 8
 }
 

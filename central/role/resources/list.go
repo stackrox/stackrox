@@ -118,6 +118,7 @@ var (
 	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
 	InstallationInfo   = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
+	Notifications      = newInternalResourceMetadata("Notifications", permissions.GlobalScope)
 	Version            = newInternalResourceMetadata("Version", permissions.GlobalScope)
 
 	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)

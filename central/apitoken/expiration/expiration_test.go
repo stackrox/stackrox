@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestAPITokenEpirationNotifier(t *testing.T) {
+func TestAPITokenExpirationNotifier(t *testing.T) {
 	suite.Run(t, new(apiTokenExpirationNotifierTestSuite))
 }
 
@@ -54,11 +54,9 @@ func truncateToMicroSeconds(timestamp *types.Timestamp) *types.Timestamp {
 
 func generateToken(now *time.Time,
 	expiration *time.Time,
-	expirationNotifiedAt *time.Time,
 	revoked bool) *storage.TokenMetadata {
 	var protoNow *types.Timestamp
 	var protoExpiration *types.Timestamp
-	var protoExpirationNotifiedAt *types.Timestamp
 	if now != nil {
 		protoNow = protoconv.ConvertTimeToTimestamp(*now)
 		protoNow = truncateToMicroSeconds(protoNow)
@@ -67,30 +65,23 @@ func generateToken(now *time.Time,
 		protoExpiration = protoconv.ConvertTimeToTimestamp(*expiration)
 		protoExpiration = truncateToMicroSeconds(protoExpiration)
 	}
-	if expirationNotifiedAt != nil {
-		protoExpirationNotifiedAt = protoconv.ConvertTimeToTimestamp(*expirationNotifiedAt)
-		protoExpirationNotifiedAt = truncateToMicroSeconds(protoExpirationNotifiedAt)
-	}
 	return &storage.TokenMetadata{
-		Id:                   uuid.NewV4().String(),
-		Name:                 "Generated Test Token",
-		Roles:                []string{"Admin"},
-		IssuedAt:             protoNow,
-		Expiration:           protoExpiration,
-		ExpirationNotifiedAt: protoExpirationNotifiedAt,
-		Revoked:              revoked,
+		Id:         uuid.NewV4().String(),
+		Name:       "Generated Test Token",
+		Roles:      []string{"Admin"},
+		IssuedAt:   protoNow,
+		Expiration: protoExpiration,
+		Revoked:    revoked,
 	}
 }
 
-func (s *apiTokenExpirationNotifierTestSuite) TestSelectTokenAboutToExpireNotNotifiedYet() {
+func (s *apiTokenExpirationNotifierTestSuite) TestSelectTokenAboutToExpire() {
 	ctx := sac.WithAllAccess(context.Background())
 	now := time.Now()
 	expiration := now.Add(2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
 	notifiedUntil := now.Add(-2 * time.Hour)
-	notifiedAt := now.Add(-4 * time.Hour)
-	token := generateToken(&now, &expiration, &notifiedAt, false)
-	// log.Info("Storing token with ID ", token.GetId(), " notified at ", notifiedAt.String())
+	token := generateToken(&now, &expiration, false)
 	s.Require().NoError(s.datastore.AddToken(ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil, notifiedUntil)
@@ -110,26 +101,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectTokenNotAboutToExpir
 	expiration := now.Add(7 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
 	notifiedUntil := now.Add(-2 * time.Hour)
-	notifiedAt := now.Add(-4 * time.Hour)
-	token := generateToken(&now, &expiration, &notifiedAt, false)
-	log.Info("Storing token with ID ", token.GetId(), " notified at ", notifiedAt.String())
-	s.Require().NoError(s.datastore.AddToken(ctx, token))
-
-	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil, notifiedUntil)
-	s.NoError(err)
-	expectedResults := []search.Result{}
-	s.ElementsMatch(expectedResults, fetchedTokens)
-}
-
-func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectTokenAboutToExpireNotifiedRecently() {
-	ctx := sac.WithAllAccess(context.Background())
-	now := time.Now()
-	expiration := now.Add(2 * time.Hour)
-	expiresUntil := now.Add(5 * time.Hour)
-	notifiedUntil := now.Add(-4 * time.Hour)
-	notifiedAt := now.Add(-2 * time.Hour)
-	token := generateToken(&now, &expiration, &notifiedAt, false)
-	log.Info("Storing token with ID ", token.GetId(), " notified at ", notifiedAt.String())
+	token := generateToken(&now, &expiration, false)
 	s.Require().NoError(s.datastore.AddToken(ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil, notifiedUntil)
@@ -144,9 +116,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectRevokedToken() {
 	expiration := now.Add(2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
 	notifiedUntil := now.Add(-2 * time.Hour)
-	notifiedAt := now.Add(-4 * time.Hour)
-	token := generateToken(&now, &expiration, &notifiedAt, true)
-	log.Info("Storing token with ID ", token.GetId())
+	token := generateToken(&now, &expiration, true)
 	s.Require().NoError(s.datastore.AddToken(ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil, notifiedUntil)
@@ -161,9 +131,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectExpiredToken() {
 	expiration := now.Add(-2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
 	notifiedUntil := now.Add(-2 * time.Hour)
-	notifiedAt := now.Add(-4 * time.Hour)
-	token := generateToken(&now, &expiration, &notifiedAt, false)
-	log.Info("Storing token with ID ", token.GetId())
+	token := generateToken(&now, &expiration, false)
 	s.Require().NoError(s.datastore.AddToken(ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil, notifiedUntil)

@@ -32,8 +32,6 @@ func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames
 	}
 
 	md := metadataFromTokenInfo(name, tokenInfo)
-	// Preset info for notifications about expiring tokens
-	md.ExpirationNotifiedAt = md.IssuedAt
 
 	if err := c.tokenStore.AddToken(ctx, md); err != nil {
 		return "", nil, err

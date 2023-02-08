@@ -20,6 +20,9 @@ type DataStore interface {
 	RevokeToken(ctx context.Context, id string) (exists bool, err error)
 
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+
+	GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error)
+	UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error
 }
 
 // New returns a ready-to-use DataStore instance.

@@ -92,12 +92,11 @@ func insertIntoApiTokens(ctx context.Context, batch *pgx.Batch, obj *storage.Tok
 		// parent primary keys start
 		obj.GetId(),
 		pgutils.NilOrTime(obj.GetExpiration()),
-		pgutils.NilOrTime(obj.GetExpirationNotifiedAt()),
 		obj.GetRevoked(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO api_tokens (Id, Expiration, ExpirationNotifiedAt, Revoked, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Expiration = EXCLUDED.Expiration, ExpirationNotifiedAt = EXCLUDED.ExpirationNotifiedAt, Revoked = EXCLUDED.Revoked, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO api_tokens (Id, Expiration, Revoked, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -118,8 +117,6 @@ func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx pgx.Tx, objs ...*s
 		"id",
 
 		"expiration",
-
-		"expirationnotifiedat",
 
 		"revoked",
 
@@ -142,8 +139,6 @@ func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx pgx.Tx, objs ...*s
 			obj.GetId(),
 
 			pgutils.NilOrTime(obj.GetExpiration()),
-
-			pgutils.NilOrTime(obj.GetExpirationNotifiedAt()),
 
 			obj.GetRevoked(),
 

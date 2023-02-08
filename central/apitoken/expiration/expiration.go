@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	nofiticationInterval = 12 * time.Hour     // 12 hours
+	notificationInterval = 1 * time.Hour      // 1 hour
 	staleNotificationAge = 24 * time.Hour     // 1 day
 	expirationWindow     = 7 * 24 * time.Hour // 1 week
 
@@ -82,7 +83,7 @@ func (n *expirationNotifierImpl) runExpiryNotifier() {
 
 	n.checkAndNotifyExpirations()
 
-	t := time.NewTicker(nofiticationInterval)
+	t := time.NewTicker(notificationInterval)
 	for {
 		select {
 		case <-t.C:
@@ -102,6 +103,33 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 	now := time.Now()
 	aboutToExpireDate := now.Add(expirationWindow)
 	staleNotificationDate := now.Add(-staleNotificationAge)
+	staleNotificationTimestamp := protoconv.ConvertTimeToTimestamp(staleNotificationDate)
+
+	scheduleCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Notifications),
+		),
+	)
+	var notificationSchedule *storage.NotificationSchedule
+	notificationSchedule, found, err := n.store.GetNotificationSchedule(scheduleCtx)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	if !found || notificationSchedule == nil {
+		notificationSchedule = &storage.NotificationSchedule{
+			LastRun: protoconv.ConvertTimeToTimestamp(staleNotificationDate.Add(-1 * time.Hour)),
+		}
+	}
+	if notificationSchedule.GetLastRun().Compare(staleNotificationTimestamp) >= 0 {
+		return
+	}
+	notificationSchedule.LastRun = protoconv.ConvertTimeToTimestamp(now)
+	err = n.store.UpsertNotificationSchedule(scheduleCtx, notificationSchedule)
+	if err != nil {
+		log.Error(errors.Wrap(err, "failed to update expired API token notification last run"))
+	}
 
 	expiringTokenIDs, err := n.listItemsToNotify(now, aboutToExpireDate, staleNotificationDate)
 	if err != nil {
@@ -113,12 +141,6 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 	if err != nil {
 		log.Error(err)
 		return
-	}
-	for _, identifier := range tokenIDs {
-		err := n.updateTokenNotificationTimestamp(identifier, now)
-		if err != nil {
-			log.Error(err)
-		}
 	}
 }
 
@@ -167,16 +189,4 @@ func (n *expirationNotifierImpl) notify(itemIDs []string) error {
 		log.Warnf("API Token about to expire %s", identifier)
 	}
 	return nil
-}
-
-func (n *expirationNotifierImpl) updateTokenNotificationTimestamp(tokenID string, timestamp time.Time) error {
-	token, err := n.store.GetTokenOrNil(expirySearchCtx, tokenID)
-	if err != nil {
-		return err
-	}
-	if token == nil {
-		return nil
-	}
-	token.ExpirationNotifiedAt = protoconv.ConvertTimeToTimestamp(timestamp)
-	return n.store.AddToken(updateTokenCtx, token)
 }

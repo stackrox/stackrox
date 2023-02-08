@@ -60,6 +60,7 @@ func init() {
 		&storage.NodeComponentEdge{}:                            resources.Node,
 		&storage.NodeCVE{}:                                      resources.Node,
 		&storage.Notifier{}:                                     resources.Integration,
+		&storage.NotificationSchedule{}:                         resources.Notifications,
 		// TODO: ROX-14398 Replace Role with Access
 		&storage.PermissionSet{}: resources.Role,
 		&storage.Pod{}:           resources.Deployment,

@@ -4,12 +4,15 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	scheduleStore "github.com/stackrox/rox/central/apitoken/datastore/internal/schedulestore/postgres"
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
 	rocksdbStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -20,11 +23,15 @@ import (
 
 var (
 	integrationSAC = sac.ForResource(resources.Integration)
+
+	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
 	storage  store.Store
 	searcher search.Searcher
+
+	scheduleStorage scheduleStore.Store
 
 	sync.Mutex
 }
@@ -33,18 +40,21 @@ func newPostgres(pool *pgxpool.Pool) *datastoreImpl {
 	storage := postgresStore.New(pool)
 	indexer := postgresStore.NewIndexer(pool)
 	searcher := blevesearch.WrapUnsafeSearcherAsSearcher(indexer)
+	scheduleStorage := scheduleStore.New(pool)
 
 	return &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage:         storage,
+		searcher:        searcher,
+		scheduleStorage: scheduleStorage,
 	}
 }
 
 func newRocks(rocksDBInstance *rocksdb.RocksDB) *datastoreImpl {
 	storage := rocksdbStore.New(rocksDBInstance)
 	return &datastoreImpl{
-		storage:  storage,
-		searcher: nil,
+		storage:         storage,
+		searcher:        nil,
+		scheduleStorage: nil,
 	}
 }
 
@@ -140,4 +150,20 @@ func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 		return nil, nil
 	}
 	return b.searcher.Search(ctx, q)
+}
+
+func (b *datastoreImpl) GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error) {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		log.Warn("Tried to retrieve API Token notification schedule not on Postgres, ignoring.")
+		return nil, false, nil
+	}
+	return b.scheduleStorage.Get(ctx)
+}
+
+func (b *datastoreImpl) UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		log.Warn("Tried to update API Token notification schedule not on Postgres, ignoring.")
+		return nil
+	}
+	return b.scheduleStorage.Upsert(ctx, schedule)
 }
