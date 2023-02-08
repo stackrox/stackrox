@@ -10,7 +10,7 @@ from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
-# Postgres is on by default
+# The Postgres version of this test is run from gke_postgres_upgrade_tests.py
 exit(0)
 
 # don't use postgres

@@ -10,9 +10,7 @@ from clusters import GKECluster
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
-
-# don't use postgres
-os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 update_helm_repo()
 chart_versions=get_latest_release_versions(4)
