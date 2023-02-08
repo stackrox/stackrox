@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -74,6 +75,47 @@ func (suite *ImageLoaderTestSuite) TestFromID() {
 
 	// Above call should now be preloaded.
 	image, err = loader.FromID(suite.ctx, sha3)
+	suite.NoError(err)
+	suite.Equal(loader.loaded[sha3], image)
+}
+
+func (suite *ImageLoaderTestSuite) TestFullImageWithID() {
+	pgtest.SkipIfPostgresDisabled(suite.T())
+
+	// Create a loader with some reloaded images.
+	loader := imageLoaderImpl{
+		loaded: map[string]*storage.Image{
+			"sha1": {Id: sha1},
+			"sha2": {Id: sha2},
+		},
+		ds: suite.mockDataStore,
+	}
+
+	// Get a preloaded image from id.
+	image, err := loader.FullImageWithID(suite.ctx, sha1)
+	suite.NoError(err)
+	suite.Equal(loader.loaded[sha1], image)
+
+	// Get a non-preloaded image from id.
+	thirdImageNotFull := &storage.Image{
+		Id:            sha3,
+		SetComponents: &storage.Image_Components{Components: 2},
+	}
+	thirdImageFull := &storage.Image{
+		Id: sha3,
+	}
+
+	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
+		Return([]*storage.Image{thirdImageNotFull}, nil)
+	suite.mockDataStore.EXPECT().GetImagesBatch(suite.ctx, []string{sha3}).
+		Return([]*storage.Image{thirdImageFull}, nil)
+
+	image, err = loader.FullImageWithID(suite.ctx, sha3)
+	suite.NoError(err)
+	suite.Equal(thirdImageFull, image)
+
+	// Above call should now be preloaded.
+	image, err = loader.FullImageWithID(suite.ctx, sha3)
 	suite.NoError(err)
 	suite.Equal(loader.loaded[sha3], image)
 }
