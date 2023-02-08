@@ -51,7 +51,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		return nil, errors.New(fmt.Sprintf("failed to get instance metadata: received HTTP status code %d", resp.StatusCode))
+		return nil, fmt.Errorf("failed to get instance metadata: received HTTP status code %d", resp.StatusCode)
 	}
 
 	contents, err := io.ReadAll(resp.Body)
