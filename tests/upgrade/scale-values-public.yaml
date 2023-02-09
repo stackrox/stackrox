@@ -23,4 +23,3 @@ customize:
   envVars:
     ROX_SCALE_TEST: "true"
     MUTEX_WATCHDOG_TIMEOUT_SECS: "0"
-    
