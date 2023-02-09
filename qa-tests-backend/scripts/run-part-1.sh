@@ -84,7 +84,7 @@ test_part_1() {
         make -C qa-tests-backend test || touch FAIL
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
-        make -C qa-tests-backend bat-test || touch FAIL
+        make -C qa-tests-backend act-test FAIL_FAST=TRUE || touch FAIL
     elif is_nightly_run; then
         info "Nightly tests, running all QA tests with --fast-fail..."
         make -C qa-tests-backend test FAIL_FAST=TRUE || touch FAIL

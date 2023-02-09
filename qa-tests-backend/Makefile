@@ -57,6 +57,11 @@ bat-test: compile
 	@echo "+ $@"
 	$(GRADLE) testBegin testBAT $(GRADLE_TEST_ARGS)
 
+.PHONY: act-test
+act-test: compile
+	@echo "+ $@"
+	$(GRADLE) test --tests=AdmissionControllerTest $(GRADLE_TEST_ARGS)
+
 .PHONY: smoke-test
 smoke-test: compile
 	@echo "+ $@"
