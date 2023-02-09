@@ -5,6 +5,9 @@ type CallOptions struct {
 	UserID     string
 	ClientID   string
 	ClientType string
+
+	// [group name: [group id]]
+	Groups map[string][]string
 }
 
 // Option modifies the provided CallOptions structure.
@@ -31,6 +34,16 @@ func WithClient(clientID string, clientType string) Option {
 	return func(o *CallOptions) {
 		o.ClientID = clientID
 		o.ClientType = clientType
+	}
+}
+
+// WithGroups appends the groups for an event.
+func WithGroups(groupName string, groupID string) Option {
+	return func(o *CallOptions) {
+		if o.Groups == nil {
+			o.Groups = make(map[string][]string, 1)
+		}
+		o.Groups[groupName] = append(o.Groups[groupName], groupID)
 	}
 }
 
