@@ -141,8 +141,8 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 }
 
 func verifyRoleOriginMatches(ctx context.Context, role *storage.Role) error {
-	if !declarativeconfig.IsOriginModifiable(ctx, role.GetTraits().GetOrigin()) {
-		return errors.Wrapf(errox.InvalidArgs, "role %q's origin is %s, cannot be modified or deleted within this context",
+	if !declarativeconfig.CanModifyResource(ctx, role) {
+		return errors.Wrapf(errox.NotAuthorized, "role %q's origin is %s, cannot be modified or deleted with the current permission",
 			role.GetName(), role.GetTraits().GetOrigin())
 	}
 	return nil
@@ -473,8 +473,8 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 }
 
 func verifyAccessScopeOriginMatches(ctx context.Context, as *storage.SimpleAccessScope) error {
-	if !declarativeconfig.IsOriginModifiable(ctx, as.GetTraits().GetOrigin()) {
-		return errors.Wrapf(errox.InvalidArgs, "access scope %q's origin is %s, cannot be modified or deleted within this context",
+	if !declarativeconfig.CanModifyResource(ctx, as) {
+		return errors.Wrapf(errox.NotAuthorized, "access scope %q's origin is %s, cannot be modified or deleted with the current permission",
 			as.GetName(), as.GetTraits().GetOrigin())
 	}
 	return nil

@@ -266,19 +266,19 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	s.NoError(err, "adding a role declaratively is not an error")
 
 	err = s.dataStore.UpdateRole(s.hasWriteCtx, declarativeRole)
-	s.ErrorIs(err, errox.InvalidArgs, "attempting to modify imperatively declarative role is an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify imperatively declarative role is an error")
 
 	err = s.dataStore.UpdateRole(s.hasWriteDeclarativeCtx, goodRole)
-	s.ErrorIs(err, errox.InvalidArgs, "attempting to modify declaratively imperative role is an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify declaratively imperative role is an error")
 
 	err = s.dataStore.UpdateRole(s.hasWriteDeclarativeCtx, declarativeRole)
 	s.NoError(err, "attempting to modify declaratively declarative role is not an error")
 
 	err = s.dataStore.RemoveRole(s.hasWriteCtx, declarativeRole.GetName())
-	s.ErrorIs(err, errox.InvalidArgs, "attempting to delete imperatively declarative role is an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to delete imperatively declarative role is an error")
 
 	err = s.dataStore.RemoveRole(s.hasWriteDeclarativeCtx, goodRole.GetName())
-	s.ErrorIs(err, errox.InvalidArgs, "attempting to delete declaratively imperative role is an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to delete declaratively imperative role is an error")
 
 	err = s.dataStore.RemoveRole(s.hasWriteDeclarativeCtx, declarativeRole.GetName())
 	s.NoError(err, "attempting to delete declaratively declarative role is not an error")
@@ -593,19 +593,19 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	s.NoError(err, "adding an access scope declaratively is not an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, declarativeScope)
-	s.ErrorIs(err, errox.InvalidArgs, "attempting to modify imperatively declarative access scope is an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify imperatively declarative access scope is an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteDeclarativeCtx, goodScope)
-	s.ErrorIs(err, errox.InvalidArgs, "attempting to modify declaratively imperative access scope is an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify declaratively imperative access scope is an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteDeclarativeCtx, declarativeScope)
 	s.NoError(err, "attempting to modify declaratively declarative access scope is not an error")
 
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, declarativeScope.GetId())
-	s.ErrorIs(err, errox.InvalidArgs, "attempting to delete imperatively declarative access scope is an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to delete imperatively declarative access scope is an error")
 
 	err = s.dataStore.RemoveAccessScope(s.hasWriteDeclarativeCtx, goodScope.GetId())
-	s.ErrorIs(err, errox.InvalidArgs, "attempting to delete declaratively imperative access scope is an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to delete declaratively imperative access scope is an error")
 
 	err = s.dataStore.RemoveAccessScope(s.hasWriteDeclarativeCtx, declarativeScope.GetId())
 	s.NoError(err, "attempting to delete declaratively declarative access scope is not an error")
