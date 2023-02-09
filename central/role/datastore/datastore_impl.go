@@ -278,8 +278,8 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 }
 
 func verifyPermissionSetOriginMatches(ctx context.Context, ps *storage.PermissionSet) error {
-	if !declarativeconfig.IsOriginModifiable(ctx, ps.GetTraits().GetOrigin()) {
-		return errors.Wrapf(errox.InvalidArgs, "permission set %q's origin is %s, cannot be modified or deleted within this context",
+	if !declarativeconfig.CanModifyResource(ctx, ps) {
+		return errors.Wrapf(errox.NotAuthorized, "permission set %q's origin is %s, cannot be modified or deleted with the current permission",
 			ps.GetName(), ps.GetTraits().GetOrigin())
 	}
 	return nil
