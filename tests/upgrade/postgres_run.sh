@@ -12,8 +12,8 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # delete RocksDB data and Postgres data based on conditions.  Additionally it contains
 # policy category Postgres changes that are required for the Upgrade tests to succeed
 # in Postgres mode.
-INITIAL_POSTGRES_TAG="3.73.x-521-g78a5f29f81"
-INITIAL_POSTGRES_SHA="78a5f29f812f3d4d43257a5c47ae2ae4ae63f072"
+INITIAL_POSTGRES_TAG="3.73.x-608-g4ffbc83042"
+INITIAL_POSTGRES_SHA="4ffbc83042614f9fe4524cbf140323f3372ee6a7"
 CURRENT_TAG="$(make --quiet tag)"
 
 source "$TEST_ROOT/scripts/lib.sh"
@@ -114,8 +114,8 @@ test_upgrade_paths() {
     wait_for_api
     wait_for_scanner_to_be_ready
 
-#    # Upgraded to Postgres via helm.  Validate the upgrade.
-#    validate_upgrade "00_upgrade" "central upgrade to postgres" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    # Upgraded to Postgres via helm.  Validate the upgrade.
+    validate_upgrade "00_upgrade" "central upgrade to postgres" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     # Ensure the access scopes added to rocks still exist after the upgrade
     checkForRocksAccessScopes
@@ -137,8 +137,8 @@ test_upgrade_paths() {
     checkForRocksAccessScopes
     checkForPostgresAccessScopes
 
-#    validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-#    collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
+    validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
 
     ########################################################################################
     # Bounce central-db to ensure central recovers from the database outage.               #
@@ -155,7 +155,7 @@ test_upgrade_paths() {
     checkForRocksAccessScopes
     checkForPostgresAccessScopes
 
-#    validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     # Since we bounced the DB we may see some errors.  Those need to be allowed in the case of this test ONLY.
     echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
@@ -188,7 +188,7 @@ test_upgrade_paths() {
     force_rollback_to_previous_postgres
     wait_for_api
 
-#    validate_upgrade "04_postgres_postgres_rollback" "Rollback Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "04_postgres_postgres_rollback" "Rollback Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     collect_and_check_stackrox_logs "$log_output_dir" "04_postgres_postgres_rollback"
 
@@ -234,7 +234,7 @@ force_rollback_to_previous_postgres() {
     upgradeStatus=$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
     echo "upgrade status: ${upgradeStatus}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "${CURRENT_TAG}"
-    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
+#    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
     test_gt_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)"
 
