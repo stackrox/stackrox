@@ -101,13 +101,13 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flags.AddImageDefaults(flagWrap.FlagSet, &k8sConfig.ImageFlavorName)
 
 	defaultImageHelp := fmt.Sprintf("(if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
-	flagWrap.StringVarP(&k8sConfig.MainImage, flags.FlagNameMainImage, "i", "", "main image to use"+defaultImageHelp, "central")
+	flagWrap.StringVarP(&k8sConfig.MainImage, flags.FlagNameMainImage, "i", "", "main image to use "+defaultImageHelp, "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		flagWrap.StringVar(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "central-db image to use"+defaultImageHelp, "central")
+		flagWrap.StringVar(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "central-db image to use "+defaultImageHelp, "central")
 	}
-	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "scanner image to use"+defaultImageHelp, "scanner")
-	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "scanner image to use "+defaultImageHelp, "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use "+defaultImageHelp, "scanner")
 	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", false, "whether to enable telemetry", "central")
 
 	if features.DeclarativeConfiguration.Enabled() {
