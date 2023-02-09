@@ -84,7 +84,6 @@ function roxcurl() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    mkdir -p "bin/$TEST_HOST_PLATFORM"
     if is_CI; then
         gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
     else
@@ -381,3 +380,112 @@ rollback_sensor_via_upgrader() {
     kill "$proxy_pid"
 }
 
+create_db_tls_secret() {
+    echo "Create certificates for central db"
+
+    cert_dir="$(mktemp -d)"
+    # get root ca
+    kubectl -n stackrox exec -i deployment/central -- cat /run/secrets/stackrox.io/certs/ca.pem > $cert_dir/ca.pem
+    kubectl -n stackrox exec -i deployment/central -- cat /run/secrets/stackrox.io/certs/ca-key.pem > $cert_dir/ca.key
+    # generate central-db certs
+    openssl genrsa -out $cert_dir/key.pem 4096
+    openssl req -new -key $cert_dir/key.pem -subj "/CN=CENTRAL_DB_SERVICE: Central DB" > $cert_dir/newreq
+    echo subjectAltName = DNS:central-db.stackrox.svc > $cert_dir/extfile.cnf
+    openssl x509 -sha256 -req -CA $cert_dir/ca.pem -CAkey $cert_dir/ca.key -CAcreateserial -out $cert_dir/cert.pem -in $cert_dir/newreq -extfile $cert_dir/extfile.cnf
+    # create secret
+    kubectl -n stackrox create secret generic central-db-tls --save-config --dry-run=client --from-file=$cert_dir/ca.pem --from-file=$cert_dir/cert.pem --from-file=$cert_dir/key.pem -o yaml | kubectl apply -f -
+}
+
+helm_upgrade_to_postgres() {
+    info "Helm upgrade to Postgres build ${INITIAL_POSTGRES_TAG}"
+
+    cd "$REPO_FOR_POSTGRES_TIME_TRAVEL"
+    git checkout "$INITIAL_POSTGRES_SHA"
+
+    # Use postgres
+    export ROX_POSTGRES_DATASTORE="true"
+    # Need to push the flag to ci so that the collect scripts pull from
+    # Postgres and not Rocks
+    ci_export ROX_POSTGRES_DATASTORE "true"
+    export CLUSTER="remote"
+
+    pwd
+    # Get opensource charts and convert to development_build to support release builds
+    if is_CI; then
+        make cli
+        bin/"$TEST_HOST_PLATFORM"/roxctl version
+        bin/"$TEST_HOST_PLATFORM"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
+        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+    else
+        make cli
+        roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
+        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+    fi
+
+    # Create Postgres password and secrets
+    password=`echo ${RANDOM}_$(date +%s-%d-%M) |base64|cut -c 1-20`
+    kubectl -n stackrox create secret generic central-db-password --from-literal=password=$password
+    kubectl -n stackrox apply -f $TEST_ROOT/tests/upgrade/pvc.yaml
+    create_db_tls_secret
+
+    ########################################################################################
+    # Use helm to upgrade to a Postgres release.  3.73.2 for now.                          #
+    ########################################################################################
+    cat $TEST_ROOT/tests/upgrade/scale-values-public.yaml
+    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart --set central.db.enabled=true --set central.exposure.loadBalancer.enabled=true -f $TEST_ROOT/tests/upgrade/scale-values-public.yaml --force
+
+    # Return back to test root
+    cd "$TEST_ROOT"
+}
+
+preamble() {
+    info "Starting test preamble"
+
+    if is_darwin; then
+        HOST_OS="darwin"
+    elif is_linux; then
+        HOST_OS="linux"
+    else
+        die "Only linux or darwin are supported for this test"
+    fi
+
+    case "$(uname -m)" in
+        x86_64) TEST_HOST_PLATFORM="${HOST_OS}_amd64" ;;
+        aarch64) TEST_HOST_PLATFORM="${HOST_OS}_arm64" ;;
+        arm64) TEST_HOST_PLATFORM="${HOST_OS}_arm64" ;;
+        ppc64le) TEST_HOST_PLATFORM="${HOST_OS}_ppc64le" ;;
+        s390x) TEST_HOST_PLATFORM="${HOST_OS}_s390x" ;;
+        *) die "Unknown architecture" ;;
+    esac
+
+    require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl"
+
+    info "Will clone or update a clean copy of the rox repo for legacy DB test at $REPO_FOR_TIME_TRAVEL"
+    if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
+        if is_CI; then
+          info "Repo for time travel already exists! Will use it."
+        fi
+        (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
+    else
+        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
+    fi
+
+    info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
+        if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
+            if is_CI; then
+              info "Repo for time travel already exists! Will use it."
+            fi
+            (cd "$REPO_FOR_POSTGRES_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
+        else
+            (cd "$(dirname "$REPO_FOR_POSTGRES_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_POSTGRES_TIME_TRAVEL")")
+        fi
+
+    if is_CI; then
+        if ! command -v yq >/dev/null 2>&1; then
+            sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
+            sudo chmod 0755 /usr/bin/yq
+        fi
+    else
+        require_executable yq
+    fi
+}
