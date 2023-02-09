@@ -2,8 +2,6 @@ package transform
 
 import (
 	"fmt"
-	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -30,6 +28,7 @@ func TestGetType(t *testing.T) {
 	cases := map[string]struct {
 		cfg *declarativeconfig.AuthProvider
 		typ string
+		err error
 	}{
 		"oidc != nil -> oidc type": {
 			cfg: &declarativeconfig.AuthProvider{OIDCConfig: &declarativeconfig.OIDCConfig{}},
@@ -53,15 +52,23 @@ func TestGetType(t *testing.T) {
 		},
 		"openshift != nil && !enabled -> empty type": {
 			cfg: &declarativeconfig.AuthProvider{OpenshiftConfig: &declarativeconfig.OpenshiftConfig{}},
+			err: errox.InvalidArgs,
 		},
 		"no type set -> empty type": {
 			cfg: &declarativeconfig.AuthProvider{},
+			err: errox.InvalidArgs,
 		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			typ := getType(c.cfg)
+			typ, err := getType(c.cfg)
+			if c.err != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, c.err)
+			} else {
+				assert.NoError(t, err)
+			}
 			assert.Equal(t, c.typ, typ)
 		})
 	}
@@ -150,7 +157,8 @@ func TestConfig(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			cfg := getConfig(c.authProvider)
+			// Error handling is tested within TestGetType.
+			cfg, _ := getConfig(c.authProvider)
 			assert.Equal(t, c.cfg, cfg)
 		})
 	}
@@ -163,9 +171,10 @@ func TestTransform(t *testing.T) {
 	// - multiple claim mappings.
 	// - multiple groups.
 	authProvider := &declarativeconfig.AuthProvider{
-		Name:            "test-auth-provider",
-		MinimumRoleName: "Analyst",
-		UIEndpoint:      "localhost:8000",
+		Name:             "test-auth-provider",
+		MinimumRoleName:  "Analyst",
+		UIEndpoint:       "localhost:8000",
+		ExtraUIEndpoints: []string{"localhost:8080", "127.0.0.1:8080"},
 		Groups: []declarativeconfig.Group{
 			{
 				AttributeKey:   "email",
@@ -217,11 +226,11 @@ func TestTransform(t *testing.T) {
 		oidc.ModeConfigKey:                      authProvider.OIDCConfig.CallbackMode,
 		oidc.ClientIDConfigKey:                  authProvider.OIDCConfig.ClientID,
 		oidc.ClientSecretConfigKey:              authProvider.OIDCConfig.ClientSecret,
-		oidc.DisableOfflineAccessScopeConfigKey: strconv.FormatBool(authProvider.OIDCConfig.DisableOfflineAccessScope),
+		oidc.DisableOfflineAccessScopeConfigKey: "true",
 	}
 	expectedClaimMappings := map[string]string{
-		authProvider.ClaimMappings[0].Name: authProvider.ClaimMappings[0].Path,
-		authProvider.ClaimMappings[1].Name: authProvider.ClaimMappings[1].Path,
+		authProvider.ClaimMappings[0].Path: authProvider.ClaimMappings[0].Name,
+		authProvider.ClaimMappings[1].Path: authProvider.ClaimMappings[1].Name,
 	}
 	expectedRequiredAttributes := []*storage.AuthProvider_RequiredAttribute{
 		{
@@ -238,7 +247,6 @@ func TestTransform(t *testing.T) {
 	protos, err := transformer.Transform(authProvider)
 	assert.NoError(t, err)
 
-	authProviderType := reflect.TypeOf((*storage.AuthProvider)(nil))
 	require.Contains(t, protos, authProviderType)
 	require.Len(t, protos[authProviderType], 1)
 	authProviderProto, ok := protos[authProviderType][0].(*storage.AuthProvider)
@@ -250,10 +258,9 @@ func TestTransform(t *testing.T) {
 	assert.Equal(t, authProvider.Name, authProviderProto.GetName())
 
 	assert.Equal(t, authProvider.UIEndpoint, authProviderProto.GetUiEndpoint())
+	assert.ElementsMatch(t, authProvider.ExtraUIEndpoints, authProviderProto.GetExtraUiEndpoints())
 
-	assert.Equal(t, "/sso/login/"+expectedAuthProviderID, authProviderProto.GetLoginUrl())
-
-	assert.Nil(t, authProviderProto.GetExtraUiEndpoints())
+	assert.Empty(t, authProviderProto.GetLoginUrl())
 
 	assert.True(t, authProviderProto.GetEnabled())
 	assert.True(t, authProviderProto.GetActive())
@@ -265,7 +272,6 @@ func TestTransform(t *testing.T) {
 
 	assert.ElementsMatch(t, expectedRequiredAttributes, authProviderProto.GetRequiredAttributes())
 
-	groupType := reflect.TypeOf((*storage.Group)(nil))
 	require.Contains(t, protos, groupType)
 	require.Len(t, protos[groupType], 4)
 	groupsProto := protos[groupType]
@@ -273,7 +279,7 @@ func TestTransform(t *testing.T) {
 	defaultGroupProto := groupsProto[0]
 	defaultGroup, ok := defaultGroupProto.(*storage.Group)
 	require.True(t, ok)
-	assert.Equal(t, declarativeconfig.NewDeclarativeGroupUUID(authProvider.Name+"default").String(),
+	assert.Equal(t, declarativeconfig.NewDeclarativeGroupUUID(authProvider.Name+"-default").String(),
 		defaultGroup.GetProps().GetId())
 	assert.Equal(t, authProvider.MinimumRoleName, defaultGroup.GetRoleName())
 	assert.Equal(t, expectedAuthProviderID, defaultGroup.GetProps().GetAuthProviderId())
@@ -286,7 +292,7 @@ func TestTransform(t *testing.T) {
 		group, ok := groupProto.(*storage.Group)
 		require.True(t, ok)
 
-		assert.Equal(t, declarativeconfig.NewDeclarativeGroupUUID(fmt.Sprintf("%s%d", authProvider.Name, id)).String(),
+		assert.Equal(t, declarativeconfig.NewDeclarativeGroupUUID(fmt.Sprintf("%s-%d", authProvider.Name, id)).String(),
 			group.GetProps().GetId())
 		assert.Equal(t, authProvider.Groups[id].RoleName, group.GetRoleName())
 		assert.Equal(t, expectedAuthProviderID, group.GetProps().GetAuthProviderId())

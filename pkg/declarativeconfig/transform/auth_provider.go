@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
@@ -18,6 +19,11 @@ import (
 
 var _ Transformer = (*authProviderTransform)(nil)
 
+var (
+	authProviderType = reflect.TypeOf((*storage.AuthProvider)(nil))
+	groupType        = reflect.TypeOf((*storage.Group)(nil))
+)
+
 type authProviderTransform struct{}
 
 func newAuthProviderTransformer() *authProviderTransform {
@@ -29,15 +35,28 @@ func (a *authProviderTransform) Transform(configuration declarativeconfig.Config
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for auth provider: %T", configuration)
 	}
+
+	providerType, err := getType(authProviderConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "transforming auth provider type")
+	}
+
+	providerConfig, err := getConfig(authProviderConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "transforming auth provider configuration")
+	}
+
+	// The assumption is that, when the auth provider will be stored later on, the DefaultLoginURL option is used,
+	// thus we do not set the login URL explicitly, even though we could.
 	authProviderProto := &storage.AuthProvider{
 		Id:                 declarativeconfig.NewDeclarativeAuthProviderUUID(authProviderConfig.Name).String(),
 		Name:               authProviderConfig.Name,
-		Type:               getType(authProviderConfig),
+		Type:               providerType,
 		UiEndpoint:         authProviderConfig.UIEndpoint,
-		Enabled:            true,
-		Config:             getConfig(authProviderConfig),
-		LoginUrl:           "/sso/login/" + declarativeconfig.NewDeclarativeAuthProviderUUID(authProviderConfig.Name).String(),
-		Active:             true,
+		ExtraUiEndpoints:   authProviderConfig.ExtraUIEndpoints,
+		Enabled:            true, // Enabled is required to be set to ensure the auth provider listed as ready for login.
+		Active:             true, // Active signals at least one user has logged in with the auth provider and disables modification in the UI.
+		Config:             providerConfig,
 		RequiredAttributes: getRequiredAttributes(authProviderConfig.RequiredAttributes),
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DECLARATIVE,
@@ -45,30 +64,34 @@ func (a *authProviderTransform) Transform(configuration declarativeconfig.Config
 		ClaimMappings: getClaimMappings(authProviderConfig.ClaimMappings),
 	}
 	return map[reflect.Type][]proto.Message{
-		reflect.TypeOf((*storage.AuthProvider)(nil)): {authProviderProto},
-		reflect.TypeOf((*storage.Group)(nil)):        getGroups(authProviderProto.Id, authProviderConfig),
+		authProviderType: {authProviderProto},
+		groupType:        getGroups(authProviderProto.Id, authProviderConfig),
 	}, nil
 }
 
-func getType(authProviderConfig *declarativeconfig.AuthProvider) string {
+func getType(authProviderConfig *declarativeconfig.AuthProvider) (string, error) {
 	switch {
 	case authProviderConfig.OIDCConfig != nil:
-		return oidc.TypeName
+		return oidc.TypeName, nil
 	case authProviderConfig.IAPConfig != nil:
-		return iap.TypeName
+		return iap.TypeName, nil
 	case authProviderConfig.SAMLConfig != nil:
-		return saml.TypeName
+		return saml.TypeName, nil
 	case authProviderConfig.UserpkiConfig != nil:
-		return userpki.TypeName
+		return userpki.TypeName, nil
 	case authProviderConfig.OpenshiftConfig != nil && authProviderConfig.OpenshiftConfig.Enable:
-		return openshift.TypeName
+		return openshift.TypeName, nil
 	default:
-		return ""
+		return "", errox.InvalidArgs.New("no valid auth provider config given")
 	}
 }
 
-func getConfig(authProviderConfig *declarativeconfig.AuthProvider) map[string]string {
-	switch getType(authProviderConfig) {
+func getConfig(authProviderConfig *declarativeconfig.AuthProvider) (map[string]string, error) {
+	authProviderType, err := getType(authProviderConfig)
+	if err != nil {
+		return nil, err
+	}
+	switch authProviderType {
 	case oidc.TypeName:
 		return map[string]string{
 			oidc.IssuerConfigKey:                    authProviderConfig.OIDCConfig.Issuer,
@@ -76,11 +99,11 @@ func getConfig(authProviderConfig *declarativeconfig.AuthProvider) map[string]st
 			oidc.ClientIDConfigKey:                  authProviderConfig.OIDCConfig.ClientID,
 			oidc.ClientSecretConfigKey:              authProviderConfig.OIDCConfig.ClientSecret,
 			oidc.DisableOfflineAccessScopeConfigKey: strconv.FormatBool(authProviderConfig.OIDCConfig.DisableOfflineAccessScope),
-		}
+		}, nil
 	case iap.TypeName:
 		return map[string]string{
 			iap.AudienceConfigKey: authProviderConfig.IAPConfig.Audience,
-		}
+		}, nil
 	case saml.TypeName:
 		return map[string]string{
 			saml.SpIssuerConfigKey:        authProviderConfig.SAMLConfig.SpIssuer,
@@ -89,15 +112,15 @@ func getConfig(authProviderConfig *declarativeconfig.AuthProvider) map[string]st
 			saml.IDPIssuerConfigKey:       authProviderConfig.SAMLConfig.IDPIssuer,
 			saml.IDPCertPemConfigKey:      authProviderConfig.SAMLConfig.Cert,
 			saml.IDPNameIDFormatConfigKey: authProviderConfig.SAMLConfig.NameIDFormat,
-		}
+		}, nil
 	case userpki.TypeName:
 		return map[string]string{
 			userpki.ConfigKeys: authProviderConfig.UserpkiConfig.CertificateAuthorities,
-		}
+		}, nil
 	case openshift.TypeName:
-		return map[string]string{}
+		return map[string]string{}, nil
 	default:
-		return nil
+		return nil, errox.InvalidArgs.Newf("unsupported auth provider type %q given", authProviderType)
 	}
 }
 
@@ -115,7 +138,7 @@ func getRequiredAttributes(requiredAttributesConfig []declarativeconfig.Required
 func getClaimMappings(claimMappingsConfig []declarativeconfig.ClaimMapping) map[string]string {
 	claimMappings := make(map[string]string, len(claimMappingsConfig))
 	for _, mapping := range claimMappingsConfig {
-		claimMappings[mapping.Name] = mapping.Path
+		claimMappings[mapping.Path] = mapping.Name
 	}
 	return claimMappings
 }
@@ -125,7 +148,7 @@ func getGroups(authProviderID string, authProviderConfig *declarativeconfig.Auth
 
 	groups = append(groups, &storage.Group{
 		Props: &storage.GroupProperties{
-			Id:             declarativeconfig.NewDeclarativeGroupUUID(authProviderConfig.Name + "default").String(),
+			Id:             declarativeconfig.NewDeclarativeGroupUUID(authProviderConfig.Name + "-default").String(),
 			Traits:         &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 			AuthProviderId: authProviderID,
 			Key:            "",
@@ -134,10 +157,10 @@ func getGroups(authProviderID string, authProviderConfig *declarativeconfig.Auth
 		RoleName: authProviderConfig.MinimumRoleName,
 	})
 
-	for id, group := range authProviderConfig.Groups {
+	for idx, group := range authProviderConfig.Groups {
 		groups = append(groups, &storage.Group{
 			Props: &storage.GroupProperties{
-				Id:             declarativeconfig.NewDeclarativeGroupUUID(fmt.Sprintf("%s%d", authProviderConfig.Name, id)).String(),
+				Id:             declarativeconfig.NewDeclarativeGroupUUID(fmt.Sprintf("%s-%d", authProviderConfig.Name, idx)).String(),
 				Traits:         &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 				AuthProviderId: authProviderID,
 				Key:            group.AttributeKey,
