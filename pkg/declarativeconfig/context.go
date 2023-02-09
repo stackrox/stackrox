@@ -16,10 +16,12 @@ func WithModifyDeclarativeResource(ctx context.Context) context.Context {
 	return context.WithValue(ctx, originCheckerKey{}, allowOnlyDeclarativeOperations)
 }
 
+// ResourceWithTraits is a common interface for proto messages containing storage.Traits.
 type ResourceWithTraits interface {
 	GetTraits() *storage.Traits
 }
 
+// CanModifyResource returns whether context holder is allowed to modify resource.
 func CanModifyResource(ctx context.Context, resource ResourceWithTraits) bool {
 	if ctx.Value(originCheckerKey{}) == allowOnlyDeclarativeOperations {
 		return resource.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE
