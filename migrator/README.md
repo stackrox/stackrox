@@ -33,7 +33,7 @@ A migration can read from any of the databases, make changes to the data or to t
 
    The migration returns to the old scheme, restarting from the database version after all data moves to `Postgres`.
 
-   All migrations again have the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}` .
+   All migrations again have the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}`.
 
 ## How to write new migration script
 
@@ -130,18 +130,29 @@ it manipulates and for converting it.
 
 ### Possible migration steps
 
+#### Freeze current schema as needed.
+
+A migration shall not access current schema under `pkg/postgres/schema`. The migration access data in the format
+of its creation time and bring the format of the next migration. It does not evolve with the latest version
+and is associated with a specific sequence number (aka version). The frozen schema helps to keep migration separated
+from Central and keep the codes of migration stable.
+
+For the initial data push to postgres, the generated schemas under `migrator/migrations/frozenschema/v73` were used.
+The auto-generation scripts are removed to freeze the schemas after 3.73.
+
+In 3.74, snapshots of the schemas are taken with an on-demand basis by version. 
+
+Starting from release 4.0, we recommend to keep frozen schemas inside a new migration:
+- If the migration does not change the schema but need to access the data of a table, it needs to freeze its schema in the migration.
+- If the migration changes the schema of a tale, it may need to freeze two versions of its schema before and after the schema change.
+
 #### Create or upgrade the schema of a table.
+
+If your new migration need to change the Postgres schema, use the following statement to apply frozen schema.
 
 ```go
 pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableCollectionsStmt)
 ```
-
-Note: the schema should be the Postgres schema at the version of migration. It does not evolve with the latest version
-and is associated with a specific sequence number (aka version).
-
-For the initial data push to postgres, the auto-generated schemas under `pkg/postgres/schema` were used.
-
-Starting with release 3.73, snapshots of the schemas will be taken for each release of Postgres Datastore.
 
 #### Access data
 
