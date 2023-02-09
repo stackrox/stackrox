@@ -115,7 +115,7 @@ func (s *authProviderDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
-	s.hasWriteDeclarativeCtx = declarativeconfig.WithAllowOnlyDeclarativeOperations(s.hasWriteCtx)
+	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -229,7 +229,7 @@ func (s *authProviderDataStoreTestSuite) TestDeleteDeclarativeViaAPI() {
 	}, true, nil).Times(1)
 
 	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, "id", false)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *authProviderDataStoreTestSuite) TestDeleteDeclarativeSuccess() {
@@ -257,7 +257,7 @@ func (s *authProviderDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(ap, true, nil).Times(1)
 
 	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, ap)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *authProviderDataStoreTestSuite) TestUpdateDeclarativeSuccess() {
@@ -285,7 +285,7 @@ func (s *authProviderDataStoreTestSuite) TestDeleteImperativeDeclaratively() {
 	}, true, nil).Times(1)
 
 	err := s.dataStore.RemoveAuthProvider(s.hasWriteDeclarativeCtx, "id", false)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *authProviderDataStoreTestSuite) TestUpdateImperativeDeclaratively() {
@@ -299,5 +299,5 @@ func (s *authProviderDataStoreTestSuite) TestUpdateImperativeDeclaratively() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(ap, true, nil).Times(1)
 
 	err := s.dataStore.UpdateAuthProvider(s.hasWriteDeclarativeCtx, ap)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 }

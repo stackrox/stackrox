@@ -89,8 +89,8 @@ func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string, force
 }
 
 func verifyAuthProviderOriginMatches(ctx context.Context, ap *storage.AuthProvider) error {
-	if !declarativeconfig.IsOriginModifiable(ctx, ap.GetTraits().GetOrigin()) {
-		return errors.Wrapf(errox.InvalidArgs, "auth provider %q's origin is %s, cannot be modified or deleted within this context",
+	if !declarativeconfig.CanModifyResource(ctx, ap) {
+		return errors.Wrapf(errox.NotAuthorized, "auth provider %q's origin is %s, cannot be modified or deleted with the current permission",
 			ap.GetName(), ap.GetTraits().GetOrigin())
 	}
 	return nil
