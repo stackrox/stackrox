@@ -39,7 +39,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 
 	q := req.URL.Query()
 	q.Add("format", "json")
-	q.Add("api-version", "2018-04-02")
+	q.Add("api-version", "2021-12-13")
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := metadataHTTPClient.Do(req)
