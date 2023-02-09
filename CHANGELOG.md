@@ -34,8 +34,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   As an example, a permission set with `WRITE Policy` and `READ VulnerabilityReports` access will have `READ WorkflowAdministration` access after the migration within the 4.1 release, leading to
   potentially unwanted side-effects and missing access if you did not update your permission sets beforehand.
 - The permission `Access` will replace `Role` in permission sets starting with the 4.1 release. You should preemptively start replacing
-  the `Role` resource within your permission sets in favor of `Access`. During the migration of the permission sets within the 4.1, the
-  `Access` permission will have the lowest access permission granted for either `Access` or `Role`. As an example, a permission set with
+  the `Role` resource within your permission sets in favor of `Access`. During the migration of the permission sets within the 4.1, the 
+  `Access` permission will have the lowest access permission granted for either `Access` or `Role`. As an example, a permission set with 
   `READ Access` and `WRITE Role` will have `READ Access` after the migration, leading to potentially unwanted side-effects and missing access
   if the permission sets were not updated beforehand.
 - The default `ScopeManager` role will be removed starting with release 4.1. During the migration, Authentication provider rules referencing that role
