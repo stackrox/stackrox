@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWrongConfigurationTypeTransform(t *testing.T) {
+func TestWrongConfigurationTypeTransformAccessScope(t *testing.T) {
 	at := newAccessScopeTransform()
 	msgs, err := at.Transform(&declarativeconfig.AuthProvider{})
 	assert.Nil(t, msgs)
