@@ -1,9 +1,6 @@
 package networkpolicy
 
 import (
-	"encoding/json"
-	"strings"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -13,7 +10,6 @@ import (
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -27,40 +23,8 @@ type RoxNetworkPolicyWrap struct {
 
 // ToYaml produces a string holding a JSON formatted yaml for the network policy.
 func (np RoxNetworkPolicyWrap) ToYaml() (string, error) {
-	k8sNetworkPolicy := np.ToKubernetesNetworkPolicy()
-	jsonData, err := json.Marshal(k8sNetworkPolicy)
-	if err != nil {
-		return "", err
-	}
-	stringBuilder := &strings.Builder{}
-	// Kubernetes added a 'status' field for NetworkPolicies in 1.24. See:
-	// * (https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.24.md#api-change-3)
-	// * (https://github.com/kubernetes/kubernetes/pull/107963)
-	// Using the `NewSerializerWithOptions` from `k8s.io/apimachinery/pkg/runtime/serializer/json` will return the `status` field.
-	// The problem is: Old cluster using kubernetes < 1.24 will fail to apply NetworkPolicies generated with this function.
-	// Since the `status` field is not necessary for the creation of resources, we delete the field manually if present here.
-	// This code might not be necessary in the future since the feature was withdrawn by the sig-network. See:
-	// * (https://github.com/kubernetes/enhancements/tree/master/keps/sig-network/2943-networkpolicy-status#implementation-history)
-	// * (https://github.com/kubernetes/kubernetes/pull/107963#issuecomment-1400220883)
-	data := make(map[string]interface{})
-	if err := json.Unmarshal(jsonData, &data); err != nil {
-		return "", err
-	}
-	delete(data, "status")
-	jsonData, err = json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
-
-	yamlData, err := yaml.JSONToYAML(jsonData)
-	if err != nil {
-		return "", err
-	}
-	if _, err := stringBuilder.Write(yamlData); err != nil {
-		return "", err
-	}
-
-	return stringBuilder.String(), nil
+	k8sWrap := KubernetesNetworkPolicyWrap{np.ToKubernetesNetworkPolicy()}
+	return k8sWrap.ToYaml()
 }
 
 // ToKubernetesNetworkPolicy converts a proto network policy to a k8s network policy
