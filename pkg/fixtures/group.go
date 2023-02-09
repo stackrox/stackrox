@@ -24,7 +24,7 @@ func GetGroupWithMutability(mode storage.Traits_MutabilityMode) *storage.Group {
 	return group
 }
 
-// GetGroupWithOrigin returns a mock storage.Group with all possible properties filled out.
+// GetGroupWithOrigin returns a mock storage.Group with all possible properties filled out and with the specified origin set.
 func GetGroupWithOrigin(origin storage.Traits_Origin) *storage.Group {
 	group := GetGroup()
 
