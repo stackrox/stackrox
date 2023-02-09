@@ -752,7 +752,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 			// Turn Postgres back off so we will rollback to Rocks
 			require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 
-			mock.rollbackCentral(c.toVersion, "", "")
+			mock.rollbackCentral(c.toVersion, "", c.toVersion.version)
 			mock.upgradeCentral(c.fromVersion, "")
 
 			// We turned off Postgres.  That means we are testing
