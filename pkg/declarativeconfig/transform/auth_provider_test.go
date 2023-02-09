@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWrongConfigurationTypeTransform(t *testing.T) {
+func TestWrongConfigurationTypeTransformAuthProvider(t *testing.T) {
 	at := newAuthProviderTransformer()
 	msgs, err := at.Transform(&declarativeconfig.AccessScope{})
 	assert.Nil(t, msgs)
@@ -24,7 +24,7 @@ func TestWrongConfigurationTypeTransform(t *testing.T) {
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
-func TestGetType(t *testing.T) {
+func TestGetAuthProviderType(t *testing.T) {
 	cases := map[string]struct {
 		cfg *declarativeconfig.AuthProvider
 		typ string
@@ -74,7 +74,7 @@ func TestGetType(t *testing.T) {
 	}
 }
 
-func TestConfig(t *testing.T) {
+func TestAuthProviderConfig(t *testing.T) {
 	cases := map[string]struct {
 		authProvider *declarativeconfig.AuthProvider
 		cfg          map[string]string
@@ -164,7 +164,7 @@ func TestConfig(t *testing.T) {
 	}
 }
 
-func TestTransform(t *testing.T) {
+func TestTransformAuthProvider(t *testing.T) {
 	// Set everything and the kitchen sink:
 	// - OIDC with all values given.
 	// - multiple required attributes.
