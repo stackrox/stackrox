@@ -49,6 +49,7 @@ func (f *afterFuncSpy) afterFunc(d time.Duration, fn func()) *time.Timer {
 }
 
 func TestRetryTickerCallsTickFunction(t *testing.T) {
+	// TODO(ROX-14933): reenable this once fixed
 	t.Skip("ROX-14933: enable once it's fixed and stable on GHA")
 	testCases := map[string]struct {
 		timeToSecondTick time.Duration
@@ -110,6 +111,7 @@ func TestRetryTickerStop(t *testing.T) {
 }
 
 func TestRetryTickerStopsOnNonRecoverableErrors(t *testing.T) {
+	// TODO(ROX-14933): reenable this once fixed
 	t.Skip("ROX-14933: enable once it's fixed and stable on GHA")
 	firsTickErrSig := NewErrorSignal()
 	ticker := newRetryTicker(t, func(ctx context.Context) (timeToNextTick time.Duration, err error) {
