@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -36,18 +35,17 @@ func TestTransform(t *testing.T) {
 		"yet-another-resource": storage.Access_READ_WRITE_ACCESS,
 	}
 
-	permissionSetProtoType := reflect.TypeOf((*storage.PermissionSet)(nil))
-
 	pt := newPermissionSetTransform()
 
 	protos, err := pt.Transform(permissionSet)
 	assert.NoError(t, err)
 
 	require.Len(t, protos, 1)
-	require.Contains(t, protos, permissionSetProtoType)
-	require.Len(t, protos[permissionSetProtoType], 1)
+	require.Contains(t, protos, permissionSetType)
+	require.Len(t, protos[permissionSetType], 1)
 
-	permissionSetProto := protos[permissionSetProtoType][0].(*storage.PermissionSet)
+	permissionSetProto, ok := protos[permissionSetType][0].(*storage.PermissionSet)
+	require.True(t, ok)
 
 	assert.Equal(t, expectedPermissionSetID, permissionSetProto.GetId())
 	assert.Equal(t, permissionSet.Name, permissionSetProto.GetName())

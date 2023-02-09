@@ -11,6 +11,10 @@ import (
 
 var _ Transformer = (*permissionSetTransform)(nil)
 
+var (
+	permissionSetType = reflect.TypeOf((*storage.PermissionSet)(nil))
+)
+
 type permissionSetTransform struct{}
 
 func newPermissionSetTransform() *permissionSetTransform {
@@ -32,7 +36,7 @@ func (p *permissionSetTransform) Transform(configuration declarativeconfig.Confi
 	}
 
 	return map[reflect.Type][]proto.Message{
-		reflect.TypeOf((*storage.PermissionSet)(nil)): {permissionSetProto},
+		permissionSetType: {permissionSetProto},
 	}, nil
 }
 
