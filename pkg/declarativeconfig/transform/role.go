@@ -11,6 +11,10 @@ import (
 
 var _ Transformer = (*roleTransform)(nil)
 
+var (
+	roleType = reflect.TypeOf((*storage.Role)(nil))
+)
+
 type roleTransform struct{}
 
 func newRoleTransform() *roleTransform {
@@ -26,11 +30,11 @@ func (r *roleTransform) Transform(configuration declarativeconfig.Configuration)
 	roleProto := &storage.Role{
 		Name:            roleConfig.Name,
 		Description:     roleConfig.Description,
-		PermissionSetId: roleConfig.PermissionSet,
-		AccessScopeId:   roleConfig.AccessScope,
+		PermissionSetId: declarativeconfig.NewDeclarativePermissionSetUUID(roleConfig.PermissionSet).String(),
+		AccessScopeId:   declarativeconfig.NewDeclarativeAccessScopeUUID(roleConfig.AccessScope).String(),
 		Traits:          &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}
 	return map[reflect.Type][]proto.Message{
-		reflect.TypeOf((*storage.Role)(nil)): {roleProto},
+		roleType: {roleProto},
 	}, nil
 }

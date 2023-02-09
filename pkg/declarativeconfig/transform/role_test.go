@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -26,7 +25,6 @@ func TestTransform(t *testing.T) {
 		AccessScope:   "and an access scope",
 		PermissionSet: "as well as a permission set",
 	}
-	roleProtoType := reflect.TypeOf((*storage.Role)(nil))
 
 	rt := newRoleTransform()
 
@@ -34,10 +32,10 @@ func TestTransform(t *testing.T) {
 	assert.NoError(t, err)
 
 	require.Len(t, protos, 1)
-	require.Contains(t, protos, roleProtoType)
-	require.Len(t, protos[roleProtoType], 1)
+	require.Contains(t, protos, roleType)
+	require.Len(t, protos[roleType], 1)
 
-	roleProto, ok := protos[roleProtoType][0].(*storage.Role)
+	roleProto, ok := protos[roleType][0].(*storage.Role)
 	require.True(t, ok)
 
 	assert.Equal(t, role.Name, roleProto.GetName())
