@@ -78,7 +78,7 @@ central:
       secrets: null # [string]
   extraMounts: null # [dict]
   db:
-    enabled: false # bool
+    enabled: true # bool
     nodeSelector: null # string | dict
     tolerations: null # [dict]
     source:
