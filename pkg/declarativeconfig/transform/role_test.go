@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWrongConfigurationTypeTransform(t *testing.T) {
+func TestWrongConfigurationTypeTransformRole(t *testing.T) {
 	rt := newRoleTransform()
 	protos, err := rt.Transform(&declarativeconfig.AuthProvider{})
 	assert.Nil(t, protos)
@@ -18,7 +18,7 @@ func TestWrongConfigurationTypeTransform(t *testing.T) {
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
-func TestTransform(t *testing.T) {
+func TestTransformRole(t *testing.T) {
 	role := &declarativeconfig.Role{
 		Name:          "some-role",
 		Description:   "with a nice description",
@@ -40,7 +40,7 @@ func TestTransform(t *testing.T) {
 
 	assert.Equal(t, role.Name, roleProto.GetName())
 	assert.Equal(t, role.Description, roleProto.GetDescription())
-	assert.Equal(t, role.AccessScope, roleProto.GetAccessScopeId())
-	assert.Equal(t, role.PermissionSet, roleProto.GetPermissionSetId())
+	assert.Equal(t, declarativeconfig.NewDeclarativeAccessScopeUUID(role.AccessScope).String(), roleProto.GetAccessScopeId())
+	assert.Equal(t, declarativeconfig.NewDeclarativePermissionSetUUID(role.PermissionSet).String(), roleProto.GetPermissionSetId())
 	assert.Equal(t, storage.Traits_DECLARATIVE, roleProto.GetTraits().GetOrigin())
 }

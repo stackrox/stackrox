@@ -9,9 +9,9 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 )
 
-var _ Transformer = (*roleTransform)(nil)
-
 var (
+	_ Transformer = (*roleTransform)(nil)
+
 	roleType = reflect.TypeOf((*storage.Role)(nil))
 )
 
