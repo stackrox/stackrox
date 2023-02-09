@@ -19,7 +19,7 @@ func New() Transformer {
 		declarativeconfig.AuthProviderConfiguration:  nil,
 		declarativeconfig.AccessScopeConfiguration:   nil,
 		declarativeconfig.RoleConfiguration:          nil,
-		declarativeconfig.PermissionSetConfiguration: nil,
+		declarativeconfig.PermissionSetConfiguration: newPermissionSetTransform(),
 	}}
 }
 
