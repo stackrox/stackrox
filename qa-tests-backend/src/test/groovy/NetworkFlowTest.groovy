@@ -626,8 +626,8 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "make sure edge does not get updated"
-        //Use a 20 second buffer to account for additional edges coming in through the data pipeline
-        assert !waitForEdgeUpdate(edges.get(0), 60, 20)
+        //Use one cadence buffer to account for additional edges coming in through the data pipeline
+        assert !waitForEdgeUpdate(edges.get(0), 60, NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS)
 
         cleanup:
         "remove policy"
