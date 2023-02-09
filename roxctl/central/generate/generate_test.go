@@ -5,12 +5,10 @@ import (
 	"encoding/hex"
 	"path/filepath"
 	"testing"
-	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	buildTestutils "github.com/stackrox/rox/pkg/buildinfo/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
@@ -39,7 +37,6 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	testutils.SetExampleVersion(t)
-	buildTestutils.SetBuildTimestamp(t, time.Now())
 
 	flavorName := defaults.ImageFlavorNameDevelopmentBuild
 	if buildinfo.ReleaseBuild {
