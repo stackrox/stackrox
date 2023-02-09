@@ -90,9 +90,22 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func (t *segmentTelemeter) overrideUserID(o *telemeter.CallOptions) string {
+func (t *segmentTelemeter) getUserID(o *telemeter.CallOptions) string {
+	if o.AnonymousID != "" {
+		return ""
+	}
+	return o.UserID
+}
+
+func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	if o.UserID != "" {
-		return o.UserID
+		return ""
+	}
+	if o.AnonymousID != "" {
+		return o.AnonymousID
+	}
+	if o.ClientID != "" {
+		return o.ClientID
 	}
 	return t.clientID
 }
@@ -130,9 +143,10 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
-		UserId:  t.overrideUserID(options),
-		Traits:  traits,
-		Context: makeDeviceContext(options),
+		UserId:      t.getUserID(options),
+		AnonymousId: t.getAnonymousID(options),
+		Traits:      traits,
+		Context:     makeDeviceContext(options),
 	}
 
 	for k, v := range props {
@@ -151,10 +165,11 @@ func (t *segmentTelemeter) Group(groupID string, props map[string]any, opts ...t
 	options := telemeter.ApplyOptions(opts)
 
 	group := segment.Group{
-		GroupId: groupID,
-		UserId:  t.overrideUserID(options),
-		Traits:  props,
-		Context: makeDeviceContext(options),
+		GroupId:     groupID,
+		UserId:      t.getUserID(options),
+		AnonymousId: t.getAnonymousID(options),
+		Traits:      props,
+		Context:     makeDeviceContext(options),
 	}
 
 	if err := t.client.Enqueue(group); err != nil {
@@ -170,10 +185,11 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 	options := telemeter.ApplyOptions(opts)
 
 	track := segment.Track{
-		UserId:     t.overrideUserID(options),
-		Event:      event,
-		Properties: props,
-		Context:    makeDeviceContext(options),
+		UserId:      t.getUserID(options),
+		AnonymousId: t.getAnonymousID(options),
+		Event:       event,
+		Properties:  props,
+		Context:     makeDeviceContext(options),
 	}
 
 	if err := t.client.Enqueue(track); err != nil {
