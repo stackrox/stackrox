@@ -1,12 +1,12 @@
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 
-import { publicConfigFooterSelector } from 'reducers/selectors';
+import { selectors } from 'reducers';
 
 import { getPublicConfigStyle } from './PublicConfig.utils';
 
 function PublicConfigFooter(): ReactElement | null {
-    const publicConfigFooter = useSelector(publicConfigFooterSelector);
+    const publicConfigFooter = useSelector(selectors.publicConfigFooterSelector);
 
     if (publicConfigFooter?.enabled) {
         return (

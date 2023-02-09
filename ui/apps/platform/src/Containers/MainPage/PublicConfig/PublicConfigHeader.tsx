@@ -1,12 +1,12 @@
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 
-import { publicConfigHeaderSelector } from 'reducers/selectors';
+import { selectors } from 'reducers';
 
 import { getPublicConfigStyle } from './PublicConfig.utils';
 
 function PublicConfigHeader(): ReactElement | null {
-    const publicConfigHeader = useSelector(publicConfigHeaderSelector);
+    const publicConfigHeader = useSelector(selectors.publicConfigHeaderSelector);
 
     if (publicConfigHeader?.enabled) {
         return (
