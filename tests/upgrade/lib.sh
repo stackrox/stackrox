@@ -431,8 +431,8 @@ helm_upgrade_to_postgres() {
     ########################################################################################
     # Use helm to upgrade to a Postgres release.  3.73.2 for now.                          #
     ########################################################################################
-    cat $TEST_ROOT/tests/upgrade/scale-values-public.yaml
-    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart --set central.db.enabled=true --set central.exposure.loadBalancer.enabled=true -f $TEST_ROOT/tests/upgrade/scale-values-public.yaml --force
+    cat "$TEST_ROOT/tests/upgrade/scale-values-public.yaml"
+    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart --set central.db.enabled=true --set central.exposure.loadBalancer.enabled=true -f "$TEST_ROOT/tests/upgrade/scale-values-public.yaml" --force
 
     # Return back to test root
     cd "$TEST_ROOT"

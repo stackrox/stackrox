@@ -100,7 +100,8 @@ test_upgrade_paths() {
     checkForRocksAccessScopes
 
     # Get the API_TOKEN for the upgrades
-    export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
+    API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
+    export API_TOKEN
 
     cd "$TEST_ROOT"
 
