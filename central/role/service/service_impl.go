@@ -410,6 +410,9 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 
 	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.NamespaceScope)
 	namespacesInScope, hasFullAccess, err := listNamespaceNamesInScope(ctx, clusterID, resourcesWithAccess)
+	if err != nil {
+		return nil, err
+	}
 
 	// Use an elevated context to fetch namespace IDs and names associated with the listed namespace names.
 	// This context must not be propagated.
