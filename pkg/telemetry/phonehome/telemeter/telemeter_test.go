@@ -10,9 +10,18 @@ func TestWith(t *testing.T) {
 	opts := ApplyOptions([]Option{
 		WithUserID("userID"),
 		WithClient("clientID", "clientType"),
+		WithGroups("groupA", "groupA_id1"),
+		WithGroups("groupA", "groupA_id2"),
+		WithGroups("groupB", "groupB_id"),
 	},
 	)
 	assert.Equal(t, "userID", opts.UserID)
 	assert.Equal(t, "clientID", opts.ClientID)
 	assert.Equal(t, "clientType", opts.ClientType)
+
+	props := map[string][]string{
+		"groupA": {"groupA_id1", "groupA_id2"},
+		"groupB": {"groupB_id"},
+	}
+	assert.Equal(t, props, opts.Groups)
 }
