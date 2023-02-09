@@ -184,8 +184,8 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
-    // splunk is not supported on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // splunk is not supported on P/Z
     def "Verify Splunk Integration (legacy mode: #legacy)"() {
         given:
         "the integration is tested"
@@ -755,13 +755,13 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
     }
 
-    @Unroll
     @Tag("Integration")
     @Tag("BAT")
     def "Verify syslog notifier"() {
        given:
        "syslog server is created"
        def syslog = SyslogServer.createRsyslog(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+       sleep 15 * 1000 // wait 15s for service to start
 
         when:
         "call the grpc API for the syslog notifier integration."
@@ -769,8 +769,9 @@ class IntegrationsTest extends BaseSpecification {
 
         then:
         "Verify syslog connection is successful"
-        assert notifier.testNotifier()
-
+        withRetry(3, 10) {
+            assert notifier.testNotifier()
+        }
         cleanup:
         "remove syslog notifier integration"
         syslog.tearDown(orchestrator)
