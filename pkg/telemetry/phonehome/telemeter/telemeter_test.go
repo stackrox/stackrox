@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWith(t *testing.T) {
+func Test_With(t *testing.T) {
 	opts := ApplyOptions([]Option{
 		WithUserID("userID"),
 		WithClient("clientID", "clientType"),
