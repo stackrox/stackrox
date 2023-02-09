@@ -12,7 +12,7 @@ export const selectors = {
                 options: '[data-testid="header-config"] .pf-c-select__menu li',
             },
         },
-        banner: '[data-testid="header-banner"]',
+        banner: '[data-testid="public-config-header"]',
     },
     footer: {
         widget: '[data-testid="footer-config"]',
@@ -27,7 +27,7 @@ export const selectors = {
                 options: '[data-testid="footer-config"] .pf-c-select__menu li',
             },
         },
-        banner: '[data-testid="footer-banner"]',
+        banner: '[data-testid="public-config-footer"]',
     },
     loginNotice: {
         widget: '[data-testid="login-notice-config"]',

@@ -22,7 +22,7 @@ import { selectors as routeSelectors } from './routes';
 import network, { selectors as networkSelectors } from './network/reducer';
 import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
-import systemConfig, { selectors as systemConfigSelectors } from './systemConfig';
+import publicConfig, { selectors as publicConfigSelectors } from './publicConfig';
 import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
 
 // Reducers
@@ -46,7 +46,7 @@ const appReducer = combineReducers({
     network,
     groups,
     attributes,
-    systemConfig,
+    publicConfig,
     telemetryConfig,
 });
 
@@ -82,7 +82,7 @@ const getMetadata = (state) => getApp(state).metadata;
 const getNetwork = (state) => getApp(state).network;
 const getRuleGroups = (state) => getApp(state).groups;
 const getAttributes = (state) => getApp(state).attributes;
-const getSystemConfig = (state) => getApp(state).systemConfig;
+const getPublicConfig = (state) => getApp(state).publicConfig;
 const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 
 const boundSelectors = {
@@ -105,7 +105,7 @@ const boundSelectors = {
     ...bindSelectors(getNetwork, networkSelectors),
     ...bindSelectors(getRuleGroups, groupsSelectors),
     ...bindSelectors(getAttributes, attributesSelectors),
-    ...bindSelectors(getSystemConfig, systemConfigSelectors),
+    ...bindSelectors(getPublicConfig, publicConfigSelectors),
     ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
 };
 

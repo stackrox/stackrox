@@ -26,7 +26,7 @@ import { useFormik } from 'formik';
 
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
-import { types } from 'reducers/systemConfig';
+import { types } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
