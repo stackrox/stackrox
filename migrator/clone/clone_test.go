@@ -698,7 +698,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 		},
 		{
 			description: "Rollback to version 57",
-			fromVersion: &currVer,
+			fromVersion: &postgresDBVer,
 			toVersion:   &preVer,
 		},
 		{
@@ -709,7 +709,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 		},
 		{
 			description: "Rollback to version 57 break before persist",
-			fromVersion: &currVer,
+			fromVersion: &postgresDBVer,
 			toVersion:   &preVer,
 			breakPoint:  breakBeforePersist,
 		},
@@ -721,7 +721,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 		},
 		{
 			description: "Rollback to version 57 break after scan",
-			fromVersion: &currVer,
+			fromVersion: &postgresDBVer,
 			toVersion:   &preVer,
 			breakPoint:  breakAfterScan,
 		},
@@ -733,7 +733,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 		},
 		{
 			description: "Rollback to version 57 break after get clone",
-			fromVersion: &currVer,
+			fromVersion: &postgresDBVer,
 			toVersion:   &preVer,
 			breakPoint:  breakAfterGetClone,
 		},
@@ -756,7 +756,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 			// Turn Postgres back off so we will rollback to Rocks
 			require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 
-			mock.rollbackCentral(c.toVersion, "", "")
+			mock.rollbackCentral(c.toVersion, "", c.toVersion.version)
 			mock.upgradeCentral(c.fromVersion, "")
 
 			// We turned off Postgres.  That means we are testing
