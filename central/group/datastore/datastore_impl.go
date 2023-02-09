@@ -432,10 +432,9 @@ func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id st
 }
 
 func verifyGroupOriginMatches(ctx context.Context, group *storage.Group) error {
-	origin := group.GetProps().GetTraits().GetOrigin()
-	if !declarativeconfig.IsOriginModifiable(ctx, origin) {
-		return errors.Wrapf(errox.InvalidArgs, "group %q's origin is %s, cannot be modified or deleted within this context",
-			group.GetProps().GetId(), origin)
+	if !declarativeconfig.CanModifyResource(ctx, group.GetProps()) {
+		return errors.Wrapf(errox.NotAuthorized, "group %q's origin is %s, cannot be modified or deleted with the current permission",
+			group.GetProps().GetId(), group.GetProps().GetTraits().GetOrigin())
 	}
 	return nil
 }

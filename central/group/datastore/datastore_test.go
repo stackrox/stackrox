@@ -53,7 +53,7 @@ func (s *groupDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
-	s.hasWriteDeclarativeCtx = declarativeconfig.WithAllowOnlyDeclarativeOperations(s.hasWriteCtx)
+	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -810,7 +810,7 @@ func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
 	updatedGroup.GetProps().Value = "else"
 
 	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, false)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaConfig() {
@@ -833,7 +833,7 @@ func (s *groupDataStoreTestSuite) TestDeleteDeclarativeViaAPI() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
 
 	err := s.dataStore.Remove(s.hasWriteCtx, expectedGroup.GetProps(), false)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *groupDataStoreTestSuite) TestDeleteDeclarativeViaConfig() {
@@ -858,7 +858,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaAPI() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{imperativeGroup}).Return(nil)
 	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, false)
 	s.Error(err)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 
 	// 2. Try and update a declarative group via API. This should fail.
 	gomock.InOrder(
@@ -867,7 +867,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaAPI() {
 
 	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, false)
 	s.Error(err)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
@@ -880,7 +880,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 	)
 	err := s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, true)
 	s.Error(err)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 
 	// 2. Try mutate(update declarative, remove imperative) groups via config. This should fail.
 	gomock.InOrder(
@@ -890,7 +890,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{declarativeGroup}).Return(nil).Times(1)
 	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, true)
 	s.Error(err)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errox.NotAuthorized)
 
 	// 3. Try update declarative group via config.
 	gomock.InOrder(
