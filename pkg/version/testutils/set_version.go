@@ -6,7 +6,6 @@ package testutils
 import (
 	"runtime"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
@@ -42,7 +41,6 @@ func SetVersion(t *testing.T, version version.Versions) {
 func GetExampleVersion(t *testing.T) version.Versions {
 	testutils.MustBeInTest(t)
 	return version.Versions{
-		BuildDate:        time.Unix(0, 0),
 		CollectorVersion: "99.9.9",
 		GitCommit:        "45b4a8ac",
 		GoVersion:        runtime.Version(),

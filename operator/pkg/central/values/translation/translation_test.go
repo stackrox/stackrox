@@ -63,6 +63,14 @@ func TestTranslate(t *testing.T) {
 							"createClaim": false,
 						},
 					},
+					"db": map[string]interface{}{
+						"enabled": true,
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -298,6 +306,14 @@ func TestTranslate(t *testing.T) {
 					"persistence": map[string]interface{}{
 						"hostPath": "/central/host/path",
 					},
+					"db": map[string]interface{}{
+						"enabled": true,
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
 					"resources": map[string]interface{}{
 						"limits": map[string]interface{}{
 							"cpu":    "10",
@@ -444,6 +460,14 @@ func TestTranslate(t *testing.T) {
 							"createClaim": false,
 						},
 					},
+					"db": map[string]interface{}{
+						"enabled": true,
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -471,6 +495,14 @@ func TestTranslate(t *testing.T) {
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
 							"createClaim": false,
+						},
+					},
+					"db": map[string]interface{}{
+						"enabled": true,
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
 						},
 					},
 				},
@@ -509,6 +541,14 @@ func TestTranslate(t *testing.T) {
 							"createClaim": false,
 						},
 					},
+					"db": map[string]interface{}{
+						"enabled": true,
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -525,6 +565,14 @@ func TestTranslate(t *testing.T) {
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
 							"createClaim": false,
+						},
+					},
+					"db": map[string]interface{}{
+						"enabled": true,
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
 						},
 					},
 				},
@@ -551,6 +599,14 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
 					"telemetry":        map[string]interface{}{"enabled": false},
+					"db": map[string]interface{}{
+						"enabled": true,
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
 				},
 			},
 		},

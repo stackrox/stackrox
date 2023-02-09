@@ -1363,6 +1363,7 @@ type Syslog struct {
 	// Eventually this will support TCP, UDP, and local endpoints
 	//
 	// Types that are valid to be assigned to Endpoint:
+	//
 	//	*Syslog_TcpConfig
 	Endpoint             isSyslog_Endpoint `protobuf_oneof:"endpoint"`
 	ExtraFields          []*KeyValuePair   `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`

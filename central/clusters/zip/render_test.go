@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -32,7 +31,6 @@ var dummyCerts = sensor.Certs{
 }
 
 func init() {
-	testbuildinfo.SetForTest(&testing.T{})
 	testutils.SetMainVersion(&testing.T{}, "3.0.55.0")
 }
 

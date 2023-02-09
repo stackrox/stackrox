@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 )
 
+var _ Transformer = (*universalTransformer)(nil)
+
 // Transformer transforms a declarativeconfig.Configuration to proto.Message(s).
 type Transformer interface {
 	Transform(config declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error)
@@ -17,9 +19,9 @@ type Transformer interface {
 func New() Transformer {
 	return &universalTransformer{configurationTransformers: map[string]Transformer{
 		declarativeconfig.AuthProviderConfiguration:  nil,
-		declarativeconfig.AccessScopeConfiguration:   nil,
+		declarativeconfig.AccessScopeConfiguration:   newAccessScopeTransform(),
 		declarativeconfig.RoleConfiguration:          nil,
-		declarativeconfig.PermissionSetConfiguration: nil,
+		declarativeconfig.PermissionSetConfiguration: newPermissionSetTransform(),
 	}}
 }
 

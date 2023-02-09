@@ -13,7 +13,6 @@ import (
 	probeSourcesMocks "github.com/stackrox/rox/central/probesources/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/search"
@@ -39,7 +38,6 @@ func (suite *ClusterServiceTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.sysConfigDatastore = configDatastoreMocks.NewMockDataStore(suite.mockCtrl)
-	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
 

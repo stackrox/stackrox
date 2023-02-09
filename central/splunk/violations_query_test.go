@@ -7,28 +7,71 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
+
+// Test suite to test everything to do with splunk violations. Actual test is split across multiple files.
+// Moved here since some helpers in this file references it and for non-postgres tests, it won't be able to read it
+// if the definition is another file
+type violationsTestSuite struct {
+	suite.Suite
+	deployAlert, processAlert, k8sAlert, networkAlert, resourceAlert *storage.Alert
+	allowCtx                                                         context.Context
+}
+
+func makeTimestamp(timeStr string) *types.Timestamp {
+	ts, err := types.TimestampProto(mustParseTime(timeStr))
+	utils.CrashOnError(err)
+	return ts
+}
+
+func mustParseTime(timeStr string) time.Time {
+	ts, err := time.Parse(time.RFC3339Nano, timeStr)
+	utils.CrashOnError(err)
+	return ts
+}
 
 // testDataStore contains all things that need to be created and disposed in order to use Alerts datastore.DataStore in
 // tests.
 type testDataStore struct {
-	rocksDB  *rocksdb.RocksDB
-	index    bleve.Index
+	// To remove once rocksdb is removed
+	rocksDB *rocksdb.RocksDB
+	index   bleve.Index
+
+	testDB   *pgtest.TestPostgres
 	alertsDS datastore.DataStore
 }
 
 // makeDS creates a new temp datastore with only provided alerts for use in tests.
 func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testDB := pgtest.ForT(t)
+		assert.NotNil(t, testDB)
+		alertsDS, err := datastore.GetTestPostgresDataStore(t, testDB.Pool)
+		require.NoError(t, err)
+
+		err = alertsDS.UpsertAlerts(sac.WithAllAccess(context.Background()), alerts)
+		require.NoError(t, err)
+
+		return testDataStore{testDB: testDB, alertsDS: alertsDS}
+	}
+
 	rocksDB := rocksdbtest.RocksDBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
@@ -44,9 +87,13 @@ func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
 
 // teardown cleans up test datastore.
 func (d *testDataStore) teardown(t *testing.T) {
-	d.rocksDB.Close()
-	err := d.index.Close()
-	assert.NoError(t, err)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		d.testDB.Teardown(t)
+	} else {
+		d.rocksDB.Close()
+		err := d.index.Close()
+		assert.NoError(t, err)
+	}
 }
 
 // these simply converts varargs to slice for slightly less typing (pun intended).
