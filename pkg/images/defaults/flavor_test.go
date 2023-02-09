@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -20,7 +19,6 @@ func TestImageFlavor(t *testing.T) {
 }
 
 func (s *imageFlavorTestSuite) SetupTest() {
-	testbuildinfo.SetForTest(s.T())
 	testutils.SetExampleVersion(s.T())
 }
 
