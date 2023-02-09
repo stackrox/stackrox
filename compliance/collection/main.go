@@ -219,9 +219,15 @@ func createAndObserveMessage(nodeName string, inventory *storage.NodeInventory) 
 // The backoff file will only be encountered if the previous container is killed during a call to scanNodeWithBackoff.
 // Note: This does not prevent strain in case of repeated pod recreation, as it is based on an EmptyDir.
 func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
-	backoffInterval := env.NodeInventoryInitialBackoff.IntegerSetting()
+	backoffInterval := int64(env.NodeInventoryInitialBackoff.DurationSetting() / time.Second)
 
 	backoffFile, err := os.ReadFile(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	defer func() {
+		if err := os.Remove(fmt.Sprintf("%s/backoff", inventoryCachePath)); err != nil {
+			log.Warnf("Could not remove backoff state file: %v", err)
+		}
+	}()
+
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Debug("No backoff found, continuing without pause")
@@ -230,28 +236,26 @@ func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventori
 		}
 	} else {
 		// We have an existing backoff counter
-		backoffInterval, err = strconv.Atoi(string(backoffFile[:]))
+		backoffIntervalMillis, err := strconv.ParseInt(string(backoffFile), 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		if backoffInterval > env.NodeInventoryMaxBackoff.IntegerSetting() {
-			log.Warnf("Backoff interval hit upper boundary. Cutting from %d to %d", backoffInterval, env.NodeInventoryMaxBackoff.IntegerSetting())
-			backoffInterval = env.NodeInventoryMaxBackoff.IntegerSetting()
+		backoffInterval = int64(time.Duration(backoffIntervalMillis) / time.Second)
+		if backoffInterval > int64(env.NodeInventoryMaxBackoff.DurationSetting()/time.Second) {
+			log.Warnf("Backoff interval hit upper boundary. Cutting from %d to %d", backoffInterval, env.NodeInventoryMaxBackoff.DurationSetting()/time.Second)
+			backoffInterval = int64(env.NodeInventoryMaxBackoff.DurationSetting() / time.Second)
 		}
 		log.Debugf("Found existing backoff. Waiting %v seconds before running next inventory", backoffInterval)
 		inventorySleeper(time.Duration(backoffInterval) * time.Second)
 	}
 
-	err = os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", backoffInterval+env.NodeInventoryBackoffIncrement.IntegerSetting())), 0600)
+	newBackoff := backoffInterval + int64(env.NodeInventoryBackoffIncrement.DurationSetting()/time.Second)
+	err = os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", newBackoff)), 0600)
 	if err != nil {
 		return nil, err
 	}
 
 	message, err := cachedScanNode(nodeName, scanner)
-	e := os.Remove(fmt.Sprintf("%s/backoff", inventoryCachePath))
-	if e != nil {
-		log.Warnf("Could not remove backoff state file: %v", err)
-	}
 	if err != nil {
 		return nil, err
 	}

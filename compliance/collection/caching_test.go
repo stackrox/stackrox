@@ -112,7 +112,7 @@ func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
 	tmpDir := s.T().TempDir()
 	inventoryCachePath = tmpDir
 
-	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", 421)), 0600)
+	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", int64(32*time.Second))), 0600)
 	s.NoError(err)
 
 	_, _ = scanNodeWithBackoff("testname", &nodeinventorizer.FakeNodeInventorizer{})
@@ -122,7 +122,7 @@ func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
 	s.ErrorIs(err, os.ErrNotExist)
 
 	s.Equal(1, m.callCount)
-	s.Equal(m.receivedDuration, time.Duration(421)*time.Second)
+	s.Equal(32*time.Second, m.receivedDuration)
 }
 
 type mockInventoryErr struct {
@@ -144,16 +144,16 @@ func (s *TestComplianceCachingSuite) TestBackoffFailedRun() {
 }
 
 func (s *TestComplianceCachingSuite) TestBackoffUpperBoundary() {
-	s.T().Setenv(env.NodeInventoryMaxBackoff.EnvVar(), fmt.Sprintf("%d", 4221))
+	s.T().Setenv(env.NodeInventoryMaxBackoff.EnvVar(), "30s")
 	m := mockSleeper{callCount: 0}
 	inventorySleeper = m.Sleep
 	tmpDir := s.T().TempDir()
 	inventoryCachePath = tmpDir
-	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", 4200001)), 0600)
+	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", int64(60*time.Minute))), 0600)
 	s.NoError(err)
 
 	_, _ = scanNodeWithBackoff("testname", &nodeinventorizer.FakeNodeInventorizer{})
 
 	s.Equal(1, m.callCount)
-	s.Equal(m.receivedDuration, time.Duration(4221)*time.Second)
+	s.Equal(30*time.Second, m.receivedDuration)
 }
