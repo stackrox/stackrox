@@ -757,6 +757,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    @Tag("BAT")
     def "Verify syslog notifier"() {
        given:
        "syslog server is created"
