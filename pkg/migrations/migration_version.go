@@ -18,6 +18,7 @@ const (
 	// MigrationVersionFile records the latest central version in databases.
 	MigrationVersionFile     = "migration_version.yaml"
 	migrationVersionFileMode = 0644
+	lastRocksDBVersion       = "3.74.0"
 )
 
 var (
@@ -71,6 +72,30 @@ func SetCurrent(dbPath string) {
 		err := newVersion.atomicWrite()
 		if err != nil {
 			utils.Should(errors.Wrapf(err, "failed to write migration version to %s", dbPath))
+		}
+	}
+}
+
+// SealLegacyDB update the database migration version of a database directory to:
+// 1) last associated version if it is upgraded from 3.74; or
+// 2) 3.74.0 to allow it to be used for recovering by upgrading it to Postgres versions.
+func SealLegacyDB(dbPath string) {
+	if curr, err := Read(dbPath); err == nil {
+		if curr.SeqNum != LastRocksDBVersionSeqNum() {
+			// This should not happen.
+			utils.Should(errors.Errorf("trying to seal legacy database with version %+v", curr))
+			return
+		}
+		if version.CompareVersions(curr.MainVersion, lastRocksDBVersion) < 0 {
+			newVersion := &MigrationVersion{
+				dbPath:      dbPath,
+				MainVersion: lastRocksDBVersion,
+				SeqNum:      LastRocksDBVersionSeqNum(),
+			}
+			err := newVersion.atomicWrite()
+			if err != nil {
+				utils.Should(errors.Wrapf(err, "failed to write migration version to %s", dbPath))
+			}
 		}
 	}
 }
