@@ -101,7 +101,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
-	suite.mockCtrl.Finish()
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.testDB.Teardown(suite.T())
 	} else {
