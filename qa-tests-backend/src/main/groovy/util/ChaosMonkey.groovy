@@ -16,17 +16,24 @@ class ChaosMonkey {
 
     Thread thread
     OrchestratorMain orchestrator
+    int minReadyReplicas
+    Long gracePeriod
 
     static final private String ADMISSION_CONTROLLER_APP_NAME = "admission-control"
     static final private int ADMISSION_CONTROLLER_EXPECTED_PODS = 3
 
     ChaosMonkey(OrchestratorMain client, int minReadyReplicas, Long gracePeriod) {
         orchestrator = client
+        this.minReadyReplicas = minReadyReplicas
+        this.gracePeriod = gracePeriod
 
         def pods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
         assert pods.size() > 0, "There are no ${ADMISSION_CONTROLLER_APP_NAME} pods. " +
                 "Did you enable ADMISSION_CONTROLLER when deploying?"
+    }
 
+    void start() {
+        assert thread == null, "Already started, call stop() first."
         thread = Thread.start {
             while (!stopFlag.get()) {
                 // Get the current ready, non-deleted pod replicas
@@ -59,8 +66,11 @@ class ChaosMonkey {
     }
 
     void stop() {
-        stopFlag.set(true)
-        thread.join()
+        if (thread) {
+            stopFlag.set(true)
+            thread.join()
+            thread = null
+        }
     }
 
     def waitForEffect() {
