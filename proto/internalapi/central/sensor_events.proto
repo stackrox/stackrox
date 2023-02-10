@@ -16,7 +16,6 @@ import "storage/policy.proto";
 import "storage/process_indicator.proto";
 import "storage/image_integration.proto";
 import "storage/compliance_operator.proto";
-import "storage/process_listening_on_port.proto";
 
 package central;
 
@@ -81,8 +80,6 @@ message SensorEvent {
         storage.ImageIntegration        image_integration       = 13;
         ReprocessDeploymentRisk         reprocess_deployment    = 17;
         AlertResults                    alert_results           = 18;
-        // XXX: Is this really needed?
-        storage.ProcessListeningOnPort  process_listening_on_port = 26;
 
         storage.ComplianceOperatorCheckResult        compliance_operator_result               = 20;
         storage.ComplianceOperatorProfile            compliance_operator_profile              = 21;
