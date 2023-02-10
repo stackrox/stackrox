@@ -232,22 +232,22 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.DeploymentName).ProtoQuery(),
-			expectedQuery: "select deployments.Name deployment from deployments",
+			expectedQuery: "select deployments.Name as deployment from deployments",
 		},
 		{
 			desc: "base schema; select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.DeploymentName).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "select deployments.Name deployment from deployments where deployments.Name = $1",
+			expectedQuery: "select deployments.Name as deployment from deployments where deployments.Name = $1",
 		},
 		{
 			desc: "child schema; multiple select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.Privileged, search.ImageName).
 				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
-			expectedQuery: "select deployments_containers.SecurityContext_Privileged privileged, " +
-				"deployments_containers.Image_Name_FullName image " +
+			expectedQuery: "select deployments_containers.SecurityContext_Privileged as privileged, " +
+				"deployments_containers.Image_Name_FullName as image " +
 				"from deployments inner join deployments_containers " +
 				"on deployments.Id = deployments_containers.deployments_Id " +
 				"where deployments_containers.Image_Name_FullName = $1",
@@ -258,9 +258,9 @@ func TestSelectQueries(t *testing.T) {
 				AddSelectFields(search.Privileged, search.ImageName).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddGroupBy(search.Cluster, search.Namespace).ProtoQuery(),
-			expectedQuery: "select jsonb_agg(deployments_containers.SecurityContext_Privileged) privileged, " +
-				"jsonb_agg(deployments_containers.Image_Name_FullName) image, " +
-				"deployments.ClusterName cluster, deployments.Namespace namespace " +
+			expectedQuery: "select jsonb_agg(deployments_containers.SecurityContext_Privileged) as privileged, " +
+				"jsonb_agg(deployments_containers.Image_Name_FullName) as image, " +
+				"deployments.ClusterName as cluster, deployments.Namespace as namespace " +
 				"from deployments inner join deployments_containers " +
 				"on deployments.Id = deployments_containers.deployments_Id " +
 				"where deployments_containers.Image_Name_FullName = $1 " +
@@ -270,7 +270,7 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema and child schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.DeploymentName, search.ImageName).ProtoQuery(),
-			expectedQuery: "select deployments.Name deployment, deployments_containers.Image_Name_FullName image " +
+			expectedQuery: "select deployments.Name as deployment, deployments_containers.Image_Name_FullName as image " +
 				"from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id",
 		},
 		{
@@ -279,7 +279,7 @@ func TestSelectQueries(t *testing.T) {
 				AddSelectFields(search.DeploymentName, search.ImageName).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "select deployments.Name deployment, deployments_containers.Image_Name_FullName image " +
+			expectedQuery: "select deployments.Name as deployment, deployments_containers.Image_Name_FullName as image " +
 				"from deployments inner join deployments_containers " +
 				"on deployments.Id = deployments_containers.deployments_Id " +
 				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
