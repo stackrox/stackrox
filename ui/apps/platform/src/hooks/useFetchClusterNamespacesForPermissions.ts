@@ -61,3 +61,4 @@ function useFetchClusterNamespacesForPermissions(
 }
 
 export default useFetchClusterNamespacesForPermissions;
+
