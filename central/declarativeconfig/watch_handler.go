@@ -48,7 +48,7 @@ func (w *watchHandler) OnChange(dir string) (interface{}, error) {
 	declarativeConfigFiles := map[string][]byte{}
 	for _, entry := range entries {
 		if entry.IsDir() {
-			log.Infof("Found a directory entry within %s: %s. This entry will be skipped", dir, entry.Name())
+			log.Debugf("Found a directory entry within %s: %s. This entry will be skipped", dir, entry.Name())
 			continue
 		}
 		entryContents, err := readDeclarativeConfigFile(path.Join(dir, entry.Name()))
@@ -73,15 +73,14 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 		log.Warnf("Received invalid type in stable update for declarative configuration files: %T", val)
 		return
 	}
-	// TODO: Make this DebugF
 	logFileContents(fileContents)
 
 	if !w.compareHashesForChanges(fileContents) {
-		log.Info("Found no changes from before in content, no reconciliation will be triggered")
+		log.Debugf("Found no changes from before in content, no reconciliation will be triggered")
 		return
 	}
 
-	log.Info("Found changes in declarative configuration files, reconciliation will be triggered")
+	log.Debugf("Found changes in declarative configuration files, reconciliation will be triggered")
 	w.updater.ReconcileDeclarativeConfigs(maputil.Values(fileContents))
 }
 
@@ -160,5 +159,5 @@ func logFileContents(contents map[string][]byte) {
 	for fileName, fileContents := range contents {
 		logMessage += fmt.Sprintf("File %s: %s", fileName, fileContents)
 	}
-	log.Infof(logMessage)
+	log.Debugf(logMessage)
 }
