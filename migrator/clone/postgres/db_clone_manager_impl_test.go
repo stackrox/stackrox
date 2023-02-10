@@ -219,9 +219,9 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 		LastPersisted: time.Now(),
 	}
 
-	// No central_active exists so we return that as the clone to use and migrate to rocks
+	// No central_active exists so we return the temp clone to use and migrate to rocks
 	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion, false)
-	s.Equal(clone, CurrentClone)
+	s.Equal(clone, TempClone)
 	s.True(migrateRocks)
 	s.Nil(err)
 
@@ -230,7 +230,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 
 	// Still migrate from Rocks because no version in Postgres meaning it is empty
 	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
-	s.Equal(clone, CurrentClone)
+	s.Equal(clone, TempClone)
 	s.True(migrateRocks)
 	s.Nil(err)
 

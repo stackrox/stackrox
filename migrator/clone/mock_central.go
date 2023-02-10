@@ -127,11 +127,11 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() && m.runBoth {
 		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
-			if pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone) {
-				m.verifyClonePostgres(postgres.PreviousClone, curVer)
+			if pgadmin.CheckIfDBExists(m.adminConfig, postgres.TempClone) {
+				m.verifyClonePostgres(postgres.TempClone, curVer)
 			}
 		} else {
-			assert.False(m.t, pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone))
+			assert.False(m.t, pgadmin.CheckIfDBExists(m.adminConfig, postgres.TempClone))
 		}
 	} else if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
