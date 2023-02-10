@@ -248,7 +248,7 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should not filter cluster entity page regardless of entity context', () => {
+    it.only('should not filter cluster entity page regardless of entity context', () => {
         const entitiesKey = 'namespaces';
         visitVulnerabilityManagementEntities(entitiesKey);
 

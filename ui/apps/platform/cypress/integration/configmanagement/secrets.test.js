@@ -1,16 +1,17 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
+    clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
     clickOnSingularEntityWidgetInSidePanel,
-    hasTabsFor,
+    hasCountWidgetsFor,
     hasRelatedEntityFor,
+    hasTabsFor,
+    navigateToSingleEntityPage,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
     visitConfigurationManagementEntities,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'secrets';
@@ -66,7 +67,8 @@ describe('Configuration Management Secrets', () => {
     });
 
     it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
-        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        const columnIndexForDeployments = 6;
+        clickEntityTableRowThatHasLinkInColumn(entitiesKey, columnIndexForDeployments);
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('deployments', 'entityList');
     });
