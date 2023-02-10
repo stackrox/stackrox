@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { gql, useQuery } from '@apollo/client';
 
 import { selectors } from 'reducers';
+import { getNamespacesForClusterAndPermissions, NamespaceForClusterAndPermissions } from 'services/RolesService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type SelectorState = { selectedClusterId: string | null; selectedNamespaceFilters: string[] };
 type SelectorResult = SelectorState;
@@ -13,56 +14,56 @@ const selector = createStructuredSelector<SelectorState, SelectorResult>({
     selectedNamespaceFilters: selectors.getSelectedNamespaceFilters,
 });
 
-type NamespaceMetadataResp = {
-    id: string;
-    results: {
-        namespaces: {
-            metadata: {
-                name: string;
-            };
-        }[];
-    };
+type Response = {
+    loading: boolean;
+    error: string;
+    availableNamespaceFilters: string[];
 };
 
-export const NAMESPACES_FOR_CLUSTER_QUERY = gql`
-    query getClusterNamespaceNames($id: ID!) {
-        results: cluster(id: $id) {
-            id
-            namespaces {
-                metadata {
-                    name
-                }
-            }
-        }
-    }
-`;
+const emptyResponse = {
+    loading: true,
+    error: '',
+    availableNamespaceFilters: [],
+};
 
 function useNamespaceFilters() {
-    const [availableNamespaceFilters, setAvailableNamespaceFilters] = useState<string[]>([]);
+    const [response, setResponse] = useState<Response>(emptyResponse);
     const { selectedClusterId, selectedNamespaceFilters } = useSelector<
         SelectorState,
         SelectorResult
     >(selector);
-    // If the selectedClusterId has not been set yet, do not run the gql query
-    const queryOptions = selectedClusterId
-        ? { variables: { id: selectedClusterId } }
-        : { skip: true };
-
-    const { loading, error, data } = useQuery<NamespaceMetadataResp, { id: string }>(
-        NAMESPACES_FOR_CLUSTER_QUERY,
-        queryOptions
-    );
 
     useEffect(() => {
-        if (!data || !data.results) {
-            return;
+        const permissions = ['NetworkGraph'];
+        if (selectedClusterId !== null && selectedClusterId !== undefined) {
+            getNamespacesForClusterAndPermissions(selectedClusterId, permissions)
+                .then((data) => {
+                    const responseNamespaces = data.namespaces;
+                    const namespaces: string[] = [];
+                    responseNamespaces.forEach((rspNamespace: NamespaceForClusterAndPermissions) => {
+                        namespaces.push(rspNamespace.name);
+                    });
+                    setResponse({
+                        loading: false,
+                        error: '',
+                        availableNamespaceFilters: namespaces,
+                    })
+                })
+                .catch((error) => {
+                    const message = getAxiosErrorMessage(error);
+                    const errorMessage =
+                        message || 'An unknown error occurred while getting the list of clusters';
+
+                    setResponse({
+                        loading: false,
+                        error: errorMessage,
+                        availableNamespaceFilters: [],
+                    });
+                })
         }
+    }, [selectedClusterId]);
 
-        const namespaces = data.results.namespaces.map(({ metadata }) => metadata.name);
-
-        setAvailableNamespaceFilters(namespaces);
-    }, [data]);
-
+    const {loading, error, availableNamespaceFilters} = response;
     return {
         loading,
         error,
