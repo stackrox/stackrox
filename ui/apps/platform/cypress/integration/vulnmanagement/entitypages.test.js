@@ -2,6 +2,7 @@ import * as api from '../../constants/apiEndpoints';
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import {
+    interactAndWaitForVulnerabilityManagementEntities,
     interactAndWaitForVulnerabilityManagementEntity,
     interactAndWaitForVulnerabilityManagementSecondaryEntities,
     visitVulnerabilityManagementEntities,
@@ -248,9 +249,16 @@ describe('Entities single views', () => {
             });
     });
 
-    it.only('should not filter cluster entity page regardless of entity context', () => {
+    it('should not filter cluster entity page regardless of entity context', () => {
         const entitiesKey = 'namespaces';
         visitVulnerabilityManagementEntities(entitiesKey);
+
+        // Sort descending by Risk Priority, because on OpenShift,
+        // all namespaces on the first page might have deployments.
+        const thSelector = '.rt-th:contains("Risk Priority")';
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(thSelector).click();
+        }, entitiesKey);
 
         interactAndWaitForVulnerabilityManagementEntity(() => {
             cy.get(`${selectors.tableRows}:contains("No deployments"):eq(0)`).click();
