@@ -47,23 +47,23 @@ func gather(db *bolt.DB) {
 	// TxStats
 	txStats := topLevelStats.TxStats
 
-	metrics.SetGaugeInt(metrics.TxStatsPageCount, txStats.PageCount)
-	metrics.SetGaugeInt(metrics.TxStatsPageAlloc, txStats.PageAlloc)
+	metrics.SetGaugeInt64(metrics.TxStatsPageCount, txStats.GetPageCount())
+	metrics.SetGaugeInt64(metrics.TxStatsPageAlloc, txStats.GetPageAlloc())
 
-	metrics.SetGaugeInt(metrics.TxStatsCursorCount, txStats.CursorCount)
+	metrics.SetGaugeInt64(metrics.TxStatsCursorCount, txStats.GetCursorCount())
 
-	metrics.SetGaugeInt(metrics.TxStatsNodeCount, txStats.NodeCount)
-	metrics.SetGaugeInt(metrics.TxStatsNodeDeref, txStats.NodeDeref)
+	metrics.SetGaugeInt64(metrics.TxStatsNodeCount, txStats.GetNodeCount())
+	metrics.SetGaugeInt64(metrics.TxStatsNodeDeref, txStats.GetNodeDeref())
 
-	metrics.SetGaugeInt(metrics.TxStatsRebalance, txStats.Rebalance)
-	metrics.SetGaugeDuration(metrics.TxStatsRebalanceSeconds, txStats.RebalanceTime)
+	metrics.SetGaugeInt64(metrics.TxStatsRebalance, txStats.GetRebalance())
+	metrics.SetGaugeDuration(metrics.TxStatsRebalanceSeconds, txStats.GetRebalanceTime())
 
-	metrics.SetGaugeInt(metrics.TxStatsSplit, txStats.Split)
-	metrics.SetGaugeInt(metrics.TxStatsSpill, txStats.Spill)
-	metrics.SetGaugeDuration(metrics.TxStatsSpillSeconds, txStats.SpillTime)
+	metrics.SetGaugeInt64(metrics.TxStatsSplit, txStats.GetSplit())
+	metrics.SetGaugeInt64(metrics.TxStatsSpill, txStats.GetSpill())
+	metrics.SetGaugeDuration(metrics.TxStatsSpillSeconds, txStats.GetSpillTime())
 
-	metrics.SetGaugeInt(metrics.TxStatsWrite, txStats.Write)
-	metrics.SetGaugeDuration(metrics.TxStatsWriteTime, txStats.WriteTime)
+	metrics.SetGaugeInt64(metrics.TxStatsWrite, txStats.GetWrite())
+	metrics.SetGaugeDuration(metrics.TxStatsWriteTime, txStats.GetWriteTime())
 
 	// gather bucket stats
 	_ = db.View(func(tx *bolt.Tx) error {
