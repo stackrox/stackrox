@@ -37,9 +37,12 @@ metadata:
     stackrox.io/description: "{{ ._rox.clusterDescription }}"
 ```
 
-### Add a cluster config field to SecuredCluster:
+### Add a cluster config field:
 
-Adding a field to the `SecuredCluster` Helm chart is more complex because the Helm Cluster configuration is tracked in Central and needs adjustments to its conversion logic.
+Making a change that affects the cluster configuration (which is persisted in
+Central and displayed in the UI) is more complex because the Helm Cluster
+configuration is tracked in Central and needs adjustments to its conversion
+logic.
 
 1. Locate the Helm chart you want to extend under `image/templates/helm/stackrox-secured-cluster`
 1. Add the desired field to the `config-shape.yaml.tpl` and add the type as a comment
