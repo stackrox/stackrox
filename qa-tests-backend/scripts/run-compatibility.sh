@@ -30,7 +30,9 @@ compatibility_test() {
         fi
 
         setup_deployment_env false false
-        setup_podsecuritypolicies_config
+#        setup_podsecuritypolicies_config
+        # testing something
+        ci_export "POD_SECURITY_POLICIES" "false"
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
