@@ -253,6 +253,8 @@ function launch_central {
 
     echo "Deploying Central..."
 
+    $(git rev-parse --show-toplevel)/scripts/ci/store-artifacts.sh store_artifacts "${k8s_dir}/central-deploy"
+
     ${KUBE_COMMAND:-kubectl} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
       ${KUBE_COMMAND:-kubectl} create namespace "${STACKROX_NAMESPACE}"
 
