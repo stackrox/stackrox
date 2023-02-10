@@ -32,7 +32,8 @@ compatibility_test() {
         setup_deployment_env false false
 #        setup_podsecuritypolicies_config
         # testing something
-        ci_export "POD_SECURITY_POLICIES" "false"
+        export POD_SECURITY_POLICIES=false
+        ci_export POD_SECURITY_POLICIES "false"
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
@@ -40,7 +41,7 @@ compatibility_test() {
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
-        deploy_default_psp
+#        deploy_default_psp
         deploy_webhook_server
         get_ECR_docker_pull_password
     fi
@@ -48,6 +49,7 @@ compatibility_test() {
     info "Running compatibility tests"
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+        info "Openshift scc stuff"
         oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
     fi
 
