@@ -5,6 +5,9 @@ collectors:
   selector: app=central
   tail: -1
 - type: pod
+  selector: app=central-db
+  tail: -1
+- type: pod
   selector: app=scanner
   tail: -1
 - type: pod
@@ -32,6 +35,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central
+status:
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-db
 status:
   availableReplicas: 1
 ---

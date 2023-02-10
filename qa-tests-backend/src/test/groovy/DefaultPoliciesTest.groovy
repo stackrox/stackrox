@@ -191,7 +191,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
         //TODO ROX-11612 debugging to see if the test fails due to incomplete scan
         if (policyName == "Apache Struts: CVE-2017-5638") {
-            def image = ImageService.scanImage("library/nginx:1.10", true)
+            def image = ImageService.scanImage(STRUTS_DEPLOYMENT.getImage(), true)
             if (!hasApacheStrutsVuln(image)) {
                 log.warn("[ROX-11612] CVE-2017-5638 is absent from image scan")
             }

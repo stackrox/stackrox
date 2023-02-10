@@ -10,7 +10,15 @@ kind: Deployment
 metadata:
   name: central
   annotations:
-    post-reconcile: "true"
+    test-step: "40"
 status:
   # Wait for pod to be ready again
   availableReplicas: 1
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    test-step: "40"
+  labels:
+    app: central

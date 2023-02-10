@@ -346,24 +346,15 @@ class SplunkNotifier extends Notifier {
 
 @Slf4j
 class SyslogNotifier extends Notifier {
-    def splunkPort // Syslog isn't inherently tied to Splunk, we're just going to test with Splunk
-
-    SyslogNotifier(String serviceName, int port, int splunkPort, String integrationName = "Syslog Test") {
-        this.splunkPort = splunkPort
+    SyslogNotifier(String serviceName, int port, String integrationName = "Syslog Test") {
         notifier = NotifierService.getSyslogIntegrationConfig(serviceName, port, integrationName)
     }
 
     def createNotifier() {
-        log.debug "validating splunk deployment is ready to accept events before creating syslog notifier..."
-        withRetry(20, 2) {
-            SplunkUtil.createSearch(splunkPort)
-        }
         notifier = NotifierService.addNotifier(notifier)
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        def response = SplunkUtil.waitForSplunkSyslog(splunkPort, 90)
-        // We must have received at least one syslog message
-        assert response.size() > 0
+    def testNotifier() {
+         return NotifierService.testNotifier(notifier)
     }
 }

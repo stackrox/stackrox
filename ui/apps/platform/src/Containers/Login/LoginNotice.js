@@ -4,8 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
-const LoginNotice = ({ publicConfig }) => {
-    const { loginNotice } = publicConfig;
+const LoginNotice = ({ loginNotice }) => {
     if (!loginNotice || !loginNotice.text || !loginNotice.enabled) {
         return null;
     }
@@ -22,22 +21,18 @@ const LoginNotice = ({ publicConfig }) => {
 };
 
 LoginNotice.propTypes = {
-    publicConfig: PropTypes.shape({
-        loginNotice: PropTypes.shape({
-            enabled: PropTypes.bool,
-            text: PropTypes.string,
-        }),
+    loginNotice: PropTypes.shape({
+        enabled: PropTypes.bool,
+        text: PropTypes.string,
     }),
 };
 
 LoginNotice.defaultProps = {
-    publicConfig: {
-        loginNotice: {},
-    },
+    loginNotice: null,
 };
 
 const mapStateToProps = createStructuredSelector({
-    publicConfig: selectors.getPublicConfig,
+    loginNotice: selectors.publicConfigLoginNoticeSelector,
 });
 
 export default connect(mapStateToProps, null)(LoginNotice);

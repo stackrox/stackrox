@@ -126,16 +126,6 @@ assert_helm_template_central_registry() {
   assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$registry_slug" "$version_regex" "$@"
 }
 
-assert_declarative_config_mount_exist() {
-  local out_dir="${1}"; shift;
-
-  for mount in "${@}"; do
-    run yq e "select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == \"central\").volumeMounts[] | select(.name == \"${mount}\")" "${out_dir}/01-central-13-deployment.yaml"
-    assert_output --partial "mountPath: /run/stackrox.io/declarative-configuration/${mount}"
-  done
-}
-
-
 wait_20s_for() {
   local file="$1"; shift
   local args=("${@}")

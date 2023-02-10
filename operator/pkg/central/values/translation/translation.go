@@ -204,7 +204,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 	if c == nil {
-		return &cv
+		c = &platform.CentralDBSpec{}
 	}
 
 	cv.SetBoolValue("enabled", true)

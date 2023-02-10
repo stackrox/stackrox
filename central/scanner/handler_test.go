@@ -8,11 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	buildTestutils "github.com/stackrox/rox/pkg/buildinfo/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -31,7 +29,6 @@ func (s *handlerTestSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 	testutils.SetExampleVersion(s.T())
-	buildTestutils.SetBuildTimestamp(s.T(), time.Now())
 }
 
 func (s *handlerTestSuite) TestGenerateScannerHTTPHandler() {

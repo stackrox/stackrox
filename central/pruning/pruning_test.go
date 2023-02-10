@@ -59,7 +59,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
@@ -618,7 +617,6 @@ func (s *PruningTestSuite) TestClusterPruning() {
 
 	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
-	testbuildinfo.SetForTest(s.T())
 	versionUtils.SetExampleVersion(s.T())
 
 	var cases = []struct {
@@ -851,7 +849,6 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
-	testbuildinfo.SetForTest(s.T())
 	versionUtils.SetExampleVersion(s.T())
 
 	var cases = []struct {
