@@ -294,7 +294,7 @@ func TestSelectQuery(t *testing.T) {
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			runTest(t, ctx, testDB, c)
+			runTest(ctx, t, testDB, c)
 		})
 	}
 }
@@ -644,7 +644,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			pkgPG.AssertSQLQueryString(t, c.q, schema.TestMultiKeyStructsSchema, c.expectedQuery)
-			runTest(t, ctx, testDB, c)
+			runTest(ctx, t, testDB, c)
 		})
 	}
 }
@@ -704,7 +704,7 @@ func getTestStructs() []*storage.TestMultiKeyStruct {
 	}
 }
 
-func runTest(t *testing.T, ctx context.Context, testDB *pgtest.TestPostgres, tc selectQTestCase) {
+func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc selectQTestCase) {
 	var results any
 	var err error
 	switch tc.resultStruct.(type) {
