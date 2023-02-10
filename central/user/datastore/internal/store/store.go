@@ -18,7 +18,7 @@ type Store interface {
 }
 
 // New returns a new instance of a Store.
-// For now we will store information for up to 1000 users for 1 day.
+// The information is stored for 1 day.
 func New() Store {
 	return &storeImpl{
 		ec: expiringcache.NewExpiringCache(24 * time.Hour),
