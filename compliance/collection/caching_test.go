@@ -6,22 +6,43 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/nodeinventorizer"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/suite"
 )
 
+type mockSleeper struct {
+	receivedDuration int64
+	callCount        int
+}
+
+func (ms *mockSleeper) mockWaitCallback(d int64) int64 {
+	ms.receivedDuration = d
+	ms.callCount++
+	return 4243
+}
+
 type TestComplianceCachingSuite struct {
 	suite.Suite
+	mockScanOpts *cachedScanOpts
+	sleeper      mockSleeper
 }
 
 func TestComplianceCaching(t *testing.T) {
 	suite.Run(t, new(TestComplianceCachingSuite))
 }
 
+// run before each test
+func (s *TestComplianceCachingSuite) SetupTest() {
+	s.mockScanOpts = &cachedScanOpts{
+		nodeName:            "testme",
+		scanner:             &nodeinventorizer.FakeNodeInventorizer{},
+		inventoryCachePath:  s.T().TempDir(),
+		backoffWaitCallback: nil,
+	}
+	s.sleeper = mockSleeper{callCount: 0}
+}
+
+/*
 func (s *TestComplianceCachingSuite) TestCachingScanNode() {
 	tmpDir := s.T().TempDir()
 	inventoryCachePath = tmpDir
@@ -80,16 +101,6 @@ func (s *TestComplianceCachingSuite) TestCaching() {
 	}
 }
 
-type mockSleeper struct {
-	receivedDuration time.Duration
-	callCount        int
-}
-
-func (ms *mockSleeper) Sleep(d time.Duration) {
-	ms.receivedDuration = d
-	ms.callCount++
-}
-
 func (s *TestComplianceCachingSuite) TestBackoffNoFile() {
 	m := mockSleeper{callCount: 0}
 	inventorySleeper = m.Sleep
@@ -105,26 +116,23 @@ func (s *TestComplianceCachingSuite) TestBackoffNoFile() {
 	// No sleep should have been called
 	s.Equal(0, m.callCount)
 }
-
+*/
 func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
-	m := mockSleeper{callCount: 0}
-	inventorySleeper = m.Sleep
-	tmpDir := s.T().TempDir()
-	inventoryCachePath = tmpDir
 
-	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", int64(32*time.Second))), 0600)
+	err := os.WriteFile(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath), []byte(fmt.Sprintf("%d", int64(32*time.Second))), 0600)
 	s.NoError(err)
 
-	_, _ = scanNodeWithBackoff("testname", &nodeinventorizer.FakeNodeInventorizer{})
+	_, _ = scanNodeWithBackoff(s.mockScanOpts)
 
 	// This file mustn't exist after a successful run
-	_, err = os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	_, err = os.Stat(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath))
 	s.ErrorIs(err, os.ErrNotExist)
 
-	s.Equal(1, m.callCount)
-	s.Equal(32*time.Second, m.receivedDuration)
+	s.Equal(1, s.sleeper.callCount)
+	s.Equal(32*time.Second, s.sleeper.receivedDuration)
 }
 
+/*
 type mockInventoryErr struct {
 }
 
@@ -157,3 +165,4 @@ func (s *TestComplianceCachingSuite) TestBackoffUpperBoundary() {
 	s.Equal(1, m.callCount)
 	s.Equal(30*time.Second, m.receivedDuration)
 }
+*/

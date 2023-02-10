@@ -41,10 +41,32 @@ var (
 
 	node string
 	once sync.Once
-
-	inventoryCachePath = "/cache"
-	inventorySleeper   = time.Sleep // used for testing more efficiently
 )
+
+// These options control behaviour of all node inventory related functions
+type cachedScanOpts struct {
+	nodeName            string
+	scanner             nodeinventorizer.NodeInventorizer
+	inventoryCachePath  string
+	backoffWaitCallback func(int64) int64
+}
+
+// waitAndIncreaseBackoff returns the duration the backoff should wait next time
+func waitAndIncreaseBackoff(waitTimeSeconds int64) int64 {
+	maxBackoffSeconds := int64(env.NodeInventoryMaxBackoff.DurationSetting() / time.Second)
+	backoffIncrementSeconds := int64(env.NodeInventoryBackoffIncrement.DurationSetting() / time.Second)
+
+	if waitTimeSeconds > maxBackoffSeconds {
+		log.Warnf("Backoff interval hit upper boundary. Cutting from %d to %d", waitTimeSeconds, maxBackoffSeconds)
+		waitTimeSeconds = maxBackoffSeconds
+	}
+
+	nextBackoff := waitTimeSeconds + backoffIncrementSeconds
+	log.Debugf("Waiting for %v Seconds - next backoff will be %v", waitTimeSeconds, nextBackoff)
+	time.Sleep(time.Duration(waitTimeSeconds) * time.Second)
+
+	return nextBackoff
+}
 
 func getNode() string {
 	once.Do(func() {
@@ -190,8 +212,8 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 	return sensorC
 }
 
-func runCachedScan(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*storage.NodeInventory, error) {
-	inventory, err := scanner.Scan(nodeName)
+func runCachedScan(opts *cachedScanOpts) (*storage.NodeInventory, error) {
+	inventory, err := opts.scanner.Scan(opts.nodeName)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +221,7 @@ func runCachedScan(nodeName string, scanner nodeinventorizer.NodeInventorizer) (
 	if err != nil {
 		return nil, err
 	}
-	if err := os.WriteFile(fmt.Sprintf("%s/last_scan", inventoryCachePath), inv, 0600); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("%s/last_scan", opts.inventoryCachePath), inv, 0600); err != nil {
 		return nil, err
 	}
 
@@ -218,18 +240,15 @@ func createAndObserveMessage(nodeName string, inventory *storage.NodeInventory) 
 // scanNodeWithBackoff runs scans with a linear backoff based on a file to not overstrain a Node if the container keeps restarting.
 // The backoff file will only be encountered if the previous container is killed during a call to scanNodeWithBackoff.
 // Note: This does not prevent strain in case of repeated pod recreation, as it is based on an EmptyDir.
-func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
+func scanNodeWithBackoff(opts *cachedScanOpts) (*sensor.MsgFromCompliance, error) {
 	backoffIntervalSeconds := int64(env.NodeInventoryInitialBackoff.DurationSetting() / time.Second)
-	maxBackoffSeconds := int64(env.NodeInventoryMaxBackoff.DurationSetting() / time.Second)
-	backoffIncrementSeconds := int64(env.NodeInventoryBackoffIncrement.DurationSetting() / time.Second)
 
-	backoffFile, err := os.ReadFile(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	backoffFile, err := os.ReadFile(fmt.Sprintf("%s/backoff", opts.inventoryCachePath))
 	defer func() {
-		if err := os.Remove(fmt.Sprintf("%s/backoff", inventoryCachePath)); err != nil {
+		if err := os.Remove(fmt.Sprintf("%s/backoff", opts.inventoryCachePath)); err != nil {
 			log.Warnf("Could not remove backoff state file: %v", err)
 		}
 	}()
-
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Debug("No backoff found, continuing without pause")
@@ -243,21 +262,16 @@ func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventori
 			return nil, err
 		}
 		backoffIntervalSeconds = int64(time.Duration(backoffIntervalMillis) / time.Second)
-		if backoffIntervalSeconds > maxBackoffSeconds {
-			log.Warnf("Backoff interval hit upper boundary. Cutting from %d to %d", backoffIntervalSeconds, maxBackoffSeconds)
-			backoffIntervalSeconds = maxBackoffSeconds
-		}
-		log.Debugf("Found existing backoff. Waiting %v seconds before running next inventory", backoffIntervalSeconds)
-		inventorySleeper(time.Duration(backoffIntervalSeconds) * time.Second)
+		log.Infof("Found existing backoff. Waiting before running next inventory")
+		backoffIntervalSeconds = opts.backoffWaitCallback(backoffIntervalSeconds)
 	}
 
-	newBackoff := backoffIntervalSeconds + backoffIncrementSeconds
-	err = os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", newBackoff)), 0600)
+	err = os.WriteFile(fmt.Sprintf("%s/backoff", opts.inventoryCachePath), []byte(fmt.Sprintf("%d", backoffIntervalSeconds)), 0600)
 	if err != nil {
 		return nil, err
 	}
 
-	message, err := cachedScanNode(nodeName, scanner)
+	message, err := cachedScanNode(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -265,10 +279,10 @@ func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventori
 }
 
 // cachedScanNode checks for a cached inventory before running a new scan
-func cachedScanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
+func cachedScanNode(opts *cachedScanOpts) (*sensor.MsgFromCompliance, error) {
 	var inventory *storage.NodeInventory
 
-	cachedInv, err := os.ReadFile(fmt.Sprintf("%s/last_scan", inventoryCachePath))
+	cachedInv, err := os.ReadFile(fmt.Sprintf("%s/last_scan", opts.inventoryCachePath))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Debug("No cache file found, running new inventory")
@@ -293,11 +307,11 @@ func cachedScanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) 
 	}
 
 	// Collect a fresh inventory
-	inventory, err = runCachedScan(nodeName, scanner)
+	inventory, err = runCachedScan(opts)
 	if err != nil {
 		return nil, err
 	}
-	return createAndObserveMessage(nodeName, inventory), nil
+	return createAndObserveMessage(opts.nodeName, inventory), nil
 }
 
 func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
