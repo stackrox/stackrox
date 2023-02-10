@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -12,6 +13,7 @@ import (
 type queryAndFieldContext struct {
 	qualifiedColumnName string
 	field               *pkgSearch.Field
+	derivedMetadata     *walker.DerivedSearchField
 	sqlDataType         walker.DataType
 
 	value          string
@@ -23,15 +25,27 @@ type queryAndFieldContext struct {
 
 func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClause, postTransformFunc func(interface{}) interface{}) *QueryEntry {
 	qe := &QueryEntry{Where: *whereClause}
+
+	if ctx.derivedMetadata != nil {
+		having := qe.Where
+		qe.Having = &having
+		qe.Where = WhereClause{}
+	}
+
 	if ctx.highlight {
 		var cast string
 		if ctx.sqlDataType == walker.UUID {
 			cast = "::text"
 		}
 		qe.SelectedFields = []SelectQueryField{{
-			SelectPath:    ctx.qualifiedColumnName + cast,
-			FieldType:     ctx.sqlDataType,
-			FieldPath:     ctx.field.FieldPath,
+			SelectPath: ctx.qualifiedColumnName + cast,
+			FieldType:  ctx.sqlDataType,
+			FieldPath: func() string {
+				if ctx.derivedMetadata == nil {
+					return ctx.field.FieldPath
+				}
+				return "derived." + ctx.derivedMetadata.DerivationType.String() + ctx.field.FieldPath
+			}(),
 			PostTransform: postTransformFunc,
 		}}
 	}
@@ -55,10 +69,11 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	// Map is handled separately.
 }
 
-func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field *pkgSearch.Field, value string, highlight bool, now time.Time, goesIntoHavingClause bool) (*QueryEntry, error) {
+func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field *pkgSearch.Field, derivedMetadata *walker.DerivedSearchField, value string, highlight bool, now time.Time) (*QueryEntry, error) {
 	ctx := &queryAndFieldContext{
 		qualifiedColumnName: qualifiedColName,
 		field:               field,
+		derivedMetadata:     derivedMetadata,
 		highlight:           highlight,
 		value:               value,
 		now:                 now,
@@ -80,6 +95,10 @@ func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field
 
 	// Special case: wildcard
 	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
+		if ctx.derivedMetadata != nil {
+			return nil, errors.New("match all (*) and match none (-) are not unsupported values for derived field query")
+		}
+
 		if len(qe.SelectedFields) != 1 {
 			// If there are no selected fields, then no post transform needs to be used
 			return handleExistenceQueries(ctx, nil), nil
@@ -87,11 +106,6 @@ func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field
 		return handleExistenceQueries(ctx, qe.SelectedFields[0].PostTransform), nil
 	}
 
-	if goesIntoHavingClause {
-		having := qe.Where
-		qe.Having = &having
-		qe.Where = WhereClause{}
-	}
 	return qe, nil
 }
 

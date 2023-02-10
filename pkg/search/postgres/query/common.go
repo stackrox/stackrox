@@ -21,7 +21,9 @@ type SelectQueryField struct {
 	FieldType  walker.DataType
 	FieldPath  string // This is the search.Field.FieldPath for this field.
 
-	FromGroupBy  bool
+	// FromGroupBy indicates that the field is present in group by clause.
+	FromGroupBy bool
+	// DerivedField indicates that the field is derived from a proto field(/table column).
 	DerivedField bool
 
 	// PostTransform is a function that will be applied to the returned rows from SQL before
@@ -49,7 +51,7 @@ func (f *SelectQueryField) PathForSelectPortion() string {
 	if f.Alias == "" {
 		return f.SelectPath
 	}
-	return fmt.Sprintf("%s %s", f.SelectPath, f.Alias)
+	return fmt.Sprintf("%s as %s", f.SelectPath, f.Alias)
 }
 
 // QueryEntry is an entry with clauses added by portions of the query.
@@ -114,18 +116,16 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 	if dbField.SQLType == "uuid" {
 		dataType = walker.UUID
 	}
-	var goesIntoHavingClause bool
 	if derivedMetadata != nil {
 		switch derivedMetadata.DerivationType {
 		case search.CountDerivationType:
 			qualifiedColName = fmt.Sprintf("count(%s)", qualifiedColName)
 			dataType = walker.Integer
-			goesIntoHavingClause = true
 		default:
 			return nil, errors.Errorf("unsupported derivation type %s", derivedMetadata.DerivationType)
 		}
 	}
-	qe, err := matchFieldQuery(qualifiedColName, dataType, field, value, highlight, now, goesIntoHavingClause)
+	qe, err := matchFieldQuery(qualifiedColName, dataType, field, derivedMetadata, value, highlight, now)
 	if err != nil {
 		return nil, err
 	}

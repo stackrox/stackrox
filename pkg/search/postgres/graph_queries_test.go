@@ -248,12 +248,6 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 	}))
 }
 
-func (s *GraphQueriesTestSuite) mustRunQuery(typeName string, q *v1.Query) []search.Result {
-	res, err := postgres.RunSearchRequestForSchema(testCtx, getTestSchema(s.T(), typeName), q, s.testDB.Pool)
-	s.Require().NoError(err)
-	return res
-}
-
 func (s *GraphQueriesTestSuite) mustRunCountQuery(typeName string, q *v1.Query) int {
 	count, err := postgres.RunCountRequestForSchema(ctx, getTestSchema(s.T(), typeName), q, s.testDB.Pool)
 	s.Require().NoError(err)
@@ -284,8 +278,8 @@ type graphQueryTestCase struct {
 	queryStrings map[search.FieldLabel][]string
 
 	expectedResultIDs []string
-
-	orderMatters bool
+	expectedError     bool
+	orderMatters      bool
 }
 
 func (s *GraphQueriesTestSuite) runTestCases(testCases []graphQueryTestCase) {
@@ -305,7 +299,12 @@ func (s *GraphQueriesTestSuite) runTestCases(testCases []graphQueryTestCase) {
 			if testCase.queryType == postgres.COUNT {
 				s.Equal(len(testCase.expectedResultIDs), s.mustRunCountQuery(testCase.queriedProtoType, q))
 			} else {
-				res := s.mustRunQuery(testCase.queriedProtoType, q)
+				res, err := postgres.RunSearchRequestForSchema(testCtx, getTestSchema(s.T(), testCase.queriedProtoType), q, s.testDB.Pool)
+				if testCase.expectedError {
+					s.Error(err)
+					return
+				}
+				s.NoError(err)
 				s.assertResultsHaveIDs(res, testCase.orderMatters, testCase.expectedResultIDs...)
 			}
 		})
@@ -620,6 +619,36 @@ func (s *GraphQueriesTestSuite) TestDerived() {
 				search.TestChild1Count: {">5"},
 			},
 			expectedResultIDs: []string{},
+		},
+	})
+}
+
+func (s *GraphQueriesTestSuite) TestDerivedFieldHighlighted() {
+	s.runTestCases([]graphQueryTestCase{
+		{
+			desc:              "one-hop count",
+			queriedProtoType:  "testgrandparent",
+			q:                 search.NewQueryBuilder().AddStringsHighlighted(search.TestParent1Count, ">1").ProtoQuery(),
+			expectedResultIDs: []string{"1"},
+		},
+		{
+			desc:              "two-hop count",
+			queriedProtoType:  "testgrandparent",
+			q:                 search.NewQueryBuilder().AddStringsHighlighted(search.TestChild1Count, ">1").ProtoQuery(),
+			expectedResultIDs: []string{"1", "2"},
+		},
+		{
+			desc:              "two-hop count again",
+			queriedProtoType:  "testgrandparent",
+			q:                 search.NewQueryBuilder().AddStringsHighlighted(search.TestChild1Count, ">5").ProtoQuery(),
+			expectedResultIDs: []string{},
+		},
+		{
+			desc:              "wildcard",
+			queriedProtoType:  "testgrandparent",
+			q:                 search.NewQueryBuilder().AddStringsHighlighted(search.TestChild1Count, "*").ProtoQuery(),
+			expectedResultIDs: []string{"1", "2"},
+			expectedError:     true,
 		},
 	})
 }
