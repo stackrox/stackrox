@@ -27,10 +27,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
     const [localPage, setLocalPage] = useState(page + 1);
 
     // 2. debounce the setPage callback to delay the setPage call when typing
-    const delayedSetPage = useCallback(
-        debounce((newPage) => setPage(newPage), TYPING_DELAY),
-        []
-    );
+    const delayedSetPage = debounce((newPage) => setPage(newPage), TYPING_DELAY);
 
     useEffect(() => {
         setLocalPage(page + 1);
