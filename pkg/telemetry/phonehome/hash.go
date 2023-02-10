@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
@@ -38,6 +39,7 @@ func (cfg *Config) HashUserAuthID(id authn.Identity) string {
 		userID = id.UID()
 		if provider := id.ExternalAuthProvider(); provider != nil {
 			providerID = provider.ID()
+			userID = strings.TrimPrefix(userID, "sso:"+providerID+":")
 		}
 	}
 	return cfg.HashUserID(userID, providerID)

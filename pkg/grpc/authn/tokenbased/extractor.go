@@ -149,7 +149,7 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 
 func createRoleBasedIdentity(roles []permissions.ResolvedRole, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
 	id := &roleBasedIdentity{
-		uid:           FormatUserID(token.Sources[0].ID(), token.ExternalUser.UserID),
+		uid:           fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
 		username:      token.ExternalUser.Email,
 		friendlyName:  token.ExternalUser.FullName,
 		fullName:      token.ExternalUser.FullName,
@@ -168,9 +168,4 @@ func createRoleBasedIdentity(roles []permissions.ResolvedRole, token *tokens.Tok
 		id.friendlyName += fmt.Sprintf(" (%s)", token.ExternalUser.Email)
 	}
 	return id
-}
-
-// FormatUserID returns a compound identity of the source and the user.
-func FormatUserID(sourceID string, userID string) string {
-	return fmt.Sprintf("sso:%s:%s", sourceID, userID)
 }
