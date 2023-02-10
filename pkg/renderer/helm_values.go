@@ -118,8 +118,6 @@ central:
     {{ end }}
   {{- end }}
 
-
-  {{- if .K8sConfig.EnableCentralDB }}
   db:
     enabled: true
     {{- if .HasCentralDBHostPath }}
@@ -158,7 +156,7 @@ central:
       {{- else }}
       none: true
       {{- end }}
-  {{- end }}
+
 scanner:
   # IMPORTANT: If you do not wish to run StackRox Scanner, change the value on the following
   # line to "true".
@@ -416,10 +414,7 @@ var (
 // based on the given config. The values are returned as a *zip.File slice, containing
 // two entries, one for `values-public.yaml`, and one for `values-private.yaml`.
 func renderNewHelmValues(c Config) ([]*zip.File, error) {
-	privateTemplate := privateValuesTemplate
-	if c.K8sConfig.EnableCentralDB {
-		privateTemplate = privateValuesPostgresTemplate
-	}
+	privateTemplate := privateValuesPostgresTemplate
 
 	publicValuesBytes, err := templates.ExecuteToBytes(publicValuesTemplate, &c)
 	if err != nil {

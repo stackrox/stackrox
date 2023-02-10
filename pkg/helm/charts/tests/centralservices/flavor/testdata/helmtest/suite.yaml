@@ -26,6 +26,10 @@ values:
     serviceTLS:
       cert: "Central cert"
       key: "Central key"
+    db:
+      serviceTLS:
+        cert: "Central DB cert"
+        key: "Central DB key"
   scanner:
     serviceTLS:
       cert: "Scanner cert"
