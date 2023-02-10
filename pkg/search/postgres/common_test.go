@@ -321,6 +321,35 @@ func TestSelectQueries(t *testing.T) {
 				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
 		},
 		{
+			desc: "derived field select",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					&v1.QueryField{
+						Field:         search.DeploymentName.String(),
+						AggregateFunc: Count.String(),
+						Distinct:      true,
+					},
+				).ProtoQuery(),
+			expectedQuery: "select count(distinct(deployments.Name)) as deployment_count from deployments",
+		},
+		{
+			desc: "derived field select w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					&v1.QueryField{
+						Field:         search.DeploymentName.String(),
+						AggregateFunc: Count.String(),
+						Distinct:      true,
+					},
+				).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select count(distinct(deployments.Name)) as deployment_count " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+		},
+		{
 			desc: "nil query",
 			q:    nil,
 		},

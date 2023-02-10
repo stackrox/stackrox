@@ -7,6 +7,7 @@ type AggrFunc string
 
 // Defines all the SQL aggregate functions.
 const (
+	Unset AggrFunc = ""
 	Count AggrFunc = "count"
 	Min   AggrFunc = "min"
 	Max   AggrFunc = "max"

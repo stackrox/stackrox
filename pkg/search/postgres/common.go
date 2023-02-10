@@ -142,7 +142,7 @@ func (q *query) populatePrimaryKeySelectFields() {
 	pks := q.Schema.PrimaryKeys()
 	for idx := range pks {
 		pk := &pks[idx]
-		q.PrimaryKeyFields = append(q.PrimaryKeyFields, selectQueryField(pk.Search.FieldName, pk, false, ""))
+		q.PrimaryKeyFields = append(q.PrimaryKeyFields, selectQueryField(pk.Search.FieldName, pk, false, Unset))
 
 		if len(q.PrimaryKeyFields) == 0 {
 			return
@@ -232,6 +232,10 @@ func (q *query) groupByNonPKFields() bool {
 }
 
 func (q *query) AsSQL() string {
+	if q == nil {
+		return ""
+	}
+
 	var querySB strings.Builder
 
 	querySB.WriteString(q.getPortionBeforeFromClause())
@@ -321,7 +325,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 		}
 
 		querySoFar.SelectedFields = append(querySoFar.SelectedFields,
-			selectQueryField(field, dbField, qs.Distinct, qs.AggregateFunc),
+			selectQueryField(field, dbField, qs.Distinct, AggrFunc(qs.AggregateFunc)),
 		)
 	}
 	return nil
@@ -361,7 +365,7 @@ func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker
 			querySoFar.GroupByPrimaryKey = true
 		}
 
-		selectField := selectQueryField(groupByField, dbField, false, "")
+		selectField := selectQueryField(groupByField, dbField, false, Unset)
 		selectField.FromGroupBy = true
 		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
 	}
@@ -373,7 +377,7 @@ func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
 	pks := schema.PrimaryKeys()
 	for idx := range pks {
 		pk := &pks[idx]
-		selectField := selectQueryField("", pk, false, "")
+		selectField := selectQueryField("", pk, false, Unset)
 		selectField.FromGroupBy = true
 		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
 	}
@@ -411,7 +415,7 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 
 		if fieldMetadata.derivedMetadata == nil {
 			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-				Field:       selectQueryField(so.GetField(), dbField, false, ""),
+				Field:       selectQueryField(so.GetField(), dbField, false, Unset),
 				Descending:  so.GetReversed(),
 				SearchAfter: so.GetSearchAfter(),
 			})
@@ -420,10 +424,10 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			var descending bool
 			switch fieldMetadata.derivedMetadata.DerivationType {
 			case searchPkg.CountDerivationType:
-				selectField = selectQueryField(so.GetField(), dbField, false, "count")
+				selectField = selectQueryField(so.GetField(), dbField, false, Count)
 				descending = so.GetReversed()
 			case searchPkg.SimpleReverseSortDerivationType:
-				selectField = selectQueryField(so.GetField(), dbField, false, "")
+				selectField = selectQueryField(so.GetField(), dbField, false, Unset)
 				descending = !so.GetReversed()
 			default:
 				log.Errorf("Unsupported derived field %s found in query", so.GetField())
@@ -1154,7 +1158,7 @@ func qualifyColumn(table, column, cast string) string {
 	return table + "." + column + cast
 }
 
-func selectQueryField(searchField string, field *walker.Field, selectDistinct bool, aggrFunc string) pgsearch.SelectQueryField {
+func selectQueryField(searchField string, field *walker.Field, selectDistinct bool, aggrFunc AggrFunc) pgsearch.SelectQueryField {
 	var cast string
 	var dataType walker.DataType
 	if field.SQLType == "uuid" {
@@ -1174,7 +1178,7 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 	}
 	return pgsearch.SelectQueryField{
 		SelectPath:   selectPath,
-		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc), ""),
+		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.String()), "_"),
 		FieldType:    dataType,
 		DerivedField: aggrFunc != "",
 	}
