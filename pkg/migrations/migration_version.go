@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"gopkg.in/yaml.v3"
@@ -65,7 +66,7 @@ func SetCurrent(dbPath string) {
 		newVersion := &MigrationVersion{
 			dbPath:      dbPath,
 			MainVersion: version.GetMainVersion(),
-			SeqNum:      LastRocksDBVersionSeqNum(), // Most recent possible RocksDB version
+			SeqNum:      mathutil.MinInt(LastRocksDBVersionSeqNum(), CurrentDBVersionSeqNum()),
 		}
 		err := newVersion.atomicWrite()
 		if err != nil {
