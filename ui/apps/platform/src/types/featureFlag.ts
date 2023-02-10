@@ -11,4 +11,5 @@ export type FeatureFlagEnvVar =
     | 'ROX_POSTGRES_DATASTORE'
     | 'ROX_NETWORK_GRAPH_PATTERNFLY'
     | 'ROX_SYSLOG_EXTRA_FIELDS'
+    | 'ROX_VULN_MGMT_WORKLOAD_CVES'
     ;
