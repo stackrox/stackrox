@@ -68,26 +68,26 @@ func (d *dbCloneManagerImpl) Scan() error {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists || currClone.GetMigVersion() == nil {
 		log.Info("Cannot find the current database or it has no version, so we need to let it create and ignore other clones.")
-		return nil
-	}
-	if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
-		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
-		prevClone, prevExists := d.cloneMap[PreviousClone]
-		if !prevExists && currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
-			if version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
-				return errors.New(metadata.ErrNoPrevious)
+	} else {
+		if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
+			// If there is no previous clone or force rollback is not requested, we cannot downgrade.
+			prevClone, prevExists := d.cloneMap[PreviousClone]
+			if !prevExists && currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
+				if version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
+					return errors.New(metadata.ErrNoPrevious)
+				}
+				return errors.New(metadata.ErrNoPreviousInDevEnv)
 			}
-			return errors.New(metadata.ErrNoPreviousInDevEnv)
-		}
 
-		// Force rollback is not requested.
-		if d.forceRollbackVersion != version.GetMainVersion() {
-			return errors.New(metadata.ErrForceUpgradeDisabled)
-		}
+			// Force rollback is not requested.
+			if d.forceRollbackVersion != version.GetMainVersion() {
+				return errors.New(metadata.ErrForceUpgradeDisabled)
+			}
 
-		// If previous clone does not match
-		if prevExists && prevClone.GetVersion() != version.GetMainVersion() {
-			return errors.Errorf(metadata.ErrPreviousMismatchWithVersions, prevClone.GetVersion(), version.GetMainVersion())
+			// If previous clone does not match
+			if prevExists && prevClone.GetVersion() != version.GetMainVersion() {
+				return errors.Errorf(metadata.ErrPreviousMismatchWithVersions, prevClone.GetVersion(), version.GetMainVersion())
+			}
 		}
 	}
 
@@ -157,11 +157,13 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
-	// Otherwise we roll with Postgres->Postgres
+	// Otherwise we roll with Postgres->Postgres.  We use central_temp as that will get cleaned up if the migration
+	// of Rocks -> Postgres fails so we can start fresh.
 	if d.versionExists(rocksVersion) {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
 		if !currExists || !d.versionExists(currClone.GetMigVersion()) {
-			return CurrentClone, true, nil
+			d.cloneMap[TempClone] = metadata.NewPostgres(nil, TempClone)
+			return TempClone, true, nil
 		}
 	}
 
@@ -302,10 +304,14 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 		return err
 	}
 
-	// Move the current to the previous clone
-	err = d.renameClone(ctx, tx, CurrentClone, previousClone)
-	if err != nil {
-		return err
+	// Move the current to the previous clone if it exists
+	if d.databaseExists(CurrentClone) {
+		err = d.renameClone(ctx, tx, CurrentClone, previousClone)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Infof("current clone %q does not exist, must be start up", CurrentClone)
 	}
 
 	// Now flip the clone to be the primary DB
