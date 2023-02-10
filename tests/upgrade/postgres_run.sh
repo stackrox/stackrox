@@ -208,9 +208,8 @@ test_upgrade_paths() {
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
-    ./sensor-remote/sensor.sh
+    MAIN_IMAGE_TAG="$CURRENT_TAG" MAIN_IMAGE_REPO="$REGISTRY" ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
-    sensor_wait
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
         "compliance=$REGISTRY/main:$CURRENT_TAG"
