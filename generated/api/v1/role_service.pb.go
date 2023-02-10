@@ -1224,19 +1224,19 @@ type RoleServiceClient interface {
 	//
 	// We let the caller decide what level of detail they would like to have:
 	//
-	//   * Minimal, when only roots of included subtrees are listed by their
+	//   - Minimal, when only roots of included subtrees are listed by their
 	//     IDs. Clusters can be either INCLUDED (its namespaces are included but
 	//     are not listed) or PARTIAL (at least one namespace is explicitly
 	//     included). Namespaces can only be INCLUDED.
 	//
-	//   * Standard [default], when all known clusters and namespaces are listed
+	//   - Standard [default], when all known clusters and namespaces are listed
 	//     with their IDs and names. Clusters can be INCLUDED (all its
 	//     namespaces are explicitly listed as INCLUDED), PARTIAL (all its
 	//     namespaces are explicitly listed, some as INCLUDED and some as
 	//     EXCLUDED), and EXCLUDED (all its namespaces are explicitly listed as
 	//     EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.
 	//
-	//   * High, when every cluster and namespace is augmented with metadata.
+	//   - High, when every cluster and namespace is augmented with metadata.
 	ComputeEffectiveAccessScope(ctx context.Context, in *ComputeEffectiveAccessScopeRequest, opts ...grpc.CallOption) (*storage.EffectiveAccessScope, error)
 	// GetClustersForPermissions
 	//
@@ -1493,19 +1493,19 @@ type RoleServiceServer interface {
 	//
 	// We let the caller decide what level of detail they would like to have:
 	//
-	//   * Minimal, when only roots of included subtrees are listed by their
+	//   - Minimal, when only roots of included subtrees are listed by their
 	//     IDs. Clusters can be either INCLUDED (its namespaces are included but
 	//     are not listed) or PARTIAL (at least one namespace is explicitly
 	//     included). Namespaces can only be INCLUDED.
 	//
-	//   * Standard [default], when all known clusters and namespaces are listed
+	//   - Standard [default], when all known clusters and namespaces are listed
 	//     with their IDs and names. Clusters can be INCLUDED (all its
 	//     namespaces are explicitly listed as INCLUDED), PARTIAL (all its
 	//     namespaces are explicitly listed, some as INCLUDED and some as
 	//     EXCLUDED), and EXCLUDED (all its namespaces are explicitly listed as
 	//     EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.
 	//
-	//   * High, when every cluster and namespace is augmented with metadata.
+	//   - High, when every cluster and namespace is augmented with metadata.
 	ComputeEffectiveAccessScope(context.Context, *ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error)
 	// GetClustersForPermissions
 	//
