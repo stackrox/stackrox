@@ -35,44 +35,44 @@ func TestMerge(t *testing.T) {
 		{
 			"old config with client secret, new config wants to use client secret but is empty",
 			map[string]string{
-				dontUseClientSecretConfigKey: "false",
-				clientSecretConfigKey:        "SECRET",
+				DontUseClientSecretConfigKey: "false",
+				ClientSecretConfigKey:        "SECRET",
 			},
 			map[string]string{
-				dontUseClientSecretConfigKey: "false",
+				DontUseClientSecretConfigKey: "false",
 			},
 			map[string]string{
-				dontUseClientSecretConfigKey: "false",
-				clientSecretConfigKey:        "SECRET",
+				DontUseClientSecretConfigKey: "false",
+				ClientSecretConfigKey:        "SECRET",
 			},
 		},
 		{
 			"old config with client secret, new config wants to use client secret and specifies a new one",
 			map[string]string{
-				dontUseClientSecretConfigKey: "false",
-				clientSecretConfigKey:        "SECRET",
+				DontUseClientSecretConfigKey: "false",
+				ClientSecretConfigKey:        "SECRET",
 			},
 			map[string]string{
-				dontUseClientSecretConfigKey: "false",
-				clientSecretConfigKey:        "NEWSECRET",
+				DontUseClientSecretConfigKey: "false",
+				ClientSecretConfigKey:        "NEWSECRET",
 			},
 			map[string]string{
-				dontUseClientSecretConfigKey: "false",
-				clientSecretConfigKey:        "NEWSECRET",
+				DontUseClientSecretConfigKey: "false",
+				ClientSecretConfigKey:        "NEWSECRET",
 			},
 		},
 		{
 			"old config with no client secret, new config wants to use client secret",
 			map[string]string{
-				dontUseClientSecretConfigKey: "true",
+				DontUseClientSecretConfigKey: "true",
 			},
 			map[string]string{
-				dontUseClientSecretConfigKey: "false",
-				clientSecretConfigKey:        "NEWSECRET",
+				DontUseClientSecretConfigKey: "false",
+				ClientSecretConfigKey:        "NEWSECRET",
 			},
 			map[string]string{
-				dontUseClientSecretConfigKey: "false",
-				clientSecretConfigKey:        "NEWSECRET",
+				DontUseClientSecretConfigKey: "false",
+				ClientSecretConfigKey:        "NEWSECRET",
 			},
 		},
 	} {
@@ -180,39 +180,39 @@ func TestBackend(t *testing.T) {
 	}{
 		"no client id": {
 			config: map[string]string{
-				clientIDConfigKey:     "",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "some-issuer",
-				modeConfigKey:         "post",
+				ClientIDConfigKey:     "",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "some-issuer",
+				ModeConfigKey:         "post",
 			},
 			wantBackendErr: errNoClientIDProvided,
 		},
 		"bad issuer": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "",
-				modeConfigKey:         "post",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "",
+				ModeConfigKey:         "post",
 			},
 			wantBackendErr: endpoint.ErrNoIssuerProvided,
 		},
 		"transient backend error": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "post",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "post",
 			},
 			oidcProvider:   nil,
 			wantBackendErr: transientError,
 		},
 		"no client secret and no confirmation": {
 			config: map[string]string{
-				clientIDConfigKey:            "testclientid",
-				clientSecretConfigKey:        "",
-				dontUseClientSecretConfigKey: "false",
-				issuerConfigKey:              "test-issuer",
-				modeConfigKey:                "post",
+				ClientIDConfigKey:            "testclientid",
+				ClientSecretConfigKey:        "",
+				DontUseClientSecretConfigKey: "false",
+				IssuerConfigKey:              "test-issuer",
+				ModeConfigKey:                "post",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -222,11 +222,11 @@ func TestBackend(t *testing.T) {
 		},
 		"no client secret and no confirmation in query mode": {
 			config: map[string]string{
-				clientIDConfigKey:            "testclientid",
-				clientSecretConfigKey:        "",
-				dontUseClientSecretConfigKey: "false",
-				issuerConfigKey:              "test-issuer",
-				modeConfigKey:                "query",
+				ClientIDConfigKey:            "testclientid",
+				ClientSecretConfigKey:        "",
+				DontUseClientSecretConfigKey: "false",
+				IssuerConfigKey:              "test-issuer",
+				ModeConfigKey:                "query",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -236,10 +236,10 @@ func TestBackend(t *testing.T) {
 		},
 		"insecure client mode form post": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "https+insecure://test-issuer",
-				modeConfigKey:         "post",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "https+insecure://test-issuer",
+				ModeConfigKey:         "post",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -250,10 +250,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "form_post",
 				responseTypes: []string{"code"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https+insecure://test-issuer",
-					modeConfigKey:         "post",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https+insecure://test-issuer",
+					ModeConfigKey:         "post",
 				},
 			},
 			issueNonce: true,
@@ -264,10 +264,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode form post": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "https://test-issuer",
-				modeConfigKey:         "post",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "https://test-issuer",
+				ModeConfigKey:         "post",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -277,10 +277,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "form_post",
 				responseTypes: []string{"code"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "post",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "post",
 				},
 			},
 			issueNonce: true,
@@ -291,10 +291,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode form post and mismatching idp response": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "https://test-issuer",
-				modeConfigKey:         "post",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "https://test-issuer",
+				ModeConfigKey:         "post",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: []string{"code"},
@@ -304,10 +304,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "form_post",
 				responseTypes: []string{"code"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "post",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "post",
 				},
 			},
 			issueNonce: true,
@@ -318,10 +318,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode form post with bad nonce": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "https://test-issuer",
-				modeConfigKey:         "post",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "https://test-issuer",
+				ModeConfigKey:         "post",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -331,10 +331,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "form_post",
 				responseTypes: []string{"code"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "post",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "post",
 				},
 			},
 			issueNonce: false,
@@ -346,10 +346,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode query": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "query",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "query",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -359,10 +359,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "query",
 				responseTypes: []string{"code"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "query",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "query",
 				},
 			},
 			issueNonce: true,
@@ -373,10 +373,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with access_token only": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "https://test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "https://test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -388,10 +388,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "fragment",
 				responseTypes: []string{"token", "id_token"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "fragment",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "fragment",
 				},
 			},
 			idpResponseTemplate: map[string]responseValueProvider{
@@ -400,10 +400,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with access_token only fails on userinfo endpoint failure": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "https://test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "https://test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -416,10 +416,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "fragment",
 				responseTypes: []string{"token", "id_token"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "fragment",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "fragment",
 				},
 			},
 			idpResponseTemplate: map[string]responseValueProvider{
@@ -429,10 +429,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with id_token only": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -449,10 +449,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with id_token only and bad nonce": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -470,10 +470,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with both token and id_token": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -493,10 +493,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with both token and id_token and invalid expires_in": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -517,10 +517,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with both token and id_token and long expires_in": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -541,10 +541,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with both token and id_token and short expires_in": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -565,10 +565,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode fragment with both token and id_token, and userinfo endpoint failure": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "fragment",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -589,10 +589,10 @@ func TestBackend(t *testing.T) {
 		},
 		"legacy no mode setting, equal to fragment, with access token only": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -604,10 +604,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "fragment",
 				responseTypes: []string{"token", "id_token"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "fragment",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "fragment",
 				},
 			},
 			idpResponseTemplate: map[string]responseValueProvider{
@@ -616,10 +616,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode auto, error due to no response types": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "auto",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "auto",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: []string{"code"},
@@ -629,10 +629,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode auto, with client secret, form post mode result": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "auto",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "auto",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -642,10 +642,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "form_post",
 				responseTypes: []string{"code"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "post",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "post",
 				},
 			},
 			issueNonce: true,
@@ -656,10 +656,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode auto, with client secret, non-code and non-post mode result": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "auto",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "auto",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     []string{"token", "id_token", "token id_token"},
@@ -671,10 +671,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "fragment",
 				responseTypes: []string{"token", "id_token"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "fragment",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "fragment",
 				},
 			},
 			idpResponseTemplate: map[string]responseValueProvider{
@@ -683,10 +683,10 @@ func TestBackend(t *testing.T) {
 		},
 		"mode auto, with client secret, code with non-post mode result": {
 			config: map[string]string{
-				clientIDConfigKey:     "testclientid",
-				clientSecretConfigKey: "testsecret",
-				issuerConfigKey:       "test-issuer",
-				modeConfigKey:         "auto",
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "auto",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     []string{"code", "token", "id_token", "token id_token"},
@@ -698,10 +698,10 @@ func TestBackend(t *testing.T) {
 				responseMode:  "query",
 				responseTypes: []string{"code"},
 				config: map[string]string{
-					clientIDConfigKey:     "testclientid",
-					clientSecretConfigKey: "testsecret",
-					issuerConfigKey:       "https://test-issuer",
-					modeConfigKey:         "query",
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "query",
 				},
 				baseOauthConfig: &oauth2.Config{
 					ClientID:     "testclientid",
@@ -722,11 +722,11 @@ func TestBackend(t *testing.T) {
 		},
 		"mode auto, no client secret": {
 			config: map[string]string{
-				clientIDConfigKey:            "testclientid",
-				clientSecretConfigKey:        "",
-				dontUseClientSecretConfigKey: "true",
-				issuerConfigKey:              "https://test-issuer",
-				modeConfigKey:                "",
+				ClientIDConfigKey:            "testclientid",
+				ClientSecretConfigKey:        "",
+				DontUseClientSecretConfigKey: "true",
+				IssuerConfigKey:              "https://test-issuer",
+				ModeConfigKey:                "",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -744,11 +744,11 @@ func TestBackend(t *testing.T) {
 		},
 		"mode auto, with client secret, disable offline_access scope": {
 			config: map[string]string{
-				clientIDConfigKey:                  "testclientid",
-				clientSecretConfigKey:              "testsecret",
-				issuerConfigKey:                    "https://test-issuer",
-				modeConfigKey:                      "",
-				disableOfflineAccessScopeConfigKey: "true",
+				ClientIDConfigKey:                  "testclientid",
+				ClientSecretConfigKey:              "testsecret",
+				IssuerConfigKey:                    "https://test-issuer",
+				ModeConfigKey:                      "",
+				DisableOfflineAccessScopeConfigKey: "true",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,
@@ -776,11 +776,11 @@ func TestBackend(t *testing.T) {
 		},
 		"unauthorized client error from idp": {
 			config: map[string]string{
-				clientIDConfigKey:            "testclientid",
-				clientSecretConfigKey:        "testsecret",
-				dontUseClientSecretConfigKey: "true",
-				issuerConfigKey:              "https://test-issuer",
-				modeConfigKey:                "auto",
+				ClientIDConfigKey:            "testclientid",
+				ClientSecretConfigKey:        "testsecret",
+				DontUseClientSecretConfigKey: "true",
+				IssuerConfigKey:              "https://test-issuer",
+				ModeConfigKey:                "auto",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -800,11 +800,11 @@ func TestBackend(t *testing.T) {
 		},
 		"error from idp without description": {
 			config: map[string]string{
-				clientIDConfigKey:            "testclientid",
-				clientSecretConfigKey:        "testsecret",
-				dontUseClientSecretConfigKey: "true",
-				issuerConfigKey:              "https://test-issuer",
-				modeConfigKey:                "auto",
+				ClientIDConfigKey:            "testclientid",
+				ClientSecretConfigKey:        "testsecret",
+				DontUseClientSecretConfigKey: "true",
+				IssuerConfigKey:              "https://test-issuer",
+				ModeConfigKey:                "auto",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
@@ -821,11 +821,11 @@ func TestBackend(t *testing.T) {
 		},
 		"error from idp with description": {
 			config: map[string]string{
-				clientIDConfigKey:            "testclientid",
-				clientSecretConfigKey:        "testsecret",
-				dontUseClientSecretConfigKey: "true",
-				issuerConfigKey:              "https://test-issuer",
-				modeConfigKey:                "auto",
+				ClientIDConfigKey:            "testclientid",
+				ClientSecretConfigKey:        "testsecret",
+				DontUseClientSecretConfigKey: "true",
+				IssuerConfigKey:              "https://test-issuer",
+				ModeConfigKey:                "auto",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported: allResponseTypes,
