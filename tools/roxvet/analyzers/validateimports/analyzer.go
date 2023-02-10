@@ -249,6 +249,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/images/types",
 			"pkg/jsonutil",
 			"pkg/logging",
+			"pkg/mathutil",
 			"pkg/metrics",
 			"pkg/migrations",
 			"pkg/nodes/converter",

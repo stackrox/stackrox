@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -168,7 +169,7 @@ func (m *mockCentral) upgradeDB(path, clone, pgClone string) {
 			require.LessOrEqual(m.t, currDBSeq, migrations.CurrentDBVersionSeqNum())
 		}
 
-		require.NoError(m.t, os.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
+		require.NoError(m.t, os.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", mathutil.MinInt(migrations.LastRocksDBVersionSeqNum(), migrations.CurrentDBVersionSeqNum()))), 0644))
 	}
 }
 
@@ -230,6 +231,9 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string, unsup
 	}
 
 	require.NoError(m.t, dbm.Persist(clone, pgClone, m.updateBoth))
+	if m.updateBoth {
+		migrations.SetCurrent(migrations.CurrentPath())
+	}
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		m.verifyDBVersion(migrations.CurrentPath(), migrations.CurrentDBVersionSeqNum())
@@ -238,7 +242,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string, unsup
 }
 
 func (m *mockCentral) runCentral() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() || m.updateBoth {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		require.NoError(m.t, migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(m.mountPath, ".backup")))
 		if version.CompareVersions(version.GetMainVersion(), "3.0.57.0") >= 0 {
 			migrations.SetCurrent(migrations.CurrentPath())
