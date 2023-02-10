@@ -39,7 +39,7 @@ metadata:
 
 ### Add a cluster config field:
 
-Making a change that affects the cluster configuration (which is persisted in
+Making a change that affects the Secured Cluster chart's cluster configuration (which is persisted in
 Central and displayed in the UI) is more complex because the Helm Cluster
 configuration is tracked in Central and needs adjustments to its conversion
 logic.
