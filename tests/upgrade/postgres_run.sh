@@ -216,6 +216,9 @@ test_upgrade_paths() {
 
     sensor_wait
 
+    # Bounce collectors to avoid restarts on initial module pull
+    kubectl -n stackrox delete pod -l app=collector --grace-period=0
+
     wait_for_central_reconciliation
 
     info "Running smoke tests"

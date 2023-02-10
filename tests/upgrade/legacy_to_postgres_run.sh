@@ -157,12 +157,14 @@ test_upgrade_paths() {
     info "Installing sensor"
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$INITIAL_POSTGRES_TAG"
-    sensor_wait
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$INITIAL_POSTGRES_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
         "compliance=$REGISTRY/main:$INITIAL_POSTGRES_TAG"
 
     sensor_wait
+
+    # Bounce collectors to avoid restarts on initial module pull
+    kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     wait_for_central_reconciliation
 
