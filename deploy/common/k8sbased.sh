@@ -253,8 +253,6 @@ function launch_central {
 
     echo "Deploying Central..."
 
-    $(git rev-parse --show-toplevel)/scripts/ci/store-artifacts.sh store_artifacts "${k8s_dir}/central-deploy"
-
     ${KUBE_COMMAND:-kubectl} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
       ${KUBE_COMMAND:-kubectl} create namespace "${STACKROX_NAMESPACE}"
 
@@ -319,8 +317,14 @@ function launch_central {
         helm lint "$unzip_dir/chart" -n stackrox
         helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
       fi
+      echo helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" "${helm_args[@]}" > /tmp/helmcmd
+      touch /tmp/hold
+      while [[ -e /tmp/hold ]]; do
+        sleep 60
+      done
       helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
+
     else
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         $unzip_dir/central/scripts/setup.sh
