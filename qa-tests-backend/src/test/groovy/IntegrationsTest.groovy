@@ -184,8 +184,8 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     // splunk is not supported on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Splunk Integration (legacy mode: #legacy)"() {
         given:
         "the integration is tested"
@@ -756,7 +756,6 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
-    @Tag("BAT")
     def "Verify syslog notifier"() {
        given:
        "syslog server is created"
