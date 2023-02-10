@@ -24,14 +24,6 @@ type KubernetesNetworkPolicyWrap struct {
 
 // ToYaml produces a string holding a JSON formatted yaml for the network policy.
 func (np KubernetesNetworkPolicyWrap) ToYaml() (string, error) {
-	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(np.NetworkPolicy)
-	if err != nil {
-		return "", err
-	}
-	encoder := json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{
-		Yaml: true,
-	})
-
 	// Kubernetes added a 'status' field for NetworkPolicies in 1.24. See:
 	// * (https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.24.md#api-change-3)
 	// * (https://github.com/kubernetes/kubernetes/pull/107963)
@@ -41,7 +33,15 @@ func (np KubernetesNetworkPolicyWrap) ToYaml() (string, error) {
 	// This code might not be necessary in the future since the feature was withdrawn by the sig-network. See:
 	// * (https://github.com/kubernetes/enhancements/tree/master/keps/sig-network/2943-networkpolicy-status#implementation-history)
 	// * (https://github.com/kubernetes/kubernetes/pull/107963#issuecomment-1400220883)
+	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(np.NetworkPolicy)
+	if err != nil {
+		return "", err
+	}
 	delete(uObj, "status")
+
+	encoder := json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{
+		Yaml: true,
+	})
 
 	stringBuilder := &strings.Builder{}
 	err = encoder.Encode(&unstructured.Unstructured{Object: uObj}, stringBuilder)
