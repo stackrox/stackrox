@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWrongConfigurationTypeTransform(t *testing.T) {
+func TestWrongConfigurationTypeTransformPermissionSet(t *testing.T) {
 	pt := newPermissionSetTransform()
 	protos, err := pt.Transform(&declarativeconfig.AuthProvider{})
 	assert.Nil(t, protos)
@@ -18,7 +18,7 @@ func TestWrongConfigurationTypeTransform(t *testing.T) {
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
-func TestTransform(t *testing.T) {
+func TestTransformPermissionSet(t *testing.T) {
 	permissionSet := &declarativeconfig.PermissionSet{
 		Name:        "some-permission-set",
 		Description: "with a nice description",

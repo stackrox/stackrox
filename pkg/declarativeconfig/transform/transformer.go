@@ -18,8 +18,8 @@ type Transformer interface {
 // New creates a Transformer that can handle transforming all currently supported declarativeconfig.Configuration.
 func New() Transformer {
 	return &universalTransformer{configurationTransformers: map[string]Transformer{
-		declarativeconfig.AuthProviderConfiguration:  nil,
 		declarativeconfig.AccessScopeConfiguration:   newAccessScopeTransform(),
+		declarativeconfig.AuthProviderConfiguration:  newAuthProviderTransformer(),
 		declarativeconfig.RoleConfiguration:          nil,
 		declarativeconfig.PermissionSetConfiguration: newPermissionSetTransform(),
 	}}

@@ -34,7 +34,7 @@ type OIDCConfig struct {
 // SAMLConfig contains config values for SAML 2.0 auth provider.
 // There are two ways to configure SAML: static and dynamic.
 // For dynamic configuration, you only need to specify spIssuer and metadataURL.
-// For static configuration, specify spIssuer, cert, ssoURL and nameIdFormat.
+// For static configuration, specify spIssuer, cert, ssoURL, idpIssuer, and nameIdFormat.
 type SAMLConfig struct {
 	SpIssuer    string `yaml:"spIssuer,omitempty"`
 	MetadataURL string `yaml:"metadataURL,omitempty"`
@@ -42,6 +42,7 @@ type SAMLConfig struct {
 	Cert         string `yaml:"cert,omitempty"`
 	SsoURL       string `yaml:"ssoURL,omitempty"`
 	NameIDFormat string `yaml:"nameIdFormat,omitempty"`
+	IDPIssuer    string `yaml:"idpIssuer,omitempty"`
 }
 
 // IAPConfig contains config values for IAP auth provider.
