@@ -4,7 +4,8 @@ import { createStructuredSelector } from 'reselect';
 import { Select, SelectOption } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
-import { actions as graphActions, networkGraphClusters } from 'reducers/network/graph';
+import { actions as graphActions } from 'reducers/network/graph';
+// import { actions as graphActions, networkGraphClusters } from 'reducers/network/graph';
 import { actions as pageActions } from 'reducers/network/page';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';

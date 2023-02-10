@@ -3,7 +3,10 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
-import { getNamespacesForClusterAndPermissions, NamespaceForClusterAndPermissions } from 'services/RolesService';
+import {
+    getNamespacesForClusterAndPermissions,
+    NamespaceForClusterAndPermissions
+} from 'services/RolesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type SelectorState = { selectedClusterId: string | null; selectedNamespaceFilters: string[] };
@@ -40,14 +43,16 @@ function useNamespaceFilters() {
                 .then((data) => {
                     const responseNamespaces = data.namespaces;
                     const namespaces: string[] = [];
-                    responseNamespaces.forEach((rspNamespace: NamespaceForClusterAndPermissions) => {
-                        namespaces.push(rspNamespace.name);
-                    });
+                    responseNamespaces.forEach(
+                        (rspNamespace: NamespaceForClusterAndPermissions) => {
+                            namespaces.push(rspNamespace.name);
+                        }
+                    );
                     setResponse({
                         loading: false,
                         error: '',
                         availableNamespaceFilters: namespaces,
-                    })
+                    });
                 })
                 .catch((error) => {
                     const message = getAxiosErrorMessage(error);
@@ -59,11 +64,11 @@ function useNamespaceFilters() {
                         error: errorMessage,
                         availableNamespaceFilters: [],
                     });
-                })
+                });
         }
     }, [selectedClusterId]);
 
-    const {loading, error, availableNamespaceFilters} = response;
+    const { loading, error, availableNamespaceFilters } = response;
     return {
         loading,
         error,

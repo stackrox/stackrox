@@ -153,11 +153,11 @@ type NamespacesForClusterAndPermissionsRequest = {
 export type NamespaceForClusterAndPermissions = {
     id: string;
     name: string;
-}
+};
 
 export type NamespacesForClusterAndPermissionsResponse = {
     namespaces: NamespaceForClusterAndPermissions[];
-}
+};
 
 export function getNamespacesForClusterAndPermissions(
     clusterID: string,
@@ -170,4 +170,3 @@ export function getNamespacesForClusterAndPermissions(
         .get<NamespacesForClusterAndPermissionsResponse>(targetUrl)
         .then((response) => response.data);
 }
-

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { NamespaceForClusterAndPermissions, getNamespacesForClusterAndPermissions } from 'services/RolesService';
-import {getAxiosErrorMessage} from "../utils/responseErrorUtils";
+import {
+    NamespaceForClusterAndPermissions,
+    getNamespacesForClusterAndPermissions
+} from 'services/RolesService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type Namespace = {
     id: string;
@@ -17,7 +20,7 @@ const emptyResponse: NamespaceResponse = {
     loading: true,
     error: '',
     namespaces: [] as Namespace[],
-}
+};
 
 function useFetchClusterNamespacesForPermissions(
     permissions: string[],
@@ -31,17 +34,19 @@ function useFetchClusterNamespacesForPermissions(
                 .then((data) => {
                     const responseNamespaces = data.namespaces;
                     const namespaces: Namespace[] = [];
-                    responseNamespaces.forEach((rspNamespace: NamespaceForClusterAndPermissions) => {
-                        const namespace: Namespace = {} as Namespace;
-                        namespace.id = rspNamespace.id;
-                        namespace.name = rspNamespace.name;
-                        namespaces.push(namespace);
-                    });
+                    responseNamespaces.forEach(
+                        (rspNamespace: NamespaceForClusterAndPermissions) => {
+                            const namespace: Namespace = {} as Namespace;
+                            namespace.id = rspNamespace.id;
+                            namespace.name = rspNamespace.name;
+                            namespaces.push(namespace);
+                        }
+                    );
                     setNamespaceResponse({
                         loading: false,
                         error: '',
-                        namespaces: namespaces,
-                    })
+                        namespaces,
+                    });
                 })
                 .catch((error) => {
                     const message = getAxiosErrorMessage(error);
@@ -53,7 +58,7 @@ function useFetchClusterNamespacesForPermissions(
                         error: errorMessage,
                         namespaces: [],
                     });
-                })
+                });
         }
     }, [permissions, selectedClusterId]);
 
@@ -61,4 +66,3 @@ function useFetchClusterNamespacesForPermissions(
 }
 
 export default useFetchClusterNamespacesForPermissions;
-
