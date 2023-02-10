@@ -12,6 +12,6 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["COLLECTION_METHOD"] = "kernel-module"
 
 # don't use postgres
-os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()

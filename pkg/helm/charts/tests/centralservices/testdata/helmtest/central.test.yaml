@@ -21,11 +21,11 @@ tests:
     .serviceaccounts["central"] | assertThat(. != null)
     .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length > 0)
     .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length > 0)
-    .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(. == null)
+    .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(length > 0)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
     .networkpolicys["allow-ext-to-central"] | assertThat(. != null)
-    .networkpolicys["central-db"] | assertThat(. == null)
+    .networkpolicys["central-db"] | assertThat(. != null)
     .deployments["central"] | assertThat(. != null)
     .services["central"] | assertThat(. != null)
 

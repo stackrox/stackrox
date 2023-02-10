@@ -39,7 +39,7 @@ defaults:
       route:
         enabled: false
     db:
-      enabled: false
+      enabled: true
 
       external: false
 
