@@ -403,9 +403,6 @@ var (
 	publicValuesTemplate = template.Must(
 		helmTemplate.InitTemplate("values-public.yaml").Parse(publicValuesTemplateStr))
 
-	privateValuesTemplate = template.Must(
-		helmTemplate.InitTemplate("values-private.yaml").Parse(privateValuesYamlTemplateStr))
-
 	privateValuesPostgresTemplate = template.Must(
 		helmTemplate.InitTemplate("values-private.yaml").Parse(privateValuesYamlPostgresTemplateStr))
 )
