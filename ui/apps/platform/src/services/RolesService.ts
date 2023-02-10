@@ -167,4 +167,3 @@ export function getNamespacesForClusterAndPermissions(
         .get<NamespacesForClusterAndPermissionsResponse>(targetUrl)
         .then((response) => response.data);
 }
-
