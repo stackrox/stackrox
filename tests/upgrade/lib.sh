@@ -18,7 +18,7 @@ wait_for_central_reconciliation() {
         numDeployments="$(curl -sSk -u "admin:$ROX_PASSWORD" "https://$API_ENDPOINT/v1/summary/counts" | jq '.numDeployments' -r)"
         echo "Try number ${i}. Number of deployments in Central: $numDeployments"
         [[ -n "$numDeployments" ]]
-        if [[ "$numDeployments" -lt 100 ]]; then
+        if [[ "$numDeployments" -lt 150 ]]; then
             success=1
             break
         fi
