@@ -219,7 +219,9 @@ func createAndObserveMessage(nodeName string, inventory *storage.NodeInventory) 
 // The backoff file will only be encountered if the previous container is killed during a call to scanNodeWithBackoff.
 // Note: This does not prevent strain in case of repeated pod recreation, as it is based on an EmptyDir.
 func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
-	backoffInterval := int64(env.NodeInventoryInitialBackoff.DurationSetting() / time.Second)
+	backoffIntervalSeconds := int64(env.NodeInventoryInitialBackoff.DurationSetting() / time.Second)
+	maxBackoffSeconds := int64(env.NodeInventoryMaxBackoff.DurationSetting() / time.Second)
+	backoffIncrementSeconds := int64(env.NodeInventoryBackoffIncrement.DurationSetting() / time.Second)
 
 	backoffFile, err := os.ReadFile(fmt.Sprintf("%s/backoff", inventoryCachePath))
 	defer func() {
@@ -240,16 +242,16 @@ func scanNodeWithBackoff(nodeName string, scanner nodeinventorizer.NodeInventori
 		if err != nil {
 			return nil, err
 		}
-		backoffInterval = int64(time.Duration(backoffIntervalMillis) / time.Second)
-		if backoffInterval > int64(env.NodeInventoryMaxBackoff.DurationSetting()/time.Second) {
-			log.Warnf("Backoff interval hit upper boundary. Cutting from %d to %d", backoffInterval, env.NodeInventoryMaxBackoff.DurationSetting()/time.Second)
-			backoffInterval = int64(env.NodeInventoryMaxBackoff.DurationSetting() / time.Second)
+		backoffIntervalSeconds = int64(time.Duration(backoffIntervalMillis) / time.Second)
+		if backoffIntervalSeconds > maxBackoffSeconds {
+			log.Warnf("Backoff interval hit upper boundary. Cutting from %d to %d", backoffIntervalSeconds, maxBackoffSeconds)
+			backoffIntervalSeconds = maxBackoffSeconds
 		}
-		log.Debugf("Found existing backoff. Waiting %v seconds before running next inventory", backoffInterval)
-		inventorySleeper(time.Duration(backoffInterval) * time.Second)
+		log.Debugf("Found existing backoff. Waiting %v seconds before running next inventory", backoffIntervalSeconds)
+		inventorySleeper(time.Duration(backoffIntervalSeconds) * time.Second)
 	}
 
-	newBackoff := backoffInterval + int64(env.NodeInventoryBackoffIncrement.DurationSetting()/time.Second)
+	newBackoff := backoffIntervalSeconds + backoffIncrementSeconds
 	err = os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", newBackoff)), 0600)
 	if err != nil {
 		return nil, err
