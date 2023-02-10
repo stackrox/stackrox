@@ -36,6 +36,9 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
+    - name: Go Integration Unit Tests
+      run: ${{ matrix.gotags }} make integration-unit-tests
+
   go-postgres:
     strategy:
       matrix:
