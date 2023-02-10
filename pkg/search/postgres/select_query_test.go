@@ -81,7 +81,7 @@ func TestSelectQuery(t *testing.T) {
 			desc: "base schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestString.String(),
 					},
 				).ProtoQuery(),
@@ -97,7 +97,7 @@ func TestSelectQuery(t *testing.T) {
 		{
 			desc: "base schema; select w/ where",
 			q: search.NewQueryBuilder().
-				AddSelectFields(&v1.QuerySelect{
+				AddSelectFields(&v1.QueryField{
 					Field: search.TestString.String(),
 				},
 				).
@@ -113,10 +113,10 @@ func TestSelectQuery(t *testing.T) {
 			desc: "child schema; multiple select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedString.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedBool.String(),
 					},
 				).
@@ -138,10 +138,10 @@ func TestSelectQuery(t *testing.T) {
 			desc: "child schema; multiple select w/ where & group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedString.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedBool.String(),
 					},
 				).
@@ -166,10 +166,10 @@ func TestSelectQuery(t *testing.T) {
 			desc: "child schema; multiple select & group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedString.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedBool.String(),
 					},
 				).
@@ -197,10 +197,10 @@ func TestSelectQuery(t *testing.T) {
 			desc: "child schema; multiple select w/ where & multiple group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedString.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedBool.String(),
 					},
 				).
@@ -227,10 +227,10 @@ func TestSelectQuery(t *testing.T) {
 			desc: "base schema and child schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestString.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedString.String(),
 					},
 				).ProtoQuery(),
@@ -262,10 +262,10 @@ func TestSelectQuery(t *testing.T) {
 			desc: "base schema and child schema conjunction query; select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestString.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedString.String(),
 					},
 				).
@@ -370,7 +370,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select one derived",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
@@ -388,7 +388,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select one derived w/ distinct",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 						Distinct:      true,
@@ -407,12 +407,12 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select multiple derived",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 						Distinct:      true,
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
 						AggregateFunc: pkgPG.Count.String(),
 						Distinct:      true,
@@ -432,11 +432,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select multiple derived again",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
 						AggregateFunc: pkgPG.Max.String(),
 					},
@@ -455,11 +455,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select multiple derived w/ group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
@@ -482,7 +482,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select one derived w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
@@ -502,11 +502,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select multiple derived w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
@@ -527,11 +527,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select multiple derived w/ where & group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
@@ -556,11 +556,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select derived & primary key",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestString.String(),
 					},
 				).ProtoQuery(),
@@ -579,11 +579,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select derived & non-primary field wo/ group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedString.String(),
 					},
 				).ProtoQuery(),
@@ -601,11 +601,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select derived & non-primary field w/ group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestNestedString.String(),
 					},
 				).
@@ -626,11 +626,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			desc: "select derived & primary field w/ group by non-primary field",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
 						AggregateFunc: pkgPG.Count.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.TestString.String(),
 					},
 				).

@@ -232,7 +232,7 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.DeploymentName.String(),
 					},
 				).ProtoQuery(),
@@ -242,7 +242,7 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema; select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.DeploymentName.String(),
 					},
 				).
@@ -253,10 +253,10 @@ func TestSelectQueries(t *testing.T) {
 			desc: "child schema; multiple select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.Privileged.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.ImageName.String(),
 					},
 				).
@@ -271,10 +271,10 @@ func TestSelectQueries(t *testing.T) {
 			desc: "child schema; multiple select w/ where & group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.Privileged.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.ImageName.String(),
 					},
 				).
@@ -292,10 +292,10 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema and child schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.DeploymentName.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.ImageName.String(),
 					},
 				).ProtoQuery(),
@@ -306,10 +306,10 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema and child schema conjunction query; select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.DeploymentName.String(),
 					},
-					&v1.QuerySelect{
+					&v1.QueryField{
 						Field: search.ImageName.String(),
 					},
 				).

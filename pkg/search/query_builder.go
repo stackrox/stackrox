@@ -75,7 +75,7 @@ type fieldValue struct {
 
 // Select defines the select field to be used with the query.
 type Select struct {
-	s *v1.QuerySelect
+	s *v1.QueryField
 }
 
 // NewGroupBy creates a new *GroupBy object.
@@ -178,7 +178,7 @@ func NewQueryBuilder() *QueryBuilder {
 }
 
 // WithSelectFields sets fields to select.
-func (qb *QueryBuilder) WithSelectFields(fields ...*v1.QuerySelect) *QueryBuilder {
+func (qb *QueryBuilder) WithSelectFields(fields ...*v1.QueryField) *QueryBuilder {
 	qs := make([]*Select, 0, len(fields))
 	for _, f := range fields {
 		qs = append(qs, &Select{s: f})
@@ -188,7 +188,7 @@ func (qb *QueryBuilder) WithSelectFields(fields ...*v1.QuerySelect) *QueryBuilde
 }
 
 // AddSelectFields adds fields to select.
-func (qb *QueryBuilder) AddSelectFields(fields ...*v1.QuerySelect) *QueryBuilder {
+func (qb *QueryBuilder) AddSelectFields(fields ...*v1.QueryField) *QueryBuilder {
 	qs := make([]*Select, 0, len(fields))
 	for _, f := range fields {
 		qs = append(qs, &Select{s: f})
@@ -400,7 +400,7 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	// Sort the queries by field value, to ensure consistency of output.
 	fields := qb.getSortedFields()
 
-	var qSelects []*v1.QuerySelect
+	var qSelects []*v1.QueryField
 	for _, sf := range qb.selectFields {
 		qSelects = append(qSelects, sf.s)
 	}

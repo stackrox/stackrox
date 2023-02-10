@@ -302,7 +302,7 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata) error {
+func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QueryField, queryFields map[string]searchFieldMetadata) error {
 	if len(querySelects) == 0 {
 		return nil
 	}
