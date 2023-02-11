@@ -755,12 +755,12 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
     }
 
-    @Unroll
     @Tag("Integration")
     def "Verify syslog notifier"() {
        given:
        "syslog server is created"
        def syslog = SyslogServer.createRsyslog(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+       sleep 15 * 1000 // wait 15s for service to start
 
         when:
         "call the grpc API for the syslog notifier integration."
@@ -768,8 +768,9 @@ class IntegrationsTest extends BaseSpecification {
 
         then:
         "Verify syslog connection is successful"
-        assert notifier.testNotifier()
-
+        withRetry(3, 10) {
+            assert notifier.testNotifier()
+        }
         cleanup:
         "remove syslog notifier integration"
         syslog.tearDown(orchestrator)
