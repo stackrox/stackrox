@@ -140,6 +140,7 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	if err := certgen.IssueOtherServiceCerts(fileMap, ca, mtls.CentralDBSubject); err != nil {
 		return err
 	}
+	
 	fileMap["central-db-password"] = []byte(renderer.CreatePassword())
 
 	if err := certgen.IssueScannerCerts(fileMap, ca); err != nil {
