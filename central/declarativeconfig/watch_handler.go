@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
@@ -30,6 +31,8 @@ type watchHandler struct {
 	updater declarativeConfigReconciler
 
 	cachedFileHashes map[string]md5CheckSum
+
+	mutex sync.Mutex
 }
 
 func newWatchHandler(updater declarativeConfigReconciler) *watchHandler {
@@ -98,6 +101,8 @@ func (w *watchHandler) OnWatchError(err error) {
 //
 // Otherwise, it will return false.
 func (w *watchHandler) compareHashesForChanges(fileContents map[string][]byte) bool {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
 	var changedFiles bool
 	for fileName, fileContent := range fileContents {
 		cachedHash, ok := w.cachedFileHashes[fileName]
@@ -107,12 +112,13 @@ func (w *watchHandler) compareHashesForChanges(fileContents map[string][]byte) b
 			changedFiles = true
 		}
 	}
-	return changedFiles || w.checkForDeletedFiles(fileContents)
+	return changedFiles || w.checkForDeletedFilesNoLock(fileContents)
 }
 
-// checkForDeletedFiles returns true if a file has been deleted, i.e. the file is within the cache but not within
+// checkForDeletedFilesNoLock returns true if a file has been deleted, i.e. the file is within the cache but not within
 // the list of updated files. Otherwise, returns false.
-func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool {
+// Note: this function is expected to be called guarded with a mutex.
+func (w *watchHandler) checkForDeletedFilesNoLock(fileContents map[string][]byte) bool {
 	cachedFileNames := set.NewStringSet(maputil.Keys(w.cachedFileHashes)...)
 	fileNames := set.NewStringSet(maputil.Keys(fileContents)...)
 

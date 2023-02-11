@@ -95,7 +95,7 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 	dirToWatch := t.TempDir()
 	// 1. Start the watch handler. Specifically check the returned error, as we do not specify the force flag in the
 	// 	  options.
-	err := k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch, wh, opts)
+	err := k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch, k8scfgwatch.DeduplicateWatchErrors(wh), opts)
 	require.NoError(t, err)
 
 	// 2. Add a valid YAML file to the directory the handler is watching.
@@ -163,7 +163,7 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 
 	// 2. Start the watch handler. Specifically check the returned error, as we do not specify the force flag in the
 	// 	  options.
-	err = k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch, wh, opts)
+	err = k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch, k8scfgwatch.DeduplicateWatchErrors(wh), opts)
 	require.NoError(t, err)
 
 	// 3. Wait to ensure the watch handler has been triggered.
@@ -218,7 +218,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	dirToWatch := t.TempDir()
 	// 1. Start the watch handler. Specifically check the returned error, as we do not specify the force flag in the
 	// 	  options.
-	err := k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch, wh, opts)
+	err := k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch, k8scfgwatch.DeduplicateWatchErrors(wh), opts)
 	require.NoError(t, err)
 
 	// 2. Add a valid YAML file to the directory the handler is watching.
