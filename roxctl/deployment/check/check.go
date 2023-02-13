@@ -78,7 +78,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Add all printer related flags
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "Yaml file to send to Central to evaluate policies against")
+	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "YAML file to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "Output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
