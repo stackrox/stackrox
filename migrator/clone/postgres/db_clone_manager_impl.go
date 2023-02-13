@@ -155,15 +155,12 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 
 	currClone, currExists := d.cloneMap[CurrentClone]
 
-	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
-	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
-	// Otherwise we roll with Postgres->Postgres.  We use central_temp as that will get cleaned up if the migration
-	// of Rocks -> Postgres fails so we can start fresh.
+	// If a Rocks database exists, consider if we need to use it to migrate or not.
 	if d.versionExists(rocksVersion) {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
-		if !currExists || !d.versionExists(currClone.GetMigVersion()) {
-			d.cloneMap[TempClone] = metadata.NewPostgres(nil, TempClone)
-			return TempClone, true, nil
+		// If Postgres is a fresh install OR a migration has started without completing, we need to use Postgres current and Rocks for migration.
+		if !currExists || !d.versionExists(currClone.GetMigVersion()) || currClone.GetMigVersion().SeqNum < migrations.LastRocksToPostgresDBVersionSeqNum() {
+			return CurrentClone, true, nil
 		}
 	}
 
@@ -283,6 +280,7 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 	return nil
 }
 
+// moveClones -- moves the CurrentClone to the incoming previousClone and if present moves the incoming updatedClone to the CurrentClone
 func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) error {
 	// Connect to different database for admin functions
 	connectPool := pgadmin.GetAdminPool(d.adminConfig)
@@ -314,10 +312,13 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 		log.Infof("current clone %q does not exist, must be start up", CurrentClone)
 	}
 
-	// Now flip the clone to be the primary DB
-	err = d.renameClone(ctx, tx, updatedClone, CurrentClone)
-	if err != nil {
-		return err
+	// If no updatedClone was provided no second move is performed
+	if updatedClone != "" {
+		// Now flip the updatedClone to be the primary DB
+		err = d.renameClone(ctx, tx, updatedClone, CurrentClone)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {

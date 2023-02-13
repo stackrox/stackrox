@@ -44,6 +44,13 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore store.ClusterSt
 	ctx := sac.WithAllAccess(context.Background())
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNetworkFlowsStmt)
 
+	// This table uses a serial ID so migrations are not idempotent.  So in the event that we are running
+	// the Rocks migrations again, we should truncate the table for safety
+	_, err := postgresDB.Exec(ctx, "TRUNCATE table network_flows;")
+	if err != nil {
+		return err
+	}
+
 	clusterStore := pgStore.NewClusterStore(postgresDB)
 
 	return legacyStore.Walk(ctx, func(clusterID string, ts *protoTypes.Timestamp, allFlows []*storage.NetworkFlow) error {

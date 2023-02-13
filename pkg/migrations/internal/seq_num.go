@@ -8,4 +8,7 @@ var (
 
 	// LastRocksDBVersionSeqNum is the sequence number for the last RocksDB version.
 	LastRocksDBVersionSeqNum = 112
+
+	// LastRocksToPostgresDBVersionSeqNum is the sequence number for the last legacy to Postgres migration
+	LastRocksToPostgresDBVersionSeqNum = 168
 )

@@ -228,14 +228,71 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	// Need to migrate from Rocks because Rocks exists and Postgres is fresh.
 	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
 
+	// Need to re-scan to get the updated clone version
+	s.Nil(dbm.Scan())
 	// Still migrate from Rocks because no version in Postgres meaning it is empty
 	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
 	s.Equal(clone, TempClone)
 	s.True(migrateRocks)
 	s.Nil(err)
 
-	// Set central_active version
+	// Set central_active version as if migration was stopped in the middle
 	currVersion := &storage.Version{
+		SeqNum:        int32(migrations.LastRocksToPostgresDBVersionSeqNum() - 15),
+		Version:       currVer.version,
+		LastPersisted: timestamp.Now().GogoProtobuf(),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
+
+	// Need to re-scan to get the updated clone version
+	s.Nil(dbm.Scan())
+	// Still migrate from Rocks because no version in Postgres meaning it is empty
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	s.Equal(clone, CurrentClone)
+	s.True(migrateRocks)
+	s.Nil(err)
+
+	// central_active was moved as part of partial migration, so need to recreate it
+	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
+
+	// Set central_active version as if migration was stopped in the middle
+	currVersion = &storage.Version{
+		SeqNum:        int32(migrations.LastRocksToPostgresDBVersionSeqNum() - 1),
+		Version:       currVer.version,
+		LastPersisted: timestamp.Now().GogoProtobuf(),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
+
+	// Need to re-scan to get the updated clone version
+	s.Nil(dbm.Scan())
+	// Still migrate from Rocks because no version in Postgres meaning it is empty
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	s.Equal(clone, CurrentClone)
+	s.True(migrateRocks)
+	s.Nil(err)
+
+	// central_active was moved as part of partial migration, so need to recreate it
+	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
+
+	// Now set the migration to less than current but Rocks migrations are complete.
+	currVersion = &storage.Version{
+		SeqNum:        int32(migrations.LastRocksToPostgresDBVersionSeqNum()),
+		Version:       currVer.version,
+		LastPersisted: timestamp.Now().GogoProtobuf(),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
+
+	// Need to re-scan to get the updated clone version
+	s.Nil(dbm.Scan())
+	// Need to use the Postgres database so migrateRocks will be false.
+	// We will use the Temp Clone as we have already completed the initial migration to Postgres.
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	s.Equal(clone, TempClone)
+	s.False(migrateRocks)
+	s.Nil(err)
+
+	// Now set the migration to current
+	currVersion = &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       currVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
@@ -244,12 +301,11 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 
 	// Need to re-scan to get the updated clone version
 	s.Nil(dbm.Scan())
-	// Need to use use the Postgres database so migrateRocks will be false.
+	// Need to use the Postgres database so migrateRocks will be false.
 	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
 	s.Nil(err)
-
 }
 
 func (s *PostgresCloneManagerSuite) TestGetCloneFreshCurrent() {

@@ -76,11 +76,19 @@ func getCurrentSeqNumPostgres(databases *types.Databases) (int, error) {
 	return ver.SeqNum, nil
 }
 func getCurrentSeqNum(databases *types.Databases) (int, error) {
+	var currentSeqNumPostgres int
+	var err error
 	// If Rocks and Bolt are passed into this function when Postgres is enabled, that means
 	// we are in a state where we need to migrate Rocks to Postgres.  In this case the Rocks
 	// sequence number will take precedence and drive the migrations
-	if env.PostgresDatastoreEnabled.BooleanSetting() && databases.RocksDB == nil && databases.BoltDB == nil {
-		return getCurrentSeqNumPostgres(databases)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		currentSeqNumPostgres, err = getCurrentSeqNumPostgres(databases)
+		if err != nil {
+			return 0, err
+		}
+		if databases.RocksDB == nil && databases.BoltDB == nil {
+			return currentSeqNumPostgres, nil
+		}
 	}
 
 	// Legacy databases should be present at this point.
@@ -101,6 +109,11 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 		return 0, fmt.Errorf("bolt and rocksdb numbers mismatch: %d vs %d", boltSeqNum, writeHeavySeqNum)
 	}
 
+	// It is possible we failed in the middle of a migration.  In which case the Postgres number will be
+	// higher than the legacy sequence number and we should return that to start where we left off.
+	if currentSeqNumPostgres > boltSeqNum {
+		return currentSeqNumPostgres, nil
+	}
 	return boltSeqNum, nil
 }
 

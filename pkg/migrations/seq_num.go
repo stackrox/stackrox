@@ -27,3 +27,8 @@ func BasePostgresDBVersionSeqNum() int {
 func LastRocksDBVersionSeqNum() int {
 	return internal.LastRocksDBVersionSeqNum
 }
+
+// LastRocksToPostgresDBVersionSeqNum is the sequence number for the last RocksDB to Postgres version.
+func LastRocksToPostgresDBVersionSeqNum() int {
+	return internal.LastRocksToPostgresDBVersionSeqNum
+}
