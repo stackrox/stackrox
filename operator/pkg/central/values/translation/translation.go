@@ -207,6 +207,8 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 		c = &platform.CentralDBSpec{}
 	}
 
+	cv.SetBoolValue("enabled", true)
+
 	if c.ConnectionStringOverride != nil {
 		if c.GetPersistence() != nil {
 			cv.SetError(errors.New("if a connection string is provided, no persistence settings must be supplied"))
