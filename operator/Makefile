@@ -184,13 +184,10 @@ controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessar
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 
 .PHONY: operator-sdk
-operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
+operator-sdk: $(OPERATOR_SDK) ## Download operator-sdk necessary for scaffolding and bundling.
 
 .PHONY: kuttl
 kuttl: $(KUTTL) ## Download kuttl.
-
-.PHONY: envtest
-envtest: ## Download envtest-setup locally if necessary.
 
 ##@ Development
 
