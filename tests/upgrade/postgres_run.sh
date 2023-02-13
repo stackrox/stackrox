@@ -90,11 +90,10 @@ test_upgrade_paths() {
     wait_for_api
     setup_client_TLS_certs
 
-    # Get a newer backup OR just run scale and then migrate, but that would take forever.
     restore_backup_test
     wait_for_api
 
-    # Let's try some scale and see what happens
+    # Run with some scale to have data populated to migrate
     deploy_scaled_workload
 
     # Add some access scopes and see that they survive the upgrade and rollback process
@@ -107,9 +106,9 @@ test_upgrade_paths() {
     cd "$TEST_ROOT"
 
     ########################################################################################
-    # Use helm to upgrade to a Postgres release.  3.73.2 for now.                          #
+    # Use helm to upgrade to a Postgres release.                                           #
     ########################################################################################
-    info "Upgrade to 3.73.2 via helm"
+    info "Upgrade to ${INITIAL_POSTGRES_TAG} via helm"
     helm_upgrade_to_postgres
     wait_for_api
     wait_for_scanner_to_be_ready
@@ -208,7 +207,7 @@ test_upgrade_paths() {
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
-    MAIN_IMAGE_TAG="$CURRENT_TAG" MAIN_IMAGE_REPO="$REGISTRY" ./sensor-remote/sensor.sh
+    ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
@@ -236,7 +235,6 @@ force_rollback_to_previous_postgres() {
     upgradeStatus=$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
     echo "upgrade status: ${upgradeStatus}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "${CURRENT_TAG}"
-#    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
     test_gt_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)"
 
@@ -253,7 +251,6 @@ force_rollback_to_previous_postgres() {
 
 deploy_scaled_workload() {
     info "Deploying a scaled workload"
-    pwd
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
