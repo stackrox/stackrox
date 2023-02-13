@@ -23,11 +23,12 @@ GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 
 SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
-ifneq ($(SCANNER_DIR),)
+ifeq ($(SCANNER_DIR),)
+$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
 SCANNER_PROTO_BASE_PATH = $(SCANNER_DIR)/proto
 ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')
 ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
-endif
 
 ##############
 ## Protobuf ##
