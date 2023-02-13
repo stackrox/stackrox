@@ -243,7 +243,6 @@
 #
 # # Public configuration options for the StackRox Central DB:
 # db:
-#   enabled: true
 #   # If you want to enforce StackRox Central DB to only run on certain nodes, you can specify
 #   # a node selector here to make sure Central can only be scheduled on Nodes with the
 #   # given label. This is particular relevant for the "hostPath" persistence type.
