@@ -28,13 +28,14 @@ func TestOptionsMapExist(t *testing.T) {
 		{v1.SearchCategory_POLICIES},
 		search.GetGlobalSearchCategories().AsSlice(),
 	} {
+		cat := categories
 		t.Run(fmt.Sprintf("%v", categories), func(t *testing.T) {
 			t.Parallel()
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			resp, err := service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
+			resp, err := service.Options(ctx, &v1.SearchOptionsRequest{Categories: cat})
 			cancel()
 			require.NoError(t, err)
-			assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
+			assert.ElementsMatch(t, options.GetOptions(cat), resp.GetOptions())
 		})
 	}
 }
