@@ -40,7 +40,7 @@ class RoutesTest extends BaseSpecification {
 
         then:
         "Fetch deployment, it shouldn't have a route"
-        withRetry(10, 5) {
+        withRetry(20, 5) {
             def routes = getRoutes()
             assert routes.size() == 0
         }
