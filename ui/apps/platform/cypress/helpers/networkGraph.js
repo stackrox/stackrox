@@ -170,9 +170,10 @@ export function selectDeploymentFilter(deploymentName) {
 export function selectNamespaceFilter(namespace) {
     interactAndWaitForResponses(() => {
         cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-        cy.get(
-            `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
-        ).click();
+        // Exact match to distinguish stackrox from stackrox-operator namespaces.
+        cy.get(`${selectSelectors.patternFlySelect.openMenu} span`)
+            .contains(new RegExp(`^${namespace}$`))
+            .click();
         cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
     }, routeMatcherMapForClusterInNetworkGraph);
 }
