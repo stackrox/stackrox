@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/kubernetes"
+	kuberetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/processfilter"
@@ -19,8 +19,22 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
+
+func hasAPI(client kubernetes.Interface, gv, kind string) (bool, error) {
+	apiResourceList, err := client.Discovery().ServerResourcesForGroupVersion(gv)
+	if err != nil {
+		return false, err
+	}
+	for _, apiResource := range apiResourceList.APIResources {
+		if apiResource.Kind == kind {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 
 func (k *listenerImpl) handleAllEvents() {
 	// TODO(ROX-14194): remove resyncingSif once all resources are adapted
@@ -175,8 +189,8 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
 	handle(resyncingSif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kuberetesPkg.ReplicaSet), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kuberetesPkg.ReplicationController), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
 	if features.ComplianceOperatorCheckResults.Enabled() {
 		// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
@@ -206,13 +220,19 @@ func (k *listenerImpl) handleAllEvents() {
 	wg := &concurrency.WaitGroup{}
 
 	// Deployment types.
-	handle(resyncingSif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(resyncingSif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(resyncingSif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kuberetesPkg.DaemonSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kuberetesPkg.Deployment), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kuberetesPkg.StatefulSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 
+	if ok, err := hasAPI(k.client.Kubernetes(), "batch/v1", kuberetesPkg.CronJob); err != nil {
+		log.Errorf("error determining API version to use for CronJobs: %v", err)
+	} else if ok {
+		handle(resyncingSif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kuberetesPkg.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	} else {
+		handle(resyncingSif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kuberetesPkg.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	}
 	if osAppsFactory != nil {
-		handle(osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+		handle(osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kuberetesPkg.DeploymentConfig), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
@@ -232,7 +252,7 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Finally, run the pod informer, and process pod events.
 	podWaitGroup := &concurrency.WaitGroup{}
-	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock)
+	handle(podInformer.Informer(), dispatchers.ForDeployments(kuberetesPkg.Pod), k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock)
 	sif.Start(stopSignal.Done())
 
 	if !concurrency.WaitInContext(podWaitGroup, stopSignal) {
