@@ -161,7 +161,7 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 	// error out if collection is in use by a report config
 	err := s.reportConfigDatastore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
 		if reportConfig.GetScopeId() == request.GetId() {
-			return errors.New("Collection is in use in one or more report configurations")
+			return errors.Wrap(errox.ReferencedByAnotherObject, "Collection is in use by one or more report configurations")
 		}
 		return nil
 	})
