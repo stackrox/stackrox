@@ -4,8 +4,11 @@ import (
 	"context"
 	"os"
 	"path"
+	"reflect"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/sync"
@@ -68,5 +71,21 @@ func (m *managerImpl) WatchDeclarativeConfigDir() {
 // TODO(ROX-14693): Add upserting transformed resources.
 // TODO(ROX-14694): Add deletion of resources.
 func (m *managerImpl) ReconcileDeclarativeConfigs(contents [][]byte) {
+	configurations, err := declarativeconfig.ConfigurationFromRawBytes(contents...)
+	if err != nil {
+		log.Errorf("Error during unmarshalling of declarative configuration files: %+v", err)
+		return
+	}
+	transformedConfigurations := make(map[reflect.Type][]proto.Message, len(configurations))
+	for _, configuration := range configurations {
+		transformedConfig, err := m.t.Transform(configuration)
+		if err != nil {
+			log.Errorf("Error during transforming declarative configuration %+v: %+v", configuration, err)
+			continue
+		}
+		for protoType, protoMessages := range transformedConfig {
+			transformedConfigurations[protoType] = append(transformedConfigurations[protoType], protoMessages...)
+		}
+	}
 	// No-op, see the TODOs within the function comment.
 }
