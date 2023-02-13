@@ -32,7 +32,7 @@ type watchHandler struct {
 
 	cachedFileHashes map[string]md5CheckSum
 
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 func newWatchHandler(updater declarativeConfigReconciler) *watchHandler {
@@ -76,14 +76,17 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 		log.Warnf("Received invalid type in stable update for declarative configuration files: %T", val)
 		return
 	}
-	logFileContents(fileContents)
 
-	if !w.compareHashesForChanges(fileContents) {
+	w.logFileContentsNoLock(fileContents)
+
+	if !w.compareHashesForChanges(fileContents) && !w.checkForDeletedFiles(fileContents) {
 		log.Debugf("Found no changes from before in content, no reconciliation will be triggered")
 		return
 	}
 
 	log.Debugf("Found changes in declarative configuration files, reconciliation will be triggered")
+	w.mutex.RLock()
+	defer w.mutex.RUnlock()
 	w.updater.ReconcileDeclarativeConfigs(maputil.Values(fileContents))
 }
 
@@ -97,7 +100,6 @@ func (w *watchHandler) OnWatchError(err error) {
 // It will return true if:
 //   - any of the file hashes changed from the cached value to the value in the given file contents.
 //   - a file which previously was not part of the cached values is contained within the file contents.
-//   - a file which previously was cached but is not contained within the file contents anymore.
 //
 // Otherwise, it will return false.
 func (w *watchHandler) compareHashesForChanges(fileContents map[string][]byte) bool {
@@ -112,13 +114,15 @@ func (w *watchHandler) compareHashesForChanges(fileContents map[string][]byte) b
 			changedFiles = true
 		}
 	}
-	return changedFiles || w.checkForDeletedFilesNoLock(fileContents)
+	return changedFiles
 }
 
-// checkForDeletedFilesNoLock returns true if a file has been deleted, i.e. the file is within the cache but not within
+// checkForDeletedFiles returns true if a file has been deleted, i.e. the file is within the cache but not within
 // the list of updated files. Otherwise, returns false.
-// Note: this function is expected to be called guarded with a mutex.
-func (w *watchHandler) checkForDeletedFilesNoLock(fileContents map[string][]byte) bool {
+// In the end, the cached values will be changed to reflect the passed file contents.
+func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
 	cachedFileNames := set.NewStringSet(maputil.Keys(w.cachedFileHashes)...)
 	fileNames := set.NewStringSet(maputil.Keys(fileContents)...)
 
@@ -134,10 +138,24 @@ func (w *watchHandler) checkForDeletedFilesNoLock(fileContents map[string][]byte
 		return false
 	}
 
+	newCachedFileHashes := maputil.ShallowClone(w.cachedFileHashes)
 	for _, removedFile := range removedFiles.AsSlice() {
-		delete(w.cachedFileHashes, removedFile)
+		delete(newCachedFileHashes, removedFile)
 	}
+
+	w.cachedFileHashes = newCachedFileHashes
 	return true
+}
+
+func (w *watchHandler) logFileContentsNoLock(contents map[string][]byte) {
+	logMessage := "Found declarative configuration file contents\n"
+
+	w.mutex.RLock()
+	defer w.mutex.RUnlock()
+	for fileName, fileContents := range contents {
+		logMessage += fmt.Sprintf("File %s: %s", fileName, fileContents)
+	}
+	log.Debugf(logMessage)
 }
 
 // readDeclarativeConfigFile will read the file and additionally verify that the contents are valid YAML.
@@ -156,14 +174,4 @@ func readDeclarativeConfigFile(file string) ([]byte, error) {
 		return nil, err
 	}
 	return fileContents, nil
-}
-
-func logFileContents(contents map[string][]byte) {
-	// TODO: This should be debug, or maybe pass in the func?
-	logMessage := "Found declarative configuration file contents\n"
-
-	for fileName, fileContents := range contents {
-		logMessage += fmt.Sprintf("File %s: %s", fileName, fileContents)
-	}
-	log.Debugf(logMessage)
 }

@@ -18,7 +18,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestCompareHashesForChanges(t *testing.T) {
+func TestWatchHandler_CompareHashesForChanges(t *testing.T) {
 	cases := map[string]struct {
 		fileContents        map[string][]byte
 		initialCachedFiles  map[string]md5CheckSum
@@ -58,26 +58,56 @@ func TestCompareHashesForChanges(t *testing.T) {
 				"test-file": md5.Sum([]byte("test content")),
 			},
 		},
-		"pre-populated cache containing more files should signal updated files due to deletion": {
-			fileContents: map[string][]byte{
-				"test-file": []byte("test content"),
-			},
-			initialCachedFiles: map[string]md5CheckSum{
-				"test-file":        md5.Sum([]byte("test content")),
-				"second-test-file": md5.Sum([]byte("some other test content")),
-			},
-			expectedResult: true,
-			expectedCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content")),
-			},
-		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			wh := &watchHandler{cachedFileHashes: c.initialCachedFiles}
 			res := wh.compareHashesForChanges(c.fileContents)
-			assert.Equal(t, res, c.expectedResult)
+			assert.Equal(t, c.expectedResult, res)
+			assert.Equal(t, c.expectedCachedFiles, wh.cachedFileHashes)
+		})
+	}
+}
+
+func TestWatchHandler_CheckForDeletedFiles(t *testing.T) {
+	cases := map[string]struct {
+		fileContents        map[string][]byte
+		initialCachedFiles  map[string]md5CheckSum
+		expectedResult      bool
+		expectedCachedFiles map[string]md5CheckSum
+	}{
+		"cache containing the file contents should not signal update": {
+			fileContents: map[string][]byte{
+				"test-file": []byte("test content"),
+			},
+			initialCachedFiles: map[string]md5CheckSum{
+				"test-file": md5.Sum([]byte("test content")),
+			},
+			expectedCachedFiles: map[string]md5CheckSum{
+				"test-file": md5.Sum([]byte("test content")),
+			},
+		},
+		"cache containing a deleted file should signal update": {
+			fileContents: map[string][]byte{
+				"test-file": []byte("test content"),
+			},
+			initialCachedFiles: map[string]md5CheckSum{
+				"test-file":        md5.Sum([]byte("test content")),
+				"second-test-file": md5.Sum([]byte("other test content")),
+			},
+			expectedCachedFiles: map[string]md5CheckSum{
+				"test-file": md5.Sum([]byte("test content")),
+			},
+			expectedResult: true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			wh := &watchHandler{cachedFileHashes: c.initialCachedFiles}
+			res := wh.checkForDeletedFiles(c.fileContents)
+			assert.Equal(t, c.expectedResult, res)
 			assert.Equal(t, c.expectedCachedFiles, wh.cachedFileHashes)
 		})
 	}
@@ -249,7 +279,10 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	expectedCache := map[string]md5CheckSum{
 		"role": md5.Sum(yamlBytes),
 	}
+
+	wh.mutex.RLock()
 	assert.Equal(t, expectedCache, wh.cachedFileHashes)
+	wh.mutex.RUnlock()
 
 	// 5.Set the expected calls to the updater
 	updaterMock.EXPECT().ReconcileDeclarativeConfigs([][]byte{})
@@ -262,5 +295,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 
 	// 7. Assert on the cached file hashes.
 	expectedCache = map[string]md5CheckSum{}
+	wh.mutex.RLock()
 	assert.Equal(t, expectedCache, wh.cachedFileHashes)
+	wh.mutex.RUnlock()
 }
