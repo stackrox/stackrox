@@ -1,5 +1,4 @@
 {{- include "srox.init" . -}}
-{{- if ._rox.central.db.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -25,4 +24,3 @@ data:
         pool_min_conns={{ ._rox.central.db.source.minConns }}
         pool_max_conns={{ ._rox.central.db.source.maxConns }}
       {{- end }}
-{{- end }}
