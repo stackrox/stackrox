@@ -146,7 +146,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint1.signal.time
         assert endpoint1.signal.name == "socat"
         assert endpoint1.signal.execFilePath == "/usr/bin/socat"
-        // assert endpoint1.signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+        assert endpoint1.signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
         assert endpoint1.signal.pid
         assert endpoint1.clusterId == clusterId
         assert endpoint1.namespace
