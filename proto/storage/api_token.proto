@@ -13,10 +13,11 @@ message TokenMetadata {
     string name                          = 2;
     repeated string roles                = 7;
     google.protobuf.Timestamp issued_at  = 4;
-    google.protobuf.Timestamp expiration = 5;
-    bool revoked                         = 6;
+    google.protobuf.Timestamp expiration = 5 [(gogoproto.moretags) = 'search:"Expiration,store"'];
+    bool revoked                         = 6 [(gogoproto.moretags) = 'search:"Revoked,store"'];
 
 
     string role = 3 [deprecated = true];
+    // Next available tag: 8
 }
 

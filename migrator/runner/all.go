@@ -128,4 +128,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_collections_sac_resource_migration"
 	_ "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges"
 	_ "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations"
+	_ "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_enablesearch_on_api_tokens"
 )

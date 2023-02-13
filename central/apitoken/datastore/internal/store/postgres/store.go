@@ -57,6 +57,7 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 
 	Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TokenMetadata, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.TokenMetadata, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -90,10 +91,12 @@ func insertIntoApiTokens(ctx context.Context, batch *pgx.Batch, obj *storage.Tok
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		pgutils.NilOrTime(obj.GetExpiration()),
+		obj.GetRevoked(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO api_tokens (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO api_tokens (Id, Expiration, Revoked, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -113,6 +116,10 @@ func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx pgx.Tx, objs ...*s
 
 		"id",
 
+		"expiration",
+
+		"revoked",
+
 		"serialized",
 	}
 
@@ -130,6 +137,10 @@ func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx pgx.Tx, objs ...*s
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
+
+			pgutils.NilOrTime(obj.GetExpiration()),
+
+			obj.GetRevoked(),
 
 			serialized,
 		})
@@ -399,6 +410,31 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TokenMetadata,
 	}
 
 	return data, true, nil
+}
+
+// GetByQuery returns the objects from the store matching the query.
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TokenMetadata, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "TokenMetadata")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
+		return nil, nil
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.TokenMetadata](ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return rows, nil
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
