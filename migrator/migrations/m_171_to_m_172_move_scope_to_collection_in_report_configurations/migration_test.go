@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
-	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
-	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
+	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/frozenschema/v73/store/reportconfiguration"
+	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/frozenschema/v73/store/simpleaccessscope"
+	collectionPostgres "github.com/stackrox/rox/migrator/migrations/frozenschema/v75/store/collection"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"

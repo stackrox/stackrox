@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -18,13 +18,13 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// This file is a partial copy of central/resourcecollection/datastore/store/postgres/store.go
+// This file is a partial copy of central/reportconfigurations/store/postgres/store.go
 // in the state it had when the migration was written.
-// Only the relevant functions (Upsert, UpsertMany, DeleteMany, Get and Walk) are kept.
+// Only the relevant functions (Upsert, UpsertMany, DeleteMany and Walk) are kept.
 // The kept functions are stripped from the scoped access control checks.
 
 const (
-	baseTable = "collections"
+	baseTable = "report_configurations"
 
 	batchAfter = 100
 
@@ -39,17 +39,16 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.CollectionsSchema
+	schema = pkgSchema.ReportConfigurationsSchema
 )
 
-// Store is the interface to interact with the storage for storage.ResourceCollection
+// Store is the interface to interact with the storage for storage.ReportConfiguration
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.ResourceCollection) error
-	UpsertMany(ctx context.Context, objs []*storage.ResourceCollection) error
+	Upsert(ctx context.Context, obj *storage.ReportConfiguration) error
+	UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
-	Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error)
-	Walk(ctx context.Context, fn func(obj *storage.ResourceCollection) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error
 }
 
 type storeImpl struct {
@@ -66,7 +65,7 @@ func New(db *postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection) error {
+func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *storage.ReportConfiguration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -77,43 +76,17 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		obj.GetCreatedBy().GetName(),
-		obj.GetUpdatedBy().GetName(),
+		obj.GetType(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO collections (Id, Name, CreatedBy_Name, UpdatedBy_Name, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, CreatedBy_Name = EXCLUDED.CreatedBy_Name, UpdatedBy_Name = EXCLUDED.UpdatedBy_Name, serialized = EXCLUDED.serialized"
-	batch.Queue(finalStr, values...)
-
-	var query string
-
-	for childIndex, child := range obj.GetEmbeddedCollections() {
-		if err := insertIntoCollectionsEmbeddedCollections(ctx, batch, child, obj.GetId(), childIndex); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from collections_embedded_collections where collections_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetEmbeddedCollections()))
-	return nil
-}
-
-func insertIntoCollectionsEmbeddedCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionsID string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		collectionsID,
-		idx,
-		obj.GetId(),
-	}
-
-	finalStr := "INSERT INTO collections_embedded_collections (collections_Id, idx, Id) VALUES($1, $2, $3) ON CONFLICT(collections_Id, idx) DO UPDATE SET collections_Id = EXCLUDED.collections_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id"
+	finalStr := "INSERT INTO report_configurations (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromCollections(ctx context.Context, tx pgx.Tx, objs ...*storage.ResourceCollection) error {
+func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
 
 	inputRows := [][]interface{}{}
 
@@ -129,9 +102,7 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx pgx.Tx, objs ...
 
 		"name",
 
-		"createdby_name",
-
-		"updatedby_name",
+		"type",
 
 		"serialized",
 	}
@@ -153,9 +124,7 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx pgx.Tx, objs ...
 
 			obj.GetName(),
 
-			obj.GetCreatedBy().GetName(),
-
-			obj.GetUpdatedBy().GetName(),
+			obj.GetType(),
 
 			serialized,
 		})
@@ -174,64 +143,7 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx pgx.Tx, objs ...
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"collections"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
-		if err = s.copyFromCollectionsEmbeddedCollections(ctx, tx, obj.GetId(), obj.GetEmbeddedCollections()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx pgx.Tx, collectionsID string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"collections_id",
-
-		"idx",
-
-		"id",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			collectionsID,
-
-			idx,
-
-			obj.GetId(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"collections_embedded_collections"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -253,8 +165,8 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 	return conn, conn.Release, nil
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ResourceCollection) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ResourceCollection")
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfiguration) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
 	if err != nil {
 		return err
 	}
@@ -265,7 +177,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ResourceColle
 		return err
 	}
 
-	if err := s.copyFromCollections(ctx, tx, objs...); err != nil {
+	if err := s.copyFromReportConfigurations(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -277,8 +189,8 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ResourceColle
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ResourceCollection) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ResourceCollection")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfiguration) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
 	if err != nil {
 		return err
 	}
@@ -286,7 +198,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ResourceCollect
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoCollections(ctx, batch, obj); err != nil {
+		if err := insertIntoReportConfigurations(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -305,19 +217,19 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ResourceCollect
 	return nil
 }
 
+//// Helper functions - END
+
+//// Interface functions
+
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ResourceCollection) error {
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ReportConfiguration) error {
 	return pgutils.Retry(func() error {
 		return s.upsert(ctx, obj)
 	})
 }
 
-//// Helper functions - END
-
-//// Interface functions
-
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ResourceCollection) error {
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error {
 	return pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
@@ -367,27 +279,10 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 	return nil
 }
 
-// Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error) {
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	data, err := pgSearch.RunGetQueryForSchema[storage.ResourceCollection](ctx, schema, q, s.db)
-	if err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	return data, true, nil
-}
-
 // Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ResourceCollection) error) error {
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ResourceCollection](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ReportConfiguration](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}

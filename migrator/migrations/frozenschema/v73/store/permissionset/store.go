@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +19,7 @@ import (
 )
 
 // This file is a partial copy of central/role/store/permissionset/postgres/store.go
-// in the state it had when the migration was written.
+// in the state it had when the v73 schema was frozen.
 // Only the relevant functions (Walk, DeleteMany and UpsertMany) are kept.
 // The kept functions are stripped from the scoped access control checks.
 
