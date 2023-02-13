@@ -306,7 +306,9 @@ func handle(
 		seenIDs:                    make(map[types.UID]struct{}),
 		missingInitialIDs:          nil,
 	}
-	informer.AddEventHandler(handlerImpl)
+	if _, err := informer.AddEventHandler(handlerImpl); err != nil {
+		utils.Should(err)
+	}
 	if !informer.HasSynced() {
 		if err := informer.SetTransform(managedFieldsTransformer); err != nil {
 			utils.Should(err)
