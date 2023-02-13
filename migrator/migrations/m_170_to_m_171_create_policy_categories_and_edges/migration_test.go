@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	policyCategoryEdgePostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategoryedgepostgresstore"
-	policyCategoryPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategorypostgresstore"
-	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policypostgresstore"
+	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/frozenschema/v73/store/policy"
+	policyCategoryPostgresStore "github.com/stackrox/rox/migrator/migrations/frozenschema/v73/store/policycategory"
+	policyCategoryEdgePostgresStore "github.com/stackrox/rox/migrator/migrations/frozenschema/v74/store/policycategoryedge"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/fixtures"

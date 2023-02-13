@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_collections_sac_resource_migration/permissionsetpostgresstore"
+	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/frozenschema/v73/store/permissionset"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
