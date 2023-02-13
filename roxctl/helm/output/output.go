@@ -38,9 +38,9 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 			return helmOutputCmd.outputHelmChart()
 		},
 	}
-	c.PersistentFlags().StringVar(&helmOutputCmd.outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
-	c.PersistentFlags().BoolVar(&helmOutputCmd.removeOutputDir, "remove", false, "remove the output directory if it already exists")
-	c.PersistentFlags().BoolVar(&helmOutputCmd.rhacs, "rhacs", false, "render RHACS chart flavor")
+	c.PersistentFlags().StringVar(&helmOutputCmd.outputDir, "output-dir", "", "Path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
+	c.PersistentFlags().BoolVar(&helmOutputCmd.removeOutputDir, "remove", false, "Remove the output directory if it already exists")
+	c.PersistentFlags().BoolVar(&helmOutputCmd.rhacs, "rhacs", false, "Render RHACS chart flavor")
 
 	deprecationNote := fmt.Sprintf("use '--%s=%s' instead", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease)
 	utils.Must(c.PersistentFlags().MarkDeprecated("rhacs", deprecationNote))

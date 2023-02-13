@@ -81,17 +81,17 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.AddFlags(c)
 
 	// Image Check specific flags
-	c.Flags().StringVarP(&imageCheckCmd.image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
+	c.Flags().StringVarP(&imageCheckCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	pkgUtils.Must(c.MarkFlagRequired("image"))
-	c.Flags().IntVarP(&imageCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds.")
-	c.Flags().IntVarP(&imageCheckCmd.retryCount, "retries", "r", 3, "number of retries before exiting as error.")
+	c.Flags().IntVarP(&imageCheckCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&imageCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
 	c.Flags().BoolVar(&imageCheckCmd.sendNotifications, "send-notifications", false,
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
-	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "Optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 
 	// deprecated, old output format specific flags
-	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
+	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "Whether to print all violations per alert or truncate violations for readability")
 	c.Flags().BoolVar(&imageCheckCmd.json, jsonFlagName, false, "Output policy results as JSON")
 	c.Flags().BoolVar(&imageCheckCmd.failViolationsWithJSON, jsonFailFlagName, true,
 		"Whether policy violations should cause the command to exit non-zero in JSON output mode too. "+

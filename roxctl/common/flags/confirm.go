@@ -18,7 +18,7 @@ const (
 
 // AddForce adds a parameter for bypassing interactive confirmation
 func AddForce(c *cobra.Command) {
-	c.Flags().BoolP(forceFlag, "f", false, "proceed without confirmation")
+	c.Flags().BoolP(forceFlag, "f", false, "Proceed without confirmation")
 }
 
 // CheckConfirmation requires that the force argument has been passed or that the user interactively confirms the action

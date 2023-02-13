@@ -32,7 +32,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().BoolVarP(&collectorSPUploadCmd.overwrite, "overwrite", "", false, "whether to overwrite present but different files")
+	c.Flags().BoolVarP(&collectorSPUploadCmd.overwrite, "overwrite", "", false, "Whether to overwrite present but different files")
 	return c
 }
 

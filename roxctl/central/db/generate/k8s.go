@@ -31,7 +31,7 @@ func orchestratorCommand(shortName, longName string) *cobra.Command {
 		},
 	}
 	if !roxctl.InMainImage() {
-		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultCentralDBBundle), "output-dir", "the directory to output the deployment bundle to")
+		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultCentralDBBundle), "output-dir", "The directory to output the deployment bundle to")
 	}
 	return c
 }
@@ -56,7 +56,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flags.AddImageDefaults(c.PersistentFlags(), &k8sConfig.ImageFlavorName)
 
 	defaultImageHelp := fmt.Sprintf(" (if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
-	c.PersistentFlags().StringVarP(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "", "central-db image to use"+defaultImageHelp)
+	c.PersistentFlags().StringVarP(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "", "Central-db image to use"+defaultImageHelp)
 	k8sConfig.EnableCentralDB = true
 
 	return c
@@ -86,6 +86,6 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		}
 	})
 
-	c.PersistentFlags().IntVar(&openshiftVersion, "openshift-version", 3, "the OpenShift major version (3 or 4) to deploy on")
+	c.PersistentFlags().IntVar(&openshiftVersion, "openshift-version", 3, "The OpenShift major version (3 or 4) to deploy on")
 	return c
 }

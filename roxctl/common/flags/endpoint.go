@@ -27,7 +27,7 @@ var (
 
 // AddConnectionFlags adds connection-related flags to roxctl.
 func AddConnectionFlags(c *cobra.Command) {
-	c.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", "localhost:8443", "endpoint for service to contact")
+	c.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", "localhost:8443", "Endpoint for service to contact")
 	c.PersistentFlags().StringVarP(&serverName, "server-name", "s", "", "TLS ServerName to use for SNI (if empty, derived from endpoint)")
 	c.PersistentFlags().BoolVar(&directGRPC, "direct-grpc", false, "Use direct gRPC (advanced; only use if you encounter connection issues)")
 	c.PersistentFlags().BoolVar(&forceHTTP1, "force-http1", false, "Always use HTTP/1 for all connections (advanced; only use if you encounter connection issues)")

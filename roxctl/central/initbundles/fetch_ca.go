@@ -77,7 +77,7 @@ func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
 			return fetchCAConfig(cliEnvironment, outputFile)
 		},
 	}
-	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the CA config")
+	c.PersistentFlags().StringVar(&outputFile, "output", "", "File to be used for storing the CA config")
 
 	return c
 }

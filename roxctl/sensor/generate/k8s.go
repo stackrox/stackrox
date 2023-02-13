@@ -30,6 +30,6 @@ func k8s(generateCmd *sensorGenerateCommand) *cobra.Command {
 		}),
 	}
 
-	c.PersistentFlags().BoolVar(&k8sCommand.cluster.AdmissionControllerEvents, "admission-controller-listen-on-events", true, "enable admission controller webhook to listen on Kubernetes events")
+	c.PersistentFlags().BoolVar(&k8sCommand.cluster.AdmissionControllerEvents, "admission-controller-listen-on-events", true, "Enable admission controller webhook to listen on Kubernetes events")
 	return c
 }

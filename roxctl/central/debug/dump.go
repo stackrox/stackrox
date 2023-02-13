@@ -40,7 +40,7 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	flags.AddTimeoutWithDefault(c, dumpTimeout)
 	c.Flags().BoolVar(&withLogs, "logs", false, "Include logs in Central dump")
-	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory)")
 
 	return c
 }

@@ -76,13 +76,13 @@ func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 		}
 		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
-	c.Flags().StringVarP(&hostpath.Central.HostPath, "hostpath", "", "/var/lib/stackrox", "path on the host")
-	c.Flags().StringVarP(&hostpath.Central.NodeSelectorKey, "node-selector-key", "", "", "node selector key (e.g. kubernetes.io/hostname)")
-	c.Flags().StringVarP(&hostpath.Central.NodeSelectorValue, "node-selector-value", "", "", "node selector value")
+	c.Flags().StringVarP(&hostpath.Central.HostPath, "hostpath", "", "/var/lib/stackrox", "Path on the host")
+	c.Flags().StringVarP(&hostpath.Central.NodeSelectorKey, "node-selector-key", "", "", "Node selector key (e.g. kubernetes.io/hostname)")
+	c.Flags().StringVarP(&hostpath.Central.NodeSelectorValue, "node-selector-value", "", "", "Node selector value")
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		c.Flags().StringVarP(&hostpath.DB.HostPath, "db-hostpath", "", "/var/lib/stackrox-central", "path on the host")
-		c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "db-node-selector-key", "", "", "node selector key (e.g. kubernetes.io/hostname)")
-		c.Flags().StringVarP(&hostpath.DB.NodeSelectorValue, "db-node-selector-value", "", "", "node selector value")
+		c.Flags().StringVarP(&hostpath.DB.HostPath, "db-hostpath", "", "/var/lib/stackrox-central", "Path on the host")
+		c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "db-node-selector-key", "", "", "Node selector key (e.g. kubernetes.io/hostname)")
+		c.Flags().StringVarP(&hostpath.DB.NodeSelectorValue, "db-node-selector-value", "", "", "Node selector value")
 	}
 
 	return c

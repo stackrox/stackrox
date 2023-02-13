@@ -10,7 +10,7 @@ var (
 
 // AddPassword adds the password flag to the base command.
 func AddPassword(c *cobra.Command) {
-	c.PersistentFlags().StringVarP(&password, "password", "p", "", "password for basic auth")
+	c.PersistentFlags().StringVarP(&password, "password", "p", "", "Password for basic auth")
 }
 
 // Password returns the set password.

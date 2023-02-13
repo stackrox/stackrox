@@ -80,7 +80,7 @@ func (c *clusterDeleteTestSuite) setupCommand(clusters []*storage.Cluster) (*cob
 	conn, closeFunction := c.createGRPCMockClustersService(clusters)
 	mockedEnv, stdout, stderr := mocks.NewEnvWithConn(conn, c.T())
 	cbr := Command(mockedEnv)
-	cbr.PersistentFlags().DurationP("timeout", "t", 5*time.Second, "timeout for API requests")
+	cbr.PersistentFlags().DurationP("timeout", "t", 5*time.Second, "Timeout for API requests")
 
 	return cbr, closeFunction, stdout, stderr
 }

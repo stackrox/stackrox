@@ -35,9 +35,9 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 
 		},
 	}
-	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.output, "output", "", "path to output file")
-	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.outputDir, "output-dir", "", "path to output directory")
-	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.input, "input", "", "path to file or directory containing YAML input")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.output, "output", "", "Path to output file")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.outputDir, "output-dir", "", "Path to output directory")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.input, "input", "", "Path to file or directory containing YAML input")
 
 	return c
 }

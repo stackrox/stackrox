@@ -46,11 +46,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return generateNetpolCmd.generateNetpol(synth)
 		},
 	}
-	c.Flags().BoolVar(&generateNetpolCmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
-	c.Flags().BoolVar(&generateNetpolCmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
-	c.Flags().BoolVar(&generateNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
-	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "", "save generated policies into target folder - one file per policy")
-	c.Flags().StringVarP(&generateNetpolCmd.outputFilePath, "output-file", "f", "", "save and merge generated policies into a single yaml file")
+	c.Flags().BoolVar(&generateNetpolCmd.treatWarningsAsErrors, "strict", false, "Treat warnings as errors")
+	c.Flags().BoolVar(&generateNetpolCmd.stopOnFirstError, "fail", false, "Fail on the first encountered error")
+	c.Flags().BoolVar(&generateNetpolCmd.removeOutputPath, "remove", false, "Remove the output path if it already exists")
+	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "", "Save generated policies into target folder - one file per policy")
+	c.Flags().StringVarP(&generateNetpolCmd.outputFilePath, "output-file", "f", "", "Save and merge generated policies into a single yaml file")
 	return c
 }
 

@@ -33,7 +33,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return clusterDeleteCmd.Delete()
 		},
 	}
-	cbr.PersistentFlags().StringVar(&clusterDeleteCmd.name, "name", "", "cluster name to delete")
+	cbr.PersistentFlags().StringVar(&clusterDeleteCmd.name, "name", "", "Cluster name to delete")
 	return cbr
 }
 

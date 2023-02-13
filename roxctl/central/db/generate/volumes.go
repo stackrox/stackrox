@@ -32,9 +32,9 @@ func externalVolume(cliEnvironment environment.Environment) *cobra.Command {
 		}
 		return outputZip(cliEnvironment.Logger(), cfg)
 	}
-	c.Flags().StringVarP(&external.DB.Name, "name", "", "central-db", "external volume name for Central DB")
-	c.Flags().StringVarP(&external.DB.StorageClass, "storage-class", "", "", "storage class name for Central DB (optional if you have a default StorageClass configured)")
-	c.Flags().Uint32VarP(&external.DB.Size, "size", "", 100, "external volume size in Gi for Central DB")
+	c.Flags().StringVarP(&external.DB.Name, "name", "", "central-db", "External volume name for Central DB")
+	c.Flags().StringVarP(&external.DB.StorageClass, "storage-class", "", "", "Storage class name for Central DB (optional if you have a default StorageClass configured)")
+	c.Flags().Uint32VarP(&external.DB.Size, "size", "", 100, "External volume size in Gi for Central DB")
 	return c
 }
 
@@ -62,9 +62,9 @@ func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 		}
 		return outputZip(cliEnvironment.Logger(), cfg)
 	}
-	c.Flags().StringVarP(&hostpath.DB.HostPath, "hostpath", "", defaultHostPathPath, "path on the host")
-	c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "node-selector-key", "", "", "node selector key (e.g. kubernetes.io/hostname)")
-	c.Flags().StringVarP(&hostpath.DB.NodeSelectorValue, "node-selector-value", "", "", "node selector value")
+	c.Flags().StringVarP(&hostpath.DB.HostPath, "hostpath", "", defaultHostPathPath, "Path on the host")
+	c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "node-selector-key", "", "", "Node selector key (e.g. kubernetes.io/hostname)")
+	c.Flags().StringVarP(&hostpath.DB.NodeSelectorValue, "node-selector-value", "", "", "Node selector value")
 
 	return c
 }

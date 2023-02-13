@@ -64,9 +64,9 @@ To specify timeout, run  'roxctl' command:
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
-	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory in which to store bundle")
-	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "comma separated list of sensor clusters from which logs should be collected")
-	c.PersistentFlags().StringVar(&since, "since", "", "timestamp starting when logs should be collected from sensor clusters")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory in which to store bundle")
+	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "Comma separated list of sensor clusters from which logs should be collected")
+	c.PersistentFlags().StringVar(&since, "since", "", "Timestamp starting when logs should be collected from sensor clusters")
 
 	return c
 }

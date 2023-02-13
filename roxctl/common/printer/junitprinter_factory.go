@@ -26,7 +26,7 @@ func NewJUnitPrinterFactory(defaultTestSuiteName string, jsonPathExpressions map
 // AddFlags will add all JUnit printer specific flags to the cobra.Command
 func (j *JUnitPrinterFactory) AddFlags(cmd *cobra.Command) {
 	// TODO: Check whether this is actually to be set by the user or whether this should be set by the command, i.e. image name
-	cmd.PersistentFlags().StringVar(&j.suiteName, "junit-suite-name", j.suiteName, "set the name of the JUnit test suite")
+	cmd.PersistentFlags().StringVar(&j.suiteName, "junit-suite-name", j.suiteName, "Set the name of the JUnit test suite")
 }
 
 // SupportedFormats returns the supported printer format that can be created by JUnitPrinterFactory
