@@ -37,7 +37,7 @@ build/generated: src/main/proto
 	@echo "+ $@"
 	$(GRADLE) generateProto generateTestProto
 
-src/main/proto: ../proto
+src/main/proto: $(shell find ../proto)
 	@echo "+ migrate protos"
 	-rm -r src/main/proto
 	@scripts/migrate_protos.sh

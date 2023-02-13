@@ -51,6 +51,16 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
     fragment cveFields on ImageVulnerability {
         cve
+        images(pagination: \$pagination) {
+            scannerVersion
+            scanNotes
+            dataSource {
+                id
+                name
+                __typename
+            }
+            __typename
+        }
     }
     """
 
@@ -236,7 +246,7 @@ class VulnMgmtSACTest extends BaseSpecification {
     @Unroll
     def "Verify role based scoping on vuln mgmt: image-role Image:*"() {
         when:
-        "Get Node CVEs and components"
+        "Get Image CVEs and components"
         BaseService.useBasicAuth()
         def gqlService = new GraphQLService()
         def baseQuery = "Image:*"
