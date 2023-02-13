@@ -66,6 +66,17 @@ updates:
     reviewers:
       - "stackrox/backend-dep-updaters"
 
+  - package-ecosystem: 'gomod'
+    directory: '/operator/tools/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "dependencies"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+
   - package-ecosystem: 'docker'
     directory: 'operator/'
     schedule:
