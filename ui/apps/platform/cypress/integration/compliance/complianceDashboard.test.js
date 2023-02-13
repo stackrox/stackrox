@@ -71,11 +71,11 @@ describe('Compliance Dashboard', () => {
         cy.get(selectors.dashboard.tileLinks.deployment.value)
             .invoke('text')
             .then((text) => {
-                const numNodes = parseInt(text, 10); // for example, 2 nodes
+                const count = parseInt(text, 10); // for example, 2 deployments
                 interactAndWaitForComplianceEntities(() => {
                     cy.get(selectors.dashboard.tileLinks.deployment.tile).click();
                 }, 'deployments');
-                cy.get('.rt-tbody .rt-tr').its('length').should('eq', numNodes);
+                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
             });
     });
 
