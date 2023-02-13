@@ -155,14 +155,6 @@ deploy_central_via_operator() {
     esac
 
     customize_envVars=""
-    customize_envVars+=$'\n      - name: GOMEMLIMIT'
-    customize_envVars+=$'\n        valueFrom:'
-    customize_envVars+=$'\n          resourceFieldRef:'
-    customize_envVars+=$'\n            resource: limits.memory'
-    customize_envVars+=$'\n      - name: GOMAXPROCS'
-    customize_envVars+=$'\n        valueFrom:'
-    customize_envVars+=$'\n          resourceFieldRef:'
-    customize_envVars+=$'\n            resource: limits.cpu'
     if [[ "${CGO_CHECKS:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: GODEBUG'
         customize_envVars+=$'\n        value: "2"'
