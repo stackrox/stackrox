@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -36,6 +37,7 @@ func main() {
 	startProfilingServer()
 	if err := run(); err != nil {
 		log.WriteToStderrf("Migrator failed: %s", err)
+		time.Sleep(30 * time.Minute)
 		os.Exit(1)
 	}
 }
