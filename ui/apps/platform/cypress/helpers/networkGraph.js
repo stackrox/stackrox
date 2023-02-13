@@ -186,9 +186,9 @@ export function selectNamespaceFilterWithGraphAndPoliciesFixtures(
     interactAndWaitForResponses(
         () => {
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-            cy.get(
-                `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
-            ).click();
+            cy.get(`${selectSelectors.patternFlySelect.openMenu} span`)
+                .contains(new RegExp(`^${namespace}$`))
+                .click();
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
         },
         routeMatcherMapForClusterInNetworkGraph,
@@ -206,9 +206,9 @@ export function selectNamespaceFilterWithNetworkGraphResponse(namespace, respons
     interactAndWaitForResponses(
         () => {
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-            cy.get(
-                `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
-            ).click();
+            cy.get(`${selectSelectors.patternFlySelect.openMenu} span`)
+                .contains(new RegExp(`^${namespace}$`))
+                .click();
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
         },
         routeMatcherMapForClusterInNetworkGraph,
