@@ -346,7 +346,7 @@ _main() {
 
 	"$@" &
 	child=$!
-	echo "Waiting for child process to exit"
+	echo "Waiting for child process $child to exit"
 	wait "$child"
 }
 
