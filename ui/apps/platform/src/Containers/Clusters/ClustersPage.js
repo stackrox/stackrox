@@ -1,20 +1,19 @@
 import React, { useCallback, useEffect } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { useQuery } from '@apollo/client';
-import { HashLink } from 'react-router-hash-link';
 
 import PageHeader from 'Components/PageHeader';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
-import { integrationsPath } from 'routePaths';
 import useURLSearch from 'hooks/useURLSearch';
 import parseURL from 'utils/URLParser';
 import { analyticsPageVisit } from 'utils/analytics';
 
 import ClustersTablePanel from './ClustersTablePanel';
 import ClustersSidePanel from './ClustersSidePanel';
+import ManageTokensButton from './Components/ManageTokensButton';
 
 const ClustersPage = ({
     history,
@@ -68,12 +67,7 @@ const ClustersPage = ({
                     handleChangeSearchFilter={setSearchFilter}
                 />
                 <div className="flex items-center ml-4 mr-3">
-                    <HashLink
-                        to={`${integrationsPath}#token-integrations`}
-                        className="no-underline btn btn-base flex-shrink-0"
-                    >
-                        Manage Tokens
-                    </HashLink>
+                    <ManageTokensButton />
                 </div>
             </div>
         </PageHeader>
