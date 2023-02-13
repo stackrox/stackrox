@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/kudobuilder/kuttl v0.15.0
-	github.com/operator-framework/operator-sdk v1.24.1
+	github.com/operator-framework/operator-sdk v1.27.0
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230131195449-5db173878d6d
 	sigs.k8s.io/controller-tools v0.11.1
 	sigs.k8s.io/kustomize/kustomize/v4 v4.5.7
@@ -130,8 +130,8 @@ require (
 	github.com/onsi/gomega v1.24.2 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
-	github.com/operator-framework/api v0.17.2-0.20221028193825-b611f6cef49c // indirect
-	github.com/operator-framework/helm-operator-plugins v0.0.12-0.20221014213227-6f6106714f0d // indirect
+	github.com/operator-framework/api v0.17.4-0.20221221181915-f1b729684854 // indirect
+	github.com/operator-framework/helm-operator-plugins v0.0.12-0.20230109213218-ebfbea851192 // indirect
 	github.com/operator-framework/java-operator-plugins v0.7.1-0.20221007075838-2e24140314fb // indirect
 	github.com/operator-framework/operator-manifest-tools v0.2.3-0.20220901033859-2a7ce32ef673 // indirect
 	github.com/operator-framework/operator-registry v1.26.3-0.20220930210947-614d6a955dc0 // indirect
@@ -199,7 +199,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	helm.sh/helm/v3 v3.10.1 // indirect
+	helm.sh/helm/v3 v3.10.3 // indirect
 	k8s.io/api v0.26.1 // indirect
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect
 	k8s.io/apimachinery v0.26.1 // indirect
