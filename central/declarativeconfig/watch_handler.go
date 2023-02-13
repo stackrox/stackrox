@@ -28,11 +28,9 @@ type declarativeConfigReconciler interface {
 }
 
 type watchHandler struct {
-	updater declarativeConfigReconciler
-
+	updater          declarativeConfigReconciler
 	cachedFileHashes map[string]md5CheckSum
-
-	mutex sync.RWMutex
+	mutex            sync.RWMutex
 }
 
 func newWatchHandler(updater declarativeConfigReconciler) *watchHandler {
@@ -48,10 +46,10 @@ func (w *watchHandler) OnChange(dir string) (interface{}, error) {
 		return nil, err
 	}
 
-	declarativeConfigFiles := map[string][]byte{}
+	declarativeConfigFiles := make(map[string][]byte, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() {
-			log.Debugf("Found a directory entry within %s: %s. This entry will be skipped", dir, entry.Name())
+			log.Warnf("Found a directory entry within %s: %s. This entry will be skipped", dir, entry.Name())
 			continue
 		}
 		entryContents, err := readDeclarativeConfigFile(path.Join(dir, entry.Name()))
@@ -77,7 +75,7 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 		return
 	}
 
-	w.logFileContentsNoLock(fileContents)
+	w.logFileContents(fileContents)
 
 	if !w.compareHashesForChanges(fileContents) && !w.checkForDeletedFiles(fileContents) {
 		log.Debugf("Found no changes from before in content, no reconciliation will be triggered")
@@ -126,11 +124,6 @@ func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool
 	cachedFileNames := set.NewStringSet(maputil.Keys(w.cachedFileHashes)...)
 	fileNames := set.NewStringSet(maputil.Keys(fileContents)...)
 
-	// No deleted files if both arrays are equal.
-	if cachedFileNames.Equal(fileNames) {
-		return false
-	}
-
 	// Retrieve all files that are within the cache, but are not present anymore in the current file contents.
 	removedFiles := cachedFileNames.Difference(fileNames)
 
@@ -147,13 +140,13 @@ func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool
 	return true
 }
 
-func (w *watchHandler) logFileContentsNoLock(contents map[string][]byte) {
+func (w *watchHandler) logFileContents(contents map[string][]byte) {
 	logMessage := "Found declarative configuration file contents\n"
 
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 	for fileName, fileContents := range contents {
-		logMessage += fmt.Sprintf("File %s: %s", fileName, fileContents)
+		logMessage += fmt.Sprintf("File %s: %s\n", fileName, fileContents)
 	}
 	log.Debugf(logMessage)
 }

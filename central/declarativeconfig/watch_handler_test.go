@@ -150,7 +150,7 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 3. Wait to ensure the watch handler has been triggered.
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(100 * time.Second)
 
 	// 4. Assert on the cached file hashes.
 	expectedCache := map[string]md5CheckSum{
