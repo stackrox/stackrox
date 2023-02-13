@@ -116,7 +116,7 @@ dependencies {
     // See https://github.com/gradle/gradle/issues/12646.
     constraints {
         "codenarc"("org.codehaus.groovy:groovy:2.5.10")
-        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.19")
+        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.21")
     }
 
     implementation 'org.javers:javers-core:6.9.1'
