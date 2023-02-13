@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // ExecutePostgresCmd -- executes a command
@@ -32,7 +32,7 @@ func ExecutePostgresCmd(cmd *exec.Cmd) error {
 }
 
 // SetPostgresCmdEnv - sets command environment for postgres commands
-func SetPostgresCmdEnv(cmd *exec.Cmd, sourceMap map[string]string, config *pgxpool.Config) {
+func SetPostgresCmdEnv(cmd *exec.Cmd, sourceMap map[string]string, config *postgres.Config) {
 	cmd.Env = os.Environ()
 
 	if _, found := sourceMap["sslmode"]; found {
@@ -45,7 +45,7 @@ func SetPostgresCmdEnv(cmd *exec.Cmd, sourceMap map[string]string, config *pgxpo
 }
 
 // GetConnectionOptions - returns a string slice with the common postgres connection options
-func GetConnectionOptions(config *pgxpool.Config) []string {
+func GetConnectionOptions(config *postgres.Config) []string {
 	// Set the options for pg_dump from the connection config
 	options := []string{
 		"-U",

@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
-	"github.com/stackrox/rox/central/signatureintegration/store/postgres"
+	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
 	"github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
@@ -22,7 +22,7 @@ func Singleton() DataStore {
 	once.Do(func() {
 		var storage store.SignatureIntegrationStore
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			storage = postgres.New(globaldb.GetPostgres())
+			storage = pgStore.New(globaldb.GetPostgres())
 		} else {
 			var err error
 			storage, err = rocksdb.New(globaldb.GetRocksDB())

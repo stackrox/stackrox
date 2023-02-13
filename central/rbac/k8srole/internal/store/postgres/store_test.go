@@ -38,7 +38,7 @@ func (s *K8sRolesStoreSuite) SetupSuite() {
 	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *K8sRolesStoreSuite) SetupTest() {

@@ -1,9 +1,9 @@
 package postgreshelper
 
 import (
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/migrator/log"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sync"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	postgresDB *pgxpool.Pool
+	postgresDB *postgres.DB
 	gormDB     *gorm.DB
 
 	err error
@@ -21,7 +21,7 @@ var (
 )
 
 // Load loads a Postgres instance and returns a GormDB.
-func Load(databaseName string) (*pgxpool.Pool, *gorm.DB, error) {
+func Load(databaseName string) (*postgres.DB, *gorm.DB, error) {
 	log.WriteToStderrf("Load database = %q", databaseName)
 	gc := migGorm.GetConfig()
 

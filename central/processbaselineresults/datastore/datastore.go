@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store"
-	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 )
 
@@ -30,8 +30,8 @@ func New(storage store.Store) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
+func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
 	return New(dbstore), nil
 }
 

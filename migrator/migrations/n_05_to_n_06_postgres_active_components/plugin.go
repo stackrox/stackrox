@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 // ComposeID creates an active component id from a deployment id and a component id
@@ -28,7 +28,7 @@ func convertActiveVuln(imageOsMap map[string]string, ac *storage.ActiveComponent
 	ret := make([]*storage.ActiveComponent, 0, len(osToContext))
 	for os, contexts := range osToContext {
 		cloned := ac.Clone()
-		cloned.ComponentId = postgres.IDFromPks([]string{componentName, componentVersion, os})
+		cloned.ComponentId = pgSearch.IDFromPks([]string{componentName, componentVersion, os})
 		cloned.Id = ComposeID(cloned.GetDeploymentId(), cloned.GetComponentId())
 		cloned.ActiveContextsSlice = contexts
 		ret = append(ret, cloned)

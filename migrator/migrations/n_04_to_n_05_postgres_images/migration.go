@@ -5,7 +5,6 @@ package n4ton5
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/dackboxhelper"
@@ -17,6 +16,7 @@ import (
 	store "github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/store"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
@@ -42,7 +42,7 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore store.Store) error {
+func move(gormDB *gorm.DB, postgresDB *postgres.DB, legacyStore store.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB, true)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableImageComponentsStmt)

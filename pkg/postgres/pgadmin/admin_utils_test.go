@@ -6,9 +6,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,8 +26,8 @@ const (
 
 type PostgresRestoreSuite struct {
 	suite.Suite
-	pool      *pgxpool.Pool
-	config    *pgxpool.Config
+	pool      *postgres.DB
+	config    *postgres.Config
 	sourceMap map[string]string
 	ctx       context.Context
 }
@@ -47,9 +47,9 @@ func (s *PostgresRestoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.New(ctx, config)
 	s.Require().NoError(err)
 
 	s.ctx = ctx

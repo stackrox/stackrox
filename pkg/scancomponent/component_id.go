@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 // ComponentID creates a component ID from the given name and version (and os if postgres is enabled).
 func ComponentID(name, version, os string) string {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.IDFromPks([]string{name, version, os})
+		return pgSearch.IDFromPks([]string{name, version, os})
 	}
 	return edges.EdgeID{ParentID: name, ChildID: version}.ToString()
 }

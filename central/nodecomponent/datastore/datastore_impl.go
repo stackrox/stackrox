@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/nodecomponent/datastore/index"
 	"github.com/stackrox/rox/central/nodecomponent/datastore/search"
-	"github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -21,7 +21,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  postgres.Store
+	storage  pgStore.Store
 	indexer  index.Indexer
 	searcher search.Searcher
 

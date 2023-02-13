@@ -9,7 +9,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -47,6 +46,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -112,7 +112,7 @@ type SearchOperationsTestSuite struct {
 	mockCtrl *gomock.Controller
 	rocksDB  *rocksdb.RocksDB
 	boltDB   *bolt.DB
-	pool     *pgxpool.Pool
+	pool     *postgres.DB
 }
 
 func (s *SearchOperationsTestSuite) SetupTest() {
@@ -120,7 +120,7 @@ func (s *SearchOperationsTestSuite) SetupTest() {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testingDB := pgtest.ForT(s.T())
-		s.pool = testingDB.Pool
+		s.pool = testingDB.DB
 	} else {
 		s.rocksDB = rocksdbtest.RocksDBForT(s.T())
 		var err error

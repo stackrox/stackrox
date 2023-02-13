@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
 	clusterPostgresStore "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
@@ -28,12 +27,13 @@ import (
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"go.etcd.io/bbolt"
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
 	clusterdbstore := clusterPostgresStore.New(pool)
 	clusterhealthdbstore := clusterHealthPostgresStore.New(pool)
 	indexer := clusterPostgresStore.NewIndexer(pool)

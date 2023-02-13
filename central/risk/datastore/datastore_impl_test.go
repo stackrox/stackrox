@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -44,7 +44,7 @@ type RiskDataStoreTestSuite struct {
 	storage   store.Store
 	datastore DataStore
 
-	pool *pgxpool.Pool
+	pool *postgres.DB
 
 	optionsMap searchPkg.OptionsMap
 
@@ -57,7 +57,7 @@ func (suite *RiskDataStoreTestSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(suite.T())
 		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.Pool
+		suite.pool = pgtestbase.DB
 		suite.datastore, err = GetTestPostgresDataStore(suite.T(), suite.pool)
 		suite.Require().NoError(err)
 

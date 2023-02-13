@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -39,7 +39,7 @@ type DeploymentPostgresDataStoreTestSuite struct {
 
 	mockCtrl            *gomock.Controller
 	ctx                 context.Context
-	db                  *pgxpool.Pool
+	db                  *postgres.DB
 	gormDB              *gorm.DB
 	imageDatastore      imageDataStore.DataStore
 	deploymentDatastore DataStore
@@ -57,10 +57,10 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.db = pool
 

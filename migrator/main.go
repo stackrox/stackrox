@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	cloneMgr "github.com/stackrox/rox/migrator/clone"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -151,7 +151,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 	}
 
 	var gormDB *gorm.DB
-	var pgPool *pgxpool.Pool
+	var pgPool *postgres.DB
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgPool, gormDB, err = postgreshelper.Load(dbClone)
 		if err != nil {

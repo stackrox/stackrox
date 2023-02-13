@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
-	"github.com/stackrox/rox/central/processindicator/store/postgres"
+	pgStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 	"github.com/stackrox/rox/central/processindicator/store/rocksdb"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
@@ -37,9 +37,9 @@ func initialize() {
 	var plopStorage plopStore.Store
 	var indexer index.Indexer
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
+		storage = pgStore.New(globaldb.GetPostgres())
 		plopStorage = plopStore.New(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 		// PLOP storage is only supported for PostgreSQL

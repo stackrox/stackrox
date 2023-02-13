@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	pkgPostgres "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -31,7 +31,7 @@ var (
 type SchemaTestSuite struct {
 	suite.Suite
 	connConfig *pgx.ConnConfig
-	pool       *pgxpool.Pool
+	pool       *postgres.DB
 	gormDB     *gorm.DB
 	ctx        context.Context
 }
@@ -51,13 +51,13 @@ func (s *SchemaTestSuite) SetupSuite() {
 
 	source := conn.GetConnectionStringWithDatabaseName(s.T(), k8sEnv.GetString("POSTGRES_DB", "postgres"))
 
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.NoError(err)
 
 	s.connConfig = config.ConnConfig
 
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.New(ctx, config)
 	s.Require().NoError(err)
 
 	s.ctx = ctx

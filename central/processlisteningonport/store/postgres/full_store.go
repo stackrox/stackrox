@@ -6,16 +6,16 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	metrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 // NewFullStore augments the generated store with GetProcessListeningOnPort functions.
-func NewFullStore(db *pgxpool.Pool) store.Store {
+func NewFullStore(db *postgres.DB) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 		db:    db,
@@ -24,7 +24,7 @@ func NewFullStore(db *pgxpool.Pool) store.Store {
 
 type fullStoreImpl struct {
 	Store
-	db *pgxpool.Pool
+	db *postgres.DB
 }
 
 // SQL query to join process_listening_on_port together with

@@ -62,7 +62,7 @@ func (s *clusterDatastoreSACSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase = pgtest.ForT(s.T())
 		s.NotNil(s.pgtestbase)
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 		s.Require().NoError(err)
 		s.optionsMap = schema.ClustersSchema.OptionsMap
 	} else {
@@ -85,7 +85,7 @@ func (s *clusterDatastoreSACSuite) SetupSuite() {
 
 func (s *clusterDatastoreSACSuite) TearDownSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.Pool.Close()
+		s.pgtestbase.DB.Close()
 	} else {
 		s.Require().NoError(s.boltengine.Close())
 		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
