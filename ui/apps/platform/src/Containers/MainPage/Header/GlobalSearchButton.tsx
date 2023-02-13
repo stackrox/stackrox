@@ -6,7 +6,7 @@ import { SearchIcon } from '@patternfly/react-icons';
 import { searchPath } from 'routePaths';
 
 /*
- * Use React Router Link element with PatternFly Button class to inherit masthead color.
+ * React Router Link element with style rule in src/css/acs.css to inherit masthead color.
  */
 function GlobalSearchButton(): ReactElement {
     return (
