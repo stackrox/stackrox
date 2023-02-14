@@ -100,7 +100,7 @@ func TestGCSExternalBackup(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	backup, err := service.PostExternalBackup(ctx, externalBackup)
 	assert.NoError(t, err)
 	cancel()
