@@ -34,8 +34,6 @@ spec:
               value: "true"
             - name: ROX_OPENSHIFT
               value: "true"
-            - name: ROX_POSTGRES_DATASTORE
-              value: "true"
             - name: NO_PROXY
               valueFrom:
                 secretKeyRef:
