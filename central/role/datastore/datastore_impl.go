@@ -9,6 +9,7 @@ import (
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -218,7 +219,11 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 	defer ds.lock.Unlock()
 
 	// Verify storage constraints.
-	if err := ds.verifyPermissionSetIDExists(ctx, permissionSet.GetId()); err != nil {
+	existingPermissionSet, err := ds.verifyPermissionSetIDExists(ctx, permissionSet.GetId())
+	if err != nil {
+		return err
+	}
+	if err := verifyPermissionSetOriginMatches(ctx, existingPermissionSet); err != nil {
 		return err
 	}
 
@@ -249,6 +254,9 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
 	}
+	if err := verifyPermissionSetOriginMatches(ctx, permissionSet); err != nil {
+		return err
+	}
 
 	// Ensure this PermissionSet isn't in use by any Role.
 	roles, err := ds.getAllRolesNoScopeCheck(ctx)
@@ -266,6 +274,14 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 		return err
 	}
 
+	return nil
+}
+
+func verifyPermissionSetOriginMatches(ctx context.Context, ps *storage.PermissionSet) error {
+	if !declarativeconfig.CanModifyResource(ctx, ps) {
+		return errors.Wrapf(errox.NotAuthorized, "permission set %q's origin is %s, cannot be modified or deleted with the current permission",
+			ps.GetName(), ps.GetTraits().GetOrigin())
+	}
 	return nil
 }
 
@@ -445,7 +461,7 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 
 func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *storage.Role) error {
 	// Verify storage constraints.
-	if err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId()); err != nil {
+	if _, err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId()); err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
 	}
 	if err := ds.verifyAccessScopeIDExists(ctx, role.GetAccessScopeId()); err != nil {
@@ -463,16 +479,16 @@ func verifyNotDefaultRole(role *storage.Role) error {
 }
 
 // Returns errox.NotFound if there is no permission set with the supplied ID.
-func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id string) error {
-	_, found, err := ds.permissionSetStorage.Get(ctx, id)
+func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id string) (*storage.PermissionSet, error) {
+	ps, found, err := ds.permissionSetStorage.Get(ctx, id)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "id = %s", id)
+		return nil, errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
-	return nil
+	return ps, nil
 }
 
 // Returns errox.AlreadyExists if there is a permission set with the same ID.
