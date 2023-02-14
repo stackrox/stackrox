@@ -32,13 +32,10 @@ class ServiceAccountService extends BaseService {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             log.debug "Waiting for Service Account"
-            def serviceAccounts = getServiceAccounts()
-            def sa = serviceAccounts.find {
-                it.getServiceAccount().name == serviceAccount.name &&
-                    it.getServiceAccount().namespace == serviceAccount.namespace
-            }
-
-            if (sa) {
+            def query = "Namespace:\"${serviceAccount.namespace}\"+Service Account:\"${serviceAccount.name}\""
+            def qb = RawQuery.newBuilder().setQuery(query).build()
+            def serviceAccounts = getServiceAccounts(qb)
+            if (serviceAccounts.size() > 0) {
                 return true
             }
         }
