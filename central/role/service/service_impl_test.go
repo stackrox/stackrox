@@ -759,6 +759,7 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissionsPagination() {
 			resources.Node.GetResource():         testResourceScope1,
 			resources.Deployment.GetResource():   testResourceScope1,
 			resources.NetworkGraph.GetResource(): testResourceScope2,
+			resources.Image.GetResource():        testResourceScope3,
 		},
 	}
 
@@ -949,6 +950,8 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 		},
 	}
 
+	scc := sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap)
+	log.Info(scc.EffectiveAccessScope(permissions.View(resources.Deployment)))
 	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap))
 
