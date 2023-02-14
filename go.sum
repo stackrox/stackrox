@@ -1634,8 +1634,8 @@ github.com/pseudomuto/protokit v0.2.0/go.mod h1:2PdH30hxVHsup8KpBTOXTBeMVhJZVio3
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
 github.com/quasilyte/go-ruleguard v0.2.0/go.mod h1:2RT/tf0Ce0UDj5y243iWKosQogJd8+1G3Rs2fxmlYnw=
 github.com/quasilyte/regex/syntax v0.0.0-20200407221936-30656e2c4a95/go.mod h1:rlzQ04UMyJXu/aOvhd8qT+hvDrFpiwqp8MRXDY9szc0=
-github.com/quay/claircore v1.4.14 h1:xlMpMJ+kCGpF6PY3rM31MsTpugu0bCXy6cmyBGU9cOY=
-github.com/quay/claircore v1.4.14/go.mod h1:M6xxl2G4qPOpEDY4CjEXj2U7h0AeZUmuQ81imhmV9us=
+github.com/quay/claircore v1.4.18 h1:8OmuDLJnZhg1UP0Tqk1hTFsIl9B7O92EXILwuYWmyC8=
+github.com/quay/claircore v1.4.18/go.mod h1:+JYIfH4aoRFuAS2iiAy+B3whWNpvyez2Bn0j5N9k4LI=
 github.com/quay/goval-parser v0.8.8 h1:Uf+f9iF2GIR5GPUY2pGoa9il2+4cdES44ZlM0mWm4cA=
 github.com/quay/zlog v1.1.4 h1:sKe/m7fFeThQlY+LzPwpgOdWD4KKehIqTrJ1H+EtwgU=
 github.com/qur/ar v0.0.0-20130629153254-282534b91770/go.mod h1:SjlYv2m9lpV0UW6K7lDqVJwEIIvSjaHbGk7nIfY8Hxw=
