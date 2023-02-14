@@ -26,7 +26,7 @@ import { useFormik } from 'formik';
 
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
-import { types } from 'reducers/publicConfig';
+import { PublicConfigAction } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -90,10 +90,15 @@ const SystemConfigForm = ({
                 })
                     .then((data) => {
                         // Simulate fetchPublicConfig response to update Redux state.
-                        dispatch({
-                            type: types.FETCH_PUBLIC_CONFIG.SUCCESS,
-                            response: data.publicConfig,
-                        });
+                        const action: PublicConfigAction = {
+                            type: 'config/FETCH_PUBLIC_CONFIG_SUCCESS',
+                            response: data.publicConfig || {
+                                footer: null,
+                                header: null,
+                                loginNotice: null,
+                            },
+                        };
+                        dispatch(action);
                         setSystemConfig(data);
                         setErrorMessage(null);
                         setSubmitting(false);
