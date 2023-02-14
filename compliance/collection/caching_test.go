@@ -33,13 +33,13 @@ func TestComplianceCaching(t *testing.T) {
 
 // run before each test
 func (s *TestComplianceCachingSuite) SetupTest() {
+	s.sleeper = mockSleeper{callCount: 0}
 	s.mockScanOpts = &cachedScanOpts{
 		nodeName:            "testme",
 		scanner:             &nodeinventorizer.FakeNodeInventorizer{},
 		inventoryCachePath:  s.T().TempDir(),
-		backoffWaitCallback: nil,
+		backoffWaitCallback: s.sleeper.mockWaitCallback,
 	}
-	s.sleeper = mockSleeper{callCount: 0}
 }
 
 /*
@@ -118,8 +118,8 @@ func (s *TestComplianceCachingSuite) TestBackoffNoFile() {
 }
 */
 func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
-
-	err := os.WriteFile(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath), []byte(fmt.Sprintf("%d", int64(32*time.Second))), 0600)
+	sleepTime := 32 * time.Second
+	err := os.WriteFile(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath), []byte(fmt.Sprintf("%d", int64(sleepTime))), 0600)
 	s.NoError(err)
 
 	_, _ = scanNodeWithBackoff(s.mockScanOpts)
@@ -129,7 +129,7 @@ func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
 	s.ErrorIs(err, os.ErrNotExist)
 
 	s.Equal(1, s.sleeper.callCount)
-	s.Equal(32*time.Second, s.sleeper.receivedDuration)
+	s.Equal(int64(sleepTime/time.Second), s.sleeper.receivedDuration)
 }
 
 /*
