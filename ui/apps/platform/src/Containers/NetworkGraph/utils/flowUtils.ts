@@ -37,7 +37,7 @@ export function getAllUniquePorts(flows: Flow[]): string[] {
 export function getNumFlows(flows: Flow[]): number {
     const numFlows = flows.reduce((acc, curr) => {
         // if there are no children then it counts as 1 flow
-        return acc + (curr.children && curr.children.length ? curr.children.length : 1);
+        return acc + (curr.children && curr.children.length > 0 ? curr.children.length : 1);
     }, 0);
     return numFlows;
 }
@@ -67,7 +67,7 @@ export function getUniqueIdFromPeer(peer: Peer) {
     const direction = peer.ingress ? 'Ingress' : 'Egress';
     const { port } = peer;
     const { protocol } = peer;
-    const id = createUniqueFlowId({ entityId, direction, port, protocol });
+    const id = createUniqueFlowId({ entityId, direction, port: String(port), protocol });
     return id;
 }
 
@@ -257,7 +257,7 @@ export function transformFlowsToPeers(flows: Flow[]): Peer[] {
                 type: backendType,
             },
             ingress: direction === 'Ingress',
-            port,
+            port: Number(port),
             protocol,
         };
         return peer;
