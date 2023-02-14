@@ -290,13 +290,13 @@ jobs:
       - name: Push images
         run: |
             source ./scripts/ci/lib.sh
+            echo "Will determin context from: ${{ github.event_name }} & ${{ github.ref_name }}"
             push_context=""
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
               push_context="merge-to-master"
             fi
             # Test
-            echo "${{ github.event_name }}" "${{ github.ref_name }}"
-            if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.ref_name }}" == "gavin/CI/fix-latest-tags" ]]; then
+            if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.ref_name }}" == "4874/merge" ]]; then
               push_context="merge-to-master"
             fi
             # EOTest
