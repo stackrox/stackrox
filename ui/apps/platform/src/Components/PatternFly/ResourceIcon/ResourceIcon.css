@@ -21,3 +21,16 @@
 .resource-icon-deployment {
   background-color: var(--color-resource-deployment);
 }
+
+.resource-icon-configmap {
+  background-color: var(--color-resource-configmap);
+}
+
+.resource-icon-secret {
+  background-color: var(--color-resource-secret);
+}
+
+.resource-icon-unknown {
+  background-color: var(--color-resource-unknown);
+}
+

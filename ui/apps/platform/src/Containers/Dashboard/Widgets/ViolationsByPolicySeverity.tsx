@@ -6,7 +6,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
 import { violationsBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
-import { DeploymentAlert } from 'types/alert.proto';
+import { Alert } from 'types/alert.proto';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
@@ -36,8 +36,10 @@ export const mostRecentAlertsQuery = gql`
             id
             time
             deployment {
-                clusterName
-                namespace
+                name
+            }
+            resource {
+                resourceType
                 name
             }
             policy {
@@ -65,7 +67,7 @@ function ViolationsByPolicySeverity() {
         previousData: previousRecentAlertsData,
         loading: recentAlertsLoading,
         error: recentAlertsError,
-    } = useQuery<{ alerts: DeploymentAlert[] }>(mostRecentAlertsQuery, {
+    } = useQuery<{ alerts: Alert[] }>(mostRecentAlertsQuery, {
         variables: { query: mostRecentFilterQuery },
     });
 

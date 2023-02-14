@@ -14,6 +14,7 @@ const mockAlerts = [
         id: '1',
         time: '2022-06-24T00:35:42.299667447Z',
         deployment: { clusterName: 'production', namespace: 'kube-system', name: 'kube-proxy' },
+        resource: null,
         policy: { name: 'Ubuntu Package Manager in Image', severity: 'CRITICAL_SEVERITY' },
     },
 ];
