@@ -817,6 +817,9 @@ func TestRacingConditionInPersist(t *testing.T) {
 }
 
 func TestUpgradeFromLastRocksDB(t *testing.T) {
+	if buildinfo.ReleaseBuild {
+		return
+	}
 	testCases := []struct {
 		description    string
 		previousVerion *versionPair
