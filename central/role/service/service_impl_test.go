@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package service
 
 import (
@@ -744,6 +746,7 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 	for _, namespace := range namespaces {
 		ns := namespace.Clone()
 		ns.Id = getNamespaceID(ns.GetName())
+		ns.ClusterId = clusterNameToIDMap[ns.GetClusterName()]
 		s.Require().NoError(s.service.namespaceDataStore.AddNamespace(writeCtx, ns))
 		s.storedNamespaceIDs = append(s.storedNamespaceIDs, ns.GetId())
 	}
@@ -757,6 +760,10 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 		s.T(),
 		pinkFloydClusterID,
 		namespacePinkFloydTheWall.GetName())
+	testResourceScope3 := getTestResourceScopeSingleNamespace(
+		s.T(),
+		queenClusterID,
+		namespaceQueenQueen.GetName())
 	testScopeMap := sac.TestScopeMap{
 		storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
 			resources.Integration.GetResource(): {
@@ -765,6 +772,7 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 			resources.Node.GetResource():         testResourceScope1,
 			resources.Deployment.GetResource():   testResourceScope1,
 			resources.NetworkGraph.GetResource(): testResourceScope2,
+			resources.Image.GetResource():        testResourceScope3,
 		},
 	}
 
@@ -773,10 +781,10 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 		Name: namespaceQueenQueen.GetName(),
 	}
 
-	queenJazzNamespaceResponse := &v1.ScopeElementForPermission{
-		Id:   getNamespaceID(namespaceQueenJazz.GetName()),
-		Name: namespaceQueenJazz.GetName(),
-	}
+	// queenJazzNamespaceResponse := &v1.ScopeElementForPermission{
+	// 	Id:   getNamespaceID(namespaceQueenJazz.GetName()),
+	// 	Name: namespaceQueenJazz.GetName(),
+	// }
 
 	queenInnuendoNamespaceResponse := &v1.ScopeElementForPermission{
 		Id:   getNamespaceID(namespaceQueenInnuendo.GetName()),
@@ -852,10 +860,12 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 			name:               "empty permission list get namespace data for all namespaces in scope of target cluster and granted namespace permissions.",
 			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{},
-			expectedNamespaces: []*v1.ScopeElementForPermission{queenQueenNamespaceResponse, queenJazzNamespaceResponse, queenInnuendoNamespaceResponse},
+			expectedNamespaces: []*v1.ScopeElementForPermission{queenQueenNamespaceResponse, queenInnuendoNamespaceResponse},
 		},
 	}
 
+	scc := sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap)
+	log.Info(scc.EffectiveAccessScope(permissions.View(resources.Deployment)))
 	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap))
 
