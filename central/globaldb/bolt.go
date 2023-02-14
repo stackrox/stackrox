@@ -25,8 +25,7 @@ func initialize() {
 
 // GetGlobalDB returns a pointer to the global db.
 func GetGlobalDB() *bolt.DB {
-	postgres.DeprecatedCall("GetGlobalDB")
-
+	postgres.LogCallerOnPostgres("GetGlobalDB")
 	once.Do(initialize)
 	return globalDB
 }
