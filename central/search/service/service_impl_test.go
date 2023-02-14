@@ -117,55 +117,37 @@ type SearchOperationsTestSuite struct {
 
 func (s *SearchOperationsTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
+	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
+	var err error
+	s.boltDB, err = bolthelper.NewTemp(s.T().Name() + "-bolt.db")
+	s.NoError(err)
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testingDB := pgtest.ForT(s.T())
 		s.pool = testingDB.Pool
-	} else {
-		s.rocksDB = rocksdbtest.RocksDBForT(s.T())
-		var err error
-		s.boltDB, err = bolthelper.NewTemp(s.T().Name() + "-bolt.db")
-		s.NoError(err)
 	}
 }
 
 func (s *SearchOperationsTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.rocksDB.Close()
-	} else {
-		s.pool.Close()
-	}
+	s.rocksDB.Close()
 }
 
 func (s *SearchOperationsTestSuite) TestAutocomplete() {
-	var (
-		indexingQ    queue.WaitableQueue
-		deploymentDS deploymentDatastore.DataStore
-		err          error
-	)
+	// Create Deployment Indexer
+	idx, err := globalindex.MemOnlyIndex()
+	s.NoError(err)
+
+	dacky, registry, indexingQ := testDackBoxInstance(s.T(), s.rocksDB, idx)
+	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
+
 	// Since we are using the datastore and not the store we need to create a ranker and use it to populate the
 	// risk score so the results are ordered correctly.
 	deploymentRanker := ranking.NewRanker()
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Create Deployment Indexer
-		idx, err := globalindex.MemOnlyIndex()
-		s.NoError(err)
-
-		var registry indexer.WrapperRegistry
-		var dacky *dackbox.DackBox
-		dacky, registry, indexingQ = testDackBoxInstance(s.T(), s.rocksDB, idx)
-		registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-
-		deploymentDS, err = deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker)
-		s.Require().NoError(err)
-	} else {
-		deploymentDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker)
-		s.Require().NoError(err)
-	}
+	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker)
+	s.Require().NoError(err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
@@ -192,11 +174,9 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	deploymentRanker.Add(fixtureconsts.Deployment4, 100)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName2))
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		finishedIndexing := concurrency.NewSignal()
-		indexingQ.PushSignal(&finishedIndexing)
-		finishedIndexing.Wait()
-	}
+	finishedIndexing := concurrency.NewSignal()
+	indexingQ.PushSignal(&finishedIndexing)
+	finishedIndexing.Wait()
 
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
@@ -331,34 +311,23 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 			sac.ResourceScopeKeys(resources.Alert)))
 	noAccessCtx := sac.WithNoAccess(context.Background())
 
-	var (
-		alertsDS     alertDatastore.DataStore
-		deploymentDS deploymentDatastore.DataStore
-		err          error
-		indexingQ    queue.WaitableQueue
-	)
+	idx, err := globalindex.MemOnlyIndex()
+	s.NoError(err)
+
+	dacky, registry, indexingQ := testDackBoxInstance(s.T(), s.rocksDB, idx)
+	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		idx, err := globalindex.MemOnlyIndex()
-		s.NoError(err)
+	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	s.Require().NoError(err)
 
-		var dacky *dackbox.DackBox
-		var registry indexer.WrapperRegistry
-		dacky, registry, indexingQ = testDackBoxInstance(s.T(), s.rocksDB, idx)
-		registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-
-		deploymentDS, err = deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		s.Require().NoError(err)
-
-		alertsDS = alertDatastore.NewWithDb(s.rocksDB, idx)
-	} else {
-		deploymentDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		s.Require().NoError(err)
-
+	var alertsDS alertDatastore.DataStore
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 		s.NoError(err)
+	} else {
+		alertsDS = alertDatastore.NewWithDb(s.rocksDB, idx)
 	}
 
 	deployment := fixtures.GetDeployment()
@@ -367,11 +336,9 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	alert := fixtures.GetAlert()
 	s.NoError(alertsDS.UpsertAlert(alertAccessCtx, alert))
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		finishedIndexing := concurrency.NewSignal()
-		indexingQ.PushSignal(&finishedIndexing)
-		finishedIndexing.Wait()
-	}
+	finishedIndexing := concurrency.NewSignal()
+	indexingQ.PushSignal(&finishedIndexing)
+	finishedIndexing.Wait()
 
 	builder := NewBuilder().
 		WithAlertStore(alertsDS).
@@ -428,34 +395,23 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 			sac.ResourceScopeKeys(resources.Alert)))
 	noAccessCtx := sac.WithNoAccess(context.Background())
 
-	var (
-		alertsDS     alertDatastore.DataStore
-		deploymentDS deploymentDatastore.DataStore
-		err          error
-		indexingQ    queue.WaitableQueue
-	)
+	idx, err := globalindex.MemOnlyIndex()
+	s.NoError(err)
+
+	dacky, registry, indexingQ := testDackBoxInstance(s.T(), s.rocksDB, idx)
+	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		idx, err := globalindex.MemOnlyIndex()
-		s.NoError(err)
+	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	s.Require().NoError(err)
 
-		var dacky *dackbox.DackBox
-		var registry indexer.WrapperRegistry
-		dacky, registry, indexingQ = testDackBoxInstance(s.T(), s.rocksDB, idx)
-		registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-
-		deploymentDS, err = deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		s.Require().NoError(err)
-
-		alertsDS = alertDatastore.NewWithDb(s.rocksDB, idx)
-	} else {
-		deploymentDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		s.Require().NoError(err)
-
+	var alertsDS alertDatastore.DataStore
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 		s.NoError(err)
+	} else {
+		alertsDS = alertDatastore.NewWithDb(s.rocksDB, idx)
 	}
 
 	deployment := fixtures.GetDeployment()
@@ -464,11 +420,9 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	alert := fixtures.GetAlert()
 	s.NoError(alertsDS.UpsertAlert(alertAccessCtx, alert))
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		finishedIndexing := concurrency.NewSignal()
-		indexingQ.PushSignal(&finishedIndexing)
-		finishedIndexing.Wait()
-	}
+	finishedIndexing := concurrency.NewSignal()
+	indexingQ.PushSignal(&finishedIndexing)
+	finishedIndexing.Wait()
 
 	builder := NewBuilder().
 		WithAlertStore(alertsDS).
