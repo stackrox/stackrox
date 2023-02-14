@@ -129,8 +129,9 @@ class K8sRbacTest extends BaseSpecification {
 
         expect:
         "SR should have the service account and its relationship to the deployment"
+        def query = ServiceAccountService.getServiceAccountQuery(NEW_SA)
         withRetry(45, 2) {
-            def stackroxSAs = ServiceAccountService.getServiceAccounts()
+            def stackroxSAs = ServiceAccountService.getServiceAccounts(query)
             for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
                 def sa = s.serviceAccount
                 if (sa.name == NEW_SA.name && sa.namespace == NEW_SA.namespace) {
