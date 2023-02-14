@@ -19,8 +19,8 @@ tests:
   values:
     confirmNewClusterName: new-cluster
     clusterName: new-cluster
-  Release:
-    IsInstall: false
+  release:
+    isInstall: false
   expect: |
     .secrets["helm-effective-cluster-name"] | assertThat(. != null)
     (container(.deployments.sensor; "sensor")).volumeMounts[] | select(.name == "helm-effective-cluster-name") | assertThat(. != null)
