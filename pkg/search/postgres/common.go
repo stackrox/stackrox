@@ -985,7 +985,6 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, sch
 		return nil, nil
 	}
 	return pgutils.Retry2(func() ([]*T, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
 		return retryableRunSelectRequestForSchema[T](ctx, db, query)
 	})
 }
