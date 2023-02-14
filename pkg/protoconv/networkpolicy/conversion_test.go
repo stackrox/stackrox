@@ -243,42 +243,73 @@ var (
 	}
 )
 
-func TestNetworkPolicyConversion(t *testing.T) {
+func TestToRoxNetworkPolicyRoundtrip(t *testing.T) {
 	for name, np := range cases {
 		t.Run(name, func(t *testing.T) {
-			// Test k8s conversion is correct
 			protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
 			k8sPolicy := RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToKubernetesNetworkPolicy()
 			assert.Equal(t, np, k8sPolicy)
+		})
+	}
+}
 
-			// Test `status` field is not present in the generated yaml
+func TestNoStatusFieldInKubernetesNetworkPolicyYaml(t *testing.T) {
+	for name, np := range cases {
+		t.Run(name, func(t *testing.T) {
+			yaml, err := KubernetesNetworkPolicyWrap{np}.ToYaml()
+			assert.NoError(t, err, "yaml generation should succeed")
+
+			assertNoStatusField(t, yaml)
+		})
+	}
+}
+
+func TestNoStatusFieldInRoxNetworkPolicyYaml(t *testing.T) {
+	for name, np := range cases {
+		t.Run(name, func(t *testing.T) {
+			protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
+
+			yaml, err := RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToYaml()
+			assert.NoError(t, err, "yaml generation should succeed")
+
+			assertNoStatusField(t, yaml)
+		})
+	}
+}
+
+func assertNoStatusField(t *testing.T, yaml string) {
+	uObj, err := k8sutil.UnstructuredFromYAML(yaml)
+	assert.NoError(t, err)
+	_, ok := uObj.Object["status"]
+	assert.False(t, ok, "yaml should not have the 'status' field")
+}
+
+func TestYamlKubernetesNetworkPolicyRoundTrip(t *testing.T) {
+	for name, np := range cases {
+		t.Run(name, func(t *testing.T) {
 			yaml, err := KubernetesNetworkPolicyWrap{np}.ToYaml()
 			assert.NoError(t, err)
-			uObj, err := k8sutil.UnstructuredFromYAML(yaml)
-			assert.NoError(t, err, "yaml generation should succeed")
-			_, ok := uObj.Object["status"]
-			assert.False(t, ok, "The generate yaml file should not have the 'status' field")
-			yaml, err = RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToYaml()
-			assert.NoError(t, err, "yaml generation should succeed")
-			uObj, err = k8sutil.UnstructuredFromYAML(yaml)
-			assert.NoError(t, err)
-			_, ok = uObj.Object["status"]
-			assert.False(t, ok, "The generate yaml file should not have the 'status' field")
 
-			// Generation from yaml k8sNetworkPolicy
 			k8sPolicies, err := YamlWrap{Yaml: yaml}.ToKubernetesNetworkPolicies()
+
 			assert.NoError(t, err, "k8s policy generation should succeed")
 			assert.Equal(t, 1, len(k8sPolicies), "expected one policy from the yaml")
 			assert.Equal(t, np, k8sPolicies[0])
+		})
+	}
+}
 
-			// Generation from yaml to roxNetworkPolicy
-			protoNetworkPolicies, err := YamlWrap{Yaml: yaml}.ToRoxNetworkPolicies()
-			assert.NoError(t, err, "k8s policy generation should succeed")
-			assert.Equal(t, 1, len(protoNetworkPolicies), "expected one policy from the yaml")
+func TestYamlRoxNetworkPolicyRoundTrip(t *testing.T) {
+	for name, np := range cases {
+		t.Run(name, func(t *testing.T) {
+			yaml, err := KubernetesNetworkPolicyWrap{np}.ToYaml()
+			assert.NoError(t, err)
 
-			// Check that yaml->rox, and k8s->rox creates the same network policy
-			protoNetworkPolicyFromK8s := KubernetesNetworkPolicyWrap{np}.ToRoxNetworkPolicy()
-			assert.Equal(t, protoNetworkPolicyFromK8s, protoNetworkPolicies[0])
+			roxPolicies, err := YamlWrap{Yaml: yaml}.ToRoxNetworkPolicies()
+
+			assert.NoError(t, err, "rox policy generation should succeed")
+			assert.Equal(t, 1, len(roxPolicies), "expected one policy from the yaml")
+			assert.Equal(t, np, RoxNetworkPolicyWrap{NetworkPolicy: roxPolicies[0]}.ToKubernetesNetworkPolicy())
 		})
 	}
 }
