@@ -6,7 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/nodeinventorizer"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -42,21 +46,15 @@ func (s *TestComplianceCachingSuite) SetupTest() {
 	}
 }
 
-/*
 func (s *TestComplianceCachingSuite) TestCachingScanNode() {
-	tmpDir := s.T().TempDir()
-	inventoryCachePath = tmpDir
-
-	result, e := runCachedScan("nodename", &nodeinventorizer.FakeNodeInventorizer{})
-	s.FileExists(fmt.Sprintf("%s/last_scan", tmpDir))
+	result, e := runCachedScan(s.mockScanOpts)
+	s.FileExists(fmt.Sprintf("%s/last_scan", s.mockScanOpts.inventoryCachePath))
 	s.NotNil(result)
 	s.NoError(e)
 }
 
 func (s *TestComplianceCachingSuite) TestCaching() {
-	tmpDir := s.T().TempDir()
 	// these two vars are set in the module and directly effect the tested code
-	inventoryCachePath = tmpDir
 	s.T().Setenv(env.NodeInventoryCacheDuration.EnvVar(), "1m")
 
 	unix42, _ := timestamp.TimestampProto(time.Unix(42, 0))
@@ -77,24 +75,24 @@ func (s *TestComplianceCachingSuite) TestCaching() {
 				NodeName: "cachedNode",
 				ScanTime: twoMinutesBefore,
 			},
-			expectedNodeName: "newNode",
+			expectedNodeName: "testme",
 		},
 		"cacheVeryOld": {
 			inputInventory: &storage.NodeInventory{
 				NodeName: "cachedNode",
 				ScanTime: unix42,
 			},
-			expectedNodeName: "newNode",
+			expectedNodeName: "testme",
 		},
 	}
 
 	for caseName, testCase := range testCases {
 		s.Run(caseName, func() {
 			minv, _ := proto.Marshal(testCase.inputInventory)
-			err := os.WriteFile(fmt.Sprintf("%s/last_scan", inventoryCachePath), minv, 0600)
+			err := os.WriteFile(fmt.Sprintf("%s/last_scan", s.mockScanOpts.inventoryCachePath), minv, 0600)
 			s.NoError(err)
 
-			actual, e := cachedScanNode("newNode", &nodeinventorizer.FakeNodeInventorizer{})
+			actual, e := cachedScanNode(s.mockScanOpts)
 			s.NoError(e)
 			s.Equal(testCase.expectedNodeName, actual.GetNode())
 		})
@@ -102,21 +100,16 @@ func (s *TestComplianceCachingSuite) TestCaching() {
 }
 
 func (s *TestComplianceCachingSuite) TestBackoffNoFile() {
-	m := mockSleeper{callCount: 0}
-	inventorySleeper = m.Sleep
-	tmpDir := s.T().TempDir()
-	inventoryCachePath = tmpDir
-
-	_, _ = scanNodeWithBackoff("testname", &nodeinventorizer.FakeNodeInventorizer{})
+	_, _ = scanNodeWithBackoff(s.mockScanOpts)
 
 	// This file mustn't exist after a successful run
-	_, err := os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
+	_, err := os.Stat(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath))
 	s.ErrorIs(err, os.ErrNotExist)
 
 	// No sleep should have been called
-	s.Equal(0, m.callCount)
+	s.Equal(0, s.sleeper.callCount)
 }
-*/
+
 func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
 	sleepTime := 32 * time.Second
 	err := os.WriteFile(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath), []byte(fmt.Sprintf("%d", int64(sleepTime))), 0600)
@@ -132,37 +125,11 @@ func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
 	s.Equal(int64(sleepTime/time.Second), s.sleeper.receivedDuration)
 }
 
-/*
-type mockInventoryErr struct {
-}
-
-func (mi *mockInventoryErr) Scan(nodeName string) (*storage.NodeInventory, error) {
-	return nil, fmt.Errorf("This is a failure on node %s", nodeName)
-}
-
-func (s *TestComplianceCachingSuite) TestBackoffFailedRun() {
-	tmpDir := s.T().TempDir()
-	inventoryCachePath = tmpDir
-
-	_, _ = scanNodeWithBackoff("testname", &mockInventoryErr{})
-
-	// Even if a scan fails, it should still leave no state file behind
-	_, err := os.Stat(fmt.Sprintf("%s/backoff", inventoryCachePath))
-	s.ErrorIs(err, os.ErrNotExist)
-}
-
 func (s *TestComplianceCachingSuite) TestBackoffUpperBoundary() {
-	s.T().Setenv(env.NodeInventoryMaxBackoff.EnvVar(), "30s")
-	m := mockSleeper{callCount: 0}
-	inventorySleeper = m.Sleep
-	tmpDir := s.T().TempDir()
-	inventoryCachePath = tmpDir
-	err := os.WriteFile(fmt.Sprintf("%s/backoff", inventoryCachePath), []byte(fmt.Sprintf("%d", int64(60*time.Minute))), 0600)
-	s.NoError(err)
+	s.T().Setenv(env.NodeInventoryMaxBackoff.EnvVar(), "10ms")
+	s.T().Setenv(env.NodeInventoryBackoffIncrement.EnvVar(), "3s")
 
-	_, _ = scanNodeWithBackoff("testname", &nodeinventorizer.FakeNodeInventorizer{})
+	nextInterval := waitAndIncreaseBackoff(4)
 
-	s.Equal(1, m.callCount)
-	s.Equal(30*time.Second, m.receivedDuration)
+	s.Equal(int64(3), nextInterval)
 }
-*/
