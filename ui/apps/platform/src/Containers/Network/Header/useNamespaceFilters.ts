@@ -5,7 +5,7 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import {
     getNamespacesForClusterAndPermissions,
-    NamespaceForClusterAndPermissions
+    NamespaceForClusterAndPermissions,
 } from 'services/RolesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 

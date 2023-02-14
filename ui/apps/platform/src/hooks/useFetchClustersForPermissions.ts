@@ -26,10 +26,10 @@ function useFetchClustersForPermissions(permissions: string[]): Result {
             .then((data) => {
                 const responseClusters = data.clusters;
                 const clusters: Cluster[] = [];
-                responseClusters.forEach((rspCl: ClusterForPermissions) => {
+                responseClusters.forEach((responseCluster: ClusterForPermissions) => {
                     const cluster: Cluster = {} as Cluster;
-                    cluster.id = rspCl.id;
-                    cluster.name = rspCl.name;
+                    cluster.id = responseCluster.id;
+                    cluster.name = responseCluster.name;
                     clusters.push(cluster);
                 });
                 setResult({

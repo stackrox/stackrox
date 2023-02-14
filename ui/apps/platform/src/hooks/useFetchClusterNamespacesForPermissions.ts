@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
     NamespaceForClusterAndPermissions,
-    getNamespacesForClusterAndPermissions
+    getNamespacesForClusterAndPermissions,
 } from 'services/RolesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -29,7 +29,7 @@ function useFetchClusterNamespacesForPermissions(
     const [namespaceResponse, setNamespaceResponse] = useState<NamespaceResponse>(emptyResponse);
 
     useEffect(() => {
-        if (selectedClusterId !== null && selectedClusterId !== undefined) {
+        if (selectedClusterId) {
             getNamespacesForClusterAndPermissions(selectedClusterId, permissions)
                 .then((data) => {
                     const responseNamespaces = data.namespaces;
