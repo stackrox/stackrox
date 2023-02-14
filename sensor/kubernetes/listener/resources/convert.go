@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -189,6 +190,11 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		// instead of looking for it inside a PodTemplate.
 		podLabels = o.Labels
 		labelSelector = w.populateK8sComponentIfNecessary(o, hierarchy)
+	case *v1beta1.CronJob:
+		// Cron jobs have a Job spec that then have a Pod Template underneath
+		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
+		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
+		labelSelector = o.Spec.JobTemplate.Spec.Selector
 	case *batchv1.CronJob:
 		// Cron jobs have a Job spec that then have a Pod Template underneath
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
