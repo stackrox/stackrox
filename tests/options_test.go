@@ -35,6 +35,9 @@ func TestOptionsMapExist(t *testing.T) {
 			resp, err := service.Options(ctx, &v1.SearchOptionsRequest{Categories: cat})
 			cancel()
 			require.NoError(t, err)
+			if len(cat) == 0 {
+				cat = search.GetGlobalSearchCategories().AsSlice()
+			}
 			assert.ElementsMatch(t, options.GetOptions(cat), resp.GetOptions())
 		})
 	}
