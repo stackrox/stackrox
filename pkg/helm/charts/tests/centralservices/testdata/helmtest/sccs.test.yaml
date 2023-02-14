@@ -4,7 +4,7 @@ server:
 tests:
 - name: Should create SCCs
   expect: |
-    .securitycontextconstraints | keys | sort | assertThat(. == ["stackrox-central", "stackrox-scanner"])
+    .securitycontextconstraints | keys | sort | assertThat(. == ["stackrox-central", "stackrox-central-db", "stackrox-scanner"])
   tests:
   - name: by default
   - name: with system.createSCCs=true

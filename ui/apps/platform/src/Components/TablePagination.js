@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { withRouter } from 'react-router-dom';
@@ -27,10 +27,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
     const [localPage, setLocalPage] = useState(page + 1);
 
     // 2. debounce the setPage callback to delay the setPage call when typing
-    const delayedSetPage = useCallback(
-        debounce((newPage) => setPage(newPage), TYPING_DELAY),
-        []
-    );
+    const delayedSetPage = debounce((newPage) => setPage(newPage), TYPING_DELAY);
 
     useEffect(() => {
         setLocalPage(page + 1);

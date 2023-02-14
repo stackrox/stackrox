@@ -124,7 +124,6 @@ func assertJSONMatches(t *testing.T, buffer *bytes.Buffer, path string, expected
 				t.Error(err)
 				return
 			}
-			ok = true
 			msg, ok = m[segment[1:]]
 			if !ok {
 				t.Errorf("Key not found: %q", segment)

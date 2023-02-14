@@ -220,6 +220,13 @@ const (
 	CentralDBEnabledTrue CentralDBEnabled = "Enabled"
 )
 
+// CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value
+func CentralDBEnabledPtr(c CentralDBEnabled) *CentralDBEnabled {
+	ptr := new(CentralDBEnabled)
+	*ptr = c
+	return ptr
+}
+
 // GetPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
 func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {
 	if c == nil {

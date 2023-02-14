@@ -164,74 +164,30 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 	$(MAKE) docker-push-index
 
 ##@ Dependencies download
-include $(PROJECT_DIR)/../make/github.mk
+include $(PROJECT_DIR)/../make/gotools.mk
 
-## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.5
-CONTROLLER_TOOLS_VERSION ?= v0.10.0
+$(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools)
+$(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools)
+$(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v4, tools)
+$(call go-tool, OPERATOR_SDK, github.com/operator-framework/operator-sdk/cmd/operator-sdk, tools)
+$(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools)
 
-## Tool Binaries
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-ENVTEST ?= $(LOCALBIN)/setup-envtest
-
-
-KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
+OPERATOR_SDK_VERSION = $(shell cd tools; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
-$(KUSTOMIZE): $(LOCALBIN)
-	test -s $(LOCALBIN)/kustomize || { curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-
-OPERATOR_SDK_VERSION = 1.24.1
-OPERATOR_SDK = $(LOCALBIN)/operator-sdk-$(OPERATOR_SDK_VERSION)
 
 .PHONY: operator-sdk
-operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
-# See https://sdk.operatorframework.io/docs/installation/#install-from-github-release
-	@ARCH=$$(case $$(uname -m) in (x86_64) echo amd64 ;; (aarch64) echo arm64 ;; (*) uname -m ;; esac) ;\
-	OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$(OPERATOR_SDK_VERSION)/operator-sdk_$(OS)_$${ARCH} ;\
-	$(GET_GITHUB_RELEASE_FN); \
-	get_github_release $(OPERATOR_SDK) $${OPERATOR_SDK_URL}
+operator-sdk: $(OPERATOR_SDK) ## Download operator-sdk necessary for scaffolding and bundling.
 
-KUTTL_VERSION = 0.15.0
-KUTTL_UPSTREAM = kudobuilder
-KUTTL ?= $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
 .PHONY: kuttl
-kuttl: ## Download kuttl.
-	@ARCH=$$(case $$(uname -m) in (aarch64) echo armv6 ;; (*) uname -m ;; esac) ;\
-	KUTTL_URL=https://github.com/$(KUTTL_UPSTREAM)/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(OS)_$${ARCH} ;\
-	$(GET_GITHUB_RELEASE_FN); \
-	get_github_release $(KUTTL) $${KUTTL_URL}
-
-ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
-.PHONY: envtest
-envtest: ## Download envtest-setup locally if necessary.
-	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
-
-# go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
-define go-get-tool
-$(SILENT)[ -x $(1) ] || { \
-set -e ;\
-TMP_DIR=$$(mktemp -d) ;\
-cd $$TMP_DIR ;\
-go mod init tmp ;\
-echo "Downloading $(2)" ;\
-go get -d $(2) ;\
-go build -o $(1) $(firstword $(subst @, ,$(2))) ;\
-rm -rf $$TMP_DIR ;\
-}
-endef
+kuttl: $(KUTTL) ## Download kuttl.
 
 ##@ Development
 
@@ -419,7 +375,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=quay.io/stackrox-io/stackrox-operator:0.0.1
-	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:v$(OPERATOR_SDK_VERSION)
+	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:$(OPERATOR_SDK_VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
 # Post-processed files will be copied instead, as configured in bundle.Dockerfile.extra.

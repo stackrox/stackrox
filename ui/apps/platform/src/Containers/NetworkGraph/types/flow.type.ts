@@ -45,7 +45,7 @@ export type Entity = {
 
 export type Peer = {
     entity: Entity;
-    port: string;
+    port: number;
     protocol: L4Protocol;
     ingress: boolean;
 };

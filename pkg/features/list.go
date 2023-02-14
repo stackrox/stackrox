@@ -58,4 +58,7 @@ var (
 
 	// DeclarativeConfiguration enables creating resources declaratively.
 	DeclarativeConfiguration = registerFeature("Declarative configuration", "ROX_DECLARATIVE_CONFIGURATION", false)
+
+	// VulnMgmtWorkloadCVEs enables APIs and UI pages for the VM Workload CVE enhancements
+	VulnMgmtWorkloadCVEs = registerFeature("Vuln Mgmt Workload CVEs", "ROX_VULN_MGMT_WORKLOAD_CVES", false)
 )

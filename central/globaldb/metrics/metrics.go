@@ -208,6 +208,11 @@ func SetGaugeInt(gauge prometheus.Gauge, value int) {
 	gauge.Set(float64(value))
 }
 
+// SetGaugeInt64 sets a value for a gauge from an int64
+func SetGaugeInt64(gauge prometheus.Gauge, value int64) {
+	gauge.Set(float64(value))
+}
+
 // SetGaugeDuration sets a value for the gauge in seconds from an time duration
 func SetGaugeDuration(gauge prometheus.Gauge, value time.Duration) {
 	gauge.Set(value.Seconds())

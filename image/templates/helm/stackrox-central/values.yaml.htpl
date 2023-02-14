@@ -188,10 +188,7 @@
 #      host: null
 #
 #  db:
-#    # If enabled, a new central will use a Postgres database as its backing datastore either via a new Central DB pod
-#    # or with an external deployment (see below).
-#    # NOTE: Using Postgres as a datastore is in Tech Preview.
-#    enabled: false
+#    enabled: true
 #
 #    # External signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
 #    # does not need to be deployed
