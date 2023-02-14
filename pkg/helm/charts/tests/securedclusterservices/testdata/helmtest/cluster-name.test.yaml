@@ -1,7 +1,5 @@
 tests:
 - name: "cluster name secret is created on installation"
-  Release:
-    IsInstall: true
   values:
     clusterName: test
   expect: |
