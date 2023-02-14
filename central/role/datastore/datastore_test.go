@@ -11,6 +11,7 @@ import (
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -72,9 +73,10 @@ func TestRoleDataStore(t *testing.T) {
 type roleDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasNoneCtx             context.Context
+	hasReadCtx             context.Context
+	hasWriteCtx            context.Context
+	hasWriteDeclarativeCtx context.Context
 
 	dataStore DataStore
 	boltDB    *bolt.DB
@@ -97,6 +99,7 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			// TODO: ROX-14398 Replace Role with Access
 			sac.ResourceScopeKeys(resources.Role)))
+	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 
 	s.initDataStore()
 }
@@ -346,6 +349,10 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	badPermissionSet := getInvalidPermissionSet("permissionset.new", "new invalid permissionset")
 	mimicPermissionSet := getValidPermissionSet("permissionset.new", "existing permissionset")
 	clonePermissionSet := getValidPermissionSet("permissionset.existing", "new existing permissionset")
+	declarativePermissionSet := getValidPermissionSet("permissionset.declarative", "declarative permissionset")
+	declarativePermissionSet.Traits = &storage.Traits{
+		Origin: storage.Traits_DECLARATIVE,
+	}
 	updatedAdminPermissionSet := getValidPermissionSet(role.EnsureValidAccessScopeID("admin"), role.Admin)
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, badPermissionSet)
@@ -389,6 +396,29 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.NoError(err, "adding a permission set with ID and name that used to exist is not an error")
+
+	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, declarativePermissionSet)
+	s.NoError(err, "adding a permission set declaratively is not an error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, declarativePermissionSet)
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify imperatively declarative permission set is an error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteDeclarativeCtx, goodPermissionSet)
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify declaratively imperative permission set is an error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet)
+	s.NoError(err, "attempting to modify declaratively declarative permission set is not an error")
+
+	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, declarativePermissionSet.GetId())
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to delete imperatively declarative permission set is an error")
+
+	err = s.dataStore.RemovePermissionSet(s.hasWriteDeclarativeCtx, goodPermissionSet.GetId())
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to delete declaratively imperative permission set is an error")
+
+	err = s.dataStore.RemovePermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet.GetId())
+	s.NoError(err, "attempting to delete declaratively declarative permission set is not an error")
+
+	s.Len(permissionSets, 1, "removed permission set should be absent in the subsequent Get*()")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
