@@ -619,7 +619,9 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 	writeCtx := sac.WithAllAccess(context.Background())
 	clusterNameToIDMap := make(map[string]string, 0)
 	for _, cluster := range clusters {
-		id, err := s.service.clusterDataStore.AddCluster(writeCtx, cluster)
+		clusterToAdd := cluster.Clone()
+		clusterToAdd.Id = ""
+		id, err := s.service.clusterDataStore.AddCluster(writeCtx, clusterToAdd)
 		s.Require().NoError(err)
 		clusterNameToIDMap[cluster.GetName()] = id
 		s.storedClusterIDs = append(s.storedClusterIDs, id)
@@ -732,7 +734,9 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 	writeCtx := sac.WithAllAccess(context.Background())
 	clusterNameToIDMap := make(map[string]string, 0)
 	for _, cluster := range clusters {
-		id, err := s.service.clusterDataStore.AddCluster(writeCtx, cluster)
+		clusterToAdd := cluster.Clone()
+		clusterToAdd.Id = ""
+		id, err := s.service.clusterDataStore.AddCluster(writeCtx, clusterToAdd)
 		s.Require().NoError(err)
 		clusterNameToIDMap[cluster.GetName()] = id
 		s.storedClusterIDs = append(s.storedClusterIDs, id)
