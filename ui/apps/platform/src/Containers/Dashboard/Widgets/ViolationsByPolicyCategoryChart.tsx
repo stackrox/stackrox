@@ -260,7 +260,7 @@ function ViolationsByPolicyCategoryChart({
                 <ChartAxis
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
                 />
-                <ChartAxis dependentAxis tickFormat={String} />
+                <ChartAxis dependentAxis fixLabelOverlap tickFormat={String} />
                 <ChartStack horizontal>{bars}</ChartStack>
             </Chart>
         </div>
