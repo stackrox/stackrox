@@ -22,21 +22,4 @@ persistence:
 
 nodeSelector: {}
 
-kube-state-metrics:
-  releaseNamespace: true
-
-alertmanager:
-  persistence:
-    enabled: false
-  config:
-    receivers:
-      - name: pagerduty-notifications
-        pagerduty_configs:
-          - service_key: ${PAGERDUTY_INTEGRATION_KEY}
-    route:
-      receiver: pagerduty-notifications
-      group_by: [alertname]
-  configmapReload:
-    enabled: true
-
 enableMonitoringPSPs: ${MONITORING_ENABLE_PSP}
