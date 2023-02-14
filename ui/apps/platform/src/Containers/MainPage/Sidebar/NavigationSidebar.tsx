@@ -32,6 +32,7 @@ import {
     systemConfigPath,
     systemHealthPath,
     collectionsBasePath,
+    vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -75,6 +76,8 @@ function NavigationSidebar({
             collectionsBasePath
         );
     }
+
+    const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath];
 
     const Navigation = (
         <Nav id="nav-primary-simple">
@@ -122,6 +125,33 @@ function NavigationSidebar({
                     path={complianceBasePath}
                     title={basePathToLabelMap[complianceBasePath]}
                 />
+
+                {isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+                    isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE') && (
+                        // TODO We need to designate this as Tech Preview in a more standard way, based on UX guidance
+                        <NavExpandable
+                            id="Vulnerabilities"
+                            title="Vulnerabilities (preview)"
+                            isActive={vulnerabilitiesPaths.some((path) =>
+                                location.pathname.includes(path)
+                            )}
+                            isExpanded={vulnerabilitiesPaths.some((path) =>
+                                location.pathname.includes(path)
+                            )}
+                        >
+                            {vulnerabilitiesPaths.map((path) => {
+                                const isActive = location.pathname.includes(path);
+                                return (
+                                    <LeftNavItem
+                                        key={path}
+                                        isActive={isActive}
+                                        path={path}
+                                        title={basePathToLabelMap[path]}
+                                    />
+                                );
+                            })}
+                        </NavExpandable>
+                    )}
                 <NavExpandable
                     id="VulnerabilityManagement"
                     title="Vulnerability Management"
