@@ -243,7 +243,7 @@ var (
 	}
 )
 
-func TestToRoxNetworkPolicyRoundtrip(t *testing.T) {
+func TestToRoxNetworkPolicyRoundTrip(t *testing.T) {
 	for name, np := range cases {
 		t.Run(name, func(t *testing.T) {
 			protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
