@@ -2,14 +2,13 @@ package fixtures
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // GetSecret returns a mock Secret
 func GetSecret() *storage.Secret {
-	return GetScopedSecret(uuid.NewDummy().String(), fixtureconsts.Cluster1, "")
+	return GetScopedSecret("ID", "clusterid", "")
 }
 
 // GetScopedSecret returns a mock Secret belonging to the input scope
