@@ -28,13 +28,16 @@ class ServiceAccountService extends BaseService {
         }
     }
 
+    static RawQuery getServiceAccountQuery(K8sServiceAccount serviceAccount) {
+        def query = "Namespace:\"${serviceAccount.namespace}\"+Service Account:\"${serviceAccount.name}\""
+        return RawQuery.newBuilder().setQuery(query).build()
+    }
+
     static boolean waitForServiceAccount(K8sServiceAccount serviceAccount) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             log.debug "Waiting for Service Account"
-            def query = "Namespace:\"${serviceAccount.namespace}\"+Service Account:\"${serviceAccount.name}\""
-            def qb = RawQuery.newBuilder().setQuery(query).build()
-            def serviceAccounts = getServiceAccounts(qb)
+            def serviceAccounts = getServiceAccounts(getServiceAccountQuery(serviceAccount))
             if (serviceAccounts.size() > 0) {
                 return true
             }
