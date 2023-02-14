@@ -10,9 +10,9 @@ tests:
     .deployments.sensor.spec.template.spec.volumes[] | select(.name == "helm-effective-cluster-name") | assertThat(. != null)
 
 - name: "cluster name secret is not created on upgrade"
-  Release:
-    IsInstall: false
-    IsUpgrade: true
+  release:
+    isInstall: false
+    isUpgrade: true
   expect: |
     .secrets["helm-effective-cluster-name"] | assertThat(. == null)
     .deployments.sensor.spec.template.spec.volumes[] | select(.name == "helm-effective-cluster-name").secret | assertThat(.optional == true)
