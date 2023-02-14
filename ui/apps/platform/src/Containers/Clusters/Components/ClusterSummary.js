@@ -5,16 +5,13 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import Widget from 'Components/Widget';
 
-import { Flex, FlexItem } from '@patternfly/react-core';
 import ClusterDeletion from './ClusterDeletion';
 import ClusterStatus from './ClusterStatus';
 import CollectorStatus from './Collector/CollectorStatus';
 import AdmissionControlStatus from './AdmissionControl/AdmissionControlStatus';
-import CredentialExpiration from './CredentialExpiration';
-import CredentialInteraction from './CredentialInteraction';
+import CredentialExpirationWidget from './CredentialExpirationWidget';
 import SensorStatus from './SensorStatus';
 import SensorUpgrade from './SensorUpgrade';
-import ManageTokensButton from './ManageTokensButton';
 
 import { formatBuildDate, formatCloudProvider, formatKubernetesVersion } from '../cluster.helpers';
 import ScannerStatus from './Scanner/ScannerStatus';
@@ -22,32 +19,6 @@ import ScannerStatus from './Scanner/ScannerStatus';
 const trClass = 'align-top leading-normal';
 const thClass = 'pl-0 pr-2 py-1 text-left whitespace-nowrap';
 const tdClass = 'px-0 py-1';
-
-const CredentialExpirationWidgetContent = ({ clusterId, status, isManagerTypeNonConfigurable }) => {
-    if (isManagerTypeNonConfigurable) {
-        return (
-            <Flex direction={{ default: 'column' }}>
-                <FlexItem>
-                    <CredentialExpiration certExpiryStatus={status?.certExpiryStatus} />
-                </FlexItem>
-                <FlexItem>
-                    <ManageTokensButton />
-                </FlexItem>
-            </Flex>
-        );
-    }
-    if (!status?.certExpiryStatus?.sensorCertExpiry) {
-        return <CredentialExpiration certExpiryStatus={status?.certExpiryStatus} />;
-    }
-
-    return (
-        <CredentialInteraction
-            certExpiryStatus={status?.certExpiryStatus}
-            upgradeStatus={status?.upgradeStatus}
-            clusterId={clusterId}
-        />
-    );
-};
 
 /*
  * Top area of Clusters side panel, except for a new cluster (which has nothing to summarize).
@@ -151,7 +122,7 @@ const ClusterSummary = ({
             </div>
             <div className="s-1">
                 <Widget header="Credential Expiration" bodyClassName="p-2">
-                    <CredentialExpirationWidgetContent
+                    <CredentialExpirationWidget
                         clusterId={clusterId}
                         status={status}
                         isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
