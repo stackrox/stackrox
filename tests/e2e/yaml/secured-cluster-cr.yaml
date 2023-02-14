@@ -4,3 +4,7 @@ metadata:
   name: stackrox-secured-cluster-services
 spec:
   clusterName: remote
+  customize:
+    envVars:
+    - name: LOGLEVEL
+      value: "debug"
