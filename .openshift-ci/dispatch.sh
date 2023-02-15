@@ -51,12 +51,18 @@ if ! [[ "$ci_job" =~ [a-z-]+ ]]; then
     die "untrusted job: $ci_job"
 fi
 
-if [[ -f "$ROOT/scripts/ci/jobs/${ci_job}.sh" ]]; then
-    job_script="$ROOT/scripts/ci/jobs/${ci_job}.sh"
-elif [[ -f "$ROOT/scripts/ci/jobs/${ci_job//-/_}.py" ]]; then
-    job_script="$ROOT/scripts/ci/jobs/${ci_job//-/_}.py"
+jobs_dir="$ROOT/scripts/ci/jobs"
+
+if [[ -f "$jobs_dir/${ci_job}.sh" ]]; then
+    job_script="$jobs_dir/${ci_job}.sh"
+elif [[ -f "$jobs_dir/${ci_job//-/_}.py" ]]; then
+    job_script="$jobs_dir/${ci_job//-/_}.py"
 elif [[ "$ci_job" == openshift-*-operator-e2e-tests ]]; then
-    job_script="$ROOT/scripts/ci/jobs/openshift_4_operator_e2e_tests.py"
+    job_script="$jobs_dir/openshift_4_operator_e2e_tests.py"
+elif [[ "$ci_job" == openshift-oldest-qa-e2e-tests || "$ci_job" == openshift-*-helm-qa-e2e-tests ]]; then
+    job_script="$jobs_dir/openshift_helm_qa_e2e_tests.py"
+elif [[ "$ci_job" == openshift-*-qa-e2e-tests ]]; then
+    job_script="$jobs_dir/openshift_qa_e2e_tests.py"
 else
     die "ERROR: There is no job script for $ci_job"
 fi
