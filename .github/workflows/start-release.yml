@@ -183,6 +183,12 @@ jobs:
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
+      - name: Synchronize fork from openshift/release
+        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        env:
+          GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+        run: |
+          gh repo sync stackrox/openshift-release --source stackrox/openshift-release
       - name: Make configuration
         if: steps.check-existing.outputs.branch-exists == 'false'
         env:
@@ -211,8 +217,10 @@ jobs:
           PR_URL=$(gh pr create --repo openshift/release \
             --title "Stackrox release $RELEASE" \
             --base "master" \
-            --body "CI configuration files to support Stackrox release \`$RELEASE\`." \
-            --assignee "$GITHUB_ACTOR")
+            --body "CI configuration files to support Stackrox release \`$RELEASE\`.")
+
+          PR_NUMBER="$(echo "${PR_URL}" | rev | cut -d '/' -f1 | rev)"
+          gh pr comment "${PR_NUMBER}" --repo openshift/release --body "/assign ${GITHUB_ACTOR}"
 
           echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> "$GITHUB_STEP_SUMMARY"
 
