@@ -7,18 +7,18 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
-	"github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store/rocksdb"
 	serviceAccountSearch "github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	rocksdbHelper "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,7 +35,7 @@ func TestServiceAccountDataStore(t *testing.T) {
 type ServiceAccountDataStoreTestSuite struct {
 	suite.Suite
 
-	pool       *pgxpool.Pool
+	pool       *postgres.DB
 	db         *rocksdbHelper.RocksDB
 	bleveIndex bleve.Index
 
@@ -52,9 +52,9 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(suite.T())
 		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.Pool
-		suite.storage = postgres.New(suite.pool)
-		suite.indexer = postgres.NewIndexer(suite.pool)
+		suite.pool = pgtestbase.DB
+		suite.storage = pgStore.New(suite.pool)
+		suite.indexer = pgStore.NewIndexer(suite.pool)
 	} else {
 		suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 		suite.Require().NoError(err)

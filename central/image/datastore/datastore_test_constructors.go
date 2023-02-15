@@ -4,17 +4,17 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	postgresStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
 	dbstore := postgresStore.New(pool, false, concurrency.NewKeyFence())
 	indexer := postgresStore.NewIndexer(pool)
 	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)

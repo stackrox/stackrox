@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -14,6 +13,7 @@ import (
 	policyCategoryPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategorypostgresstore"
 	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policypostgresstore"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -103,7 +103,7 @@ var (
 )
 
 // CreatePolicyCategoryEdges reads policies and creates categories and policy <-> category edges
-func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *pgxpool.Pool) error {
+func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *postgres.DB) error {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTablePolicyCategoryEdgesStmt)
 
 	ctx := sac.WithAllAccess(context.Background())

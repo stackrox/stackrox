@@ -3,12 +3,12 @@ package m168tom169
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission/permissionsetpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 const (
@@ -51,7 +51,7 @@ func propagateAccessForPermission(permission string, accessLevel storage.Access,
 	return accessLevel
 }
 
-func cleanupPermissionSets(db *pgxpool.Pool) error {
+func cleanupPermissionSets(db *postgres.DB) error {
 	ctx := context.Background()
 	permissionSetStore := permissionSetPostgresStore.New(db)
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)

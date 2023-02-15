@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/nodecomponentedge/search"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	"github.com/stackrox/rox/central/nodecomponentedge/store/dackbox"
-	"github.com/stackrox/rox/central/nodecomponentedge/store/postgres"
+	pgStore "github.com/stackrox/rox/central/nodecomponentedge/store/postgres"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
@@ -27,8 +27,8 @@ func initialize() {
 	var searcher search.Searcher
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		storage = pgStore.New(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 		searcher = search.New(storage, indexer)
 	} else {
 		graphProvider = globalDackbox.GetGlobalDackBox()

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
@@ -14,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
-	"github.com/stackrox/rox/central/deployment/store/postgres"
+	pgStore "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -32,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -62,7 +62,7 @@ type DataStore interface {
 	GetDeploymentIDs(ctx context.Context) ([]string, error)
 }
 
-func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
+func newDataStore(storage store.Store, graphProvider graph.Provider, pool *postgres.DB,
 	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
@@ -74,7 +74,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		deploymentIndexer = postgres.NewIndexer(pool)
+		deploymentIndexer = pgStore.NewIndexer(pool)
 		searcher = search.NewV2(storage, deploymentIndexer)
 	} else {
 		deploymentIndexer = index.New(bleveIndex, processIndex)
@@ -95,14 +95,14 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 }
 
 // New creates a deployment datastore based on dackbox
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Pool,
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *postgres.DB,
 	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	var storage store.Store
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.NewFullStore(pool)
+		storage = pgStore.NewFullStore(pool)
 	} else {
 		storage = dackBoxStore.New(dacky, keyFence)
 	}
@@ -110,7 +110,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 }
 
 // NewTestDataStore allows for direct creation of the datastore for testing purposes
-func NewTestDataStore(t testing.TB, storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
+func NewTestDataStore(t testing.TB, storage store.Store, graphProvider graph.Provider, pool *postgres.DB,
 	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
@@ -125,7 +125,7 @@ func NewTestDataStore(t testing.TB, storage store.Store, graphProvider graph.Pro
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		deploymentIndexer = postgres.NewIndexer(pool)
+		deploymentIndexer = pgStore.NewIndexer(pool)
 		searcher = search.NewV2(storage, deploymentIndexer)
 	} else {
 		deploymentIndexer = index.New(bleveIndex, processIndex)
@@ -146,9 +146,9 @@ func NewTestDataStore(t testing.TB, storage store.Store, graphProvider graph.Pro
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.FullStoreWrap(postgres.New(pool))
-	indexer := postgres.NewIndexer(pool)
+func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
+	dbstore := pgStore.FullStoreWrap(pgStore.New(pool))
+	indexer := pgStore.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
 	imageStore, err := imageDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {

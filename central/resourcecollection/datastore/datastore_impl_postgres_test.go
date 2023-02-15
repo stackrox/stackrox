@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/heimdalr/dag"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -32,9 +32,9 @@ type CollectionPostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx       context.Context
-	db        *pgxpool.Pool
+	db        *postgres.DB
 	gormDB    *gorm.DB
-	store     postgres.Store
+	store     pgStore.Store
 	datastore DataStore
 	qr        QueryResolver
 }
@@ -50,18 +50,18 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.db = pool
 
-	postgres.Destroy(s.ctx, s.db)
+	pgStore.Destroy(s.ctx, s.db)
 
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.store = postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	index := postgres.NewIndexer(s.db)
+	s.store = pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	index := pgStore.NewIndexer(s.db)
 	s.datastore, s.qr, err = New(s.store, index, search.New(s.store, index))
 	s.NoError(err)
 }
@@ -72,7 +72,7 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupTest() {
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TearDownSuite() {
-	postgres.Destroy(s.ctx, s.db)
+	pgStore.Destroy(s.ctx, s.db)
 	s.db.Close()
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 }

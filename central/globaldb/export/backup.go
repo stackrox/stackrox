@@ -6,7 +6,6 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/cas"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/utils"
@@ -56,7 +56,7 @@ func Backup(ctx context.Context, boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, back
 }
 
 // BackupPostgres backs up the given databases (optionally removing secrets) and writes a ZIP archive to the given writer.
-func BackupPostgres(ctx context.Context, postgresDB *pgxpool.Pool, backupListener listener.BackupListener, includeCerts bool, out io.Writer) error {
+func BackupPostgres(ctx context.Context, postgresDB *postgres.DB, backupListener listener.BackupListener, includeCerts bool, out io.Writer) error {
 	zipWriter := zip.NewWriter(out)
 	defer utils.IgnoreError(zipWriter.Close)
 

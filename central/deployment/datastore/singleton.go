@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/globaldb"
 	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -32,7 +32,7 @@ func initialize() {
 	var dackBox *dackbox.DackBox
 	var keyFence concurrency.KeyFence
 	var bleveIndex, processIndex bleve.Index
-	var pool *pgxpool.Pool
+	var pool *postgres.DB
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool = globaldb.GetPostgres()
 	} else {

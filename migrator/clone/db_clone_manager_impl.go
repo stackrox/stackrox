@@ -1,32 +1,32 @@
 package clone
 
 import (
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/migrator/clone/postgres"
+	pgClone "github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // dbCloneManagerImpl - scans and manage database clones within central.
 type dbCloneManagerImpl struct {
 	forceRollbackVersion string
-	adminConfig          *pgxpool.Config
+	adminConfig          *postgres.Config
 	sourceMap            map[string]string
 	basePath             string
 	dbmRocks             rocksdb.DBCloneManager
-	dbmPostgres          postgres.DBCloneManager
+	dbmPostgres          pgClone.DBCloneManager
 }
 
 // NewPostgres - returns a new ready-to-use manager.
-func NewPostgres(basePath string, forceVersion string, adminConfig *pgxpool.Config, sourceMap map[string]string) DBCloneManager {
+func NewPostgres(basePath string, forceVersion string, adminConfig *postgres.Config, sourceMap map[string]string) DBCloneManager {
 	return &dbCloneManagerImpl{
 		forceRollbackVersion: forceVersion,
 		adminConfig:          adminConfig,
 		sourceMap:            sourceMap,
 		basePath:             basePath,
 		dbmRocks:             rocksdb.New(basePath, forceVersion),
-		dbmPostgres:          postgres.New(forceVersion, adminConfig, sourceMap),
+		dbmPostgres:          pgClone.New(forceVersion, adminConfig, sourceMap),
 	}
 }
 

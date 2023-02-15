@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	cveDS "github.com/stackrox/rox/central/cve/image/datastore"
 	cveSearcher "github.com/stackrox/rox/central/cve/image/datastore/search"
 	cvePG "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -37,7 +37,7 @@ type ReprocessorPostgresTestSuite struct {
 	suite.Suite
 
 	ctx             context.Context
-	db              *pgxpool.Pool
+	db              *postgres.DB
 	gormDB          *gorm.DB
 	imageDataStore  imageDS.DataStore
 	cveDataStore    cveDS.DataStore
@@ -56,10 +56,10 @@ func (s *ReprocessorPostgresTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool

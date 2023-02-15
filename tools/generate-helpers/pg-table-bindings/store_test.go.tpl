@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -45,7 +45,7 @@ func (s *{{$namePrefix}}StoreSuite) SetupSuite() {
 	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *{{$namePrefix}}StoreSuite) SetupTest() {

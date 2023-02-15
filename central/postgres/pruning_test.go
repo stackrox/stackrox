@@ -45,8 +45,8 @@ func (s *PostgresPruningSuite) TearDownSuite() {
 }
 
 func (s *PostgresPruningSuite) TestPruneActiveComponents() {
-	depStore, _ := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.Pool)
-	acDS, err := activeComponent.NewForTestOnly(s.T(), s.testDB.Pool)
+	depStore, _ := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	acDS, err := activeComponent.NewForTestOnly(s.T(), s.testDB.DB)
 	s.NoError(err)
 
 	// Create and save a deployment
@@ -81,7 +81,7 @@ func (s *PostgresPruningSuite) TestPruneActiveComponents() {
 	s.Nil(err)
 	s.True(exists)
 
-	PruneActiveComponents(s.ctx, s.testDB.Pool)
+	PruneActiveComponents(s.ctx, s.testDB.DB)
 
 	exists, err = acDS.Exists(s.ctx, "test1")
 	s.Nil(err)
@@ -92,13 +92,13 @@ func (s *PostgresPruningSuite) TestPruneActiveComponents() {
 }
 
 func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
-	clusterDS, err := clusterStore.GetTestPostgresDataStore(s.T(), s.testDB.Pool)
+	clusterDS, err := clusterStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Nil(err)
 
 	clusterID, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testCluster", MainImage: "docker.io/stackrox/rox:latest"})
 	s.Nil(err)
 
-	clusterHealthStore := clusterHealthPostgresStore.New(s.testDB.Pool)
+	clusterHealthStore := clusterHealthPostgresStore.New(s.testDB.DB)
 	healthStatuses := []*storage.ClusterHealthStatus{
 		{
 			Id:                 clusterID,
@@ -125,7 +125,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 	s.Nil(err)
 	s.True(exists)
 
-	PruneClusterHealthStatuses(s.ctx, s.testDB.Pool)
+	PruneClusterHealthStatuses(s.ctx, s.testDB.DB)
 
 	count, err = clusterHealthStore.Count(s.ctx)
 	s.Nil(err)

@@ -3,12 +3,12 @@ package m169tom170
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_collections_sac_resource_migration/permissionsetpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -35,7 +35,7 @@ var (
 	}
 )
 
-func migrateWorkflowAdministrationPermissionSet(db *pgxpool.Pool) error {
+func migrateWorkflowAdministrationPermissionSet(db *postgres.DB) error {
 	ctx := sac.WithAllAccess(context.Background())
 	pgStore := permissionSetPostgresStore.New(db)
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)

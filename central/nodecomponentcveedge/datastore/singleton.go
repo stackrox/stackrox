@@ -3,7 +3,7 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
-	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,8 +14,8 @@ var (
 )
 
 func initialize() {
-	storage := postgres.New(globaldb.GetPostgres())
-	indexer := postgres.NewIndexer(globaldb.GetPostgres())
+	storage := pgStore.New(globaldb.GetPostgres())
+	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 
 	ds = New(storage, indexer, search.New(storage, indexer))
 }

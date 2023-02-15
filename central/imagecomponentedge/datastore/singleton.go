@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/imagecomponentedge/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/imagecomponentedge/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/imagecomponentedge/search"
 	"github.com/stackrox/rox/central/imagecomponentedge/store/dackbox"
@@ -22,8 +22,8 @@ var (
 func initialize() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		var err error
-		storage := postgres.New(globaldb.GetPostgres())
-		indexer := postgres.NewIndexer(globaldb.GetPostgres())
+		storage := pgStore.New(globaldb.GetPostgres())
+		indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 		searcher := search.NewV2(storage, indexer)
 		ad, err = New(nil, storage, indexer, searcher)
 		utils.CrashOnError(err)

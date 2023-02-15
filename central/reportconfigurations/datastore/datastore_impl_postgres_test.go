@@ -38,7 +38,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 
 	var err error
 	s.testDB = pgtest.ForT(s.T())
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testDB.Pool)
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.NoError(err)
 
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),

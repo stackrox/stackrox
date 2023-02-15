@@ -3,19 +3,19 @@ package gatherers
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 type postgresGatherer struct {
-	db          *pgxpool.Pool
-	adminConfig *pgxpool.Config
+	db          *postgres.DB
+	adminConfig *postgres.Config
 }
 
-func newPostgresGatherer(db *pgxpool.Pool, adminConfig *pgxpool.Config) *postgresGatherer {
+func newPostgresGatherer(db *postgres.DB, adminConfig *postgres.Config) *postgresGatherer {
 	return &postgresGatherer{
 		db:          db,
 		adminConfig: adminConfig,

@@ -80,8 +80,8 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 		suite.testDB = pgtest.ForT(suite.T())
 		suite.NotNil(suite.testDB)
 
-		suite.store = postgresStore.New(suite.testDB.Pool)
-		suite.indexer = postgresStore.NewIndexer(suite.testDB.Pool)
+		suite.store = postgresStore.New(suite.testDB.DB)
+		suite.indexer = postgresStore.NewIndexer(suite.testDB.DB)
 	} else {
 		db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 		if err != nil {

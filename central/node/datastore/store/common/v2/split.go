@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -68,7 +68,7 @@ func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedN
 
 func generateComponentCVEEdge(convertedComponent *storage.NodeComponent, convertedCVE *storage.NodeCVE, embedded *storage.NodeVulnerability) *storage.NodeComponentCVEEdge {
 	ret := &storage.NodeComponentCVEEdge{
-		Id:              postgres.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
+		Id:              pgSearch.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
 		IsFixable:       embedded.GetFixedBy() != "",
 		NodeCveId:       convertedCVE.GetId(),
 		NodeComponentId: convertedComponent.GetId(),
@@ -101,7 +101,7 @@ func GenerateNodeComponent(os string, from *storage.EmbeddedNodeScanComponent) *
 
 func generateNodeComponentEdge(node *storage.Node, convertedComponent *storage.NodeComponent) *storage.NodeComponentEdge {
 	ret := &storage.NodeComponentEdge{
-		Id:              postgres.IDFromPks([]string{node.GetId(), convertedComponent.GetId()}),
+		Id:              pgSearch.IDFromPks([]string{node.GetId(), convertedComponent.GetId()}),
 		NodeId:          node.GetId(),
 		NodeComponentId: convertedComponent.GetId(),
 	}

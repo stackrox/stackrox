@@ -6,13 +6,13 @@ import (
 	"math"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,13 +24,13 @@ import (
 type dbCloneManagerImpl struct {
 	cloneMap             map[string]*metadata.DBClone
 	forceRollbackVersion string
-	adminConfig          *pgxpool.Config
+	adminConfig          *postgres.Config
 	sourceMap            map[string]string
 	gc                   migGorm.Config
 }
 
 // New - returns a new ready-to-use store.
-func New(forceVersion string, adminConfig *pgxpool.Config, sourceMap map[string]string) DBCloneManager {
+func New(forceVersion string, adminConfig *postgres.Config, sourceMap map[string]string) DBCloneManager {
 	return &dbCloneManagerImpl{
 		cloneMap:             make(map[string]*metadata.DBClone),
 		forceRollbackVersion: forceVersion,

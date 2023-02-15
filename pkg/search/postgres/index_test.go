@@ -10,18 +10,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/timeutil"
-	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
+	pgStore "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -32,8 +32,8 @@ var (
 type IndexSuite struct {
 	suite.Suite
 
-	pool    *pgxpool.Pool
-	store   postgres.Store
+	pool    *postgres.DB
+	store   pgStore.Store
 	indexer interface {
 		Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 	}
@@ -52,16 +52,16 @@ func (s *IndexSuite) SetupTest() {
 	}
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
-	s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
+	s.pool, err = postgres.New(context.Background(), config)
 	s.Require().NoError(err)
 
-	postgres.Destroy(ctx, s.pool)
+	pgStore.Destroy(ctx, s.pool)
 	gormDB := pgtest.OpenGormDB(s.T(), source)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = postgres.CreateTableAndNewStore(ctx, s.pool, gormDB)
-	s.indexer = postgres.NewIndexer(s.pool)
+	s.store = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+	s.indexer = pgStore.NewIndexer(s.pool)
 }
 
 func (s *IndexSuite) TearDownTest() {
@@ -81,7 +81,7 @@ func (s *IndexSuite) getStruct(i int, f func(s *storage.TestMultiKeyStruct)) *st
 }
 
 func getID(s *storage.TestMultiKeyStruct) string {
-	return s.Key1 + pkgPostgres.IDSeparator + s.Key2
+	return s.Key1 + pgSearch.IDSeparator + s.Key2
 }
 
 type testCase struct {

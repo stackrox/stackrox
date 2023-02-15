@@ -38,7 +38,7 @@ func uniqKeyFunc(msg proto.Message) []byte {
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
 	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
-	return  &storeImpl{crud: baseCRUD}, nil
+	return &storeImpl{crud: baseCRUD}, nil
 }
 
 // UpsertMany batches objects into the DB

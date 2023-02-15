@@ -62,7 +62,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 func (s *postgresMigrationSuite) TestServiceIdentityMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.DB)
 	legacyStore := legacy.New(s.legacyDB)
 
 	// Prepare data and write to legacy DB
@@ -75,7 +75,7 @@ func (s *postgresMigrationSuite) TestServiceIdentityMigration() {
 	}
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

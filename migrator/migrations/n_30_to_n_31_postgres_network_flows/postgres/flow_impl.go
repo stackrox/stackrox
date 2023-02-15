@@ -10,10 +10,10 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -68,7 +68,7 @@ var (
 )
 
 type flowStoreImpl struct {
-	db        *pgxpool.Pool
+	db        *postgres.DB
 	clusterID uuid.UUID
 }
 
@@ -143,7 +143,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, clusterID string) store.FlowStore {
+func New(db *postgres.DB, clusterID string) store.FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Errorf("cluster ID is not valid.  %v", err)
@@ -224,7 +224,7 @@ func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*stora
 	return s.copyFrom(ctx, flows...)
 }
 
-func (s *flowStoreImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
+func (s *flowStoreImpl) acquireConn(ctx context.Context) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err

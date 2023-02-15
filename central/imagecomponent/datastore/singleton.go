@@ -9,7 +9,7 @@ import (
 	globalDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
-	"github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagecomponent/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/search"
@@ -39,8 +39,8 @@ func initialize() {
 	var searcher search.Searcher
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		storage = pgStore.New(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, indexer)
 		ad = New(nil, storage, indexer, searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
 		return
