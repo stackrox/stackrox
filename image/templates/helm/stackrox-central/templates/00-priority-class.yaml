@@ -1,0 +1,12 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.priorityClass.enabled -}}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: stackrox-central-priority-class
+value: {{ ._rox.priorityClass.value }}
+preemptionPolicy: {{ default "Never" ._rox.priorityClass.preemptionPolicy }}
+globalDefault: {{ default "false" ._rox.priorityClass.globalDefault }}
+description: {{ default "Stackrox Central Priority Class" ._rox.priorityClass.description | quote }}
+{{ end }}
