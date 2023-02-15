@@ -43,19 +43,19 @@ message ListSimpleAccessScopesResponse {
     repeated storage.SimpleAccessScope access_scopes = 1;
 }
 
-// ScopeElementForPermission represents an ID, name pair, which can apply to any
+// ScopeObject represents an ID, name pair, which can apply to any
 // entity that takes part in an access scope (so far Cluster and Namespace).
-message ScopeElementForPermission {
+message ScopeObject {
     string id   = 1;
     string name = 2;
 }
 
 message GetClustersForPermissionsResponse {
-    repeated ScopeElementForPermission clusters = 1;
+    repeated ScopeObject clusters = 1;
 }
 
 message GetNamespacesForClusterAndPermissionsResponse {
-    repeated ScopeElementForPermission namespaces = 1;
+    repeated ScopeObject namespaces = 1;
 }
 
 message ComputeEffectiveAccessScopeRequest {
@@ -90,7 +90,7 @@ message GetClustersForPermissionsRequest {
 }
 
 message GetNamespaceForClusterAndPermissionsRequest {
-    Pagination      pagination  = 1;
+    reserved 1; // For pagination, should namespace search allow for it.
     string          cluster_id  = 2;
     repeated string permissions = 3;
 }

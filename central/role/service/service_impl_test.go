@@ -513,6 +513,7 @@ type serviceImplTestSuite struct {
 
 	storedClusterIDs   []string
 	storedNamespaceIDs []string
+	clusterNameToIDMap map[string]string
 }
 
 func (s *serviceImplTestSuite) SetupSuite() {
@@ -573,6 +574,27 @@ func (s *serviceImplTestSuite) TearDownSuite() {
 func (s *serviceImplTestSuite) SetupTest() {
 	s.storedClusterIDs = make([]string, 0)
 	s.storedNamespaceIDs = make([]string, 0)
+	s.clusterNameToIDMap = make(map[string]string, 0)
+
+	writeCtx := sac.WithAllAccess(context.Background())
+
+	for _, cluster := range clusters {
+		clusterToAdd := cluster.Clone()
+		clusterToAdd.Id = ""
+		clusterToAdd.MainImage = "quay.io/rhacs-eng/main:latest"
+		id, err := s.service.clusterDataStore.AddCluster(writeCtx, clusterToAdd)
+		s.Require().NoError(err)
+		s.clusterNameToIDMap[clusterToAdd.GetName()] = id
+		s.storedClusterIDs = append(s.storedClusterIDs, id)
+	}
+
+	for _, namespace := range namespaces {
+		ns := namespace.Clone()
+		ns.Id = getNamespaceID(ns.GetName())
+		ns.ClusterId = s.clusterNameToIDMap[ns.GetClusterName()]
+		s.Require().NoError(s.service.namespaceDataStore.AddNamespace(writeCtx, ns))
+		s.storedNamespaceIDs = append(s.storedNamespaceIDs, ns.GetId())
+	}
 }
 
 func (s *serviceImplTestSuite) TearDownTest() {
@@ -618,28 +640,12 @@ func getNamespaceID(namespaceName string) string {
 }
 
 func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
-	writeCtx := sac.WithAllAccess(context.Background())
-	clusterNameToIDMap := make(map[string]string, 0)
-	for _, cluster := range clusters {
-		clusterToAdd := cluster.Clone()
-		clusterToAdd.Id = ""
-		id, err := s.service.clusterDataStore.AddCluster(writeCtx, clusterToAdd)
-		s.Require().NoError(err)
-		clusterNameToIDMap[cluster.GetName()] = id
-		s.storedClusterIDs = append(s.storedClusterIDs, id)
-	}
-	for _, namespace := range namespaces {
-		ns := namespace.Clone()
-		ns.Id = getNamespaceID(ns.GetName())
-		s.Require().NoError(s.service.namespaceDataStore.AddNamespace(writeCtx, ns))
-		s.storedNamespaceIDs = append(s.storedNamespaceIDs, ns.GetId())
-	}
-	queenClusterID := clusterNameToIDMap[clusterQueen.GetName()]
+	queenClusterID := s.clusterNameToIDMap[clusterQueen.GetName()]
 	testResourceScope1 := getTestResourceScopeSingleNamespace(
 		s.T(),
 		queenClusterID,
 		namespaceQueenInnuendo.GetName())
-	pinkFloydClusterID := clusterNameToIDMap[clusterPinkFloyd.GetName()]
+	pinkFloydClusterID := s.clusterNameToIDMap[clusterPinkFloyd.GetName()]
 	testResourceScope2 := getTestResourceScopeSingleNamespace(
 		s.T(),
 		pinkFloydClusterID,
@@ -655,12 +661,12 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 		},
 	}
 
-	queenClusterResponse := &v1.ScopeElementForPermission{
+	queenClusterResponse := &v1.ScopeObject{
 		Id:   queenClusterID,
 		Name: clusterQueen.GetName(),
 	}
 
-	pinkFloydClusterResponse := &v1.ScopeElementForPermission{
+	pinkFloydClusterResponse := &v1.ScopeObject{
 		Id:   pinkFloydClusterID,
 		Name: clusterPinkFloyd.GetName(),
 	}
@@ -671,52 +677,52 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 	testCases := []struct {
 		name              string
 		testedPermissions []string
-		expectedClusters  []*v1.ScopeElementForPermission
+		expectedClusters  []*v1.ScopeObject
 	}{
 		{
 			name:              "Global permission (Not Granted) gets no cluster data.",
 			testedPermissions: []string{rolePermission},
-			expectedClusters:  []*v1.ScopeElementForPermission{},
+			expectedClusters:  []*v1.ScopeObject{},
 		},
 		{
 			name:              "Global permission (Granted) gets no cluster data.",
 			testedPermissions: []string{integrationPermission},
-			expectedClusters:  []*v1.ScopeElementForPermission{},
+			expectedClusters:  []*v1.ScopeObject{},
 		},
 		{
 			name:              "Not granted Cluster scoped permission gets no cluster data.",
 			testedPermissions: []string{clusterPermission},
-			expectedClusters:  []*v1.ScopeElementForPermission{},
+			expectedClusters:  []*v1.ScopeObject{},
 		},
 		{
 			name:              "Granted Cluster scoped permission gets only cluster data for clusters in permission scope.",
 			testedPermissions: []string{nodePermission},
-			expectedClusters:  []*v1.ScopeElementForPermission{queenClusterResponse},
+			expectedClusters:  []*v1.ScopeObject{queenClusterResponse},
 		},
 		{
 			name:              "Not granted Namespace scoped permission gets no cluster data.",
 			testedPermissions: []string{namespacePermission},
-			expectedClusters:  []*v1.ScopeElementForPermission{},
+			expectedClusters:  []*v1.ScopeObject{},
 		},
 		{
 			name:              "Granted Namespace scoped permission gets only cluster data for clusters in permission scope.",
 			testedPermissions: []string{deploymentPermission},
-			expectedClusters:  []*v1.ScopeElementForPermission{queenClusterResponse},
+			expectedClusters:  []*v1.ScopeObject{queenClusterResponse},
 		},
 		{
 			name:              "Multiple not granted Namespace scoped permissions get no cluster data.",
 			testedPermissions: []string{namespacePermission, deploymentExtensionPermission},
-			expectedClusters:  []*v1.ScopeElementForPermission{},
+			expectedClusters:  []*v1.ScopeObject{},
 		},
 		{
 			name:              "Multiple Namespace scoped permissions get only cluster data for clusters in granted permission scopes.",
 			testedPermissions: []string{namespacePermission, deploymentPermission},
-			expectedClusters:  []*v1.ScopeElementForPermission{queenClusterResponse},
+			expectedClusters:  []*v1.ScopeObject{queenClusterResponse},
 		},
 		{
 			name:              "empty permission list get cluster data for all cluster data in scope of granted cluster and namespace permissions.",
 			testedPermissions: []string{},
-			expectedClusters:  []*v1.ScopeElementForPermission{queenClusterResponse, pinkFloydClusterResponse},
+			expectedClusters:  []*v1.ScopeObject{queenClusterResponse, pinkFloydClusterResponse},
 		},
 	}
 
@@ -732,30 +738,115 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 	}
 }
 
-func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
-	writeCtx := sac.WithAllAccess(context.Background())
-	clusterNameToIDMap := make(map[string]string, 0)
-	for _, cluster := range clusters {
-		clusterToAdd := cluster.Clone()
-		clusterToAdd.Id = ""
-		id, err := s.service.clusterDataStore.AddCluster(writeCtx, clusterToAdd)
-		s.Require().NoError(err)
-		clusterNameToIDMap[cluster.GetName()] = id
-		s.storedClusterIDs = append(s.storedClusterIDs, id)
-	}
-	for _, namespace := range namespaces {
-		ns := namespace.Clone()
-		ns.Id = getNamespaceID(ns.GetName())
-		ns.ClusterId = clusterNameToIDMap[ns.GetClusterName()]
-		s.Require().NoError(s.service.namespaceDataStore.AddNamespace(writeCtx, ns))
-		s.storedNamespaceIDs = append(s.storedNamespaceIDs, ns.GetId())
-	}
-	queenClusterID := clusterNameToIDMap[clusterQueen.GetName()]
+func (s *serviceImplTestSuite) TestGetClustersForPermissionsPagination() {
+	queenClusterID := s.clusterNameToIDMap[clusterQueen.GetName()]
 	testResourceScope1 := getTestResourceScopeSingleNamespace(
 		s.T(),
 		queenClusterID,
 		namespaceQueenInnuendo.GetName())
-	pinkFloydClusterID := clusterNameToIDMap[clusterPinkFloyd.GetName()]
+	pinkFloydClusterID := s.clusterNameToIDMap[clusterPinkFloyd.GetName()]
+	testResourceScope2 := getTestResourceScopeSingleNamespace(
+		s.T(),
+		pinkFloydClusterID,
+		namespacePinkFloydTheWall.GetName())
+	testScopeMap := sac.TestScopeMap{
+		storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
+			resources.Integration.GetResource(): {
+				Included: true,
+			},
+			resources.Node.GetResource():         testResourceScope1,
+			resources.Deployment.GetResource():   testResourceScope1,
+			resources.NetworkGraph.GetResource(): testResourceScope2,
+		},
+	}
+
+	queenClusterResponse := &v1.ScopeObject{
+		Id:   queenClusterID,
+		Name: clusterQueen.GetName(),
+	}
+
+	pinkFloydClusterResponse := &v1.ScopeObject{
+		Id:   pinkFloydClusterID,
+		Name: clusterPinkFloyd.GetName(),
+	}
+
+	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap))
+
+	testCases := []struct {
+		name             string
+		pagination       *v1.Pagination
+		expectedClusters []*v1.ScopeObject
+	}{
+		{
+			name: "No offset and a limit restricts to a list of appropriate size",
+			pagination: &v1.Pagination{
+				Limit:  1,
+				Offset: 0,
+				SortOption: &v1.SortOption{
+					Field:    "Cluster",
+					Reversed: false,
+				},
+			},
+			expectedClusters: []*v1.ScopeObject{pinkFloydClusterResponse},
+		},
+		{
+			name: "Offset and no limit restricts to a list of appropriate size starting with expected value",
+			pagination: &v1.Pagination{
+				Limit:  0,
+				Offset: 1,
+				SortOption: &v1.SortOption{
+					Field:    "Cluster",
+					Reversed: false,
+				},
+			},
+			expectedClusters: []*v1.ScopeObject{queenClusterResponse},
+		},
+		{
+			name: "Sort options without offset nor limit return the expected results",
+			pagination: &v1.Pagination{
+				Limit:  0,
+				Offset: 0,
+				SortOption: &v1.SortOption{
+					Field:    "Cluster",
+					Reversed: false,
+				},
+			},
+			expectedClusters: []*v1.ScopeObject{pinkFloydClusterResponse, queenClusterResponse},
+		},
+		{
+			name: "Reversed sort without offset nor limit return the expected results",
+			pagination: &v1.Pagination{
+				Limit:  0,
+				Offset: 0,
+				SortOption: &v1.SortOption{
+					Field:    "Cluster",
+					Reversed: true,
+				},
+			},
+			expectedClusters: []*v1.ScopeObject{queenClusterResponse, pinkFloydClusterResponse},
+		},
+	}
+
+	for _, c := range testCases {
+		s.Run(c.name, func() {
+			clusterResponse, err := s.service.GetClustersForPermissions(testCtx, &v1.GetClustersForPermissionsRequest{
+				Pagination:  c.pagination,
+				Permissions: []string{},
+			})
+			s.NoError(err)
+			s.Equal(clusterResponse.GetClusters(), c.expectedClusters)
+		})
+	}
+}
+
+func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
+	queenClusterID := s.clusterNameToIDMap[clusterQueen.GetName()]
+	testResourceScope1 := getTestResourceScopeSingleNamespace(
+		s.T(),
+		queenClusterID,
+		namespaceQueenInnuendo.GetName())
+	pinkFloydClusterID := s.clusterNameToIDMap[clusterPinkFloyd.GetName()]
 	testResourceScope2 := getTestResourceScopeSingleNamespace(
 		s.T(),
 		pinkFloydClusterID,
@@ -776,22 +867,17 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 		},
 	}
 
-	queenQueenNamespaceResponse := &v1.ScopeElementForPermission{
+	queenQueenNamespaceResponse := &v1.ScopeObject{
 		Id:   getNamespaceID(namespaceQueenQueen.GetName()),
 		Name: namespaceQueenQueen.GetName(),
 	}
 
-	// queenJazzNamespaceResponse := &v1.ScopeElementForPermission{
-	// 	Id:   getNamespaceID(namespaceQueenJazz.GetName()),
-	// 	Name: namespaceQueenJazz.GetName(),
-	// }
-
-	queenInnuendoNamespaceResponse := &v1.ScopeElementForPermission{
+	queenInnuendoNamespaceResponse := &v1.ScopeObject{
 		Id:   getNamespaceID(namespaceQueenInnuendo.GetName()),
 		Name: namespaceQueenInnuendo.GetName(),
 	}
 
-	pinkFloydTheWallNamespaceResponse := &v1.ScopeElementForPermission{
+	pinkFloydTheWallNamespaceResponse := &v1.ScopeObject{
 		Id:   getNamespaceID(namespacePinkFloydTheWall.GetName()),
 		Name: namespacePinkFloydTheWall.GetName(),
 	}
@@ -800,72 +886,70 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 		name               string
 		testedClusterID    string
 		testedPermissions  []string
-		expectedNamespaces []*v1.ScopeElementForPermission
+		expectedNamespaces []*v1.ScopeObject
 	}{
 		{
 			name:               "Global permission (Not Granted) gets no namespace data.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{rolePermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{},
+			expectedNamespaces: []*v1.ScopeObject{},
 		},
 		{
 			name:               "Global permission (Granted) gets no namespace data.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{integrationPermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{},
+			expectedNamespaces: []*v1.ScopeObject{},
 		},
 		{
 			name:               "Not granted Cluster scoped permission gets no namespace data.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{clusterPermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{},
+			expectedNamespaces: []*v1.ScopeObject{},
 		},
 		{
 			name:               "Granted Cluster scoped permission gets no namespace data.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{nodePermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{},
+			expectedNamespaces: []*v1.ScopeObject{},
 		},
 		{
 			name:               "Not granted Namespace scoped permission gets no namespace data.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{namespacePermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{},
+			expectedNamespaces: []*v1.ScopeObject{},
 		},
 		{
 			name:               "Granted Namespace scoped permission gets only namespace data for namespaces in cluster and permission scope.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{deploymentPermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{queenInnuendoNamespaceResponse},
+			expectedNamespaces: []*v1.ScopeObject{queenInnuendoNamespaceResponse},
 		},
 		{
 			name:               "Granted Namespace scoped permission gets only namespace data for namespaces in cluster and permission scope (other permission).",
-			testedClusterID:    clusterNameToIDMap[clusterPinkFloyd.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterPinkFloyd.GetName()],
 			testedPermissions:  []string{networkGraphPermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{pinkFloydTheWallNamespaceResponse},
+			expectedNamespaces: []*v1.ScopeObject{pinkFloydTheWallNamespaceResponse},
 		},
 		{
 			name:               "Multiple not granted Namespace scoped permissions get no namespace data.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{namespacePermission, deploymentExtensionPermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{},
+			expectedNamespaces: []*v1.ScopeObject{},
 		},
 		{
 			name:               "Multiple Namespace scoped permissions get only namespace data for namespaces in granted permission scopes.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{namespacePermission, deploymentPermission},
-			expectedNamespaces: []*v1.ScopeElementForPermission{queenInnuendoNamespaceResponse},
+			expectedNamespaces: []*v1.ScopeObject{queenInnuendoNamespaceResponse},
 		},
 		{
 			name:               "empty permission list get namespace data for all namespaces in scope of target cluster and granted namespace permissions.",
-			testedClusterID:    clusterNameToIDMap[clusterQueen.GetName()],
+			testedClusterID:    s.clusterNameToIDMap[clusterQueen.GetName()],
 			testedPermissions:  []string{},
-			expectedNamespaces: []*v1.ScopeElementForPermission{queenQueenNamespaceResponse, queenInnuendoNamespaceResponse},
+			expectedNamespaces: []*v1.ScopeObject{queenQueenNamespaceResponse, queenInnuendoNamespaceResponse},
 		},
 	}
 
-	scc := sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap)
-	log.Info(scc.EffectiveAccessScope(permissions.View(resources.Deployment)))
 	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap))
 

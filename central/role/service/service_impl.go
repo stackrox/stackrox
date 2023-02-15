@@ -391,6 +391,8 @@ func (s *serviceImpl) GetClustersForPermissions(ctx context.Context, req *v1.Get
 	query := search.NewQueryBuilder().
 		AddStringsHighlighted(search.Cluster, search.WildcardString).
 		ProtoQuery()
+	allowedSortFields := set.NewStringSet(search.ClusterID.String(), search.Cluster.String())
+	query.Pagination = getSanitizedPagination(req.GetPagination(), allowedSortFields)
 	results, err := s.clusterDataStore.Search(clusterLookupCtx, query)
 	if err != nil {
 		return nil, err
@@ -409,6 +411,17 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 	clusterID := req.GetClusterId()
 
 	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.NamespaceScope)
+
+	/*
+		clusterVisible, err := s.isClusterVisibleForRequesterAndPermissions(ctx, clusterID, resourcesWithAccess)
+		if err != nil {
+			return nil, err
+		}
+		if !clusterVisible {
+			return nil, errox.NotFound
+		}
+	*/
+
 	namespacesInScope, hasFullAccess, err := listNamespaceNamesInScope(ctx, clusterID, resourcesWithAccess)
 	if err != nil {
 		return nil, err
@@ -440,6 +453,11 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 	query := search.NewQueryBuilder().
 		AddStringsHighlighted(search.Namespace, search.WildcardString).
 		ProtoQuery()
+	/*
+		// Currently, the namespace search overrides pagination information. As a consequence, pagination is disabled here.
+		allowedSortFields := set.NewStringSet(search.NamespaceID.String(), search.Namespace.String())
+		query.Pagination = getSanitizedPagination(req.GetPagination(), allowedSortFields)
+	*/
 	results, err := s.namespaceDataStore.Search(namespaceLookupCtx, query)
 	if err != nil {
 		return nil, err
@@ -473,6 +491,11 @@ func effectiveAccessScopeForSimpleAccessScope(scopeRules *storage.SimpleAccessSc
 	return response, nil
 }
 
+const (
+	hasFullAccess    = true
+	hasPartialAccess = false
+)
+
 func listReadPermissions(
 	requestedPermissions []string,
 	scope permissions.ResourceScope,
@@ -480,8 +503,7 @@ func listReadPermissions(
 	readPermissions := resources.AllResourcesViewPermissions()
 	indexedScopeReadPermissions := make(map[string]permissions.ResourceWithAccess, 0)
 	scopeReadPermissions := make([]permissions.ResourceWithAccess, 0, len(readPermissions))
-	for i := range readPermissions {
-		permission := readPermissions[i]
+	for _, permission := range readPermissions {
 		if permission.Resource.GetScope() >= scope {
 			scopeReadPermissions = append(scopeReadPermissions, permission)
 			indexedScopeReadPermissions[permission.Resource.String()] = permission
@@ -491,45 +513,52 @@ func listReadPermissions(
 		return scopeReadPermissions
 	}
 	scopeRequestedReadPermissions := make([]permissions.ResourceWithAccess, 0, len(scopeReadPermissions))
+	deduplicatedRequestedPermissions := set.NewStringSet()
 	for _, permission := range requestedPermissions {
-		resourceWithAccess, found := indexedScopeReadPermissions[permission]
-		if found {
+		deduplicatedRequestedPermissions.Add(permission)
+	}
+	for _, permission := range deduplicatedRequestedPermissions.AsSlice() {
+		if resourceWithAccess, found := indexedScopeReadPermissions[permission]; found {
 			scopeRequestedReadPermissions = append(scopeRequestedReadPermissions, resourceWithAccess)
 		}
 	}
 	return scopeRequestedReadPermissions
 }
 
+func getRequesterScopeForReadPermission(
+	ctx context.Context,
+	resourceWithAccess permissions.ResourceWithAccess,
+) (*effectiveaccessscope.ScopeTree, error) {
+	scopeChecker := sac.ForResource(resourceWithAccess.Resource).ScopeChecker(ctx, storage.Access_READ_ACCESS)
+	return scopeChecker.EffectiveAccessScope(resourceWithAccess)
+}
+
+// listClusterIDsInScope consolidates the list of cluster IDs in the user scopes associated
+// with the requested resources and access level.
+// - If one of the allowed scopes is unrestricted, then the string set is returned empty
+// and the returned boolean is true.
+// - If no allowed scope is unrestricted, the string set contains the cluster IDs allowed by
+// the user scopes associated with the requested resources, and the returned boolean is false.
 func listClusterIDsInScope(
 	ctx context.Context,
 	resourcesWithAccess []permissions.ResourceWithAccess,
 ) (set.StringSet, bool, error) {
-	const hasFullAccess = true
-	const hasPartialAccess = false
-	noClusterIDs := set.NewStringSet()
 	clusterIDsInScope := set.NewStringSet()
 	for _, r := range resourcesWithAccess {
-		scopeChecker := sac.ForResource(r.Resource).ScopeChecker(ctx, storage.Access_READ_ACCESS)
-		scope, err := scopeChecker.EffectiveAccessScope(r)
+		scope, err := getRequesterScopeForReadPermission(ctx, r)
 		if err != nil {
-			return noClusterIDs, hasPartialAccess, err
+			return set.NewStringSet(), hasPartialAccess, err
 		}
-		if scope == nil {
+		if scope == nil || scope.State == effectiveaccessscope.Excluded {
 			continue
 		}
 		if scope.State == effectiveaccessscope.Included {
-			return noClusterIDs, hasFullAccess, nil
-		}
-		if scope.State == effectiveaccessscope.Excluded {
-			continue
+			return set.NewStringSet(), hasFullAccess, nil
 		}
 		clusterIDs := scope.GetClusterIDs()
 		for _, clusterID := range clusterIDs {
-			clusterNode := scope.GetClusterByID(clusterID)
-			if clusterNode == nil {
-				continue
-			}
-			if clusterNode.State != effectiveaccessscope.Excluded {
+			if clusterNode := scope.GetClusterByID(clusterID); clusterNode != nil &&
+				clusterNode.State != effectiveaccessscope.Excluded {
 				clusterIDsInScope.Add(clusterID)
 			}
 		}
@@ -544,51 +573,98 @@ func getClustersOptionsMap() search.OptionsMap {
 	return clusterMappings.OptionsMap
 }
 
+func (s *serviceImpl) isClusterVisibleForRequesterAndPermissions(
+	ctx context.Context,
+	clusterID string,
+	resourcesWithAccess []permissions.ResourceWithAccess,
+) (bool, error) {
+	clusterIDsInScope, isFullAccess, err := listClusterIDsInScope(ctx, resourcesWithAccess)
+	if err != nil {
+		return false, err
+	}
+	if !isFullAccess && clusterIDsInScope.Contains(clusterID) {
+		return true, nil
+	}
+	if isFullAccess {
+		clusterLookupElevatedAccess := sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+			),
+		)
+		exists, err := s.clusterDataStore.Exists(clusterLookupElevatedAccess, clusterID)
+		if err != nil {
+			return false, err
+		}
+		return exists, nil
+	}
+	return false, nil
+}
+
+// listNamespaceNamesInScope consolidates the list of names of namespaces in the cluster matching
+// the requested ID and allowed by user scopes associated with the requested resources
+// and access level.
+// - If one of the allowed scopes is unrestricted for the requested cluster, then the string set
+// is returned empty and the returned boolean is true.
+// - If no allowed scope is unrestricted for the requested cluster, the string set contains
+// the names of the namespaces allowed by the user scopes associated with the requested resources,
+// and the returned boolean is false.
 func listNamespaceNamesInScope(
 	ctx context.Context,
 	clusterID string,
 	resourcesWithAccess []permissions.ResourceWithAccess,
 ) (set.StringSet, bool, error) {
-	const hasFullAccess = true
-	const hasPartialAccess = false
 	noNamespaces := set.NewStringSet()
 	namespacesInScope := set.NewStringSet()
 	for _, r := range resourcesWithAccess {
-		scopeChecker := sac.ForResource(r.Resource).ScopeChecker(ctx, storage.Access_READ_ACCESS)
-		scope, err := scopeChecker.EffectiveAccessScope(r)
+		scope, err := getRequesterScopeForReadPermission(ctx, r)
 		if err != nil {
 			return noNamespaces, hasPartialAccess, err
 		}
-		if scope == nil {
+		if scope == nil || scope.State == effectiveaccessscope.Excluded {
 			continue
 		}
 		if scope.State == effectiveaccessscope.Included {
 			return noNamespaces, hasFullAccess, nil
 		}
-		if scope.State == effectiveaccessscope.Excluded {
-			continue
-		}
 		clusterScope := scope.GetClusterByID(clusterID)
-		if clusterScope == nil {
+		if clusterScope == nil || clusterScope.State == effectiveaccessscope.Excluded {
 			continue
 		}
 		if clusterScope.State == effectiveaccessscope.Included {
 			return noNamespaces, hasFullAccess, nil
 		}
-		if clusterScope.State == effectiveaccessscope.Excluded {
-			continue
-		}
 		for namespace, namespaceScope := range clusterScope.Namespaces {
-			if namespaceScope == nil {
-				continue
-			}
-			if namespaceScope.State == effectiveaccessscope.Excluded {
+			if namespaceScope == nil || namespaceScope.State == effectiveaccessscope.Excluded {
 				continue
 			}
 			namespacesInScope.Add(namespace)
 		}
 	}
 	return namespacesInScope, hasPartialAccess, nil
+}
+
+func getSanitizedPagination(requested *v1.Pagination, allowedSortFields set.StringSet) *v1.QueryPagination {
+	if requested == nil {
+		return nil
+	}
+	sanitized := &v1.QueryPagination{
+		Limit:       requested.GetLimit(),
+		Offset:      requested.GetOffset(),
+		SortOptions: nil,
+	}
+	if requested.GetSortOption() != nil {
+		sortField := requested.GetSortOption().GetField()
+		if allowedSortFields.Contains(sortField) {
+			sanitizedSortOption := &v1.QuerySortOption{
+				Field:          sortField,
+				Reversed:       requested.GetSortOption().GetReversed(),
+				SearchAfterOpt: nil,
+			}
+			sanitized.SortOptions = append(sanitized.SortOptions, sanitizedSortOption)
+		}
+	}
+	return sanitized
 }
 
 func getNamespacesOptionsMap() search.OptionsMap {
@@ -598,8 +674,8 @@ func getNamespacesOptionsMap() search.OptionsMap {
 	return namespaceMappings.OptionsMap
 }
 
-func extractScopeElements(results []search.Result, optionsMap search.OptionsMap, searchedField string) []*v1.ScopeElementForPermission {
-	scopeElements := make([]*v1.ScopeElementForPermission, 0, len(results))
+func extractScopeElements(results []search.Result, optionsMap search.OptionsMap, searchedField string) []*v1.ScopeObject {
+	scopeElements := make([]*v1.ScopeObject, 0, len(results))
 	targetField, fieldFound := optionsMap.Get(searchedField)
 	for _, r := range results {
 		objID := r.ID
@@ -615,7 +691,7 @@ func extractScopeElements(results []search.Result, optionsMap search.OptionsMap,
 		if len(objName) == 0 {
 			objName = fmt.Sprintf("%s with ID %s", searchedField, objID)
 		}
-		element := &v1.ScopeElementForPermission{
+		element := &v1.ScopeObject{
 			Id:   objID,
 			Name: objName,
 		}
