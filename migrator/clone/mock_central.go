@@ -115,6 +115,15 @@ func (m *mockCentral) migrateWithVersion(ver *versionPair, breakpoint string, fo
 	m.runMigrator(breakpoint, forceRollback, false)
 }
 
+// legacyUpgrade emulates the legacy database upgrade.
+func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair) {
+	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
+	m.setVersion(t, ver)
+	m.runMigrator("", "", false)
+	m.runCentral()
+	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
+}
+
 func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 	curVer := &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()}
 	m.migrateWithVersion(ver, breakpoint, "")
@@ -232,7 +241,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string, unsup
 
 	require.NoError(m.t, dbm.Persist(clone, pgClone, m.updateBoth))
 	if m.updateBoth {
-		migrations.SetCurrent(migrations.CurrentPath())
+		migrations.SealLegacyDB(migrations.CurrentPath())
 	}
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
