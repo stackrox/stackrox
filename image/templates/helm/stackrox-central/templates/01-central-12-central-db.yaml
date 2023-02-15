@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
 
-{{ if ._rox.central.db.enabled -}}
 {{ if not ._rox.central.db.external -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -193,6 +192,5 @@ type: Opaque
 stringData:
   password: |
     {{- ._rox.central.db._password.value | nindent 4 }}
-{{- end }}
 {{- end }}
 {{- end }}
