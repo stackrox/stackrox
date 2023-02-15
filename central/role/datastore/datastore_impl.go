@@ -114,10 +114,14 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	defer ds.lock.Unlock()
 
 	// Verify storage constraints.
-	if err := ds.verifyRoleNameExists(ctx, role.GetName()); err != nil {
+	role, err := ds.verifyRoleNameExists(ctx, role.GetName())
+	if err != nil {
 		return err
 	}
-	if err := ds.verifyRoleReferencesExist(ctx, role); err != nil {
+	if err = verifyRoleOriginMatches(ctx, role); err != nil {
+		return err
+	}
+	if err = ds.verifyRoleReferencesExist(ctx, role); err != nil {
 		return err
 	}
 
@@ -134,6 +138,14 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 	}
 
 	return ds.roleStorage.Delete(ctx, name)
+}
+
+func verifyRoleOriginMatches(ctx context.Context, role *storage.Role) error {
+	if !declarativeconfig.CanModifyResource(ctx, role) {
+		return errors.Wrapf(errox.NotAuthorized, "role %q's origin is %s, cannot be modified or deleted with the current permission",
+			role.GetName(), role.GetTraits().GetOrigin())
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -368,7 +380,11 @@ func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, scope *storage.S
 	defer ds.lock.Unlock()
 
 	// Verify storage constraints.
-	if err := ds.verifyAccessScopeIDExists(ctx, scope.GetId()); err != nil {
+	as, err := ds.verifyAccessScopeIDExists(ctx, scope.GetId())
+	if err != nil {
+		return err
+	}
+	if err := verifyAccessScopeOriginMatches(ctx, as); err != nil {
 		return err
 	}
 
@@ -398,6 +414,9 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 		return errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
 	if err := verifyNotDefaultAccessScope(accessScope); err != nil {
+		return err
+	}
+	if err := verifyAccessScopeOriginMatches(ctx, accessScope); err != nil {
 		return err
 	}
 
@@ -453,6 +472,14 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 	return resolvedRole, nil
 }
 
+func verifyAccessScopeOriginMatches(ctx context.Context, as *storage.SimpleAccessScope) error {
+	if !declarativeconfig.CanModifyResource(ctx, as) {
+		return errors.Wrapf(errox.NotAuthorized, "access scope %q's origin is %s, cannot be modified or deleted with the current permission",
+			as.GetName(), as.GetTraits().GetOrigin())
+	}
+	return nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Storage constraints                                                        //
 //                                                                            //
@@ -464,7 +491,7 @@ func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *st
 	if _, err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId()); err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
 	}
-	if err := ds.verifyAccessScopeIDExists(ctx, role.GetAccessScopeId()); err != nil {
+	if _, err := ds.verifyAccessScopeIDExists(ctx, role.GetAccessScopeId()); err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
 	}
 	return nil
@@ -515,16 +542,16 @@ func verifyNotDefaultPermissionSet(permissionSet *storage.PermissionSet) error {
 }
 
 // Returns errox.NotFound if there is no access scope with the supplied ID.
-func (ds *dataStoreImpl) verifyAccessScopeIDExists(ctx context.Context, id string) error {
-	_, found, err := ds.accessScopeStorage.Get(ctx, id)
+func (ds *dataStoreImpl) verifyAccessScopeIDExists(ctx context.Context, id string) (*storage.SimpleAccessScope, error) {
+	as, found, err := ds.accessScopeStorage.Get(ctx, id)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "id = %s", id)
+		return nil, errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
-	return nil
+	return as, nil
 }
 
 // Returns errox.AlreadyExists if there is an access scope with the same ID.
@@ -554,16 +581,16 @@ func (ds *dataStoreImpl) verifyRoleNameDoesNotExist(ctx context.Context, name st
 }
 
 // Returns errox.NotFound if there is no role with the supplied name.
-func (ds *dataStoreImpl) verifyRoleNameExists(ctx context.Context, name string) error {
-	_, found, err := ds.roleStorage.Get(ctx, name)
+func (ds *dataStoreImpl) verifyRoleNameExists(ctx context.Context, name string) (*storage.Role, error) {
+	role, found, err := ds.roleStorage.Get(ctx, name)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "name = %q", name)
+		return nil, errors.Wrapf(errox.NotFound, "name = %q", name)
 	}
-	return nil
+	return role, nil
 }
 
 // verifyRoleForDeletion verifies the storage constraints for deleting a role.
@@ -578,6 +605,9 @@ func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string)
 	}
 	if !found {
 		return errors.Wrapf(errox.NotFound, "name = %q", name)
+	}
+	if err = verifyRoleOriginMatches(ctx, role); err != nil {
+		return err
 	}
 
 	return verifyNotDefaultRole(role)
