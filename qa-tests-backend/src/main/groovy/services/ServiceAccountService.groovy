@@ -50,7 +50,7 @@ class ServiceAccountService extends BaseService {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             log.debug "Waiting for Service Account removed"
-            def serviceAccounts = getServiceAccounts()
+            def serviceAccounts = getServiceAccounts(getServiceAccountQuery(serviceAccount))
             def sa = serviceAccounts.find {
                 it.getServiceAccount().name == serviceAccount.name &&
                         it.getServiceAccount().namespace == serviceAccount.namespace
