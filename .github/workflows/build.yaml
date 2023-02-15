@@ -295,11 +295,6 @@ jobs:
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
               push_context="merge-to-master"
             fi
-            # Test
-            if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.ref_name }}" == "4874/merge" ]]; then
-              push_context="merge-to-master"
-            fi
-            # EOTest
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}"
 
       - name: Push matching collector and scanner images
