@@ -820,6 +820,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
+		if ctx.Err() == context.Canceled {
+			return nil, err
+		}
 		if !pgutils.IsTransientError(err) {
 			debug.PrintStack()
 		} else {
@@ -884,6 +887,9 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
+		if ctx.Err() == context.Canceled {
+			return nil, err
+		}
 		if !pgutils.IsTransientError(err) {
 			debug.PrintStack()
 		} else {
@@ -993,6 +999,9 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
+			if ctx.Err() == context.Canceled {
+				return 0, err
+			}
 			if !pgutils.IsTransientError(err) {
 				debug.PrintStack()
 			} else {
