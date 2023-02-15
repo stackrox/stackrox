@@ -106,9 +106,9 @@ test_upgrade_paths() {
     cd "$TEST_ROOT"
 
     ########################################################################################
-    # Use helm to upgrade to a Postgres release.  3.73.2 for now.                          #
+    # Use helm to upgrade to current Postgres release.                                     #
     ########################################################################################
-    info "Upgrade to 3.73.2 via helm"
+    info "Upgrade to ${CURRENT_TAG} via helm"
     helm_upgrade_to_postgres
     wait_for_api
     wait_for_scanner_to_be_ready
@@ -134,7 +134,8 @@ test_upgrade_paths() {
     # Need to push the flag to ci so that the collect scripts pull from
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "false"
-    kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
+    LAST_ROCKS_TAG="3.74.0-rc.2"
+    kubectl -n stackrox set image deploy/central "central=${REGISTRY}/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -156,10 +157,10 @@ test_upgrade_paths() {
 
     info "Installing sensor"
     ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$INITIAL_POSTGRES_TAG"
-    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$INITIAL_POSTGRES_TAG"
+    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$LAST_ROCKS_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
-        "compliance=$REGISTRY/main:$INITIAL_POSTGRES_TAG"
+        "compliance=$REGISTRY/main:$LAST_ROCKS_TAG"
 
     sensor_wait
 
@@ -174,6 +175,42 @@ test_upgrade_paths() {
     [[ ! -f FAIL ]] || die "Smoke tests failed"
 
     collect_and_check_stackrox_logs "$log_output_dir" "02_final_back_to_Rocks"
+}
+
+helm_upgrade_to_postgres() {
+    info "Helm upgrade to Postgres build ${CURRENT_TAG}"
+
+    # Use postgres
+    export ROX_POSTGRES_DATASTORE="true"
+    # Need to push the flag to ci so that the collect scripts pull from
+    # Postgres and not Rocks
+    ci_export ROX_POSTGRES_DATASTORE "true"
+    export CLUSTER="remote"
+
+    pwd
+    # Get opensource charts and convert to development_build to support release builds
+    if is_CI; then
+        roxctl version
+        roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
+        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+    else
+        roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
+        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+    fi
+
+    # Create Postgres password and secrets
+    password=`echo ${RANDOM}_$(date +%s-%d-%M) |base64|cut -c 1-20`
+    kubectl -n stackrox create secret generic central-db-password --from-literal=password=$password
+    kubectl -n stackrox apply -f $TEST_ROOT/tests/upgrade/pvc.yaml
+    create_db_tls_secret
+
+    ########################################################################################
+    # Use helm to upgrade to current Postgres release.                                     #
+    ########################################################################################
+    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart --set central.db.enabled=true --set central.exposure.loadBalancer.enabled=true -f "$TEST_ROOT/tests/upgrade/scale-values-public.yaml" --force
+
+    # Return back to test root
+    cd "$TEST_ROOT"
 }
 
 helm_uninstall_and_cleanup() {
