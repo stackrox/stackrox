@@ -357,7 +357,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 				).ProtoQuery(),
 			resultStruct: DerivedStruct1{},
@@ -375,7 +375,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 						Distinct:      true,
 					},
 				).ProtoQuery(),
@@ -394,12 +394,12 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 						Distinct:      true,
 					},
 					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 						Distinct:      true,
 					},
 				).ProtoQuery(),
@@ -419,11 +419,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
-						AggregateFunc: pkgPG.Max.String(),
+						AggregateFunc: pkgPG.MaxAggrFunc.String(),
 					},
 				).ProtoQuery(),
 			resultStruct: DerivedStruct22{},
@@ -442,11 +442,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 				).
 				AddGroupBy(search.TestNestedString).ProtoQuery(),
@@ -470,7 +470,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 				).
 				AddExactMatches(search.TestString, "bcs").ProtoQuery(),
@@ -490,11 +490,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 				).
 				AddStrings(search.TestNestedString2, "nested").ProtoQuery(),
@@ -515,11 +515,11 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 					&v1.QueryField{
 						Field:         search.TestNestedString2.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 				).
 				AddStrings(search.TestNestedString2, "nested").
@@ -545,7 +545,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 					&v1.QueryField{
 						Field: search.TestString.String(),
@@ -569,7 +569,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 					&v1.QueryField{
 						Field: search.TestNestedString.String(),
@@ -590,7 +590,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 					&v1.QueryField{
 						Field: search.TestNestedString.String(),
@@ -616,7 +616,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.TestNestedString.String(),
-						AggregateFunc: pkgPG.Count.String(),
+						AggregateFunc: pkgPG.CountAggrFunc.String(),
 					},
 					&v1.QueryField{
 						Field: search.TestString.String(),

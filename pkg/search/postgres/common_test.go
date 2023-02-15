@@ -326,7 +326,7 @@ func TestSelectQueries(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.DeploymentName.String(),
-						AggregateFunc: Count.String(),
+						AggregateFunc: CountAggrFunc.String(),
 						Distinct:      true,
 					},
 				).ProtoQuery(),
@@ -338,7 +338,7 @@ func TestSelectQueries(t *testing.T) {
 				AddSelectFields(
 					&v1.QueryField{
 						Field:         search.DeploymentName.String(),
-						AggregateFunc: Count.String(),
+						AggregateFunc: CountAggrFunc.String(),
 						Distinct:      true,
 					},
 				).

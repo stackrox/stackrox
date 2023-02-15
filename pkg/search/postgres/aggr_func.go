@@ -7,10 +7,10 @@ type AggrFunc string
 
 // Defines all the SQL aggregate functions.
 const (
-	Unset AggrFunc = ""
-	Count AggrFunc = "count"
-	Min   AggrFunc = "min"
-	Max   AggrFunc = "max"
+	UnsetAggrFunc AggrFunc = ""
+	CountAggrFunc AggrFunc = "count"
+	MinAggrFunc   AggrFunc = "min"
+	MaxAggrFunc   AggrFunc = "max"
 )
 
 func (a AggrFunc) String() string {
@@ -19,10 +19,10 @@ func (a AggrFunc) String() string {
 
 var (
 	aggrFuncToDataType = map[AggrFunc]walker.DataType{
-		Count: walker.Integer,
+		CountAggrFunc: walker.Integer,
 
-		// Min and max can be performed on text or numeric. Therefore, use the underlaying column's datatype.
-		Min: "",
-		Max: "",
+		// MinAggrFunc and MaxAggrFunc can be performed on text or numeric. Therefore, use the underlying column's datatype.
+		MinAggrFunc: "",
+		MaxAggrFunc: "",
 	}
 )
