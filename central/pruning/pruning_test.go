@@ -10,7 +10,6 @@ import (
 	"github.com/blevesearch/bleve"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -77,6 +76,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -123,7 +123,7 @@ type PruningTestSuite struct {
 	suite.Suite
 
 	ctx  context.Context
-	pool *pgxpool.Pool
+	pool *postgres.DB
 }
 
 func (s *PruningTestSuite) SetupSuite() {
@@ -133,7 +133,7 @@ func (s *PruningTestSuite) SetupSuite() {
 		s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 		testingDB := pgtest.ForT(s.T())
-		s.pool = testingDB.Pool
+		s.pool = testingDB.DB
 	}
 }
 

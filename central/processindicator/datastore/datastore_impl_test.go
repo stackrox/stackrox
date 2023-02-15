@@ -77,9 +77,9 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.postgres = pgtest.ForT(suite.T())
-		suite.storage = postgresStore.New(suite.postgres.Pool)
-		suite.plopStorage = plopStore.New(suite.postgres.Pool)
-		suite.indexer = postgresStore.NewIndexer(suite.postgres.Pool)
+		suite.storage = postgresStore.New(suite.postgres.DB)
+		suite.plopStorage = plopStore.New(suite.postgres.DB)
+		suite.indexer = postgresStore.NewIndexer(suite.postgres.DB)
 	} else {
 		suite.rocksDB = rocksdbtest.RocksDBForT(suite.T())
 		suite.storage = rocksStore.New(suite.rocksDB)

@@ -92,7 +92,7 @@ func TestMigration(t *testing.T) {
 
 func (s *psMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
-	s.store = permissionSetPostgresStore.New(s.db.Pool)
+	s.store = permissionSetPostgresStore.New(s.db.DB)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePermissionSetsStmt)
 }
 
@@ -109,7 +109,7 @@ func (s *psMigrationTestSuite) TestMigration() {
 	s.NoError(s.store.UpsertMany(ctx, psToUpsert))
 
 	dbs := &types.Databases{
-		PostgresDB: s.db.Pool,
+		PostgresDB: s.db.DB,
 	}
 
 	s.NoError(migration.Run(dbs))
@@ -131,7 +131,7 @@ func (s *psMigrationTestSuite) TestMigration() {
 
 func (s *psMigrationTestSuite) TestMigrationOnCleanDB() {
 	dbs := &types.Databases{
-		PostgresDB: s.db.Pool,
+		PostgresDB: s.db.DB,
 	}
 	s.NoError(migration.Run(dbs))
 }

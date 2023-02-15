@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,11 +35,11 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db *postgres.DB
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -139,7 +139,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 	return nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
@@ -168,6 +168,6 @@ func insert(ctx context.Context, tx pgx.Tx, obj *storage.SystemInfo) error {
 // Used for Testing
 
 // Destroy is Used for Testing
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+tableName+" CASCADE")
 }

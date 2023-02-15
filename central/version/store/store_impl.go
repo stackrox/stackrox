@@ -6,7 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/version/postgres"
+	pgStore "github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
@@ -22,7 +22,7 @@ type storeImpl struct {
 	bucketRef bolthelper.BucketRef
 	rocksDB   *rocksdb.RocksDB
 
-	pgStore postgres.Store
+	pgStore pgStore.Store
 }
 
 func (s *storeImpl) getBoltVersion() (*storage.Version, error) {

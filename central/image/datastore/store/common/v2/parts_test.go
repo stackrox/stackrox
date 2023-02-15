@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -121,12 +121,12 @@ func TestSplitAndMergeImage(t *testing.T) {
 		},
 		ImageCVEEdges: map[string]*storage.ImageCVEEdge{
 			cve.ID("cve1", ""): {
-				Id:         postgres.IDFromPks([]string{"sha", cve.ID("cve1", "")}),
+				Id:         pgSearch.IDFromPks([]string{"sha", cve.ID("cve1", "")}),
 				ImageId:    "sha",
 				ImageCveId: cve.ID("cve1", ""),
 			},
 			cve.ID("cve2", ""): {
-				Id:         postgres.IDFromPks([]string{"sha", cve.ID("cve2", "")}),
+				Id:         pgSearch.IDFromPks([]string{"sha", cve.ID("cve2", "")}),
 				ImageId:    "sha",
 				ImageCveId: cve.ID("cve2", ""),
 			},
@@ -139,7 +139,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Version: "ver1",
 				},
 				Edge: &storage.ImageComponentEdge{
-					Id:               postgres.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver1", "")}),
+					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver1", "")}),
 					ImageId:          "sha",
 					ImageComponentId: scancomponent.ComponentID("comp1", "ver1", ""),
 					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
@@ -155,7 +155,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Version: "ver2",
 				},
 				Edge: &storage.ImageComponentEdge{
-					Id:               postgres.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver2", "")}),
+					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver2", "")}),
 					ImageId:          "sha",
 					ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
 					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
@@ -171,7 +171,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							},
 						},
 						Edge: &storage.ComponentCVEEdge{
-							Id:               postgres.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve1", "")}),
+							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve1", "")}),
 							ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
 							ImageCveId:       cve.ID("cve1", ""),
 						},
@@ -184,7 +184,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							},
 						},
 						Edge: &storage.ComponentCVEEdge{
-							Id:               postgres.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve2", "")}),
+							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve2", "")}),
 							ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
 							ImageCveId:       cve.ID("cve2", ""),
 							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
@@ -202,7 +202,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Version: "ver1",
 				},
 				Edge: &storage.ImageComponentEdge{
-					Id:               postgres.IDFromPks([]string{"sha", scancomponent.ComponentID("comp2", "ver1", "")}),
+					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp2", "ver1", "")}),
 					ImageId:          "sha",
 					ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
 					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
@@ -218,7 +218,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							},
 						},
 						Edge: &storage.ComponentCVEEdge{
-							Id:               postgres.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve1", "")}),
+							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve1", "")}),
 							ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
 							ImageCveId:       cve.ID("cve1", ""),
 							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
@@ -235,7 +235,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							},
 						},
 						Edge: &storage.ComponentCVEEdge{
-							Id:               postgres.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve2", "")}),
+							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve2", "")}),
 							ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
 							ImageCveId:       cve.ID("cve2", ""),
 						},

@@ -10,33 +10,34 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 // NewIndexer returns new indexer for `{{.Type}}`.
-func NewIndexer(db *pgxpool.Pool) *indexerImpl {
+func NewIndexer(db *postgres.DB) *indexerImpl {
 	return &indexerImpl {
 		db: db,
 	}
 }
 
 type indexerImpl struct {
-	db *pgxpool.Pool
+	db *postgres.DB
 }
 
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "{{.TrimmedType}}")
 
-	return postgres.RunCountRequest(ctx, v1.{{.SearchCategory}}, q, b.db)
+	return pgSearch.RunCountRequest(ctx, v1.{{.SearchCategory}}, q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "{{.TrimmedType}}")
 
-	return postgres.RunSearchRequest(ctx, v1.{{.SearchCategory}}, q, b.db)
+	return pgSearch.RunSearchRequest(ctx, v1.{{.SearchCategory}}, q, b.db)
 }
 
 //// Stubs for satisfying interfaces

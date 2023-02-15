@@ -53,7 +53,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -94,12 +94,12 @@ func (s *imageDatastoreSACSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase = pgtest.ForT(s.T())
 		s.Require().NotNil(s.pgtestbase)
-		s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
+		s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 		s.Require().NoError(err)
-		s.imageVulnDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
-		s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
+		s.imageVulnDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+		s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 		s.Require().NoError(err)
-		s.namespaceDatastore, err = namespaceDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
+		s.namespaceDatastore, err = namespaceDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 		s.Require().NoError(err)
 		s.optionsMap = schema.ImagesSchema.OptionsMap
 	} else {
@@ -143,7 +143,7 @@ func (s *imageDatastoreSACSuite) SetupSuite() {
 
 func (s *imageDatastoreSACSuite) TearDownSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.Pool.Close()
+		s.pgtestbase.DB.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
 		s.Require().NoError(s.index.Close())
@@ -191,7 +191,7 @@ func getImageCVEID(cve string) string {
 // getImageCVEEdgeID returns base 64 encoded Image:CVE ids
 func getImageCVEEdgeID(image, cve string) string {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.IDFromPks([]string{image, getImageCVEID(cve)})
+		return pgSearch.IDFromPks([]string{image, getImageCVEID(cve)})
 	}
 	return edges.EdgeID{ParentID: image, ChildID: getImageCVEID(cve)}.ToString()
 }

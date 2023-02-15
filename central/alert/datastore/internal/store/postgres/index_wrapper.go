@@ -3,9 +3,9 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -13,7 +13,7 @@ import (
 // NewIndexWrapper returns a wrapper around the generated postgres indexer code
 // which satisfies the alert bleve indexer interface (using storage.ListAlert
 // instead of storage.Alert as input parameters)
-func NewIndexWrapper(db *pgxpool.Pool) *indexWrapperImpl {
+func NewIndexWrapper(db *postgres.DB) *indexWrapperImpl {
 	return &indexWrapperImpl{
 		indexer: NewIndexer(db),
 	}

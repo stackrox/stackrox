@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
 
 // NewPostgresSize returns a generator for Postgres backups.
 // We take in the connection to connect to the DB
-func NewPostgresSize(db *pgxpool.Pool) *PostgresSize {
+func NewPostgresSize(db *postgres.DB) *PostgresSize {
 	return &PostgresSize{
 		db: db,
 	}
@@ -21,7 +21,7 @@ func NewPostgresSize(db *pgxpool.Pool) *PostgresSize {
 
 // PostgresSize is an implementation of a StreamGenerator which writes a backup of PostgresDB to the input io.Writer.
 type PostgresSize struct {
-	db *pgxpool.Pool
+	db *postgres.DB
 }
 
 // WriteTo writes a backup of Postgres to the writer

@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/reportconfigurations/index"
 	"github.com/stackrox/rox/central/reportconfigurations/search"
 	"github.com/stackrox/rox/central/reportconfigurations/store"
-	"github.com/stackrox/rox/central/reportconfigurations/store/postgres"
+	pgStore "github.com/stackrox/rox/central/reportconfigurations/store/postgres"
 	reportConfigStore "github.com/stackrox/rox/central/reportconfigurations/store/rocksdb"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,8 +25,8 @@ func Singleton() DataStore {
 		var storage store.Store
 		var indexer index.Indexer
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			storage = postgres.New(globaldb.GetPostgres())
-			indexer = postgres.NewIndexer(globaldb.GetPostgres())
+			storage = pgStore.New(globaldb.GetPostgres())
+			indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 		} else {
 			storage, err = reportConfigStore.New(globaldb.GetRocksDB())
 			indexer = index.New(globalindex.GetGlobalTmpIndex())

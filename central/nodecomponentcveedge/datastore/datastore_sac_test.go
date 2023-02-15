@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -81,7 +81,7 @@ func getEdgeID(component *storage.EmbeddedNodeScanComponent, vulnerability *stor
 	componentID := getComponentID(component, os)
 	vulnerabilityID := getVulnerabilityID(vulnerability, os)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.IDFromPks([]string{componentID, vulnerabilityID})
+		return pgSearch.IDFromPks([]string{componentID, vulnerabilityID})
 	}
 	return edges.EdgeID{ParentID: componentID, ChildID: vulnerabilityID}.ToString()
 }

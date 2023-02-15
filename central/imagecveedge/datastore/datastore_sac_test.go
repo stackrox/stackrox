@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,7 +71,7 @@ func getEdgeID(image *storage.Image, vulnerability *storage.EmbeddedVulnerabilit
 	imageID := image.GetId()
 	convertedCVEID := getCveID(vulnerability, os)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.IDFromPks([]string{imageID, convertedCVEID})
+		return pgSearch.IDFromPks([]string{imageID, convertedCVEID})
 	}
 	return edges.EdgeID{ParentID: imageID, ChildID: convertedCVEID}.ToString()
 }

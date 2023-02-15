@@ -8,15 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	testChild1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1"
 	testChild1P4 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1p4"
@@ -67,7 +67,7 @@ type GraphQueriesTestSuite struct {
 	suite.Suite
 
 	testDB *pgtest.TestPostgres
-	pool   *pgxpool.Pool
+	pool   *postgres.DB
 
 	testGrandparentStore   testGrandparent.Store
 	testChild1Store        testChild1.Store
@@ -93,7 +93,7 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 	}
 
 	s.testDB = pgtest.ForT(s.T())
-	pool := s.testDB.Pool
+	pool := s.testDB.DB
 
 	s.testGrandparentStore = testGrandparent.New(pool)
 	s.testChild1Store = testChild1.New(pool)
@@ -249,7 +249,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 }
 
 func (s *GraphQueriesTestSuite) mustRunCountQuery(typeName string, q *v1.Query) int {
-	count, err := postgres.RunCountRequestForSchema(ctx, getTestSchema(s.T(), typeName), q, s.testDB.Pool)
+	count, err := pgSearch.RunCountRequestForSchema(ctx, getTestSchema(s.T(), typeName), q, s.testDB.DB)
 	s.Require().NoError(err)
 	return count
 }
@@ -269,7 +269,7 @@ func (s *GraphQueriesTestSuite) assertResultsHaveIDs(results []search.Result, or
 type graphQueryTestCase struct {
 	desc             string
 	queriedProtoType string
-	queryType        postgres.QueryType
+	queryType        pgSearch.QueryType
 	// Passing queryStrings is short for passing
 	// search.NewQueryBuilder().AddStrings() with the values
 	// in queryStrings.
@@ -296,10 +296,10 @@ func (s *GraphQueriesTestSuite) runTestCases(testCases []graphQueryTestCase) {
 			} else {
 				s.Require().Empty(testCase.queryStrings, "both query and queryStrings specified")
 			}
-			if testCase.queryType == postgres.COUNT {
+			if testCase.queryType == pgSearch.COUNT {
 				s.Equal(len(testCase.expectedResultIDs), s.mustRunCountQuery(testCase.queriedProtoType, q))
 			} else {
-				res, err := postgres.RunSearchRequestForSchema(testCtx, getTestSchema(s.T(), testCase.queriedProtoType), q, s.testDB.Pool)
+				res, err := pgSearch.RunSearchRequestForSchema(testCtx, getTestSchema(s.T(), testCase.queriedProtoType), q, s.testDB.DB)
 				if testCase.expectedError {
 					s.Error(err)
 					return
@@ -341,21 +341,21 @@ func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandParentValue() {
 			queriedProtoType:  "testgrandparent",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1"},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "query from parent",
 			queriedProtoType:  "testparent1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1", "2"},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "query from child",
 			queriedProtoType:  "testchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1", "2", "3"},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 	})
 }
@@ -367,14 +367,14 @@ func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandChild() {
 			queriedProtoType:  "testgrandchild1",
 			q:                 search.EmptyQuery(),
 			expectedResultIDs: []string{"1", "2", "3"},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "grand parent query",
 			queriedProtoType:  "testgrandchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1", "2", "3"},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:             "grand child query + grand parent query",
@@ -384,7 +384,7 @@ func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandChild() {
 				search.TestGrandchild1ID:  {"1"},
 			},
 			expectedResultIDs: []string{"1"},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:             "non-overlapping grand child query and grand parent query",
@@ -394,28 +394,28 @@ func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandChild() {
 				search.TestGrandchild1ID:  {"1"},
 			},
 			expectedResultIDs: []string{},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "embedded grand parent query",
 			queriedProtoType:  "testgrandchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentEmbedded2: {"Grandparent1Embedded11"}},
 			expectedResultIDs: []string{"1", "2", "3"},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "non-overlapping embedded grand parent query",
 			queriedProtoType:  "testgrandchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentEmbedded2: {"Grandparent2Embedded11"}},
 			expectedResultIDs: []string{},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "shared value embedded grand parent query",
 			queriedProtoType:  "testgrandchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentEmbedded2: {"GrandparentEmbeddedShared"}},
 			expectedResultIDs: []string{"1", "2", "3"},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:             "scoped shared value embedded grand parent query",
@@ -425,7 +425,7 @@ func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandChild() {
 				search.TestGrandparentEmbedded2: {"GrandparentEmbeddedShared"},
 			},
 			expectedResultIDs: []string{},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 	})
 }
@@ -561,35 +561,35 @@ func (s *GraphQueriesTestSuite) TestSubGraphCountQueries() {
 			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent2ID: {"r/.*1"}},
 			expectedResultIDs: []string{},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "query out-of-scope resource from child1p4",
 			queriedProtoType:  "testchild1p4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestChild1ID: {"r/.*1"}},
 			expectedResultIDs: []string{},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "query in-scope resource from parent4",
 			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent4Val: {"r/.*4"}},
 			expectedResultIDs: []string{parent4ID},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "query in-scope child from parent4",
 			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestChild1P4ID: {"r/.*P4"}},
 			expectedResultIDs: []string{parent4ID},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 		{
 			desc:              "query out-of-scope parent from child1p4",
 			queriedProtoType:  "testchild1p4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent4ID: {"r/.*4"}},
 			expectedResultIDs: []string{},
-			queryType:         postgres.COUNT,
+			queryType:         pgSearch.COUNT,
 		},
 	})
 }

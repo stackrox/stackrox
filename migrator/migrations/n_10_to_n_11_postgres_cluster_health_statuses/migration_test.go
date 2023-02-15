@@ -58,7 +58,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 func (s *postgresMigrationSuite) TestClusterHealthStatusMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.DB)
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
 
@@ -73,7 +73,7 @@ func (s *postgresMigrationSuite) TestClusterHealthStatusMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, clusterHealthStatuss))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

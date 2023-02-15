@@ -9,7 +9,7 @@ package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/pkg/errors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -60,7 +60,7 @@ var (
 
 {{$rocksDB :=  eq .Migration.MigrateFromDB "rocksdb" }}
 
-func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+func move(gormDB *gorm.DB, postgresDB *postgres.DB, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTable{{.Table|upperCamelCase}}Stmt)

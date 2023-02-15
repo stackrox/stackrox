@@ -4,14 +4,14 @@ import (
 	"context"
 	"io"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"gopkg.in/yaml.v3"
 )
 
 // NewPostgresVersion returns a generator for Postgres backups.
 // We take in the connection to connect to the DB
-func NewPostgresVersion(db *pgxpool.Pool) *PostgresVersion {
+func NewPostgresVersion(db *postgres.DB) *PostgresVersion {
 	return &PostgresVersion{
 		db: db,
 	}
@@ -19,7 +19,7 @@ func NewPostgresVersion(db *pgxpool.Pool) *PostgresVersion {
 
 // PostgresVersion is an implementation of a StreamGenerator which writes information from the version table to the input io.Writer.
 type PostgresVersion struct {
-	db *pgxpool.Pool
+	db *postgres.DB
 }
 
 // WriteTo writes a backup of Postgres to the writer

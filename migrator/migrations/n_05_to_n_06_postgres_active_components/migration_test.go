@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -71,7 +71,7 @@ var (
 )
 
 func (s *postgresMigrationSuite) TestActiveComponentMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.DB)
 	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	s.NoError(err)
 	legacyStore := legacy.New(dacky, concurrency.NewKeyFence())
@@ -176,7 +176,7 @@ func (s *postgresMigrationSuite) TestActiveComponentMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, activeComponents))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	s.verify(newStore, images)
@@ -200,7 +200,7 @@ func (s *postgresMigrationSuite) verify(newStore pgStore.Store, images []*pkgSch
 		s.Equal(deploymentID, fetched.GetDeploymentId())
 		// Verify componentId
 		s.True(strings.HasSuffix(id, fetched.GetComponentId()))
-		parts := postgres.IDToParts(fetched.GetComponentId())
+		parts := pgSearch.IDToParts(fetched.GetComponentId())
 		s.Equal(componentName, parts[0])
 		s.Len(fetched.ActiveContextsSlice, 2)
 		s.Equal(imageToOs[fetched.ActiveContextsSlice[0].ImageId], parts[2])

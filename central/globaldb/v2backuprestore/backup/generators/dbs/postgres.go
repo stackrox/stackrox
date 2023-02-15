@@ -5,8 +5,8 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
@@ -17,7 +17,7 @@ var (
 
 // NewPostgresBackup returns a generator for Postgres backups.
 // We take in the connection to connect to the DB
-func NewPostgresBackup(db *pgxpool.Pool) *PostgresBackup {
+func NewPostgresBackup(db *postgres.DB) *PostgresBackup {
 	return &PostgresBackup{
 		db: db,
 	}
@@ -25,7 +25,7 @@ func NewPostgresBackup(db *pgxpool.Pool) *PostgresBackup {
 
 // PostgresBackup is an implementation of a StreamGenerator which writes a backup of PostgresDB to the input io.Writer.
 type PostgresBackup struct {
-	db *pgxpool.Pool
+	db *postgres.DB
 }
 
 // WriteTo writes a backup of Postgres to the writer

@@ -33,7 +33,7 @@ func BenchmarkNodes(b *testing.B) {
 	var nodeDS DataStore
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testDB := pgtest.ForT(b)
-		nodeDS, err = GetTestPostgresDataStore(b, testDB.Pool)
+		nodeDS, err = GetTestPostgresDataStore(b, testDB.DB)
 		require.NoError(b, err)
 		defer testDB.Teardown(b)
 	} else {

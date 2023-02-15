@@ -4,11 +4,11 @@ package n46ton47
 // central/role/store/role/postgres
 
 import (
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +27,7 @@ var (
 	}
 )
 
-func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+func move(gormDB *gorm.DB, postgresDB *postgres.DB) error {
 	return nil
 }
 

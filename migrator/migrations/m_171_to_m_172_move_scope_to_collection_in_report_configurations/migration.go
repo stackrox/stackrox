@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -16,6 +15,7 @@ import (
 	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
@@ -222,7 +222,7 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 	return newScopeID, true
 }
 
-func moveScopesInReportsToCollections(gormDB *gorm.DB, db *pgxpool.Pool) error {
+func moveScopesInReportsToCollections(gormDB *gorm.DB, db *postgres.DB) error {
 	ctx := context.Background()
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableCollectionsStmt)
 	reportConfigStore := reportConfigurationPostgres.New(db)
