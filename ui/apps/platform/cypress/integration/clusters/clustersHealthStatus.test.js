@@ -24,7 +24,7 @@ describe('Clusters Health Status', () => {
         {
             expectedInListAndSide: {
                 clusterName: 'alpha-amsterdam-1',
-                cloudProvider: 'Not applicable',
+                cloudProvider: 'Not available',
                 clusterStatus: 'Uninitialized',
                 sensorUpgrade: 'Not applicable',
                 credentialExpiration: 'Not applicable',
