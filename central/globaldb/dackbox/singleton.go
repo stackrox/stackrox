@@ -20,19 +20,21 @@ var (
 
 // GetGlobalDackBox returns the global dackbox.DackBox instance.
 func GetGlobalDackBox() *dackbox.DackBox {
-	postgres.LogCallerOnPostgres("GetGlobalDackBox")
+	postgres.DeprecatedCall("GetGlobalDackBox")
 	initializeDackBox()
 	return rawDackbox.GetGlobalDackBox()
 }
 
 // GetIndexQueue returns the queue of items waiting to be indexed.
 func GetIndexQueue() queue.WaitableQueue {
+	postgres.DeprecatedCall("GetIndexQueue")
 	initializeDackBox()
 	return rawDackbox.GetIndexQueue()
 }
 
 // GetKeyFence returns the global key fence.
 func GetKeyFence() concurrency.KeyFence {
+	postgres.DeprecatedCall("GetKeyFence")
 	initializeDackBox()
 	return rawDackbox.GetKeyFence()
 }

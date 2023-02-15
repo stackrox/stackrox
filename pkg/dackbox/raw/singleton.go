@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbInstance "github.com/stackrox/rox/pkg/rocksdb/instance"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -34,18 +35,21 @@ var (
 
 // GetGlobalDackBox returns the global dackbox.DackBox instance.
 func GetGlobalDackBox() *dackbox.DackBox {
+	postgres.DeprecatedCall("GetGlobalDackBox")
 	initialize()
 	return dackBox
 }
 
 // GetIndexQueue returns the queue of items waiting to be indexed.
 func GetIndexQueue() queue.WaitableQueue {
+	postgres.DeprecatedCall("GetIndexQueue")
 	initialize()
 	return toIndex
 }
 
 // GetKeyFence returns the global key fence.
 func GetKeyFence() concurrency.KeyFence {
+	postgres.DeprecatedCall("GetKeyFence")
 	initialize()
 	return globalKeyLock
 }
