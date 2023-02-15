@@ -39,6 +39,9 @@ class ChaosMonkey {
                 // Get the current ready, non-deleted pod replicas
                 def admCtrlPods = new ArrayList<Pod>(orchestrator.getPods(
                         Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME))
+                admCtrlPods.forEach {
+                    log.info "Encountered pod ${it.metadata.name}, ready=${orchestrator.podReady(it)}."
+                }
                 admCtrlPods.removeIf { Pod p -> !orchestrator.podReady(p) }
 
                 if (admCtrlPods.size() < minReadyReplicas) {
