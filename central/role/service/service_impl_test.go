@@ -950,8 +950,6 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 		},
 	}
 
-	scc := sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap)
-	log.Info(scc.EffectiveAccessScope(permissions.View(resources.Deployment)))
 	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap))
 
