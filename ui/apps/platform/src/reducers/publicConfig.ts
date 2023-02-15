@@ -3,46 +3,40 @@ import isEqual from 'lodash/isEqual';
 
 import { fetchPublicConfig } from 'services/SystemConfigService';
 import { PublicConfig } from 'types/config.proto';
-import {
-    FailureAction,
-    FetchingAction,
-    createFetchingActionTypes,
-} from 'utils/fetchingReduxRoutines';
+import { PrefixedAction } from 'utils/fetchingReduxRoutines';
 
 // Action types
 
-export const types = {
-    FETCH_PUBLIC_CONFIG: createFetchingActionTypes('notifiers/FETCH_PUBLIC_CONFIG'),
-};
+export type PublicConfigAction = PrefixedAction<'config/FETCH_PUBLIC_CONFIG', PublicConfig>;
 
-// Actions
+// Thunk
 
 export const fetchPublicConfigThunk = () => {
     return async (dispatch) => {
-        dispatch({ type: types.FETCH_PUBLIC_CONFIG.REQUEST });
+        dispatch({ type: 'config/FETCH_PUBLIC_CONFIG_REQUEST' });
 
         try {
             const result = await fetchPublicConfig();
             dispatch({
-                type: types.FETCH_PUBLIC_CONFIG.SUCCESS,
+                type: 'config/FETCH_PUBLIC_CONFIG_SUCCESS',
                 response: result.response,
             });
         } catch (error) {
-            dispatch({ type: types.FETCH_PUBLIC_CONFIG.FAILURE, error });
+            dispatch({ type: 'config/FETCH_PUBLIC_CONFIG_FAILURE', error });
         }
     };
 };
 
 // Reducers
 
-const isLoadingPublicConfig: Reducer<boolean> = (state = true, action) => {
+const isLoadingPublicConfig: Reducer<boolean, PublicConfigAction> = (state = true, action) => {
     // Initialize true for edge case before authSagas call fetchUserRolePermissions action.
     switch (action.type) {
-        case types.FETCH_PUBLIC_CONFIG.REQUEST:
+        case 'config/FETCH_PUBLIC_CONFIG_REQUEST':
             return true;
 
-        case types.FETCH_PUBLIC_CONFIG.FAILURE:
-        case types.FETCH_PUBLIC_CONFIG.SUCCESS:
+        case 'config/FETCH_PUBLIC_CONFIG_FAILURE':
+        case 'config/FETCH_PUBLIC_CONFIG_SUCCESS':
             return false;
 
         default:
@@ -56,26 +50,25 @@ const publicConfigInitialState: PublicConfig = {
     loginNotice: null,
 };
 
-const publicConfig: Reducer<PublicConfig, FetchingAction<{ response: PublicConfig }>> = (
+const publicConfig: Reducer<PublicConfig, PublicConfigAction> = (
     state = publicConfigInitialState,
     action
 ) => {
-    if (action.type === types.FETCH_PUBLIC_CONFIG.SUCCESS) {
-        return isEqual(action.response, state) ? state : action.response;
+    switch (action.type) {
+        case 'config/FETCH_PUBLIC_CONFIG_SUCCESS':
+            return isEqual(action.response, state) ? state : action.response;
+        default:
+            return state;
     }
-    return state;
 };
 
-const publicConfigError: Reducer<Error | null, ReturnType<FailureAction>> = (
-    state = null,
-    action
-) => {
+const publicConfigError: Reducer<Error | null, PublicConfigAction> = (state = null, action) => {
     switch (action.type) {
-        case types.FETCH_PUBLIC_CONFIG.REQUEST:
-        case types.FETCH_PUBLIC_CONFIG.SUCCESS:
+        case 'config/FETCH_PUBLIC_CONFIG_REQUEST':
+        case 'config/FETCH_PUBLIC_CONFIG_SUCCESS':
             return null;
 
-        case types.FETCH_PUBLIC_CONFIG.FAILURE:
+        case 'config/FETCH_PUBLIC_CONFIG_FAILURE':
             return action.error;
 
         default:
