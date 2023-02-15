@@ -6,6 +6,6 @@ class K8sServiceAccount {
     Map<String, String> labels = [:]
     Map<String, String> annotations = [:]
     def automountToken
-    def secrets = []
+    List<io.fabric8.kubernetes.api.model.ObjectReference> secrets = []
     String[] imagePullSecrets = []
 }
