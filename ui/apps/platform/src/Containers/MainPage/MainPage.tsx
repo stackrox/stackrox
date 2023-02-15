@@ -16,17 +16,16 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import { clustersBasePath } from 'routePaths';
 
-import CredentialExpiryBanner from './CredentialExpiryBanner';
-import VersionOutOfDate from './VersionOutOfDate';
-import DatabaseBanner from './DatabaseBanner';
 import AnnouncementBanner from './AnnouncementBanner';
+import CredentialExpiryBanner from './CredentialExpiryBanner';
+import DatabaseBanner from './DatabaseBanner';
+import OutdatedVersionBanner from './OutdatedVersionBanner';
 import Masthead from './Header/Masthead';
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
 import NavigationSidebar from './Sidebar/NavigationSidebar';
 
 const mainPageSelector = createStructuredSelector({
-    metadata: selectors.getMetadata,
     serverState: selectors.getServerState,
 });
 
@@ -41,12 +40,7 @@ const CLUSTER_COUNT = gql`
 `;
 
 function MainPage(): ReactElement {
-    const {
-        metadata = {
-            stale: false,
-        },
-        serverState,
-    } = useSelector(mainPageSelector);
+    const { serverState } = useSelector(mainPageSelector);
 
     // Follow-up: Replace SearchModal with path like /main/search and component like GlobalSearchPage.
     const history = useHistory();
@@ -90,7 +84,7 @@ function MainPage(): ReactElement {
                     component="SCANNER"
                     hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
                 />
-                {metadata?.stale && <VersionOutOfDate />}
+                <OutdatedVersionBanner />
                 <DatabaseBanner isApiReachable={serverState && serverState !== 'UNREACHABLE'} />
                 <Page
                     mainContainerId="main-page-container"
