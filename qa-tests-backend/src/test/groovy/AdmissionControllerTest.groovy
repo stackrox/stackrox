@@ -25,6 +25,7 @@ import spock.lang.Tag
 import spock.lang.Timeout
 import spock.lang.Unroll
 
+@Retry(count = 0)
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> latestTagEnforcements
