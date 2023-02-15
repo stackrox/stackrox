@@ -92,7 +92,7 @@ func TestGCSExternalBackup(t *testing.T) {
 	},
 		retry.Tries(10),
 		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(1 * time.Second)
+			time.Sleep(10 * time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) {
 			log.Error(err.Error())
