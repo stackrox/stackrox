@@ -6,14 +6,6 @@ set -euo pipefail
 # Tests upgrade to Postgres.
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-
-# Build 3.73.x-608-g4ffbc83042 was chosen as it contains the fixes for issues that
-# caused corruption of RocksDB as well as the removal of destructive acts that would
-# delete RocksDB data and Postgres data based on conditions.  Additionally it contains
-# policy category Postgres changes that are required for the Upgrade tests to succeed
-# in Postgres mode.
-INITIAL_POSTGRES_TAG="3.73.x-608-g4ffbc83042"
-INITIAL_POSTGRES_SHA="4ffbc83042614f9fe4524cbf140323f3372ee6a7"
 CURRENT_TAG="$(make --quiet tag)"
 
 source "$TEST_ROOT/scripts/lib.sh"
@@ -25,7 +17,7 @@ source "$TEST_ROOT/tests/upgrade/lib.sh"
 source "$TEST_ROOT/tests/upgrade/validation.sh"
 
 test_upgrade() {
-    info "Starting Rocks to Postgres back to Rocks upgrade/rollback test"
+    info "Starting Rocks to 4.0 Postgres back to Rocks at 3.74 upgrade/rollback test"
 
     # Need to push the flag to ci so that is where it needs to be for the part
     # of the test.  We start this test with RocksDB
@@ -109,7 +101,7 @@ test_upgrade_paths() {
     # Use helm to upgrade to current Postgres release.                                     #
     ########################################################################################
     info "Upgrade to ${CURRENT_TAG} via helm"
-    helm_upgrade_to_postgres
+    helm_upgrade_to_latest_postgres
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -128,19 +120,16 @@ test_upgrade_paths() {
     ########################################################################################
     # Flip the Postgres flag to go back to RocksDB                                         #
     ########################################################################################
-    # Now go back up to Postgres
-    # Use postgres
-    export ROX_POSTGRES_DATASTORE="false"
+
     # Need to push the flag to ci so that the collect scripts pull from
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "false"
     LAST_ROCKS_TAG="3.74.x-12-g378d5ef15d"
-    info "Moving back to RocksDB at the 3.74 release"
     kubectl -n stackrox set image deploy/central "central=${REGISTRY}/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
-#    kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
     wait_for_api
     wait_for_scanner_to_be_ready
 
+    # Check the database status to ensure it is using RocksDB
     check_legacy_db_status
 
     # Ensure we still have the access scopes added to Rocks
@@ -179,11 +168,9 @@ test_upgrade_paths() {
     collect_and_check_stackrox_logs "$log_output_dir" "02_final_back_to_Rocks"
 }
 
-helm_upgrade_to_postgres() {
+helm_upgrade_to_latest_postgres() {
     info "Helm upgrade to Postgres build ${CURRENT_TAG}"
 
-    # Use postgres
-    export ROX_POSTGRES_DATASTORE="true"
     # Need to push the flag to ci so that the collect scripts pull from
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "true"
