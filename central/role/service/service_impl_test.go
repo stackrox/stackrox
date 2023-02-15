@@ -80,7 +80,7 @@ var clusters = []*storage.Cluster{
 }
 
 var (
-	namespaceQueenQueen = &storage.NamespaceMetadata{
+	namespaceQueenInClusterQueen = &storage.NamespaceMetadata{
 		Id:          "album.queen",
 		Name:        "Queen",
 		ClusterId:   "band.queen",
@@ -90,7 +90,7 @@ var (
 		},
 	}
 
-	namespaceQueenJazz = &storage.NamespaceMetadata{
+	namespaceJazzInClusterQueen = &storage.NamespaceMetadata{
 		Id:          "album.jazz",
 		Name:        "Jazz",
 		ClusterId:   "band.queen",
@@ -100,7 +100,7 @@ var (
 		},
 	}
 
-	namespaceQueenInnuendo = &storage.NamespaceMetadata{
+	namespaceInnuendoInClusterQueen = &storage.NamespaceMetadata{
 		Id:          "album.innuendo",
 		Name:        "Innuendo",
 		ClusterId:   "band.queen",
@@ -110,7 +110,7 @@ var (
 		},
 	}
 
-	namespacePinkFloydTheWall = &storage.NamespaceMetadata{
+	namespaceTheWallInClusterPinkFloyd = &storage.NamespaceMetadata{
 		Id:          "album.thewall",
 		Name:        "The Wall",
 		ClusterId:   "band.pinkfloyd",
@@ -120,7 +120,7 @@ var (
 		},
 	}
 
-	namespaceDeepPurpleMachineHead = &storage.NamespaceMetadata{
+	namespaceMachineHeadInClusterDeepPurple = &storage.NamespaceMetadata{
 		Id:          "album.machinehead",
 		Name:        "Machine Head",
 		ClusterId:   "band.deeppurple",
@@ -133,13 +133,13 @@ var (
 
 var namespaces = []*storage.NamespaceMetadata{
 	// Queen
-	namespaceQueenQueen,
-	namespaceQueenJazz,
-	namespaceQueenInnuendo,
+	namespaceQueenInClusterQueen,
+	namespaceJazzInClusterQueen,
+	namespaceInnuendoInClusterQueen,
 	// Pink Floyd
-	namespacePinkFloydTheWall,
+	namespaceTheWallInClusterPinkFloyd,
 	// Deep Purple
-	namespaceDeepPurpleMachineHead,
+	namespaceMachineHeadInClusterDeepPurple,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -629,7 +629,7 @@ const (
 	rolePermission                = "Role"
 )
 
-func getTestResourceScopeSingleNamespace(_ *testing.T, clusterID string, namespace string) *sac.TestResourceScope {
+func getTestResourceScopeSingleNamespace(clusterID string, namespace string) *sac.TestResourceScope {
 	return &sac.TestResourceScope{
 		Clusters: map[string]*sac.TestClusterScope{
 			clusterID: {
@@ -648,14 +648,12 @@ func getNamespaceID(namespaceName string) string {
 func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 	queenClusterID := s.clusterNameToIDMap[clusterQueen.GetName()]
 	testResourceScope1 := getTestResourceScopeSingleNamespace(
-		s.T(),
 		queenClusterID,
-		namespaceQueenInnuendo.GetName())
+		namespaceInnuendoInClusterQueen.GetName())
 	pinkFloydClusterID := s.clusterNameToIDMap[clusterPinkFloyd.GetName()]
 	testResourceScope2 := getTestResourceScopeSingleNamespace(
-		s.T(),
 		pinkFloydClusterID,
-		namespacePinkFloydTheWall.GetName())
+		namespaceTheWallInClusterPinkFloyd.GetName())
 	testScopeMap := sac.TestScopeMap{
 		storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
 			resources.Integration.GetResource(): {
@@ -747,14 +745,12 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 func (s *serviceImplTestSuite) TestGetClustersForPermissionsPagination() {
 	queenClusterID := s.clusterNameToIDMap[clusterQueen.GetName()]
 	testResourceScope1 := getTestResourceScopeSingleNamespace(
-		s.T(),
 		queenClusterID,
-		namespaceQueenInnuendo.GetName())
+		namespaceInnuendoInClusterQueen.GetName())
 	pinkFloydClusterID := s.clusterNameToIDMap[clusterPinkFloyd.GetName()]
 	testResourceScope2 := getTestResourceScopeSingleNamespace(
-		s.T(),
 		pinkFloydClusterID,
-		namespacePinkFloydTheWall.GetName())
+		namespaceTheWallInClusterPinkFloyd.GetName())
 	testScopeMap := sac.TestScopeMap{
 		storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
 			resources.Integration.GetResource(): {
@@ -849,18 +845,15 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissionsPagination() {
 func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 	queenClusterID := s.clusterNameToIDMap[clusterQueen.GetName()]
 	testResourceScope1 := getTestResourceScopeSingleNamespace(
-		s.T(),
 		queenClusterID,
-		namespaceQueenInnuendo.GetName())
+		namespaceInnuendoInClusterQueen.GetName())
 	pinkFloydClusterID := s.clusterNameToIDMap[clusterPinkFloyd.GetName()]
 	testResourceScope2 := getTestResourceScopeSingleNamespace(
-		s.T(),
 		pinkFloydClusterID,
-		namespacePinkFloydTheWall.GetName())
+		namespaceTheWallInClusterPinkFloyd.GetName())
 	testResourceScope3 := getTestResourceScopeSingleNamespace(
-		s.T(),
 		queenClusterID,
-		namespaceQueenQueen.GetName())
+		namespaceQueenInClusterQueen.GetName())
 	testScopeMap := sac.TestScopeMap{
 		storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
 			resources.Integration.GetResource(): {
@@ -874,18 +867,18 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 	}
 
 	queenQueenNamespaceResponse := &v1.ScopeObject{
-		Id:   getNamespaceID(namespaceQueenQueen.GetName()),
-		Name: namespaceQueenQueen.GetName(),
+		Id:   getNamespaceID(namespaceQueenInClusterQueen.GetName()),
+		Name: namespaceQueenInClusterQueen.GetName(),
 	}
 
 	queenInnuendoNamespaceResponse := &v1.ScopeObject{
-		Id:   getNamespaceID(namespaceQueenInnuendo.GetName()),
-		Name: namespaceQueenInnuendo.GetName(),
+		Id:   getNamespaceID(namespaceInnuendoInClusterQueen.GetName()),
+		Name: namespaceInnuendoInClusterQueen.GetName(),
 	}
 
 	pinkFloydTheWallNamespaceResponse := &v1.ScopeObject{
-		Id:   getNamespaceID(namespacePinkFloydTheWall.GetName()),
-		Name: namespacePinkFloydTheWall.GetName(),
+		Id:   getNamespaceID(namespaceTheWallInClusterPinkFloyd.GetName()),
+		Name: namespaceTheWallInClusterPinkFloyd.GetName(),
 	}
 
 	testCases := []struct {
