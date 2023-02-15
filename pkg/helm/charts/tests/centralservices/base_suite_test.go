@@ -45,6 +45,9 @@ ca:
 additionalCAs:
   ca.crt: |
     Extra CA certificate
+priorityClass:
+  enabled: true
+  value: 10000
 central:
   adminPassword:
     htpasswd: "htpasswd file"
@@ -92,6 +95,9 @@ env:
 imagePullSecrets:
   username: myuser
   password: mypass
+priorityClass:
+  enabled: true
+  value: 10000
 central:
   defaultTLS:
     cert: "central default tls cert pem"
