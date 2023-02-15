@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -93,9 +94,10 @@ func TestAuthProviderDataStore(t *testing.T) {
 type authProviderDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasNoneCtx             context.Context
+	hasReadCtx             context.Context
+	hasWriteCtx            context.Context
+	hasWriteDeclarativeCtx context.Context
 
 	storage   *storeMocks.MockStore
 	dataStore authproviders.Store
@@ -113,6 +115,7 @@ func (s *authProviderDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
+	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -214,4 +217,87 @@ func (s *authProviderDataStoreTestSuite) TestDeleteImmutableForce() {
 
 	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, "id", true)
 	s.NoError(err)
+}
+
+func (s *authProviderDataStoreTestSuite) TestDeleteDeclarativeViaAPI() {
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DECLARATIVE,
+		},
+	}, true, nil).Times(1)
+
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, "id", false)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *authProviderDataStoreTestSuite) TestDeleteDeclarativeSuccess() {
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DECLARATIVE,
+		},
+	}, true, nil).Times(1)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteDeclarativeCtx, "id", false)
+	s.NoError(err)
+}
+
+func (s *authProviderDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
+	ap := &storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DECLARATIVE,
+		},
+	}
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(ap, true, nil).Times(1)
+
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, ap)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *authProviderDataStoreTestSuite) TestUpdateDeclarativeSuccess() {
+	ap := &storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DECLARATIVE,
+		},
+	}
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(ap, true, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteDeclarativeCtx, ap)
+	s.NoError(err)
+}
+
+func (s *authProviderDataStoreTestSuite) TestDeleteImperativeDeclaratively() {
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_IMPERATIVE,
+		},
+	}, true, nil).Times(1)
+
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteDeclarativeCtx, "id", false)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *authProviderDataStoreTestSuite) TestUpdateImperativeDeclaratively() {
+	ap := &storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_IMPERATIVE,
+		},
+	}
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(ap, true, nil).Times(1)
+
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteDeclarativeCtx, ap)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
