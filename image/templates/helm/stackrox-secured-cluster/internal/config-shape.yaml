@@ -7,6 +7,12 @@ exposeMonitoring: null # bool
 createUpgraderServiceAccount: null # string
 helmManaged: null
 createSecrets: null
+priorityClass:
+  enabled: null # bool
+  value: null # int
+  globalDefault: null # bool
+  preemptionPolicy: null # string
+  description: null # string
 additionalCAs: null # [obj]
 imagePullSecrets:
   username: null # string
@@ -77,7 +83,9 @@ sensor:
     # sensor reaching out to a scanner instance.
     # This setting does not relate to the scanner deployment configuration which configures whether scanner should be deployed.
     enabled: null # bool
-  podPriorityClassName: null # string
+  podPriority:
+    enabled: null # bool
+    className: null # string
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
@@ -96,7 +104,9 @@ admissionControl:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
-  podPriorityClassName: null # string
+  podPriority:
+    enabled: null # bool
+    className: null # string
 collector:
   collectionMethod: null # string
   disableTaintTolerations: null # bool
@@ -112,7 +122,9 @@ collector:
   nodeSelector: null # string | dict
   disableSELinuxOptions: null # bool
   seLinuxOptionsType: null # string
-  podPriorityClassName: null # string
+  podPriority:
+    enabled: null # bool
+    className: null # string
 auditLogs:
   disableCollection: null # bool
 customize:

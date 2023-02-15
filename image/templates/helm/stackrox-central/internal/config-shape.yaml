@@ -18,6 +18,12 @@ ca:
   key: null # string
   generate: null # bool
 additionalCAs: null # string | [string] | dict
+priorityClass:
+  enabled: null # bool
+  value: null # int
+  globalDefault: null # bool
+  preemptionPolicy: null # string
+  description: null # string
 central:
   telemetry:
     enabled: null # bool
@@ -51,7 +57,9 @@ central:
     generate: null # bool
     htpasswd: null # string
   resources: null # string | dict
-  podPriorityClassName: null # string
+  podPriority:
+    enabled: null # bool
+    className: null # string
   persistence:
     hostPath: null # string
     persistentVolumeClaim:
