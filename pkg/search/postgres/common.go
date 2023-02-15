@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
@@ -806,7 +805,7 @@ func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Que
 	schema := mapping.GetTableFromCategory(category)
 
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		return RunSearchRequestForSchema(ctx, schema, q, db)
 	})
 }
@@ -951,7 +950,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		return nil, nil
 	}
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		return retryableRunSearchRequestForSchema(ctx, query, schema, db)
 	})
 }
@@ -986,7 +985,6 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, sch
 		return nil, nil
 	}
 	return pgutils.Retry2(func() ([]*T, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
 		return retryableRunSelectRequestForSchema[T](ctx, db, query)
 	})
 }
@@ -996,7 +994,7 @@ func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Quer
 	schema := mapping.GetTableFromCategory(category)
 
 	return pgutils.Retry2(func() (int, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		return RunCountRequestForSchema(ctx, schema, q, db)
 	})
 }
@@ -1010,7 +1008,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	queryStr := query.AsSQL()
 
 	return pgutils.Retry2(func() (int, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
@@ -1043,7 +1041,7 @@ func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema 
 	queryStr := query.AsSQL()
 
 	return pgutils.Retry2(func() (*T, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		return unmarshal[T, PT](row)
 	})
@@ -1071,7 +1069,7 @@ func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sch
 	}
 
 	return pgutils.Retry2(func() ([]*T, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		return retryableRunGetManyQueryForSchema[T, PT](ctx, query, db)
 	})
 }
@@ -1128,7 +1126,7 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	}
 
 	return pgutils.Retry(func() error {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		_, err = db.Exec(ctx, query.AsSQL(), query.Data...)
 		if err != nil {
 			return errors.Wrapf(err, "could not delete from %q", schema.Table)
