@@ -35,8 +35,8 @@ spec:
         {{- ._rox.collector._nodeSelector | nindent 8 }}
       {{- end}}
       serviceAccountName: collector
-      {{- if ._rox.collector.podPriorityClassName }}
-      priorityClassName: {{- ._rox.collector.podPriorityClassName }}
+      {{- if ._rox.collector.podPriority.enabled }}
+      priorityClassName: {{- ._rox.collector.podPriority.className }}
       {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
