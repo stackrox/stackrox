@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/blevesearch/bleve"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.etcd.io/bbolt"
 )
@@ -599,14 +601,18 @@ func (s *serviceImplTestSuite) SetupTest() {
 
 func (s *serviceImplTestSuite) TearDownTest() {
 	writeCtx := sac.WithAllAccess(context.Background())
-	doneSignal := concurrency.NewSignal()
 	for _, clusterID := range s.storedClusterIDs {
-		s.NoError(s.service.clusterDataStore.RemoveCluster(writeCtx, clusterID, &doneSignal))
+		doneSignal := concurrency.NewSignal()
+		s.Require().NoError(s.service.clusterDataStore.RemoveCluster(writeCtx, clusterID, &doneSignal))
+		require.Eventually(s.T(),
+			func() bool { return doneSignal.IsDone() },
+			5*time.Second,
+			10*time.Millisecond,
+		)
 	}
-	<-doneSignal.Done()
 	s.storedClusterIDs = s.storedClusterIDs[:0]
 	for _, namespaceID := range s.storedNamespaceIDs {
-		s.NoError(s.service.namespaceDataStore.RemoveNamespace(writeCtx, namespaceID))
+		s.Require().NoError(s.service.namespaceDataStore.RemoveNamespace(writeCtx, namespaceID))
 	}
 }
 
@@ -956,7 +962,6 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 	for _, c := range testCases {
 		s.Run(c.name, func() {
 			request := &v1.GetNamespaceForClusterAndPermissionsRequest{
-				Pagination:  nil,
 				ClusterId:   c.testedClusterID,
 				Permissions: c.testedPermissions,
 			}

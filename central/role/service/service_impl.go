@@ -412,15 +412,13 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 
 	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.NamespaceScope)
 
-	/*
-		clusterVisible, err := s.isClusterVisibleForRequesterAndPermissions(ctx, clusterID, resourcesWithAccess)
-		if err != nil {
-			return nil, err
-		}
-		if !clusterVisible {
-			return nil, errox.NotFound
-		}
-	*/
+	clusterVisible, err := s.isClusterVisibleForRequester(ctx, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if !clusterVisible {
+		return nil, errox.NotFound
+	}
 
 	namespacesInScope, hasFullAccess, err := listNamespaceNamesInScope(ctx, clusterID, resourcesWithAccess)
 	if err != nil {
@@ -573,11 +571,11 @@ func getClustersOptionsMap() search.OptionsMap {
 	return clusterMappings.OptionsMap
 }
 
-func (s *serviceImpl) isClusterVisibleForRequesterAndPermissions(
+func (s *serviceImpl) isClusterVisibleForRequester(
 	ctx context.Context,
 	clusterID string,
-	resourcesWithAccess []permissions.ResourceWithAccess,
 ) (bool, error) {
+	resourcesWithAccess := listReadPermissions([]string{}, permissions.ClusterScope)
 	clusterIDsInScope, isFullAccess, err := listClusterIDsInScope(ctx, resourcesWithAccess)
 	if err != nil {
 		return false, err
