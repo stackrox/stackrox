@@ -37,8 +37,8 @@ class ChaosMonkey {
         thread = Thread.start {
             while (!stopFlag.get()) {
                 // Get the current ready, non-deleted pod replicas
-                def admCtrlPods = new ArrayList<Pod>(orchestrator.getPods(
-                        Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME))
+                def admCtrlPods = orchestrator.getPods(
+                        Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
                 admCtrlPods.forEach {
                     log.info "Encountered pod ${it.metadata.name}, ready=${orchestrator.podReady(it)}."
                 }
