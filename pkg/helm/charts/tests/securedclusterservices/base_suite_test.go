@@ -40,7 +40,11 @@ ca:
 imagePullSecrets:
   username: myuser
   password: mypass
-  
+
+priorityClass:
+  enabled: true
+  value: 10000
+
 endpoint:
   central: "central.stackrox:443"
   advertised: "central-advertised.stackrox:443"
