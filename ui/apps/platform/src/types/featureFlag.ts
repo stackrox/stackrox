@@ -3,6 +3,7 @@
 // prettier-ignore
 export type FeatureFlagEnvVar =
     | 'ROX_CLAIR_V4_SCANNING'
+    | 'ROX_DECLARATIVE_CONFIGURATION'
     | 'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
     | 'ROX_NETPOL_FIELDS'
     | 'ROX_QUAY_ROBOT_ACCOUNTS'
