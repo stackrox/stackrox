@@ -55,6 +55,8 @@ if [[ -f "$ROOT/scripts/ci/jobs/${ci_job}.sh" ]]; then
     job_script="$ROOT/scripts/ci/jobs/${ci_job}.sh"
 elif [[ -f "$ROOT/scripts/ci/jobs/${ci_job//-/_}.py" ]]; then
     job_script="$ROOT/scripts/ci/jobs/${ci_job//-/_}.py"
+elif [[ "$ci_job" == openshift-*-operator-e2e-tests ]]; then
+    job_script="$ROOT/scripts/ci/jobs/openshift_4_operator_e2e_tests.py"
 else
     die "ERROR: There is no job script for $ci_job"
 fi
