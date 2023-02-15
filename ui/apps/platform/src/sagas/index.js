@@ -5,9 +5,7 @@ import authProviders from './authSagas';
 import clusterInitBundles from './clusterInitBundleSagas';
 import clusters from './clusterSagas';
 import integrations from './integrationSagas';
-import globalSearch from './globalSearchSagas';
 import roles from './roleSagas';
-import searches from './searchSagas';
 import searchAutoComplete from './searchAutocompleteSagas';
 import network from './networkSagas';
 import metadata from './metadataSagas';
@@ -21,9 +19,7 @@ export default function* root() {
         fork(clusterInitBundles),
         fork(clusters),
         fork(integrations),
-        fork(globalSearch),
         fork(roles),
-        fork(searches),
         fork(searchAutoComplete),
         fork(network),
         fork(metadata),
