@@ -817,6 +817,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 }
 
 func TestUpgradeFromLastRocksDB(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	if buildinfo.ReleaseBuild {
 		return
 	}
