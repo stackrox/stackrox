@@ -59,13 +59,4 @@ else
     die "ERROR: There is no job script for $ci_job"
 fi
 
-"${job_script}" "$@" &
-job_pid="$!"
-
-forward_sigint() {
-    echo "Dispatch is forwarding SIGINT to job"
-    kill -SIGINT "${job_pid}"
-}
-trap forward_sigint SIGINT
-
-wait "${job_pid}"
+exec "${job_script}" "$@"
