@@ -1,15 +1,16 @@
 import React from 'react';
-import Loader from 'Components/Loader';
 import { Link, withRouter } from 'react-router-dom';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
-import URLService from 'utils/URLService';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import { gql } from '@apollo/client';
+import pluralize from 'pluralize';
+import dateFns from 'date-fns';
+import { Tooltip } from '@patternfly/react-core';
+
+import Loader from 'Components/Loader';
+import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
-import pluralize from 'pluralize';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import dateFns from 'date-fns';
 
 const QUERY = gql`
     query secrets {
@@ -126,7 +127,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                     <span className="pb-2">{item.name}</span>
                                                     <Tooltip
                                                         content={
-                                                            <TooltipOverlay>
+                                                            <div>
                                                                 {`${
                                                                     item.deploymentCount
                                                                 } ${pluralize(
@@ -134,7 +135,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                                     item.deploymentCount
                                                                 )}, `}
                                                                 {getCertificateStatus(item.files)}
-                                                            </TooltipOverlay>
+                                                            </div>
                                                         }
                                                     >
                                                         {item.deploymentCount > 0 && (

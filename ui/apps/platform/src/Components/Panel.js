@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import CloseButton from './CloseButton';
 
 /*
@@ -39,7 +39,7 @@ export function PanelTitle({ isUpperCase = false, testid = '', breakAll = true, 
             }`}
             data-testid={testid || null}
         >
-            <Tooltip content={<TooltipOverlay>{text}</TooltipOverlay>}>
+            <Tooltip content={text}>
                 <div className={`line-clamp ${breakAll ? 'break-all' : ''}`}>{text}</div>
             </Tooltip>
         </div>
@@ -96,7 +96,7 @@ const Panel = (props) => (
                         }`}
                         data-testid={`${props.id}-header`}
                     >
-                        <Tooltip content={<TooltipOverlay>{props.header}</TooltipOverlay>}>
+                        <Tooltip content={props.header}>
                             <div className="line-clamp break-all">{props.header}</div>
                         </Tooltip>
                     </div>
