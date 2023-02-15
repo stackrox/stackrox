@@ -91,6 +91,14 @@ spec:
       - command:
         - stackrox/compliance
         env:
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
         - name: ROX_METRICS_PORT
         {{- if ._rox.collector.exposeMonitoring }}
           value: ":9091"
