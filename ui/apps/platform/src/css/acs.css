@@ -65,3 +65,10 @@
 button.pf-c-toggle-group__button.pf-m-selected:disabled {
     background-color: var(--pf-c-toggle-group__button--m-selected--BackgroundColor);
 }
+
+/*
+ * Inherit same color as rest of masthead, instead of blue.
+ */
+a[href="/main/search"] {
+    color: inherit;
+}

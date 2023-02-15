@@ -24,10 +24,6 @@
     opacity: 0.75;
 }
 
-.theme-dark .search-modal img {
-    filter: invert(1) brightness(2.5) hue-rotate(180deg) saturate(0.6);
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -240,13 +236,6 @@ h6 {
 
 .navigation-panel ul {
     width: 270px;
-}
-
-.search-modal {
-    position: absolute;
-    left: 0;
-    top: 76px;
-    height: calc(100% - 76px);
 }
 
 /* Collapsible CSS */

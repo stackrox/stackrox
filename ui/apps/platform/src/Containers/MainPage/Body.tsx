@@ -104,7 +104,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const { isDarkMode } = useTheme();
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
-    const isSearchPageEnabled = isFeatureFlagEnabled('ROX_SEARCH_PAGE_UI');
     const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
 
@@ -137,7 +136,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     )}
                     <Route path={riskPath} component={AsyncRiskPage} />
                     <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
-                    {isSearchPageEnabled && <Route path={searchPath} component={AsyncSearchPage} />}
+                    <Route path={searchPath} component={AsyncSearchPage} />
                     <Route path={apidocsPath} component={AsyncApiDocsPage} />
                     <Route path={userBasePath} component={AsyncUserPage} />
                     <Route path={systemConfigPath} component={AsyncSystemConfigPage} />
