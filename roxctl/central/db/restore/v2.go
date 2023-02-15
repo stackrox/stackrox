@@ -44,9 +44,10 @@ type centralDbRestoreCommand struct {
 func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralDbRestoreCmd := &centralDbRestoreCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use: "restore <file>",
+		Use:  "restore <file>",
+		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := validate(c, args); err != nil {
+			if err := validate(c); err != nil {
 				return err
 			}
 			if err := centralDbRestoreCmd.construct(c, args); err != nil {
@@ -66,18 +67,13 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.Flags().StringVar(&centralDbRestoreCmd.file, "file", "", "file to restore the DB from (deprecated; use positional argument)")
 	c.Flags().BoolVar(&centralDbRestoreCmd.interrupt, "interrupt", false, "interrupt ongoing restore process (if any) to allow resuming")
+	utils.Must(c.Flags().MarkDeprecated("file", "--file is deprecated; use the positional argument instead"))
 	flags.AddForce(c)
 
 	return c
 }
 
-func validate(cbr *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		return cbr.Usage()
-	}
-	if len(args) > 1 {
-		return errox.InvalidArgs.Newf("too many positional arguments (%d given)", len(args))
-	}
+func validate(cbr *cobra.Command) error {
 	if file, _ := cbr.Flags().GetString("file"); file != "" {
 		return errox.InvalidArgs.New("legacy --file flag must not be used in conjunction with a positional argument")
 	}
@@ -98,6 +94,9 @@ func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string)
 func (cmd *centralDbRestoreCommand) validate() error {
 	if cmd.file == "" {
 		return errox.InvalidArgs.New("file to restore from must be specified")
+	}
+	if _, err := os.Stat(cmd.file); os.IsNotExist(err) {
+		return errox.NotFound.Newf("file %q could not be found", cmd.file)
 	}
 	return nil
 }
