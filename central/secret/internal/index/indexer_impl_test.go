@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -37,6 +38,8 @@ type SecretIndexTestSuite struct {
 }
 
 func (suite *SecretIndexTestSuite) SetupSuite() {
+	pgtest.SkipIfPostgresEnabled(suite.T())
+
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 

@@ -551,7 +551,7 @@ func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
 	}
 }
 
-func TestEnumComparisonSearch(t *testing.T) {
+func (suite *DeploymentIndexTestSuite) TestEnumComparisonSearch(t *testing.T) {
 	bleveIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(t, err)
 	indexer := New(bleveIndex, bleveIndex)
@@ -602,7 +602,7 @@ func getDeployment(id string, labels map[string]string) *storage.Deployment {
 	return d
 }
 
-func TestMapQueries(t *testing.T) {
+func (suite *DeploymentIndexTestSuite) TestMapQueries(t *testing.T) {
 	indexer, err := globalindex.TempInitializeIndices("")
 	require.NoError(t, err)
 
