@@ -65,8 +65,8 @@ spec:
         runAsUser: 4000
         fsGroup: 4000
       {{- end }}
-      {{- if ._rox.admissionControl.podPriorityClassName }}
-      priorityClassName: {{- ._rox.admissionControl.podPriorityClassName }}
+      {{- if ._rox.admissionControl.podPriority.enabled }}
+      priorityClassName: {{- ._rox.admissionControl.podPriority.className }}
       {{- end }}
       serviceAccountName: admission-control
       containers:
