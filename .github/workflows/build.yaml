@@ -290,7 +290,12 @@ jobs:
       - name: Push images
         run: |
             source ./scripts/ci/lib.sh
-            push_main_image_set "${GITHUB_HEAD_REF}" "${{ env.ROX_PRODUCT_BRANDING }}"
+            echo "Will determin context from: ${{ github.event_name }} & ${{ github.ref_name }}"
+            push_context=""
+            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+              push_context="merge-to-master"
+            fi
+            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}"
 
       - name: Push matching collector and scanner images
         run: |
