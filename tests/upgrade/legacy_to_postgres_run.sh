@@ -135,7 +135,9 @@ test_upgrade_paths() {
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "false"
     LAST_ROCKS_TAG="3.74.0-rc.2"
-    kubectl -n stackrox set image deploy/central "central=${REGISTRY}/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
+    info "Moving back to RocksDB at the 3.74 release"
+#    kubectl -n stackrox set image deploy/central "central=${REGISTRY}/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
+    kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
     wait_for_api
     wait_for_scanner_to_be_ready
 
