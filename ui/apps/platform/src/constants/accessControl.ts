@@ -141,4 +141,16 @@ export const replacedResourceMapping = new Map<ResourceName, string>([
     ['VulnerabilityReports', 'WorkflowAdministration'],
 ]);
 
+export const traitsOriginLabels = {
+    DEFAULT: 'System',
+    IMPERATIVE: 'User',
+    DECLARATIVE: 'Declarative',
+};
+
+export const originLabelColours = {
+    System: 'grey',
+    User: 'green',
+    Declarative: 'blue',
+};
+
 export const deprecatedResourceRowStyle = { backgroundColor: 'rgb(255,250,205)' };

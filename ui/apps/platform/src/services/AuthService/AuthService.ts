@@ -4,7 +4,7 @@ import store from 'store';
 import axios from 'services/instance';
 import queryString from 'qs';
 
-import { Role } from 'services/RolesService';
+import { Role, Traits } from 'services/RolesService';
 
 import { Empty } from 'services/types';
 import AccessTokenManager from './AccessTokenManager';
@@ -77,12 +77,6 @@ export type AuthProvider = {
     requiredAttributes: AuthProviderRequiredAttributes[];
     traits?: Traits;
 };
-
-export type Traits = {
-    mutabilityMode: MutabilityMode;
-};
-
-export type MutabilityMode = 'ALLOW_MUTATE' | 'ALLOW_MUTATE_FORCED';
 
 export type AuthProviderInfo = {
     label: string;

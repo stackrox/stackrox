@@ -1,5 +1,6 @@
 import axios from './instance';
 import { Empty } from './types';
+import { traitsOriginLabels } from '../constants/accessControl';
 
 const resourcesUrl = '/v1/resources';
 
@@ -79,12 +80,27 @@ export function fetchUserRolePermissions(): Promise<{ response: Role }> {
 
 const permissionSetsUrl = '/v1/permissionsets';
 
+export type Traits = {
+    mutabilityMode: MutabilityMode;
+    origin?: Origin;
+};
+
+export type MutabilityMode = 'ALLOW_MUTATE' | 'ALLOW_MUTATE_FORCED';
+export type Origin = 'IMPERATIVE' | 'DECLARATIVE' | 'DEFAULT';
+
 export type PermissionSet = {
     id: string;
     name: string;
     description: string;
     resourceToAccess: PermissionsMap;
+    traits?: Traits;
 };
+
+export function getTraitsOriginLabel(traits?: Traits) {
+    return traits && traits.origin && traitsOriginLabels[traits.origin]
+        ? traitsOriginLabels[traits.origin]
+        : 'User';
+}
 
 /*
  * Fetch entities and return array of objects.
