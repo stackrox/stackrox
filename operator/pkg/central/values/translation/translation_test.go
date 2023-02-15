@@ -64,7 +64,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"db": map[string]interface{}{
-						"enabled": true,
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
@@ -307,7 +306,6 @@ func TestTranslate(t *testing.T) {
 						"hostPath": "/central/host/path",
 					},
 					"db": map[string]interface{}{
-						"enabled": true,
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
@@ -461,7 +459,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"db": map[string]interface{}{
-						"enabled": true,
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
@@ -498,7 +495,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"db": map[string]interface{}{
-						"enabled": true,
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
@@ -542,7 +538,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"db": map[string]interface{}{
-						"enabled": true,
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
@@ -568,7 +563,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"db": map[string]interface{}{
-						"enabled": true,
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
@@ -600,7 +594,6 @@ func TestTranslate(t *testing.T) {
 					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
 					"telemetry":        map[string]interface{}{"enabled": false},
 					"db": map[string]interface{}{
-						"enabled": true,
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,

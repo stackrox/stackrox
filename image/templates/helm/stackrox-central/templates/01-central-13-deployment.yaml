@@ -132,10 +132,6 @@ spec:
             fieldRef:
               fieldPath: metadata.labels['rhacs.redhat.com/tenant']
         {{- end }}
-        {{- if ._rox.central.db.enabled }}
-        - name: ROX_POSTGRES_DATASTORE
-          value: "true"
-        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog
@@ -174,12 +170,10 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
-        {{- if ._rox.central.db.enabled }}
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/db-password
         - name: central-external-db-volume
           mountPath: /etc/ext-db
-        {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
@@ -240,7 +234,6 @@ spec:
       - name: endpoints-config-volume
         configMap:
           name: central-endpoints
-      {{- if ._rox.central.db.enabled }}
       - name: central-db-password
         secret:
           secretName: central-db-password
@@ -248,7 +241,6 @@ spec:
         configMap:
           name: central-external-db
           optional: true
-      {{- end }}
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}

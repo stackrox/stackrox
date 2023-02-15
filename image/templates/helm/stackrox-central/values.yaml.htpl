@@ -188,8 +188,6 @@
 #      host: null
 #
 #  db:
-#    enabled: true
-#
 #    # External signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
 #    # does not need to be deployed
 #    external: false
