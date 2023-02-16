@@ -4,6 +4,7 @@
 # Lines starting with a `#` as well as blank lines are ignored, but a `#` in the middle of a line is matched as-is.
 # If you want to match on a pattern starting with `#`, write `\#`.
 
+stackrox
 unexpected(?! EOF)
 panic
 fatal
