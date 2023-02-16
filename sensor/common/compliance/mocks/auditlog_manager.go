@@ -113,6 +113,18 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) ForceUpdate() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForceUpdate", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).ForceUpdate))
 }
 
+// NotifyReady mocks base method.
+func (m *MockAuditLogCollectionManager) NotifyReady() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "NotifyReady")
+}
+
+// NotifyReady indicates an expected call of NotifyReady.
+func (mr *MockAuditLogCollectionManagerMockRecorder) NotifyReady() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyReady", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).NotifyReady))
+}
+
 // ProcessMessage mocks base method.
 func (m *MockAuditLogCollectionManager) ProcessMessage(arg0 *central.MsgToSensor) error {
 	m.ctrl.T.Helper()

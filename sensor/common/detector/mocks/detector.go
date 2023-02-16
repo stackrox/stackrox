@@ -51,6 +51,18 @@ func (mr *MockDetectorMockRecorder) Capabilities() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockDetector)(nil).Capabilities))
 }
 
+// NotifyReady mocks base method.
+func (m *MockDetector) NotifyReady() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "NotifyReady")
+}
+
+// NotifyReady indicates an expected call of NotifyReady.
+func (mr *MockDetectorMockRecorder) NotifyReady() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyReady", reflect.TypeOf((*MockDetector)(nil).NotifyReady))
+}
+
 // ProcessDeployment mocks base method.
 func (m *MockDetector) ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction) {
 	m.ctrl.T.Helper()
