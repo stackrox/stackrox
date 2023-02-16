@@ -8,7 +8,7 @@ import { IntegrationMergedItem } from '../utils/integrations';
 type Props = {
     unhealthyIntegrations: IntegrationMergedItem[];
     fgColor: string;
-    Icon: ComponentClass<SVGIconProps, any>;
+    Icon: ComponentClass<SVGIconProps>;
 };
 
 const IntegrationsHealth = ({ unhealthyIntegrations, fgColor, Icon }: Props): ReactElement => {

@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { MemoryRouter, Route } from 'react-router-dom';
+import { MemoryRouter, Route, RouteComponentProps } from 'react-router-dom';
 import { renderHook, act } from '@testing-library/react-hooks';
 
 import { URLSearchParams } from 'url';
@@ -7,7 +7,7 @@ import useURLParameter from './useURLParameter';
 
 type WrapperProps = {
     children: ReactNode;
-    onRouteRender: (renderResult: { history: any; location: any }) => void;
+    onRouteRender: (renderResult: RouteComponentProps) => void;
     initialEntries: string[];
 };
 
