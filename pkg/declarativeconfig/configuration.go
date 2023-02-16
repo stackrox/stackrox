@@ -3,6 +3,7 @@ package declarativeconfig
 import (
 	"bytes"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
@@ -31,12 +32,14 @@ type Configuration interface {
 func ConfigurationFromRawBytes(rawConfigurations ...[]byte) ([]Configuration, error) {
 	var configurations []Configuration
 	for _, rawConfiguration := range rawConfigurations {
+		// A declarative configuration file can either contain a single declarative configuration, or an array of
+		// configurations, hence we first check whether we have an array of objects present.
 		var objects []interface{}
 		err := yaml.Unmarshal(rawConfiguration, &objects)
 		if err == nil {
 			configs, err := fromUnstructuredConfigs(objects)
 			if err != nil {
-				return nil, errors.Wrap(err, "unmarshalling list of raw configuration")
+				return nil, errors.Wrap(err, "unmarshalling list of raw configurations")
 			}
 			configurations = append(configurations, configs...)
 		} else {
@@ -53,7 +56,6 @@ func ConfigurationFromRawBytes(rawConfigurations ...[]byte) ([]Configuration, er
 
 func fromUnstructuredConfigs(unstructuredConfigs []interface{}) ([]Configuration, error) {
 	configurations := make([]Configuration, 0, len(unstructuredConfigs))
-	// Not sure how to do this otherwise, we essentially have to marshal each configuration and unmarshal it afterwards.
 	for _, unstructuredConfig := range unstructuredConfigs {
 		rawConfigurationBytes, err := yaml.Marshal(unstructuredConfig)
 		if err != nil {
@@ -69,38 +71,36 @@ func fromUnstructuredConfigs(unstructuredConfigs []interface{}) ([]Configuration
 }
 
 func fromRawBytes(rawConfiguration []byte) (Configuration, error) {
+	var decodeErrs *multierror.Error
 
-	for _, configurationType := range []ConfigurationType{AuthProviderConfiguration, AccessScopeConfiguration,
-		PermissionSetConfiguration, RoleConfiguration} {
-		switch configurationType {
-		case AuthProviderConfiguration:
-			var authProvider AuthProvider
-			if err := decodeYAMLToConfiguration(rawConfiguration, &authProvider); err != nil {
-				break
-			}
-			return &authProvider, nil
-		case AccessScopeConfiguration:
-			var accessScope AccessScope
-			if err := decodeYAMLToConfiguration(rawConfiguration, &accessScope); err != nil {
-				break
-			}
-			return &accessScope, nil
-		case PermissionSetConfiguration:
-			var permissionSet PermissionSet
-			if err := decodeYAMLToConfiguration(rawConfiguration, &permissionSet); err != nil {
-				break
-			}
-			return &permissionSet, nil
-		case RoleConfiguration:
-			var role Role
-			if err := decodeYAMLToConfiguration(rawConfiguration, &role); err != nil {
-				break
-			}
-			return &role, nil
-		}
+	var authProvider AuthProvider
+	err := decodeYAMLToConfiguration(rawConfiguration, &authProvider)
+	if err == nil {
+		return &authProvider, nil
 	}
-	return nil, errors.Errorf("raw configuration found that didn't match any of the given configurations: %s",
-		rawConfiguration)
+	decodeErrs = multierror.Append(decodeErrs, err)
+
+	var accessScope AccessScope
+	err = decodeYAMLToConfiguration(rawConfiguration, &accessScope)
+	if err == nil {
+		return &accessScope, nil
+	}
+	decodeErrs = multierror.Append(decodeErrs, err)
+
+	var permissionSet PermissionSet
+	err = decodeYAMLToConfiguration(rawConfiguration, &permissionSet)
+	if err == nil {
+		return &permissionSet, nil
+	}
+	decodeErrs = multierror.Append(decodeErrs, err)
+
+	var role Role
+	err = decodeYAMLToConfiguration(rawConfiguration, &role)
+	if err == nil {
+		return &role, nil
+	}
+	decodeErrs = multierror.Append(decodeErrs, err)
+	return nil, errors.Wrapf(decodeErrs, "raw configuration %s didn't match any of the given configurations", rawConfiguration)
 }
 
 func decodeYAMLToConfiguration(rawYAML []byte, configuration Configuration) error {

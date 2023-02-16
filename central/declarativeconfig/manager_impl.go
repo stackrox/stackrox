@@ -27,8 +27,8 @@ var (
 )
 
 type managerImpl struct {
-	once sync.Once
-	t    transform.Transformer
+	once                 sync.Once
+	universalTransformer transform.Transformer
 }
 
 // New creates a new instance of Manager.
@@ -36,7 +36,7 @@ type managerImpl struct {
 // WatchDeclarativeConfigDir has been called.
 func New() Manager {
 	return &managerImpl{
-		t: transform.New(),
+		universalTransformer: transform.New(),
 	}
 }
 
@@ -78,7 +78,7 @@ func (m *managerImpl) ReconcileDeclarativeConfigs(contents [][]byte) {
 	}
 	transformedConfigurations := make(map[reflect.Type][]proto.Message, len(configurations))
 	for _, configuration := range configurations {
-		transformedConfig, err := m.t.Transform(configuration)
+		transformedConfig, err := m.universalTransformer.Transform(configuration)
 		if err != nil {
 			log.Errorf("Error during transforming declarative configuration %+v: %+v", configuration, err)
 			continue
