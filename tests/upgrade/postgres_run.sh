@@ -112,9 +112,6 @@ test_upgrade_paths() {
     helm_upgrade_to_postgres
     wait_for_api
     wait_for_scanner_to_be_ready
-    sensor_wait
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     # Upgraded to Postgres via helm.  Validate the upgrade.
     validate_upgrade "00_upgrade" "central upgrade to postgres" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
