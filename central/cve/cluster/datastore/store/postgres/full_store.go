@@ -22,6 +22,8 @@ import (
 const (
 	clusterCVEsTable    = pkgSchema.ClusterCvesTableName
 	clusterCVEEdgeTable = pkgSchema.ClusterCveEdgesTableName
+
+	batchSize = 10000
 )
 
 // NewFullStore augments the generated store with upsert and delete cluster cves functions.
