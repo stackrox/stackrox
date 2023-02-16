@@ -124,7 +124,7 @@ require (
 	k8s.io/kubectl v0.24.9
 	k8s.io/kubelet v0.24.9
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	sigs.k8s.io/controller-runtime v0.12.2
+	sigs.k8s.io/controller-runtime v0.12.3
 	sigs.k8s.io/controller-tools v0.9.2
 	sigs.k8s.io/e2e-framework v0.0.8
 	sigs.k8s.io/yaml v1.3.0
