@@ -3,18 +3,18 @@ package datastore
 import (
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	permissionSetRocksDBStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	roleRocksDBStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	accessScopePostgresStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	accessScopeRocksDBStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) (DataStore, error) {
 	permissionStore := permissionSetPostgresStore.New(pool)
 	roleStore := rolePostgresStore.New(pool)
 	scopeStore := accessScopePostgresStore.New(pool)

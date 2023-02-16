@@ -523,11 +523,11 @@ func (s *serviceImplTestSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.postgres = pgtest.ForT(s.T())
 		s.Require().NotNil(s.postgres)
-		roleStore, err := roleDatastore.GetTestPostgresDataStore(s.T(), s.postgres.Pool)
+		roleStore, err := roleDatastore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
 		s.Require().NoError(err)
-		clusterStore, err := clusterDataStore.GetTestPostgresDataStore(s.T(), s.postgres.Pool)
+		clusterStore, err := clusterDataStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
 		s.Require().NoError(err)
-		namespaceStore, err := namespaceDataStore.GetTestPostgresDataStore(s.T(), s.postgres.Pool)
+		namespaceStore, err := namespaceDataStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
 		s.Require().NoError(err)
 
 		s.service = &serviceImpl{
