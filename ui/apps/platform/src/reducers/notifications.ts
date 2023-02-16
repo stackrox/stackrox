@@ -31,11 +31,9 @@ const notifications: Reducer<string[], NotificationAction> = (state = [], action
     const newState = state.slice();
     switch (action.type) {
         case 'notifications/ADD_NOTIFICATION':
-            console.log('notifications/ADD_NOTIFICATION', action.notification); // eslint-disable-line no-console
             newState.push(action.notification);
             return newState;
         case 'notifications/REMOVE_OLDEST_NOTIFICATION':
-            console.log('notifications/REMOVE_OLDEST_NOTIFICATION'); // eslint-disable-line no-console
             newState.shift();
             return newState;
         default:
