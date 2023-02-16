@@ -26,6 +26,24 @@ func Equal[K, V comparable](a, b map[K]V) bool {
 	return true
 }
 
+// Keys retrieves the keys of the given map.
+func Keys[K comparable, V any](inputMap map[K]V) []K {
+	keys := make([]K, 0, len(inputMap))
+	for k := range inputMap {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// Values retrieves the values of the given map.
+func Values[K comparable, V any](inputMap map[K]V) []V {
+	values := make([]V, 0, len(inputMap))
+	for _, v := range inputMap {
+		values = append(values, v)
+	}
+	return values
+}
+
 // FastRMap is a thread-safe map from K to V that is optimized for read-heavy access patterns.
 // Writes are expensive because it clones, mutates and replaces the map instead of an in-place addition.
 // Use NewFastRMap to instantiate.
