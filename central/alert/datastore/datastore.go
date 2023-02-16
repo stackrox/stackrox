@@ -79,7 +79,7 @@ func NewWithDb(db *rocksdbBase.RocksDB, bIndex bleve.Index) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool *postgres.DB) (DataStore, error) {
 	alertStore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(alertStore, indexer)
