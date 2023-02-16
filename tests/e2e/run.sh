@@ -40,10 +40,16 @@ test_e2e() {
     store_test_results "roxctl-test-output" "roxctl-test-output"
     [[ ! -f FAIL ]] || die "roxctl e2e tests failed"
 
+    # Give some time for previous tests to finish up
+    wait_for_api
+
     info "E2E API tests"
     make -C tests || touch FAIL
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
+
+    # Give some time for previous tests to finish up
+    wait_for_api
 
     info "Sensor k8s integration tests"
     make sensor-integration-test || touch FAIL
@@ -53,17 +59,25 @@ test_e2e() {
     store_test_results "test-output/test.log" "sensor-integration"
     [[ ! -f FAIL ]] || die "sensor-integration e2e tests failed"
 
+    # Give some time for previous tests to finish up
+    wait_for_api
+
     setup_proxy_tests "localhost"
     run_proxy_tests "localhost"
     cd "$ROOT"
 
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
 
+    # Give some time for previous tests to finish up
+    wait_for_api
+
     info "E2E destructive tests"
     make -C tests destructive-tests || touch FAIL
     store_test_results "tests/destructive-tests-results" "destructive-tests-results"
     [[ ! -f FAIL ]] || die "destructive e2e tests failed"
 
+    # Give some time for previous tests to finish up
+    wait_for_api
     restore_56_1_backup
     wait_for_api
 
