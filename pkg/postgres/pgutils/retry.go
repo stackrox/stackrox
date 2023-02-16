@@ -11,7 +11,11 @@ import (
 
 const (
 	interval = 5 * time.Second
-	timeout  = 5 * time.Minute
+	timeout  = 10 * time.Minute
+)
+
+var (
+	crashOnError = env.PostgresCrashOnError.BooleanSetting()
 )
 
 // Retry is used to specify how long to retry to successfully run a query with 1 return value
@@ -67,6 +71,9 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	for {
 		select {
 		case <-expirationTimer.C:
+			if !crashOnError || isQueryTimeoutError(err) {
+				return nil, nil, err
+			}
 			debug.PrintStack()
 			log.Fatalf("unsuccessful in reconnecting to the database: %v. Exiting...", err)
 		case <-intervalTicker.C:

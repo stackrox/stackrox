@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+const queryCancelledCode = "57014"
+
 var transientPGCodes = set.NewFrozenStringSet(
 	// Class 08 — Connection Exception
 	"08000", // connection_exception
@@ -46,6 +48,14 @@ var transientPGCodes = set.NewFrozenStringSet(
 	"58000", // system_error
 	"58030", // io_error
 )
+
+// IsQueryTimeoutError specifies if the error is a statement timeout error
+func isQueryTimeoutError(err error) bool {
+	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) && pgErr.Code == queryCancelledCode {
+		return true
+	}
+	return false
+}
 
 // IsTransientError specifies if the passed error is transient and should be retried
 func IsTransientError(err error) bool {
