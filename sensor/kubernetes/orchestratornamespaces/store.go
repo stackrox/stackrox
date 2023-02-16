@@ -12,6 +12,7 @@ type OrchestratorNamespaces struct {
 	lock  sync.RWMutex
 }
 
+// NewOrchestratorNamespaces returns a new OrchestratorNamespaces store
 func NewOrchestratorNamespaces() *OrchestratorNamespaces {
 	return &OrchestratorNamespaces{
 		nsSet: set.NewStringSet(),

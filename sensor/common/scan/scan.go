@@ -31,6 +31,7 @@ var (
 	scannerClientSingleton   = scannerclient.GRPCClientSingleton
 )
 
+// SetMatchingRegistryFunction sets the getMatchingRegistry function
 func SetMatchingRegistryFunction(getMatchingRegistryFunc func(*storage.ImageName) (registryTypes.Registry, error)) {
 	getMatchingRegistry = getMatchingRegistryFunc
 }
