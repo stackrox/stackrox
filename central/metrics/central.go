@@ -178,6 +178,13 @@ var (
 		Name:      "cluster_metrics_cpu_capacity",
 		Help:      "Total Kubernetes cpu capacity of all nodes in a secured cluster",
 	}, []string{"ClusterID"})
+
+	totalOrphanedPLOPCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "total_orphaned_plop_counter",
+		Help:      "A counter of the total number of PLOP objects without a reference to a ProcessIndicator",
+	}, []string{"ClusterID"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -292,4 +299,12 @@ func SetClusterMetrics(clusterID string, clusterMetrics *central.ClusterMetrics)
 		Set(float64(clusterMetrics.GetNodeCount()))
 	clusterMetricsCPUCapacityGaugeVec.With(prometheus.Labels{"ClusterID": clusterID}).
 		Set(float64(clusterMetrics.GetCpuCapacity()))
+}
+
+// IncrementOrphanedPLOPCounter increments the counter for orphaned PLOP
+// objects. An orphaned PLOP objects indicates that something is not quite
+// right, e.g. process information is received after the endpoint, or not
+// received at all. This type of situations require investigation.
+func IncrementOrphanedPLOPCounter(clusterID string) {
+	totalOrphanedPLOPCounter.With(prometheus.Labels{"ClusterID": clusterID}).Inc()
 }
