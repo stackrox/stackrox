@@ -33,11 +33,6 @@ const (
 
 	batchAfter = 100
 
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
-
 	cursorBatchSize = 50
 	deleteBatchSize = 5000
 )
@@ -114,113 +109,6 @@ func insertIntoProcessIndicators(ctx context.Context, batch *pgx.Batch, obj *sto
 	return nil
 }
 
-func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessIndicator) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
-
-	copyCols := []string{
-
-		"id",
-
-		"deploymentid",
-
-		"containername",
-
-		"podid",
-
-		"poduid",
-
-		"signal_containerid",
-
-		"signal_name",
-
-		"signal_args",
-
-		"signal_execfilepath",
-
-		"signal_uid",
-
-		"clusterid",
-
-		"namespace",
-
-		"serialized",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		serialized, marshalErr := obj.Marshal()
-		if marshalErr != nil {
-			return marshalErr
-		}
-
-		inputRows = append(inputRows, []interface{}{
-
-			pgutils.NilOrUUID(obj.GetId()),
-
-			pgutils.NilOrUUID(obj.GetDeploymentId()),
-
-			obj.GetContainerName(),
-
-			obj.GetPodId(),
-
-			pgutils.NilOrUUID(obj.GetPodUid()),
-
-			obj.GetSignal().GetContainerId(),
-
-			obj.GetSignal().GetName(),
-
-			obj.GetSignal().GetArgs(),
-
-			obj.GetSignal().GetExecFilePath(),
-
-			obj.GetSignal().GetUid(),
-
-			pgutils.NilOrUUID(obj.GetClusterId()),
-
-			obj.GetNamespace(),
-
-			serialized,
-		})
-
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
@@ -228,30 +116,6 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
-}
-
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessIndicator) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ProcessIndicator")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromProcessIndicators(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessIndicator) error {
@@ -320,16 +184,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessIndic
 	}
 
 	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		if len(objs) < batchAfter {
-			return s.upsert(ctx, objs...)
-		}
-		return s.copyFrom(ctx, objs...)
+		return s.upsert(ctx, objs...)
 	})
 }
 
