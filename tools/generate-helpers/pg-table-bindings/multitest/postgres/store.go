@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
@@ -16,12 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
@@ -30,11 +30,6 @@ const (
 	baseTable = "test_multi_key_structs"
 
 	batchAfter = 100
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 
 	cursorBatchSize = 50
 	deleteBatchSize = 5000
@@ -69,12 +64,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    *pgxpool.Pool
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -145,224 +140,13 @@ func insertIntoTestMultiKeyStructsNesteds(ctx context.Context, batch *pgx.Batch,
 	return nil
 }
 
-func (s *storeImpl) copyFromTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, objs ...*storage.TestMultiKeyStruct) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"key1",
-
-		"key2",
-
-		"stringslice",
-
-		"bool",
-
-		"uint64",
-
-		"int64",
-
-		"float",
-
-		"labels",
-
-		"timestamp",
-
-		"enum",
-
-		"enums",
-
-		"string_",
-
-		"int32slice",
-
-		"oneofnested_nested",
-
-		"serialized",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		serialized, marshalErr := obj.Marshal()
-		if marshalErr != nil {
-			return marshalErr
-		}
-
-		inputRows = append(inputRows, []interface{}{
-
-			obj.GetKey1(),
-
-			obj.GetKey2(),
-
-			obj.GetStringSlice(),
-
-			obj.GetBool(),
-
-			obj.GetUint64(),
-
-			obj.GetInt64(),
-
-			obj.GetFloat(),
-
-			obj.GetLabels(),
-
-			pgutils.NilOrTime(obj.GetTimestamp()),
-
-			obj.GetEnum(),
-
-			obj.GetEnums(),
-
-			obj.GetString_(),
-
-			obj.GetInt32Slice(),
-
-			obj.GetOneofnested().GetNested(),
-
-			serialized,
-		})
-
-		if err := s.Delete(ctx, obj.GetKey1(), obj.GetKey2()); err != nil {
-			return err
-		}
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_multi_key_structs"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
-		if err = s.copyFromTestMultiKeyStructsNesteds(ctx, tx, obj.GetKey1(), obj.GetKey2(), obj.GetNested()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromTestMultiKeyStructsNesteds(ctx context.Context, tx pgx.Tx, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, objs ...*storage.TestMultiKeyStruct_Nested) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"test_multi_key_structs_key1",
-
-		"test_multi_key_structs_key2",
-
-		"idx",
-
-		"nested",
-
-		"isnested",
-
-		"int64",
-
-		"nested2_nested2",
-
-		"nested2_isnested",
-
-		"nested2_int64",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			test_multi_key_structs_Key1,
-
-			test_multi_key_structs_Key2,
-
-			idx,
-
-			obj.GetNested(),
-
-			obj.GetIsNested(),
-
-			obj.GetInt64(),
-
-			obj.GetNested2().GetNested2(),
-
-			obj.GetNested2().GetIsNested(),
-
-			obj.GetNested2().GetInt64(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_multi_key_structs_nesteds"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
-}
-
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestMultiKeyStruct) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TestMultiKeyStruct")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromTestMultiKeyStructs(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestMultiKeyStruct) error {
@@ -421,16 +205,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestMultiKey
 	}
 
 	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		if len(objs) < batchAfter {
-			return s.upsert(ctx, objs...)
-		}
-		return s.copyFrom(ctx, objs...)
+		return s.upsert(ctx, objs...)
 	})
 }
 
@@ -455,7 +230,7 @@ func (s *storeImpl) Delete(ctx context.Context, key1 string, key2 string) error 
 		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key 2"), key2).ProtoQuery(),
 	)
 
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
@@ -478,7 +253,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 		query,
 	)
 
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
@@ -515,7 +290,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
 		)
 
-		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
 			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
 			log.Error(err)
 			return err
@@ -545,7 +320,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the ID exists in the store.
@@ -569,7 +344,7 @@ func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool,
 		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key 2"), key2).ProtoQuery(),
 	)
 
-	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -597,7 +372,7 @@ func (s *storeImpl) Get(ctx context.Context, key1 string, key2 string) (*storage
 		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key 2"), key2).ProtoQuery(),
 	)
 
-	data, err := pgSearch.RunGetQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -628,7 +403,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 		query,
 	)
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -665,7 +440,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
 	)
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(identifiers))
@@ -708,7 +483,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -724,7 +499,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestMultiKeyStruct) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -763,23 +538,23 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableTestMultiKeyStructs(ctx, db)
 }
 
-func dropTableTestMultiKeyStructs(ctx context.Context, db *postgres.DB) {
+func dropTableTestMultiKeyStructs(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_multi_key_structs CASCADE")
 	dropTableTestMultiKeyStructsNesteds(ctx, db)
 
 }
 
-func dropTableTestMultiKeyStructsNesteds(ctx context.Context, db *postgres.DB) {
+func dropTableTestMultiKeyStructsNesteds(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_multi_key_structs_nesteds CASCADE")
 
 }

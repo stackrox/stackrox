@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
@@ -15,12 +16,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
@@ -29,11 +29,6 @@ const (
 	baseTable = "collections"
 
 	batchAfter = 100
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 
 	cursorBatchSize = 50
 	deleteBatchSize = 5000
@@ -68,12 +63,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    *pgxpool.Pool
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -128,169 +123,13 @@ func insertIntoCollectionsEmbeddedCollections(ctx context.Context, batch *pgx.Ba
 	return nil
 }
 
-func (s *storeImpl) copyFromCollections(ctx context.Context, tx pgx.Tx, objs ...*storage.ResourceCollection) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
-
-	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"createdby_name",
-
-		"updatedby_name",
-
-		"serialized",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		serialized, marshalErr := obj.Marshal()
-		if marshalErr != nil {
-			return marshalErr
-		}
-
-		inputRows = append(inputRows, []interface{}{
-
-			obj.GetId(),
-
-			obj.GetName(),
-
-			obj.GetCreatedBy().GetName(),
-
-			obj.GetUpdatedBy().GetName(),
-
-			serialized,
-		})
-
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"collections"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
-		if err = s.copyFromCollectionsEmbeddedCollections(ctx, tx, obj.GetId(), obj.GetEmbeddedCollections()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx pgx.Tx, collections_Id string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"collections_id",
-
-		"idx",
-
-		"id",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			collections_Id,
-
-			idx,
-
-			obj.GetId(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"collections_embedded_collections"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
-}
-
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ResourceCollection) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ResourceCollection")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromCollections(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ResourceCollection) error {
@@ -349,16 +188,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ResourceColl
 	}
 
 	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		if len(objs) < batchAfter {
-			return s.upsert(ctx, objs...)
-		}
-		return s.copyFrom(ctx, objs...)
+		return s.upsert(ctx, objs...)
 	})
 }
 
@@ -377,7 +207,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
@@ -395,7 +225,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 		query,
 	)
 
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
@@ -427,7 +257,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
 		)
 
-		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
 			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
 			log.Error(err)
 			return err
@@ -451,7 +281,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 		return 0, nil
 	}
 
-	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the ID exists in the store.
@@ -469,7 +299,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -491,7 +321,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ResourceCollec
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := pgSearch.RunGetQueryForSchema[storage.ResourceCollection](ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.ResourceCollection](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -514,7 +344,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 		query,
 	)
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.ResourceCollection](ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.ResourceCollection](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -543,7 +373,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
 	)
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.ResourceCollection](ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.ResourceCollection](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(identifiers))
@@ -581,7 +411,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if !scopeChecker.IsAllowed() {
 		return nil, nil
 	}
-	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -601,7 +431,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ResourceColle
 	if !scopeChecker.IsAllowed() {
 		return nil
 	}
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ResourceCollection](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.ResourceCollection](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -640,23 +470,23 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableCollections(ctx, db)
 }
 
-func dropTableCollections(ctx context.Context, db *postgres.DB) {
+func dropTableCollections(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS collections CASCADE")
 	dropTableCollectionsEmbeddedCollections(ctx, db)
 
 }
 
-func dropTableCollectionsEmbeddedCollections(ctx context.Context, db *postgres.DB) {
+func dropTableCollectionsEmbeddedCollections(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS collections_embedded_collections CASCADE")
 
 }

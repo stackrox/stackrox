@@ -27,6 +27,7 @@ import (
 
     "github.com/hashicorp/go-multierror"
     "github.com/jackc/pgx/v4"
+    "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
     {{- if not $inMigration}}
     "github.com/stackrox/rox/central/metrics"
@@ -41,10 +42,9 @@ import (
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
-    "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
-    pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+    "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
     "github.com/stackrox/rox/pkg/utils"
     "github.com/stackrox/rox/pkg/uuid"
@@ -55,11 +55,6 @@ const (
         baseTable = "{{.Table}}"
 
         batchAfter = 100
-
-        // using copyFrom, we may not even want to batch.  It would probably be simpler
-        // to deal with failures if we just sent it all.  Something to think about as we
-        // proceed and move into more e2e and larger performance testing
-        batchSize = 10000
 
         cursorBatchSize = 50
 
@@ -112,7 +107,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-    db *postgres.DB
+    db *pgxpool.Pool
     mutex sync.Mutex
 }
 
@@ -121,7 +116,7 @@ type storeImpl struct {
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db *pgxpool.Pool) Store {
     return &storeImpl{
         db: db,
     }
@@ -193,124 +188,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
 {{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable "migration" $inMigration }}
 {{- end}}
 
-{{- define "copyFunctionName"}}{{- $schema := . }}copyFrom{{$schema.Table|upperCamelCase}}
-{{- end}}
-
-{{- define "copyObject"}}
-{{- $migration := .migration }}
-{{- $schema := .schema }}
-func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
-
-    inputRows := [][]interface{}{}
-
-    var err error
-
-    {{if and (eq (len $schema.PrimaryKeys) 1) (not $schema.Parent) }}
-    // This is a copy so first we must delete the rows and re-add them
-    // Which is essentially the desired behaviour of an upsert.
-    var deletes []string
-    {{end}}
-
-    copyCols := []string {
-    {{range $index, $field := $schema.DBColumnFields}}
-        "{{$field.ColumnName|lowerCase}}",
-    {{end}}
-    }
-
-    for idx, obj := range objs {
-        // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-		"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-		"to simply use the object.  %s", obj)
-
-        {{/* If embedded, the top-level has the full serialized object */}}
-        {{if not $schema.Parent }}
-        serialized, marshalErr := obj.Marshal()
-        if marshalErr != nil {
-            return marshalErr
-        }
-        {{end}}
-
-        inputRows = append(inputRows, []interface{}{
-            {{ range $index, $field := $schema.DBColumnFields }}
-            {{if eq $field.DataType "datetime"}}
-            pgutils.NilOrTime({{$field.Getter "obj"}}),
-            {{- else if eq $field.SQLType "uuid" }}
-            pgutils.NilOrUUID({{$field.Getter "obj"}}),
-            {{- else}}
-            {{$field.Getter "obj"}},{{end}}
-            {{end}}
-        })
-
-        {{- if $migration }}
-        {{- range $field := $schema.PrimaryKeys -}}
-            {{- if eq $field.SQLType "uuid" }}
-            if pgutils.NilOrUUID({{$field.Getter "obj"}}) == nil {
-                utils.Should(errors.Errorf("{{$field.Name}} is not a valid uuid -- %v", obj))
-                continue
-            }
-            {{- end }}
-        {{- end }}
-        {{- end }}
-
-        {{ if not $schema.Parent }}
-        {{if eq (len $schema.PrimaryKeys) 1}}
-        // Add the ID to be deleted.
-        deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-        {{else}}
-        if err := s.Delete(ctx, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
-            return err
-        }
-
-        {{end}}
-        {{end}}
-
-        // if we hit our batch size we need to push the data
-        if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
-            // copy does not upsert so have to delete first.  parent deletion cascades so only need to
-            // delete for the top level parent
-            {{if and ((eq (len $schema.PrimaryKeys) 1)) (not $schema.Parent) }}
-            if err := s.DeleteMany(ctx, deletes); err != nil {
-                return err
-            }
-            // clear the inserts and vals for the next batch
-            deletes = nil
-            {{end}}
-
-            _, err = tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows))
-
-            if err != nil {
-                return err
-            }
-
-            // clear the input rows for the next batch
-            inputRows = inputRows[:0]
-        }
-    }
-
-    {{if $schema.Children }}
-    for idx, obj := range objs {
-        _ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-        {{range $child := $schema.Children }}
-        if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
-            return err
-        }
-        {{- end}}
-    }
-    {{end}}
-
-    return err
-}
-{{range $child := $schema.Children}}{{ template "copyObject" dict "schema" $child "migration" $migration }}{{end}}
-{{- end}}
-
-{{- if not .JoinTable }}
-{{- if not .NoCopyFrom }}
-{{ template "copyObject" dict "schema" .Schema "migration" $inMigration }}
-{{- end }}
-{{- end }}
-
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
     {{- if not $inMigration}}
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
     {{- end}}{{/* if not .inMigration */}}
@@ -322,32 +200,6 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 }
 
 {{- if not .JoinTable }}
-{{- if not .NoCopyFrom }}
-
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
-    conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
-	if err != nil {
-	    return err
-	}
-    defer release()
-
-    tx, err := conn.Begin(ctx)
-    if err != nil {
-        return err
-    }
-
-    if err := s.{{ template "copyFunctionName" .Schema }}(ctx, tx, objs...); err != nil {
-        if err := tx.Rollback(ctx); err != nil {
-            return err
-        }
-        return err
-    }
-    if err := tx.Commit(ctx); err != nil {
-        return err
-    }
-    return nil
-}
-{{- end}}
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
@@ -456,23 +308,9 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     {{- end }}
     {{- end }}{{/* if not $inMigration */}}
 
-    {{- if .NoCopyFrom }}
-    return s.upsert(ctx, objs...)
-    {{- else }}
-
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		if len(objs) < batchAfter {
-			return s.upsert(ctx, objs...)
-		}
-		return s.copyFrom(ctx, objs...)
+   return pgutils.Retry(func() error {
+		return s.upsert(ctx, objs...)
 	})
-    {{- end }}
 }
 {{- end }}
 
@@ -525,7 +363,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     {{- end}}
     )
 
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
 
@@ -572,7 +410,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
         query,
     )
 
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
 
@@ -633,7 +471,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
             search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
         )
 
-        if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+        if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
             err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
             log.Error(err)
             return err
@@ -684,7 +522,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
 
-    return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+    return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the ID exists in the store.
@@ -732,7 +570,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     {{- end}}
     )
 
-	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -783,7 +621,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     {{- end}}
     )
 
-	data, err := pgSearch.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -837,7 +675,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
         query,
     )
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 		    return nil, nil
@@ -898,7 +736,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
         search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
     )
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(identifiers))
@@ -962,7 +800,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
-    result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+    result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -1025,7 +863,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
     }
 {{- end }}
 {{- end }}{{/* if not $inMigration */}}
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[{{.Type}}](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[{{.Type}}](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -1079,7 +917,7 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 {{- if not $inMigration }}
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
@@ -1089,13 +927,13 @@ func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.D
 
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
     {{template "dropTableFunctionName" .Schema}}(ctx, db)
 }
 
 {{- define "dropTable"}}
 {{- $schema := . }}
-func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *postgres.DB) {
+func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
     {{range $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
     {{end}}
