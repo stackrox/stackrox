@@ -176,7 +176,7 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 			continue
 		}
 
-		// Segment doesn't understand group Name. The name must be configured
+		// Segment doesn't understand group Type. The type must be configured
 		// in the Amplitude destination mapping.
 		group.GroupId = ids[0]
 

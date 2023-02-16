@@ -73,7 +73,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	return &phonehome.Config{
 			ClientID:     centralID,
 			ClientName:   "Central",
-			GroupName:    "Tenant",
+			GroupType:    "Tenant",
 			GroupID:      tenantID,
 			StorageKey:   key,
 			Endpoint:     env.TelemetryEndpoint.Setting(),
@@ -130,7 +130,7 @@ func RegisterCentralClient(config grpc.Config, basicAuthProviderID string) {
 	}
 	registerInterceptors(config)
 	// Central adds itself to the tenant group, with no group properties:
-	cfg.Telemeter().Group(nil, telemeter.WithGroups(cfg.GroupName, cfg.GroupID))
+	cfg.Telemeter().Group(nil, telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	registerAdminUser(basicAuthProviderID)
 }
 
@@ -146,5 +146,5 @@ func registerInterceptors(config grpc.Config) {
 func registerAdminUser(basicAuthProviderID string) {
 	cfg := InstanceConfig()
 	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	cfg.Telemeter().Group(nil, telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupName, cfg.GroupID))
+	cfg.Telemeter().Group(nil, telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 }

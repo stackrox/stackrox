@@ -28,7 +28,7 @@ func (cfg *Config) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			cfg.telemeter.Track(event, props, telemeter.WithUserID(id), telemeter.WithGroups(cfg.GroupName, cfg.GroupID))
+			cfg.telemeter.Track(event, props, telemeter.WithUserID(id), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 		}
 	}
 }

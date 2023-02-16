@@ -11,6 +11,6 @@ import (
 func addUserToTenantGroup(user *storage.User) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		cfg.Telemeter().Group(nil, telemeter.WithUserID(cfg.HashUserID(user.GetId(), user.GetAuthProviderId())),
-			telemeter.WithGroups(cfg.GroupName, cfg.GroupID))
+			telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	}
 }

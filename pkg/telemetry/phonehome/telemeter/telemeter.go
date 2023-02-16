@@ -7,7 +7,7 @@ type CallOptions struct {
 	ClientID    string
 	ClientType  string
 
-	// [group name: [group id]]
+	// [group type: [group id]]
 	Groups map[string][]string
 }
 
@@ -43,12 +43,12 @@ func WithClient(clientID string, clientType string) Option {
 }
 
 // WithGroups appends the groups for an event.
-func WithGroups(groupName string, groupID string) Option {
+func WithGroups(groupType string, groupID string) Option {
 	return func(o *CallOptions) {
 		if o.Groups == nil {
 			o.Groups = make(map[string][]string, 1)
 		}
-		o.Groups[groupName] = append(o.Groups[groupName], groupID)
+		o.Groups[groupType] = append(o.Groups[groupType], groupID)
 	}
 }
 

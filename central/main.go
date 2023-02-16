@@ -319,7 +319,7 @@ func startServices() {
 	vulnRequestManager.Singleton().Start()
 
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupName, cfg.GroupID))
+		cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)

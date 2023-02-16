@@ -72,7 +72,7 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 	}
 	cfg := &Config{
 		ClientID:  "test",
-		GroupName: "TEST",
+		GroupType: "TEST",
 		telemeter: s.mockTelemeter,
 	}
 
@@ -105,7 +105,7 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	testRP.HTTPReq = req
 	cfg := &Config{
 		ClientID:  "test",
-		GroupName: "TEST",
+		GroupType: "TEST",
 		telemeter: s.mockTelemeter,
 	}
 
