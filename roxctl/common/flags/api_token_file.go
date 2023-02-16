@@ -19,7 +19,7 @@ func AddAPITokenFile(c *cobra.Command) {
 		"token-file",
 		"",
 		"",
-		"Use the API token in the provided file to authenticate")
+		"Use the API token in the provided file to authenticate. Alternatively, set the token via the ROX_API_TOKEN environment variable")
 }
 
 // APITokenFile returns the currently specified API token file name.
