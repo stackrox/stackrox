@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -28,9 +27,13 @@ var (
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
 	scanImg                  = scanImage
 	fetchSignaturesWithRetry = signatures.FetchImageSignaturesWithRetries
-	getMatchingRegistry      = registry.Singleton().GetRegistryForImage
+	getMatchingRegistry      func(*storage.ImageName) (registryTypes.Registry, error)
 	scannerClientSingleton   = scannerclient.GRPCClientSingleton
 )
+
+func SetMatchingRegistryFunction(getMatchingRegistryFunc func(*storage.ImageName) (registryTypes.Registry, error)) {
+	getMatchingRegistry = getMatchingRegistryFunc
+}
 
 // EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
 // from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
