@@ -263,6 +263,11 @@ deploy_sensor_via_operator() {
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
        kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
+
+    if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
+       kubectl -n stackrox set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+       kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+    fi
 }
 
 export_central_basic_auth_creds() {
