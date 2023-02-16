@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/mocks"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -155,14 +156,15 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 	_, err = f.Write(yamlBytes)
 	require.NoError(t, err)
 
-	// 3. Wait to ensure the watch handler has been triggered.
-	time.Sleep(100 * time.Millisecond)
-
 	// 4. Assert on the cached file hashes.
 	expectedCache := map[string]md5CheckSum{
 		"role": md5.Sum(yamlBytes),
 	}
-	assert.Equal(t, expectedCache, wh.cachedFileHashes)
+	assert.Eventually(t, func() bool {
+		wh.mutex.RLock()
+		defer wh.mutex.RUnlock()
+		return maputil.Equal(expectedCache, wh.cachedFileHashes)
+	}, 100*time.Millisecond, 10*time.Millisecond)
 }
 
 func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
@@ -202,16 +204,17 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 	err = k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch, k8scfgwatch.DeduplicateWatchErrors(wh), opts)
 	require.NoError(t, err)
 
-	// 3. Wait to ensure the watch handler has been triggered.
-	time.Sleep(100 * time.Millisecond)
-
-	// 4. Assert on the cached file hashes.
+	// 3. Assert on the cached file hashes.
 	expectedCache := map[string]md5CheckSum{
 		"role": md5.Sum(roleBytes),
 	}
-	assert.Equal(t, expectedCache, wh.cachedFileHashes)
+	assert.Eventually(t, func() bool {
+		wh.mutex.RLock()
+		defer wh.mutex.RUnlock()
+		return maputil.Equal(expectedCache, wh.cachedFileHashes)
+	}, 100*time.Millisecond, 10*time.Millisecond)
 
-	// 5.  Add another valid YAML file to the directory the handler will be watching.
+	// 4.  Add another valid YAML file to the directory the handler will be watching.
 	permissionSet := declarativeconfig.PermissionSet{
 		Name:        "Everything",
 		Description: "One that can do everything",
@@ -220,7 +223,7 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 	permissionSetBytes, err := yaml.Marshal(&permissionSet)
 	require.NoError(t, err)
 
-	// 5.1 Set the expected calls to the updater.
+	// 4.1 Set the expected calls to the updater.
 	updaterMock.EXPECT().ReconcileDeclarativeConfigs(gomock.InAnyOrder([][]byte{permissionSetBytes, roleBytes}))
 
 	permissionSetPath := path.Join(dirToWatch, "permission-set")
@@ -231,15 +234,16 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 	_, err = permissionSetF.Write(permissionSetBytes)
 	require.NoError(t, err)
 
-	// 6. Wait to ensure the watch handler has been triggered.
-	time.Sleep(100 * time.Millisecond)
-
-	// 7. Assert on the cached file hashes.
+	// 5. Assert on the cached file hashes.
 	expectedCache = map[string]md5CheckSum{
 		"role":           md5.Sum(roleBytes),
 		"permission-set": md5.Sum(permissionSetBytes),
 	}
-	assert.Equal(t, expectedCache, wh.cachedFileHashes)
+	assert.Eventually(t, func() bool {
+		wh.mutex.RLock()
+		defer wh.mutex.RUnlock()
+		return maputil.Equal(expectedCache, wh.cachedFileHashes)
+	}, 100*time.Millisecond, 10*time.Millisecond)
 }
 
 func TestWatchHandler_WithRemovedFiles(t *testing.T) {
@@ -278,30 +282,28 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	_, err = f.Write(yamlBytes)
 	require.NoError(t, err)
 
-	// 3. Wait to ensure the watch handler has been triggered.
-	time.Sleep(100 * time.Millisecond)
-
-	// 4. Assert on the cached file hashes.
+	// 3. Assert on the cached file hashes.
 	expectedCache := map[string]md5CheckSum{
 		"role": md5.Sum(yamlBytes),
 	}
+	assert.Eventually(t, func() bool {
+		wh.mutex.RLock()
+		defer wh.mutex.RUnlock()
+		return maputil.Equal(expectedCache, wh.cachedFileHashes)
+	}, 100*time.Millisecond, 10*time.Millisecond)
 
-	wh.mutex.RLock()
-	assert.Equal(t, expectedCache, wh.cachedFileHashes)
-	wh.mutex.RUnlock()
-
-	// 5.Set the expected calls to the updater.
+	// 4.Set the expected calls to the updater.
 	updaterMock.EXPECT().ReconcileDeclarativeConfigs([][]byte{})
 
-	// 6. Remove the previously added YAML file.
+	// 5. Remove the previously added YAML file.
 	err = os.Remove(filePath)
 	require.NoError(t, err)
 
-	time.Sleep(100 * time.Millisecond)
-
-	// 7. Assert on the cached file hashes.
+	// 6. Assert on the cached file hashes.
 	expectedCache = map[string]md5CheckSum{}
-	wh.mutex.RLock()
-	assert.Equal(t, expectedCache, wh.cachedFileHashes)
-	wh.mutex.RUnlock()
+	assert.Eventually(t, func() bool {
+		wh.mutex.RLock()
+		defer wh.mutex.RUnlock()
+		return maputil.Equal(expectedCache, wh.cachedFileHashes)
+	}, 100*time.Millisecond, 10*time.Millisecond)
 }
