@@ -341,6 +341,9 @@ wait_for_collectors_to_be_operational() {
     info "Will wait for collectors to reach a ready state"
 
     local readiness_indicator="Successfully established GRPC stream for signals"
+    local timeout=300
+    local retry_interval=10
+
     local start_time
     start_time="$(date '+%s')"
     local all_ready="false"
@@ -349,7 +352,7 @@ wait_for_collectors_to_be_operational() {
         for pod in $(kubectl -n stackrox get pods -l app=collector -o json | jq -r '.items[].metadata.name'); do
             echo "Checking readiness of $pod"
             if kubectl -n stackrox logs -c collector "$pod" | grep "$readiness_indicator" > /dev/null 2>&1; then
-                echo "ready"
+                echo "$pod is deemed ready"
             else
                 info "$pod is not ready"
                 kubectl -n stackrox logs -c collector "$pod"
@@ -357,14 +360,14 @@ wait_for_collectors_to_be_operational() {
                 break
             fi
         done
-        if (( $(date '+%s') - start_time > 300 )); then
-            echo "ERROR: Collector readiness check timed out after 5m"
+        if (( $(date '+%s') - start_time > "$timeout" )); then
+            echo "ERROR: Collector readiness check timed out after $timeout seconds"
             echo "Not all collector logs contain: $readiness_indicator"
             exit 1
         fi
         if [[ "$all_ready" == "false" ]]; then
-            info "Found at least one unready collector pod, will check again in 10s"
-            sleep 10
+            info "Found at least one unready collector pod, will check again in $retry_interval seconds"
+            sleep "$retry_interval"
         fi
     done
 }
