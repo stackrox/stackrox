@@ -157,7 +157,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 	}
 }
 
-func (t *segmentTelemeter) Group(groupID string, props map[string]any, opts ...telemeter.Option) {
+func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
 	if t == nil {
 		return
 	}
@@ -165,15 +165,24 @@ func (t *segmentTelemeter) Group(groupID string, props map[string]any, opts ...t
 	options := telemeter.ApplyOptions(opts)
 
 	group := segment.Group{
-		GroupId:     groupID,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      props,
 		Context:     makeDeviceContext(options),
 	}
 
-	if err := t.client.Enqueue(group); err != nil {
-		log.Error("Cannot enqueue Segment group event: ", err)
+	for _, ids := range options.Groups {
+		if len(ids) == 0 {
+			continue
+		}
+
+		// Segment doesn't understand group Name. The name must be configured
+		// in the Amplitude destination mapping.
+		group.GroupId = ids[0]
+
+		if err := t.client.Enqueue(group); err != nil {
+			log.Error("Cannot enqueue Segment group event: ", err)
+		}
 	}
 }
 

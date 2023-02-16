@@ -16,16 +16,16 @@ type GatherFunc func(context.Context) (map[string]any, error)
 
 // Gatherer interface for interacting with telemetry gatherer.
 type Gatherer interface {
-	Start()
+	Start(...telemeter.Option)
 	Stop()
 	AddGatherer(GatherFunc)
 }
 
 type nilGatherer struct{}
 
-func (*nilGatherer) Start()                 {}
-func (*nilGatherer) Stop()                  {}
-func (*nilGatherer) AddGatherer(GatherFunc) {}
+func (*nilGatherer) Start(...telemeter.Option) {}
+func (*nilGatherer) Stop()                     {}
+func (*nilGatherer) AddGatherer(GatherFunc)    {}
 
 type gatherer struct {
 	clientType  string
@@ -37,6 +37,7 @@ type gatherer struct {
 	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
 	lastData    map[string]any
+	opts        []telemeter.Option
 }
 
 func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
@@ -75,9 +76,9 @@ func (g *gatherer) identify() {
 	defer g.gathering.Unlock()
 	data := g.gather()
 	if !reflect.DeepEqual(g.lastData, data) {
-		g.telemeter.Identify(data)
+		g.telemeter.Identify(data, g.opts...)
 		// Issue an event so that the new data become visible on analytics:
-		g.telemeter.Track("Updated "+g.clientType+" Identity", nil)
+		g.telemeter.Track("Updated "+g.clientType+" Identity", nil, g.opts...)
 	}
 	g.lastData = data
 }
@@ -97,7 +98,7 @@ func (g *gatherer) loop() {
 	}
 }
 
-func (g *gatherer) Start() {
+func (g *gatherer) Start(opts ...telemeter.Option) {
 	if g == nil {
 		return
 	}
@@ -105,6 +106,7 @@ func (g *gatherer) Start() {
 	defer g.mu.Unlock()
 	if g.stopSig.IsDone() {
 		g.reset()
+		g.opts = opts
 		go g.loop()
 	}
 }

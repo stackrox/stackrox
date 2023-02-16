@@ -72,6 +72,7 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 	}
 	cfg := &Config{
 		ClientID:  "test",
+		GroupName: "TEST",
 		telemeter: s.mockTelemeter,
 	}
 
@@ -86,7 +87,7 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 
 	s.mockTelemeter.EXPECT().Track("TestEvent", map[string]any{
 		"Property": "test value",
-	}, matchOptions(telemeter.WithUserID(cfg.HashUserAuthID(nil)))).Times(1)
+	}, matchOptions(telemeter.WithUserID(cfg.HashUserAuthID(nil)), telemeter.WithGroups("TEST", ""))).Times(1)
 
 	cfg.track(testRP)
 }
@@ -104,6 +105,7 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	testRP.HTTPReq = req
 	cfg := &Config{
 		ClientID:  "test",
+		GroupName: "TEST",
 		telemeter: s.mockTelemeter,
 	}
 
@@ -118,7 +120,7 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	mockID.EXPECT().UID().Return("id").Times(2)
 	s.mockTelemeter.EXPECT().Track("TestEvent", map[string]any{
 		"Property": "test_value",
-	}, matchOptions(telemeter.WithUserID(cfg.HashUserAuthID(mockID)))).Times(1)
+	}, matchOptions(telemeter.WithUserID(cfg.HashUserAuthID(mockID)), telemeter.WithGroups("TEST", ""))).Times(1)
 
 	cfg.track(testRP)
 }
