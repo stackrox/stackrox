@@ -5,6 +5,8 @@ import CredentialExpiration from './CredentialExpiration';
 import CredentialInteraction from './CredentialInteraction';
 import ManageTokensButton from './ManageTokensButton';
 
+import { isCertificateExpiringSoon } from '../cluster.helpers';
+
 type CredentialExpirationWidgetProps = {
     clusterId: string;
     status: ClusterStatus;
@@ -16,11 +18,20 @@ const CredentialExpirationWidget = ({
     status,
     isManagerTypeNonConfigurable,
 }: CredentialExpirationWidgetProps) => {
+    const certExpiryStatus = status?.certExpiryStatus;
+    if (!certExpiryStatus?.sensorCertExpiry) {
+        return <CredentialExpiration certExpiryStatus={certExpiryStatus} />;
+    }
+
     if (isManagerTypeNonConfigurable) {
+        const currentDatetime = new Date();
+        if (!isCertificateExpiringSoon(certExpiryStatus, currentDatetime)) {
+            return <CredentialExpiration certExpiryStatus={certExpiryStatus} />;
+        }
         return (
             <Flex direction={{ default: 'column' }}>
                 <FlexItem>
-                    <CredentialExpiration certExpiryStatus={status?.certExpiryStatus} />
+                    <CredentialExpiration certExpiryStatus={certExpiryStatus} />
                 </FlexItem>
                 <FlexItem>
                     <ManageTokensButton />
@@ -28,13 +39,10 @@ const CredentialExpirationWidget = ({
             </Flex>
         );
     }
-    if (!status?.certExpiryStatus?.sensorCertExpiry) {
-        return <CredentialExpiration certExpiryStatus={status?.certExpiryStatus} />;
-    }
 
     return (
         <CredentialInteraction
-            certExpiryStatus={status?.certExpiryStatus}
+            certExpiryStatus={certExpiryStatus}
             upgradeStatus={status?.upgradeStatus}
             clusterId={clusterId}
         />
