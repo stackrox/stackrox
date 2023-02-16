@@ -386,8 +386,8 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 		AddGroupBy(pkgSearch.DeploymentType).ProtoQuery()
 
 	type deploymentCountByType struct {
-		DeploymentIDCount int    `db:"deploymentidcount"`
-		DeploymentType    string `db:"deploymenttype"`
+		DeploymentIDCount int    `db:"deployment_id_count"`
+		DeploymentType    string `db:"deployment_type"`
 	}
 
 	expected := []*deploymentCountByType{
