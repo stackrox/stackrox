@@ -95,9 +95,18 @@ func (cmd *centralDbRestoreCommand) validate() error {
 	if cmd.file == "" {
 		return errox.InvalidArgs.New("file to restore from must be specified")
 	}
-	if _, err := os.Stat(cmd.file); os.IsNotExist(err) {
-		return errox.NotFound.Newf("file %q could not be found", cmd.file)
+	fi, err := os.Stat(cmd.file)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errox.NotFound.Newf("file %q could not be found", cmd.file)
+		}
+		return errox.InvalidArgs.Newf("opening file %q", cmd.file)
 	}
+
+	if fi.IsDir() {
+		return errox.InvalidArgs.Newf("expected a file not a directory for path %s", cmd.file)
+	}
+
 	return nil
 }
 

@@ -11,26 +11,42 @@ import (
 )
 
 func TestCentralDBRestore_Validate(t *testing.T) {
-	cmd := &centralDbRestoreCommand{}
-
-	// 1. If file is unset, expect an InvalidArgs error.
-	err := cmd.validate()
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, errox.InvalidArgs)
-
-	// 2. If file is set, but does not exist, expect an NotFound error.
-	cmd.file = "some-non-existent-file"
-	err = cmd.validate()
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, errox.NotFound)
-
-	// 3. If file is set, and exists, no error should be returned.
-	tmpDir := t.TempDir()
-	testFile := path.Join(tmpDir, "test-file")
-	_, err = os.Create(testFile)
+	t.Parallel()
+	testDir := t.TempDir()
+	testFile := path.Join(testDir, "test-file")
+	_, err := os.Create(testFile)
 	require.NoError(t, err)
 
-	cmd.file = testFile
-	err = cmd.validate()
-	assert.NoError(t, err)
+	cases := map[string]struct {
+		cmd *centralDbRestoreCommand
+		err error
+	}{
+		"if file is unset, expect an InvalidArgs error": {
+			cmd: &centralDbRestoreCommand{},
+			err: errox.InvalidArgs,
+		},
+		"if file is set, but does not exist, expect an NotFound error": {
+			cmd: &centralDbRestoreCommand{file: "non-existent-file"},
+			err: errox.NotFound,
+		},
+		"if file is set, but is a directory, expect an InvalidArgs error": {
+			cmd: &centralDbRestoreCommand{file: testDir},
+			err: errox.InvalidArgs,
+		},
+		"if file is set, and  exists, no error should be returned": {
+			cmd: &centralDbRestoreCommand{file: testFile},
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			err := c.cmd.validate()
+			if c.err != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, c.err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }
