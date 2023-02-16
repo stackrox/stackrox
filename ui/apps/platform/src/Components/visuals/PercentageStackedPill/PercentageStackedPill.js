@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import { colorTypes, defaultColorType } from 'constants/visuals/colors';
 
 const getBackgroundColor = (colorType) => {
@@ -37,7 +38,10 @@ const PercentageStackedPill = ({ data, tooltip }) => {
         </div>
     );
     return tooltip ? (
-        <Tooltip content={<DetailedTooltipOverlay title={tooltipTitle} body={tooltipBody} />}>
+        <Tooltip
+            isContentLeftAligned
+            content={<DetailedTooltipContent title={tooltipTitle} body={tooltipBody} />}
+        >
             {content}
         </Tooltip>
     ) : (
