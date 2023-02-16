@@ -38,10 +38,11 @@ func TestCentralDBRestore_Validate(t *testing.T) {
 		},
 	}
 	for name, c := range cases {
+		tc := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			err := c.cmd.validate()
-			if c.err != nil {
+			err := tc.cmd.validate()
+			if tc.err != nil {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, c.err)
 			} else {
