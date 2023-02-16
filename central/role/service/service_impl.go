@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
 )
 
@@ -511,11 +512,7 @@ func listReadPermissions(
 		return scopeReadPermissions
 	}
 	scopeRequestedReadPermissions := make([]permissions.ResourceWithAccess, 0, len(scopeReadPermissions))
-	deduplicatedRequestedPermissions := set.NewStringSet()
-	for _, permission := range requestedPermissions {
-		deduplicatedRequestedPermissions.Add(permission)
-	}
-	for _, permission := range deduplicatedRequestedPermissions.AsSlice() {
+	for _, permission := range sliceutils.Unique(requestedPermissions) {
 		if resourceWithAccess, found := indexedScopeReadPermissions[permission]; found {
 			scopeRequestedReadPermissions = append(scopeRequestedReadPermissions, resourceWithAccess)
 		}
