@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
 
-{{ if ._rox.central.db.enabled -}}
 {{ if not ._rox.central.db.external -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -71,6 +70,7 @@ spec:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
       serviceAccountName: central-db
+      terminationGracePeriodSeconds: 120
       initContainers:
       - name: init-db
         image: {{ ._rox.central.db.image.fullRef | quote }}
@@ -101,6 +101,18 @@ spec:
         - containerPort: 5432
           name: postgresql
           protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - -e
+            - |
+              exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
         resources:
           {{- ._rox.central.db._resources | nindent 10 }}
         securityContext:
@@ -180,6 +192,5 @@ type: Opaque
 stringData:
   password: |
     {{- ._rox.central.db._password.value | nindent 4 }}
-{{- end }}
 {{- end }}
 {{- end }}

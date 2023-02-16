@@ -197,7 +197,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 	// Rocks will not be the active database, we need to do that as part of the migrations.
 	if processBoth {
 		// Update last associated software version on DBs.
-		migrations.SetCurrent(option.MigratorOptions.DBPathBase)
+		migrations.SealLegacyDB(option.MigratorOptions.DBPathBase)
 	}
 
 	if gormDB != nil {

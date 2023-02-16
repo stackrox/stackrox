@@ -8,6 +8,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
@@ -31,13 +32,14 @@ var (
 type groupDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
+	hasNoneCtx             context.Context
+	hasReadCtx             context.Context
+	hasWriteDeclarativeCtx context.Context
+
 	hasWriteCtx context.Context
+	dataStore   DataStore
 
-	dataStore DataStore
-	storage   *storeMocks.MockStore
-
+	storage  *storeMocks.MockStore
 	mockCtrl *gomock.Controller
 }
 
@@ -51,6 +53,7 @@ func (s *groupDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
+	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -633,9 +636,11 @@ func (s *groupDataStoreTestSuite) TestUpdateMutableToImmutable() {
 func (s *groupDataStoreTestSuite) TestUpdateImmutableNoForce() {
 	expectedGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE_FORCED)
 
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
+
 	updatedGroup := expectedGroup.Clone()
-	updatedGroup.GetProps().Key = ""
-	updatedGroup.GetProps().Value = ""
+	updatedGroup.GetProps().Key = "something"
+	updatedGroup.GetProps().Value = "else"
 
 	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, false)
 	s.ErrorIs(err, errox.InvalidArgs)
@@ -793,4 +798,113 @@ func (s *groupDataStoreTestSuite) TestRemoveAllWithEmptyProperties() {
 	err = s.dataStore.RemoveAllWithEmptyProperties(s.hasWriteCtx)
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)
+}
+
+func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
+	expectedGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
+
+	updatedGroup := expectedGroup.Clone()
+	updatedGroup.GetProps().Key = "something"
+	updatedGroup.GetProps().Value = "else"
+
+	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, false)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaConfig() {
+	expectedGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	updatedGroup := expectedGroup.Clone()
+	updatedGroup.GetProps().Key = "something"
+	updatedGroup.GetProps().Value = "else"
+
+	err := s.dataStore.Update(s.hasWriteDeclarativeCtx, updatedGroup, true)
+	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) TestDeleteDeclarativeViaAPI() {
+	expectedGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
+
+	err := s.dataStore.Remove(s.hasWriteCtx, expectedGroup.GetProps(), false)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestDeleteDeclarativeViaConfig() {
+	expectedGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.Remove(s.hasWriteDeclarativeCtx, expectedGroup.GetProps(), true)
+	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) TestMutateGroupViaAPI() {
+	imperativeGroup := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
+	declarativeGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	// 1. Try and remove a declarative group via API. This should fail.
+	gomock.InOrder(
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(imperativeGroup, true, nil),
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
+	)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{imperativeGroup}).Return(nil)
+	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, false)
+	s.Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	// 2. Try and update a declarative group via API. This should fail.
+	gomock.InOrder(
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
+	)
+
+	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, false)
+	s.Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
+	imperativeGroup := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
+	declarativeGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	// 1. Try mutate(remove declarative, update imperative) groups via config. This should fail.
+	gomock.InOrder(
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(imperativeGroup, true, nil),
+	)
+	err := s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, true)
+	s.Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	// 2. Try mutate(update declarative, remove imperative) groups via config. This should fail.
+	gomock.InOrder(
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(imperativeGroup, true, nil),
+	)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{declarativeGroup}).Return(nil).Times(1)
+	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, true)
+	s.Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	// 3. Try update declarative group via config.
+	gomock.InOrder(
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
+	)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{declarativeGroup}).Return(nil).Times(1)
+	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, nil, []*storage.Group{declarativeGroup}, nil, true)
+	s.NoError(err)
+
+	// 4. Try delete declarative group via config.
+	gomock.InOrder(
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
+	)
+	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{declarativeGroup.GetProps().GetId()}).Return(nil).Times(1)
+	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, nil, nil, true)
+	s.NoError(err)
 }

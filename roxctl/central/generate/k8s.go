@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -99,7 +100,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	// Adds k8s specific flags
 	flags.AddImageDefaults(flagWrap.FlagSet, &k8sConfig.ImageFlavorName)
 
-	defaultImageHelp := fmt.Sprintf("(if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
+	defaultImageHelp := fmt.Sprintf(" (if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
 	flagWrap.StringVarP(&k8sConfig.MainImage, flags.FlagNameMainImage, "i", "", "main image to use"+defaultImageHelp, "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -107,13 +108,14 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	}
 	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "scanner image to use"+defaultImageHelp, "scanner")
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
-
 	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", false, "whether to enable telemetry", "central")
 
-	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.ConfigMaps, "declarative-config-config-maps", []string{},
-		"list of config maps to add as declarative configuration mounts in central", "central")
-	flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.Secrets, "declarative-config-secrets", []string{},
-		"list of secrets to add as declarative configuration mounts in central", "central")
+	if features.DeclarativeConfiguration.Enabled() {
+		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.ConfigMaps, "declarative-config-config-maps", nil,
+			"list of config maps to add as declarative configuration mounts in central", "central")
+		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.Secrets, "declarative-config-secrets", nil,
+			"list of secrets to add as declarative configuration mounts in central", "central")
+	}
 
 	k8sConfig.EnableCentralDB = env.PostgresDatastoreEnabled.BooleanSetting()
 

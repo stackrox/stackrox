@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -130,7 +129,7 @@ func RegisterCentralClient(config grpc.Config, basicAuthProviderID string) {
 	}
 	registerInterceptors(config)
 	// Central adds itself to the tenant group, with no group properties:
-	cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(cfg.ClientID))
+	cfg.Telemeter().Group(cfg.GroupID, nil)
 	registerAdminUser(basicAuthProviderID)
 }
 
@@ -145,15 +144,6 @@ func registerInterceptors(config grpc.Config) {
 // it to the tenant group specifically.
 func registerAdminUser(basicAuthProviderID string) {
 	cfg := InstanceConfig()
-
-	// Add the basic authorization ID form ('admin'):
 	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
 	cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(adminHash))
-
-	// Add the token based ID form ('sso:<provider id>:admin'):
-	adminTokenHash := cfg.HashUserID(
-		tokenbased.FormatUserID(basic.DefaultUsername, basicAuthProviderID),
-		basicAuthProviderID,
-	)
-	cfg.Telemeter().Group(cfg.GroupID, nil, telemeter.WithUserID(adminTokenHash))
 }

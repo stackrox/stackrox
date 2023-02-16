@@ -33,20 +33,42 @@ if {[llength $argv] != 4} {
 
 spawn {*}"$binary" central generate interactive
 
-expect "Enter path to the backup bundle from which to restore keys and certificates*" { send "\n" }
-expect "Enter read templates from local filesystem*" { send "\n" }
-expect "Enter path to helm templates on your local filesystem*" { send "\n" }
-expect "Enter PEM cert bundle file*" { send "\n" }
-expect "Enter Create PodSecurityPolicy resources*" { send "\n" }
-expect "Enter administrator password*" { send "\n" }
-expect "Enter orchestrator (k8s, openshift)*" { send "k8s\n" }
-expect "Enter the directory to output the deployment bundle to*" { send "$out_dir\n" }
-expect "Enter default container images settings*" { send "$flavor\n" }
-# Enter list of config maps for declarative configuration.
-# Enter list of secrets for declarative configuration
-expect "Enter list of config maps*" { send "\n"}
-expect "Enter list of secrets*" { send "\n"}
-expect "Enter the method of exposing Central*" { send "none\n" }
+expect "Enter path to the backup bundle from which to restore keys and certificates*: " { send "\n" }
+expect "Enter read templates from local filesystem*:*: " { send "\n" }
+expect "Enter path to helm templates on your local filesystem*:*: " { send "\n" }
+expect "Enter PEM cert bundle file*: " { send "\n" }
+expect "Enter Create PodSecurityPolicy resources*:*: " { send "\n" }
+expect "Enter administrator password*:*: " { send "\n" }
+expect "Enter orchestrator (k8s, openshift)*: " { send "k8s\n" }
+expect "Enter default container images settings*:*: " { send "$flavor\n" }
+expect "Enter the directory to output the deployment bundle to*:*: " { send "$out_dir\n" }
+
+# Enter central-db image to use (default: "docker.io/stackrox/central-db:2.21.0-15-g448f2dc8fa"):
+# Enter central-db image to use (default: "stackrox.io/central-db:3.67.x-296-g56df6a892d"):
+# Enter central-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+expect {
+  default {
+    send_user "\nFATAL: No question about Central-DB image\n"
+    exit 8
+  }
+  "Enter central-db * (if unset, the default will be used):" {
+    send_user "WARNING: roxctl does not suggest any registry for central-db"
+    send "\n"
+    set exitWith [expr {$exitWith + 2}]
+  }
+  "Enter central-db * (default: \"$registry/central-db:*\"):" {
+    send_user "roxctl suggests correct registry for central-db"
+    send "\n"
+  }
+  # Special case for RHACS to avoid writing a regexp in TCL
+  "Enter central-db * (default: \"$registry/rhacs-central-db-rhel8:*\"):" {
+    send_user "roxctl suggests correct registry for central-db"
+    send "\n"
+  }
+}
+
+expect "Enter whether to enable telemetry*:*: " { send "\n" }
+expect "Enter the method of exposing Central*:*: " { send "none\n" }
 
 # Enter main image to use (default: "docker.io/stackrox/main:3.67.x-296-g56df6a892d"):
 # Enter main image to use (default: "stackrox.io/main:3.67.x-296-g56df6a892d")
@@ -72,7 +94,6 @@ expect {
   }
 }
 expect "Enter whether to run StackRox in offline mode, which avoids reaching out to the Internet*" { send "\n" }
-expect "Enter whether to enable telemetry*" { send "\n" }
 expect "Enter the deployment tool to use (kubectl, helm, helm-values)*:" { send "\n" }
 expect "Enter Istio version when deploying into an Istio-enabled cluster*:" { send "\n" }
 
@@ -128,11 +149,9 @@ expect "Enter external volume name for Central*:" { send "\n" }
 expect "Enter external volume size in Gi for Central*:" { send "\n" }
 expect "Enter storage class name for Central (optional if you have a default StorageClass configured):" { send "\n" }
 
-if {[info exists ::env(ROX_POSTGRES_DATASTORE)] && [string equal "$env(ROX_POSTGRES_DATASTORE)" true]} {
-  expect "Enter external volume name for Central DB*:" { send "\n" }
-  expect "Enter external volume size in Gi for Central DB*:" { send "\n" }
-  expect "Enter storage class name for Central DB (optional if you have a default StorageClass configured):" { send "\n" }
-}
+expect "Enter external volume name for Central DB*:" { send "\n" }
+expect "Enter external volume size in Gi for Central DB*:" { send "\n" }
+expect "Enter storage class name for Central DB (optional if you have a default StorageClass configured):" { send "\n" }
 
 # Setting a generous timeout, as generating files may take >3 seconds
 expect -timeout 20 "Generating deployment bundle..."

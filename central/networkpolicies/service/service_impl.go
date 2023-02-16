@@ -45,7 +45,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 var (
@@ -116,16 +115,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func populateYAML(np *storage.NetworkPolicy) {
-	k8sNetworkPolicy := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToKubernetesNetworkPolicy()
-	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
-
-	stringBuilder := &strings.Builder{}
-	err := encoder.Encode(k8sNetworkPolicy, stringBuilder)
+	yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
 	if err != nil {
 		np.Yaml = fmt.Sprintf("Could not render Network Policy YAML: %s", err)
 		return
 	}
-	np.Yaml = stringBuilder.String()
+	np.Yaml = yaml
 }
 
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.NetworkPolicy, error) {

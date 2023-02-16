@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -24,11 +26,13 @@ import (
 )
 
 var (
-	preHistoryVer = versionPair{version: "3.0.56.0", seqNum: 62}
-	preVer        = versionPair{version: "3.0.57.0", seqNum: 64}
-	currVer       = versionPair{version: "3.0.58.0", seqNum: 65}
-	futureVer     = versionPair{version: "10001.0.0.0", seqNum: 6533}
-	moreFutureVer = versionPair{version: "10002.0.0.0", seqNum: 7533}
+	preHistoryVer   = versionPair{version: "3.0.56.0", seqNum: 62}
+	preVer          = versionPair{version: "3.0.57.0", seqNum: 64}
+	currVer         = versionPair{version: "3.0.58.0", seqNum: 65}
+	lastLegacyDBVer = versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()}
+	postgresDBVer   = versionPair{version: "4.0.0", seqNum: 175}
+	futureVer       = versionPair{version: "10001.0.0.0", seqNum: 6533}
+	moreFutureVer   = versionPair{version: "10002.0.0.0", seqNum: 7533}
 
 	// Current versions
 	rcVer      = versionPair{version: "3.0.58.0-rc.1", seqNum: 65}
@@ -694,7 +698,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 		},
 		{
 			description: "Rollback to version 57",
-			fromVersion: &currVer,
+			fromVersion: &postgresDBVer,
 			toVersion:   &preVer,
 		},
 		{
@@ -705,7 +709,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 		},
 		{
 			description: "Rollback to version 57 break before persist",
-			fromVersion: &currVer,
+			fromVersion: &postgresDBVer,
 			toVersion:   &preVer,
 			breakPoint:  breakBeforePersist,
 		},
@@ -717,7 +721,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 		},
 		{
 			description: "Rollback to version 57 break after scan",
-			fromVersion: &currVer,
+			fromVersion: &postgresDBVer,
 			toVersion:   &preVer,
 			breakPoint:  breakAfterScan,
 		},
@@ -729,7 +733,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 		},
 		{
 			description: "Rollback to version 57 break after get clone",
-			fromVersion: &currVer,
+			fromVersion: &postgresDBVer,
 			toVersion:   &preVer,
 			breakPoint:  breakAfterGetClone,
 		},
@@ -752,7 +756,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 			// Turn Postgres back off so we will rollback to Rocks
 			require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 
-			mock.rollbackCentral(c.toVersion, "", "")
+			mock.rollbackCentral(c.toVersion, "", c.toVersion.version)
 			mock.upgradeCentral(c.fromVersion, "")
 
 			// We turned off Postgres.  That means we are testing
@@ -809,5 +813,66 @@ func TestRacingConditionInPersist(t *testing.T) {
 			desc := c.description + " at " + breakpoint
 			run(desc, breakpoint)
 		}
+	}
+}
+
+func TestUpgradeFromLastRocksDB(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
+	if buildinfo.ReleaseBuild {
+		return
+	}
+	testCases := []struct {
+		description    string
+		previousVerion *versionPair
+		fromVersion    *versionPair
+		toVersion      *versionPair
+	}{
+		{
+			description:    "Upgrade from fresh install of 3.74",
+			previousVerion: nil,
+			fromVersion:    &lastLegacyDBVer,
+			toVersion:      &postgresDBVer,
+		},
+		{
+			description:    "Upgrade from 3.74 with previous",
+			previousVerion: &preVer,
+			fromVersion:    &lastLegacyDBVer,
+			toVersion:      &postgresDBVer,
+		},
+		{
+			// We require upgrade from 3.74 to Postgres. This is not a recommended upgrade path, but
+			// internally we still need to test the data on stackrox-db PVC is in valid state,
+			// so we can recover from it.
+			description: "Upgrade directly from earlier versions",
+			fromVersion: &preVer,
+			toVersion:   &postgresDBVer,
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(c.description, func(t *testing.T) {
+			startVer := c.fromVersion
+			if c.previousVerion != nil {
+				startVer = c.previousVerion
+			}
+			mock := createAndRunCentralStartRocks(t, startVer, true)
+			defer mock.destroyCentral()
+			mock.setVersion = setVersion
+
+			if c.previousVerion != nil {
+				mock.legacyUpgrade(t, c.fromVersion)
+			}
+
+			mock.upgradeCentral(c.toVersion, "")
+			mock.verifyCurrent()
+			if strings.HasPrefix(c.fromVersion.version, "3.74.") {
+				mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: c.fromVersion.version, seqNum: migrations.LastRocksDBVersionSeqNum()})
+			} else {
+				mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()})
+			}
+			if c.previousVerion != nil {
+				mock.verifyClone(rocksdb.PreviousClone, &versionPair{version: c.previousVerion.version, seqNum: c.previousVerion.seqNum})
+			}
+		})
 	}
 }

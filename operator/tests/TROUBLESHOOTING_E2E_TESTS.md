@@ -15,11 +15,13 @@ All kuttl tests are in the [tests](.) directory. It contains three suites, each 
   3. verifies that the stackrox installation was upgraded and is still healthy.
 
 Note that the `deploy-via-olm` and `deploy-previous-via-olm` targets in `Makefile` also use `kuttl` internally.
+- `deploy-via-olm` is used by the `qa-e2e` CI jobs to deploy stackrox
+- `deploy-previous-via-olm` is used by the `operator-e2e` CI jobs as described in the next section
 
 ## How these tests are run
 
 In a CI job:
-1. a previous operator version is installed first (a requirement of the upgrade test),
+1. a previous operator version is installed first (a requirement of the upgrade test) using the `deploy-previous-via-olm` rule,
 2. the upgrade test runs next; it leaves the cluster with current operator version installed,
 3. then the `central` and `securedcluster` tests are run _in parallel_.
 
@@ -121,93 +123,133 @@ I0126 17:32:00.275793    3247 request.go:682] Waited for 1.003842813s due to cli
 
 ### Failed test step
 
+#### Step progress
+
 It begins similar to a successful step:
 
 ``` 
-    logger.go:42: 17:31:59 | basic/80-enable-telemetry | starting test step 80-enable-telemetry
-    logger.go:42: 17:32:02 | basic/80-enable-telemetry | Central:kuttl-test-wealthy-cockatoo/stackrox-central-services updated
+    logger.go:42: 02:12:54 | basic/10-central-cr | starting test step 10-central-cr
+    logger.go:42: 02:13:00 | basic/10-central-cr | Central:kuttl-test-steady-fowl/stackrox-central-services created
+    logger.go:42: 02:13:00 | basic/10-central-cr | Secret:kuttl-test-steady-fowl/admin-pass created
 ```
 
 The ending is different, and there are a few important parts, which tell us the direct reason for failure.
 
+#### Step failure message
+
 First, just a message that tells us which step failed.
 
 ```
-    logger.go:42: 17:42:02 | basic/80-enable-telemetry | test step failed 80-enable-telemetry
+    logger.go:42: 02:23:01 | basic/10-central-cr | test step failed 10-central-cr
 ```
+
+Note that at this point we still do not know **why** this step failed, this will be revealed a bit later.
+
+#### Collector (i.e. pod log) outputs
+
+The second piece is the output from any "collectors" defined in the assert file (if any).
+Note the notion of `kuttl` [test assert collector](https://kuttl.dev/docs/testing/reference.html#collectors)
+is completely unrelated to the stackrox collector component.
+We typically request fetching logs of all the pods that comprise deployments on which we make any status assertions.
+
+Here is an example snippet that shows `central` and beginning of `scanner` logs:
+
+```
+    logger.go:42: 02:23:01 | basic/10-central-cr | collecting log output for [type==pod,label: app=central]
+    logger.go:42: 02:23:01 | basic/10-central-cr | running command: [kubectl logs --prefix -l app=central -n kuttl-test-steady-fowl --all-containers --tail=-1]
+    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] '/usr/local/share/ca-certificates/00-foo.pem.crt' -> '/etc/pki/ca-trust/source/anchors/00-foo.pem.crt'
+    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] '/etc/pki/injected-ca-trust/tls-ca-bundle.pem' -> '/etc/pki/ca-trust/source/anchors/tls-ca-bundle.pem'
+    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219239 log.go:18: Info: Run migrator.run() with version: 3.74.x-21-ge2ac78b3b8, DB sequence: 172
+    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219527 log.go:18: Info: conf.Maintenance.ForceRollbackVersion: none
+    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219609 log.go:18: Info: Migrator failed: unable to get Postgres DB config: pgsql: could not load password file "/run/secrets/stackrox.io/db-password/password": open /run/secrets/stackrox.io/db-password/password: no such file or directory
+    logger.go:42: 02:23:01 | basic/10-central-cr | collecting log output for [type==pod,label: app=scanner]
+    logger.go:42: 02:23:01 | basic/10-central-cr | running command: [kubectl logs --prefix -l app=scanner -n kuttl-test-steady-fowl --all-containers --tail=-1]
+    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/scanner-689bb74f5f-kt6xx/scanner] '/usr/local/share/ca-certificates/00-foo.pem.crt' -> '/etc/pki/ca-trust/source/anchors/00-foo.pem.crt'
+    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/scanner-689bb74f5f-kt6xx/scanner] '/etc/pki/injected-ca-trust/tls-ca-bundle.pem' -> '/etc/pki/ca-trust/source/anchors/tls-ca-bundle.pem'
+    [...]
+```
+
+#### Assertion diff
 
 Then a comparison of expected (specified in YAML files) and actual (seen on the cluster) resources as a unified diff.
 
 ```
-    case.go:364: failed in step 80-enable-telemetry
-    case.go:366: --- Deployment:kuttl-test-wealthy-cockatoo/central
-         +++ Deployment:kuttl-test-wealthy-cockatoo/central
-         @@ -1,13 +1,487 @@
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-         +  annotations:
-         +    email: support@stackrox.com
-         [...]
+    case.go:364: failed in step 10-central-cr
+    case.go:366: --- Deployment:kuttl-test-steady-fowl/central
+        +++ Deployment:kuttl-test-steady-fowl/central
+        @@ -1,8 +1,616 @@
+         apiVersion: apps/v1
+         kind: Deployment
+         metadata:
+        +  annotations:
+        +    email: support@stackrox.com
+        [...]
          status:
-         -  availableReplicas: 1
-         +  conditions:
-         +  - lastTransitionTime: "2023-01-26T17:30:53Z"
-         +    lastUpdateTime: "2023-01-26T17:30:53Z"
-         +    message: Deployment does not have minimum availability.
-         +    reason: MinimumReplicasUnavailable
-         +    status: "False"
-         +    type: Available
-         +  - lastTransitionTime: "2023-01-26T17:24:51Z"
-         +    lastUpdateTime: "2023-01-26T17:32:24Z"
-         +    message: ReplicaSet "central-659d8c98f4" is progressing.
-         +    reason: ReplicaSetUpdated
-         +    status: "True"
-         +    type: Progressing
-         +  observedGeneration: 6
-         +  replicas: 1
-         +  unavailableReplicas: 1
-         +  updatedReplicas: 1
+        -  availableReplicas: 1
+        +  conditions:
+        +  - lastTransitionTime: "2023-02-07T02:13:19Z"
+        +    lastUpdateTime: "2023-02-07T02:13:19Z"
+        +    message: Deployment does not have minimum availability.
+        +    reason: MinimumReplicasUnavailable
+        +    status: "False"
+        +    type: Available
+        +  - lastTransitionTime: "2023-02-07T02:13:19Z"
+        +    lastUpdateTime: "2023-02-07T02:13:19Z"
+        +    message: ReplicaSet "central-f959bb7c5" is progressing.
+        +    reason: ReplicaSetUpdated
+        +    status: "True"
+        +    type: Progressing
+        +  observedGeneration: 1
+        +  replicas: 1
+        +  unavailableReplicas: 1
+        +  updatedReplicas: 1      
 ```
+
+#### Failed condition
 
 Then, the condition that caused the step to fail:
 
 ```
-    case.go:366: resource Deployment:kuttl-test-wealthy-cockatoo/central: .status.availableReplicas: key is missing from map
+    case.go:366: resource Deployment:kuttl-test-steady-fowl/central: .status.availableReplicas: key is missing from map
 ```
 
 This is useful, since the diff above can be quite long.
+
+#### Events dump
 
 Finally, a dump of all events from the test namespace.
 This also can get quite long but sometimes contains important information.
 
 ```
-    logger.go:42: 17:42:02 | basic | basic events from ns kuttl-test-wealthy-cockatoo:
+    logger.go:42: 02:23:02 | basic | basic events from ns kuttl-test-steady-fowl:
+    logger.go:42: 02:23:02 | basic | 2023-02-07 02:13:15 +0000 UTC	Normal	PersistentVolumeClaim central-db		WaitForFirstConsumer	waiting for first consumer to be created before binding		
+    logger.go:42: 02:23:02 | basic | 2023-02-07 02:13:15 +0000 UTC	Normal	PersistentVolumeClaim stackrox-db		WaitForFirstConsumer	waiting for first consumer to be created before binding		
+    logger.go:42: 02:23:02 | basic | 2023-02-07 02:13:19 +0000 UTC	Normal	ReplicaSet.apps central-f959bb7c5		SuccessfulCreate	Created pod: central-f959bb7c5-rlz2c		
     [...]
-    logger.go:42: 17:42:02 | basic | 2023-01-26 17:32:43 +0000 UTC	Normal	Pod central-659d8c98f4-72dt5.spec.containers{central}		Started	Started container central		
-    logger.go:42: 17:42:02 | basic | 2023-01-26 17:32:43 +0000 UTC	Warning	Pod central-659d8c98f4-72dt5.spec.containers{central}		Unhealthy	Readiness probe failed: Get "https://10.129.2.43:8443/v1/ping": dial tcp 10.129.2.43:8443: connect: connection refused		
-    logger.go:42: 17:42:02 | basic | 2023-01-26 17:32:54 +0000 UTC	Warning	Pod central-659d8c98f4-72dt5.spec.containers{central}		BackOff	Back-off restarting failed container		
+    logger.go:42: 02:23:02 | basic | 2023-02-07 02:15:23 +0000 UTC	Normal	Pod scanner-db-bb9f74864-gmr2m.spec.containers{db}		Created	Created container db		
+    logger.go:42: 02:23:02 | basic | 2023-02-07 02:15:23 +0000 UTC	Normal	Pod scanner-db-bb9f74864-gmr2m.spec.containers{db}		Started	Started container db		
 ```
 
-TODO(porridge): add an example of a pod log dump from a `TestAssert` collector.
+### Test cleanup
 
 Finally, a notice about cleanup:
 
 ```
-    logger.go:42: 17:42:02 | basic | Deleting namespace: kuttl-test-wealthy-cockatoo
+    logger.go:42: 02:23:02 | basic | Deleting namespace: kuttl-test-steady-fowl
 ```
+
+### Test harness teardown
 
 And then the whole harness teardown:
 
 ```
-=== CONT  kuttl
     harness.go:405: run tests finished
     harness.go:513: cleaning up
     [...]
-    --- FAIL: kuttl (1115.07s)
-        --- FAIL: kuttl/harness (0.00s)
-            --- PASS: kuttl/harness/basic-sc (354.87s)
-            --- FAIL: kuttl/harness/basic (1106.36s)
+--- FAIL: kuttl (633.12s)
+    --- FAIL: kuttl/harness (0.00s)
+        --- PASS: kuttl/harness/basic-sc (419.53s)
+        --- FAIL: kuttl/harness/basic (625.20s)
 FAIL
 make: *** [Makefile:281: test-e2e-deployed] Error 1
 make: Leaving directory '/go/src/github.com/stackrox/stackrox/operator'
@@ -219,14 +261,16 @@ make: Leaving directory '/go/src/github.com/stackrox/stackrox/operator'
 
 Look for the harness teardown message near the bottom that contains the names of failing and passing tests.
 
-In the example above we see that the `basic-sc` test (from `operator/tests/securedcluster/`) test passed,
-and only the `basic` test (from `operator/tests/central/`) failed.
+In the example above we see that the `basic-sc` test (from `operator/tests/securedcluster/`) test **passed**,
+and only the `basic` test (from `operator/tests/central/`) **failed**.
 
 ### Identify **which test step** failed
 
 Keeping in mind the name of the failing test (`basic` in this example) and ignoring the irrelevant (i.e. successful)
 test (`basic-sc` in this example), scroll up from the final `FAIL: kuttl` until you find the message about
 the condition that caused the step to fail.
+
+In the example above, the failing step is `10-central-cr`.
 
 ### Identify why it failed
 
@@ -236,10 +280,23 @@ Look at the comments inside the step's files if there are any.
 Once you understand that, try to figure out what went wrong by looking at the events and pod log messages.
 
 In the example above, the step tried to assert that the `central` deployment had exactly one healthy replica.
+
+The exact piece of the `10-assert.yaml` file is:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+status:
+  availableReplicas: 1
+```
+
 However, in the resource on the cluster the `status.availableReplicas` field never appeared.
 
 We see in the diff that `status.unavailableReplicas` is `1` which means the central pod never became healthy.
-The reason for that should be visible from the pod log collected by `kuttl` (see TODO above).
+The reason for that in turn is visible from the pod log collected by `kuttl`.
+In this example, the db password file is missing for some reason.
 
-If you still do not know, please do not hesitate to ask!
-If something failed in these tests, it will most likely fail in some case for the end user too!
+If you still do not know what is going on, please do not hesitate to ask!
+Please do not ignore those failures - if something failed in these tests,
+it will most likely fail in some case for the end user too!

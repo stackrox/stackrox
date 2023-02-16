@@ -5,4 +5,4 @@ metadata:
 spec:
   customize:
     annotations:
-      post-reconcile: "true"
+      test-step: "40"

@@ -79,6 +79,14 @@ spec:
         image: {{ ._rox.scanner.image.fullRef | quote }}
         {{ end -}}
         env:
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
         - name: POD_NAME
           valueFrom:
             fieldRef:

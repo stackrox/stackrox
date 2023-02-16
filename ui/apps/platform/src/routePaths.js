@@ -91,6 +91,13 @@ export const vulnManagementPendingApprovalsPath = `${vulnManagementRiskAcceptanc
 export const vulnManagementApprovedDeferralsPath = `${vulnManagementRiskAcceptancePath}/approved-deferrals`;
 export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcceptancePath}/approved-false-positives`;
 
+// VM 2.0 "Vulnerabilities" paths
+export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
+export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
+export const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesBasePath}/workload-cves/cves/:cveId`;
+export const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesBasePath}/workload-cves/images/:imageId`;
+export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesBasePath}/workload-cves/deployments/:deploymentId`;
+
 /**
  * New Framwork-related route paths
  */
@@ -145,12 +152,18 @@ const vulnManagementPathToLabelMap = {
     [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 
+const vulnerabilitiesPathToLabelMap = {
+    [vulnerabilitiesBasePath]: 'Vulnerabilities',
+    [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
+};
+
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph (1.0)',
     [networkBasePathPF]: 'Network Graph (2.0 preview)',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
+    ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
     [riskBasePath]: 'Risk',

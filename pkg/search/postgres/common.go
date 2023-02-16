@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
@@ -113,8 +112,10 @@ func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
 	var out []pgsearch.SelectQueryField
 	for _, groupBy := range q.GroupBys {
 		var alreadyExists bool
-		for _, selectedField := range q.SelectedFields {
-			if selectedField.SelectPath == groupBy.Field.SelectPath {
+		for idx := range q.SelectedFields {
+			field := &q.SelectedFields[idx]
+			if field.SelectPath == groupBy.Field.SelectPath {
+				field.FromGroupBy = true
 				alreadyExists = true
 			}
 		}
@@ -138,21 +139,14 @@ func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
 
 func (q *query) populatePrimaryKeySelectFields() {
 	// Note that DB framework version prior to adding this func assumes all primary key fields in Go to be string type.
-	for _, pk := range q.Schema.PrimaryKeys() {
-		q.PrimaryKeyFields = append(q.PrimaryKeyFields, pgsearch.SelectQueryField{
-			SelectPath: qualifyColumn(pk.Schema.Table, pk.ColumnName, ternary.String(pk.SQLType == "uuid", "::text", "")),
-			Alias: func() string {
-				if q.QueryType == SELECT {
-					return strings.Join([]string{q.Schema.Table, pk.ColumnName}, "_")
-				}
-				return ""
-			}(),
-			FieldType: pk.DataType,
-		})
-	}
+	pks := q.Schema.PrimaryKeys()
+	for idx := range pks {
+		pk := &pks[idx]
+		q.PrimaryKeyFields = append(q.PrimaryKeyFields, selectQueryField(pk.Search.FieldName, pk, false, UnsetAggrFunc))
 
-	if len(q.PrimaryKeyFields) == 0 {
-		return
+		if len(q.PrimaryKeyFields) == 0 {
+			return
+		}
 	}
 
 	// If we do not need to apply distinct clause to the primary keys, then we are done here.
@@ -165,16 +159,16 @@ func (q *query) populatePrimaryKeySelectFields() {
 	for _, f := range q.PrimaryKeyFields {
 		outStr = append(outStr, f.SelectPath)
 	}
-	columnName := ternary.String(len(q.PrimaryKeyFields) > 1, "pks", q.PrimaryKeyFields[0].Alias)
+
+	alias := q.PrimaryKeyFields[0].Alias
+	if len(q.PrimaryKeyFields) > 1 {
+		alias = q.Schema.Table + "pks" // this will result in distinct(id, name) as tablepks
+	}
+
 	q.PrimaryKeyFields = q.PrimaryKeyFields[:0]
 	q.PrimaryKeyFields = append(q.PrimaryKeyFields, pgsearch.SelectQueryField{
 		SelectPath: fmt.Sprintf("distinct(%s)", stringutils.JoinNonEmpty(",", outStr...)),
-		Alias: func() string {
-			if q.QueryType == SELECT {
-				return strings.Join([]string{"distinct", q.Schema.Table, columnName}, "_")
-			}
-			return ""
-		}(),
+		Alias:      alias,
 	})
 }
 
@@ -215,7 +209,7 @@ func (q *query) getPortionBeforeFromClause() string {
 		selectStrs := make([]string, 0, len(allSelectFields))
 		for _, field := range allSelectFields {
 			if q.groupByNonPKFields() && !field.FromGroupBy && !field.DerivedField {
-				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) %s", field.SelectPath, field.Alias))
+				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) as %s", field.SelectPath, field.Alias))
 			} else {
 				selectStrs = append(selectStrs, field.PathForSelectPortion())
 			}
@@ -238,6 +232,10 @@ func (q *query) groupByNonPKFields() bool {
 }
 
 func (q *query) AsSQL() string {
+	if q == nil {
+		return ""
+	}
+
 	var querySB strings.Builder
 
 	querySB.WriteString(q.getPortionBeforeFromClause())
@@ -308,36 +306,32 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, querySelect *v1.QuerySelect, queryFields map[string]searchFieldMetadata) error {
-	if len(querySelect.GetFields()) == 0 {
+func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QueryField, queryFields map[string]searchFieldMetadata) error {
+	if len(querySelects) == 0 {
 		return nil
 	}
 
-	for _, field := range querySelect.GetFields() {
+	for _, qs := range querySelects {
+		field := qs.GetField()
 		fieldMetadata := queryFields[field]
 		dbField := fieldMetadata.baseField
 		if dbField == nil {
-			return errors.Errorf("field %s in SELECT clause does not exist in table %s or connected tables", field, schema.Table)
+			return errors.Errorf("field %s in select portion of query does not exist in table %s or connected tables", field, schema.Table)
+		}
+		// TODO(mandar): Add support for the following.
+		if dbField.DataType == walker.StringArray || dbField.DataType == walker.IntArray ||
+			dbField.DataType == walker.EnumArray || dbField.DataType == walker.Map {
+			return errors.Errorf("field %s in select portion of query is unsupported", field)
 		}
 
-		querySoFar.SelectedFields = append(querySoFar.SelectedFields, pgsearch.SelectQueryField{
-			SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, ternary.String(dbField.SQLType == "uuid", "::text", "")),
-			FieldType:  dbField.DataType,
-			Alias: func() string {
-				if querySoFar.QueryType == SELECT {
-					return strings.Join(strings.Fields(field), "")
-				}
-				return ""
-			}(),
-			// TODO(mandar): derived fields as field labels or expand QuerySelect to store user-defined aggr functions?
-			// TODO(mandar): Handle array type and map type.
-		})
+		querySoFar.SelectedFields = append(querySoFar.SelectedFields,
+			selectQueryField(field, dbField, qs.Distinct, AggrFunc(qs.AggregateFunc)),
+		)
 	}
 	return nil
 }
-
 func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
-	if querySoFar.QueryType == SEARCH && len(groupBy.GetFields()) > 0 {
+	if querySoFar.QueryType != SELECT && len(groupBy.GetFields()) > 0 {
 		return errors.New("GROUP BY clause not supported with SEARCH query type; Use SELECT")
 	}
 
@@ -371,41 +365,21 @@ func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker
 			querySoFar.GroupByPrimaryKey = true
 		}
 
-		var cast string
-		if dbField.SQLType == "uuid" {
-			cast = "::text"
-		}
-		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{
-			Field: pgsearch.SelectQueryField{
-				SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
-				FieldType:  dbField.DataType,
-				Alias: func() string {
-					if querySoFar.QueryType == SELECT {
-						return strings.Join(strings.Fields(groupByField), "")
-					}
-					return ""
-				}(),
-				FromGroupBy: true,
-			},
-		})
+		selectField := selectQueryField(groupByField, dbField, false, UnsetAggrFunc)
+		selectField.FromGroupBy = true
+		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
 	}
 	return nil
 }
 
 func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
 	querySoFar.GroupByPrimaryKey = true
-	for _, pk := range schema.PrimaryKeys() {
-		var cast string
-		if pk.SQLType == "uuid" {
-			cast = "::text"
-		}
-		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{
-			Field: pgsearch.SelectQueryField{
-				SelectPath:  qualifyColumn(pk.Schema.Table, pk.ColumnName, cast),
-				FieldType:   pk.DataType,
-				FromGroupBy: true,
-			},
-		})
+	pks := schema.PrimaryKeys()
+	for idx := range pks {
+		pk := &pks[idx]
+		selectField := selectQueryField("", pk, false, UnsetAggrFunc)
+		selectField.FromGroupBy = true
+		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
 	}
 }
 
@@ -439,42 +413,32 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			return errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
 		}
 
-		var cast string
-		if dbField.SQLType == "uuid" {
-			cast = "::text"
-		}
-
 		if fieldMetadata.derivedMetadata == nil {
 			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-				Field: pgsearch.SelectQueryField{
-					SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
-					FieldType:  dbField.DataType,
-				},
+				Field:       selectQueryField(so.GetField(), dbField, false, UnsetAggrFunc),
 				Descending:  so.GetReversed(),
 				SearchAfter: so.GetSearchAfter(),
 			})
 		} else {
+			var selectField pgsearch.SelectQueryField
+			var descending bool
 			switch fieldMetadata.derivedMetadata.DerivationType {
 			case searchPkg.CountDerivationType:
-				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-					Field: pgsearch.SelectQueryField{
-						SelectPath:   fmt.Sprintf("count(%s)", qualifyColumn(dbField.Schema.Table, dbField.ColumnName, "")),
-						Alias:        strings.Join([]string{"count", dbField.Schema.Table, dbField.ColumnName}, "_"),
-						FieldType:    walker.Integer,
-						DerivedField: true,
-					},
-					Descending: so.GetReversed(),
-				})
+				selectField = selectQueryField(so.GetField(), dbField, false, CountAggrFunc)
+				descending = so.GetReversed()
 			case searchPkg.SimpleReverseSortDerivationType:
-				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-					Field: pgsearch.SelectQueryField{
-						SelectPath:   qualifyColumn(dbField.Schema.Table, dbField.ColumnName, cast),
-						FieldType:    dbField.DataType,
-						DerivedField: true,
-					},
-					Descending: !so.GetReversed(),
-				})
+				selectField = selectQueryField(so.GetField(), dbField, false, UnsetAggrFunc)
+				descending = !so.GetReversed()
+			default:
+				log.Errorf("Unsupported derived field %s found in query", so.GetField())
+				continue
 			}
+
+			selectField.DerivedField = true
+			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+				Field:      selectField,
+				Descending: descending,
+			})
 		}
 	}
 	querySoFar.Pagination.Limit = int(pagination.GetLimit())
@@ -557,10 +521,10 @@ func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, q
 	standardizeFieldNamesInQuery(q)
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
 
-	if q.GetSelect() == nil && q.GetQuery() == nil {
+	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
 	}
-	if q.GetSelect() == nil {
+	if len(q.GetSelects()) == 0 {
 		return nil, errors.New("select portion of the query cannot be empty")
 	}
 
@@ -571,7 +535,7 @@ func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, q
 		InnerJoins: innerJoins,
 	}
 
-	err := populateSelect(parsedQuery, schema, q.GetSelect(), dbFields)
+	err := populateSelect(parsedQuery, schema, q.GetSelects(), dbFields)
 	if err != nil {
 		return nil, err
 	}
@@ -751,8 +715,8 @@ func valueFromStringPtrInterface(value interface{}) string {
 }
 
 func standardizeFieldNamesInQuery(q *v1.Query) {
-	for idx, field := range q.GetSelect().GetFields() {
-		q.Select.Fields[idx] = strings.ToLower(field)
+	for idx, s := range q.GetSelects() {
+		q.Selects[idx].Field = strings.ToLower(s.GetField())
 	}
 
 	// Lowercase all field names in the query, for standardization.
@@ -822,7 +786,7 @@ func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Que
 	schema := mapping.GetTableFromCategory(category)
 
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		return RunSearchRequestForSchema(ctx, schema, q, db)
 	})
 }
@@ -856,6 +820,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
+		if ctx.Err() == context.Canceled {
+			return nil, err
+		}
 		if !pgutils.IsTransientError(err) {
 			debug.PrintStack()
 		} else {
@@ -920,6 +887,9 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
+		if ctx.Err() == context.Canceled {
+			return nil, err
+		}
 		if !pgutils.IsTransientError(err) {
 			debug.PrintStack()
 		} else {
@@ -967,7 +937,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		return nil, nil
 	}
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		return retryableRunSearchRequestForSchema(ctx, query, schema, db)
 	})
 }
@@ -1002,7 +972,6 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, sch
 		return nil, nil
 	}
 	return pgutils.Retry2(func() ([]*T, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
 		return retryableRunSelectRequestForSchema[T](ctx, db, query)
 	})
 }
@@ -1012,7 +981,7 @@ func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Quer
 	schema := mapping.GetTableFromCategory(category)
 
 	return pgutils.Retry2(func() (int, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		return RunCountRequestForSchema(ctx, schema, q, db)
 	})
 }
@@ -1026,10 +995,13 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	queryStr := query.AsSQL()
 
 	return pgutils.Retry2(func() (int, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
+			if ctx.Err() == context.Canceled {
+				return 0, err
+			}
 			if !pgutils.IsTransientError(err) {
 				debug.PrintStack()
 			} else {
@@ -1059,7 +1031,7 @@ func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema 
 	queryStr := query.AsSQL()
 
 	return pgutils.Retry2(func() (*T, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		return unmarshal[T, PT](row)
 	})
@@ -1087,7 +1059,7 @@ func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sch
 	}
 
 	return pgutils.Retry2(func() ([]*T, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		return retryableRunGetManyQueryForSchema[T, PT](ctx, query, db)
 	})
 }
@@ -1144,7 +1116,7 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	}
 
 	return pgutils.Retry(func() error {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
+
 		_, err = db.Exec(ctx, query.AsSQL(), query.Data...)
 		if err != nil {
 			return errors.Wrapf(err, "could not delete from %q", schema.Table)
@@ -1193,4 +1165,30 @@ func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
 
 func qualifyColumn(table, column, cast string) string {
 	return table + "." + column + cast
+}
+
+func selectQueryField(searchField string, field *walker.Field, selectDistinct bool, aggrFunc AggrFunc) pgsearch.SelectQueryField {
+	var cast string
+	var dataType walker.DataType
+	if field.SQLType == "uuid" {
+		cast = "::text"
+	}
+
+	selectPath := qualifyColumn(field.Schema.Table, field.ColumnName, cast)
+	if selectDistinct {
+		selectPath = fmt.Sprintf("distinct(%s)", selectPath)
+	}
+	if aggrFunc != "" {
+		selectPath = fmt.Sprintf("%s(%s)", aggrFunc, selectPath)
+		dataType = aggrFuncToDataType[AggrFunc(aggrFunc)]
+	}
+	if dataType == "" {
+		dataType = field.DataType
+	}
+	return pgsearch.SelectQueryField{
+		SelectPath:   selectPath,
+		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.String()), "_"),
+		FieldType:    dataType,
+		DerivedField: aggrFunc != "",
+	}
 }

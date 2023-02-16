@@ -39,8 +39,6 @@ defaults:
       route:
         enabled: false
     db:
-      enabled: false
-
       external: false
 
       source:

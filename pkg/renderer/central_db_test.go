@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
@@ -26,7 +25,6 @@ func TestRenderCentralDBOnly(t *testing.T) {
 
 type centralDBTestSuite struct {
 	suite.Suite
-	restorer      *testbuildinfo.TestBuildTimestampRestorer
 	testFlavor    defaults.ImageFlavor
 	testCA        mtls.CA
 	centralDBCert *mtls.IssuedCert
@@ -40,10 +38,6 @@ func (suite *centralDBTestSuite) SetupSuite() {
 	require.NoError(suite.T(), err)
 	suite.centralDBCert, err = suite.testCA.IssueCertForSubject(mtls.CentralDBSubject)
 	require.NoError(suite.T(), err)
-}
-
-func (suite *centralDBTestSuite) TearDownSuite() {
-	suite.restorer.Restore()
 }
 
 func (suite *centralDBTestSuite) testWithHostPath(t *testing.T, c Config, m mode) {

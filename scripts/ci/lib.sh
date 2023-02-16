@@ -671,6 +671,8 @@ is_nightly_run() {
 is_in_PR_context() {
     if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
         return 0
+    elif is_GITHUB_ACTIONS && [[ -n "${GITHUB_BASE_REF:-}" ]]; then
+        return 0
     elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         return 0
     elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
@@ -740,6 +742,9 @@ get_repo_full_name() {
     if is_CIRCLECI; then
         # CIRCLE_REPOSITORY_URL=git@github.com:stackrox/stackrox.git
         echo "${CIRCLE_REPOSITORY_URL:15:-4}"
+    elif is_GITHUB_ACTIONS; then
+        [[ -n "${GITHUB_ACTION_REPOSITORY:-}" ]] || die "expect: GITHUB_ACTION_REPOSITORY"
+        echo "${GITHUB_ACTION_REPOSITORY}"
     elif is_OPENSHIFT_CI; then
         if [[ -n "${REPO_OWNER:-}" ]]; then
             # presubmit, postsubmit and batch runs
@@ -1164,7 +1169,7 @@ store_test_results() {
     if ! is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.3/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.4/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira -junit-reports-dir "$from" -threshold 5
     } || true

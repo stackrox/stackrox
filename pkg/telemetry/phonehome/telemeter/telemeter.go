@@ -2,9 +2,13 @@ package telemeter
 
 // CallOptions defines optional features for a Telemeter call.
 type CallOptions struct {
-	UserID     string
-	ClientID   string
-	ClientType string
+	UserID      string
+	AnonymousID string
+	ClientID    string
+	ClientType  string
+
+	// [group name: [group id]]
+	Groups map[string][]string
 }
 
 // Option modifies the provided CallOptions structure.
@@ -23,14 +27,28 @@ func ApplyOptions(opts []Option) *CallOptions {
 func WithUserID(userID string) Option {
 	return func(o *CallOptions) {
 		o.UserID = userID
+		o.AnonymousID = ""
 	}
 }
 
 // WithClient allows for modifying the ClientID and ClientType call options.
 func WithClient(clientID string, clientType string) Option {
 	return func(o *CallOptions) {
+		if o.UserID == "" {
+			o.AnonymousID = clientID
+		}
 		o.ClientID = clientID
 		o.ClientType = clientType
+	}
+}
+
+// WithGroups appends the groups for an event.
+func WithGroups(groupName string, groupID string) Option {
+	return func(o *CallOptions) {
+		if o.Groups == nil {
+			o.Groups = make(map[string][]string, 1)
+		}
+		o.Groups[groupName] = append(o.Groups[groupName], groupID)
 	}
 }
 

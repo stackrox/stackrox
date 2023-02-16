@@ -126,16 +126,6 @@ assert_helm_template_central_registry() {
   assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$registry_slug" "$version_regex" "$@"
 }
 
-assert_declarative_config_mount_exist() {
-  local out_dir="${1}"; shift;
-
-  for mount in "${@}"; do
-    run yq e "select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == \"central\").volumeMounts[] | select(.name == \"${mount}\")" "${out_dir}/01-central-13-deployment.yaml"
-    assert_output --partial "mountPath: /run/stackrox.io/declarative-configuration/${mount}"
-  done
-}
-
-
 wait_20s_for() {
   local file="$1"; shift
   local args=("${@}")
@@ -288,11 +278,7 @@ run_image_defaults_registry_test() {
   assert_success
   assert_components_registry "$out_dir/central" "$expected_main_registry" "$any_version" 'main'
   assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" "$any_version" 'scanner' 'scanner-db'
-  if [[ "$ROX_POSTGRES_DATASTORE" =~ "true" ]]; then
-    assert_components_registry "$out_dir/central" "$expected_main_registry" "$any_version" 'central-db'
-  else
-    assert_file_not_exist "$out_dir/central/01-central-12-central-db.yaml"
-  fi
+  assert_components_registry "$out_dir/central" "$expected_main_registry" "$any_version" 'central-db'
 }
 
 # run_no_rhacs_flag_test asserts that 'roxctl central generate' fails when presented with `--rhacs` parameter

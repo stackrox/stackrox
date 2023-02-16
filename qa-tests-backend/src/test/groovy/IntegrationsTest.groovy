@@ -21,6 +21,7 @@ import objects.NetworkPolicyTypes
 import objects.Notifier
 import objects.QuayImageIntegration
 import objects.SlackNotifier
+import objects.SyslogNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
 import services.ClusterService
@@ -31,6 +32,7 @@ import services.NotifierService
 import services.PolicyService
 import util.Env
 import util.MailServer
+import util.SyslogServer
 import util.SplunkUtil
 
 import org.junit.Assume
@@ -59,13 +61,11 @@ class IntegrationsTest extends BaseSpecification {
     Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
 
     def setupSpec() {
-        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { Services.waitForDeployment(it) }
     }
 
     def cleanupSpec() {
-        ImageIntegrationService.addStackroxScannerIntegration()
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
     }
 
@@ -641,6 +641,9 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("Integration")
     def "Verify #imageIntegration.name() integration - #testAspect"() {
+        setup:
+        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
+
         Assume.assumeTrue(imageIntegration.isTestable())
         Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
 
@@ -653,6 +656,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration outcome"
         assert outcome
+
+        cleanup:
+        ImageIntegrationService.addStackroxScannerIntegration()
 
         where:
         "tests are:"
@@ -749,35 +755,26 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
     }
 
-    // TODO disabled due to flaking (ROX-7902), shoudl be re-enabled once reworked (ROX-10310)
-    //@Tag("Integration")
-    //def "Verify syslog notifier"() {
-    //    given:
-    //    "the some syslog receiver is created"
-    //    // Change the local port numbers so we don't conflict with any other splunk instances
-    //    SplunkUtil.SplunkDeployment splunkDeployment = SplunkUtil.createSplunk(orchestrator,
-    //            Constants.ORCHESTRATOR_NAMESPACE, true)
+    @Tag("Integration")
+    def "Verify syslog notifier"() {
+       given:
+       "syslog server is created"
+       def syslog = SyslogServer.createRsyslog(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+       sleep 15 * 1000 // wait 15s for service to start
 
-    //    when:
-    //    "call the grpc API for the syslog integration."
-    //    SyslogNotifier notifier = new SyslogNotifier(splunkDeployment.syslogSvc.name, 514,
-    //            splunkDeployment.splunkPortForward.localPort)
-    //    try {
-    //        notifier.createNotifier()
-    //    } catch (Exception e) {
-    //        throw new AssumptionViolatedException("Could not create syslog notifier. Skipping test!", e)
-    //    }
+        when:
+        "call the grpc API for the syslog notifier integration."
+        SyslogNotifier notifier = new SyslogNotifier(syslog.syslogSvc.name, syslog.SYSLOG_PORT)
 
-    //    then:
-    //    "Verify the messages are seen in the json"
-    //    // We should have at least one audit log for the message which created the syslog integration.
-    //    notifier.validateViolationNotification(null, null, false)
-
-    //    cleanup:
-    //    "remove splunk and syslog notifier integration"
-    //    SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
-    //    notifier.deleteNotifier()
-    //}
+        then:
+        "Verify syslog connection is successful"
+        withRetry(3, 10) {
+            assert notifier.testNotifier()
+        }
+        cleanup:
+        "remove syslog notifier integration"
+        syslog.tearDown(orchestrator)
+    }
 
     def uniqueName(String name) {
         return name + RandomStringUtils.randomAlphanumeric(5).toLowerCase()

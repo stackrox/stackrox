@@ -15,6 +15,14 @@ spec:
       containers:
         - name: central
           env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
             - name: ROX_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -29,8 +37,6 @@ spec:
             - name: ROX_ENABLE_OPENSHIFT_AUTH
               value: "true"
             - name: ROX_OPENSHIFT
-              value: "true"
-            - name: ROX_POSTGRES_DATASTORE
               value: "true"
             - name: NO_PROXY
               valueFrom:

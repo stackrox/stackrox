@@ -1,16 +1,14 @@
 import React, { ReactElement } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 import { Page } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
 import { selectors } from 'reducers';
-import { actions as globalSearchActions } from 'reducers/globalSearch';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import Notifications from 'Containers/Notifications';
-import SearchModal from 'Containers/Search/SearchModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper from 'Containers/AppWrapper';
 import Body from 'Containers/MainPage/Body';
@@ -23,12 +21,12 @@ import VersionOutOfDate from './VersionOutOfDate';
 import DatabaseBanner from './DatabaseBanner';
 import AnnouncementBanner from './AnnouncementBanner';
 import Masthead from './Header/Masthead';
+import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
+import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
 import NavigationSidebar from './Sidebar/NavigationSidebar';
 
 const mainPageSelector = createStructuredSelector({
-    isGlobalSearchView: selectors.getGlobalSearchView,
     metadata: selectors.getMetadata,
-    publicConfig: selectors.getPublicConfig,
     serverState: selectors.getServerState,
 });
 
@@ -44,23 +42,14 @@ const CLUSTER_COUNT = gql`
 
 function MainPage(): ReactElement {
     const {
-        isGlobalSearchView,
         metadata = {
             stale: false,
         },
-        publicConfig,
         serverState,
     } = useSelector(mainPageSelector);
 
     // Follow-up: Replace SearchModal with path like /main/search and component like GlobalSearchPage.
-    const dispatch = useDispatch();
     const history = useHistory();
-    function onCloseGlobalSearchModal(toURL) {
-        dispatch(globalSearchActions.toggleGlobalSearchView());
-        if (typeof toURL === 'string') {
-            history.push(toURL);
-        }
-    }
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
@@ -87,7 +76,8 @@ function MainPage(): ReactElement {
     const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
 
     return (
-        <AppWrapper publicConfig={publicConfig}>
+        <AppWrapper>
+            <PublicConfigHeader />
             <div className="flex flex-1 flex-col h-full relative">
                 <AnnouncementBanner />
                 <UnreachableWarning serverState={serverState} />
@@ -118,8 +108,8 @@ function MainPage(): ReactElement {
                         isFeatureFlagEnabled={isFeatureFlagEnabled}
                     />
                 </Page>
-                {isGlobalSearchView && <SearchModal onClose={onCloseGlobalSearchModal} />}
             </div>
+            <PublicConfigFooter />
         </AppWrapper>
     );
 }

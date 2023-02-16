@@ -293,13 +293,13 @@ const upgradeStates: UpgradeStates = {
 };
 
 export function formatKubernetesVersion(orchestratorMetadata: { version: string }) {
-    return orchestratorMetadata?.version || 'Not applicable';
+    return orchestratorMetadata?.version || 'Not available';
 }
 
 export function formatBuildDate(orchestratorMetadata) {
     return orchestratorMetadata?.buildDate
         ? getDate(orchestratorMetadata.buildDate)
-        : 'Not applicable';
+        : 'Not available';
 }
 
 type ProviderMetadata = {
@@ -326,7 +326,7 @@ export function formatCloudProvider(providerMetadata: ProviderMetadata) {
         }
     }
 
-    return 'Not applicable';
+    return 'Not available';
 }
 
 const shortLivedCertMaxDays = 14;

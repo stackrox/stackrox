@@ -106,7 +106,7 @@ dependencies {
     implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
 
     //Slack API
-    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.27.0'
+    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.27.3'
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
@@ -116,10 +116,10 @@ dependencies {
     // See https://github.com/gradle/gradle/issues/12646.
     constraints {
         "codenarc"("org.codehaus.groovy:groovy:2.5.10")
-        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.19")
+        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.21")
     }
 
-    implementation 'org.javers:javers-core:6.7.0'
+    implementation 'org.javers:javers-core:6.9.1'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.15'

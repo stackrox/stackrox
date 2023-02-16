@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{ if and ._rox.central.db.enabled (not ._rox.central.db.external) -}}
+{{ if not ._rox.central.db.external -}}
 {{ if ._rox.central.db.persistence._pvcCfg -}}
 {{- $pvcCfg := ._rox.central.db.persistence._pvcCfg -}}
 {{- $claimName := $pvcCfg.claimName -}}

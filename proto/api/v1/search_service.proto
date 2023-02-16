@@ -100,8 +100,10 @@ message QuerySortOption {
     }
 }
 
-message QuerySelect {
-    repeated string fields = 1;
+message QueryField {
+    string field          = 1;
+    string aggregate_func = 2;
+    bool   distinct       = 3;
 }
 
 message QueryGroupBy {
@@ -127,7 +129,7 @@ message Query {
         BaseQuery           base_query    = 3;
         BooleanQuery        boolean_query = 6;
     }
-    QuerySelect             select        = 8;
+    repeated QueryField     selects       = 8;
     QueryGroupBy            group_by      = 7;
     QueryPagination         pagination    = 4;
     reserved 5; // previously SearchOptions

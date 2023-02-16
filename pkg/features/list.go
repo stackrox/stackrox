@@ -22,9 +22,6 @@ var (
 	// against network policies applied in the secured cluster.
 	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", true)
 
-	// SearchPageUI enables search page instead of search modal in UI. Frontend only.
-	SearchPageUI = registerFeature("Enable search page instead of search modal in UI", "ROX_SEARCH_PAGE_UI", true)
-
 	// DecommissionedClusterRetention enables the setting in System Configuration.
 	DecommissionedClusterRetention = registerFeature("Enable Decommissioned Cluster Retention in System Configuration", "ROX_DECOMMISSIONED_CLUSTER_RETENTION", true)
 
@@ -58,4 +55,7 @@ var (
 
 	// DeclarativeConfiguration enables creating resources declaratively.
 	DeclarativeConfiguration = registerFeature("Declarative configuration", "ROX_DECLARATIVE_CONFIGURATION", false)
+
+	// VulnMgmtWorkloadCVEs enables APIs and UI pages for the VM Workload CVE enhancements
+	VulnMgmtWorkloadCVEs = registerFeature("Vuln Mgmt Workload CVEs", "ROX_VULN_MGMT_WORKLOAD_CVES", false)
 )

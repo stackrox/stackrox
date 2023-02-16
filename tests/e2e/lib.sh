@@ -87,12 +87,13 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
+    ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_DECOMMISSIONED_CLUSTER_RETENTION "${ROX_DECOMMISSIONED_CLUSTER_RETENTION:-true}"
     ci_export ROX_NETWORK_GRAPH_PATTERNFLY "${ROX_NETWORK_GRAPH_PATTERNFLY:-true}"
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
-    ci_export ROX_SEARCH_PAGE_UI "${ROX_SEARCH_PAGE_UI:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
+    ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
 }
 
 deploy_stackrox_operator() {
@@ -177,7 +178,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
     envsubst \
-      < operator/tests/e2e/central-cr.envsubst.yaml \
+      < tests/e2e/yaml/central-cr.envsubst.yaml \
       > /tmp/central-cr.yaml
 
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
@@ -251,7 +252,7 @@ deploy_sensor_via_operator() {
         --output-secrets - \
     | kubectl -n stackrox apply -f -
 
-    kubectl apply -n stackrox -f operator/tests/e2e/secured-cluster-cr.yaml
+    kubectl apply -n stackrox -f tests/e2e/yaml/secured-cluster-cr.yaml
 
     wait_for_object_to_appear stackrox deploy/sensor 300
     wait_for_object_to_appear stackrox ds/collector 300
