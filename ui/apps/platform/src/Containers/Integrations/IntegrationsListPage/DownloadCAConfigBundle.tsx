@@ -1,13 +1,15 @@
 import React, { ReactElement, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Button, Tooltip } from '@patternfly/react-core';
 import FileSaver from 'file-saver';
 
+import { actions } from 'reducers/notifications';
 import { fetchCAConfig } from 'services/ClustersService';
-import useNotifications from 'hooks/useNotifications';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 function DownloadCAConfigBundle(): ReactElement {
     const [downloadingCAConfig, setDownloadingCAConfig] = useState<boolean>(false);
-    const addNotification = useNotifications();
+    const dispatch = useDispatch();
 
     function onFetchCAConfig() {
         setDownloadingCAConfig(true);
@@ -22,10 +24,14 @@ function DownloadCAConfigBundle(): ReactElement {
                 });
                 FileSaver.saveAs(file, 'ca-config.yaml');
             })
-            .catch((err: { message: string }) => {
-                addNotification(
-                    `Problem downloading the CA config. Please try again. (${err.message})`
+            .catch((error) => {
+                const errorMessage = getAxiosErrorMessage(error);
+                dispatch(
+                    actions.addNotification(
+                        `Problem downloading the CA config. Please try again. (${errorMessage})`
+                    )
                 );
+                setTimeout(dispatch(actions.removeOldestNotification), 5000);
             })
             .finally(() => {
                 setDownloadingCAConfig(false);

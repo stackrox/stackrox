@@ -8,7 +8,6 @@ import { gql, useQuery } from '@apollo/client';
 import { selectors } from 'reducers';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
-import Notifications from 'Containers/Notifications';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper from 'Containers/AppWrapper';
 import Body from 'Containers/MainPage/Body';
@@ -24,6 +23,8 @@ import Masthead from './Header/Masthead';
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
 import NavigationSidebar from './Sidebar/NavigationSidebar';
+
+import Notifications from './Notifications';
 
 const mainPageSelector = createStructuredSelector({
     metadata: selectors.getMetadata,

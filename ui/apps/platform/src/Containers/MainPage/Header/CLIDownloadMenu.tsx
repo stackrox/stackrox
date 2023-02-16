@@ -105,7 +105,6 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
 }
 
 const mapDispatchToProps = {
-    // TODO: type redux props
     addToast: actions.addNotification,
     removeToast: actions.removeOldestNotification,
 };
