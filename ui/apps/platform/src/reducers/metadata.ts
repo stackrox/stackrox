@@ -39,12 +39,12 @@ export const actions = {
 
 // Reducers
 
-// Response for request before authentication arbitrarily assumes release build.
+// Initial state arbitrarily assumes release build.
 const metadataInitialState: Metadata = {
     buildFlavor: 'release',
     licenseStatus: 'VALID',
     releaseBuild: true,
-    version: '',
+    version: '', // response for request before authentication does not reveal version
 };
 
 const metadata: Reducer<Metadata, MetadataAction> = (
