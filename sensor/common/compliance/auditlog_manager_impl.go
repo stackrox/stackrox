@@ -48,6 +48,8 @@ func (a *auditLogCollectionManagerImpl) Stop(_ error) {
 	a.stopSig.Signal()
 }
 
+func (a *auditLogCollectionManagerImpl) NotifyReady() {}
+
 func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
 }

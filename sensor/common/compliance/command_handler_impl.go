@@ -43,6 +43,8 @@ func (c *commandHandlerImpl) Stop(_ error) {
 	c.stopper.Client().Stop()
 }
 
+func (c *commandHandlerImpl) NotifyReady() {}
+
 func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()
 }

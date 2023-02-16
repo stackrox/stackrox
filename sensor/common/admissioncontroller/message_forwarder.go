@@ -52,6 +52,8 @@ func (h *admCtrlMsgForwarderImpl) Stop(err error) {
 	h.stopper.Client().Stop()
 }
 
+func (c *admCtrlMsgForwarderImpl) NotifyReady() {}
+
 func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }

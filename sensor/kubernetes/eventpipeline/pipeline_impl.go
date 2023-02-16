@@ -72,6 +72,8 @@ func (p *eventPipeline) Stop(_ error) {
 	p.stopSig.Signal()
 }
 
+func (p *eventPipeline) NotifyReady() {}
+
 // forwardMessages from listener component to responses channel
 func (p *eventPipeline) forwardMessages() {
 	for {

@@ -54,6 +54,8 @@ func (u *updaterImpl) Stop(_ error) {
 	u.stopSig.Signal()
 }
 
+func (u *updaterImpl) NotifyReady() {}
+
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.HealthMonitoringCap}
 }

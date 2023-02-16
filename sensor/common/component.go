@@ -11,6 +11,7 @@ import (
 type SensorComponent interface {
 	Start() error
 	Stop(err error) // TODO: get rid of err argument as it always seems to be effectively nil.
+	NotifyReady()
 	Capabilities() []centralsensor.SensorCapability
 
 	ProcessMessage(msg *central.MsgToSensor) error

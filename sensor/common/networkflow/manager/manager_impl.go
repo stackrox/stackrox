@@ -230,6 +230,8 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
+func (m *networkFlowManager) NotifyReady() {}
+
 func (m *networkFlowManager) ResponsesC() <-chan *central.MsgFromSensor {
 	return m.sensorUpdates
 }

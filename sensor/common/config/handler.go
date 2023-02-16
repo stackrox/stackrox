@@ -59,6 +59,8 @@ func (c *configHandlerImpl) Stop(_ error) {
 	c.stopC.Signal()
 }
 
+func (c *configHandlerImpl) NotifyReady() {}
+
 func (c *configHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }

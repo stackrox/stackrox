@@ -47,6 +47,8 @@ func (s *serviceImpl) Start() error {
 
 func (s *serviceImpl) Stop(err error) {}
 
+func (s *serviceImpl) NotifyReady() {}
+
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }

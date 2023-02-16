@@ -80,6 +80,8 @@ func (h *commandHandler) Stop(err error) {
 	h.stopSig.SignalWithError(err)
 }
 
+func (h *commandHandler) NotifyReady() {}
+
 func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_TelemetryDataRequest:
