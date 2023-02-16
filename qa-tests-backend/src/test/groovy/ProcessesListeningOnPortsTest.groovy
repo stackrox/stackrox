@@ -82,7 +82,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     def destroyDeployments() {
         for (Deployment deployment : targetDeployments) {
-            orchestrator.deleteDeployment(deployment)
+            orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
         }
         for (Deployment deployment : targetDeployments) {
             if (deployment.exposeAsService) {
@@ -101,9 +101,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         if (Helpers.getAttemptCount() > 1) {
             log.info ">>>> Recreating test deployments prior to retest <<<<<"
             destroyDeployments()
-            sleep(5000)
             createDeployments()
-            sleep(5000)
             log.info ">>>> Done <<<<<"
         }
     }
