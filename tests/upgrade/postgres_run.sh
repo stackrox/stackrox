@@ -302,7 +302,7 @@ deploy_scaled_workload() {
 
     sensor_wait
 
-    ./scale/launch_workload.sh upgrade-test
+    ./scale/launch_workload.sh scale-test
 
     wait_for_api
 
