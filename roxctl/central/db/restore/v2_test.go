@@ -44,7 +44,7 @@ func TestCentralDBRestore_Validate(t *testing.T) {
 			err := tc.cmd.validate()
 			if tc.err != nil {
 				assert.Error(t, err)
-				assert.ErrorIs(t, err, c.err)
+				assert.ErrorIs(t, err, tc.err)
 			} else {
 				assert.NoError(t, err)
 			}
