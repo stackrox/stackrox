@@ -56,10 +56,10 @@ func ConfigurationFromRawBytes(rawConfigurations ...[]byte) ([]Configuration, er
 
 func fromUnstructuredConfigs(unstructuredConfigs []interface{}) ([]Configuration, error) {
 	configurations := make([]Configuration, 0, len(unstructuredConfigs))
-	for _, unstructuredConfig := range unstructuredConfigs {
+	for i, unstructuredConfig := range unstructuredConfigs {
 		rawConfigurationBytes, err := yaml.Marshal(unstructuredConfig)
 		if err != nil {
-			return nil, errors.Wrapf(err, "marshalling configuration from list %+v", unstructuredConfig)
+			return nil, errors.Wrapf(err, "marshalling configuration[%d] from list %+v", i, unstructuredConfig)
 		}
 		config, err := fromRawBytes(rawConfigurationBytes)
 		if err != nil {
