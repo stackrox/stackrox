@@ -54,7 +54,7 @@ func (w *watchHandler) OnChange(dir string) (interface{}, error) {
 		}
 		entryContents, err := readDeclarativeConfigFile(path.Join(dir, entry.Name()))
 		if err != nil {
-			log.Errorf("Found an invalid file %s: %+v", entry.Name(), err)
+			log.Errorf("Error reading file %s: %+v", entry.Name(), err)
 			continue
 		}
 		declarativeConfigFiles[entry.Name()] = entryContents
@@ -66,7 +66,7 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 	// We receive an array of file contents (i.e. bytes) which contain valid YAML format (this has been achieved within
 	// OnUpdate, and OnStableUpdate will only be called _iff_ OnStable deemed the contents as valid YAMLs.
 	if err != nil {
-		log.Warnf("Error reading declartive configuration files: %+v", err)
+		log.Warnf("Error reading declarative configuration files: %+v", err)
 		return
 	}
 	fileContents, ok := val.(map[string][]byte)
@@ -77,6 +77,8 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 
 	w.logFileContents(fileContents)
 
+	// We have to ensure that no errors will be omitted from the time we changed the hashes for the files to passing
+	// the latest changes to the updater, otherwise we could potentially lose changes.
 	if !w.compareHashesForChanges(fileContents) && !w.checkForDeletedFiles(fileContents) {
 		log.Debugf("Found no changes from before in content, no reconciliation will be triggered")
 		return

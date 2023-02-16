@@ -37,25 +37,31 @@ func TestWatchHandler_CompareHashesForChanges(t *testing.T) {
 		},
 		"pre-populated cache containing the new file should not signal updated files": {
 			fileContents: map[string][]byte{
-				"test-file": []byte("test content"),
+				"test-file":        []byte("test content"),
+				"test-second-file": []byte("second test content"),
 			},
 			initialCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content")),
+				"test-file":        md5.Sum([]byte("test content")),
+				"test-second-file": md5.Sum([]byte("second test content")),
 			},
 			expectedCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content")),
+				"test-file":        md5.Sum([]byte("test content")),
+				"test-second-file": md5.Sum([]byte("second test content")),
 			},
 		},
 		"pre-populated cache containing the new file but different contents should signal updated files": {
 			fileContents: map[string][]byte{
-				"test-file": []byte("test content"),
+				"test-file":        []byte("test content"),
+				"test-second-file": []byte("second test content"),
 			},
 			initialCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content but different")),
+				"test-file":        md5.Sum([]byte("test content but different")),
+				"test-second-file": md5.Sum([]byte("second test content")),
 			},
 			expectedResult: true,
 			expectedCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content")),
+				"test-file":        md5.Sum([]byte("test content")),
+				"test-second-file": md5.Sum([]byte("second test content")),
 			},
 		},
 	}
@@ -150,7 +156,7 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 3. Wait to ensure the watch handler has been triggered.
-	time.Sleep(100 * time.Second)
+	time.Sleep(100 * time.Millisecond)
 
 	// 4. Assert on the cached file hashes.
 	expectedCache := map[string]md5CheckSum{
@@ -284,7 +290,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	assert.Equal(t, expectedCache, wh.cachedFileHashes)
 	wh.mutex.RUnlock()
 
-	// 5.Set the expected calls to the updater
+	// 5.Set the expected calls to the updater.
 	updaterMock.EXPECT().ReconcileDeclarativeConfigs([][]byte{})
 
 	// 6. Remove the previously added YAML file.
