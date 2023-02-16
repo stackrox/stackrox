@@ -20,7 +20,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.21.12'
 def protobufVersion = '3.21.12'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '6.1.1'
+def fabric8Version = '6.4.1'
 def jacksonVersion = '2.13.2'
 
 protobuf {
