@@ -88,7 +88,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		AddGroupBy(pkgSearch.Severity).ProtoQuery()
 	b.Run("selectQuery", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			runSelectQuery(b, ctx, testDB, query, expected)
+			runSelectQuery(ctx, b, testDB, query, expected)
 		}
 	})
 
@@ -154,7 +154,7 @@ func runSearchListAlerts(ctx context.Context, t testing.TB, datastore DataStore,
 	assert.ElementsMatch(t, expected, actual)
 }
 
-func runSelectQuery(t testing.TB, ctx context.Context, testDB *pgtest.TestPostgres, q *v1.Query, expected []*violationsBySeverity) {
+func runSelectQuery(ctx context.Context, t testing.TB, testDB *pgtest.TestPostgres, q *v1.Query, expected []*violationsBySeverity) {
 	results, err := postgres.RunSelectRequestForSchema[violationsBySeverity](ctx, testDB.DB, schema.AlertsSchema, q)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, expected, results)
