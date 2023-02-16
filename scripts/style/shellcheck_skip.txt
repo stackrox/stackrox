@@ -1,4 +1,3 @@
-.github/workflows/scripts/patch-changelog.sh
 deploy/common/docker-auth.sh
 deploy/common/k8sbased.sh
 deploy/openshift/deploy-local.sh

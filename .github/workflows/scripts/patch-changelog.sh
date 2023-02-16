@@ -20,6 +20,7 @@ check_not_empty \
     main_branch
 
 create_pr() {
+    # shellcheck disable=SC2154
     gh pr create \
     --title "$TITLE" \
     --base "$main_branch" \
