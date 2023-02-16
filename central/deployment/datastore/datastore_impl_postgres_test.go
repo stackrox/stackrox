@@ -54,11 +54,11 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 
-	imageDS, err := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.Pool)
+	imageDS, err := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
 	s.imageDatastore = imageDS
 
-	deploymentDS, err := GetTestPostgresDataStore(s.T(), s.testDB.Pool)
+	deploymentDS, err := GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
 	s.deploymentDatastore = deploymentDS
 }
@@ -348,7 +348,7 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
 
-	deploymentDS, err := GetTestPostgresDataStore(t, testDB.Pool)
+	deploymentDS, err := GetTestPostgresDataStore(t, testDB.DB)
 	assert.NoError(t, err)
 
 	for _, deployment := range []*storage.Deployment{
@@ -380,7 +380,7 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 		AddSelectFields(
 			&v1.QueryField{
 				Field:         pkgSearch.DeploymentID.String(),
-				AggregateFunc: postgres.Count.String(),
+				AggregateFunc: postgres.CountAggrFunc.String(),
 			},
 		).
 		AddGroupBy(pkgSearch.DeploymentType).ProtoQuery()
@@ -395,7 +395,7 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 		{2, "daemonset"},
 		{1, "replicaset"},
 	}
-	results, err := postgres.RunSelectRequestForSchema[deploymentCountByType](ctx, testDB.Pool, schema.DeploymentsSchema, q)
+	results, err := postgres.RunSelectRequestForSchema[deploymentCountByType](ctx, testDB.DB, schema.DeploymentsSchema, q)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, expected, results)
 }

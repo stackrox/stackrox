@@ -32,7 +32,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 
 	testDB := pgtest.ForT(b)
 	ctx := sac.WithAllAccess(context.Background())
-	datastore, err := GetTestPostgresDataStore(b, testDB.Pool)
+	datastore, err := GetTestPostgresDataStore(b, testDB.DB)
 	require.NoError(b, err)
 
 	var ids []string
@@ -60,20 +60,20 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		ProtoQuery()
 	b.Run("searchWithStringHighlighted", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			runSearchAndGroupResults(b, ctx, datastore, query, expected)
+			runSearchAndGroupResults(ctx, b, datastore, query, expected)
 		}
 	})
 
 	query = pkgSearch.EmptyQuery()
 	b.Run("searchWithoutHighlighted (aka get IDs only)", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			runSearch(b, ctx, datastore, query)
+			runSearch(ctx, b, datastore, query)
 		}
 	})
 
 	b.Run("searchWithRawListAlert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			runSearchListAlerts(b, ctx, datastore, expected)
+			runSearchListAlerts(ctx, b, datastore, expected)
 		}
 	})
 
@@ -108,7 +108,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 	})
 }
 
-func runSearchAndGroupResults(t testing.TB, ctx context.Context, datastore DataStore, query *v1.Query, expected []*violationsBySeverity) {
+func runSearchAndGroupResults(ctx context.Context, t testing.TB, datastore DataStore, query *v1.Query, expected []*violationsBySeverity) {
 	results, err := datastore.Search(ctx, query)
 	require.NoError(t, err)
 	require.NotNil(t, results)
@@ -129,13 +129,13 @@ func runSearchAndGroupResults(t testing.TB, ctx context.Context, datastore DataS
 	assert.ElementsMatch(t, expected, actual)
 }
 
-func runSearch(t testing.TB, ctx context.Context, datastore DataStore, query *v1.Query) {
+func runSearch(ctx context.Context, t testing.TB, datastore DataStore, query *v1.Query) {
 	results, err := datastore.Search(ctx, query)
 	require.NoError(t, err)
 	require.NotNil(t, results)
 }
 
-func runSearchListAlerts(t testing.TB, ctx context.Context, datastore DataStore, expected []*violationsBySeverity) {
+func runSearchListAlerts(ctx context.Context, t testing.TB, datastore DataStore, expected []*violationsBySeverity) {
 	results, err := datastore.ListAlerts(ctx, &v1.ListAlertsRequest{})
 	require.NoError(t, err)
 	require.NotNil(t, results)
@@ -155,12 +155,12 @@ func runSearchListAlerts(t testing.TB, ctx context.Context, datastore DataStore,
 }
 
 func runSelectQuery(t testing.TB, ctx context.Context, testDB *pgtest.TestPostgres, q *v1.Query, expected []*violationsBySeverity) {
-	results, err := postgres.RunSelectRequestForSchema[violationsBySeverity](ctx, testDB.Pool, schema.AlertsSchema, q)
+	results, err := postgres.RunSelectRequestForSchema[violationsBySeverity](ctx, testDB.DB, schema.AlertsSchema, q)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, expected, results)
 }
 
 type violationsBySeverity struct {
 	AlertIDCount int `db:"alertidcount"`
-	Severity     int `db:"severity"` //int because of enum
+	Severity     int `db:"severity"` // int because of enum
 }
