@@ -560,7 +560,7 @@ jobs:
 
   slack-on-build-failure:
     if: github.event_name == 'push' && failure()
-    name: Post Build Failure
+    name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
       - pre-build-ui
@@ -573,9 +573,11 @@ jobs:
       - build-and-push-operator
       - build-and-push-mock-grpc-server
       - scan-images-with-roxctl
+    permissions:
+      read-all
     steps:
       - name: Slack Workflow Notification
-        uses: Gamesight/slack-workflow-status@v1.1.0
+        uses: Gamesight/slack-workflow-status@26a36836c887f260477432e4314ec3490a84f309
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
           slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}
