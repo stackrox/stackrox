@@ -19,6 +19,7 @@ type nodeInventoryHandlerImpl struct {
 	inventories <-chan *storage.NodeInventory
 	toCentral   <-chan *central.MsgFromSensor
 	nodeMatcher NodeIDMatcher
+	sigReady    *concurrency.Signal
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
@@ -56,6 +57,10 @@ func (c *nodeInventoryHandlerImpl) Stop(_ error) {
 	c.stopper.Client().Stop()
 }
 
+func (c *nodeInventoryHandlerImpl) NotifyReady() {
+	c.sigReady.Signal()
+}
+
 func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	// This component doesn't actually process or handle any messages sent from Central to Sensor (yet).
 	// It uses the sensor component so that the lifecycle (start, stop) can be handled when Sensor starts up.
@@ -77,6 +82,11 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 				if !ok {
 					c.stopper.Flow().StopWithError(errInputChanClosed)
 					return
+				}
+				if !c.sigReady.IsDone() {
+					// TODO: NACK compliance
+					log.Warnf("Received NodeInventory but central is not reacheable. Sending NACK to compliance")
+					continue
 				}
 				if inventory == nil {
 					log.Warnf("Received nil NodeInventory - not sending node inventory to Central")
