@@ -133,22 +133,31 @@ it manipulates and for converting it.
 #### Freeze current schema as needed.
 
 A migration shall not access current schema under `pkg/postgres/schema`. The migration access data in the format
-of its creation time and bring the format of the next migration. It does not evolve with the latest version
-and is associated with a specific sequence number (aka version). The frozen schema helps to keep migration separated
-from Central and keep the codes of migration stable.
+of its creation time and bring the format of the next migration. It is associated with a specific sequence number(aka version)
+and hence it does not evolve with the latest version. The frozen schema helps to keep migration separated
+from Central and keep the codes of migrations stable.
 
-For the initial data push to postgres, the generated schemas under `migrator/migrations/frozenschema/v73` were used.
-The auto-generation scripts are removed to freeze the schemas after 3.73.
+To freeze a schema, you can use the following tool to generate a frozen schema, make sure use the exact same parameters
+to generate current schema which can be find in each Postgres store.
 
-In 3.74, snapshots of the schemas are taken with an on-demand basis by version. 
+```shell
+pg-schema-migration-helper --type=<prototype> --search-category ...
+```
 
-Starting from release 4.0, we recommend to keep frozen schemas inside a new migration:
-- If the migration does not change the schema but need to access the data of a table, it needs to freeze its schema in the migration.
-- If the migration changes the schema of a tale, it may need to freeze two versions of its schema before and after the schema change.
+This tool also generates conversion tools for schema, you may remove the 
 
 #### Create or upgrade the schema of a table.
 
-If your new migration need to change the Postgres schema, use the following statement to apply frozen schema.
+For the initial data push to postgres, the generated schemas under `migrator/migrations/frozenschema/v73` were used.
+The auto-generation scripts are removed so the schemas are frozen after 3.73.
+
+In 3.74, snapshots of the schemas are taken with an on-demand basis. 
+
+Starting from release 4.0, we recommend to keep frozen schemas inside a new migration:
+- If the migration does not change the schema but need to access the data of a table, it needs to freeze its schema in the migration.
+- If the migration changes the schema of a table, it may need to freeze two versions of its schema before and after the schema change.
+
+If your new migration need to change the Postgres schema, use the following statement to apply frozen schema in a migration.
 
 ```go
 pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableCollectionsStmt)
@@ -161,7 +170,9 @@ In migrator, there are a multiple ways to access data.
 
 1. Raw SQL commands
 
-    Raw SQL commands are always available to databases. But it may not be convenient and it could be error-prone.
+    Raw SQL commands are always available to databases and it has good isolation from current release. It is used frequently in 
+    migrations before Postgres. Migrations with raw SQL command needs less maintenance but it may not be convenient 
+    and it could be error-prone.
     We try to provide more convenient way to read and update the data.
 
 2. Gorm
@@ -210,6 +221,12 @@ In migrator, there are a multiple ways to access data.
        Serialized []byte    `gorm:"column:serialized;type:bytea"`
    }
    ```
+   
+3. Duplicate the Postgres Store
+   This method is used in version 73 and 74 to migrate all tables from RocksDB to Postgres. In addition to frozen schema,
+   the store to access the data are also frozen for migration. The migrations with this method are closely associated
+   with current release eg. search/delete with schema and the prototypes of the objects. This method is NOT recommended for
+   4.0 and beyond.
 
 #### Conversion tool
 
