@@ -31,7 +31,9 @@ function DownloadCAConfigBundle(): ReactElement {
                         `Problem downloading the CA config. Please try again. (${errorMessage})`
                     )
                 );
-                setTimeout(dispatch(actions.removeOldestNotification), 5000);
+                setTimeout(() => {
+                    dispatch(actions.removeOldestNotification());
+                }, 5000);
             })
             .finally(() => {
                 setDownloadingCAConfig(false);
