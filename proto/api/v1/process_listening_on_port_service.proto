@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "storage/process_listening_on_port.proto";
+
+package v1;
+
+message GetProcessesListeningOnPortsRequest {
+    string deployment_id = 1;
+}
+
+message GetProcessesListeningOnPortsResponse {
+    repeated storage.ProcessListeningOnPort listening_endpoints = 1;
+}
+
+service ProcessesListeningOnPortsService {
+
+    rpc GetProcessesListeningOnPorts(GetProcessesListeningOnPortsRequest) returns (GetProcessesListeningOnPortsResponse) {
+        option (google.api.http) = {
+            get: "/v1/listening_endpoints/deployment/{deployment_id}"
+        };
+    }
+}
