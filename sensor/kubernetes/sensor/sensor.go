@@ -61,7 +61,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		log.Infof("Running sesnor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
 	}
-	// TODO(ROX-13603): Move other singleton stores into the store provider
+
 	storeProvider := resources.InitializeStore()
 	scan.SetMatchingRegistryFunction(storeProvider.Registries().GetRegistryForImage)
 
