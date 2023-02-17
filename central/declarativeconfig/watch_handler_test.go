@@ -122,9 +122,9 @@ func TestWatchHandler_CheckForDeletedFiles(t *testing.T) {
 
 func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 	// 0. Create a watch handler with a lower interval.
-	updaterMock := mocks.NewMockdeclarativeConfigReconciler(gomock.NewController(t))
+	updaterMock := mocks.NewMockdeclarativeConfigContentUpdater(gomock.NewController(t))
 
-	wh := newWatchHandler(updaterMock)
+	wh := newWatchHandler("empty-directory", updaterMock)
 	opts := k8scfgwatch.Options{
 		Interval: 10 * time.Millisecond,
 	}
@@ -146,7 +146,7 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 2.1 Set the expected calls to the updater.
-	updaterMock.EXPECT().ReconcileDeclarativeConfigs([][]byte{yamlBytes})
+	updaterMock.EXPECT().UpdateDeclarativeConfigContents("empty-directory", [][]byte{yamlBytes})
 
 	filePath := path.Join(dirToWatch, "role")
 	f, err := os.Create(filePath)
@@ -169,9 +169,9 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 
 func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 	// 0. Create a watch handler with a lower interval.
-	updaterMock := mocks.NewMockdeclarativeConfigReconciler(gomock.NewController(t))
+	updaterMock := mocks.NewMockdeclarativeConfigContentUpdater(gomock.NewController(t))
 
-	wh := newWatchHandler(updaterMock)
+	wh := newWatchHandler("prefilled-directory", updaterMock)
 	opts := k8scfgwatch.Options{
 		Interval: 10 * time.Millisecond,
 	}
@@ -189,7 +189,7 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 1.1 Set the expected calls to the updater.
-	updaterMock.EXPECT().ReconcileDeclarativeConfigs([][]byte{roleBytes})
+	updaterMock.EXPECT().UpdateDeclarativeConfigContents("prefilled-directory", [][]byte{roleBytes})
 
 	rolePath := path.Join(dirToWatch, "role")
 	roleF, err := os.Create(rolePath)
@@ -224,7 +224,10 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 4.1 Set the expected calls to the updater.
-	updaterMock.EXPECT().ReconcileDeclarativeConfigs(gomock.InAnyOrder([][]byte{permissionSetBytes, roleBytes}))
+	updaterMock.EXPECT().UpdateDeclarativeConfigContents(
+		"prefilled-directory",
+		gomock.InAnyOrder([][]byte{permissionSetBytes, roleBytes}),
+	)
 
 	permissionSetPath := path.Join(dirToWatch, "permission-set")
 	permissionSetF, err := os.Create(permissionSetPath)
@@ -248,9 +251,9 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 
 func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	// 0. Create a watch handler with a lower interval.
-	updaterMock := mocks.NewMockdeclarativeConfigReconciler(gomock.NewController(t))
+	updaterMock := mocks.NewMockdeclarativeConfigContentUpdater(gomock.NewController(t))
 
-	wh := newWatchHandler(updaterMock)
+	wh := newWatchHandler("removed-files", updaterMock)
 	opts := k8scfgwatch.Options{
 		Interval: 10 * time.Millisecond,
 	}
@@ -272,7 +275,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// 2.1 Set the expected calls to the updater.
-	updaterMock.EXPECT().ReconcileDeclarativeConfigs([][]byte{yamlBytes})
+	updaterMock.EXPECT().UpdateDeclarativeConfigContents("removed-files", [][]byte{yamlBytes})
 
 	filePath := path.Join(dirToWatch, "role")
 	f, err := os.Create(filePath)
@@ -293,7 +296,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// 4.Set the expected calls to the updater.
-	updaterMock.EXPECT().ReconcileDeclarativeConfigs([][]byte{})
+	updaterMock.EXPECT().UpdateDeclarativeConfigContents("removed-files", [][]byte{})
 
 	// 5. Remove the previously added YAML file.
 	err = os.Remove(filePath)

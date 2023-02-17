@@ -23,19 +23,21 @@ var (
 type md5CheckSum = [16]byte
 
 //go:generate mockgen-wrapper
-type declarativeConfigReconciler interface {
-	ReconcileDeclarativeConfigs(fileContents [][]byte)
+type declarativeConfigContentUpdater interface {
+	UpdateDeclarativeConfigContents(id string, fileContents [][]byte)
 }
 
 type watchHandler struct {
-	updater          declarativeConfigReconciler
+	updater          declarativeConfigContentUpdater
 	cachedFileHashes map[string]md5CheckSum
 	mutex            sync.RWMutex
+	id               string
 }
 
-func newWatchHandler(updater declarativeConfigReconciler) *watchHandler {
+func newWatchHandler(id string, updater declarativeConfigContentUpdater) *watchHandler {
 	return &watchHandler{
 		updater:          updater,
+		id:               id,
 		cachedFileHashes: map[string]md5CheckSum{},
 	}
 }
@@ -87,7 +89,7 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 	log.Debugf("Found changes in declarative configuration files, reconciliation will be triggered")
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
-	w.updater.ReconcileDeclarativeConfigs(maputil.Values(fileContents))
+	w.updater.UpdateDeclarativeConfigContents(w.id, maputil.Values(fileContents))
 }
 
 func (w *watchHandler) OnWatchError(err error) {
