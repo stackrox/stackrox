@@ -1400,7 +1400,7 @@ save_junit_failure() {
     cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
     <testcase name="${description}" classname="${class}">
-        <failure>${details}</failure>
+        <failure><![CDATA[${details}]]></failure>
     </testcase>
 </testsuite>
 EOF
