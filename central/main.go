@@ -182,6 +182,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
@@ -317,7 +318,10 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
-	centralclient.InstanceConfig().Gatherer().Start()
+
+	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }

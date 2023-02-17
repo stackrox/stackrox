@@ -26,14 +26,17 @@ func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 			"Cluster ID":   cluster.GetId(),
 			"Managed By":   cluster.GetManagedBy().String(),
 		}
-		cfg.Telemeter().Track("Secured Cluster Registered", props, telemeter.WithUserID(userID))
+		groups := telemeter.WithGroups(cfg.GroupType, cfg.GroupID)
 
-		opts := telemeter.WithClient(cluster.GetId(), securedClusterClient)
+		cfg.Telemeter().Track("Secured Cluster Registered", props, telemeter.WithUserID(userID), groups)
+
+		client := telemeter.WithClient(cluster.GetId(), securedClusterClient)
+
 		// Add the secured cluster 'user' to the Tenant group:
-		cfg.Telemeter().Group(cfg.GroupID, nil, opts)
+		cfg.Telemeter().Group(nil, client, groups)
 
 		// Update the secured cluster identity from its name:
-		cfg.Telemeter().Identify(makeClusterProperties(cluster), opts)
+		cfg.Telemeter().Identify(makeClusterProperties(cluster), client, groups)
 	}
 }
 
@@ -58,7 +61,7 @@ func trackClusterInitialized(cluster *storage.Cluster) {
 				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 			},
 				telemeter.WithClient(cluster.GetId(), securedClusterClient),
-				telemeter.WithGroups("Tenant", cfg.GroupID))
+				telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	}
 }
 
@@ -95,6 +98,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 
 		opts := []telemeter.Option{
 			telemeter.WithClient(cluster.GetId(), securedClusterClient),
+			telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
 		}
 		cfg.Telemeter().Identify(props, opts...)
 		cfg.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
