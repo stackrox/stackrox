@@ -55,8 +55,8 @@ const (
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text 
 	FROM network_flows nf ` + joinStmt +
 		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
-	deleteSrcDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
-	deleteDstDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
+	deleteSrcDeploymentStmt = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $1 AND ClusterId = $2"
+	deleteDstDeploymentStmt = "DELETE FROM network_flows WHERE Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $1 AND ClusterId = $2"
 
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
@@ -368,14 +368,14 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 	}
 
 	// To avoid a full scan with an OR delete source and destination flows separately
-	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, s.clusterID, id); err != nil {
+	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, id, s.clusterID); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, s.clusterID, id); err != nil {
+	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, id, s.clusterID); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
