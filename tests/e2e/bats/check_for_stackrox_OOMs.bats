@@ -14,12 +14,12 @@ function setup() {
 
     run check_for_stackrox_OOMs "${BATS_TEST_TMPDIR}/oom-test"
 
-    with_oomkilled_test="${ARTIFACT_DIR}/junit-OOMCheck-central-84bf956f94-bg6hr.xml"
+    with_oomkilled_test="$(ls ${ARTIFACT_DIR}/junit-OOMCheck-central-84bf956f94-bg6hr-*.xml)"
     assert [ -f "$with_oomkilled_test" ]
     run grep -q "was OOMKilled" "$with_oomkilled_test"
     assert_success
 
-    without_oomkilled_test="${ARTIFACT_DIR}/junit-OOMCheck-sensor-67d98c67bf-v688m.xml"
+    without_oomkilled_test="$(ls ${ARTIFACT_DIR}/junit-OOMCheck-sensor-67d98c67bf-v688m-*.xml)"
     assert [ -f "$without_oomkilled_test" ]
     run grep -q "was not OOMKilled" "$without_oomkilled_test"
     assert_success
