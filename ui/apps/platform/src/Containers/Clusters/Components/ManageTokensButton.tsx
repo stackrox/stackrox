@@ -6,6 +6,7 @@ const ManageTokensButton = () => (
     <HashLink
         to={`${integrationsPath}#token-integrations`}
         className="no-underline btn btn-base flex-shrink-0"
+        data-testid="manageTokens"
     >
         Manage Tokens
     </HashLink>

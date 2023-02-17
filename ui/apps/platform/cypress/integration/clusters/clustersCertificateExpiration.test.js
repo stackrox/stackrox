@@ -14,7 +14,7 @@ import { selectors } from './Clusters.selectors';
 describe('Clusters Certificate Expiration', () => {
     withAuth();
 
-    const fixturePath = 'clusters/health.json';
+    const fixturePath = 'clusters/certExpiration.json';
 
     const metadata = {
         version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
@@ -27,8 +27,8 @@ describe('Clusters Certificate Expiration', () => {
     const currentDatetime = new Date('2020-08-31T13:01:00Z');
 
     describe('status is Healthy', () => {
-        it('should not show link or form', () => {
-            const clusterName = 'kappa-kilogramme-10';
+        it('should not show link or form when no cert expiry', () => {
+            const clusterName = 'not-applicable-1';
             visitClusterByNameWithFixtureMetadataDatetime(
                 clusterName,
                 fixturePath,
@@ -36,11 +36,42 @@ describe('Clusters Certificate Expiration', () => {
                 currentDatetime
             );
 
-            cy.get(selectors.clusterHealth.credentialExpiration).should('have.text', 'in 1 month');
+            cy.get(selectors.clusterHealth.credentialExpiration).should(
+                'have.text',
+                'Not applicable'
+            );
             cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
             cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
             cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
             cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
+            cy.get(selectors.clusterHealth.manageTokensButton).should('not.exist');
+        });
+
+        it(`should not show link or form`, () => {
+            [
+                'healthy-kubectl-1',
+                'healthy-kubectl-2',
+                'healthy-helm-1',
+                'healthy-helm-2',
+                'healthy-operator-1',
+            ].forEach((clusterName) => {
+                visitClusterByNameWithFixtureMetadataDatetime(
+                    clusterName,
+                    fixturePath,
+                    metadata,
+                    currentDatetime
+                );
+
+                cy.get(selectors.clusterHealth.credentialExpiration).should(
+                    'have.text',
+                    'in 1 month'
+                );
+                cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
+                cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
+                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
+                cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
+                cy.get(selectors.clusterHealth.manageTokensButton).should('not.exist');
+            });
         });
     });
 
@@ -48,7 +79,7 @@ describe('Clusters Certificate Expiration', () => {
         const expectedExpiration = 'in 6 days on Monday'; // Unhealthy
 
         it('should disable the upgrade option', () => {
-            const clusterName = 'epsilon-edison-5';
+            const clusterName = 'unhealthy-kubectl-1';
             visitClusterByNameWithFixtureMetadataDatetime(
                 clusterName,
                 fixturePath,
@@ -66,16 +97,38 @@ describe('Clusters Certificate Expiration', () => {
                 .should('be.checked');
             cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('be.disabled');
             cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
+            cy.get(selectors.clusterHealth.manageTokensButton).should('not.exist');
         });
 
         // TODO mock Download YAML file for it('should display a message for success instead of the form')
+
+        it('should display manage tokens button for helm and operator managed clusters when cluster is unhealthy', () => {
+            ['unhealthy-helm-1', 'unhealthy-operator-1'].forEach((clusterName) => {
+                visitClusterByNameWithFixtureMetadataDatetime(
+                    clusterName,
+                    fixturePath,
+                    metadata,
+                    currentDatetime
+                );
+
+                cy.get(selectors.clusterHealth.credentialExpiration).should(
+                    'have.text',
+                    expectedExpiration
+                );
+                cy.get(selectors.clusterHealth.reissueCertificatesLink);
+                cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
+                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
+                cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
+                cy.get(selectors.clusterHealth.manageTokensButton);
+            });
+        });
     });
 
     describe('Sensor is up to date with Central', () => {
         const expectedExpiration = 'in 29 days on 09/29/2020'; // Degraded
 
         it('should enable the upgrade option', () => {
-            const clusterName = 'eta-7';
+            const clusterName = 'degraded-kubectl-1';
             visitClusterByNameWithFixtureMetadataDatetime(
                 clusterName,
                 fixturePath,
@@ -96,7 +149,7 @@ describe('Clusters Certificate Expiration', () => {
         });
 
         it('should display a message for success instead of the form', () => {
-            const clusterName = 'eta-7';
+            const clusterName = 'degraded-kubectl-1';
             visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, currentDatetime);
 
             cy.fixture(fixturePath).then(({ clusters }) => {
@@ -131,6 +184,27 @@ describe('Clusters Certificate Expiration', () => {
                 cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
                 cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
                 cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
+            });
+        });
+
+        it('should display manage tokens button for helm and operator managed clusters when cluster is degraded', () => {
+            ['degraded-helm-1', 'degraded-operator-1'].forEach((clusterName) => {
+                visitClusterByNameWithFixtureMetadataDatetime(
+                    clusterName,
+                    fixturePath,
+                    metadata,
+                    currentDatetime
+                );
+
+                cy.get(selectors.clusterHealth.credentialExpiration).should(
+                    'have.text',
+                    expectedExpiration
+                );
+                cy.get(selectors.clusterHealth.reissueCertificatesLink);
+                cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
+                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
+                cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
+                cy.get(selectors.clusterHealth.manageTokensButton);
             });
         });
     });

@@ -19,15 +19,16 @@ const CredentialExpirationWidget = ({
     isManagerTypeNonConfigurable,
 }: CredentialExpirationWidgetProps) => {
     const certExpiryStatus = status?.certExpiryStatus;
-    if (!certExpiryStatus?.sensorCertExpiry) {
+    const currentDatetime = new Date();
+    // Secured cluster is healthy or has no expiration info => no interaction
+    if (
+        !certExpiryStatus?.sensorCertExpiry ||
+        !isCertificateExpiringSoon(certExpiryStatus, currentDatetime)
+    ) {
         return <CredentialExpiration certExpiryStatus={certExpiryStatus} />;
     }
-
+    // Show the link to the token integrations for non-configurable clusters (installed by helm or operator).
     if (isManagerTypeNonConfigurable) {
-        const currentDatetime = new Date();
-        if (!isCertificateExpiringSoon(certExpiryStatus, currentDatetime)) {
-            return <CredentialExpiration certExpiryStatus={certExpiryStatus} />;
-        }
         return (
             <Flex direction={{ default: 'column' }}>
                 <FlexItem>
@@ -39,7 +40,7 @@ const CredentialExpirationWidget = ({
             </Flex>
         );
     }
-
+    // Show controls for the certificate renewal
     return (
         <CredentialInteraction
             certExpiryStatus={certExpiryStatus}
