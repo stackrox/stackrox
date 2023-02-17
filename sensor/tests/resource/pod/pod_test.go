@@ -77,7 +77,7 @@ func assertDeploymentContainerImages(images ...string) resource.AssertFunc {
 }
 
 func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 		}),
@@ -102,7 +102,7 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 }
 
 func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 			NginxPod,
@@ -135,7 +135,7 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 }
 
 func (s *PodHierarchySuite) Test_DeleteDeployment() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			var id string
 			k8sDeployment := &appsv1.Deployment{}
@@ -168,7 +168,7 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 }
 
 func (s *PodHierarchySuite) Test_DeletePod() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			var id string
 			k8sPod := &v1.Pod{}

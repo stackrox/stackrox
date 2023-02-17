@@ -146,7 +146,7 @@ func (s *DeploymentExposureSuite) SetupSuite() {
 }
 
 func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 			NginxServiceClusterIP,
@@ -217,7 +217,7 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 		},
 	}
 	for _, c := range cases {
-		s.testContext.NewRun(
+		s.testContext.RunTest(
 			resource.WithResources(c.orderedResources),
 			resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources
@@ -286,7 +286,7 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 		},
 	}
 	for _, c := range cases {
-		s.testContext.NewRun(
+		s.testContext.RunTest(
 			resource.WithResources(c.orderedResources),
 			resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources
@@ -326,7 +326,7 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 }
 
 func (s *DeploymentExposureSuite) Test_NoExposure() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 		}),
@@ -362,7 +362,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 	// We need to use different ports in each NodePort/LoadBalancer test otherwise k8s could throw an error when the service is being created (provided port is already allocated).
 	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
 	// Adding retries on creation helped a lot, but it's still not enough.
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), resource.DefaultNamespace, NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)
@@ -475,7 +475,7 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 		},
 	}
 	for _, c := range cases {
-		s.testContext.NewRun(
+		s.testContext.RunTest(
 			resource.WithResources(c.orderedResources),
 			resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources

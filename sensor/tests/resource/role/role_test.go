@@ -73,7 +73,7 @@ func assertBindingHasRoleID(roleID string) resource.AssertFuncAny {
 
 func (s *RoleDependencySuite) Test_PermutationTest() {
 	s.testContext.GetFakeCentral().ClearReceivedBuffer()
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 			NginxRole,
@@ -99,7 +99,7 @@ func matchBinding(namespace, id string) resource.MatchResource {
 }
 
 func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)
@@ -125,7 +125,7 @@ func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
 }
 
 func (s *RoleDependencySuite) Test_GroupSubjects() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 			NginxRole,
@@ -146,7 +146,7 @@ func (s *RoleDependencySuite) Test_GroupSubjects() {
 }
 
 func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 			NginxRole,
@@ -161,7 +161,7 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 }
 
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)

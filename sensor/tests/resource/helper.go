@@ -180,8 +180,8 @@ func WithRetryCallback(retryCallback RetryCallback) TestRunFunc {
 	}
 }
 
-// NewRun runs a test case. Fails the test if the testRun cannot be created.
-func (c *TestContext) NewRun(options ...TestRunFunc) {
+// RunTest runs a test case. Fails the test if the testRun cannot be created.
+func (c *TestContext) RunTest(options ...TestRunFunc) {
 	tr, err := newTestRun(options...)
 	if err != nil {
 		c.t.Fatal(err)
@@ -233,7 +233,8 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 	return c.fakeCentral
 }
 
-// run handles the run of a testRun case
+// run calls the proper test function depending on the configuration of the testRun.
+// For example, if permutation is set to true, it will run call runWithResourcesPermutation.
 func (c *TestContext) run(t *testRun) {
 	if t.resources == nil {
 		c.runBare(t.testCase)
@@ -571,15 +572,17 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, fakeCentral, closeF
 }
 
-// ApplyResourceNoObject - apply a resource without an object
-// If it is set, the RetryCallback will be called if the application of a resource fails.
+// ApplyResourceNoObject creates a Kubernetes resource using `ApplyResource` without requiring an object reference.
 func (c *TestContext) ApplyResourceNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
 	obj := objByKind(resource.Kind)
 	return c.ApplyResource(ctx, ns, &resource, obj, retryFn)
 }
 
-// ApplyResource - applies a resource
-// If it is set, the RetryCallback will be called if the application of a resource fails.
+// ApplyResource creates a Kubernetes resource in namespace `ns` from a resource definition (see
+// `K8sResourceInfo` for more details). Once the resource is applied, the `obj` will be populated
+// with the properties from the resource definition. In case the creation fails (due to the client
+// API rejecting the definition), a `RetryCallback` function can be provided to manipulate the
+// object prior to the retry.
 func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
 	if resource.Obj != nil {
 		var ok bool

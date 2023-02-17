@@ -61,7 +61,7 @@ func checkIfAlertsHaveViolation(result *central.AlertResults, name string) bool 
 }
 
 func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment, NetpolAllow443,
 		}),
@@ -81,7 +81,7 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
 }
 
 func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
-	s.testContext.NewRun(
+	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 		}),
