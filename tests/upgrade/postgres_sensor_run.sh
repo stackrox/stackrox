@@ -64,6 +64,8 @@ test_upgrade() {
     validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
     sensor_wait
 
+    wait_for_collectors_to_be_operational
+
     touch "${STATE_DEPLOYED}"
 
     test_sensor_bundle

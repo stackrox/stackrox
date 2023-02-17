@@ -33,6 +33,8 @@ deploy_stackrox() {
 
     sensor_wait
 
+    wait_for_collectors_to_be_operational
+
     touch "${STATE_DEPLOYED}"
 }
 
@@ -68,6 +70,8 @@ deploy_stackrox_with_custom_sensor() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
+
+    wait_for_collectors_to_be_operational
 
     touch "${STATE_DEPLOYED}"
 }
@@ -337,6 +341,43 @@ setup_podsecuritypolicies_config() {
         ci_export "POD_SECURITY_POLICIES" "true"
         info "POD_SECURITY_POLICIES set to true"
     fi
+}
+
+# wait_for_collectors_to_be_operational() ensures that collector pods are able
+# to load kernel objects and create network connections.
+wait_for_collectors_to_be_operational() {
+    info "Will wait for collectors to reach a ready state"
+
+    local readiness_indicator="Successfully established GRPC stream for signals"
+    local timeout=300
+    local retry_interval=10
+
+    local start_time
+    start_time="$(date '+%s')"
+    local all_ready="false"
+    while [[ "$all_ready" == "false" ]]; do
+        all_ready="true"
+        for pod in $(kubectl -n stackrox get pods -l app=collector -o json | jq -r '.items[].metadata.name'); do
+            echo "Checking readiness of $pod"
+            if kubectl -n stackrox logs -c collector "$pod" | grep "$readiness_indicator" > /dev/null 2>&1; then
+                echo "$pod is deemed ready"
+            else
+                info "$pod is not ready"
+                kubectl -n stackrox logs -c collector "$pod"
+                all_ready="false"
+                break
+            fi
+        done
+        if (( $(date '+%s') - start_time > "$timeout" )); then
+            echo "ERROR: Collector readiness check timed out after $timeout seconds"
+            echo "Not all collector logs contain: $readiness_indicator"
+            exit 1
+        fi
+        if [[ "$all_ready" == "false" ]]; then
+            info "Found at least one unready collector pod, will check again in $retry_interval seconds"
+            sleep "$retry_interval"
+        fi
+    done
 }
 
 patch_resources_for_test() {
