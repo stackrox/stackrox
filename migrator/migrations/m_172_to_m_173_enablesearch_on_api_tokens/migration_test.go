@@ -114,8 +114,8 @@ func TestMigration(t *testing.T) {
 
 func (s *apiTokenMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), false)
-	s.oldTokenStore = oldAPITokenStore.New(s.db.Pool)
-	s.newTokenStore = newAPITokenStore.New(s.db.Pool)
+	s.oldTokenStore = oldAPITokenStore.New(s.db.DB)
+	s.newTokenStore = newAPITokenStore.New(s.db.DB)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableApiTokensStmt)
 }
 
@@ -176,7 +176,7 @@ func (s *apiTokenMigrationTestSuite) TestMigration() {
 	s.Errorf(err1x6, "column api_tokens.expiration does not exist")
 	s.Equal(0, len(res1x6))
 
-	err = migrateAPITokens(s.db.Pool, s.db.GetGormDB())
+	err = migrateAPITokens(s.db.DB, s.db.GetGormDB())
 	s.NoError(err)
 
 	res2x1, err2x1 := s.newTokenStore.GetByQuery(ctx, token1Query)
