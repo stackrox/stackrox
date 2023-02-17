@@ -24,6 +24,7 @@ pkg/branding/files/stackrox_integration_logo.png
 pkg/docker/types/types_easyjson.go
 pkg/fixtures/dackbox.go
 pkg/fixtures/image.go
+pkg/fixtures/image/files/*
 pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
 pkg/sliceutils/gen-builtins-generic.go
