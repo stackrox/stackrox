@@ -203,7 +203,7 @@ test_upgrade_paths() {
     wait_for_api
 
     # Cleanup the scaled sensor before smoke tests
-    "${REPO_FOR_TIME_TRAVEL}"/deploy/k8s/delete-sensor.sh
+    "${REPO_FOR_TIME_TRAVEL}"/deploy/k8s/sensor-deploy/delete-sensor.sh
 
     info "Fetching a sensor bundle for cluster 'remote'"
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
