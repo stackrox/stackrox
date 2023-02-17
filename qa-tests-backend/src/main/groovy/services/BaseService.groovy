@@ -121,6 +121,7 @@ class BaseService {
 
             transportChannel = NettyChannelBuilder
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
+                    .enableRetry()
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
                     .build()
