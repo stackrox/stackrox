@@ -233,7 +233,7 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 	return c.fakeCentral
 }
 
-// run calls the proper test function depending on the configuration of the testRun.
+// run calls the test function depending on the configuration of the testRun.
 // For example, if permutation is set to true, it will run call runWithResourcesPermutation.
 func (c *TestContext) run(t *testRun) {
 	if t.resources == nil {
