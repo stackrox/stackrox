@@ -40,13 +40,13 @@ const (
 
 // NetworkFlows holds the Gorm model for Postgres table `network_flows`.
 type NetworkFlows struct {
-	FlowID             string                         `gorm:"column:flow_id;type:bigserial;primaryKey"`
-	PropsSrcEntityType storage.NetworkEntityInfo_Type `gorm:"column:props_srcentity_type;type:integer;index:network_flows_src,type:btree"`
-	PropsSrcEntityID   string                         `gorm:"column:props_srcentity_id;type:varchar;index:network_flows_src,type:btree"`
-	PropsDstEntityType storage.NetworkEntityInfo_Type `gorm:"column:props_dstentity_type;type:integer;index:network_flows_dst,type:btree"`
-	PropsDstEntityID   string                         `gorm:"column:props_dstentity_id;type:varchar;index:network_flows_dst,type:btree"`
-	PropsDstPort       uint32                         `gorm:"column:props_dstport;type:integer"`
-	PropsL4Protocol    storage.L4Protocol             `gorm:"column:props_l4protocol;type:integer"`
+	//FlowID             string                         `gorm:"column:flow_id;type:bigserial;primaryKey"`
+	PropsSrcEntityType storage.NetworkEntityInfo_Type `gorm:"column:props_srcentity_type;type:integer;index:network_flows_src,type:btree;primaryKey"`
+	PropsSrcEntityID   string                         `gorm:"column:props_srcentity_id;type:varchar;index:network_flows_src,type:btree;primaryKey"`
+	PropsDstEntityType storage.NetworkEntityInfo_Type `gorm:"column:props_dstentity_type;type:integer;index:network_flows_dst,type:btree;primaryKey"`
+	PropsDstEntityID   string                         `gorm:"column:props_dstentity_id;type:varchar;index:network_flows_dst,type:btree;primaryKey"`
+	PropsDstPort       uint32                         `gorm:"column:props_dstport;type:integer;primaryKey"`
+	PropsL4Protocol    storage.L4Protocol             `gorm:"column:props_l4protocol;type:integer;primaryKey"`
 	LastSeenTimestamp  *time.Time                     `gorm:"column:lastseentimestamp;type:timestamp"`
-	ClusterID          string                         `gorm:"column:clusterid;type:uuid;index:network_flows_cluster,type:btree;index:network_flows_src,type:btree;index:network_flows_dst,type:btree"`
+	ClusterID          string                         `gorm:"column:clusterid;type:uuid;index:network_flows_cluster,type:btree;index:network_flows_src,type:btree;index:network_flows_dst,type:btree;primaryKey"`
 }

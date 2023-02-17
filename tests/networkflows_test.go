@@ -50,6 +50,8 @@ func TestStackroxNetworkFlows(t *testing.T) {
 	var graph *v1.NetworkGraph
 	timeout := time.NewTimer(5 * time.Minute)
 	ticker := time.NewTicker(5 * time.Second)
+	since, err := types.TimestampProto(time.Now().Add(-1 * time.Minute))
+	require.NoError(t, err)
 	for {
 		select {
 		case <-timeout.C:
@@ -59,7 +61,7 @@ func TestStackroxNetworkFlows(t *testing.T) {
 			graph, err = service.GetNetworkGraph(ctx, &v1.NetworkGraphRequest{
 				ClusterId: clusterID,
 				Query:     "namespace:stackrox",
-				Since:     types.TimestampNow(),
+				Since:     since,
 			})
 			cancel()
 			if err != nil {
