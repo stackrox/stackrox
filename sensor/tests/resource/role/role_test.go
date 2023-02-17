@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	NginxDeployment       = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
-	NginxRole             = resource.YamlTestFile{Kind: "Role", File: "nginx-role.yaml"}
-	NginxRoleBinding      = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding.yaml"}
-	NginxRoleGroupBinding = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding-group.yaml"}
+	NginxDeployment       = resource.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
+	NginxRole             = resource.K8sResourceInfo{Kind: "Role", YamlFile: "nginx-role.yaml"}
+	NginxRoleBinding      = resource.K8sResourceInfo{Kind: "Binding", YamlFile: "nginx-binding.yaml"}
+	NginxRoleGroupBinding = resource.K8sResourceInfo{Kind: "Binding", YamlFile: "nginx-binding-group.yaml"}
 )
 
 type RoleDependencySuite struct {
@@ -73,17 +73,19 @@ func assertBindingHasRoleID(roleID string) resource.AssertFuncAny {
 
 func (s *RoleDependencySuite) Test_PermutationTest() {
 	s.testContext.GetFakeCentral().ClearReceivedBuffer()
-	s.testContext.RunWithResourcesPermutation(
-		[]resource.YamlTestFile{
+	s.testContext.RunTest(
+		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 			NginxRole,
 			NginxRoleBinding,
-		}, "RoleDependency", func(t *testing.T, testC *resource.TestContext, objects map[string]k8s.Object) {
+		}),
+		resource.WithPermutation(),
+		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, objects map[string]k8s.Object) {
 			testC.LastDeploymentState("nginx-deployment",
 				assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
 				"Permission level has to be elevated in namespace")
 			testC.GetFakeCentral().ClearReceivedBuffer()
-		},
+		}),
 	)
 }
 
@@ -97,37 +99,39 @@ func matchBinding(namespace, id string) resource.MatchResource {
 }
 
 func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
-	s.testContext.RunBare("Binding should get an update if role gets created after", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		deleteDep, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxDeployment)
-		defer utils.IgnoreError(deleteDep)
-		require.NoError(t, err)
+	s.testContext.RunTest(
+		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
+			defer utils.IgnoreError(deleteDep)
+			require.NoError(t, err)
 
-		var binding v12.RoleBinding
-		deleteRoleBinding, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRoleBinding, &binding)
-		defer utils.IgnoreError(deleteRoleBinding)
-		require.NoError(t, err)
+			var binding v12.RoleBinding
+			deleteRoleBinding, err := testC.ApplyResource(context.Background(), "sensor-integration", &NginxRoleBinding, &binding, nil)
+			defer utils.IgnoreError(deleteRoleBinding)
+			require.NoError(t, err)
 
-		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(""), "No RoleID")
+			testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(""), "No RoleID")
 
-		var role v12.Role
-		deleteRole, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRole, &role)
-		defer utils.IgnoreError(deleteRole)
-		require.NoError(t, err)
+			var role v12.Role
+			deleteRole, err := testC.ApplyResource(context.Background(), "sensor-integration", &NginxRole, &role, nil)
+			defer utils.IgnoreError(deleteRole)
+			require.NoError(t, err)
 
-		testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(string(role.GetUID())), "Has RoleID")
+			testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(string(role.GetUID())), "Has RoleID")
 
-		testC.GetFakeCentral().ClearReceivedBuffer()
-	})
+			testC.GetFakeCentral().ClearReceivedBuffer()
+		}),
+	)
 }
 
 func (s *RoleDependencySuite) Test_GroupSubjects() {
-	s.testContext.RunWithResources(
-		[]resource.YamlTestFile{
+	s.testContext.RunTest(
+		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 			NginxRole,
 			NginxRoleGroupBinding,
-		},
-		func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		}),
+		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			// This test expects that a reference to a non-ServiceAccount subject (i.e. Group or User) does not
 			// reference any deployments and thus a deployment object should not be updated. However, Groups can be
 			// used to reference a set of ServiceAccounts, see: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-binding-examples
@@ -137,49 +141,53 @@ func (s *RoleDependencySuite) Test_GroupSubjects() {
 				assertPermissionLevel(storage.PermissionLevel_NONE),
 				"Group / User permission levels should be ignored")
 			testC.GetFakeCentral().ClearReceivedBuffer()
-		},
+		}),
 	)
 }
 
 func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
-	s.testContext.RunWithResources(
-		[]resource.YamlTestFile{
+	s.testContext.RunTest(
+		resource.WithResources([]resource.K8sResourceInfo{
 			NginxDeployment,
 			NginxRole,
-		}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		}),
+		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			testC.LastDeploymentState("nginx-deployment",
 				assertPermissionLevel(storage.PermissionLevel_NONE),
 				"Permission level has to be none if role binding is missing")
 			testC.GetFakeCentral().ClearReceivedBuffer()
-		})
+		}),
+	)
 }
 
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
-	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		deleteDep, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxDeployment)
-		defer utils.IgnoreError(deleteDep)
-		require.NoError(t, err)
+	s.testContext.RunTest(
+		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
+			defer utils.IgnoreError(deleteDep)
+			require.NoError(t, err)
 
-		deleteRoleBinding, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxRoleBinding)
-		defer utils.IgnoreError(deleteRoleBinding)
-		require.NoError(t, err)
+			deleteRoleBinding, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxRoleBinding, nil)
+			defer utils.IgnoreError(deleteRoleBinding)
+			require.NoError(t, err)
 
-		deleteRole, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxRole)
+			deleteRole, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxRole, nil)
 
-		defer utils.IgnoreError(deleteRole)
-		require.NoError(t, err)
+			defer utils.IgnoreError(deleteRole)
+			require.NoError(t, err)
 
-		testC.LastDeploymentState("nginx-deployment",
-			assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
-			"Permission level has to be elevated in namespace")
-		testC.GetFakeCentral().ClearReceivedBuffer()
+			testC.LastDeploymentState("nginx-deployment",
+				assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
+				"Permission level has to be elevated in namespace")
+			testC.GetFakeCentral().ClearReceivedBuffer()
 
-		utils.IgnoreError(deleteRole)
-		utils.IgnoreError(deleteRoleBinding)
+			utils.IgnoreError(deleteRole)
+			utils.IgnoreError(deleteRoleBinding)
 
-		testC.LastDeploymentState("nginx-deployment",
-			assertPermissionLevel(storage.PermissionLevel_NONE),
-			"Permission level has to be none after deleting role and binding")
-		testC.GetFakeCentral().ClearReceivedBuffer()
-	})
+			testC.LastDeploymentState("nginx-deployment",
+				assertPermissionLevel(storage.PermissionLevel_NONE),
+				"Permission level has to be none after deleting role and binding")
+			testC.GetFakeCentral().ClearReceivedBuffer()
+		}),
+	)
 }
