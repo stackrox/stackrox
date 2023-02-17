@@ -118,7 +118,7 @@ jobs:
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
 
   slack-on-unit-tests-failure:
-    # if: github.event_name == 'push' && failure()
+    if: github.event_name == 'push' && failure()
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
