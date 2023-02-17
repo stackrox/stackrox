@@ -33,7 +33,9 @@ type Config struct {
 	ClientID string
 	// ClientName tells what kind of client is sending data.
 	ClientName string
-	// GroupID identifies the main group to which the client belongs.
+	// GroupType identifies the main group type to which the client belongs.
+	GroupType string
+	// GroupID identifies the ID of the GroupType group.
 	GroupID string
 
 	StorageKey   string
