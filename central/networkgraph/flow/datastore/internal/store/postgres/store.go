@@ -2,7 +2,10 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -94,6 +97,10 @@ const (
 	//AND a.ClusterId = b.ClusterId
 	//  AND a.Flow_Id <> b.Max_Flow;
 	//`
+
+	insertStr = "INSERT INTO network_flows (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES %s ON CONFLICT (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) DO UPDATE SET Props_SrcEntity_Type = EXCLUDED.Props_SrcEntity_Type, Props_SrcEntity_Id = EXCLUDED.Props_SrcEntity_Id, Props_DstEntity_Type = EXCLUDED.Props_DstEntity_Type, Props_DstEntity_Id = EXCLUDED.Props_DstEntity_Id, Props_DstPort = EXCLUDED.Props_DstPort, Props_L4Protocol = EXCLUDED.Props_L4Protocol, LastSeenTimestamp = EXCLUDED.LastSeenTimestamp, ClusterId = EXCLUDED.ClusterId"
+
+	insertBatchSize = 50
 )
 
 var (
@@ -141,6 +148,15 @@ type flowStoreImpl struct {
 	clusterID uuid.UUID
 }
 
+// ReplaceSQL replaces the instance occurrence of any string pattern with an increasing $n based sequence
+func ReplaceSQL(old, searchPattern string) string {
+	tmpCount := strings.Count(old, searchPattern)
+	for m := 1; m <= tmpCount; m++ {
+		old = strings.Replace(old, searchPattern, "$"+strconv.Itoa(m), 1)
+	}
+	return old
+}
+
 func insertIntoNetworkflow(ctx context.Context, batch *pgx.Batch, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
 
 	values := []interface{}{
@@ -163,6 +179,35 @@ func insertIntoNetworkflow(ctx context.Context, batch *pgx.Batch, clusterID uuid
 	//	return err
 	//}
 	batch.Queue(finalStr, values...)
+
+	return nil
+}
+
+func (s *flowStoreImpl) insertNetworkflowMultiple(ctx context.Context, batch *pgx.Batch, objs ...*storage.NetworkFlow) error {
+	var inserts []string
+	inputRows := []interface{}{}
+
+	for _, obj := range objs {
+		inputRows = append(inputRows,
+			obj.GetProps().GetSrcEntity().GetType(),
+			obj.GetProps().GetSrcEntity().GetId(),
+			obj.GetProps().GetDstEntity().GetType(),
+			obj.GetProps().GetDstEntity().GetId(),
+			obj.GetProps().GetDstPort(),
+			obj.GetProps().GetL4Protocol(),
+			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
+			s.clusterID,
+		)
+
+		const rowSQL = "(?, ?, ?, ?, ?, ?, ?, ?)"
+		inserts = append(inserts, rowSQL)
+	}
+
+	varString := strings.Join(inserts, ",")
+	varString = ReplaceSQL(varString, "?")
+
+	stmt := fmt.Sprintf(insertStr, varString)
+	batch.Queue(stmt, inputRows...)
 
 	return nil
 }
@@ -269,48 +314,55 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	//if err != nil {
 	//	return err
 	//}
-	for _, obj := range objs {
-		batch := &pgx.Batch{}
-		if err := insertIntoNetworkflow(ctx, batch, s.clusterID, obj); err != nil {
-			return err
-		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
+	var temp []*storage.NetworkFlow
+	batch := &pgx.Batch{}
+	for idx, obj := range objs {
+		temp = append(temp, obj)
+		rem := idx % insertBatchSize
+
+		if rem == 0 || idx == len(objs) {
+
+			if err := s.insertNetworkflowMultiple(ctx, batch, temp...); err != nil {
+				return err
+			}
+
+			temp = nil
 		}
 	}
+
+	batchResults := conn.SendBatch(ctx, batch)
+	var result *multierror.Error
+	for i := 0; i < batch.Len(); i++ {
+		_, err := batchResults.Exec()
+		result = multierror.Append(result, err)
+	}
+	if err := batchResults.Close(); err != nil {
+		return err
+	}
+	if err := result.ErrorOrNil(); err != nil {
+		return err
+	}
+	//}
 	return nil
 }
 
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
-	//s.mutex.Lock()
-	//defer s.mutex.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	return pgutils.Retry(func() error {
-		return s.retryableUpsertFlows(ctx, flows, lastUpdateTS)
-	})
+	return s.upsert(ctx, flows...)
+	//
+	//return pgutils.Retry(func() error {
+	//	return s.retryableUpsertFlows(ctx, flows, lastUpdateTS)
+	//})
 }
 
 func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
-	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
-	if len(flows) < batchAfter {
-		return s.upsert(ctx, flows...)
-	}
-
-	return s.copyFrom(ctx, flows...)
+	return s.upsert(ctx, flows...)
 }
 
 func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
