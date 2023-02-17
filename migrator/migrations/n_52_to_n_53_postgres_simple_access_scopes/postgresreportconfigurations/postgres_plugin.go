@@ -472,3 +472,4 @@ func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
+
