@@ -66,7 +66,7 @@ type ProcessIndicators struct {
 	SignalArgs         string `gorm:"column:signal_args;type:varchar;index:processindicators_unique_indicator"`
 	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar;index:processindicators_unique_indicator"`
 	SignalUID          uint32 `gorm:"column:signal_uid;type:bigint"`
-	ClusterID          string `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree"`
-	Namespace          string `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
+	ClusterID          string `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:hash"`
+	Namespace          string `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:hash"`
 	Serialized         []byte `gorm:"column:serialized;type:bytea"`
 }
