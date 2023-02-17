@@ -182,7 +182,7 @@ var (
 	totalOrphanedPLOPCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "total_orphaned_plop_counter",
+		Name:      "orphaned_plop_total",
 		Help:      "A counter of the total number of PLOP objects without a reference to a ProcessIndicator",
 	}, []string{"ClusterID"})
 )
