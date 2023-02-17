@@ -101,6 +101,7 @@ export_test_environment() {
         # TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
         ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     fi
+    ci_export ROX_COLLECT_UDP "${ROX_COLLECT_UDP:-true}"
 }
 
 deploy_stackrox_operator() {

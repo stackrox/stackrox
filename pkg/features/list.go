@@ -31,6 +31,22 @@ var (
 	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
 	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", true)
 
+	// RHCOSNodeScanning enables phase 1 functions of "Full host level vulnerability scanning for RHCOS nodes" (ROX-10818)
+	RHCOSNodeScanning = registerFeature("Enable RHCOS node scanning of OS and installed packages", "ROX_RHCOS_NODE_SCANNING", false)
+
+	// UseFakeNodeInventory tells compliance to use FakeNodeScanner with hardcoded data instead of calling scanner.Analyze()
+	// TODO(ROX-13935): Remove this FF and the accompanying code
+	UseFakeNodeInventory = registerFeature("Enables compliance to use FakeNodeScanner with hardcoded data instead of calling scanner.Analyze()", "ROX_RHCOS_FAKE_NODE_INVENTORY", false)
+
+	// ProcessesListeningOnPort enables the NetworkFlow code to also update the processes that are listening on ports
+	ProcessesListeningOnPort = registerFeature("Enable Processes Listening on Port", "ROX_PROCESSES_LISTENING_ON_PORT", false)
+
+	// CollectUdp is a collector specific feature flag. It is added here so that the environment variable can be easily set in collector
+	CollectUdp = registerFeature("Enables collector to report UDP listening endpoints", "ROX_COLLECT_UDP", false)
+
+	// ResyncDisabled disables the resync behavior of the kubernetes listeners in sensor
+	ResyncDisabled = registerFeature("Disable the re-sync", "ROX_RESYNC_DISABLED", false)
+
 	// ClairV4Scanner enables Clair v4 as an Image Integration option
 	ClairV4Scanner = registerFeature("Enable Clair v4 as an Image Integration option", "ROX_CLAIR_V4_SCANNING", true)
 
