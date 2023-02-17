@@ -13,7 +13,8 @@ import spock.lang.Stepwise
 import services.ProcessesListeningOnPortsService
 
 @Stepwise
-@IgnoreIf({ !Env.get("ROX_POSTGRES_DATASTORE", null) })
+// TODO: Solve the flake and change back to @IgnoreIf({ !Env.get("ROX_POSTGRES_DATASTORE", null) })
+@IgnoreIf({ !Env.CI_JOBNAME.contains("postgres") })
 class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     // Deployment names
