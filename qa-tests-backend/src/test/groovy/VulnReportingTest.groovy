@@ -1,15 +1,9 @@
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-
-import com.opencsv.CSVReader
-
 import io.stackrox.proto.storage.NotifierOuterClass
 
 import common.Constants
 import objects.Deployment
 import objects.EmailNotifier
 import services.CollectionsService
-import services.FeatureFlagService
 import services.VulnReportService
 import util.MailServer
 
@@ -17,7 +11,7 @@ import org.junit.Assume
 import spock.lang.Shared
 import spock.lang.Tag
 
-class VulnReportingTest extends BaseSpecification  {
+class VulnReportingTest extends BaseSpecification {
 
     static final private String SECONDARY_NAMESPACE = "vulnreport-2nd-namespace"
     static final private List<Deployment> DEPLOYMENTS = [
@@ -137,40 +131,5 @@ class VulnReportingTest extends BaseSpecification  {
             mailServer.deleteEmail(emailId)
             log.info "[Cleanup] Deleted email from mail server"
         }
-    }
-
-    private List<String[]> getReportCSVFromAttachments(Object csvAttachmentMetadata, String emailId) {
-        def csv = mailServer.downloadEmailAttachment(emailId, (String) csvAttachmentMetadata["fileName"])
-
-        byte[] csvData
-        try (def zis = new ZipInputStream(csv)) {
-            ZipEntry entry
-            while ((entry = zis.nextEntry) != null) {
-                log.info "Found file ${entry.name}"
-                if (entry.name =~ /(StackRox|RHACS)_Vulnerability_Report_(\d+)_(.*)_(\d+).csv/) {
-                    try (def csvByteStream = new ByteArrayOutputStream()) {
-                        for (int c = zis.read(); c != -1; c = zis.read()) {
-                            csvByteStream.write(c)
-                        }
-                        csvData = csvByteStream.toByteArray()
-                    } catch (Exception e) {
-                        log.error("Could not extract csv from zip", e)
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("Could not extract csv from zip", e)
-        }
-        assert csvData && csvData.size() > 0
-
-        List<String[]> lines = []
-        try (def bis = new ByteArrayInputStream(csvData);
-             def isr = new InputStreamReader(bis);
-             def reader = new CSVReader(isr)) {
-            lines = reader.readAll()
-        } catch (Exception e) {
-            log.error("Could not read attachment as CSV", e)
-        }
-        lines
     }
 }
