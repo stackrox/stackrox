@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/sync"
@@ -35,20 +34,19 @@ type managerImpl struct {
 	reconciliationTickerDuration time.Duration
 	watchIntervalDuration        time.Duration
 
-	reconciliationTicker     *time.Ticker
-	reconciliationInProgress concurrency.Flag
-	shortCircuitSignal       concurrency.Signal
+	reconciliationTicker *time.Ticker
+	shortCircuitSignal   concurrency.Signal
 }
 
 // New creates a new instance of Manager.
 // Note that it will not watch the declarative configuration directories when created, only after
 // ReconcileDeclarativeConfigurations has been called.
-func New() Manager {
+func New(reconciliationTickerDuration, watchIntervalDuration time.Duration) Manager {
 	return &managerImpl{
 		universalTransformer:         transform.New(),
 		transformedMessagesByHandler: map[string]protoMessagesByType{},
-		reconciliationTickerDuration: env.DeclarativeConfigReconcileInterval.DurationSetting(),
-		watchIntervalDuration:        env.DeclarativeConfigWatchInterval.DurationSetting(),
+		reconciliationTickerDuration: reconciliationTickerDuration,
+		watchIntervalDuration:        watchIntervalDuration,
 	}
 }
 
@@ -111,15 +109,14 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 	}
 
 	m.transformedMessagesMutex.Lock()
-	defer m.transformedMessagesMutex.Unlock()
 	m.transformedMessagesByHandler[handlerID] = transformedConfigurations
+	m.transformedMessagesMutex.Unlock()
 	m.shortCircuitReconciliationLoop()
 }
 
 // shortCircuitReconciliationLoop will short circuit the reconciliation loop and trigger a reconciliation loop run.
 // Note that the reconciliation loop will not be run if:
 //   - the short circuit loop signal has not been reset yet and is de-duped.
-//   - a current reconciliation loop run is in progress.
 func (m *managerImpl) shortCircuitReconciliationLoop() {
 	// In case the signal is already triggered, the current call (and the Signal() call) will be effectively de-duped.
 	m.shortCircuitSignal.Signal()
@@ -132,7 +129,7 @@ func (m *managerImpl) startReconciliationLoop() {
 }
 
 func (m *managerImpl) reconciliationLoop() {
-	// While we currently do not have an exist in the form of "stopping" the reconciliation, still, ensure that
+	// While we currently do not have an exit in the form of "stopping" the reconciliation, still, ensure that
 	// the ticker is stopped when we stop running the reconciliation.
 	defer m.reconciliationTicker.Stop()
 	for {
@@ -147,11 +144,6 @@ func (m *managerImpl) reconciliationLoop() {
 }
 
 func (m *managerImpl) runReconciliation() {
-	// We shouldn't trigger a parallel reconciliation run, hence we should ensure that the flag is not set to true.
-	if m.reconciliationInProgress.TestAndSet(true) {
-		return
-	}
-	defer m.reconciliationInProgress.Set(false)
 	m.transformedMessagesMutex.RLock()
 	transformedMessagesByHandler := maputil.ShallowClone(m.transformedMessagesByHandler)
 	m.transformedMessagesMutex.RUnlock()
