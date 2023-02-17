@@ -166,10 +166,12 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMar
 	return d.updateBatch(ctx, alertsToMark)
 }
 
-// It is the caller's responsibility to not call this with an empty slice,
-// else this function will panic.
-func lastTimestamp(processes []*storage.ProcessIndicator) *ptypes.Timestamp {
-	return processes[len(processes)-1].GetSignal().GetTime()
+// It is the caller's responsibility to not call this with an empty slice.
+func lastTimestamp(processes []*storage.ProcessIndicator) (*ptypes.Timestamp, error) {
+	if len(processes) == 0 {
+		return nil, errors.New("Unexpected: no processes found in the alert")
+	}
+	return processes[len(processes)-1].GetSignal().GetTime(), nil
 }
 
 // Some processes in the old alert might have been deleted from the process store because of our pruning,
@@ -179,6 +181,7 @@ func lastTimestamp(processes []*storage.ProcessIndicator) *ptypes.Timestamp {
 func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewProcesses bool) {
 	oldProcessViolation := old.GetProcessViolation()
 
+	// Do not return if the old alert has 0 processes because that is unexpected. Further down we log the error.
 	if len(newAlert.GetProcessViolation().GetProcesses()) == 0 {
 		return
 	}
@@ -189,7 +192,19 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 
 	newProcessesSlice := oldProcessViolation.GetProcesses()
 	// De-dupe processes using timestamps.
-	timestamp := lastTimestamp(oldProcessViolation.GetProcesses())
+	timestamp, err := lastTimestamp(oldProcessViolation.GetProcesses())
+	if err != nil {
+		log.Errorf(
+			"Failed to merge alerts. "+
+				"New alert %s (policy=%s) has %d processses and old alert %s (policy=%s) has %d processes: %v",
+			newAlert.GetId(), newAlert.GetPolicy().GetName(), len(newAlert.GetProcessViolation().GetProcesses()),
+			old.GetId(), old.GetPolicy().GetName(), len(oldProcessViolation.GetProcesses()), err,
+		)
+		// At this point, we know that the new alert has non-zero process violations but it cannot be merged.
+		newAlertHasNewProcesses = true
+		return
+	}
+
 	for _, process := range newAlert.GetProcessViolation().GetProcesses() {
 		if process.GetSignal().GetTime().Compare(timestamp) > 0 {
 			newAlertHasNewProcesses = true
