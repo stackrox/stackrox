@@ -133,6 +133,8 @@ test_upgrade_paths() {
     info "Bouncing central"
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
+    # Bounce collectors to avoid restarts on if central is down long enough so sensor restarts
+    kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     # Verify data is still there
     checkForRocksAccessScopes
