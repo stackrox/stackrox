@@ -1004,7 +1004,6 @@ openshift_ci_mods() {
     fi
 
     # Provide Circle CI vars that are commonly used
-    export CIRCLE_JOB="${JOB_NAME:-${OPENSHIFT_BUILD_NAME}}"
     CIRCLE_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
     export CIRCLE_TAG
 

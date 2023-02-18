@@ -1,5 +1,3 @@
-import static org.junit.Assume.assumeFalse
-
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageOuterClass
@@ -11,7 +9,6 @@ import services.GraphQLService
 import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
-import util.Env
 
 import spock.lang.Retry
 import spock.lang.Tag
@@ -362,11 +359,5 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         then:
         assert !vulnCallResult.hasNoErrors()
-    }
-
-    private static Boolean skipThisTest() {
-        // This test consistently fails with RHEL -race (ROX-6584)
-        return Env.get("IS_RACE_BUILD", null) == "true" &&
-                Env.CI_JOBNAME && Env.CI_JOBNAME.contains("-rhel")
     }
 }
