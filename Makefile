@@ -19,11 +19,7 @@ SILENT ?= @
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests"
 
 ifeq ($(TAG),)
-ifeq (,$(wildcard CI_TAG))
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
-else
-TAG=$(shell cat CI_TAG)
-endif
 endif
 
 # Set expiration on Quay.io for non-release tags.
@@ -687,14 +683,10 @@ clean-image:
 
 .PHONY: tag
 tag:
-ifneq (,$(wildcard CI_TAG))
-	@cat CI_TAG
-else
 ifdef COMMIT
 	@git describe $(COMMIT) --tags --abbrev=10 --long --exclude '*-nightly-*'
 else
 	@echo $(TAG)
-endif
 endif
 
 .PHONY: shortcommit
