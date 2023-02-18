@@ -1,6 +1,9 @@
 package declarativeconfig
 
-import "github.com/stackrox/rox/pkg/sync"
+import (
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sync"
+)
 
 var (
 	once     sync.Once
@@ -10,7 +13,7 @@ var (
 // ManagerSingleton provides the instance of Manager to use.
 func ManagerSingleton() Manager {
 	once.Do(func() {
-		instance = New()
+		instance = New(env.DeclarativeConfigReconcileInterval.DurationSetting(), env.DeclarativeConfigWatchInterval.DurationSetting())
 	})
 	return instance
 }

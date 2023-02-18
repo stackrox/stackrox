@@ -10,37 +10,37 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockdeclarativeConfigReconciler is a mock of declarativeConfigReconciler interface.
-type MockdeclarativeConfigReconciler struct {
+// MockdeclarativeConfigContentUpdater is a mock of declarativeConfigContentUpdater interface.
+type MockdeclarativeConfigContentUpdater struct {
 	ctrl     *gomock.Controller
-	recorder *MockdeclarativeConfigReconcilerMockRecorder
+	recorder *MockdeclarativeConfigContentUpdaterMockRecorder
 }
 
-// MockdeclarativeConfigReconcilerMockRecorder is the mock recorder for MockdeclarativeConfigReconciler.
-type MockdeclarativeConfigReconcilerMockRecorder struct {
-	mock *MockdeclarativeConfigReconciler
+// MockdeclarativeConfigContentUpdaterMockRecorder is the mock recorder for MockdeclarativeConfigContentUpdater.
+type MockdeclarativeConfigContentUpdaterMockRecorder struct {
+	mock *MockdeclarativeConfigContentUpdater
 }
 
-// NewMockdeclarativeConfigReconciler creates a new mock instance.
-func NewMockdeclarativeConfigReconciler(ctrl *gomock.Controller) *MockdeclarativeConfigReconciler {
-	mock := &MockdeclarativeConfigReconciler{ctrl: ctrl}
-	mock.recorder = &MockdeclarativeConfigReconcilerMockRecorder{mock}
+// NewMockdeclarativeConfigContentUpdater creates a new mock instance.
+func NewMockdeclarativeConfigContentUpdater(ctrl *gomock.Controller) *MockdeclarativeConfigContentUpdater {
+	mock := &MockdeclarativeConfigContentUpdater{ctrl: ctrl}
+	mock.recorder = &MockdeclarativeConfigContentUpdaterMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockdeclarativeConfigReconciler) EXPECT() *MockdeclarativeConfigReconcilerMockRecorder {
+func (m *MockdeclarativeConfigContentUpdater) EXPECT() *MockdeclarativeConfigContentUpdaterMockRecorder {
 	return m.recorder
 }
 
-// ReconcileDeclarativeConfigs mocks base method.
-func (m *MockdeclarativeConfigReconciler) ReconcileDeclarativeConfigs(fileContents [][]byte) {
+// UpdateDeclarativeConfigContents mocks base method.
+func (m *MockdeclarativeConfigContentUpdater) UpdateDeclarativeConfigContents(id string, fileContents [][]byte) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ReconcileDeclarativeConfigs", fileContents)
+	m.ctrl.Call(m, "UpdateDeclarativeConfigContents", id, fileContents)
 }
 
-// ReconcileDeclarativeConfigs indicates an expected call of ReconcileDeclarativeConfigs.
-func (mr *MockdeclarativeConfigReconcilerMockRecorder) ReconcileDeclarativeConfigs(fileContents interface{}) *gomock.Call {
+// UpdateDeclarativeConfigContents indicates an expected call of UpdateDeclarativeConfigContents.
+func (mr *MockdeclarativeConfigContentUpdaterMockRecorder) UpdateDeclarativeConfigContents(id, fileContents interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileDeclarativeConfigs", reflect.TypeOf((*MockdeclarativeConfigReconciler)(nil).ReconcileDeclarativeConfigs), fileContents)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeclarativeConfigContents", reflect.TypeOf((*MockdeclarativeConfigContentUpdater)(nil).UpdateDeclarativeConfigContents), id, fileContents)
 }
