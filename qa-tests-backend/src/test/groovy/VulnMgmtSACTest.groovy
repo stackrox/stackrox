@@ -137,8 +137,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def setupSpec() {
-        assumeFalse("This test is skipped in this environment", skipThisTest())
-
         // Purposefully add an image (centos7-base) that is not running to check the case
         // where an image is orphaned. The image is actually part of the re-scanned image set.
         ImageIntegrationService.addStackroxScannerIntegration()
@@ -155,8 +153,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        assumeFalse("This test is skipped in this environment", skipThisTest())
-
         BaseService.useBasicAuth()
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         RoleService.deleteRole(NODE_ROLE)
