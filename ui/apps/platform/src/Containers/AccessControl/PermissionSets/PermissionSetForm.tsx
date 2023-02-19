@@ -17,8 +17,8 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { defaultMinimalReadAccessResources } from 'constants/accessControl';
-import { PermissionSet } from 'services/RolesService';
+import { defaultMinimalReadAccessResources, originLabelColours } from 'constants/accessControl';
+import { getTraitsOriginLabel, PermissionSet } from 'services/RolesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
@@ -124,6 +124,17 @@ function PermissionSetForm({
                             {action === 'create' ? 'Create permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <Label
+                                color={
+                                    originLabelColours[getTraitsOriginLabel(permissionSet.traits)]
+                                }
+                            >
+                                {getTraitsOriginLabel(permissionSet.traits)}
+                            </Label>
+                        </ToolbarItem>
+                    )}
                     {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>

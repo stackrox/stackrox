@@ -96,10 +96,14 @@ export type PermissionSet = {
     traits?: Traits;
 };
 
-export function getTraitsOriginLabel(traits?: Traits) {
+export function getTraitsOriginLabel(traits?: Traits): string {
     return traits && traits.origin && traitsOriginLabels[traits.origin]
         ? traitsOriginLabels[traits.origin]
         : 'User';
+}
+
+export function isUserResource(traits?: Traits): boolean {
+    return traits == null || traits.origin === 'IMPERATIVE';
 }
 
 /*

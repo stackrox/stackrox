@@ -12,7 +12,7 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { getTraitsOriginLabel, PermissionSet, Role } from 'services/RolesService';
+import { getTraitsOriginLabel, isUserResource, PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 import usePermissions from '../../../hooks/usePermissions';
@@ -115,6 +115,7 @@ function PermissionSetsList({
                                         disable:
                                             !hasWriteAccessForPage ||
                                             idDeleting === id ||
+                                            !isUserResource(traits) ||
                                             roles.some(
                                                 ({ permissionSetId }) => permissionSetId === id
                                             ),
