@@ -23,6 +23,7 @@ export function useFetchClusterNamespacesForPermissions(
     permissions: string[],
     selectedClusterId?: string
 ) {
+    const [requestedPermissions] = useState<string[]>(permissions);
     const [namespaceResponse, setNamespaceResponse] = useState<NamespaceResponse>(emptyResponse);
 
     useEffect(() => {
@@ -32,7 +33,7 @@ export function useFetchClusterNamespacesForPermissions(
             namespaces: [],
         });
         if (selectedClusterId) {
-            getNamespacesForClusterAndPermissions(selectedClusterId, permissions)
+            getNamespacesForClusterAndPermissions(selectedClusterId, requestedPermissions)
                 .then((data) => {
                     const responseNamespaces = data.namespaces;
                     const namespaces: Namespace[] = [];
@@ -60,7 +61,7 @@ export function useFetchClusterNamespacesForPermissions(
                     });
                 });
         }
-    }, [permissions, selectedClusterId]);
+    }, [requestedPermissions, selectedClusterId]);
 
     return namespaceResponse;
 }
