@@ -25,9 +25,8 @@ function NetworkBreadcrumbs({
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
-    const permissions = ['NetworkGraph', 'Deployment'];
     const fetchedNamespaces = useFetchClusterNamespacesForPermissions(
-        permissions,
+        ['NetworkGraph', 'Deployment'],
         selectedCluster?.id
     );
     const { namespaces } = useEnrichNamespacesWithDeploymentCounts(
