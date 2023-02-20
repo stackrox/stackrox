@@ -54,6 +54,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	"github.com/stackrox/rox/central/views/imagecve"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/manager/querymgr"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
@@ -62,6 +63,7 @@ import (
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -118,6 +120,9 @@ type Resolver struct {
 	vulnReqQueryMgr               querymgr.VulnReqQueryManager
 	vulnReqStore                  vulnReqDataStore.DataStore
 	AuditLogger                   auditPkg.Auditor
+
+	// Views
+	ImageCVEView imagecve.CveView
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -165,6 +170,14 @@ func New() *Resolver {
 		vulnReqQueryMgr:             querymgr.Singleton(),
 		vulnReqStore:                vulnReqDataStore.Singleton(),
 		AuditLogger:                 audit.New(processor.Singleton()),
+
+		// Views
+		ImageCVEView: func() imagecve.CveView {
+			if features.VulnMgmtWorkloadCVEs.Enabled() {
+				return imagecve.Singleton()
+			}
+			return nil
+		}(),
 	}
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		resolver.ClusterCVEDataStore = clusterCVEDataStore.Singleton()
