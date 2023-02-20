@@ -415,9 +415,10 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	s.ErrorIs(err, errox.AlreadyExists, "adding permission set with an existing ID yields an error")
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, mimicPermissionSet)
-	assert.Error(s.T(), err)
 	// With postgres the unique constraint catches this.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		assert.ErrorContains(s.T(), err, "violates unique constraint")
+	} else {
 		s.ErrorIs(err, errox.AlreadyExists, "adding permission set with an existing name yields an error")
 	}
 
@@ -590,11 +591,6 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 		Origin: storage.Traits_DECLARATIVE,
 	}
 
-	log.Info("SHREWS --")
-	log.Infof("good = %v", goodScope)
-	log.Infof("bad = %v", badScope)
-	log.Infof("mimic = %v", mimicScope)
-	log.Infof("clone = %v", cloneScope)
 	err := s.dataStore.AddAccessScope(s.hasWriteCtx, badScope)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Add*() yields an error")
 
