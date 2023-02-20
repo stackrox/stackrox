@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package service
 
 import (
@@ -11,6 +13,8 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
+	"github.com/stackrox/rox/central/processbaseline/store"
+	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	rocksdbStore "github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	resultsMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
@@ -19,7 +23,10 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -79,8 +86,6 @@ func getIndicators(key *storage.ProcessBaselineKey) []*storage.ProcessIndicator 
 }
 
 func TestProcessBaselineService(t *testing.T) {
-	pgtest.SkipIfPostgresEnabled(t)
-
 	suite.Run(t, new(ProcessBaselineServiceTestSuite))
 }
 
@@ -89,7 +94,8 @@ type ProcessBaselineServiceTestSuite struct {
 	datastore datastore.DataStore
 	service   Service
 
-	db *rocksdb.RocksDB
+	db   *rocksdb.RocksDB
+	pool *postgres.DB
 
 	reprocessor        *mocks.MockLoop
 	resultDatastore    *resultsMocks.MockDataStore
@@ -101,17 +107,27 @@ type ProcessBaselineServiceTestSuite struct {
 }
 
 func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
-	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
-	suite.Require().NoError(err)
+	var store store.Store
+	var indexer index.Indexer
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		pgtestbase := pgtest.ForT(suite.T())
+		suite.Require().NotNil(pgtestbase)
+		suite.pool = pgtestbase.DB
+		store = postgresStore.New(suite.pool)
+		indexer = postgresStore.NewIndexer(suite.pool)
+	} else {
+		db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
+		suite.Require().NoError(err)
 
-	suite.db = db
+		suite.db = db
 
-	store, err := rocksdbStore.New(db)
-	suite.NoError(err)
+		store, err = rocksdbStore.New(db)
+		suite.NoError(err)
 
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	suite.NoError(err)
-	indexer := index.New(tmpIndex)
+		tmpIndex, err := globalindex.TempInitializeIndices("")
+		suite.NoError(err)
+		indexer = index.New(tmpIndex)
+	}
 
 	searcher, err := baselineSearch.New(store, indexer)
 	suite.NoError(err)
@@ -130,8 +146,12 @@ func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 }
 
 func (suite *ProcessBaselineServiceTestSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(suite.db)
 	suite.mockCtrl.Finish()
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.pool.Close()
+	} else {
+		rocksdbtest.TearDownRocksDB(suite.db)
+	}
 }
 
 func (suite *ProcessBaselineServiceTestSuite) TestGetProcessBaseline() {
@@ -354,9 +374,9 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	baselines := []*storage.ProcessBaseline{
 		{
 			Key: &storage.ProcessBaselineKey{
-				DeploymentId:  "d1",
+				DeploymentId:  fixtureconsts.Deployment1,
 				ContainerName: "container",
-				ClusterId:     "clusterid",
+				ClusterId:     fixtureconsts.Cluster1,
 				Namespace:     "namespace",
 			},
 			Elements: []*storage.BaselineElement{
@@ -371,9 +391,9 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 		},
 		{
 			Key: &storage.ProcessBaselineKey{
-				DeploymentId:  "d2",
+				DeploymentId:  fixtureconsts.Deployment2,
 				ContainerName: "container",
-				ClusterId:     "clusterid",
+				ClusterId:     fixtureconsts.Cluster1,
 				Namespace:     "namespace",
 			},
 			Elements: []*storage.BaselineElement{
@@ -389,8 +409,8 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	}
 
 	suite.deployments.EXPECT().GetDeployment(hasWriteCtx, gomock.Any()).Return(nil, true, nil).AnyTimes()
-	suite.lifecycleManager.EXPECT().RemoveDeploymentFromObservation("d1").AnyTimes()
-	suite.lifecycleManager.EXPECT().RemoveDeploymentFromObservation("d2").AnyTimes()
+	suite.lifecycleManager.EXPECT().RemoveDeploymentFromObservation(fixtureconsts.Deployment1).AnyTimes()
+	suite.lifecycleManager.EXPECT().RemoveDeploymentFromObservation(fixtureconsts.Deployment2).AnyTimes()
 
 	for _, baseline := range baselines {
 		id, err := suite.datastore.AddProcessBaseline(hasWriteCtx, baseline)
@@ -405,7 +425,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	suite.Error(err)
 
 	request = &v1.DeleteProcessBaselinesRequest{
-		Query:   "Deployment Id:d1",
+		Query:   "Deployment Id:" + fixtureconsts.Deployment1,
 		Confirm: false,
 	}
 	resp, err := suite.service.DeleteProcessBaselines(hasWriteCtx, request)
