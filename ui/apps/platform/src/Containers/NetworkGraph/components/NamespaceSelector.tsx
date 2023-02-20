@@ -2,7 +2,7 @@ import React, { useCallback, ChangeEvent } from 'react';
 import { Badge, Button, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Namespace } from 'hooks/useFetchClusterNamespaces';
+import { EnrichedNamespace } from 'hooks/useEnrichNamespacesWithDeploymentCounts';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import { getDeploymentLookupMap, getDeploymentsAllowedByNamespaces } from '../utils/hierarchyUtils';
@@ -21,7 +21,7 @@ function filterElementsWithValueProp(
 }
 
 type NamespaceSelectorProps = {
-    namespaces?: Namespace[];
+    namespaces?: EnrichedNamespace[];
     selectedNamespaces?: string[];
     selectedDeployments?: string[];
     deploymentsByNamespace?: NamespaceWithDeployments[];

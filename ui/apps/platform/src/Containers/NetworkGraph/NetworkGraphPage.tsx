@@ -14,7 +14,7 @@ import {
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { timeWindows } from 'constants/timeWindows';
-import useFetchClusters from 'hooks/useFetchClusters';
+import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
 import {
@@ -103,7 +103,7 @@ function NetworkGraphPage() {
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
-    const { clusters } = useFetchClusters();
+    const { clusters } = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
     const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
