@@ -36,13 +36,17 @@ function CollectionAttacher({
     const { attached, detached, attach, detach, hasMore, fetchMore, onSearch } = embedded;
     const { isFetchingMore, fetchMoreError } = embedded;
 
+    function onSearchInputChange(_event, value) {
+        setSearchInput(value);
+    }
+
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXl' }}>
             <SearchInput
                 aria-label="Filter by name"
                 placeholder="Filter by name"
                 value={searchInput}
-                onChange={setSearchInput}
+                onChange={onSearchInputChange}
                 onSearch={() => {
                     onSearch(searchInput);
                     setSearchValue(searchInput);
