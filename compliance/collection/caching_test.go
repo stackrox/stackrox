@@ -103,7 +103,7 @@ func (s *TestComplianceCachingSuite) TestBackoffNoFile() {
 	_, _ = scanNodeWithBackoff(s.mockScanOpts)
 
 	// This file mustn't exist after a successful run
-	_, err := os.Stat(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath))
+	_, err := os.Stat(fmt.Sprintf("%s/inventory-backoff", s.mockScanOpts.inventoryCachePath))
 	s.ErrorIs(err, os.ErrNotExist)
 
 	// No sleep should have been called
@@ -112,13 +112,13 @@ func (s *TestComplianceCachingSuite) TestBackoffNoFile() {
 
 func (s *TestComplianceCachingSuite) TestBackoffWithFile() {
 	sleepTime := 32 * time.Second
-	err := os.WriteFile(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath), []byte(fmt.Sprintf("%d", int64(sleepTime))), 0600)
+	err := os.WriteFile(fmt.Sprintf("%s/inventory-backoff", s.mockScanOpts.inventoryCachePath), []byte(fmt.Sprintf("%d", int64(sleepTime))), 0600)
 	s.NoError(err)
 
 	_, _ = scanNodeWithBackoff(s.mockScanOpts)
 
 	// This file mustn't exist after a successful run
-	_, err = os.Stat(fmt.Sprintf("%s/backoff", s.mockScanOpts.inventoryCachePath))
+	_, err = os.Stat(fmt.Sprintf("%s/inventory-backoff", s.mockScanOpts.inventoryCachePath))
 	s.ErrorIs(err, os.ErrNotExist)
 
 	s.Equal(1, s.sleeper.callCount)
