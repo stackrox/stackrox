@@ -31,8 +31,7 @@ const ClusterSelect = ({
         closeSelect();
         closeSidePanel();
     }
-    const permissions = ['NetworkGraph', 'Deployment'];
-    const fetchResult = useFetchClustersForPermissions(permissions);
+    const fetchResult = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
     const { clusters } = fetchResult;
 
     return (
@@ -45,12 +44,11 @@ const ClusterSelect = ({
             placeholderText="Select a cluster"
             onSelect={changeCluster}
         >
-            {clusters
-                .map(({ id: clusterId, name }) => (
-                    <SelectOption key={clusterId} value={clusterId}>
-                        {name}
-                    </SelectOption>
-                ))}
+            {clusters.map(({ id: clusterId, name }) => (
+                <SelectOption key={clusterId} value={clusterId}>
+                    {name}
+                </SelectOption>
+            ))}
         </Select>
     );
 };
