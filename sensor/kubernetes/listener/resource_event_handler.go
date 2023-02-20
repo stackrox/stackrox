@@ -307,8 +307,10 @@ func handle(
 		missingInitialIDs:          nil,
 	}
 	informer.AddEventHandler(handlerImpl)
-	if err := informer.SetTransform(managedFieldsTransformer); err != nil {
-		utils.Should(err)
+	if !informer.HasSynced() {
+		if err := informer.SetTransform(managedFieldsTransformer); err != nil {
+			utils.Should(err)
+		}
 	}
 	wg.Add(1)
 	go func() {
