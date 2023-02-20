@@ -11,12 +11,12 @@ import (
 var (
 	once sync.Once
 
-	imageCVEView ImageCVEView
+	imageCVEView CveView
 )
 
-// NewGenericImageCVEView returns the interface ImageCVEView
+// NewCVEView returns the interface CveView
 // that provides searching image cves stored in the database.
-func NewGenericImageCVEView(db *postgres.DB) ImageCVEView {
+func NewCVEView(db *postgres.DB) CveView {
 	return &imageCVECoreViewImpl{
 		db:     db,
 		schema: schema.ImageCvesSchema,
@@ -24,13 +24,13 @@ func NewGenericImageCVEView(db *postgres.DB) ImageCVEView {
 }
 
 // Singleton provides the interface to search image cves stored in the database.
-func Singleton() ImageCVEView {
+func Singleton() CveView {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}
 
 	once.Do(func() {
-		imageCVEView = NewGenericImageCVEView(globaldb.GetPostgres())
+		imageCVEView = NewCVEView(globaldb.GetPostgres())
 	})
 	return imageCVEView
 }

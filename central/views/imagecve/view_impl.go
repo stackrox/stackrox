@@ -16,8 +16,8 @@ type imageCVECoreViewImpl struct {
 	db     *postgres.DB
 }
 
-func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]ImageCVECore, error) {
-	// We only support a dynamic where clause. ImageCVECore has a pre-defined select and group by. Remember this is a "view".
+func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, error) {
+	// We only support a dynamic where clause. CveCore has a pre-defined select and group by. Remember this is a "view".
 	if len(q.GetSelects()) > 0 {
 		return nil, errors.Errorf("Unexpected select clause in query %q", q.String())
 	}
@@ -29,7 +29,7 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]ImageCVE
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]ImageCVECore, 0, len(results))
+	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {
 		ret = append(ret, r)
 	}

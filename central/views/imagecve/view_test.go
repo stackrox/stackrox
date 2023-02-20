@@ -57,7 +57,7 @@ func (f *filterImpl) withVulnFiler(fn func(vuln *storage.EmbeddedVulnerability) 
 	return f
 }
 
-func TestGetGenericImageCVE(t *testing.T) {
+func TestGetImageCVECore(t *testing.T) {
 	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -78,7 +78,7 @@ func TestGetGenericImageCVE(t *testing.T) {
 		require.NoError(t, store.UpsertImage(ctx, image))
 	}
 
-	cveView := NewGenericImageCVEView(testDB.DB)
+	cveView := NewCVEView(testDB.DB)
 
 	for _, tc := range []struct {
 		desc        string
