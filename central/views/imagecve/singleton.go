@@ -25,7 +25,7 @@ func NewCVEView(db *postgres.DB) CveView {
 
 // Singleton provides the interface to search image cves stored in the database.
 func Singleton() CveView {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}
 
