@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-    NamespaceForClusterAndPermissions,
-    getNamespacesForClusterAndPermissions,
-} from 'services/RolesService';
+import { ScopeObject, getNamespacesForClusterAndPermissions } from 'services/RolesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type Namespace = {
@@ -17,31 +14,34 @@ type NamespaceResponse = {
 };
 
 const emptyResponse: NamespaceResponse = {
-    loading: true,
+    loading: false,
     error: '',
     namespaces: [] as Namespace[],
 };
 
-function useFetchClusterNamespacesForPermissions(
+export function useFetchClusterNamespacesForPermissions(
     permissions: string[],
     selectedClusterId?: string
 ) {
     const [namespaceResponse, setNamespaceResponse] = useState<NamespaceResponse>(emptyResponse);
 
     useEffect(() => {
+        setNamespaceResponse({
+            loading: true,
+            error: '',
+            namespaces: [],
+        });
         if (selectedClusterId) {
             getNamespacesForClusterAndPermissions(selectedClusterId, permissions)
                 .then((data) => {
                     const responseNamespaces = data.namespaces;
                     const namespaces: Namespace[] = [];
-                    responseNamespaces.forEach(
-                        (rspNamespace: NamespaceForClusterAndPermissions) => {
-                            const namespace: Namespace = {} as Namespace;
-                            namespace.id = rspNamespace.id;
-                            namespace.name = rspNamespace.name;
-                            namespaces.push(namespace);
-                        }
-                    );
+                    responseNamespaces.forEach((responseNamespace: ScopeObject) => {
+                        const namespace: Namespace = {} as Namespace;
+                        namespace.id = responseNamespace.id;
+                        namespace.name = responseNamespace.name;
+                        namespaces.push(namespace);
+                    });
                     setNamespaceResponse({
                         loading: false,
                         error: '',
@@ -64,5 +64,3 @@ function useFetchClusterNamespacesForPermissions(
 
     return namespaceResponse;
 }
-
-export default useFetchClusterNamespacesForPermissions;

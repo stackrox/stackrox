@@ -3,10 +3,7 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
-import {
-    getNamespacesForClusterAndPermissions,
-    NamespaceForClusterAndPermissions,
-} from 'services/RolesService';
+import { getNamespacesForClusterAndPermissions, ScopeObject } from 'services/RolesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type SelectorState = { selectedClusterId: string | null; selectedNamespaceFilters: string[] };
@@ -24,7 +21,7 @@ type Response = {
 };
 
 const emptyResponse = {
-    loading: true,
+    loading: false,
     error: '',
     availableNamespaceFilters: [],
 };
@@ -37,17 +34,20 @@ function useNamespaceFilters() {
     >(selector);
 
     useEffect(() => {
+        setResponse({
+            loading: true,
+            error: '',
+            availableNamespaceFilters: [],
+        });
         const permissions = ['NetworkGraph'];
-        if (selectedClusterId !== null && selectedClusterId !== undefined) {
+        if (selectedClusterId) {
             getNamespacesForClusterAndPermissions(selectedClusterId, permissions)
                 .then((data) => {
                     const responseNamespaces = data.namespaces;
                     const namespaces: string[] = [];
-                    responseNamespaces.forEach(
-                        (rspNamespace: NamespaceForClusterAndPermissions) => {
-                            namespaces.push(rspNamespace.name);
-                        }
-                    );
+                    responseNamespaces.forEach((namespace: ScopeObject) => {
+                        namespaces.push(namespace.name);
+                    });
                     setResponse({
                         loading: false,
                         error: '',

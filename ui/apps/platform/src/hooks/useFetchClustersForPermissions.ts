@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { ClusterForPermissions, getClustersForPermissions } from 'services/RolesService';
+import { getClustersForPermissions, ScopeObject } from 'services/RolesService';
 import { Cluster } from 'types/cluster.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -11,22 +11,30 @@ type Result = {
 };
 
 function useFetchClustersForPermissions(permissions: string[]): Result {
-    const defaultResultState = {
+    const defaultResultState = useMemo(() => {
+        return {
+            clusters: [],
+            error: '',
+            isLoading: true,
+        };
+    }, []);
+
+    const [result, setResult] = useState<Result>({
         clusters: [],
         error: '',
-        isLoading: true,
-    };
+        isLoading: false,
+    });
 
-    const [result, setResult] = useState<Result>(defaultResultState);
+    const [requestedPermissions] = useState<string[]>(permissions);
 
     useEffect(() => {
         setResult(defaultResultState);
 
-        getClustersForPermissions(permissions)
+        getClustersForPermissions(requestedPermissions)
             .then((data) => {
                 const responseClusters = data.clusters;
                 const clusters: Cluster[] = [];
-                responseClusters.forEach((responseCluster: ClusterForPermissions) => {
+                responseClusters.forEach((responseCluster: ScopeObject) => {
                     const cluster: Cluster = {} as Cluster;
                     cluster.id = responseCluster.id;
                     cluster.name = responseCluster.name;
@@ -49,7 +57,7 @@ function useFetchClustersForPermissions(permissions: string[]): Result {
                     isLoading: false,
                 });
             });
-    }, []);
+    }, [defaultResultState, requestedPermissions]);
 
     return result;
 }

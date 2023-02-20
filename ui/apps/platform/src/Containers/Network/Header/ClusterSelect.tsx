@@ -5,18 +5,15 @@ import { Select, SelectOption } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
-// import { actions as graphActions, networkGraphClusters } from 'reducers/network/graph';
 import { actions as pageActions } from 'reducers/network/page';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
-// import { Cluster } from 'types/cluster.proto';
 
 type ClusterSelectProps = {
     id?: string;
     selectClusterId: (clusterId: string) => void;
     closeSidePanel: () => void;
-    // clusters: Cluster[];
     selectedClusterId?: string;
     isDisabled?: boolean;
 };
@@ -25,7 +22,6 @@ const ClusterSelect = ({
     id,
     selectClusterId,
     closeSidePanel,
-    // clusters,
     selectedClusterId = '',
     isDisabled = false,
 }: ClusterSelectProps): ReactElement => {
@@ -50,7 +46,6 @@ const ClusterSelect = ({
             onSelect={changeCluster}
         >
             {clusters
-                // .filter((cluster) => networkGraphClusters[cluster.type])
                 .map(({ id: clusterId, name }) => (
                     <SelectOption key={clusterId} value={clusterId}>
                         {name}
@@ -61,7 +56,6 @@ const ClusterSelect = ({
 };
 
 const mapStateToProps = createStructuredSelector({
-    // clusters: selectors.getClusters,
     selectedClusterId: selectors.getSelectedNetworkClusterId,
 });
 
