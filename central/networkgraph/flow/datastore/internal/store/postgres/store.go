@@ -140,11 +140,11 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID uuid.UUID, 
 		obj.GetProps().GetDstEntity().GetId(),
 		obj.GetProps().GetDstPort(),
 		obj.GetProps().GetL4Protocol(),
-		pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 		clusterID,
+		pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 	}
 
-	finalStr := "INSERT INTO network_flows (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
+	finalStr := "INSERT INTO network_flows (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId, LastSeenTimestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -165,8 +165,8 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 		"props_dstentity_id",
 		"props_dstport",
 		"props_l4protocol",
-		"lastseentimestamp",
 		"clusterid",
+		"lastseentimestamp",
 	}
 
 	for idx, obj := range objs {
@@ -177,8 +177,8 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 			obj.GetProps().GetDstEntity().GetId(),
 			obj.GetProps().GetDstPort(),
 			obj.GetProps().GetL4Protocol(),
-			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 			s.clusterID,
+			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 		})
 
 		// if we hit our batch size we need to push the data
