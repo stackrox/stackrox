@@ -30,7 +30,7 @@ export type AWSProviderMetadata = {
 
 export type ClusterAzureProviderMetadata = {
     azure: AzureProviderMetadata;
-};
+} & ClusterBaseProviderMetadata;
 
 export type AzureProviderMetadata = {
     subscriptionId: string;
