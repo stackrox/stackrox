@@ -645,15 +645,15 @@ func setPortConfigNode(portConfig []*storage.PortConfig, name string, port int32
 	}
 }
 
-func setDynamicFields(svc *v1.Service, name string, port int32, sel map[string]string, serviceFunc func(*v1.Service, string, int32, map[string]string)) {
-	serviceFunc(svc, name, port, sel)
+func setDynamicFields(svc *v1.Service, name string, port int32, sel map[string]string, serviceFn func(*v1.Service, string, int32, map[string]string)) {
+	serviceFn(svc, name, port, sel)
 }
 
-func setDynamicFieldsInSlice(resources []resource.K8sResourceInfo, portConfig []*storage.PortConfig, name string, port int32, sel map[string]string, svcFunc serviceFunc, pcFunc portConfigFunc) {
+func setDynamicFieldsInSlice(resources []resource.K8sResourceInfo, portConfig []*storage.PortConfig, name string, port int32, sel map[string]string, serviceFn serviceFunc, portConfigFn portConfigFunc) {
 	for i := range resources {
 		if resources[i].Kind == "Service" {
-			setDynamicFields(resources[i].Obj.(*v1.Service), name, port, sel, svcFunc)
+			setDynamicFields(resources[i].Obj.(*v1.Service), name, port, sel, serviceFn)
 		}
 	}
-	pcFunc(portConfig, name, port)
+	portConfigFn(portConfig, name, port)
 }
