@@ -27,6 +27,11 @@ export function useFetchClusterNamespacesForPermissions(
     const [namespaceResponse, setNamespaceResponse] = useState<NamespaceResponse>(emptyResponse);
 
     useEffect(() => {
+        setNamespaceResponse({
+            loading: true,
+            error: '',
+            namespaces: [],
+        });
         if (selectedClusterId) {
             setNamespaceResponse({
                 loading: true,
