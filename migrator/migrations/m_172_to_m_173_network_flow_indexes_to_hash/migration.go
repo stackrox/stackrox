@@ -37,9 +37,18 @@ var (
 func UpdateIndexesToHash(gormDB *gorm.DB, db *postgres.DB) error {
 	// Automigrate does not remove or update indexes, it only creates them.
 	// Remove index
-	gormDB.Migrator().DropIndex(&schema.NetworkFlows{}, "network_flows_cluster")
-	gormDB.Migrator().DropIndex(&schema.NetworkFlows{}, "network_flows_dst")
-	gormDB.Migrator().DropIndex(&schema.NetworkFlows{}, "network_flows_src")
+	err := gormDB.Migrator().DropIndex(&schema.NetworkFlows{}, "network_flows_cluster")
+	if err != nil {
+		log.WriteToStderrf("unable to drop index network_flows_cluster from network_flows, %v", err)
+	}
+	err = gormDB.Migrator().DropIndex(&schema.NetworkFlows{}, "network_flows_dst")
+	if err != nil {
+		log.WriteToStderrf("unable to drop index network_flows_dst from network_flows, %v", err)
+	}
+	err = gormDB.Migrator().DropIndex(&schema.NetworkFlows{}, "network_flows_src")
+	if err != nil {
+		log.WriteToStderrf("unable to drop index network_flows_src from network_flows, %v", err)
+	}
 
 	// Now apply the updated schema to get the updated indexes
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNetworkFlowsStmt)
