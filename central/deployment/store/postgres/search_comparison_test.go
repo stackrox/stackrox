@@ -1,0 +1,170 @@
+package postgres
+
+import (
+	"context"
+	"sort"
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+)
+
+var (
+	ctx = sac.WithAllAccess(context.Background())
+)
+
+func TestSearchComparison(t *testing.T) {
+	suite.Run(t, new(SearchComparisonTestSuite))
+}
+
+type SearchComparisonTestSuite struct {
+	suite.Suite
+
+	mockCtrl       *gomock.Controller
+	testDB         *pgtest.TestPostgres
+	imageDatastore imageDataStore.DataStore
+
+	optionsMap search.OptionsMap
+}
+
+func (s *SearchComparisonTestSuite) SetupSuite() {
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.T().Skip("Skip postgres store tests")
+		s.T().SkipNow()
+	}
+
+	s.testDB = pgtest.ForT(s.T())
+
+	imageDS, err := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+	s.imageDatastore = imageDS
+	s.optionsMap = pkgSchema.ImagesSchema.OptionsMap
+}
+
+func (s *SearchComparisonTestSuite) TearDownSuite() {
+	//s.testDB.Teardown(s.T())
+}
+
+func compareResults(t *testing.T, matches bool, predResult *search.Result, searchResults []search.Result) {
+	assert.Equal(t, matches, len(searchResults) != 0)
+	log.Infof("Results length => %d", len(searchResults))
+	log.Infof("Results Matches => %v", searchResults[0].Matches)
+	if matches && len(searchResults) > 0 {
+		for k := range predResult.Matches {
+			log.Infof("k => %q", k)
+			sort.Strings(predResult.Matches[k])
+			sort.Strings(searchResults[0].Matches[k])
+			assert.Equal(t, predResult.Matches[k], searchResults[0].Matches[k])
+		}
+	}
+}
+
+func (s *SearchComparisonTestSuite) TestImageSearchResults() {
+	//s.T().SkipNow()
+	pgtest.SkipIfPostgresDisabled(s.T())
+
+	test := 0
+
+	cases := []struct {
+		image *storage.Image
+		query *v1.Query
+	}{
+		{
+			image: fixtures.GetImage(),
+			query: search.NewQueryBuilder().AddStringsHighlighted(search.ImageTag, "latest").ProtoQuery(),
+		},
+		{
+			image: fixtures.GetImage(),
+			query: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.CVSS, search.CVE},
+				[]string{">=5", search.WildcardString}).
+				ProtoQuery(),
+		},
+		{
+			image: fixtures.GetImage(),
+			query: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.CVSS, search.CVE},
+				[]string{">4", "CVE-2014-620"}).
+				ProtoQuery(),
+		},
+	}
+
+	factory := predicate.NewFactory("image", (*storage.Image)(nil))
+	factory2 := factory.ForCustomOptionsMap(s.optionsMap)
+	for _, c := range cases {
+		s.T().Run("test", func(t *testing.T) {
+			log.Infof("Test = %d", test)
+			predicate, err := factory2.GeneratePredicate(c.query)
+			require.NoError(t, err)
+
+			predResult, matches := predicate.Evaluate(c.image)
+			log.Infof("SHREWS -- predResult = %v", predResult)
+
+			require.NoError(t, s.imageDatastore.UpsertImage(ctx, c.image))
+			searchResults, err := s.imageDatastore.Search(ctx, c.query)
+			log.Infof("SHREWS -- %v", searchResults)
+			log.Infof("SHREWS -- %v", searchResults[0].ID)
+			log.Infof("SHREWS -- %v", searchResults[0].Matches)
+			require.NoError(t, err)
+
+			compareResults(t, matches, predResult, searchResults)
+			test = test + 1
+		})
+	}
+}
+
+func (s *SearchComparisonTestSuite) TestDeploymentSearchResults() {
+	pgtest.SkipIfPostgresDisabled(s.T())
+
+	cases := []struct {
+		deployment *storage.Deployment
+		query      *v1.Query
+	}{
+		{
+			deployment: fixtures.GetDeployment(),
+			query:      search.NewQueryBuilder().AddStringsHighlighted(search.Cluster, "prod").ProtoQuery(),
+		},
+		{
+			deployment: fixtures.GetDeployment(),
+			query:      search.NewQueryBuilder().AddBoolsHighlighted(search.Privileged, true).ProtoQuery(),
+		},
+		{
+			deployment: fixtures.GetDeployment(),
+			query: search.NewQueryBuilder().AddGenericTypeLinkedFieldsHighligted(
+				[]search.FieldLabel{search.AddCapabilities, search.Privileged}, []interface{}{"SYS_ADMIN", true}).ProtoQuery(),
+		},
+	}
+
+	index := NewIndexer(s.testDB.DB)
+	store := New(s.testDB.DB)
+
+	factory := predicate.NewFactory("deployment", (*storage.Deployment)(nil))
+	for _, c := range cases {
+		s.T().Run("test", func(t *testing.T) {
+			predicate, err := factory.GeneratePredicate(c.query)
+			require.NoError(t, err)
+
+			predResult, matches := predicate.Evaluate(c.deployment)
+
+			require.NoError(t, store.Upsert(ctx, c.deployment))
+			searchResults, err := index.Search(ctx, c.query)
+			require.NoError(t, err)
+
+			compareResults(t, matches, predResult, searchResults)
+		})
+	}
+}
