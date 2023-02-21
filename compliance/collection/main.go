@@ -109,30 +109,12 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-// manageSendingToSensor sends everything from sensorC channel to sensor
-func manageSendingToSensor(ctx context.Context, cli sensor.ComplianceServiceClient, sensorC <-chan *sensor.MsgFromCompliance) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case sc := <-sensorC:
-			client, _, err := initializeStream(ctx, cli)
-			if err != nil && ctx.Err() == nil {
-				// error even after retries
-				log.Fatalf("unable to establish send stream to sensor: %v", err)
-			}
-			if err := client.Send(sc); err != nil {
-				log.Errorf("failed sending nodeScanV2 to sensor: %v", err)
-			}
-		}
-	}
-}
-
-func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
+func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, sensorC <-chan *sensor.MsgFromCompliance) {
 	for {
 		select {
 		case <-ctx.Done():
 			sig.Signal()
+			log.Infof("Parent context cancelled. Stopping manageStream")
 			return
 		default:
 			client, config, err := initializeStream(ctx, cli)
@@ -143,8 +125,27 @@ func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient
 				}
 				log.Fatalf("error initializing stream to sensor: %v", err)
 			}
+			ctx2, cancelFn := context.WithCancel(ctx)
+			if sensorC != nil {
+				go manageSendToSensor(ctx2, client, sensorC)
+			}
 			if err := runRecv(ctx, client, config); err != nil {
 				log.Errorf("error running recv: %v", err)
+			}
+			cancelFn()
+		}
+	}
+}
+
+func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_CommunicateClient, sensorC <-chan *sensor.MsgFromCompliance) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Infof("Child context cancelled. Stopping manageSendToSensor")
+			return
+		case sc := <-sensorC:
+			if err := cli.Send(sc); err != nil {
+				log.Errorf("failed sending nodeScanV2 to sensor: %v", err)
 			}
 		}
 	}
@@ -278,15 +279,13 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
-	go manageReceiveStream(ctx, cli, &stoppedSig)
-
 	if features.RHCOSNodeScanning.Enabled() {
 		rescanInterval := env.NodeRescanInterval.DurationSetting()
 		cmetrics.ObserveRescanInterval(rescanInterval, getNode())
 		log.Infof("Node Rescan interval: %s", rescanInterval.String())
 		sensorC := make(chan *sensor.MsgFromCompliance)
 		defer close(sensorC)
-		go manageSendingToSensor(ctx, cli, sensorC)
+		go manageStream(ctx, cli, &stoppedSig, sensorC)
 
 		var scanner nodeinventorizer.NodeInventorizer
 		if features.UseFakeNodeInventory.Enabled() {
@@ -308,6 +307,8 @@ func main() {
 				}
 			}
 		}()
+	} else {
+		go manageStream(ctx, cli, &stoppedSig, nil)
 	}
 
 	signalsC := make(chan os.Signal, 1)
