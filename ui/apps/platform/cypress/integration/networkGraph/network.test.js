@@ -99,7 +99,8 @@ describe('Network page', () => {
         // Stop here because after Policies processed, local deployment differs from CI.
     });
 
-    it('should show the network policy simulator screen after generating network policies', () => {
+    // This test is disabled for now as the links from Risk to Network Graph have been changed to navigate to the new version
+    it.skip('should show the network policy simulator screen after generating network policies', () => {
         visitRiskDeployments();
         viewRiskDeploymentByName('sensor');
         viewRiskDeploymentInNetworkGraph();
@@ -119,7 +120,8 @@ describe('Network page', () => {
 describe('Network Deployment Details', () => {
     withAuth();
 
-    it('should show the deployment name and namespace', () => {
+    // This test is disabled for now as the links from Risk to Network Graph have been changed to navigate to the new version
+    it.skip('should show the deployment name and namespace', () => {
         const deploymentName = 'sensor';
 
         visitRiskDeployments();
