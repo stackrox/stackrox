@@ -10,8 +10,8 @@ const TYPING_DELAY = 800;
 const PaginationInput = ({ totalSize, onChange, currentPage, pageSize }) => {
     const [localPage, setLocalPage] = useState(currentPage);
     const delayedSetPage = useCallback(
-        debounce((newPage) => onChange(newPage), TYPING_DELAY),
-        []
+        () => debounce((newPage) => onChange(newPage), TYPING_DELAY),
+        [onChange]
     );
 
     const totalPages = Math.ceil(totalSize / pageSize);
