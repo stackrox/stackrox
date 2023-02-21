@@ -6,27 +6,19 @@ import (
 	"context"
 	"testing"
 
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	policyCategoryEdgePostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategoryedgepostgresstore"
-	policyCategoryPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategorypostgresstore"
-	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policypostgresstore"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	newSchema "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_network_flow_indexes_to_hash/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stretchr/testify/require"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 )
 
 type categoriesMigrationTestSuite struct {
 	suite.Suite
 
-	db            *pghelper.TestPostgres
-	policyStore   policyPostgresStore.Store
-	categoryStore policyCategoryPostgresStore.Store
-	edgeStore     policyCategoryEdgePostgresStore.Store
+	db *pghelper.TestPostgres
 }
 
 func TestMigration(t *testing.T) {
@@ -35,12 +27,7 @@ func TestMigration(t *testing.T) {
 
 func (s *categoriesMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
-	s.policyStore = policyPostgresStore.New(s.db.DB)
-	s.categoryStore = policyCategoryPostgresStore.New(s.db.DB)
-	s.edgeStore = policyCategoryEdgePostgresStore.New(s.db.DB)
-	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePoliciesStmt)
-	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePolicyCategoriesStmt)
-
+	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableNetworkFlowsStmt)
 }
 
 func (s *categoriesMigrationTestSuite) TearDownTest() {
@@ -48,26 +35,31 @@ func (s *categoriesMigrationTestSuite) TearDownTest() {
 }
 
 func (s *categoriesMigrationTestSuite) TestMigration() {
-	ctx := sac.WithAllAccess(context.Background())
-	testPolicy := fixtures.GetPolicy()
-	testPolicy.Categories = []string{"Test Category"}
-
-	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
+	var indexSet set.StringSet
+	indexSet.Add("network_flows_pkey")
+	indexSet.Add("network_flows_cluster")
+	indexSet.Add("network_flows_dst")
+	indexSet.Add("network_flows_lastseentimestamp")
+	indexSet.Add("network_flows_src")
 
 	dbs := &types.Databases{
 		PostgresDB: s.db.DB,
 		GormDB:     s.db.GetGormDB(),
 	}
 
+	indexes, err := s.db.GetGormDB().Migrator().GetIndexes(&oldSchema.NetworkFlows{})
+	s.NoError(err)
+
+	for _, index := range indexes {
+		s.True(indexSet.Contains(index.Name()))
+	}
+
 	s.NoError(migration.Run(dbs))
 
-	q := search.NewQueryBuilder().AddExactMatches(search.PolicyCategoryName, testPolicy.GetCategories()[0]).ProtoQuery()
-	categoriesAfterMigration, err := s.categoryStore.GetByQuery(ctx, q)
+	indexes, err = s.db.GetGormDB().Migrator().GetIndexes(&newSchema.NetworkFlows{})
 	s.NoError(err)
-	s.Len(categoriesAfterMigration, 1)
-	s.Equal(categoriesAfterMigration[0].GetName(), "Test Category", "categories do not match after migration")
 
-	edges, err := s.edgeStore.GetAll(ctx)
-	s.NoError(err)
-	s.Len(edges, 1)
+	for _, index := range indexes {
+		s.True(indexSet.Contains(index.Name()))
+	}
 }

@@ -35,7 +35,6 @@ var (
 
 // UpdateIndexesToHash updates the btree network flow indexes to be hash
 func UpdateIndexesToHash(gormDB *gorm.DB, db *postgres.DB) error {
-	log.WriteToStderr("SHREWS -- about to remove some indexes")
 	// Automigrate does not remove or update indexes, it only creates them.
 	// Remove index
 	gormDB.Migrator().DropIndex(&schema.NetworkFlows{}, "network_flows_cluster")
@@ -44,7 +43,6 @@ func UpdateIndexesToHash(gormDB *gorm.DB, db *postgres.DB) error {
 
 	// Now apply the updated schema to get the updated indexes
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNetworkFlowsStmt)
-	log.WriteToStderr("SHREWS -- network flow updated????")
 
 	return nil
 }
