@@ -67,6 +67,7 @@ func newConnection(sensorHello *central.SensorHello,
 	policyMgr common.PolicyManager,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
+	msgDeduper *deduper,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -88,7 +89,7 @@ func newConnection(sensorHello *central.SensorHello,
 	}
 
 	// Need a reference to conn for injector
-	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig)
+	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig, msgDeduper)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
@@ -148,7 +149,6 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
-
 		c.multiplexedPush(ctx, msg, queues)
 	}
 }

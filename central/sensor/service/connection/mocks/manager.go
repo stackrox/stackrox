@@ -52,6 +52,18 @@ func (mr *MockManagerMockRecorder) BroadcastMessage(msg interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMessage", reflect.TypeOf((*MockManager)(nil).BroadcastMessage), msg)
 }
 
+// CloseConnection mocks base method.
+func (m *MockManager) CloseConnection(clusterID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CloseConnection", clusterID)
+}
+
+// CloseConnection indicates an expected call of CloseConnection.
+func (mr *MockManagerMockRecorder) CloseConnection(clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseConnection", reflect.TypeOf((*MockManager)(nil).CloseConnection), clusterID)
+}
+
 // GetActiveConnections mocks base method.
 func (m *MockManager) GetActiveConnections() []connection.SensorConnection {
 	m.ctrl.T.Helper()

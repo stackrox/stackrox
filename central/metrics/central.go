@@ -192,6 +192,13 @@ var (
 		Name:      "process_queue_length",
 		Help:      "A gauge that indicates the current number of processes that have not been flushed",
 	})
+
+	sensorEventsDeduperCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_event_deduper",
+		Help:      "A counter that tracks objects that has passed the sensor event deduper in the connection stream",
+	}, []string{"status"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -319,4 +326,13 @@ func IncrementOrphanedPLOPCounter(clusterID string) {
 // ModifyProcessQueueLength modifies the metric for the number of processes that have not been flushed
 func ModifyProcessQueueLength(delta int) {
 	processQueueLengthGauge.Add(float64(delta))
+}
+
+// IncSensorEventsDeduper increments the sensor events deduper on whether or not it was deduped or not
+func IncSensorEventsDeduper(deduped bool) {
+	label := "passed"
+	if deduped {
+		label = "deduped"
+	}
+	sensorEventsDeduperCounter.With(prometheus.Labels{"status": label}).Inc()
 }
