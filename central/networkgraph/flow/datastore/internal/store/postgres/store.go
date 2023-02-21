@@ -57,8 +57,8 @@ const (
 	//FROM network_flows nf ` + joinStmt +
 	//	` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
 	getSinceStmt            = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM network_flows WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
-	deleteSrcDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
-	deleteDstDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
+	deleteSrcDeploymentStmt = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $1 AND ClusterId = $2"
+	deleteDstDeploymentStmt = "DELETE FROM network_flows WHERE Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $1 AND ClusterId = $2"
 
 	//getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
 	//nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
@@ -106,7 +106,7 @@ var (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
+	batchSize = 5000
 )
 
 // FlowStore stores all of the flows for a single cluster.
@@ -150,11 +150,11 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID uuid.UUID, 
 		obj.GetProps().GetDstEntity().GetId(),
 		obj.GetProps().GetDstPort(),
 		obj.GetProps().GetL4Protocol(),
-		pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 		clusterID,
+		pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 	}
 
-	finalStr := "INSERT INTO network_flows (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) DO UPDATE SET Props_SrcEntity_Type = EXCLUDED.Props_SrcEntity_Type, Props_SrcEntity_Id = EXCLUDED.Props_SrcEntity_Id, Props_DstEntity_Type = EXCLUDED.Props_DstEntity_Type, Props_DstEntity_Id = EXCLUDED.Props_DstEntity_Id, Props_DstPort = EXCLUDED.Props_DstPort, Props_L4Protocol = EXCLUDED.Props_L4Protocol, LastSeenTimestamp = EXCLUDED.LastSeenTimestamp, ClusterId = EXCLUDED.ClusterId"
+	finalStr := "INSERT INTO network_flows (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId, LastSeenTimestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) DO UPDATE SET LastSeenTimestamp = EXCLUDED.LastSeenTimestamp"
 
 	//finalStr := "INSERT INTO network_flows (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
 	_, err := tx.Exec(ctx, finalStr, values...)
@@ -177,8 +177,8 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 		"props_dstentity_id",
 		"props_dstport",
 		"props_l4protocol",
-		"lastseentimestamp",
 		"clusterid",
+		"lastseentimestamp",
 	}
 
 	for idx, obj := range objs {
@@ -189,8 +189,8 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 			obj.GetProps().GetDstEntity().GetId(),
 			obj.GetProps().GetDstPort(),
 			obj.GetProps().GetL4Protocol(),
-			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 			s.clusterID,
+			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 		})
 
 		_, err = tx.Exec(ctx, deleteStmt, obj.GetProps().GetSrcEntity().GetType(), obj.GetProps().GetSrcEntity().GetId(), obj.GetProps().GetDstEntity().GetType(), obj.GetProps().GetDstEntity().GetId(), obj.GetProps().GetDstPort(), obj.GetProps().GetL4Protocol(), s.clusterID)
@@ -392,14 +392,14 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 	}
 
 	// To avoid a full scan with an OR delete source and destination flows separately
-	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, s.clusterID, id); err != nil {
+	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, id, s.clusterID); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, s.clusterID, id); err != nil {
+	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, id, s.clusterID); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
