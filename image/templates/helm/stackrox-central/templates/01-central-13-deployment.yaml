@@ -43,7 +43,7 @@ spec:
         fsGroup: 4000
         runAsUser: 4000
       {{- if ._rox.central.podPriority.enabled }}
-      priorityClassName: {{- ._rox.central.podPriority.className }}
+      priorityClassName: {{- default "stackrox-central-priority-class" ._rox.central.podPriority.className }}
       {{- end }}
       containers:
       - name: central
