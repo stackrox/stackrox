@@ -27,7 +27,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Next available tag: 51
+// Next available tag: 52
 type SearchCategory int32
 
 const (
@@ -81,6 +81,7 @@ const (
 	SearchCategory_COLLECTIONS               SearchCategory = 48
 	SearchCategory_POLICY_CATEGORY_EDGE      SearchCategory = 49
 	SearchCategory_PROCESS_LISTENING_ON_PORT SearchCategory = 50
+	SearchCategory_API_TOKEN                 SearchCategory = 51
 )
 
 var SearchCategory_name = map[int32]string{
@@ -134,6 +135,7 @@ var SearchCategory_name = map[int32]string{
 	48: "COLLECTIONS",
 	49: "POLICY_CATEGORY_EDGE",
 	50: "PROCESS_LISTENING_ON_PORT",
+	51: "API_TOKEN",
 }
 
 var SearchCategory_value = map[string]int32{
@@ -187,6 +189,7 @@ var SearchCategory_value = map[string]int32{
 	"COLLECTIONS":               48,
 	"POLICY_CATEGORY_EDGE":      49,
 	"PROCESS_LISTENING_ON_PORT": 50,
+	"API_TOKEN":                 51,
 }
 
 func (x SearchCategory) String() string {
