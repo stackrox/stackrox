@@ -36,7 +36,7 @@ spec:
       {{- end}}
       serviceAccountName: collector
       {{- if ._rox.collector.podPriority.enabled }}
-      priorityClassName: {{- ._rox.collector.podPriority.className }}
+      priorityClassName: {{- default "stackrox-secured-cluster-priority-class" ._rox.collector.podPriority.className }}
       {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
