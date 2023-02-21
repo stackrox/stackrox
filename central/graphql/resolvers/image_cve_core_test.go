@@ -45,6 +45,13 @@ func (s *ImageCVECoreResolverTestSuite) SetupSuite() {
 
 func (s *ImageCVECoreResolverTestSuite) TearDownSuite() {}
 
+func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEsNoImagePerm() {
+	q := &PaginatedQuery{}
+	response, err := s.resolver.ImageCVEs(context.Background(), *q)
+	s.Error(err)
+	s.Nil(response)
+}
+
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEsEmpty() {
 	q := &PaginatedQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
