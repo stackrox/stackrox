@@ -117,8 +117,9 @@ func loadCachedInventory(opts *InventoryScanOpts) *storage.NodeInventory {
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Debug("No cache file found, running new inventory")
+		} else {
+			log.Warnf("Unable to read inventory cache, running new inventory. Error: %v", err)
 		}
-		log.Warnf("Unable to read inventory cache, running new inventory. Error: %v", err)
 	} else {
 		// deserialize stored inventory into
 		cachedInv = &storage.NodeInventory{}
