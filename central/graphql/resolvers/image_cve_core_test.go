@@ -32,7 +32,7 @@ func (s *ImageCVECoreResolverTestSuite) SetupSuite() {
 	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	s.T().Setenv(features.VulnMgmtWorkloadCVEs.EnvVar(), "true")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() && !features.VulnMgmtWorkloadCVEs.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.VulnMgmtWorkloadCVEs.Enabled() {
 		s.T().Skipf("Skiping test. %s=false %s=false", env.PostgresDatastoreEnabled.EnvVar(), features.VulnMgmtWorkloadCVEs.EnvVar())
 		s.T().SkipNow()
 	}
