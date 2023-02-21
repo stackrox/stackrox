@@ -45,12 +45,15 @@ const serverResponseStatus: Reducer<ServerResponseStatus, ServerResponseAction> 
             // This is the happy path, and also an extremely hot code path since it's called with every server request.
             // We need to return the same state object where possible, because if we don't, React will do a lot of state updates
             // and slow the UI down.
-            return state.numSuccessiveFailures === 0
+            return state.serverStatus && state.numSuccessiveFailures === 0
                 ? state
                 : {
                       firstFailure: 0,
                       numSuccessiveFailures: 0,
-                      serverStatus: state.serverStatus === 'UP' ? 'UP' : 'RESURRECTED',
+                      serverStatus:
+                          state.serverStatus === '' || state.serverStatus === 'UP'
+                              ? 'UP'
+                              : 'RESURRECTED',
                   };
         }
 

@@ -1,15 +1,19 @@
-import reducer, { actions } from './serverResponseStatus';
+import reducer from './serverResponseStatus';
 
 describe('Server Error Reducer', () => {
     const initialTimestamp = 946684799000; // 1999-12-31T23:59:59+0000
     const initialState = {
-        serverResponseStatus: null,
+        serverResponseStatus: {
+            firstFailure: 0,
+            numSuccessiveFailures: 0,
+            serverStatus: '',
+        },
     };
     const successState = {
         serverResponseStatus: {
+            firstFailure: 0,
             numSuccessiveFailures: 0,
-            firstFailure: null,
-            serverState: 'UP',
+            serverStatus: 'UP',
         },
     };
 
@@ -29,7 +33,7 @@ describe('Server Error Reducer', () => {
             ...initialState,
         };
 
-        const nextState = reducer(prevState, actions.recordServerSuccess());
+        const nextState = reducer(prevState, { type: 'serverStatus/RESPONSE_SUCCESS' });
 
         expect(nextState).toEqual(successState);
     });
@@ -39,7 +43,7 @@ describe('Server Error Reducer', () => {
             ...successState,
         };
 
-        const nextState = reducer(prevState, actions.recordServerSuccess());
+        const nextState = reducer(prevState, { type: 'serverStatus/RESPONSE_SUCCESS' });
 
         expect(nextState).toEqual(successState);
     });
@@ -49,7 +53,7 @@ describe('Server Error Reducer', () => {
             serverResponseStatus: {
                 numSuccessiveFailures: 1,
                 firstFailure: initialTimestamp,
-                serverState: 'UP',
+                serverStatus: 'UP',
             },
         };
 
@@ -57,7 +61,10 @@ describe('Server Error Reducer', () => {
             ...successState,
         };
 
-        const nextState = reducer(prevState, actions.recordServerError());
+        const nextState = reducer(prevState, {
+            type: 'serverStatus/RESPONSE_FAILURE',
+            now: Date.now(),
+        });
 
         expect(nextState).toEqual(firstFailureState);
     });
@@ -67,7 +74,7 @@ describe('Server Error Reducer', () => {
             serverResponseStatus: {
                 numSuccessiveFailures: 1,
                 firstFailure: initialTimestamp,
-                serverState: 'UP',
+                serverStatus: 'UP',
             },
         };
 
@@ -75,13 +82,16 @@ describe('Server Error Reducer', () => {
             serverResponseStatus: {
                 numSuccessiveFailures: 2,
                 firstFailure: initialTimestamp,
-                serverState: 'UP',
+                serverStatus: 'UP',
             },
         };
         const prevState = {
             ...firstFailureState,
         };
-        const nextState = reducer(prevState, actions.recordServerError());
+        const nextState = reducer(prevState, {
+            type: 'serverStatus/RESPONSE_FAILURE',
+            now: Date.now(),
+        });
 
         expect(nextState).toEqual(nextFailureState);
     });
@@ -91,7 +101,7 @@ describe('Server Error Reducer', () => {
             serverResponseStatus: {
                 numSuccessiveFailures: 4,
                 firstFailure: initialTimestamp,
-                serverState: 'UP',
+                serverStatus: 'UP',
             },
         };
 
@@ -99,7 +109,7 @@ describe('Server Error Reducer', () => {
             serverResponseStatus: {
                 numSuccessiveFailures: 5,
                 firstFailure: initialTimestamp,
-                serverState: 'UNREACHABLE',
+                serverStatus: 'UNREACHABLE',
             },
         };
         const prevState = {
@@ -108,7 +118,10 @@ describe('Server Error Reducer', () => {
 
         Date.now = jest.fn(() => initialTimestamp + 15001); // tick the "clock" ahead 15 secs.
 
-        const nextState = reducer(prevState, actions.recordServerError());
+        const nextState = reducer(prevState, {
+            type: 'serverStatus/RESPONSE_FAILURE',
+            now: Date.now(),
+        });
 
         expect(nextState).toEqual(nextFailureState);
 
@@ -120,22 +133,22 @@ describe('Server Error Reducer', () => {
             serverResponseStatus: {
                 numSuccessiveFailures: 5,
                 firstFailure: initialTimestamp,
-                serverState: 'UNREACHABLE',
+                serverStatus: 'UNREACHABLE',
             },
         };
 
         const nextFailureState = {
             serverResponseStatus: {
                 numSuccessiveFailures: 0,
-                firstFailure: null,
-                serverState: 'RESURRECTED',
+                firstFailure: 0,
+                serverStatus: 'RESURRECTED',
             },
         };
         const prevState = {
             ...finalFailureState,
         };
 
-        const nextState = reducer(prevState, actions.recordServerSuccess());
+        const nextState = reducer(prevState, { type: 'serverStatus/RESPONSE_SUCCESS' });
 
         expect(nextState).toEqual(nextFailureState);
     });
