@@ -9,6 +9,7 @@ helmManaged: null
 createSecrets: null
 priorityClass:
   enabled: null # bool
+  name: null # string
   value: null # int
   globalDefault: null # bool
   preemptionPolicy: null # string
