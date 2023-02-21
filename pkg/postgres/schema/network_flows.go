@@ -17,7 +17,7 @@ var (
 	CreateTableNetworkFlowsStmt = &postgres.CreateStmts{
 		GormModel: (*NetworkFlows)(nil),
 		PostStmts: []string{
-			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp ON public.network_flows USING brin (lastseentimestamp) WITH (pages_per_range='32')",
+			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp ON public.network_flows USING brin (lastseentimestamp)",
 		},
 	}
 
@@ -40,7 +40,7 @@ const (
 
 // NetworkFlows holds the Gorm model for Postgres table `network_flows`.
 type NetworkFlows struct {
-	FlowID             string                         `gorm:"column:flow_id;type:bigserial;primaryKey"`
+	FlowID             string                         `gorm:"column:flow_id;type:bigserial;index:flows,type:brin;primaryKey"`
 	PropsSrcEntityType storage.NetworkEntityInfo_Type `gorm:"column:props_srcentity_type;type:integer"`
 	PropsSrcEntityID   string                         `gorm:"column:props_srcentity_id;type:varchar;index:network_flows_src,type:hash"`
 	PropsDstEntityType storage.NetworkEntityInfo_Type `gorm:"column:props_dstentity_type;type:integer"`
