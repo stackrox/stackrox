@@ -20,5 +20,6 @@ message TokenMetadata {
 
 
     string role = 3 [deprecated = true];
+    // Next available tag: 8
 }
 
