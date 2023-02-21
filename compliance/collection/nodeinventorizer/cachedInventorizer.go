@@ -27,9 +27,6 @@ type InventoryScanOpts struct {
 // Additionally, a cached inventory from an earlier invocation may be used instead of a full inventory run if it is fresh enough.
 // Note: This does not prevent strain in case of repeated pod recreation, as both mechanisms are based on an EmptyDir.
 func TriggerNodeInventory(opts *InventoryScanOpts) (*sensor.MsgFromCompliance, error) {
-	// this ensures the Backoff file only survives a run if it was interrupted externally
-	defer removeBackoff(opts.BackoffFilePath)
-
 	// check for existing backoff, wait for specified duration if needed, then persist the new backoff duration
 	initialBackoff := env.NodeInventoryInitialBackoff.DurationSetting()
 	currentBackoff, err := getCurrentBackoff(opts)
@@ -64,6 +61,7 @@ func TriggerNodeInventory(opts *InventoryScanOpts) (*sensor.MsgFromCompliance, e
 		return nil, err
 	}
 
+	removeBackoff(opts.BackoffFilePath) // Remove backoff file as late as possible
 	return createAndObserveMessage(newInventory), nil
 }
 
