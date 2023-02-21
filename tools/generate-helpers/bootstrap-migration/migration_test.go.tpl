@@ -1,0 +1,6 @@
+package {{.packageName}}
+
+import (
+    "testing"
+)
+
