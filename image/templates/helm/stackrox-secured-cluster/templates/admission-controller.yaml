@@ -44,7 +44,7 @@ spec:
         fsGroup: 4000
       {{- end }}
       {{- if ._rox.admissionControl.podPriority.enabled }}
-      priorityClassName: {{- ._rox.admissionControl.podPriority.className }}
+      priorityClassName: {{- default "stackrox-secured-cluster-priority-class" ._rox.admissionControl.podPriority.className }}
       {{- end }}
       serviceAccountName: admission-control
       containers:

@@ -44,7 +44,7 @@ spec:
         fsGroup: 4000
       {{- end }}
       {{- if ._rox.sensor.podPriority.enabled }}
-      priorityClassName: {{- ._rox.sensor.podPriority.className }}
+      priorityClassName: {{- default "stackrox-secured-cluster-priority-class" ._rox.sensor.podPriority.className }}
       {{- end }}
       serviceAccountName: sensor
       containers:
