@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"runtime/debug"
 	"testing"
 	"time"
 
@@ -207,6 +208,7 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 }
 
 func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponent) error {
+	debug.PrintStack()
 	inputRows := [][]interface{}{}
 	var err error
 	var deletes []string
@@ -265,6 +267,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 }
 
 func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
+	debug.PrintStack()
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -448,6 +451,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 }
 
 func removeOrphanedNodeComponent(ctx context.Context, tx pgx.Tx) error {
+	debug.PrintStack()
 	_, err := tx.Exec(ctx, "DELETE FROM "+nodeComponentsTable+" WHERE not exists (select "+nodeComponentEdgesTable+".nodecomponentid from "+nodeComponentEdgesTable+" where "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)")
 	if err != nil {
 		return err
@@ -659,6 +663,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 }
 
 func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (*storage.Node, bool, error) {
+	debug.PrintStack()
 	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
 	var data []byte
 	if err := row.Scan(&data); err != nil {

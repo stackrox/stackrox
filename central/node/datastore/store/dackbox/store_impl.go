@@ -2,6 +2,7 @@ package dackbox
 
 import (
 	"context"
+	"runtime/debug"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
@@ -322,6 +323,7 @@ func (b *storeImpl) writeNodeParts(parts *common.NodeParts, clusterKey []byte, i
 }
 
 func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *common.ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
+	debug.PrintStack()
 	var cveKeys [][]byte
 	for _, cveData := range parts.Children {
 		cveKey, err := b.writeCVEParts(txn, cveData, iTime)
@@ -386,6 +388,7 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *common.CVEPar
 ////////////////////////////////////////////////
 
 func (b *storeImpl) deleteNodeKeys(keys *nodeKeySet) error {
+	debug.PrintStack()
 	// Delete the keys
 	deleteTxn, err := b.dacky.NewTransaction()
 	if err != nil {
@@ -474,6 +477,7 @@ type cveKeySet struct {
 }
 
 func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*common.NodeParts, error) {
+	debug.PrintStack()
 	// Read the objects for the keys.
 	parts := &common.NodeParts{}
 	msg, err := nodeDackBox.Reader.ReadIn(keys.nodeKey, txn)
