@@ -1,12 +1,12 @@
-import reducer, { actions } from './serverError';
+import reducer, { actions } from './serverResponseStatus';
 
 describe('Server Error Reducer', () => {
     const initialTimestamp = 946684799000; // 1999-12-31T23:59:59+0000
     const initialState = {
-        serverError: null,
+        serverResponseStatus: null,
     };
     const successState = {
-        serverError: {
+        serverResponseStatus: {
             numSuccessiveFailures: 0,
             firstFailure: null,
             serverState: 'UP',
@@ -46,7 +46,7 @@ describe('Server Error Reducer', () => {
 
     it('should start tracking failures when an API call fails', () => {
         const firstFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 1,
                 firstFailure: initialTimestamp,
                 serverState: 'UP',
@@ -64,7 +64,7 @@ describe('Server Error Reducer', () => {
 
     it('should increment the failure count when another API call fails', () => {
         const firstFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 1,
                 firstFailure: initialTimestamp,
                 serverState: 'UP',
@@ -72,7 +72,7 @@ describe('Server Error Reducer', () => {
         };
 
         const nextFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 2,
                 firstFailure: initialTimestamp,
                 serverState: 'UP',
@@ -88,7 +88,7 @@ describe('Server Error Reducer', () => {
 
     it('should toggle to UNREACHABLE when a fifth API call fails, at least 15 seconds after first failure', () => {
         const penultimateFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 4,
                 firstFailure: initialTimestamp,
                 serverState: 'UP',
@@ -96,7 +96,7 @@ describe('Server Error Reducer', () => {
         };
 
         const nextFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 5,
                 firstFailure: initialTimestamp,
                 serverState: 'UNREACHABLE',
@@ -117,7 +117,7 @@ describe('Server Error Reducer', () => {
 
     it('should toggle to RESURRECTED when a fifth API call fails, at least 15 seconds after first failure', () => {
         const finalFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 5,
                 firstFailure: initialTimestamp,
                 serverState: 'UNREACHABLE',
@@ -125,7 +125,7 @@ describe('Server Error Reducer', () => {
         };
 
         const nextFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 0,
                 firstFailure: null,
                 serverState: 'RESURRECTED',
