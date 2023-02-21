@@ -40,7 +40,7 @@ type startable interface {
 	Start(stopCh <-chan struct{})
 }
 
-func startManyAndWait(stopSignal *concurrency.Signal, wg *concurrency.WaitGroup, startables ...startable) bool {
+func startAndWait(stopSignal *concurrency.Signal, wg *concurrency.WaitGroup, startables ...startable) bool {
 	for _, start := range startables {
 		if start == nil {
 			continue
@@ -162,7 +162,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	if !startManyAndWait(stopSignal, noDependencyWaitGroup, sif, resyncingSif, osConfigFactory, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, resyncingSif, osConfigFactory, crdSharedInformerFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
@@ -176,7 +176,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(roleBindingInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 	handle(clusterRoleBindingInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 
-	if !startManyAndWait(stopSignal, prePodWaitGroup, resyncingSif) {
+	if !startAndWait(stopSignal, prePodWaitGroup, resyncingSif) {
 		return
 	}
 
@@ -218,16 +218,7 @@ func (k *listenerImpl) handleAllEvents() {
 		}
 	}
 
-	sif.Start(stopSignal.Done())
-	resyncingSif.Start(stopSignal.Done())
-	if crdSharedInformerFactory != nil {
-		crdSharedInformerFactory.Start(stopSignal.Done())
-	}
-	if osRouteFactory != nil {
-		osRouteFactory.Start(stopSignal.Done())
-	}
-
-	if !concurrency.WaitInContext(preTopLevelDeploymentWaitGroup, stopSignal) {
+	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, resyncingSif, crdSharedInformerFactory, osRouteFactory) {
 		return
 	}
 
@@ -252,15 +243,7 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
-	sif.Start(stopSignal.Done())
-	resyncingSif.Start(stopSignal.Done())
-	if osAppsFactory != nil {
-		osAppsFactory.Start(stopSignal.Done())
-	}
-
-	// WaitForCacheSync synchronization is broken for SharedIndexInformers due to internal addCh/pendingNotifications
-	// copy.  We have implemented our own sync in order to work around this.
-	if !concurrency.WaitInContext(wg, stopSignal) {
+	if !startAndWait(stopSignal, wg, sif, resyncingSif, osAppsFactory) {
 		return
 	}
 
@@ -269,9 +252,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Finally, run the pod informer, and process pod events.
 	podWaitGroup := &concurrency.WaitGroup{}
 	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetesPkg.Pod), k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock)
-	sif.Start(stopSignal.Done())
-
-	if !concurrency.WaitInContext(podWaitGroup, stopSignal) {
+	if !startAndWait(stopSignal, podWaitGroup, sif) {
 		return
 	}
 
