@@ -7,6 +7,8 @@ import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
 import Loader from 'Components/Loader';
 
+import { getQueryString } from 'utils/queryStringUtils';
+import { networkBasePathPF } from 'routePaths';
 import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './Process/Details';
@@ -39,13 +41,25 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
         { text: 'Deployment Details' },
         { text: 'Process Discovery' },
     ];
+
+    // @TODO: Consider a more secure approach to creating links to the network graph so that
+    // areas outside of the Network Graph don't need to know the URL architecture of that feature
+    // Reference to discussion: https://github.com/stackrox/stackrox/pull/4955#discussion_r1112450278
+    const queryString = getQueryString({
+        s: {
+            Cluster: selectedDeployment.clusterName,
+            Namespace: selectedDeployment.namespace,
+        },
+    });
+    const networkGraphLink = `${networkBasePathPF}/deployment/${selectedDeployment.id}${queryString}`;
+
     return (
         <Tabs headers={riskPanelTabs}>
             <Tab>
                 <div className="flex flex-col pb-5">
                     <Link
                         className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
-                        to={`/main/network/${selectedDeployment.id}`}
+                        to={networkGraphLink}
                         data-testid="view-deployments-in-network-graph-button"
                     >
                         View Deployment in Network Graph
@@ -88,6 +102,8 @@ RiskSidePanelContent.propTypes = {
     isFetching: PropTypes.bool.isRequired,
     selectedDeployment: PropTypes.shape({
         id: PropTypes.string.isRequired,
+        clusterName: PropTypes.string.isRequired,
+        namespace: PropTypes.string.isRequired,
     }),
     deploymentRisk: PropTypes.shape({}),
     processGroup: PropTypes.shape({
