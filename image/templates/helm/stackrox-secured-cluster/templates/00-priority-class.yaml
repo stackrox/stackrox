@@ -4,7 +4,7 @@
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
-  name: stackrox-secured-cluster-priority-class
+  name: {{ default "stackrox-secured-cluster-priority-class" ._rox.priorityClass.name }}
   labels:
     {{- include "srox.labels" (list . "priorityclass" "stackrox-secured-cluster-priority-class") | nindent 4 }}
   annotations:
