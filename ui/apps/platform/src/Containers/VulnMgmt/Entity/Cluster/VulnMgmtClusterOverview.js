@@ -1,5 +1,4 @@
 import React, { useContext } from 'react';
-import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import DateTimeField from 'Components/DateTimeField';
@@ -9,7 +8,6 @@ import StatusChip from 'Components/StatusChip';
 import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import entityTypes from 'constants/entityTypes';
 import { OVERVIEW_LIMIT } from 'constants/workflowPages.constants';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
@@ -20,7 +18,6 @@ import RecentlyDetectedImageVulnerabilities from '../../widgets/RecentlyDetected
 import TopRiskiestEntities from '../../widgets/TopRiskiestEntities';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
-import TableWidget from '../TableWidget';
 
 const emptyCluster = {
     componentCount: 0,
@@ -59,7 +56,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
 
     const { orchestratorMetadata = null } = status;
     const { buildDate = '', version = 'N/A' } = orchestratorMetadata;
-    const { failingPolicies } = policyStatus;
 
     function yesNoMaybe(value) {
         if (!value && value !== false) {
@@ -140,20 +136,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                     <div className="pdf-page pdf-stretch pdf-new flex relative rounded mb-4 ml-4 mr-4">
                         {showVmUpdates && (
                             <BinderTabs>
-                                <Tab title="Policies">
-                                    <TableWidget
-                                        header={`${failingPolicies.length} failing ${pluralize(
-                                            entityTypes.POLICY,
-                                            failingPolicies.length
-                                        )} across this cluster`}
-                                        rows={failingPolicies}
-                                        entityType={entityTypes.POLICY}
-                                        noDataText="No failing policies"
-                                        className="bg-base-100"
-                                        columns={getPolicyTableColumns(workflowState)}
-                                        idAttribute="id"
-                                    />
-                                </Tab>
                                 <Tab title="Fixable Image CVEs">
                                     <TableWidgetFixableCves
                                         workflowState={workflowState}
@@ -188,20 +170,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                         )}
                         {!showVmUpdates && (
                             <BinderTabs>
-                                <Tab title="Policies">
-                                    <TableWidget
-                                        header={`${failingPolicies.length} failing ${pluralize(
-                                            entityTypes.POLICY,
-                                            failingPolicies.length
-                                        )} across this cluster`}
-                                        rows={failingPolicies}
-                                        entityType={entityTypes.POLICY}
-                                        noDataText="No failing policies"
-                                        className="bg-base-100"
-                                        columns={getPolicyTableColumns(workflowState)}
-                                        idAttribute="id"
-                                    />
-                                </Tab>
                                 <Tab title="Fixable CVEs">
                                     <TableWidgetFixableCves
                                         workflowState={workflowState}
