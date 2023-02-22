@@ -295,14 +295,24 @@ func (ds *datastoreImpl) fetchIndicators(
 			continue
 		}
 
-		indicatorLookups = append(indicatorLookups,
-			search.NewQueryBuilder().
-				AddExactMatches(search.ContainerName, val.Process.ContainerName).
-				AddExactMatches(search.PodID, val.Process.PodId).
-				AddExactMatches(search.ProcessName, val.Process.ProcessName).
-				AddExactMatches(search.ProcessArguments, val.Process.ProcessArgs).
-				AddExactMatches(search.ProcessExecPath, val.Process.ProcessExecFilePath).
-				ProtoQuery())
+		if val.Process.ProcessArgs != "" {
+			indicatorLookups = append(indicatorLookups,
+				search.NewQueryBuilder().
+					AddExactMatches(search.ContainerName, val.Process.ContainerName).
+					AddExactMatches(search.PodID, val.Process.PodId).
+					AddExactMatches(search.ProcessName, val.Process.ProcessName).
+					AddExactMatches(search.ProcessArguments, val.Process.ProcessArgs).
+					AddExactMatches(search.ProcessExecPath, val.Process.ProcessExecFilePath).
+					ProtoQuery())
+		} else {
+			indicatorLookups = append(indicatorLookups,
+				search.NewQueryBuilder().
+					AddExactMatches(search.ContainerName, val.Process.ContainerName).
+					AddExactMatches(search.PodID, val.Process.PodId).
+					AddExactMatches(search.ProcessName, val.Process.ProcessName).
+					AddExactMatches(search.ProcessExecPath, val.Process.ProcessExecFilePath).
+					ProtoQuery())
+		}
 	}
 
 	indicatorsQuery := search.DisjunctionQuery(indicatorLookups...)
@@ -445,11 +455,11 @@ func getProcessUniqueKeyFromParts(containerName string,
 
 func getPlopProcessUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
 	return getProcessUniqueKeyFromParts(
-		plop.Process.ContainerName,
-		plop.Process.PodId,
-		plop.Process.ProcessName,
-		plop.Process.ProcessArgs,
-		plop.Process.ProcessExecFilePath,
+		plop.GetProcess().GetContainerName(),
+		plop.GetProcess().GetPodId(),
+		plop.GetProcess().GetProcessName(),
+		plop.GetProcess().GetProcessArgs(),
+		plop.GetProcess().GetProcessExecFilePath(),
 	)
 }
 
