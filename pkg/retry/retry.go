@@ -1,6 +1,8 @@
 package retry
 
-import "time"
+import (
+	"time"
+)
 
 // WithRetry allows you to call an error returning function with a suite of retry options and modifiers.
 func WithRetry(f func() error, retriableOptions ...OptionsModifier) error {
@@ -42,6 +44,9 @@ func BetweenAttempts(between func(previousAttemptNumber int)) OptionsModifier {
 
 // OptionsModifier applies a mutation to a retryOptions.
 type OptionsModifier func(*retryOptions)
+
+type BackoffOpts struct {
+}
 
 type retryOptions struct {
 	function               func() error
