@@ -41,14 +41,7 @@ var (
 )
 
 func nodeInventoryWaitCallback(waitTime time.Duration) {
-	maxBackoffSeconds := int64(env.NodeInventoryMaxBackoff.DurationSetting() / time.Second)
 	waitTimeSeconds := int64(waitTime / time.Second)
-
-	if waitTimeSeconds > maxBackoffSeconds {
-		log.Debugf("Backoff interval hit upper boundary. Cutting from %d to %d", waitTimeSeconds, maxBackoffSeconds)
-		waitTimeSeconds = maxBackoffSeconds
-	}
-
 	time.Sleep(time.Duration(waitTimeSeconds) * time.Second)
 }
 
@@ -185,6 +178,7 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 				if err != nil {
 					log.Errorf("error running scanNode: %v", err)
 				} else {
+					cmetrics.ObserveInventoryProtobufMessage(msg)
 					sensorC <- msg
 				}
 				interval := i.Next()

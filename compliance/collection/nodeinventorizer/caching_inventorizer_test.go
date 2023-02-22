@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -47,18 +46,18 @@ func (s *TestComplianceCachingSuite) SetupTest() {
 
 func (s *TestComplianceCachingSuite) TestGetCurrentBackoff() {
 	d, _ := time.ParseDuration("42s")
-	s.T().Setenv(env.NodeInventoryInitialBackoff.EnvVar(), "1s")
+	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
 	err := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte(d.String()), 0600)
 	s.NoError(err)
 
-	currentBackoff, err := getCurrentBackoff(s.mockInventoryScanOpts)
+	currentBackoff, err := getCurrentBackoff(s.mockInventoryScanOpts.BackoffFilePath)
 
 	s.NoError(err)
 	s.Equal(d, *currentBackoff)
 }
 
 func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
-	s.T().Setenv(env.NodeInventoryBackoffIncrement.EnvVar(), "24s")
+	s.T().Setenv(env.NodeScanBackoffIncrement.EnvVar(), "24s")
 	baseBackoff, _ := time.ParseDuration("10s")
 	expectedBackoff, _ := time.ParseDuration("34s")
 
@@ -68,8 +67,8 @@ func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
 }
 
 func (s *TestComplianceCachingSuite) TestCalcNextBackoffUpperBoundary() {
-	s.T().Setenv(env.NodeInventoryMaxBackoff.EnvVar(), "5s")
-	s.T().Setenv(env.NodeInventoryBackoffIncrement.EnvVar(), "24s")
+	s.T().Setenv(env.NodeScanMaxBackoff.EnvVar(), "5s")
+	s.T().Setenv(env.NodeScanBackoffIncrement.EnvVar(), "24s")
 	baseBackoff, _ := time.ParseDuration("10s")
 	expectedBackoff, _ := time.ParseDuration("5s")
 
@@ -96,47 +95,42 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryWithoutResultCache(
 	s.Equal(s.mockInventoryScanOpts.NodeName, actual.GetNode())
 }
 
-func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryResultCaching() {
-	s.T().Setenv(env.NodeInventoryCacheDuration.EnvVar(), "1m")
+func (s *TestComplianceCachingSuite) TestIsCachedInventoryValid() {
+	s.T().Setenv(env.NodeScanCacheDuration.EnvVar(), "1m")
 
 	unix42, _ := timestamp.TimestampProto(time.Unix(42, 0))
 	twoMinutesBefore, _ := timestamp.TimestampProto(time.Now().Add(-time.Minute * 2))
 	testCases := map[string]struct {
-		inputInventory   *storage.NodeInventory
-		expectedNodeName string
+		inputInventory *storage.NodeInventory
+		expectedResult bool
 	}{
 		"cachedResult": {
 			inputInventory: &storage.NodeInventory{
 				NodeName: "cachedNode",
 				ScanTime: timestamp.TimestampNow(),
 			},
-			expectedNodeName: "cachedNode",
+			expectedResult: true,
 		},
 		"cacheTooOld": {
 			inputInventory: &storage.NodeInventory{
 				NodeName: "cachedNode",
 				ScanTime: twoMinutesBefore,
 			},
-			expectedNodeName: "testme",
+			expectedResult: false,
 		},
 		"cacheVeryOld": {
 			inputInventory: &storage.NodeInventory{
 				NodeName: "cachedNode",
 				ScanTime: unix42,
 			},
-			expectedNodeName: "testme",
+			expectedResult: false,
 		},
 	}
 
 	for caseName, testCase := range testCases {
 		s.Run(caseName, func() {
-			minv, _ := proto.Marshal(testCase.inputInventory)
-			err := os.WriteFile(s.mockInventoryScanOpts.InventoryCachePath, minv, 0600)
-			s.NoError(err)
-
-			actual, e := TriggerNodeInventory(s.mockInventoryScanOpts)
-			s.NoError(e)
-			s.Equal(testCase.expectedNodeName, actual.GetNode())
+			actual := isCachedInventoryValid(testCase.inputInventory)
+			s.Equal(testCase.expectedResult, actual)
 		})
 	}
 }

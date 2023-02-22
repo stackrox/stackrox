@@ -15,15 +15,15 @@ var (
 	// scanning wait time.
 	NodeScanningMaxInitialWait = registerDurationSetting("ROX_NODE_SCANNING_MAX_INITIAL_WAIT", 5*time.Minute)
 
-	// NodeInventoryCacheDuration defines the time after which a cached inventory is considered outdated. Defaults to 90% of rescan interval.
-	NodeInventoryCacheDuration = registerDurationSetting("ROX_NODE_INVENTORY_CACHE_TIME", time.Duration(NodeRescanInterval.DurationSetting().Nanoseconds()-NodeRescanInterval.DurationSetting().Nanoseconds()/10))
+	// NodeScanCacheDuration defines the time after which a cached inventory is considered outdated. Defaults to 90% of rescan interval.
+	NodeScanCacheDuration = registerDurationSetting("ROX_NODE_SCAN_CACHE_TIME", time.Duration(NodeRescanInterval.DurationSetting().Nanoseconds()-NodeRescanInterval.DurationSetting().Nanoseconds()/10))
 
-	// NodeInventoryInitialBackoff defines the initial time in seconds a Node Inventory will be delayed if a backoff file is found
-	NodeInventoryInitialBackoff = registerDurationSetting("ROX_NODE_INVENTORY_INITIAL_BACKOFF", 30*time.Second)
+	// NodeScanInitialBackoff defines the initial time in seconds a Node Inventory will be delayed if a backoff file is found
+	NodeScanInitialBackoff = registerDurationSetting("ROX_NODE_SCAN_INITIAL_BACKOFF", 30*time.Second)
 
-	// NodeInventoryBackoffIncrement sets the seconds that are added on each interrupted run
-	NodeInventoryBackoffIncrement = registerDurationSetting("ROX_NODE_INVENTORY_BACKOFF_INCREMENT", 5*time.Second)
+	// NodeScanBackoffIncrement sets the seconds that are added on each interrupted run
+	NodeScanBackoffIncrement = registerDurationSetting("ROX_NODE_SCAN_BACKOFF_INCREMENT", 5*time.Second)
 
-	// NodeInventoryMaxBackoff is the upper boundary of backoff. Defaults to 5m in seconds, being 50% of Kubernetes restart policy stability timer.
-	NodeInventoryMaxBackoff = registerDurationSetting("ROX_NODE_INVENTORY_MAX_BACKOFF", 300*time.Second)
+	// NodeScanMaxBackoff is the upper boundary of backoff. Defaults to 5m in seconds, being 50% of Kubernetes restart policy stability timer.
+	NodeScanMaxBackoff = registerDurationSetting("ROX_NODE_SCAN_MAX_BACKOFF", 300*time.Second)
 )
