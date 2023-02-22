@@ -371,7 +371,7 @@ spin() {
 }
 
 export_job_name() {
-    # Emulate CI_JOB_NAME (which sets Env.CI_JOBNAME for .groovy tests) as it is
+    # Emulate CI_JOB_NAME (which sets Env.CI_JOB_NAME for .groovy tests) as it is
     # used to determine some test behavior.
     local job_name=""
 
