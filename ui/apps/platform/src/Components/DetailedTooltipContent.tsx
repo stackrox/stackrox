@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from 'react';
+import React, { ReactElement, ReactNode, CSSProperties } from 'react';
 import { Divider, Text, TextVariants } from '@patternfly/react-core';
 
 export type DetailedTooltipContentProps = {
@@ -24,10 +24,19 @@ function DetailedTooltipContent({
         return null;
     }
 
+    const styleConstant = {
+        overflow: 'scroll',
+        '--pf-u-max-height--MaxHeight': '75vh',
+    } as CSSProperties;
+
     return (
-        <div className={extraClassName}>
+        <div className={`pf-u-max-height ${extraClassName}`} style={styleConstant}>
             <div>
-                <Text className="pf-u-font-weight-bold" component={TextVariants.h3} data-testid="tooltip-title">
+                <Text
+                    className="pf-u-font-weight-bold"
+                    component={TextVariants.h3}
+                    data-testid="tooltip-title"
+                >
                     {title}
                 </Text>
                 {!!subtitle && <span data-testid="tooltip-subtitle">{subtitle}</span>}

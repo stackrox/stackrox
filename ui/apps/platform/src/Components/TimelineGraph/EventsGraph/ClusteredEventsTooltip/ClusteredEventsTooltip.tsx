@@ -1,7 +1,8 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import { Popover, Text, TextVariants } from '@patternfly/react-core';
 
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import { eventTypes } from 'constants/timelineTypes';
 import { Event } from '../eventTypes';
 import getTimeRangeTextOfEvents from './getTimeRangeTextOfEvents';
@@ -75,14 +76,17 @@ const ClusteredEventsTooltip = ({
     const tooltipBody = <ul>{sections}</ul>;
 
     return (
-        <Tooltip
-            trigger="click"
-            interactive
-            appendTo={document.body}
-            content={<DetailedTooltipOverlay title={tooltipTitle} body={tooltipBody} />}
+        <Popover
+            aria-label="Open to see individual processes"
+            headerContent={
+                <Text className="pf-u-font-weight-bold" component={TextVariants.h3}>
+                    Events in this group
+                </Text>
+            }
+            bodyContent={<DetailedTooltipContent title={tooltipTitle} body={tooltipBody} />}
         >
             {children}
-        </Tooltip>
+        </Popover>
     );
 };
 
