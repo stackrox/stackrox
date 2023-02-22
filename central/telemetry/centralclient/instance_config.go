@@ -123,7 +123,7 @@ func InstanceConfig() *phonehome.Config {
 
 // RegisterCentralClient adds call interceptors, adds central and admin user
 // to the tenant group.
-func RegisterCentralClient(config grpc.Config, basicAuthProviderID string) {
+func RegisterCentralClient(config *grpc.Config, basicAuthProviderID string) {
 	cfg := InstanceConfig()
 	if !cfg.Enabled() {
 		return
@@ -134,7 +134,7 @@ func RegisterCentralClient(config grpc.Config, basicAuthProviderID string) {
 	registerAdminUser(basicAuthProviderID)
 }
 
-func registerInterceptors(config grpc.Config) {
+func registerInterceptors(config *grpc.Config) {
 	cfg := InstanceConfig()
 	config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
 	config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
