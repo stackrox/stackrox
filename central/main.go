@@ -534,13 +534,17 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	if cfg := centralclient.Enable(); cfg.Enabled() {
-		centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
-		gs := cfg.Gatherer()
-		gs.AddGatherer(authProviderDS.Gather)
-		gs.AddGatherer(signatureIntegrationDS.Gather)
-		gs.AddGatherer(roleDataStore.Gather)
-		gs.AddGatherer(clusterDataStore.Gather)
+	if cds, err := configDS.Singleton().GetConfig(context.Background()); err != nil {
+		if cds.GetPublicConfig().GetTelemetry().GetEnabled() {
+			if cfg := centralclient.Enable(); cfg.Enabled() {
+				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
+				gs := cfg.Gatherer()
+				gs.AddGatherer(authProviderDS.Gather)
+				gs.AddGatherer(signatureIntegrationDS.Gather)
+				gs.AddGatherer(roleDataStore.Gather)
+				gs.AddGatherer(clusterDataStore.Gather)
+			}
+		}
 	}
 
 	server := pkgGRPC.NewAPI(config)
