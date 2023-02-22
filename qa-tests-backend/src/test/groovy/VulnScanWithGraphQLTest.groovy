@@ -1,10 +1,7 @@
-import static org.junit.Assume.assumeFalse
-
 import org.apache.commons.lang3.StringUtils
 
 import objects.Deployment
 import services.GraphQLService
-import util.Env
 import util.Timer
 
 import spock.lang.Shared
@@ -142,8 +139,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     private  gqlService = new GraphQLService()
 
     def setupSpec() {
-        assumeFalse("This test is skipped in this evironment", skipThisTest())
-
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
@@ -151,8 +146,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        assumeFalse("This test is skipped in this evironment", skipThisTest())
-
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
@@ -259,11 +252,5 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         }
         log.info "could not find  imageID from  ${depID} in ${t.SecondsSince()} seconds"
         return ""
-    }
-
-    private static Boolean skipThisTest() {
-        // This test consistently fails with RHEL -race (ROX-6584)
-        return Env.get("IS_RACE_BUILD", null) == "true" &&
-                Env.CI_JOBNAME && Env.CI_JOBNAME.contains("-rhel")
     }
 }

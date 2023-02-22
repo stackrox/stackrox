@@ -397,9 +397,8 @@ class BaseSpecification extends Specification {
     }
 
     static Boolean isRaceBuild() {
-        return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOBNAME == "race-condition-tests"
+        return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
     }
-
 }
 
 class TestSpecRuntimeException extends RuntimeException {
