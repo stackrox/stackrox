@@ -10,13 +10,13 @@ type Result = {
     error: string;
 };
 
-function useFetchClusters(): Result {
-    const defaultResultState = {
-        clusters: [],
-        error: '',
-        isLoading: true,
-    };
+const defaultResultState = {
+    clusters: [],
+    error: '',
+    isLoading: true,
+};
 
+function useFetchClusters(): Result {
     const [result, setResult] = useState<Result>(defaultResultState);
 
     useEffect(() => {

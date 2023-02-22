@@ -32,7 +32,7 @@ function useTableSelection<T extends Base>(
 
     React.useEffect(() => {
         setSelected(data.map(preSelectedFunc));
-    }, [data]);
+    }, [data, preSelectedFunc]);
 
     const onClearAll = () => {
         setSelected(data.map(() => false));
