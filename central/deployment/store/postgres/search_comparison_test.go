@@ -56,7 +56,7 @@ func (s *SearchComparisonTestSuite) SetupSuite() {
 }
 
 func (s *SearchComparisonTestSuite) TearDownSuite() {
-	//s.testDB.Teardown(s.T())
+	s.testDB.Teardown(s.T())
 }
 
 func compareResults(t *testing.T, matches bool, predResult *search.Result, searchResults []search.Result) {
@@ -81,7 +81,6 @@ func compareResults(t *testing.T, matches bool, predResult *search.Result, searc
 }
 
 func (s *SearchComparisonTestSuite) TestImageSearchResults() {
-	//s.T().SkipNow()
 	pgtest.SkipIfPostgresDisabled(s.T())
 
 	test := 0
