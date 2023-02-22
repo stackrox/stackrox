@@ -4,6 +4,7 @@ run:
   - pkg/complianceoperator/api
   build-tags:
   - sql_integration
+  modules-download-mode: readonly
 
 output:
   format: "junit-xml:report.xml,colored-line-number"
