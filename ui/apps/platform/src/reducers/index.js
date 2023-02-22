@@ -14,7 +14,9 @@ import featureFlags, { selectors as featureFlagSelectors } from './featureFlags'
 import policies, { selectors as policySelectors } from './policies/reducer';
 import roles, { selectors as roleSelectors } from './roles';
 import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
-import serverError, { selectors as serverErrorSelectors } from './serverError';
+import serverResponseStatus, {
+    selectors as serverResponseStatusSelectors,
+} from './serverResponseStatus';
 import metadata, { selectors as metadataSelectors } from './metadata';
 import loading, { selectors as loadingSelectors } from './loading';
 import { selectors as routeSelectors } from './routes';
@@ -38,7 +40,7 @@ const appReducer = combineReducers({
     policies,
     roles,
     searchAutoComplete,
-    serverError,
+    serverResponseStatus,
     loading,
     metadata,
     network,
@@ -73,7 +75,7 @@ const getFeatureFlags = (state) => getApp(state).featureFlags;
 const getPolicies = (state) => getApp(state).policies;
 const getRoles = (state) => getApp(state).roles;
 const getSearchAutocomplete = (state) => getApp(state).searchAutoComplete;
-const getServerError = (state) => getApp(state).serverError;
+const getServerResponseStatus = (state) => getApp(state).serverResponseStatus;
 const getLoadingStatus = (state) => getApp(state).loading;
 const getMetadata = (state) => getApp(state).metadata;
 const getNetwork = (state) => getApp(state).network;
@@ -95,7 +97,7 @@ const boundSelectors = {
     ...bindSelectors(getRoles, roleSelectors),
     ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
-    ...bindSelectors(getServerError, serverErrorSelectors),
+    ...bindSelectors(getServerResponseStatus, serverResponseStatusSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
     ...bindSelectors(getMetadata, metadataSelectors),
     ...bindSelectors(getNetwork, networkSelectors),

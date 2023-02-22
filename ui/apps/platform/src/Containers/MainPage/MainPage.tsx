@@ -1,34 +1,29 @@
 import React, { ReactElement } from 'react';
-import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import { createStructuredSelector } from 'reselect';
 import { Page } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
-import { selectors } from 'reducers';
-
 import LoadingSection from 'Components/PatternFly/LoadingSection';
-import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper from 'Containers/AppWrapper';
-import Body from 'Containers/MainPage/Body';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import { clustersBasePath } from 'routePaths';
 
-import AnnouncementBanner from './AnnouncementBanner';
-import CredentialExpiryBanner from './CredentialExpiryBanner';
-import DatabaseBanner from './DatabaseBanner';
-import OutdatedVersionBanner from './OutdatedVersionBanner';
+import AnnouncementBanner from './Banners/AnnouncementBanner';
+import CredentialExpiryBanner from './Banners/CredentialExpiryBanner';
+import DatabaseStatusBanner from './Banners/DatabaseStatusBanner';
+import OutdatedVersionBanner from './Banners/OutdatedVersionBanner';
+import ServerStatusBanner from './Banners/ServerStatusBanner';
+
 import Masthead from './Header/Masthead';
+
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
+
 import NavigationSidebar from './Sidebar/NavigationSidebar';
 
+import Body from './Body';
 import Notifications from './Notifications';
-
-const mainPageSelector = createStructuredSelector({
-    serverState: selectors.getServerState,
-});
 
 type ClusterCountResponse = {
     clusterCount: number;
@@ -41,9 +36,6 @@ const CLUSTER_COUNT = gql`
 `;
 
 function MainPage(): ReactElement {
-    const { serverState } = useSelector(mainPageSelector);
-
-    // Follow-up: Replace SearchModal with path like /main/search and component like GlobalSearchPage.
     const history = useHistory();
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
@@ -75,7 +67,7 @@ function MainPage(): ReactElement {
             <PublicConfigHeader />
             <div className="flex flex-1 flex-col h-full relative">
                 <AnnouncementBanner />
-                <UnreachableWarning serverState={serverState} />
+                <ServerStatusBanner />
                 <Notifications />
                 <CredentialExpiryBanner
                     component="CENTRAL"
@@ -86,7 +78,7 @@ function MainPage(): ReactElement {
                     hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
                 />
                 <OutdatedVersionBanner />
-                <DatabaseBanner isApiReachable={serverState && serverState !== 'UNREACHABLE'} />
+                <DatabaseStatusBanner />
                 <Page
                     mainContainerId="main-page-container"
                     header={<Masthead />}
