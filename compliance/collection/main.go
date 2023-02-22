@@ -117,6 +117,8 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 			log.Infof("Parent context cancelled. Stopping manageStream")
 			return
 		default:
+			// initializeStream must only be called once across all Compliance components,
+			// as multiple calls would overwrite associations on the Sensor side.
 			client, config, err := initializeStream(ctx, cli)
 			if err != nil {
 				if ctx.Err() != nil {
@@ -125,6 +127,9 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 				}
 				log.Fatalf("error initializing stream to sensor: %v", err)
 			}
+			// A second Context is introduced for cancelling the goroutine if runRecv returns.
+			// runRecv only returns on errors, upon which the client will get reinitialized,
+			// orphaning manageSendToSensor in the process.
 			ctx2, cancelFn := context.WithCancel(ctx)
 			if sensorC != nil {
 				go manageSendToSensor(ctx2, client, sensorC)
@@ -132,7 +137,7 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 			if err := runRecv(ctx, client, config); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
-			cancelFn()
+			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next  call to initializeStream
 		}
 	}
 }
