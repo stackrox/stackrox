@@ -1,10 +1,8 @@
-//go:build sql_integration
-// +build sql_integration
-
 package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -16,6 +14,7 @@ import (
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	nodeComponentCVEEdgePostgres "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
+	k8sRoleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
@@ -64,14 +64,46 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 	s.db, s.gormDB = SetupTestPostgresConn(s.T())
 
 	s.nodeDatastore = CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+
+	s.dropTable(postgresSchema.RoleBindingsTableName)
+	s.dropTable(postgresSchema.RoleBindingsSubjectsTableName)
+	//	postgresSchema.ApplySchemaForTable(s.ctx, s.gormDB, postgresSchema.RoleBindingsSubjectsTableName)
+	postgresSchema.ApplySchemaForTable(s.ctx, s.gormDB, postgresSchema.RoleBindingsTableName)
+
+	k8sRoleBindingDatastore, err := k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db)
+	s.NoError(err)
 	resolver, _ := SetupTestResolver(s.T(),
 		CreateTestNodeCVEDatastore(s.T(), s.db, s.gormDB),
 		CreateTestNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
 		s.nodeDatastore,
 		CreateTestNodeComponentCveEdgeDatastore(s.T(), s.db, s.gormDB),
 		CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, nil, nil, s.nodeDatastore),
+		k8sRoleBindingDatastore,
 	)
 	s.resolver = resolver
+
+	roleBindings := testK8sRoleBindings()
+	for _, roleBinding := range roleBindings {
+		err = k8sRoleBindingDatastore.UpsertRoleBinding(s.ctx, roleBinding)
+		s.NoError(err)
+	}
+
+	req := searchRequest{
+		Query:      "Cluster:c1",
+		Categories: &[]string{"SUBJECTS"},
+	}
+	allowAllCtx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	results, err := resolver.SearchAutocomplete(allowAllCtx, req)
+	s.NoError(err)
+	fmt.Printf("%v\n", results)
+
+	req = searchRequest{
+		Query:      "Subject:subjectID1",
+		Categories: &[]string{"SUBJECTS"},
+	}
+	results, err = resolver.SearchAutocomplete(allowAllCtx, req)
+	s.NoError(err)
+	fmt.Printf("%v\n", results)
 
 	// Add test data to DataStores
 	testClusters, testNodes := testClustersWithNodes()
@@ -479,4 +511,61 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerability() {
 	topVuln, err = node.TopNodeVulnerability(ctx, RawQuery{})
 	s.NoError(err)
 	s.Nil(topVuln)
+}
+
+func testK8sRoleBindings() []*storage.K8SRoleBinding {
+	return []*storage.K8SRoleBinding{
+		{
+			Id:          fixtureconsts.RoleBinding1,
+			Name:        "rb1",
+			ClusterName: "c1",
+			ClusterId:   fixtureconsts.Cluster1,
+			ClusterRole: true,
+			Subjects: []*storage.Subject{
+				{
+					Id:          "subjectID1",
+					Name:        "subjectID1",
+					Kind:        storage.SubjectKind_USER,
+					ClusterId:   fixtureconsts.Cluster1,
+					ClusterName: "c1",
+				},
+				{
+					Id:          "subjectID2",
+					Name:        "subjectID2",
+					Kind:        storage.SubjectKind_USER,
+					ClusterId:   fixtureconsts.Cluster1,
+					ClusterName: "c1",
+				},
+			},
+		},
+		{
+			Id:          fixtureconsts.RoleBinding2,
+			Name:        "rb2",
+			ClusterName: "c2",
+			ClusterId:   fixtureconsts.Cluster2,
+			ClusterRole: true,
+			Subjects: []*storage.Subject{
+				{
+					Id:          "subjectID3",
+					Name:        "subjectID3",
+					Kind:        storage.SubjectKind_USER,
+					ClusterId:   fixtureconsts.Cluster1,
+					ClusterName: "c2",
+				},
+				{
+					Id:          "subjectID4",
+					Name:        "subjectID4",
+					Kind:        storage.SubjectKind_USER,
+					ClusterId:   fixtureconsts.Cluster1,
+					ClusterName: "c2",
+				},
+			},
+		},
+	}
+}
+
+func (s *GraphQLNodeVulnerabilityTestSuite) dropTable(name string) {
+	sql := fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE", name)
+	_, err := s.db.Exec(s.ctx, sql)
+	s.NoError(err)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	"github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +18,8 @@ import (
 )
 
 var (
-	subjectFactory = predicate.NewFactory("subject", (*storage.Subject)(nil))
+	subjectFactory         = predicate.NewFactory("subject", (*storage.Subject)(nil))
+	roleBindingPredFactory = predicate.NewFactory("k8srolebinding", (*storage.K8SRoleBinding)(nil))
 )
 
 func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) (*v1.ListSubjectsResponse, error) {
@@ -137,30 +139,47 @@ func NewSubjectSearcher(k8sRoleBindingDatastore datastore.DataStore) *SubjectSea
 
 // Search implements the searcher interface
 func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	subjectQuery, _ := search.FilterQueryWithMap(q, mapping.OptionsMap)
-	pred, err := subjectFactory.GeneratePredicate(subjectQuery)
+	roleBindingQuery, _ := search.FilterQueryWithMap(q, roleBindingOptions.OptionsMap)
+	roleBindingPred, err := roleBindingPredFactory.GeneratePredicate(roleBindingQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, q)
+	subjectQuery, _ := search.FilterQueryWithMap(q, mapping.OptionsMap)
+	subjectPred, err := subjectFactory.GeneratePredicate(subjectQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, roleBindingQuery)
 	if err != nil {
 		return nil, err
 	}
 	// Subject return only users and groups, there is a separate resolver for service accounts.
-	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
+	// subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 	// Sort first then evaluate to not run evaluation twice.
 	// Sorting should be cheaper than reflect based evaluation
-	if err := sortSubjects(q, subjects); err != nil {
-		return nil, err
-	}
+	//if err := sortSubjects(q, subjects); err != nil {
+	//	return nil, err
+	//}
 
 	var results []search.Result
-	for _, subject := range subjects {
-		if result, match := pred.Evaluate(subject); match {
-			results = append(results, *result)
+	for _, binding := range bindings {
+		if result, match := roleBindingPred.Evaluate(binding); match {
+			subjects := k8srbac.GetAllSubjects([]*storage.K8SRoleBinding{binding}, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
+			for _, subject := range subjects {
+				if res, m := subjectPred.Evaluate(subject); m {
+					newRes := predicate.MergeResults(result, res)
+					results = append(results, *newRes)
+				}
+			}
 		}
 	}
+	//for _, subject := range subjects {
+	//	if result, match := subjectPred.Evaluate(subject); match {
+	//		results = append(results, *result)
+	//	}
+	//}
 
 	return results, nil
 }
