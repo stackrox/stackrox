@@ -26,7 +26,7 @@ func patchNamespaces(client kubernetes.Interface, stopCond concurrency.Waitable)
 	}
 
 	if _, err := nsInformer.AddEventHandler(patchHandler); err != nil {
-		log.Warnf("could add event handler: %+v", err)
+		log.Warnf("could not add event handler: %+v", err)
 	}
 	go nsInformer.Run(stopCond.Done())
 }

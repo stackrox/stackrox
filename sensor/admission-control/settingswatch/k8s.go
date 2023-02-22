@@ -159,7 +159,7 @@ func (w *k8sSettingsWatch) start() error {
 		informers.WithTweakListOptions(tweakListOpts))
 
 	if _, err := sif.Core().V1().ConfigMaps().Informer().AddEventHandler(w); err != nil {
-		return errors.Wrap(err, "could add event handler")
+		return errors.Wrap(err, "could not add event handler")
 	}
 	sif.Start(w.ctx.Done())
 
