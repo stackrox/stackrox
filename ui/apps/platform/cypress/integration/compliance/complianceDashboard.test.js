@@ -29,11 +29,11 @@ describe('Compliance Dashboard', () => {
         cy.get(selectors.dashboard.tileLinks.cluster.value)
             .invoke('text')
             .then((text) => {
-                const numClusters = parseInt(text, 10); // for example, 1 cluster
+                const count = parseInt(text, 10); // for example, 1 cluster
                 interactAndWaitForComplianceEntities(() => {
                     cy.get(selectors.dashboard.tileLinks.cluster.tile).click();
                 }, 'clusters');
-                cy.get('.rt-tbody .rt-tr').its('length').should('eq', numClusters);
+                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
             });
     });
 
@@ -43,11 +43,11 @@ describe('Compliance Dashboard', () => {
         cy.get(selectors.dashboard.tileLinks.namespace.value)
             .invoke('text')
             .then((text) => {
-                const numNamespaces = parseInt(text, 10); // for example, 2 namespaces
+                const count = parseInt(text, 10); // for example, 2 namespaces
                 interactAndWaitForComplianceEntities(() => {
                     cy.get(selectors.dashboard.tileLinks.namespace.tile).click();
                 }, 'namespaces');
-                cy.get('.rt-tbody .rt-tr').its('length').should('eq', numNamespaces);
+                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
             });
     });
 
@@ -57,11 +57,11 @@ describe('Compliance Dashboard', () => {
         cy.get(selectors.dashboard.tileLinks.node.value)
             .invoke('text')
             .then((text) => {
-                const numNodes = parseInt(text, 10); // for example, 2 nodes
+                const count = parseInt(text, 10); // for example, 2 nodes
                 interactAndWaitForComplianceEntities(() => {
                     cy.get(selectors.dashboard.tileLinks.node.tile).click();
                 }, 'nodes');
-                cy.get('.rt-tbody .rt-tr').its('length').should('eq', numNodes);
+                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
             });
     });
 
@@ -71,11 +71,11 @@ describe('Compliance Dashboard', () => {
         cy.get(selectors.dashboard.tileLinks.deployment.value)
             .invoke('text')
             .then((text) => {
-                const numNodes = parseInt(text, 10); // for example, 2 nodes
+                const count = parseInt(text, 10); // for example, 2 deployments
                 interactAndWaitForComplianceEntities(() => {
                     cy.get(selectors.dashboard.tileLinks.deployment.tile).click();
                 }, 'deployments');
-                cy.get('.rt-tbody .rt-tr').its('length').should('eq', numNodes);
+                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
             });
     });
 

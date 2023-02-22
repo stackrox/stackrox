@@ -37,7 +37,10 @@ describe('Network Graph Search', () => {
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const deployments = cytoscape.nodes().filter(filterDeployments);
             deployments.forEach((deployment) => {
-                expect(deployment.data().parent).to.be.oneOf(['stackrox']);
+                // TODO Verify whether or not namespace filter is exact match.
+                // GKE: stackrox
+                // OpenShift: stackrox and stackrox-operator
+                expect(deployment.data().parent).to.be.oneOf(['stackrox', 'stackrox-operator']);
             });
         });
     });
@@ -49,7 +52,10 @@ describe('Network Graph Search', () => {
             const namespaces = cytoscape.nodes().filter(filterNamespaces);
             // For now, let the assertion pass even if array is empty.
             namespaces.forEach((namespace) => {
-                expect(namespace.data().name).to.be.oneOf(['stackrox']);
+                // TODO Verify whether or not namespace filter is exact match.
+                // GKE: stackrox
+                // OpenShift: stackrox and stackrox-operator
+                expect(namespace.data().name).to.be.oneOf(['stackrox', 'stackrox-operator']);
             });
         });
     });

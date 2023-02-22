@@ -2,16 +2,17 @@ import withAuth from '../../helpers/basicAuth';
 import { triggerScan } from '../compliance/Compliance.helpers';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
+    clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
     clickOnSingularEntityWidgetInSidePanel,
     clickOnSingleEntityInTable,
-    hasTabsFor,
+    hasCountWidgetsFor,
     hasRelatedEntityFor,
+    hasTabsFor,
+    navigateToSingleEntityPage,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'nodes';
@@ -58,7 +59,8 @@ describe('Configuration Management Nodes', () => {
     it('should click on the controls count widget in the entity page and show the controls tab', () => {
         triggerScan(); // because test assumes that scan results are available
 
-        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        const columnIndexForControls = 7;
+        clickEntityTableRowThatHasLinkInColumn(entitiesKey, columnIndexForControls);
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('controls', 'entityList');
     });
