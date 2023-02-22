@@ -61,7 +61,6 @@ func compareResults(t *testing.T, matches bool, predResult *search.Result, searc
 
 	if matches && len(searchResults) > 0 {
 		for k := range predResult.Matches {
-			log.Infof("k => %q", k)
 			sort.Strings(predResult.Matches[k])
 			newImageKey, ok := imageKeyMap[k]
 			// If the key exists
@@ -93,7 +92,7 @@ func (s *SearchComparisonTestSuite) TestImageSearchResults() {
 			},
 		},
 		{
-			image: fixtures.GetImage(),
+			image: fixtures.GetImageWithUniqueComponents(50),
 			query: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
 				[]search.FieldLabel{search.CVSS, search.CVE},
 				[]string{">=5", search.WildcardString}).
@@ -106,7 +105,7 @@ func (s *SearchComparisonTestSuite) TestImageSearchResults() {
 			},
 		},
 		{
-			image: fixtures.GetImage(),
+			image: fixtures.GetImageWithUniqueComponents(50),
 			query: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
 				[]search.FieldLabel{search.CVSS, search.CVE},
 				[]string{">2", "CVE-2014-620"}).
