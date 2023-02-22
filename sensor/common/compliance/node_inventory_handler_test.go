@@ -78,6 +78,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	producer := concurrency.NewStopper()
 	h := NewNodeInventoryHandler(inventories, &mockAlwaysHitNodeIDMatcher{})
 	s.NoError(h.Start())
+	h.NotifyReady()
 	consumer := consumeAndCount(h.ResponsesC(), 1)
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages.
 	go func() {
@@ -105,6 +106,8 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	// NotifyReady is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
+	h.NotifyReady()
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -118,6 +121,8 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	// NotifyReady is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
+	h.NotifyReady()
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -176,6 +181,8 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
 
+	// NotifyReady is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
+	h.NotifyReady()
 	s.NoError(h.Start())
 	s.ErrorIs(h.Start(), errStartMoreThanOnce)
 
@@ -197,6 +204,8 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	// NotifyReady is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
+	h.NotifyReady()
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -211,6 +220,8 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	ch, producer := s.generateTestInputNoClose(10)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	// NotifyReady is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
+	h.NotifyReady()
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -242,6 +253,8 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
 	ch, producer := s.generateNilTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	// NotifyReady is called before Start to avoid race between generateNilTestInputNoClose and the NodeInventoryHandler
+	h.NotifyReady()
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 0)
 	s.NoError(producer.Stopped().Wait())
@@ -255,8 +268,24 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockNeverHitNodeIDMatcher{})
+	// NotifyReady is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
+	h.NotifyReady()
 	s.NoError(h.Start())
 	// expect consumer to get 0 messages - sensor should drop inventory when node is not found
+	consumer := consumeAndCount(h.ResponsesC(), 0)
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(consumer.Stopped().Wait())
+
+	h.Stop(nil)
+	s.NoError(h.Stopped().Wait())
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
+	ch, producer := s.generateTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	s.NoError(h.Start())
+	// expect consumer to get 0 messages - sensor should drop inventory when the connection with central is not ready
 	consumer := consumeAndCount(h.ResponsesC(), 0)
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
