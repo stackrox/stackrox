@@ -791,6 +791,42 @@ wait_for_object_to_appear() {
     return 0
 }
 
+highlight_cluster_versions() {
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "No place for artifacts, skipping cluster version dump"
+        return
+    fi
+
+    artifact_file="$ARTIFACT_DIR/cluster-version-summary.html"
+
+    cat > "$artifact_file" <<- HEAD
+<html style="background: #fff">
+    <head>
+        <title><h4>GKE Logs Explorer</h4></title>
+    </head>
+    <body>
+HEAD
+
+    local nodes
+    nodes="$(kubectl get nodes -o wide 2>&1 || true)"
+    local versions
+    versions="$(kubectl version -o json 2>&1 || true)"
+
+    cat >> "$artifact_file" << DETAILS
+      <h3>Nodes:</h3>
+      kubectl get nodes -o wide
+      <pre>$nodes</pre>
+      <h3>Versions:</h3>
+      kubectl version -o json
+      <pre>$versions</pre>
+DETAILS
+
+    cat >> "$artifact_file" <<- FOOT
+  </body>
+</html>
+FOOT
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         usage
