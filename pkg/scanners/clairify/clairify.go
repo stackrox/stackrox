@@ -30,7 +30,10 @@ import (
 	"github.com/stackrox/scanner/pkg/clairify/client"
 	"github.com/stackrox/scanner/pkg/clairify/types"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -45,8 +48,15 @@ var (
 	_ scannerTypes.Scanner                  = (*clairify)(nil)
 	_ scannerTypes.ImageVulnerabilityGetter = (*clairify)(nil)
 
-	log             = logging.LoggerForModule()
-	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
+	log                   = logging.LoggerForModule()
+	scannerEndpoint       = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
+	scannerDefaultBackoff = wait.Backoff{
+		Duration: 500 * time.Millisecond,
+		Jitter:   0.25,
+		Factor:   3,
+		Steps:    5,
+		Cap:      1 * time.Minute,
+	}
 )
 
 // GetScannerEndpoint returns the scanner endpoint with a configured namespace. env.ScannerGRPCEndpoint is only used by Sensor.
@@ -411,12 +421,38 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 	return convertImageToImageScan(image.GetMetadata(), resp.GetImage()), nil
 }
 
+func callGRPCWithRetryOnError(ctx context.Context, operation string, f func() error) error {
+	err := wait.ExponentialBackoffWithContext(ctx, scannerDefaultBackoff, func() (bool, error) {
+		err := f()
+		if err != nil {
+			e, _ := status.FromError(err)
+			switch e.Code() {
+			case codes.Internal, codes.Aborted, codes.Unavailable, codes.Unknown:
+				log.Warnf("retrying %s() on: %v", operation, err)
+				return false, nil
+			default:
+				log.Errorf("failed %s(): %v", operation, err)
+				return false, err
+			}
+		}
+		return true, nil
+	})
+	if errors.Is(err, wait.ErrWaitTimeout) {
+		return fmt.Errorf("calling %s(): all retry attempts failed", operation)
+	}
+	return err
+}
+
 func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error) {
 	req := convertNodeToVulnRequest(node, inv)
 	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
 	defer cancel()
 	log.Debugf("Calling GetNodeVulnerabilities with node inventory: %v", req.GetComponents())
-	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
+	var resp *clairGRPCV1.GetNodeVulnerabilitiesResponse
+	err := callGRPCWithRetryOnError(ctx, "GetNodeVulnerabilities", func() (err error) {
+		resp, err = c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
