@@ -7,8 +7,8 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
-	types "github.com/gogo/protobuf/types"
 	gomock "github.com/golang/mock/gomock"
 	imagecve "github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -66,10 +66,10 @@ func (mr *MockCveCoreMockRecorder) GetCVE() *gomock.Call {
 }
 
 // GetFirstDiscoveredInSystem mocks base method.
-func (m *MockCveCore) GetFirstDiscoveredInSystem() *types.Timestamp {
+func (m *MockCveCore) GetFirstDiscoveredInSystem() time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFirstDiscoveredInSystem")
-	ret0, _ := ret[0].(*types.Timestamp)
+	ret0, _ := ret[0].(time.Time)
 	return ret0
 }
 
