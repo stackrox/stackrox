@@ -822,6 +822,8 @@ HEAD
 DETAILS
 
     cat >> "$artifact_file" <<- FOOT
+    <br />
+    <br />
   </body>
 </html>
 FOOT

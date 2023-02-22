@@ -44,10 +44,6 @@ if [[ "$ci_job" =~ e2e|upgrade ]]; then
     handle_nightly_binary_version_mismatch
 fi
 
-if is_nightly_run && [[ "$ci_job" =~ e2e|gke|ocp ]]; then
-    highlight_cluster_versions
-fi
-
 export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
 
 if ! [[ "$ci_job" =~ [a-z-]+ ]]; then
