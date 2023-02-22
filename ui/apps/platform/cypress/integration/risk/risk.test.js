@@ -145,7 +145,8 @@ describe('Risk page', () => {
     });
 
     describe('with actual API', () => {
-        it('should navigate to network page with selected deployment', () => {
+        // This test is disabled for now as the links from Risk to Network Graph have been changed to navigate to the new version
+        it.skip('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
             viewRiskDeploymentInNetworkGraph();
