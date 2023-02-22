@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package postgres
 
 import (
@@ -9,7 +11,6 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -40,12 +41,7 @@ type SearchComparisonTestSuite struct {
 }
 
 func (s *SearchComparisonTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
+	pgtest.SkipIfPostgresDisabled(s.T())
 
 	s.testDB = pgtest.ForT(s.T())
 
@@ -81,10 +77,6 @@ func compareResults(t *testing.T, matches bool, predResult *search.Result, searc
 }
 
 func (s *SearchComparisonTestSuite) TestImageSearchResults() {
-	pgtest.SkipIfPostgresDisabled(s.T())
-
-	test := 0
-
 	cases := []struct {
 		image          *storage.Image
 		query          *v1.Query
@@ -142,14 +134,11 @@ func (s *SearchComparisonTestSuite) TestImageSearchResults() {
 			require.NoError(t, err)
 
 			compareResults(t, matches, predResult, searchResults)
-			test = test + 1
 		})
 	}
 }
 
 func (s *SearchComparisonTestSuite) TestDeploymentSearchResults() {
-	pgtest.SkipIfPostgresDisabled(s.T())
-
 	cases := []struct {
 		deployment *storage.Deployment
 		query      *v1.Query
