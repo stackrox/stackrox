@@ -240,6 +240,8 @@ func (s *roleDataStoreTestSuite) TestRoleReadOperations() {
 
 func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	goodRole := getValidRole("valid role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
+	secondExistingPermissionSet := getValidPermissionSet("permissionset.existingtoo", "second permission set")
+	updatedGoodRole := getValidRole("valid role", secondExistingPermissionSet.GetId(), s.existingScope.GetId())
 	badRole := &storage.Role{Name: "invalid role"}
 	cloneRole := getValidRole(s.existingRole.GetName(), s.existingPermissionSet.GetId(), s.existingScope.GetId())
 	updatedAdminRole := getValidRole(role.Admin, s.existingPermissionSet.GetId(), s.existingScope.GetId())
@@ -248,7 +250,10 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 		Origin: storage.Traits_DECLARATIVE,
 	}
 
-	err := s.dataStore.AddRole(s.hasWriteCtx, badRole)
+	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, secondExistingPermissionSet)
+	s.NoError(err, "failed to add second permission set needed for test")
+
+	err = s.dataStore.AddRole(s.hasWriteCtx, badRole)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid role for Add*() yields an error")
 
 	err = s.dataStore.AddRole(s.hasWriteCtx, cloneRole)
@@ -272,8 +277,14 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	err = s.dataStore.UpdateRole(s.hasWriteCtx, badRole)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid role for Update*() yields an error")
 
-	err = s.dataStore.UpdateRole(s.hasWriteCtx, goodRole)
+	err = s.dataStore.UpdateRole(s.hasWriteCtx, updatedGoodRole)
 	s.NoError(err)
+
+	datastoreGoodRole, found, err := s.dataStore.GetRole(s.hasReadCtx, goodRole.GetName())
+	s.NoError(err)
+	s.True(found)
+	s.Equal(updatedGoodRole.GetPermissionSetId(), datastoreGoodRole.GetPermissionSetId(),
+		"successful Update*() call should update the value in datastore")
 
 	err = s.dataStore.RemoveRole(s.hasWriteCtx, goodRole.GetName())
 	s.NoError(err)
