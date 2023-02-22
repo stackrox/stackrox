@@ -16,6 +16,11 @@ set -euo pipefail
 run_part_1() {
     info "Starting test (qa-tests-backend part I)"
 
+    while true; do
+        echo "Sleeping for ten minutes..."
+        sleep 10m
+    done
+
     config_part_1
     test_part_1
 }
