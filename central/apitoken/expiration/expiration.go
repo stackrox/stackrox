@@ -21,9 +21,11 @@ const (
 	// notificationInterval = 1 * time.Hour      // 1 hour
 	// staleNotificationAge = 24 * time.Hour     // 1 day
 	// expirationWindow     = 7 * 24 * time.Hour // 1 week
+	// expirationSlice      = 24 * time.Hour     // 1 day
 	notificationInterval = 10 * time.Minute // 1 hour
 	staleNotificationAge = 1 * time.Hour    // 1 day
 	expirationWindow     = 6 * time.Hour    // 1 week
+	expirationSlice      = 1 * time.Hour    // 1 day
 
 	// The timestamp format / layout is borrowed from `pkg/search/postgres/query/time_query.go`. It would be worth exporting.
 	timestampLayout = "01/02/2006 3:04:05 PM MST"
@@ -128,28 +130,19 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 		log.Error(errors.Wrap(err, "failed to update expired API token notification last run"))
 	}
 
-	expiringTokenIDs, err := n.listItemsToNotify(now, aboutToExpireDate)
+	expiringTokens, err := n.listItemsToNotify(now, aboutToExpireDate)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	tokenIDs := convertSearchResultsToIDList(expiringTokenIDs)
-	err = n.notify(tokenIDs)
+	err = n.notify(expiringTokens)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 }
 
-func convertSearchResultsToIDList(results []search.Result) []string {
-	tokenIDs := make([]string, 0, len(results))
-	for _, r := range results {
-		tokenIDs = append(tokenIDs, r.ID)
-	}
-	return tokenIDs
-}
-
-func (n *expirationNotifierImpl) listItemsToNotify(now time.Time, expiresUntil time.Time) ([]search.Result, error) {
+func (n *expirationNotifierImpl) listItemsToNotify(now time.Time, expiresUntil time.Time) ([]*storage.TokenMetadata, error) {
 	formattedNow := now.Format(timestampLayout)
 	formattedExpiresUntil := expiresUntil.Format(timestampLayout)
 	// Search tokens that expire before expiresUntil, that have not expired yet,
@@ -169,16 +162,29 @@ func (n *expirationNotifierImpl) listItemsToNotify(now time.Time, expiresUntil t
 		queryAboutToExpire,
 		queryNotRevoked,
 	)
-	response, err := n.store.Search(expirySearchCtx, query)
+	response, err := n.store.SearchRawTokens(expirySearchCtx, query)
 	if err != nil {
 		return nil, err
 	}
 	return response, nil
 }
 
-func (n *expirationNotifierImpl) notify(itemIDs []string) error {
-	for _, identifier := range itemIDs {
-		log.Warnf("API Token about to expire %s", identifier)
+func (n *expirationNotifierImpl) notify(items []*storage.TokenMetadata) error {
+	now := time.Now()
+	for _, token := range items {
+		expiration := protoconv.ConvertTimestampToTimeOrNow(token.GetExpiration())
+		ttl := expiration.Sub(now)
+		timeUnit := int(expirationSlice.Seconds())
+		ttlSeconds := int(ttl.Seconds())
+		sliceCount := ttlSeconds / timeUnit
+		if ttlSeconds%timeUnit != 0 {
+			sliceCount++
+		}
+		sliceDuration := "hours"
+		if sliceCount == 1 {
+			sliceDuration = "hour"
+		}
+		log.Warnf("API Token %s will expire in less than %d %s.", token.Id, sliceCount, sliceDuration)
 	}
 	return nil
 }

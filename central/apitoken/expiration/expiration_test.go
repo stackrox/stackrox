@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package expiration
 
 import (
@@ -12,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -85,12 +86,8 @@ func (s *apiTokenExpirationNotifierTestSuite) TestSelectTokenAboutToExpire() {
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
-	expectedResult := search.Result{
-		ID:      token.GetId(),
-		Matches: make(map[string][]string, 0),
-		Fields:  nil,
-	}
-	expectedResults := []search.Result{expectedResult}
+	expectedResult := token
+	expectedResults := []*storage.TokenMetadata{expectedResult}
 	s.ElementsMatch(expectedResults, fetchedTokens)
 }
 
@@ -104,7 +101,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectTokenNotAboutToExpir
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
-	expectedResults := []search.Result{}
+	expectedResults := []*storage.TokenMetadata{}
 	s.ElementsMatch(expectedResults, fetchedTokens)
 }
 
@@ -118,7 +115,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectRevokedToken() {
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
-	expectedResults := []search.Result{}
+	expectedResults := []*storage.TokenMetadata{}
 	s.ElementsMatch(expectedResults, fetchedTokens)
 }
 
@@ -132,6 +129,6 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectExpiredToken() {
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
-	expectedResults := []search.Result{}
+	expectedResults := []*storage.TokenMetadata{}
 	s.ElementsMatch(expectedResults, fetchedTokens)
 }
