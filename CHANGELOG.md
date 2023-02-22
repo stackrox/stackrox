@@ -14,6 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 `/debug/versions.json` endpoint and `roxctl version --json` command.
 
 ### Deprecated Fatures
+- Deprecated `/v1/telemetry/configure` service.
 
 ### Technical Changes
 
