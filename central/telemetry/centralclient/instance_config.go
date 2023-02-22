@@ -169,14 +169,19 @@ func Disable() {
 
 // Enable enables and starts the telemetry collection.
 func Enable() *phonehome.Config {
+	// Prepare the configuration.
 	InstanceConfig()
 
 	startMux.Lock()
 	defer startMux.Unlock()
-	// Use config as InstanceConfig may return nil for not yet running instance.
+	// Use config as InstanceConfig may return nil for not yet enabled instance.
 	cfg := config
-	if enabled || !cfg.Enabled() {
+	if !cfg.Enabled() {
+		// Cannot enable without proper configuration.
 		return nil
+	}
+	if enabled {
+		return cfg
 	}
 	cfg.RemoveInterceptors()
 	for event, funcs := range interceptors {
