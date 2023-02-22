@@ -114,11 +114,11 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	defer ds.lock.Unlock()
 
 	// Verify storage constraints.
-	role, err := ds.verifyRoleNameExists(ctx, role.GetName())
+	existingRole, err := ds.verifyRoleNameExists(ctx, role.GetName())
 	if err != nil {
 		return err
 	}
-	if err = verifyRoleOriginMatches(ctx, role); err != nil {
+	if err = verifyRoleOriginMatches(ctx, existingRole); err != nil {
 		return err
 	}
 	if err = ds.verifyRoleReferencesExist(ctx, role); err != nil {
