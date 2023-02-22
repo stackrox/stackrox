@@ -1,14 +1,15 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
+    clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
     entityListCountMatchesTableLinkCount,
+    hasCountWidgetsFor,
     hasTabsFor,
+    navigateToSingleEntityPage,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'images';
@@ -36,7 +37,8 @@ describe('Configuration Management Images', () => {
     });
 
     it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
-        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        const columnIndexForDeployments = 4;
+        clickEntityTableRowThatHasLinkInColumn(entitiesKey, columnIndexForDeployments);
         navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Deployments']);
         clickOnCountWidget('deployments', 'entityList');
