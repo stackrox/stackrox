@@ -802,7 +802,7 @@ highlight_cluster_versions() {
     cat > "$artifact_file" <<- HEAD
 <html style="background: #fff">
     <head>
-        <title><h4>GKE Logs Explorer</h4></title>
+        <title><h4>Cluster Versions</h4></title>
     </head>
     <body>
 HEAD
