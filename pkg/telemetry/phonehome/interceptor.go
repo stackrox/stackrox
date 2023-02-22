@@ -16,9 +16,14 @@ import (
 const grpcGatewayUserAgentHeader = runtime.MetadataPrefix + "User-Agent"
 
 func (cfg *Config) track(rp *RequestParams) {
-	id := cfg.HashUserAuthID(rp.UserID)
 	cfg.interceptorsLock.RLock()
 	defer cfg.interceptorsLock.RUnlock()
+	if len(cfg.interceptors) == 0 {
+		return
+	}
+	opts := []telemeter.Option{
+		telemeter.WithUserID(cfg.HashUserAuthID(rp.UserID)),
+		telemeter.WithGroups(cfg.GroupType, cfg.GroupID)}
 	for event, funcs := range cfg.interceptors {
 		props := map[string]any{}
 		ok := true
@@ -28,7 +33,7 @@ func (cfg *Config) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			cfg.telemeter.Track(event, props, telemeter.WithUserID(id), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+			cfg.telemeter.Track(event, props, opts...)
 		}
 	}
 }
