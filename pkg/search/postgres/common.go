@@ -868,8 +868,6 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 					returnedValue = field.PostTransform(returnedValue)
 				}
 				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
-					log.Infof("SHREWS -- time to append? %d", idx)
-					log.Infof("SHREWS -- %q", queryStr)
 					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
 				}
 			}

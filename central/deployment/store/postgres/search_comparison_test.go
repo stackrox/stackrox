@@ -61,14 +61,21 @@ func (s *SearchComparisonTestSuite) TearDownSuite() {
 
 func compareResults(t *testing.T, matches bool, predResult *search.Result, searchResults []search.Result) {
 	assert.Equal(t, matches, len(searchResults) != 0)
-	log.Infof("Results length => %d", len(searchResults))
-	log.Infof("Results Matches => %v", searchResults[0].Matches)
+	imageKeyMap := map[string]string{"image.scan.components.vulns.cve": "imagecve.cve_base_info.cve", "image.scan.components.vulns.cvss": "imagecve.cvss"}
+
 	if matches && len(searchResults) > 0 {
 		for k := range predResult.Matches {
 			log.Infof("k => %q", k)
 			sort.Strings(predResult.Matches[k])
-			sort.Strings(searchResults[0].Matches[k])
-			assert.Equal(t, predResult.Matches[k], searchResults[0].Matches[k])
+			newImageKey, ok := imageKeyMap[k]
+			// If the key exists
+			if ok {
+				sort.Strings(searchResults[0].Matches[newImageKey])
+				assert.Equal(t, predResult.Matches[k], searchResults[0].Matches[newImageKey])
+			} else {
+				sort.Strings(searchResults[0].Matches[k])
+				assert.Equal(t, predResult.Matches[k], searchResults[0].Matches[k])
+			}
 		}
 	}
 }
@@ -126,21 +133,16 @@ func (s *SearchComparisonTestSuite) TestImageSearchResults() {
 	factory2 := factory.ForCustomOptionsMap(s.optionsMap)
 	for _, c := range cases {
 		s.T().Run("test", func(t *testing.T) {
-			log.Infof("Test = %d", test)
 			predicate, err := factory2.GeneratePredicate(c.query)
 			require.NoError(t, err)
 
 			predResult, matches := predicate.Evaluate(c.image)
-			log.Infof("SHREWS -- predResult = %v", predResult)
 
 			require.NoError(t, s.imageDatastore.UpsertImage(ctx, c.image))
 			searchResults, err := s.imageDatastore.Search(ctx, c.query)
-			log.Infof("SHREWS -- %v", searchResults)
-			log.Infof("SHREWS -- %v", searchResults[0].ID)
-			log.Infof("SHREWS -- %v", searchResults[0].Matches)
 			require.NoError(t, err)
 
-			compareResults(t, matches, c.expectedResult, searchResults)
+			compareResults(t, matches, predResult, searchResults)
 			test = test + 1
 		})
 	}

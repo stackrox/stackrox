@@ -33,7 +33,7 @@ func GetImage() *storage.Image {
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
 	for i := 0; i < numComponentsPerImage; i++ {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
-			Name:    "name",
+			Name:    fmt.Sprintf("name-%d", i), // "name",
 			Version: "1.2.3.4",
 			License: &storage.License{
 				Name: "blah",
