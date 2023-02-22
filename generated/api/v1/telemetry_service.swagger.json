@@ -84,6 +84,70 @@
           "TelemetryService"
         ]
       }
+    },
+    "/v1/telemetry/disable": {
+      "put": {
+        "operationId": "TelemetryService_Disable",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          }
+        ],
+        "tags": [
+          "TelemetryService"
+        ]
+      }
+    },
+    "/v1/telemetry/enable": {
+      "put": {
+        "operationId": "TelemetryService_Enable",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          }
+        ],
+        "tags": [
+          "TelemetryService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -159,6 +223,9 @@
           "type": "boolean"
         }
       }
+    },
+    "v1Empty": {
+      "type": "object"
     }
   }
 }

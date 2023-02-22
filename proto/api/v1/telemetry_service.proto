@@ -33,4 +33,18 @@ service TelemetryService {
             get: "/v1/telemetry/config"
         };
     }
+
+    rpc Disable (Empty) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/telemetry/disable"
+            body: "*"
+        };
+    }
+
+    rpc Enable (Empty) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/telemetry/enable"
+            body: "*"
+        };
+    }
 }

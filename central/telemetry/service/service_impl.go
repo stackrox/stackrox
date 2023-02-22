@@ -31,7 +31,14 @@ var (
 		user.With(): {
 			"/v1.TelemetryService/GetConfig",
 		},
+		user.With(permissions.Modify(resources.Administration)): {
+			"/v1.TelemetryService/Disable",
+			"/v1.TelemetryService/Enable",
+		},
 	})
+
+	errTelemetryDisabled = errox.NotFound.New("telemetry collection is disabled")
+	nothing              = &v1.Empty{}
 )
 
 type serviceImpl struct {
@@ -64,7 +71,7 @@ func (s *serviceImpl) ConfigureTelemetry(ctx context.Context, config *v1.Configu
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.TelemetryConfig, error) {
 	cfg := centralclient.InstanceConfig()
 	if !cfg.Enabled() {
-		return nil, errox.NotFound.New("telemetry collection is disabled")
+		return nil, errTelemetryDisabled
 	}
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
@@ -75,4 +82,16 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.Tele
 		Endpoint:     cfg.Endpoint,
 		StorageKeyV1: cfg.StorageKey,
 	}, nil
+}
+
+func (s *serviceImpl) Disable(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
+	centralclient.Disable()
+	return nothing, nil
+}
+
+func (s *serviceImpl) Enable(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
+	if !centralclient.Enable().Enabled() {
+		return nothing, errTelemetryDisabled
+	}
+	return nothing, nil
 }
