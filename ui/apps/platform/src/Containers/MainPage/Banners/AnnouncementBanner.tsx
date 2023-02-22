@@ -36,7 +36,6 @@ function AnnouncementBanner(): ReactElement | null {
         return (
             <Banner
                 className="pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center"
-                isSticky
                 variant={AlertVariant.info}
                 style={{ whiteSpace: 'normal' }}
             >
