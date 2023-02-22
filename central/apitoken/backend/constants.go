@@ -5,5 +5,5 @@ import "time"
 // These constants are used in the signed JWTs Central produces.
 const (
 	// defaultTTL = 365 * 24 * time.Hour
-	defaultTTL = 12 * time.Hour
+	defaultTTL = 6 * time.Hour
 )
