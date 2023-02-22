@@ -80,12 +80,19 @@ func (s *SearchComparisonTestSuite) TestImageSearchResults() {
 	test := 0
 
 	cases := []struct {
-		image *storage.Image
-		query *v1.Query
+		image          *storage.Image
+		query          *v1.Query
+		expectedResult *search.Result
 	}{
 		{
 			image: fixtures.GetImage(),
 			query: search.NewQueryBuilder().AddStringsHighlighted(search.ImageTag, "latest").ProtoQuery(),
+			expectedResult: &search.Result{
+				ID: "test",
+				Matches: map[string][]string{"imagecve.cve_base_info.cve": {"CVE-2014-6200", "CVE-2014-6201", "CVE-2014-6202", "CVE-2014-6203", "CVE-2014-6204"},
+					"imagecve.cvss": {"5", "5", "5", "5", "5"},
+				},
+			},
 		},
 		{
 			image: fixtures.GetImage(),
@@ -93,13 +100,25 @@ func (s *SearchComparisonTestSuite) TestImageSearchResults() {
 				[]search.FieldLabel{search.CVSS, search.CVE},
 				[]string{">=5", search.WildcardString}).
 				ProtoQuery(),
+			expectedResult: &search.Result{
+				ID: "test",
+				Matches: map[string][]string{"imagecve.cve_base_info.cve": {"CVE-2014-6200", "CVE-2014-6201", "CVE-2014-6202", "CVE-2014-6203", "CVE-2014-6204"},
+					"imagecve.cvss": {"5", "5", "5", "5", "5"},
+				},
+			},
 		},
 		{
 			image: fixtures.GetImage(),
 			query: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
 				[]search.FieldLabel{search.CVSS, search.CVE},
-				[]string{">4", "CVE-2014-620"}).
+				[]string{">2", "CVE-2014-620"}).
 				ProtoQuery(),
+			expectedResult: &search.Result{
+				ID: "test",
+				Matches: map[string][]string{"imagecve.cve_base_info.cve": {"CVE-2014-6200", "CVE-2014-6201", "CVE-2014-6202", "CVE-2014-6203", "CVE-2014-6204"},
+					"imagecve.cvss": {"5", "5", "5", "5", "5"},
+				},
+			},
 		},
 	}
 
@@ -121,7 +140,7 @@ func (s *SearchComparisonTestSuite) TestImageSearchResults() {
 			log.Infof("SHREWS -- %v", searchResults[0].Matches)
 			require.NoError(t, err)
 
-			compareResults(t, matches, predResult, searchResults)
+			compareResults(t, matches, c.expectedResult, searchResults)
 			test = test + 1
 		})
 	}

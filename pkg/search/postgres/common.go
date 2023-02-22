@@ -272,8 +272,6 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(" ")
 		querySB.WriteString(paginationSQL)
 	}
-
-	log.Infof("SHREWS -- query = %q", querySB.String())
 	return querySB.String()
 }
 
@@ -836,7 +834,6 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, redactedQueryData(query))
 
 	for rows.Next() {
-		log.Infof("SHREWS in the row loop")
 		if err := rows.Scan(bufferToScanRowInto...); err != nil {
 			return nil, err
 		}
@@ -853,10 +850,8 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 		}
 
 		id := IDFromPks(idParts)
-		log.Infof("SHREWS -- id = %q", id)
 		idx, ok := recordIDIdxMap[id]
 		if !ok {
-			log.Infof("never seen, build the map %d", idx)
 			idx = len(searchResults)
 			recordIDIdxMap[id] = idx
 			searchResults = append(searchResults, searchPkg.Result{
@@ -865,7 +860,6 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 			})
 		}
 		result := searchResults[idx]
-		log.Infof("Result after check for map -- %v", result)
 
 		if len(query.SelectedFields) > 0 {
 			for i, field := range query.SelectedFields {
@@ -874,16 +868,14 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 					returnedValue = field.PostTransform(returnedValue)
 				}
 				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
-					//result.Matches[field.FieldPath] = matches
+					log.Infof("SHREWS -- time to append? %d", idx)
+					log.Infof("SHREWS -- %q", queryStr)
 					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
 				}
 			}
 		}
-		log.Infof("Setting result %v as searchResult index %d", result, idx)
-		log.Infof("The search results are %v", searchResults[idx])
 		searchResults[idx] = result
 	}
-	log.Infof("SHREWS -- results going out -- %v", searchResults)
 	return searchResults, nil
 }
 
