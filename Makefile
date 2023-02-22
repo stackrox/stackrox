@@ -133,7 +133,7 @@ $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tool
 style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
 
 .PHONY: golangci-lint
-golangci-lint: $(GOLANGCILINT_BIN)
+golangci-lint: $(GOLANGCILINT_BIN) deps
 ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
