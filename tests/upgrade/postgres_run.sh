@@ -174,6 +174,7 @@ test_upgrade_paths() {
     # Upgrade to current to run any Postgres -> Postgres migrations                        #
     ########################################################################################
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
+    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
     wait_for_api
 
     # Verify data is still there
@@ -202,6 +203,8 @@ test_upgrade_paths() {
     # Upgrade back to latest to run the smoke tests                                        #
     ########################################################################################
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
+    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
+
     wait_for_api
 
     # Cleanup the scaled sensor before smoke tests
@@ -217,7 +220,7 @@ test_upgrade_paths() {
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
         "compliance=$REGISTRY/main:$CURRENT_TAG"
 
     sensor_wait
@@ -248,7 +251,6 @@ helm_upgrade_to_postgres() {
     ci_export ROX_POSTGRES_DATASTORE "true"
     export CLUSTER="remote"
 
-    pwd
     # Get opensource charts and convert to development_build to support release builds
     if is_CI; then
         make cli
@@ -296,6 +298,7 @@ force_rollback_to_previous_postgres() {
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$FORCE_ROLLBACK_VERSION"
 }
 
 deploy_scaled_workload() {

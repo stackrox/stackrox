@@ -150,7 +150,7 @@ test_upgrade_paths() {
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$LAST_ROCKS_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$LAST_ROCKS_TAG"
-    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
         "compliance=$REGISTRY/main:$LAST_ROCKS_TAG"
 
     sensor_wait
@@ -176,7 +176,6 @@ helm_upgrade_to_latest_postgres() {
     ci_export ROX_POSTGRES_DATASTORE "true"
     export CLUSTER="remote"
 
-    pwd
     # Get opensource charts and convert to development_build to support release builds
     if is_CI; then
         roxctl version
