@@ -50,6 +50,10 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 			Field:         search.ImageSHA.String(),
 			AggregateFunc: pgSearch.CountAggrFunc.String(),
 		},
+		{
+			Field:         search.CVECreatedTime.String(),
+			AggregateFunc: pgSearch.MinAggrFunc.String(),
+		},
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},

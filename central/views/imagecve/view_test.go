@@ -4,8 +4,10 @@ package imagecve
 
 import (
 	"context"
+	"sort"
 	"testing"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -76,6 +78,23 @@ func TestGetImageCVECore(t *testing.T) {
 	require.NoError(t, err)
 	for _, image := range images {
 		require.NoError(t, store.UpsertImage(ctx, image))
+	}
+
+	// Ensure that the image is stored and constructed as expected.
+	for idx, image := range images {
+		actual, found, err := store.GetImage(ctx, image.GetId())
+		require.NoError(t, err)
+		require.True(t, found)
+
+		cloned := actual.Clone()
+		// Adjust dynamic fields.
+		standardizeImages(image)
+		standardizeImages(cloned)
+		assert.EqualValues(t, image, cloned)
+
+		// Now that we confirmed that images match, use stored image to establish the expected test results.
+		// This makes dynamic fields matching (e.g. created at) straightforward.
+		images[idx] = actual
 	}
 
 	cveView := NewCVEView(testDB.DB)
@@ -227,14 +246,22 @@ func compileExpected(images []*storage.Image, filter *filterImpl) []*imageCVECor
 					continue
 				}
 
+				vulnTime, _ := types.TimestampFromProto(vuln.GetFirstSystemOccurrence())
 				val := cveMap[vuln.GetCve()]
 				if val == nil {
 					val = &imageCVECore{
-						CVE: vuln.GetCve(),
+						CVE:                     vuln.GetCve(),
+						TopCVSS:                 vuln.GetCvss(),
+						FirstDiscoveredInSystem: vulnTime,
 					}
 					cveMap[val.CVE] = val
 				}
-				val.TopCVSS = mathutil.MaxFloat32(val.TopCVSS, vuln.GetCvss())
+
+				val.TopCVSS = mathutil.MaxFloat32(val.GetTopCVSS(), vuln.GetCvss())
+				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
+					val.FirstDiscoveredInSystem = vulnTime
+				}
+
 				if seenForImage.Add(val.CVE) {
 					val.AffectedImages++
 				}
@@ -247,4 +274,37 @@ func compileExpected(images []*storage.Image, filter *filterImpl) []*imageCVECor
 		ret = append(ret, entry)
 	}
 	return ret
+}
+
+func standardizeImages(images ...*storage.Image) {
+	for _, image := range images {
+		if image.GetMetadata().GetV1() != nil && len(image.GetMetadata().GetV1().GetLabels()) == 0 {
+			image.Metadata.V1.Labels = nil
+		}
+
+		components := image.GetScan().GetComponents()
+		for _, component := range components {
+			component.Priority = 0
+			if len(component.GetVulns()) == 0 {
+				component.Vulns = nil
+			}
+
+			vulns := component.GetVulns()
+			for _, vuln := range vulns {
+				vuln.FirstImageOccurrence = nil
+				vuln.FirstSystemOccurrence = nil
+			}
+
+			sort.SliceStable(vulns, func(i, j int) bool {
+				return vulns[i].Cve < vulns[j].Cve
+			})
+		}
+
+		sort.SliceStable(components, func(i, j int) bool {
+			if components[i].Name == components[j].Name {
+				return components[i].Version < components[j].Version
+			}
+			return components[i].Name < components[j].Name
+		})
+	}
 }
