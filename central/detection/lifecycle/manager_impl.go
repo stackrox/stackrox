@@ -209,8 +209,11 @@ func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
 	m.indicatorQueueLock.Lock()
 	defer m.indicatorQueueLock.Unlock()
 
-	centralMetrics.ModifyProcessQueueLength(1)
+	previousSize := len(m.queuedIndicators)
 	m.queuedIndicators[indicator.GetId()] = indicator
+	if len(m.queuedIndicators) != previousSize {
+		centralMetrics.ModifyProcessQueueLength(1)
+	}
 }
 
 func (m *managerImpl) addBaseline(deploymentID string) {
