@@ -41,7 +41,7 @@ func TriggerNodeInventory(opts *InventoryScanOpts) (*sensor.MsgFromCompliance, e
 		*currentBackoff = env.NodeScanMaxBackoff.DurationSetting()
 	}
 	if *currentBackoff > initialBackoff {
-		log.Warnf("Found existing backoff - last scan may have failed. Waiting %v seconds before retrying", currentBackoff.Seconds())
+		log.Warnf("Found existing node scan backoff file - last scan may have failed. Waiting %v seconds before retrying", currentBackoff.Seconds())
 		opts.BackoffWaitCallback(*currentBackoff)
 	}
 	writeBackoff(calcNextBackoff(*currentBackoff), opts.BackoffFilePath)
