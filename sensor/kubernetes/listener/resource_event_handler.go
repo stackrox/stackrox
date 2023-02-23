@@ -11,11 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
@@ -48,6 +50,17 @@ func startAndWait(stopSignal *concurrency.Signal, wg *concurrency.WaitGroup, sta
 		start.Start(stopSignal.Done())
 	}
 	return concurrency.WaitInContext(wg, stopSignal)
+}
+
+func managedFieldsTransformer(obj interface{}) (interface{}, error) {
+	if obj == nil {
+		return obj, nil
+	}
+	if managedFieldsSetter, ok := obj.(interface{ SetManagedFields([]v1.ManagedFieldsEntry) }); ok {
+		// Managed fields are unused by Sensor so clear them out to avoid them hitting the cache
+		managedFieldsSetter.SetManagedFields(nil)
+	}
+	return obj, nil
 }
 
 func (k *listenerImpl) handleAllEvents() {
@@ -252,7 +265,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Finally, run the pod informer, and process pod events.
 	podWaitGroup := &concurrency.WaitGroup{}
 	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetesPkg.Pod), k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock)
-	if !startAndWait(stopSignal, podWaitGroup, sif) {
+	if !startAndWait(stopSignal, podWaitGroup, resyncingSif) {
 		return
 	}
 
@@ -294,6 +307,11 @@ func handle(
 		missingInitialIDs:          nil,
 	}
 	informer.AddEventHandler(handlerImpl)
+	if !informer.HasSynced() {
+		if err := informer.SetTransform(managedFieldsTransformer); err != nil {
+			utils.Should(err)
+		}
+	}
 	wg.Add(1)
 	go func() {
 		defer wg.Add(-1)
