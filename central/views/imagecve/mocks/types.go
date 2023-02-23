@@ -7,6 +7,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	imagecve "github.com/stackrox/rox/central/views/imagecve"
@@ -62,6 +63,20 @@ func (m *MockCveCore) GetCVE() string {
 func (mr *MockCveCoreMockRecorder) GetCVE() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVE", reflect.TypeOf((*MockCveCore)(nil).GetCVE))
+}
+
+// GetFirstDiscoveredInSystem mocks base method.
+func (m *MockCveCore) GetFirstDiscoveredInSystem() time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFirstDiscoveredInSystem")
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// GetFirstDiscoveredInSystem indicates an expected call of GetFirstDiscoveredInSystem.
+func (mr *MockCveCoreMockRecorder) GetFirstDiscoveredInSystem() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFirstDiscoveredInSystem", reflect.TypeOf((*MockCveCore)(nil).GetFirstDiscoveredInSystem))
 }
 
 // GetTopCVSS mocks base method.
