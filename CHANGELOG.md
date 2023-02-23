@@ -9,7 +9,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-15102: `/v1/telemetry/enable` and `/v1/telemetry/disable` endpoints to
+  opt-in or opt-out from the telemetry collection respectively, without removing
+  the `ROX_TELEMETRY_STORAGE_KEY_V1` environment variable from the central
+  deployment.
+
 ### Removed Features
+
 - ROX-14336: product `BuildDate` attribute was removed. It won't be returned by
 `/debug/versions.json` endpoint and `roxctl version --json` command.
 
