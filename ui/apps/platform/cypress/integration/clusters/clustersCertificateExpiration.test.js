@@ -14,8 +14,6 @@ import { selectors } from './Clusters.selectors';
 describe('Clusters Certificate Expiration', () => {
     withAuth();
 
-    const fixturePath = 'clusters/certExpiration.json';
-
     const metadata = {
         version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
         buildFlavor: 'release',
@@ -27,25 +25,7 @@ describe('Clusters Certificate Expiration', () => {
     const currentDatetime = new Date('2020-08-31T13:01:00Z');
 
     describe('status is Healthy', () => {
-        it('should not show link or form when no cert expiry', () => {
-            const clusterName = 'not-applicable-1';
-            visitClusterByNameWithFixtureMetadataDatetime(
-                clusterName,
-                fixturePath,
-                metadata,
-                currentDatetime
-            );
-
-            cy.get(selectors.clusterHealth.credentialExpiration).should(
-                'have.text',
-                'Not applicable'
-            );
-            cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
-            cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
-            cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
-            cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
-            cy.get(selectors.clusterHealth.manageTokensButton).should('not.exist');
-        });
+        const fixturePath = 'clusters/certExpirationHealthy.json';
 
         it(`should not show link or form`, () => {
             [
@@ -77,6 +57,7 @@ describe('Clusters Certificate Expiration', () => {
 
     describe('Sensor is not up to date with Central', () => {
         const expectedExpiration = 'in 6 days on Monday'; // Unhealthy
+        const fixturePath = 'clusters/certExpirationUnhealthy.json';
 
         it('should disable the upgrade option', () => {
             const clusterName = 'unhealthy-kubectl-1';
@@ -122,10 +103,31 @@ describe('Clusters Certificate Expiration', () => {
                 cy.get(selectors.clusterHealth.manageTokensButton);
             });
         });
+
+        it('should not show link or form when no cert expiry', () => {
+            const clusterName = 'not-applicable-1';
+            visitClusterByNameWithFixtureMetadataDatetime(
+                clusterName,
+                fixturePath,
+                metadata,
+                currentDatetime
+            );
+
+            cy.get(selectors.clusterHealth.credentialExpiration).should(
+                'have.text',
+                'Not applicable'
+            );
+            cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
+            cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
+            cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
+            cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
+            cy.get(selectors.clusterHealth.manageTokensButton).should('not.exist');
+        });
     });
 
     describe('Sensor is up to date with Central', () => {
         const expectedExpiration = 'in 29 days on 09/29/2020'; // Degraded
+        const fixturePath = 'clusters/certExpirationDegraded.json';
 
         it('should enable the upgrade option', () => {
             const clusterName = 'degraded-kubectl-1';
