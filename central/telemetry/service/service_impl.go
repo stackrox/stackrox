@@ -91,7 +91,7 @@ func (s *serviceImpl) Disable(ctx context.Context, _ *v1.Empty) (*v1.Empty, erro
 
 func (s *serviceImpl) Enable(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
 	if !centralclient.Enable().Enabled() {
-		return nothing, errTelemetryDisabled
+		return nil, errTelemetryDisabled
 	}
 	return nothing, nil
 }
