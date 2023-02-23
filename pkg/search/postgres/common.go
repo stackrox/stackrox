@@ -874,7 +874,7 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *postgres
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error executing query")
+		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
 	}
 	defer rows.Close()
 
@@ -1082,10 +1082,11 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		return err
 	}
 
+	queryStr := query.AsSQL()
 	return pgutils.Retry(func() error {
-		_, err = db.Exec(ctx, query.AsSQL(), query.Data...)
+		_, err = db.Exec(ctx, queryStr, query.Data...)
 		if err != nil {
-			return errors.Wrapf(err, "could not delete from %q", schema.Table)
+			return errors.Wrapf(err, "could not delete from %q with query %s", schema.Table, queryStr)
 		}
 		return err
 	})
