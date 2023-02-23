@@ -16,10 +16,41 @@
   color: var(--base-600);
 }
 
+/* Document assumptions for layout that are specified in PatternFly base.css file. */
+
 /*
- * Borrow rules from Red Hat OpenShift Container Platform,
- * but #root instead of body to avoid conflict with background-color from base.css
- */
+html {
+  height: 100%;
+}
+*/
+
+/*
+body {
+  height: 100%;
+}
+*/
+
 #root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+
+  /*
+   * Borrow rules from Red Hat OpenShift Container Platform,
+   * but #root instead of body to avoid conflict with background-color from base.css
+   */
   background-color: #151515;
+}
+
+/*
+ * MainPage is the only child because of its height: 100% style rule.
+ */
+#PageParent {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  overflow: hidden;
+  position: relative;
 }

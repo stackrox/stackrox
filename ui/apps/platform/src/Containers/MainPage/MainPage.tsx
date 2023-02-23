@@ -4,7 +4,6 @@ import { Page } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
-import AppWrapper from 'Containers/AppWrapper';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import { clustersBasePath } from 'routePaths';
@@ -63,22 +62,22 @@ function MainPage(): ReactElement {
     const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
 
     return (
-        <AppWrapper>
+        <>
+            <Notifications />
             <PublicConfigHeader />
-            <div className="flex flex-1 flex-col h-full relative">
-                <AnnouncementBanner />
-                <ServerStatusBanner />
-                <Notifications />
-                <CredentialExpiryBanner
-                    component="CENTRAL"
-                    hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
-                />
-                <CredentialExpiryBanner
-                    component="SCANNER"
-                    hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
-                />
-                <OutdatedVersionBanner />
-                <DatabaseStatusBanner />
+            <AnnouncementBanner />
+            <CredentialExpiryBanner
+                component="CENTRAL"
+                hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
+            />
+            <CredentialExpiryBanner
+                component="SCANNER"
+                hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
+            />
+            <OutdatedVersionBanner />
+            <DatabaseStatusBanner />
+            <ServerStatusBanner />
+            <div id="PageParent">
                 <Page
                     mainContainerId="main-page-container"
                     header={<Masthead />}
@@ -97,7 +96,7 @@ function MainPage(): ReactElement {
                 </Page>
             </div>
             <PublicConfigFooter />
-        </AppWrapper>
+        </>
     );
 }
 
