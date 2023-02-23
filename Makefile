@@ -649,7 +649,7 @@ syslog-image: syslog-build
 	chmod +w syslog/bin/syslog
 	docker build \
 		-t stackrox/syslog:1.0 \
-		-t quay.io/rhacs-eng/syslog:1.0 \
+		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
 		-f syslog/Dockerfile syslog
 
 .PHONY: mock-grpc-server-image
