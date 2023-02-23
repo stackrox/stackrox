@@ -88,7 +88,7 @@ func getCurrentBackoff(backoffFilePath string) (*time.Duration, error) {
 func writeBackoff(backoff time.Duration, path string) {
 	err := os.WriteFile(path, []byte(backoff.String()), 0600)
 	if err != nil {
-		log.Warnf("Error writing backoff marker: %v", err)
+		log.Warnf("Error writing node scan backoff file: %v", err)
 	}
 }
 
