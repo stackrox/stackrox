@@ -14,8 +14,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -819,19 +817,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		if ctx.Err() == context.Canceled {
-			return nil, err
-		}
-		if !pgutils.IsTransientError(err) {
-			debug.PrintStack()
-		} else {
-			log.Debugf("%s", debug.Stack())
-		}
-		log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
-		return nil, err
+		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
 	}
 	defer rows.Close()
-	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, redactedQueryData(query))
 
 	for rows.Next() {
 		if err := rows.Scan(bufferToScanRowInto...); err != nil {
@@ -886,19 +874,9 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *postgres
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		if ctx.Err() == context.Canceled {
-			return nil, err
-		}
-		if !pgutils.IsTransientError(err) {
-			debug.PrintStack()
-		} else {
-			log.Debugf("%s", debug.Stack())
-		}
-		log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
-		return nil, err
+		return nil, errors.Wrapf(err, "error executing query")
 	}
 	defer rows.Close()
-	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, redactedQueryData(query))
 
 	var scannedRows []*T
 	if err := pgxscan.ScanAll(&scannedRows, rows); err != nil {
@@ -918,7 +896,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	defer func() {
 		if r := recover(); r != nil {
 			if query != nil {
-				log.Errorf("Query issue: %s %+v: %v", query.AsSQL(), redactedQueryData(query), r)
+				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
 			} else {
 				log.Errorf("Unexpected error running search request: %v", r)
 			}
@@ -953,7 +931,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, sche
 	defer func() {
 		if r := recover(); r != nil {
 			if query != nil {
-				log.Errorf("Query issue: %s %+v: %v", query.AsSQL(), redactedQueryData(query), r)
+				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
 			} else {
 				log.Errorf("Unexpected error running search request: %v", r)
 			}
@@ -994,20 +972,10 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	queryStr := query.AsSQL()
 
 	return pgutils.Retry2(func() (int, error) {
-
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
-			if ctx.Err() == context.Canceled {
-				return 0, err
-			}
-			if !pgutils.IsTransientError(err) {
-				debug.PrintStack()
-			} else {
-				log.Debugf("%s", debug.Stack())
-			}
-			log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
-			return 0, err
+			return 0, errors.Wrapf(err, "error executing query %s", queryStr)
 		}
 		return count, nil
 	})
@@ -1115,24 +1083,12 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	}
 
 	return pgutils.Retry(func() error {
-
 		_, err = db.Exec(ctx, query.AsSQL(), query.Data...)
 		if err != nil {
 			return errors.Wrapf(err, "could not delete from %q", schema.Table)
 		}
 		return err
 	})
-}
-
-// redactedQueryData returns query.Data for logging purposes if this is a dev build. Otherwise, it redacts it as it
-// may contain sensitive data.
-func redactedQueryData(query *query) interface{} {
-	if !devbuild.IsEnabled() || buildinfo.ReleaseBuild {
-		// On a release build or non-dev build, redact query data
-		return "[REDACTED]"
-	}
-	// Otherwise, allow the logging
-	return query.Data
 }
 
 // helper functions
