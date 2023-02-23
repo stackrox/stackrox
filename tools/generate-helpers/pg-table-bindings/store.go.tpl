@@ -634,9 +634,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
         )
 
         if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-            err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
-            log.Error(err)
-            return err
+            return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
         }
 
         // Move the slice forward to start the next batch
