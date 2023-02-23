@@ -24,5 +24,6 @@ type CveCore interface {
 //
 //go:generate mockgen-wrapper
 type CveView interface {
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
 }

@@ -18,9 +18,15 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
+
+type testCase struct {
+	desc        string
+	q           *v1.Query
+	expectedErr string
+	expected    []*imageCVECore
+}
 
 type filterImpl struct {
 	matchImage func(image *storage.Image) bool
@@ -59,61 +65,103 @@ func (f *filterImpl) withVulnFiler(fn func(vuln *storage.EmbeddedVulnerability) 
 	return f
 }
 
-func TestGetImageCVECore(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+func TestImageCVEView(t *testing.T) {
+	suite.Run(t, new(ImageCVEViewTestSuite))
+}
+
+type ImageCVEViewTestSuite struct {
+	suite.Suite
+
+	ctx     context.Context
+	testDB  *pgtest.TestPostgres
+	cveView CveView
+
+	testImages []*storage.Image
+}
+
+func (s *ImageCVEViewTestSuite) SetupSuite() {
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skipf("Requires %s=true. Skipping the test", env.PostgresDatastoreEnabled.EnvVar())
-		t.SkipNow()
+		s.T().Skipf("Requires %s=true. Skipping the test", env.PostgresDatastoreEnabled.EnvVar())
+		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-	testDB := pgtest.ForT(t)
-	defer testDB.Teardown(t)
+	s.ctx = sac.WithAllAccess(context.Background())
+	s.testDB = pgtest.ForT(s.T())
 
-	store, err := datastore.GetTestPostgresDataStore(t, testDB.DB)
-	require.NoError(t, err)
+	store, err := datastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
 
-	images, err := imageSamples.GetTestImages(t)
-	require.NoError(t, err)
+	images, err := imageSamples.GetTestImages(s.T())
+	s.Require().NoError(err)
 	for _, image := range images {
-		require.NoError(t, store.UpsertImage(ctx, image))
+		s.Require().NoError(store.UpsertImage(s.ctx, image))
 	}
 
 	// Ensure that the image is stored and constructed as expected.
 	for idx, image := range images {
-		actual, found, err := store.GetImage(ctx, image.GetId())
-		require.NoError(t, err)
-		require.True(t, found)
+		actual, found, err := store.GetImage(s.ctx, image.GetId())
+		s.Require().NoError(err)
+		s.Require().True(found)
 
 		cloned := actual.Clone()
-		// Adjust dynamic fields.
-		standardizeImages(image)
-		standardizeImages(cloned)
-		assert.EqualValues(t, image, cloned)
+		// Adjust dynamic fields and ensure images in ACS are as expected.
+		s.Require().EqualValues(standardizeImages(image), standardizeImages(cloned))
 
 		// Now that we confirmed that images match, use stored image to establish the expected test results.
 		// This makes dynamic fields matching (e.g. created at) straightforward.
 		images[idx] = actual
 	}
 
-	cveView := NewCVEView(testDB.DB)
+	s.testImages = images
+	s.cveView = NewCVEView(s.testDB.DB)
+}
 
-	for _, tc := range []struct {
-		desc        string
-		q           *v1.Query
-		expectedErr string
-		expected    []*imageCVECore
-	}{
+func (s *ImageCVEViewTestSuite) TearDownSuite() {
+	s.testDB.Teardown(s.T())
+}
+
+func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			actual, err := s.cveView.Get(s.ctx, tc.q)
+			if tc.expectedErr != "" {
+				s.ErrorContains(err, tc.expectedErr)
+				return
+			}
+			s.NoError(err)
+			s.Equal(len(tc.expected), len(actual))
+			s.ElementsMatch(tc.expected, actual)
+		})
+	}
+}
+
+func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			actual, err := s.cveView.Count(s.ctx, tc.q)
+			if tc.expectedErr != "" {
+				s.ErrorContains(err, tc.expectedErr)
+				return
+			}
+			s.NoError(err)
+			s.Equal(len(tc.expected), actual)
+		})
+	}
+}
+
+func (s *ImageCVEViewTestSuite) testCases() []testCase {
+	return []testCase{
 		{
 			desc:     "search all",
 			q:        search.NewQueryBuilder().ProtoQuery(),
-			expected: compileExpected(images, matchAllFilter()),
+			expected: compileExpected(s.testImages, matchAllFilter()),
 		},
 		{
 			desc: "search one cve",
 			q:    search.NewQueryBuilder().AddExactMatches(search.CVE, "CVE-2022-1552").ProtoQuery(),
-			expected: compileExpected(images,
+			expected: compileExpected(s.testImages,
 				matchAllFilter().withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
 					return vuln.GetCve() == "CVE-2022-1552"
 				}),
@@ -123,7 +171,7 @@ func TestGetImageCVECore(t *testing.T) {
 			desc: "search one image",
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:latest").ProtoQuery(),
-			expected: compileExpected(images,
+			expected: compileExpected(s.testImages,
 				matchAllFilter().withImageFiler(func(image *storage.Image) bool {
 					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:latest"
 				}),
@@ -135,7 +183,7 @@ func TestGetImageCVECore(t *testing.T) {
 				AddExactMatches(search.CVE, "CVE-2022-1552").
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
 				ProtoQuery(),
-			expected: compileExpected(images,
+			expected: compileExpected(s.testImages,
 				matchAllFilter().
 					withImageFiler(func(image *storage.Image) bool {
 						return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
@@ -150,7 +198,7 @@ func TestGetImageCVECore(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
 				ProtoQuery(),
-			expected: compileExpected(images,
+			expected: compileExpected(s.testImages,
 				matchAllFilter().
 					withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
 						return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
@@ -165,7 +213,7 @@ func TestGetImageCVECore(t *testing.T) {
 					storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
 				).
 				ProtoQuery(),
-			expected: compileExpected(images,
+			expected: compileExpected(s.testImages,
 				matchAllFilter().
 					withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
 						return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY ||
@@ -179,7 +227,7 @@ func TestGetImageCVECore(t *testing.T) {
 				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
 				ProtoQuery(),
-			expected: compileExpected(images,
+			expected: compileExpected(s.testImages,
 				matchAllFilter().
 					withImageFiler(func(image *storage.Image) bool {
 						return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
@@ -192,7 +240,7 @@ func TestGetImageCVECore(t *testing.T) {
 		{
 			desc: "search one operating system",
 			q:    search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "debian:8").ProtoQuery(),
-			expected: compileExpected(images,
+			expected: compileExpected(s.testImages,
 				matchAllFilter().withImageFiler(func(image *storage.Image) bool {
 					return image.GetScan().GetOperatingSystem() == "debian:8"
 				}),
@@ -201,7 +249,7 @@ func TestGetImageCVECore(t *testing.T) {
 		{
 			desc:     "no match",
 			q:        search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
-			expected: compileExpected(images, matchNoneFilter()),
+			expected: compileExpected(s.testImages, matchNoneFilter()),
 		},
 		{
 			desc: "with select",
@@ -217,17 +265,6 @@ func TestGetImageCVECore(t *testing.T) {
 				AddGroupBy(search.CVE).ProtoQuery(),
 			expectedErr: "Unexpected group by clause in query",
 		},
-	} {
-		t.Run(tc.desc, func(t *testing.T) {
-			actual, err := cveView.Get(ctx, tc.q)
-			if tc.expectedErr != "" {
-				assert.ErrorContains(t, err, tc.expectedErr)
-				return
-			}
-			assert.NoError(t, err)
-			assert.Equal(t, len(tc.expected), len(actual))
-			assert.ElementsMatch(t, tc.expected, actual)
-		})
 	}
 }
 

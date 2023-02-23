@@ -26,3 +26,7 @@ func (c *imageCVECore) GetAffectedImages() int {
 func (c *imageCVECore) GetFirstDiscoveredInSystem() time.Time {
 	return c.FirstDiscoveredInSystem
 }
+
+type imageCVECoreCount struct {
+	CVECount int `db:"cve_count"`
+}
