@@ -69,7 +69,7 @@ func getCurrentBackoff(backoffFilePath string) (*time.Duration, error) {
 	backoffFileContents, err := os.ReadFile(backoffFilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			log.Debug("No backoff found, continuing without pause")
+			log.Debug("No node scan backoff file found, continuing without pause")
 		} else {
 			// return
 			return nil, err
