@@ -5,11 +5,14 @@ import (
     "github.com/stackrox/rox/migrator/types"
 )
 
-var (
+const (
     startSeqNum = {{.startSequenceNumber}}
+)
+
+var (
     migration = types.Migration{
         StartingSeqNum: startSeqNum,
-        VersionAfter:   startSeqNum+1,
+        VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
         Run: func(database *types.Databases) error {
             // Migration code comes here
             return nil
