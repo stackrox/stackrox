@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/safe"
 )
 
 var (
@@ -53,6 +54,15 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 	for _, fragment := range s.fragments {
 		if fragment.Match(msg) {
 			matchCount++
+
+			err := safe.Run(func() {
+				if err := c.handleMessage(ctx, msg); err != nil {
+					log.Errorf("Error handling sensor message: %v", err)
+				}
+			})
+			errorList.add
+			log.Errorf("UNEXPECTED panic in handle message: %v", err)
+
 			errorList.AddError(fragment.Run(ctx, s.clusterID, msg, injector))
 		}
 	}

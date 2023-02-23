@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -155,9 +156,12 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 
 func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQueue) {
 	for msg := queue.pullBlocking(&c.stopSig); msg != nil; msg = queue.pullBlocking(&c.stopSig) {
-		if err := c.handleMessage(ctx, msg); err != nil {
-			log.Errorf("Error handling sensor message: %v", err)
-		}
+		err := safe.Run(func() {
+			if err := c.handleMessage(ctx, msg); err != nil {
+				log.Errorf("Error handling sensor message: %v", err)
+			}
+		})
+		log.Errorf("UNEXPECTED panic in handle message: %v", err)
 	}
 	c.eventPipeline.OnFinish(c.clusterID)
 	c.stoppedSig.SignalWithError(c.stopSig.Err())
