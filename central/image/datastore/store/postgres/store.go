@@ -606,18 +606,18 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
 	keys := gatherKeys(imageParts)
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+		if err != nil {
+			return err
+		}
+		defer release()
+
+		tx, err := conn.Begin(ctx)
+		if err != nil {
+			return err
+		}
+
 		if err := s.insertIntoImages(ctx, tx, imageParts, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err

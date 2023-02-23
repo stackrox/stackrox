@@ -508,18 +508,18 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	nodeParts := getPartsAsSlice(common.Split(obj, scanUpdated))
 	keys := gatherKeys(nodeParts)
 
-	conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
+		if err != nil {
+			return err
+		}
+		defer release()
+
+		tx, err := conn.Begin(ctx)
+		if err != nil {
+			return err
+		}
+
 		if err := s.insertIntoNodes(ctx, tx, nodeParts, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
