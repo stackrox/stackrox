@@ -184,7 +184,7 @@ func (n *expirationNotifierImpl) notify(items []*storage.TokenMetadata) error {
 		if sliceCount == 1 {
 			sliceDuration = "hour"
 		}
-		log.Warnf("API Token %s will expire in less than %d %s.", token.Id, sliceCount, sliceDuration)
+		log.Warnf("API Token %s (ID %s) will expire in less than %d %s.", token.GetName(), token.GetId(), sliceCount, sliceDuration)
 	}
 	return nil
 }
