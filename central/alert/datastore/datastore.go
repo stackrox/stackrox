@@ -22,6 +22,11 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
+var (
+	// Override the default mutex pool size to allow for better parallelism
+	mutexPoolSize uint32 = 1024
+)
+
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
 //
 //go:generate mockgen-wrapper
@@ -38,7 +43,6 @@ type DataStore interface {
 	CountAlerts(ctx context.Context) (int, error)
 	UpsertAlert(ctx context.Context, alert *storage.Alert) error
 	UpsertAlerts(ctx context.Context, alerts []*storage.Alert) error
-	MarkAlertStale(ctx context.Context, id string) error
 	// MarkAlertStaleBatch marks alerts with specified ids as RESOLVED in batch and returns resolved alerts.
 	MarkAlertStaleBatch(ctx context.Context, id ...string) ([]*storage.Alert, error)
 
@@ -51,7 +55,7 @@ func New(alertStore store.Store, indexer index.Indexer, searcher search.Searcher
 		storage:    alertStore,
 		indexer:    indexer,
 		searcher:   searcher,
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		keyedMutex: concurrency.NewKeyedMutex(mutexPoolSize),
 		keyFence:   dackboxConcurrency.NewKeyFence(),
 	}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
