@@ -24,7 +24,7 @@ func (ms *mockSleeper) mockWaitCallback(d time.Duration) {
 
 type TestComplianceCachingSuite struct {
 	suite.Suite
-	mockInventoryScanOpts *InventoryScanOpts
+	mockInventoryScanOpts *CachingScannerOpts
 	sleeper               mockSleeper
 }
 
@@ -35,9 +35,7 @@ func TestComplianceCaching(t *testing.T) {
 // run before each test
 func (s *TestComplianceCachingSuite) SetupTest() {
 	s.sleeper = mockSleeper{callCount: 0}
-	s.mockInventoryScanOpts = &InventoryScanOpts{
-		NodeName:            "testme",
-		Scanner:             &FakeNodeInventorizer{},
+	s.mockInventoryScanOpts = &CachingScannerOpts{
 		InventoryCachePath:  fmt.Sprintf("%s/inventory-cache", s.T().TempDir()),
 		BackoffFilePath:     fmt.Sprintf("%s/inventory-backoff", s.T().TempDir()),
 		BackoffWaitCallback: s.sleeper.mockWaitCallback,
@@ -50,9 +48,8 @@ func (s *TestComplianceCachingSuite) TestGetCurrentBackoff() {
 	err := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte(d.String()), 0600)
 	s.NoError(err)
 
-	currentBackoff, err := getCurrentBackoff(s.mockInventoryScanOpts.BackoffFilePath)
+	currentBackoff := getCurrentBackoff(s.mockInventoryScanOpts.BackoffFilePath)
 
-	s.NoError(err)
 	s.Equal(d, *currentBackoff)
 }
 
@@ -81,8 +78,9 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
 	d, _ := time.ParseDuration("3m")
 	e := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte(d.String()), 0600)
 	s.NoError(e)
+	c := NewCachingScanner(s.mockInventoryScanOpts.InventoryCachePath, s.mockInventoryScanOpts.BackoffFilePath, s.mockInventoryScanOpts.BackoffWaitCallback)
 
-	_, err := TriggerNodeInventory(s.mockInventoryScanOpts)
+	_, err := c.Scan("testme")
 
 	s.NoError(err)
 	s.Equal(d, s.sleeper.receivedDuration)
@@ -90,9 +88,13 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
 }
 
 func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryWithoutResultCache() {
-	actual, e := TriggerNodeInventory(s.mockInventoryScanOpts)
+	nodeName := "testme"
+	c := NewCachingScanner(s.mockInventoryScanOpts.InventoryCachePath, s.mockInventoryScanOpts.BackoffFilePath, s.mockInventoryScanOpts.BackoffWaitCallback)
+
+	actual, e := c.Scan(nodeName)
+
 	s.NoError(e)
-	s.Equal(s.mockInventoryScanOpts.NodeName, actual.GetNode())
+	s.Equal(nodeName, actual.GetNodeName())
 }
 
 func (s *TestComplianceCachingSuite) TestIsCachedInventoryValid() {

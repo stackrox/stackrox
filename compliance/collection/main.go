@@ -40,10 +40,6 @@ var (
 	once sync.Once
 )
 
-func nodeInventoryWaitCallback(waitTime time.Duration) {
-	time.Sleep(waitTime)
-}
-
 func getNode() string {
 	once.Do(func() {
 		node = os.Getenv(string(orchestrators.NodeName))
@@ -177,6 +173,10 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 				if err != nil {
 					log.Errorf("error running scanNode: %v", err)
 				} else {
+					msg := &sensor.MsgFromCompliance{
+						Node: nodeName,
+						Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inventory},
+					}
 					cmetrics.ObserveInventoryProtobufMessage(msg)
 					sensorC <- msg
 				}
@@ -286,7 +286,10 @@ func main() {
 			scanner = &nodeinventorizer.FakeNodeInventorizer{}
 		} else {
 			log.Infof("Using NodeInventoryCollector")
-			scanner = &nodeinventorizer.NodeInventoryCollector{}
+			scanner = nodeinventorizer.NewCachingScanner(
+				"/cache/inventory-cache",
+				"/cache/inventory-backoff",
+				func(duration time.Duration) { time.Sleep(duration) })
 		}
 
 		i := intervals.NewNodeScanIntervalFromEnv()
