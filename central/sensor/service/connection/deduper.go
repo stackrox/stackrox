@@ -43,10 +43,33 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	return false
 }
 
-func (d *deduper) dedupe(msg *central.MsgFromSensor) bool {
-	if skipDedupe(msg) {
+func (d *deduper) shouldReprocess(msg *central.MsgFromSensor) bool {
+	event := msg.GetEvent()
+	key := key{
+		id:           event.GetId(),
+		resourceType: reflect.TypeOf(event.GetResource()),
+	}
+	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
+		return true
+	}
+	prevValue, ok := d.lastReceived[key]
+	if !ok {
+		// This implies that a REMOVE event has been processed before this event
+		// Note: we may want to handle alerts specifically because we should insert them as already resolved for completeness
 		return false
 	}
+	// This implies that no new event was processed after the initial processing of the current message
+	return prevValue == event.GetSensorHash()
+}
+
+func (d *deduper) shouldProcess(msg *central.MsgFromSensor) bool {
+	if skipDedupe(msg) {
+		return true
+	}
+	if msg.GetProcessingAttempt() > 0 {
+		return d.shouldReprocess(msg)
+	}
+
 	event := msg.GetEvent()
 	key := key{
 		id:           event.GetId(),
@@ -54,9 +77,8 @@ func (d *deduper) dedupe(msg *central.MsgFromSensor) bool {
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.lastReceived, key)
-		return false
+		return true
 	}
-	receivedHash := event.GetSensorHash()
 	// Backwards compatibility with a previous Sensor
 	if event.GetSensorHashOneof() == nil {
 		// Compute the sensor hash
@@ -64,12 +86,14 @@ func (d *deduper) dedupe(msg *central.MsgFromSensor) bool {
 		if !ok {
 			return false
 		}
-		receivedHash = hashValue
+		event.SensorHashOneof = &central.SensorEvent_SensorHash{
+			SensorHash: hashValue,
+		}
 	}
 	prevValue, ok := d.lastReceived[key]
-	if ok && prevValue == receivedHash {
-		return true
+	if ok && prevValue == event.GetSensorHash() {
+		return false
 	}
-	d.lastReceived[key] = receivedHash
-	return false
+	d.lastReceived[key] = event.GetSensorHash()
+	return true
 }

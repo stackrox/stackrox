@@ -23,6 +23,7 @@ package central;
 message MsgFromSensor {
     string hash_key                                                     = 7;
     string dedupe_key                                                   = 8;
+    int32  processing_attempt                                           = 15;
     oneof msg {
         SensorEvent                   event                             = 1;
         NetworkFlowUpdate             network_flow_update               = 2;

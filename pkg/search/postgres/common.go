@@ -1129,7 +1129,7 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 
 	queryStr := query.AsSQL()
 	return pgutils.Retry(func() error {
-		_, err = db.Exec(ctx, queryStr, query.Data...)
+		_, err := db.Exec(ctx, queryStr, query.Data...)
 		if err != nil {
 			return errors.Wrapf(err, "could not delete from %q with query %s", schema.Table, queryStr)
 		}
