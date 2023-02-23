@@ -146,7 +146,6 @@ func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_Commun
 	for {
 		select {
 		case <-ctx.Done():
-			log.Infof("Child context cancelled. Stopping manageSendToSensor")
 			return
 		case sc := <-sensorC:
 			if err := cli.Send(sc); err != nil {
