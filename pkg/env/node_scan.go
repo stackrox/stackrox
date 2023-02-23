@@ -18,7 +18,7 @@ var (
 	// NodeScanCacheDuration defines the time after which a cached inventory is considered outdated. Defaults to 90% of rescan interval.
 	NodeScanCacheDuration = registerDurationSetting("ROX_NODE_SCAN_CACHE_TIME", time.Duration(NodeRescanInterval.DurationSetting().Nanoseconds()-NodeRescanInterval.DurationSetting().Nanoseconds()/10))
 
-	// NodeScanInitialBackoff defines the initial time in seconds a Node Inventory will be delayed if a backoff file is found
+	// NodeScanInitialBackoff defines the initial time in seconds a Node scan will be delayed if a backoff file is found
 	NodeScanInitialBackoff = registerDurationSetting("ROX_NODE_SCAN_INITIAL_BACKOFF", 30*time.Second)
 
 	// NodeScanBackoffIncrement sets the seconds that are added on each interrupted run

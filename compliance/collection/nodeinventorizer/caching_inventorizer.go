@@ -104,7 +104,7 @@ func calcNextBackoff(currentBackoff time.Duration) time.Duration {
 
 func removeBackoff(backoffFilePath string) {
 	if err := os.Remove(backoffFilePath); err != nil {
-		log.Warnf("Could not remove backoff marker, subsequent scans may be delayed: %v", err)
+		log.Warnf("Could not remove node scan backoff file, subsequent scans may be delayed: %v", err)
 	}
 }
 
@@ -114,16 +114,16 @@ func loadCachedInventory(opts *InventoryScanOpts) *storage.NodeInventory {
 	cacheContents, err := os.ReadFile(opts.InventoryCachePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			log.Debug("No cache file found, running new inventory")
+			log.Debug("No node scan cache file found, will run a new scan")
 		} else {
-			log.Warnf("Unable to read inventory cache, running new inventory. Error: %v", err)
+			log.Warnf("Unable to read node scan cache, will run a new scan. Error: %v", err)
 		}
 	} else {
 		// deserialize stored inventory into
 		cachedInv = &storage.NodeInventory{}
 		if e := proto.Unmarshal(cacheContents, cachedInv); e != nil {
 			// in this case, also collect a fresh inventory
-			log.Warnf("Unable to deserialize inventory cache - running new inventory. Error: %v", e)
+			log.Warnf("Unable to deserialize node scan cache - will run a new scan. Error: %v", e)
 			return nil
 		}
 	}
