@@ -114,7 +114,6 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 		select {
 		case <-ctx.Done():
 			sig.Signal()
-			log.Infof("Parent context cancelled. Stopping manageStream")
 			return
 		default:
 			// initializeStream must only be called once across all Compliance components,
@@ -149,7 +148,7 @@ func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_Commun
 			return
 		case sc := <-sensorC:
 			if err := cli.Send(sc); err != nil {
-				log.Errorf("failed sending nodeScanV2 to sensor: %v", err)
+				log.Errorf("failed sending node scan to sensor: %v", err)
 			}
 		}
 	}
@@ -283,13 +282,14 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
+	sensorC := make(chan *sensor.MsgFromCompliance)
+	defer close(sensorC)
+	go manageStream(ctx, cli, &stoppedSig, sensorC)
+
 	if features.RHCOSNodeScanning.Enabled() {
 		rescanInterval := env.NodeRescanInterval.DurationSetting()
 		cmetrics.ObserveRescanInterval(rescanInterval, getNode())
 		log.Infof("Node Rescan interval: %s", rescanInterval.String())
-		sensorC := make(chan *sensor.MsgFromCompliance)
-		defer close(sensorC)
-		go manageStream(ctx, cli, &stoppedSig, sensorC)
 
 		var scanner nodeinventorizer.NodeInventorizer
 		if features.UseFakeNodeInventory.Enabled() {
@@ -311,8 +311,6 @@ func main() {
 				}
 			}
 		}()
-	} else {
-		go manageStream(ctx, cli, &stoppedSig, nil)
 	}
 
 	signalsC := make(chan os.Signal, 1)
