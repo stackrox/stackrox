@@ -7,15 +7,11 @@ type EntityNameSearchInputProps = {
 };
 
 function EntityNameSearchInput({ value, setValue }: EntityNameSearchInputProps): ReactElement {
-    function onSearchInputChange(_event, newValue) {
-        setValue(newValue);
-    }
-
     return (
         <SearchInput
             placeholder="Filter by entity name"
             value={value}
-            onChange={onSearchInputChange}
+            onChange={setValue}
             onClear={() => setValue('')}
         />
     );

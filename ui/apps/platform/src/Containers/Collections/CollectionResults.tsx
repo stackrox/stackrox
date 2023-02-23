@@ -124,10 +124,6 @@ function CollectionResults({
         closeSelect();
     }
 
-    function onSearchInputChange(_event, value) {
-        setFilterInput(value);
-    }
-
     useEffect(() => {
         if (configError) {
             clearPages();
@@ -254,7 +250,7 @@ function CollectionResults({
                                 aria-label="Filter by name"
                                 placeholder="Filter by name"
                                 value={filterInput}
-                                onChange={onSearchInputChange}
+                                onChange={setFilterInput}
                                 onSearch={() => setFilterValue(filterInput)}
                                 onClear={() => {
                                     setFilterInput('');

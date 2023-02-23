@@ -27,9 +27,9 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
     const [searchValue, setSearchValue] = React.useState('');
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
 
-    function onSearchInputChange(_event, value) {
-        setSearchValue(value);
-    }
+    const onChange = (newValue: string) => {
+        setSearchValue(newValue);
+    };
 
     const onNodeSelectHandler = (deployment) => () => {
         onNodeSelect(deployment.id);
@@ -46,8 +46,8 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                     <SearchInput
                         placeholder="Find by deployment name"
                         value={searchValue}
-                        onChange={onSearchInputChange}
-                        onClear={() => onSearchInputChange(null, '')}
+                        onChange={onChange}
+                        onClear={() => onChange('')}
                     />
                 </StackItem>
                 <StackItem>

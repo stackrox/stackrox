@@ -61,10 +61,6 @@ function CollectionsTable({
     });
     const hasCollections = collections.length > 0;
 
-    function onSearchInputChange(_event, value) {
-        setSearchValue(value);
-    }
-
     function getEnabledSortParams(field: string) {
         return hasCollections ? getSortParams(field) : undefined;
     }
@@ -193,7 +189,7 @@ function CollectionsTable({
                             aria-label="Search by name"
                             placeholder="Search by name"
                             value={searchValue}
-                            onChange={onSearchInputChange}
+                            onChange={setSearchValue}
                             onSearch={() => setSearchFilter({ 'Collection Name': searchValue })}
                             onClear={() => {
                                 setSearchValue('');
