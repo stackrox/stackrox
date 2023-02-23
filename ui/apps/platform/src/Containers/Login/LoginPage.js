@@ -19,7 +19,6 @@ import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv
 import BrandLogo from 'Components/PatternFly/BrandLogo';
 
 import ServerStatusBanner from '../MainPage/Banners/ServerStatusBanner';
-import AppWrapper from '../AppWrapper';
 import LoginNotice from './LoginNotice';
 
 import { loginWithBasicAuth } from '../../services/AuthService';
@@ -210,7 +209,7 @@ class LoginPage extends Component {
 
     render() {
         return (
-            <AppWrapper>
+            <>
                 <ServerStatusBanner />
                 <main className="flex h-full items-center justify-center">
                     <div className="flex items-start">
@@ -228,7 +227,7 @@ class LoginPage extends Component {
                         <BrandLogo className="pf-u-p-2xl" />
                     </div>
                 </main>
-            </AppWrapper>
+            </>
         );
     }
 }
