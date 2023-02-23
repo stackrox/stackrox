@@ -11,6 +11,7 @@ import {
 
 import PageTitle from 'Components/PageTitle';
 import CveStatusTabNavigation from './CveStatusTabNavigation';
+import DefaultFilterModal from './DefaultFilterModal';
 
 function WorkloadCvesOverviewPage() {
     return (
@@ -19,7 +20,7 @@ function WorkloadCvesOverviewPage() {
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Toolbar>
                     <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <div>Default vulnerability filters</div>
+                        <DefaultFilterModal />
                     </ToolbarItem>
                 </Toolbar>
             </PageSection>
