@@ -11,7 +11,7 @@ const ICON_SIZE = 15;
 
 const TimelineLegend = () => {
     const content = (
-        <div>
+        <div data-testid="timeline-legend-items">
             <div className="flex items-center mb-2">
                 <ProcessActivityEvent size={ICON_SIZE} />
                 <span className="ml-2">Process Activity</span>
