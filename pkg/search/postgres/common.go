@@ -868,7 +868,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 					returnedValue = field.PostTransform(returnedValue)
 				}
 				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
-					result.Matches[field.FieldPath] = matches
+					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
 				}
 			}
 		}
