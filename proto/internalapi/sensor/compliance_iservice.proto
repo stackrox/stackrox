@@ -51,11 +51,15 @@ message MsgToCompliance {
             StopRequest  stop_req  = 2;
         }
     }
+    message NodeInventoryNack {
+        string          node_id    = 1;
+    }
 
     oneof msg {
         ScrapeConfig              config                       = 1;
         TriggerRun                trigger                      = 2;
         AuditLogCollectionRequest audit_log_collection_request = 3;
+        NodeInventoryNack         nack                         = 4;
     }
 }
 

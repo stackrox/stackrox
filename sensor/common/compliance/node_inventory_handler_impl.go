@@ -3,6 +3,7 @@ package compliance
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -19,8 +20,9 @@ var (
 type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
 	toCentral    <-chan *central.MsgFromSensor
-	nodeMatcher  NodeIDMatcher
 	centralReady concurrency.Signal
+	toCompliance <-chan *sensor.MsgToCompliance
+	nodeMatcher  NodeIDMatcher
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
@@ -44,13 +46,18 @@ func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return c.toCentral
 }
 
+// ComplianceC returns a channel with messages to Compliance
+func (c *nodeInventoryHandlerImpl) ComplianceC() <-chan *sensor.MsgToCompliance {
+	return c.toCompliance
+}
+
 func (c *nodeInventoryHandlerImpl) Start() error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	if c.toCentral != nil {
+	if c.toCentral != nil || c.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
-	c.toCentral = c.run()
+	c.toCentral, c.toCompliance = c.run()
 	return nil
 }
 
@@ -73,11 +80,12 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error 
 
 // run handles the messages from Compliance and forwards them to Central
 // This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
-func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
-	toC := make(chan *central.MsgFromSensor)
+func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan *sensor.MsgToCompliance) {
+	toCentral := make(chan *central.MsgFromSensor)
+	toCompliance := make(chan *sensor.MsgToCompliance)
 	go func() {
 		defer c.stopper.Flow().ReportStopped()
-		defer close(toC)
+		defer close(toCentral)
 		for {
 			select {
 			case <-c.stopper.Flow().StopRequested():
@@ -97,17 +105,31 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 					break
 				}
 				if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
-					log.Warnf("Node '%s' unknown to sensor: not sending node inventory to Central", inventory.GetNodeName())
+					log.Infof("Sending NACK to compliance after receiving unknown NodeInventory with ID %s", inventory.GetNodeId())
+					c.sendNackToCompliance(toCompliance, inventory)
 				} else {
 					inventory.NodeId = nodeID
 					metrics.ObserveReceivedNodeInventory(inventory)
-					log.Debugf("Mapping node inventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
-					c.sendNodeInventory(toC, inventory)
+					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
+					c.sendNodeInventory(toCentral, inventory)
 				}
 			}
 		}
 	}()
-	return toC
+	return toCentral, toCompliance
+}
+
+func (c *nodeInventoryHandlerImpl) sendNackToCompliance(toC chan<- *sensor.MsgToCompliance, inventory *storage.NodeInventory) {
+	if inventory == nil {
+		return
+	}
+	toC <- &sensor.MsgToCompliance{
+		Msg: &sensor.MsgToCompliance_Nack{
+			Nack: &sensor.MsgToCompliance_NodeInventoryNack{
+				NodeId: inventory.GetNodeId(),
+			},
+		},
+	}
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *central.MsgFromSensor, inventory *storage.NodeInventory) {

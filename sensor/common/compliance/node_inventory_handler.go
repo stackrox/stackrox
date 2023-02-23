@@ -20,9 +20,10 @@ func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMat
 	return &nodeInventoryHandlerImpl{
 		inventories:  ch,
 		toCentral:    nil,
+		centralReady: concurrency.NewSignal(),
+		toCompliance: nil,
 		lock:         &sync.Mutex{},
 		stopper:      concurrency.NewStopper(),
 		nodeMatcher:  matcher,
-		centralReady: concurrency.NewSignal(),
 	}
 }

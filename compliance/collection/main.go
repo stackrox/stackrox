@@ -85,6 +85,26 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 					log.Warn("Attempting to stop an un-started audit log reader - this is a no-op")
 				}
 			}
+		case *sensor.MsgToCompliance_Nack:
+			log.Errorf("Received NACK from Sensor, resending NodeInventory in X minutes.")
+			var scanner nodeinventorizer.NodeInventorizer
+			if features.UseFakeNodeInventory.Enabled() {
+				log.Infof("Using FakeNodeInventorizer")
+				scanner = &nodeinventorizer.FakeNodeInventorizer{}
+			} else {
+				log.Infof("Using NodeInventoryCollector")
+				scanner = &nodeinventorizer.NodeInventoryCollector{}
+			}
+			msg, err := scanNode(t.Nack.GetNodeId(), scanner)
+			if err != nil {
+				log.Errorf("error running scanNode: %v", err)
+			} else {
+				sensorC := make(chan *sensor.MsgFromCompliance)
+				go func() {
+					defer close(sensorC)
+					sensorC <- msg
+				}()
+			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
