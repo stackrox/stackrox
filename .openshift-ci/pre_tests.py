@@ -12,12 +12,23 @@ class NullPreTest:
 
 class PreSystemTests:
     """
-    PreSystemTests - System tests (upgrade, e2e) need images.
+    PreSystemTests - System tests (upgrade, e2e) need images and have a target
+    cluster from which to get information.
     """
 
+    VERSIONS_TIMEOUT = 10 * 60
     POLL_TIMEOUT = 60 * 60
 
     def run(self):
+        subprocess.run(
+            [
+                "scripts/ci/lib.sh",
+                "highlight_cluster_versions",
+            ],
+            check=False,
+            timeout=PreSystemTests.VERSIONS_TIMEOUT,
+        )
+
         subprocess.run(
             [
                 "scripts/ci/lib.sh",

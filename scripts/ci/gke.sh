@@ -329,6 +329,7 @@ LINK
 
     cat >> "$artifact_file" <<- FOOT
     </ul>
+  </body>
 </html>
 FOOT
 }
