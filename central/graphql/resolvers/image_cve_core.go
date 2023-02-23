@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views/imagecve"
@@ -21,6 +22,7 @@ func init() {
 				"affectedImages: Int!",
 
 				"cve: String!",
+				"firstDiscoveredInSystem: Time",
 				"topCVSS: Float!",
 			}),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
@@ -74,4 +76,10 @@ func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
+}
+
+func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {
+	return &graphql.Time{
+		Time: resolver.data.GetFirstDiscoveredInSystem(),
+	}
 }

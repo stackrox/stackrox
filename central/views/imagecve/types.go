@@ -2,6 +2,7 @@ package imagecve
 
 import (
 	"context"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
@@ -13,6 +14,7 @@ type CveCore interface {
 	GetCVE() string
 	GetTopCVSS() float32
 	GetAffectedImages() int
+	GetFirstDiscoveredInSystem() time.Time
 }
 
 // CveView interface is like a SQL view that provides functionality to fetch the image CVE data
