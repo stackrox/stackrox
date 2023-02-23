@@ -41,8 +41,7 @@ var (
 )
 
 func nodeInventoryWaitCallback(waitTime time.Duration) {
-	waitTimeSeconds := int64(waitTime / time.Second)
-	time.Sleep(time.Duration(waitTimeSeconds) * time.Second)
+	time.Sleep(waitTime)
 }
 
 func getNode() string {
