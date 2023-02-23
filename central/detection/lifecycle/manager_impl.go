@@ -180,6 +180,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	if len(copiedQueue) == 0 {
 		return
 	}
+	defer centralMetrics.ModifyProcessQueueLength(-len(copiedQueue))
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "FlushingIndicatorQueue")
 
@@ -208,7 +209,11 @@ func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
 	m.indicatorQueueLock.Lock()
 	defer m.indicatorQueueLock.Unlock()
 
+	previousSize := len(m.queuedIndicators)
 	m.queuedIndicators[indicator.GetId()] = indicator
+	if len(m.queuedIndicators) != previousSize {
+		centralMetrics.ModifyProcessQueueLength(1)
+	}
 }
 
 func (m *managerImpl) addBaseline(deploymentID string) {
