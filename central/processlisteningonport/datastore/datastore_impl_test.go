@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package datastore
 
 import (
@@ -98,12 +96,9 @@ func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.Pro
 	return indicatorsFromDB
 }
 
-// TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
-// with a correct process indicator reference and could be fetched later.
-func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
+func indicatorsFixture() []*storage.ProcessIndicator {
 	testNamespace := "test_namespace"
-
-	indicators := []*storage.ProcessIndicator{
+	return []*storage.ProcessIndicator{
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
@@ -133,6 +128,12 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 			},
 		},
 	}
+}
+
+// TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
+// with a correct process indicator reference and could be fetched later.
+func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
+	testNamespace := "test_namespace"
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{
@@ -151,7 +152,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
+		suite.hasWriteCtx, indicatorsFixture()...))
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
@@ -396,38 +397,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOneBlankArgumentOneNonBlankArgum
 // with a correct process indicator reference and CloseTimestamp set. It will
 // be exluded from the API result.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
-	testNamespace := "test_namespace"
-
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
 
 	plopObjectsActive := []*storage.ProcessListeningOnPortFromSensor{
 		{
@@ -461,7 +430,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
+		suite.hasWriteCtx, indicatorsFixture()...))
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
@@ -502,37 +471,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 	testNamespace := "test_namespace"
 
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
-
 	plopObjectsActive := []*storage.ProcessListeningOnPortFromSensor{
 		{
 			Port:           1234,
@@ -565,7 +503,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
+		suite.hasWriteCtx, indicatorsFixture()...))
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
@@ -623,38 +561,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 // TestPLOPCloseSameTimestamp: One PLOP object is added with a correct process
 // indicator reference and CloseTimestamp set to the same as existing one.
 func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
-	testNamespace := "test_namespace"
-
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
 
 	plopObjectsActive := []*storage.ProcessListeningOnPortFromSensor{
 		{
@@ -688,7 +594,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
+		suite.hasWriteCtx, indicatorsFixture()...))
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
@@ -732,38 +638,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 // This will excercise logic of batch normalization. It will be exluded from
 // the API result.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
-	testNamespace := "test_namespace"
-
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{
@@ -794,7 +668,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
+		suite.hasWriteCtx, indicatorsFixture()...))
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
@@ -830,38 +704,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 // previously active PLOP. Will be stored in the db as closed and excluded from
 // the API.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
-	testNamespace := "test_namespace"
-
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{
@@ -880,7 +722,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
+		suite.hasWriteCtx, indicatorsFixture()...))
 
 	// Confirm that the database is empty before anything is inserted into it
 	plopsFromDB := suite.getPlopsFromDB()
@@ -1079,7 +921,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
+		suite.hasWriteCtx, indicatorsFixture()...))
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
@@ -1126,38 +968,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 }
 
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() {
-	testNamespace := "test_namespace"
 
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
+	indicators := indicatorsFixture()
 
 	openPlopObject := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
@@ -1231,38 +1043,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 }
 
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch() {
-	testNamespace := "test_namespace"
 
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
+	indicators := indicatorsFixture()
 
 	openPlopObject := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
@@ -1337,38 +1119,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 // TestPLOPAddCloseBatchOutOfOrderMoreClosed: Excersice batching logic when
 // having more "closed" PLOP events
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed() {
-	testNamespace := "test_namespace"
 
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
+	indicators := indicatorsFixture()
 
 	openPlopObject := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
@@ -1475,38 +1227,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 // TestPLOPAddCloseBatchOutOfOrderMoreOpen: Excersice batching logic when
 // having more "open" PLOP events
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
-	testNamespace := "test_namespace"
 
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     testNamespace,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
+	indicators := indicatorsFixture()
 
 	openPlopObject := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
