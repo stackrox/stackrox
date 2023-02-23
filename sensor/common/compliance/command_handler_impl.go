@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
 )
 
 var (
@@ -43,7 +44,7 @@ func (c *commandHandlerImpl) Stop(_ error) {
 	c.stopper.Client().Stop()
 }
 
-func (c *commandHandlerImpl) NotifyReady() {}
+func (c *commandHandlerImpl) Notify(common.SensorComponentEvent) {}
 
 func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()

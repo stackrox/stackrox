@@ -11,6 +11,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
+	common "github.com/stackrox/rox/sensor/common"
 	grpc "google.golang.org/grpc"
 )
 
@@ -51,16 +52,16 @@ func (mr *MockDetectorMockRecorder) Capabilities() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockDetector)(nil).Capabilities))
 }
 
-// NotifyReady mocks base method.
-func (m *MockDetector) NotifyReady() {
+// Notify mocks base method.
+func (m *MockDetector) Notify(e common.SensorComponentEvent) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifyReady")
+	m.ctrl.Call(m, "Notify", e)
 }
 
-// NotifyReady indicates an expected call of NotifyReady.
-func (mr *MockDetectorMockRecorder) NotifyReady() *gomock.Call {
+// Notify indicates an expected call of Notify.
+func (mr *MockDetectorMockRecorder) Notify(e interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyReady", reflect.TypeOf((*MockDetector)(nil).NotifyReady))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockDetector)(nil).Notify), e)
 }
 
 // ProcessDeployment mocks base method.

@@ -221,7 +221,7 @@ func (s *Sensor) Start() {
 		return
 	case <-okSig.Done():
 		for _, component := range s.components {
-			component.NotifyReady()
+			component.Notify(common.SensorComponentEventCentralReachable)
 		}
 	case <-s.stoppedSig.Done():
 		return

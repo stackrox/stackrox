@@ -12,6 +12,7 @@ import (
 	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
+	common "github.com/stackrox/rox/sensor/common"
 )
 
 // MockAuditLogCollectionManager is a mock of AuditLogCollectionManager interface.
@@ -113,16 +114,16 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) ForceUpdate() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForceUpdate", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).ForceUpdate))
 }
 
-// NotifyReady mocks base method.
-func (m *MockAuditLogCollectionManager) NotifyReady() {
+// Notify mocks base method.
+func (m *MockAuditLogCollectionManager) Notify(arg0 common.SensorComponentEvent) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifyReady")
+	m.ctrl.Call(m, "Notify", arg0)
 }
 
-// NotifyReady indicates an expected call of NotifyReady.
-func (mr *MockAuditLogCollectionManagerMockRecorder) NotifyReady() *gomock.Call {
+// Notify indicates an expected call of Notify.
+func (mr *MockAuditLogCollectionManagerMockRecorder) Notify(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyReady", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).NotifyReady))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Notify), arg0)
 }
 
 // ProcessMessage mocks base method.

@@ -17,13 +17,12 @@ var _ nodeInventoryHandler = (*nodeInventoryHandlerImpl)(nil)
 
 // NewNodeInventoryHandler returns a new instance of a NodeInventoryHandler
 func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMatcher) *nodeInventoryHandlerImpl {
-	sig := concurrency.NewSignal()
 	return &nodeInventoryHandlerImpl{
-		inventories: ch,
-		toCentral:   nil,
-		lock:        &sync.Mutex{},
-		stopper:     concurrency.NewStopper(),
-		nodeMatcher: matcher,
-		sigReady:    &sig,
+		inventories:  ch,
+		toCentral:    nil,
+		lock:         &sync.Mutex{},
+		stopper:      concurrency.NewStopper(),
+		nodeMatcher:  matcher,
+		centralReady: concurrency.NewSignal(),
 	}
 }

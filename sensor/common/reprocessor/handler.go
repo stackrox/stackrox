@@ -46,7 +46,7 @@ func (h *handlerImpl) Stop(err error) {
 	h.stopSig.SignalWithError(err)
 }
 
-func (h *handlerImpl) NotifyReady() {}
+func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	// A new sensor capability to reprocess deployment has not been added. In case of mismatched upgrades,

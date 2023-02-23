@@ -56,7 +56,7 @@ func (cm *clusterMetricsImpl) Stop(_ error) {
 	_ = cm.stopper.Client().Stopped().Wait()
 }
 
-func (cm *clusterMetricsImpl) NotifyReady() {}
+func (cm *clusterMetricsImpl) Notify(common.SensorComponentEvent) {}
 
 func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}

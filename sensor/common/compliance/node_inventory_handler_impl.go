@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 )
 
@@ -16,10 +17,10 @@ var (
 )
 
 type nodeInventoryHandlerImpl struct {
-	inventories <-chan *storage.NodeInventory
-	toCentral   <-chan *central.MsgFromSensor
-	nodeMatcher NodeIDMatcher
-	sigReady    *concurrency.Signal
+	inventories  <-chan *storage.NodeInventory
+	toCentral    <-chan *central.MsgFromSensor
+	nodeMatcher  NodeIDMatcher
+	centralReady concurrency.Signal
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
@@ -57,8 +58,11 @@ func (c *nodeInventoryHandlerImpl) Stop(_ error) {
 	c.stopper.Client().Stop()
 }
 
-func (c *nodeInventoryHandlerImpl) NotifyReady() {
-	c.sigReady.Signal()
+func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		c.centralReady.Signal()
+	}
 }
 
 func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
@@ -83,9 +87,9 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 					c.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
-				if !c.sigReady.IsDone() {
-					// TODO: NACK compliance
-					log.Warnf("Received NodeInventory but central is not reacheable. Sending NACK to compliance")
+				if !c.centralReady.IsDone() {
+					// TODO(ROX-13164): Reply with NACK to compliance
+					log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
 					continue
 				}
 				if inventory == nil {

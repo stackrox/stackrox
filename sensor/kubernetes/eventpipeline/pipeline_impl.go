@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
@@ -72,7 +73,7 @@ func (p *eventPipeline) Stop(_ error) {
 	p.stopSig.Signal()
 }
 
-func (p *eventPipeline) NotifyReady() {}
+func (p *eventPipeline) Notify(common.SensorComponentEvent) {}
 
 // forwardMessages from listener component to responses channel
 func (p *eventPipeline) forwardMessages() {
