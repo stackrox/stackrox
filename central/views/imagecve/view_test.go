@@ -107,7 +107,8 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 
 		cloned := actual.Clone()
 		// Adjust dynamic fields and ensure images in ACS are as expected.
-		s.Require().EqualValues(standardizeImages(image), standardizeImages(cloned))
+		standardizeImages(image, cloned)
+		s.Require().EqualValues(image, cloned)
 
 		// Now that we confirmed that images match, use stored image to establish the expected test results.
 		// This makes dynamic fields matching (e.g. created at) straightforward.

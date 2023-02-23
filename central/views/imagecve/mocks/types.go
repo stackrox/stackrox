@@ -116,6 +116,21 @@ func (m *MockCveView) EXPECT() *MockCveViewMockRecorder {
 	return m.recorder
 }
 
+// Count mocks base method.
+func (m *MockCveView) Count(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Count", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count.
+func (mr *MockCveViewMockRecorder) Count(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockCveView)(nil).Count), ctx, q)
+}
+
 // Get mocks base method.
 func (m *MockCveView) Get(ctx context.Context, q *v1.Query) ([]imagecve.CveCore, error) {
 	m.ctrl.T.Helper()

@@ -98,3 +98,32 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEsQuery() {
 	s.NoError(err)
 	s.Len(response, 3)
 }
+
+func (s *ImageCVECoreResolverTestSuite) TestCountImageCVEsNoImagePerm() {
+	q := &PaginatedQuery{}
+	response, err := s.resolver.ImageCVEs(context.Background(), *q)
+	s.Error(err)
+	s.Nil(response)
+}
+
+func (s *ImageCVECoreResolverTestSuite) TestCountImageCVEs() {
+	q := &RawQuery{}
+	expectedQ, err := q.AsV1QueryOrEmpty()
+	s.Require().NoError(err)
+
+	s.imageCVEView.EXPECT().Count(s.ctx, expectedQ).Return(0, nil)
+	response, err := s.resolver.ImageCVECount(s.ctx, *q)
+	s.NoError(err)
+	s.Equal(response, int32(0))
+}
+
+func (s *ImageCVECoreResolverTestSuite) TestCountImageCVEsWithQuery() {
+	q := &RawQuery{}
+	expectedQ, err := q.AsV1QueryOrEmpty()
+	s.Require().NoError(err)
+
+	s.imageCVEView.EXPECT().Count(s.ctx, expectedQ).Return(3, nil)
+	response, err := s.resolver.ImageCVECount(s.ctx, *q)
+	s.NoError(err)
+	s.Equal(response, int32(3))
+}
