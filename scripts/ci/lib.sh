@@ -665,8 +665,7 @@ is_tagged() {
 }
 
 is_nightly_run() {
-    true
-    # [[ "${CIRCLE_TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
+    [[ "${CIRCLE_TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
 }
 
 is_in_PR_context() {
