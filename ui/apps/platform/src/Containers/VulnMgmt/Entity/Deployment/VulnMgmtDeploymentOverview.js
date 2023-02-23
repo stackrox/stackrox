@@ -1,27 +1,22 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import StatusChip from 'Components/StatusChip';
-import BinderTabs from 'Components/BinderTabs';
-import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
-import TableWidget from '../TableWidget';
 
 const emptyDeployment = {
     annotations: [],
@@ -51,17 +46,8 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyDeployment, ...data };
 
-    const {
-        id,
-        cluster,
-        priority,
-        namespace,
-        namespaceId,
-        policyStatus,
-        failingPolicies,
-        labels,
-        annotations,
-    } = safeData;
+    const { id, cluster, priority, namespace, namespaceId, policyStatus, labels, annotations } =
+        safeData;
 
     const metadataKeyValuePairs = [];
 
@@ -109,31 +95,14 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     } else {
         deploymentFindingsContent = (
             <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
-                <BinderTabs>
-                    <Tab title="Policies">
-                        <TableWidget
-                            header={`${failingPolicies.length} failing ${pluralize(
-                                entityTypes.POLICY,
-                                failingPolicies.length
-                            )} across this deployment`}
-                            rows={failingPolicies}
-                            entityType={entityTypes.POLICY}
-                            noDataText="No failing policies"
-                            className="bg-base-100"
-                            columns={getPolicyTableColumns(workflowState)}
-                        />
-                    </Tab>
-                    <Tab title="Fixable CVEs">
-                        <TableWidgetFixableCves
-                            workflowState={workflowState}
-                            entityContext={entityContext}
-                            entityType={entityTypes.DEPLOYMENT}
-                            name={safeData?.name}
-                            id={safeData?.id}
-                            vulnType={showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE}
-                        />
-                    </Tab>
-                </BinderTabs>
+                <TableWidgetFixableCves
+                    workflowState={workflowState}
+                    entityContext={entityContext}
+                    entityType={entityTypes.DEPLOYMENT}
+                    name={safeData?.name}
+                    id={safeData?.id}
+                    vulnType={showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE}
+                />
             </div>
         );
     }
