@@ -29,7 +29,7 @@ func TriggerNodeInventory(opts *InventoryScanOpts) (*sensor.MsgFromCompliance, e
 	// check whether a cached inventory exists that is recent enough to use
 	cachedInventory := loadCachedInventory(opts)
 	if cachedInventory != nil && isCachedInventoryValid(cachedInventory) {
-		log.Debugf("Using cached scan created at %v", cachedInventory.GetScanTime())
+		log.Debugf("Using cached node scan created at %v", cachedInventory.GetScanTime())
 		return createMessage(cachedInventory), nil
 	}
 
