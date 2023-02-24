@@ -9,18 +9,42 @@ import {
     FlexItem,
 } from '@patternfly/react-core';
 
+import useLocalStorage from 'hooks/useLocalStorage';
 import PageTitle from 'Components/PageTitle';
 import CveStatusTabNavigation from './CveStatusTabNavigation';
 import DefaultFilterModal from './DefaultFilterModal';
+import { VulnMgmtLocalStorage } from './types';
+
+const emptyStorage: VulnMgmtLocalStorage = {
+    preferences: {
+        defaultFilters: {
+            Severity: [],
+            Fixable: [],
+        },
+    },
+};
 
 function WorkloadCvesOverviewPage() {
+    const [storedValue, setStoredValue] = useLocalStorage('vulnerabilityManagement', emptyStorage);
+
+    function setLocalStorage(values) {
+        setStoredValue({
+            preferences: {
+                defaultFilters: values,
+            },
+        });
+    }
+
     return (
         <>
             <PageTitle title="Workload CVEs Overview" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Toolbar>
                     <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <DefaultFilterModal />
+                        <DefaultFilterModal
+                            defaultFilters={storedValue.preferences.defaultFilters}
+                            setLocalStorage={setLocalStorage}
+                        />
                     </ToolbarItem>
                 </Toolbar>
             </PageSection>
