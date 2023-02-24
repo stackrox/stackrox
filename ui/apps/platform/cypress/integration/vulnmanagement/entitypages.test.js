@@ -330,7 +330,6 @@ describe('Entities single views', () => {
             cy.get(`${selectors.tableRows}`).eq(1).click();
         }, entitiesKey);
 
-        cy.get('button:contains("Fixable CVEs")').click();
         cy.wait('@getFixableCvesForEntity');
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`).contains(
             'Active'
