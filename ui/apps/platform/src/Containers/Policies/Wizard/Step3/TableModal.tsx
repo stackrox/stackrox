@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     Button,
     ButtonVariant,
@@ -36,10 +36,13 @@ function TableModal({
 }: TableModalProps): React.ReactElement {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const isPreSelected = useCallback(
+        (row) => (value.arrayValue ? (value.arrayValue.includes(row.id) as boolean) : false),
+        [value]
+    );
+
     const { selected, onSelect, onSelectAll, allRowsSelected, onResetAll, getSelectedIds } =
-        useTableSelection(rows, (row) => {
-            return value.arrayValue ? (value.arrayValue.includes(row.id) as boolean) : false;
-        });
+        useTableSelection(rows, isPreSelected);
 
     function onCloseModalHandler() {
         onResetAll();
