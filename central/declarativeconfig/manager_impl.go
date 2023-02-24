@@ -8,11 +8,16 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/declarativeconfig/types"
+	"github.com/stackrox/rox/central/declarativeconfig/updater"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -36,17 +41,38 @@ type managerImpl struct {
 
 	reconciliationTicker *time.Ticker
 	shortCircuitSignal   concurrency.Signal
+
+	reconciliationCtx           context.Context
+	reconciliationErrorReporter ReconciliationErrorReporter
+	updaters                    map[reflect.Type]updater.ResourceUpdater
+}
+
+var protoTypesOrder = []reflect.Type{
+	types.AccessScopeType,
+	types.PermissionSetType,
+	types.RoleType,
+	types.AuthProviderType,
+	types.GroupType,
 }
 
 // New creates a new instance of Manager.
 // Note that it will not watch the declarative configuration directories when created, only after
 // ReconcileDeclarativeConfigurations has been called.
-func New(reconciliationTickerDuration, watchIntervalDuration time.Duration) Manager {
+func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, updaters map[reflect.Type]updater.ResourceUpdater, reconciliationErrorReporter ReconciliationErrorReporter) Manager {
+	writeDeclarativeRoleCtx := declarativeconfig.WithModifyDeclarativeResource(context.Background())
+	writeDeclarativeRoleCtx = sac.WithGlobalAccessScopeChecker(writeDeclarativeRoleCtx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			// TODO: ROX-14398 Replace Role with Access
+			sac.ResourceScopeKeys(resources.Role, resources.Access)))
 	return &managerImpl{
 		universalTransformer:         transform.New(),
 		transformedMessagesByHandler: map[string]protoMessagesByType{},
 		reconciliationTickerDuration: reconciliationTickerDuration,
 		watchIntervalDuration:        watchIntervalDuration,
+		updaters:                     updaters,
+		reconciliationCtx:            writeDeclarativeRoleCtx,
+		reconciliationErrorReporter:  reconciliationErrorReporter,
 	}
 }
 
@@ -151,11 +177,27 @@ func (m *managerImpl) runReconciliation() {
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
-	for handler, protoMessagesByType := range transformedMessagesByHandler {
+	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
+	transformedMessages := map[reflect.Type][]proto.Message{}
+	for _, protoMessagesByType := range transformedMessagesByHandler {
 		for protoType, protoMessages := range protoMessagesByType {
-			// TODO(ROX-14693): Add upserting transformed resources.
-			log.Debugf("Upserting transformed messages of type %s from file %s: %+v",
-				protoType.Name(), handler, protoMessages)
+			transformedMessages[protoType] = append(transformedMessages[protoType], protoMessages...)
+		}
+
+	}
+	for _, protoType := range protoTypesOrder {
+		messages, hasMessages := transformedMessages[protoType]
+		if !hasMessages {
+			continue
+		}
+		typeUpdater, hasUpdater := m.updaters[protoType]
+		if !hasUpdater {
+			log.Fatalf("Manager does not have updater for type %v", protoType)
+		}
+		for _, message := range messages {
+			if err := typeUpdater.Upsert(m.reconciliationCtx, message); err != nil {
+				m.reconciliationErrorReporter.ProcessError(message, err)
+			}
 		}
 	}
 	// TODO(ROX-14694): Add deletion of resources.

@@ -32,6 +32,116 @@ type dataStoreImpl struct {
 	lock sync.RWMutex
 }
 
+func (ds *dataStoreImpl) UpsertRole(ctx context.Context, newRole *storage.Role) error {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+	if err := rolePkg.ValidateRole(newRole); err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	oldRole, exists, err := ds.roleStorage.Get(ctx, newRole.GetName())
+	if err != nil {
+		return err
+	}
+	if exists {
+		if err := verifyRoleOrigin(ctx, oldRole); err != nil {
+			return err
+		}
+	}
+	if err := verifyRoleOrigin(ctx, newRole); err != nil {
+		return err
+	}
+
+	permissionSet, accessScope, err := ds.verifyRoleReferencesExist(ctx, newRole)
+	if err != nil {
+		return err
+	}
+	if err := verifyPermissionSetOrigin(ctx, permissionSet); err != nil {
+		return err
+	}
+	if err := verifyAccessScopeOrigin(ctx, accessScope); err != nil {
+		return err
+	}
+
+	// Constraints ok, write the object. We expect the underlying store to
+	// verify there is no role with the same name.
+	if err := ds.roleStorage.Upsert(ctx, newRole); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ds *dataStoreImpl) UpsertPermissionSet(ctx context.Context, newPS *storage.PermissionSet) error {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+	if err := rolePkg.ValidatePermissionSet(newPS); err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	oldPS, exists, err := ds.permissionSetStorage.Get(ctx, newPS.GetId())
+	if err != nil {
+		return err
+	}
+	if exists {
+		if err := verifyPermissionSetOrigin(ctx, oldPS); err != nil {
+			return err
+		}
+	}
+	if err := verifyPermissionSetOrigin(ctx, newPS); err != nil {
+		return err
+	}
+
+	// Constraints ok, write the object. We expect the underlying store to
+	// verify there is no permission set with the same name.
+	if err := ds.permissionSetStorage.Upsert(ctx, newPS); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ds *dataStoreImpl) UpsertAccessScope(ctx context.Context, newScope *storage.SimpleAccessScope) error {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+	if err := rolePkg.ValidateSimpleAccessScope(newScope); err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	oldScope, exists, err := ds.accessScopeStorage.Get(ctx, newScope.GetId())
+	if err != nil {
+		return err
+	}
+	if exists {
+		if err := verifyAccessScopeOrigin(ctx, oldScope); err != nil {
+			return err
+		}
+	}
+	if err := verifyAccessScopeOrigin(ctx, newScope); err != nil {
+		return err
+	}
+
+	// Constraints ok, write the object. We expect the underlying store to
+	// verify there is no access scope with the same name.
+	if err := ds.accessScopeStorage.Upsert(ctx, newScope); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Role, bool, error) {
 	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
@@ -91,7 +201,7 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 	if err := ds.verifyRoleNameDoesNotExist(ctx, role.GetName()); err != nil {
 		return err
 	}
-	if err := ds.verifyRoleReferencesExist(ctx, role); err != nil {
+	if _, _, err := ds.verifyRoleReferencesExist(ctx, role); err != nil {
 		return err
 	}
 
@@ -118,13 +228,13 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	if err != nil {
 		return err
 	}
-	if err = verifyRoleOriginMatches(ctx, existingRole); err != nil {
+	if err = verifyRoleOrigin(ctx, existingRole); err != nil {
 		return errors.Wrap(err, "origin didn't match for existing role")
 	}
-	if err = verifyRoleOriginMatches(ctx, role); err != nil {
+	if err = verifyRoleOrigin(ctx, role); err != nil {
 		return errors.Wrap(err, "origin didn't match for new role")
 	}
-	if err = ds.verifyRoleReferencesExist(ctx, role); err != nil {
+	if _, _, err = ds.verifyRoleReferencesExist(ctx, role); err != nil {
 		return err
 	}
 
@@ -143,7 +253,7 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 	return ds.roleStorage.Delete(ctx, name)
 }
 
-func verifyRoleOriginMatches(ctx context.Context, role *storage.Role) error {
+func verifyRoleOrigin(ctx context.Context, role *storage.Role) error {
 	if !declarativeconfig.CanModifyResource(ctx, role) {
 		return errors.Wrapf(errox.NotAuthorized, "role %q's origin is %s, cannot be modified or deleted with the current permission",
 			role.GetName(), role.GetTraits().GetOrigin())
@@ -238,10 +348,10 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 	if err != nil {
 		return err
 	}
-	if err := verifyPermissionSetOriginMatches(ctx, existingPermissionSet); err != nil {
+	if err := verifyPermissionSetOrigin(ctx, existingPermissionSet); err != nil {
 		return errors.Wrap(err, "origin didn't match for existing permission set")
 	}
-	if err := verifyPermissionSetOriginMatches(ctx, permissionSet); err != nil {
+	if err := verifyPermissionSetOrigin(ctx, permissionSet); err != nil {
 		return errors.Wrap(err, "origin didn't match for new permission set")
 	}
 
@@ -272,7 +382,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
 	}
-	if err := verifyPermissionSetOriginMatches(ctx, permissionSet); err != nil {
+	if err := verifyPermissionSetOrigin(ctx, permissionSet); err != nil {
 		return err
 	}
 
@@ -295,7 +405,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 	return nil
 }
 
-func verifyPermissionSetOriginMatches(ctx context.Context, ps *storage.PermissionSet) error {
+func verifyPermissionSetOrigin(ctx context.Context, ps *storage.PermissionSet) error {
 	if !declarativeconfig.CanModifyResource(ctx, ps) {
 		return errors.Wrapf(errox.NotAuthorized, "permission set %q's origin is %s, cannot be modified or deleted with the current permission",
 			ps.GetName(), ps.GetTraits().GetOrigin())
@@ -390,10 +500,10 @@ func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, newScope *storag
 	if err != nil {
 		return err
 	}
-	if err := verifyAccessScopeOriginMatches(ctx, existingScope); err != nil {
+	if err := verifyAccessScopeOrigin(ctx, existingScope); err != nil {
 		return errors.Wrap(err, "origin didn't match for existing access scope")
 	}
-	if err := verifyAccessScopeOriginMatches(ctx, newScope); err != nil {
+	if err := verifyAccessScopeOrigin(ctx, newScope); err != nil {
 		return errors.Wrap(err, "origin didn't match for new access scope")
 	}
 
@@ -425,7 +535,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	if err := verifyNotDefaultAccessScope(accessScope); err != nil {
 		return err
 	}
-	if err := verifyAccessScopeOriginMatches(ctx, accessScope); err != nil {
+	if err := verifyAccessScopeOrigin(ctx, accessScope); err != nil {
 		return err
 	}
 
@@ -481,7 +591,7 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 	return resolvedRole, nil
 }
 
-func verifyAccessScopeOriginMatches(ctx context.Context, as *storage.SimpleAccessScope) error {
+func verifyAccessScopeOrigin(ctx context.Context, as *storage.SimpleAccessScope) error {
 	if !declarativeconfig.CanModifyResource(ctx, as) {
 		return errors.Wrapf(errox.NotAuthorized, "access scope %q's origin is %s, cannot be modified or deleted with the current permission",
 			as.GetName(), as.GetTraits().GetOrigin())
@@ -495,15 +605,17 @@ func verifyAccessScopeOriginMatches(ctx context.Context, as *storage.SimpleAcces
 // Uniqueness of the 'name' field is expected to be verified by the           //
 // underlying store, see its `--uniq-key-func` flag                           //
 
-func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *storage.Role) error {
+func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *storage.Role) (*storage.PermissionSet, *storage.SimpleAccessScope, error) {
 	// Verify storage constraints.
-	if _, err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId()); err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
+	permissionSet, err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId())
+	if err != nil {
+		return nil, nil, errors.Wrapf(errox.InvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
 	}
-	if _, err := ds.verifyAccessScopeIDExists(ctx, role.GetAccessScopeId()); err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
+	accessScope, err := ds.verifyAccessScopeIDExists(ctx, role.GetAccessScopeId())
+	if err != nil {
+		return nil, nil, errors.Wrapf(errox.InvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
 	}
-	return nil
+	return permissionSet, accessScope, nil
 }
 
 // Returns errox.InvalidArgs if the given role is a default one.
@@ -615,7 +727,7 @@ func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string)
 	if !found {
 		return errors.Wrapf(errox.NotFound, "name = %q", name)
 	}
-	if err = verifyRoleOriginMatches(ctx, role); err != nil {
+	if err = verifyRoleOrigin(ctx, role); err != nil {
 		return err
 	}
 

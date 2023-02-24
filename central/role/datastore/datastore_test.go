@@ -618,6 +618,10 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	declarativeScope.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
+	badDeclarativeScope := getInvalidAccessScope("scope.declarative-invalid", "new invalid declarative scope")
+	badDeclarativeScope.Traits = &storage.Traits{
+		Origin: storage.Traits_DECLARATIVE,
+	}
 
 	err := s.dataStore.AddAccessScope(s.hasWriteCtx, badScope)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Add*() yields an error")
@@ -697,6 +701,36 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 
 	err = s.dataStore.RemoveAccessScope(s.hasWriteDeclarativeCtx, declarativeScope.GetId())
 	s.NoError(err, "attempting to delete declaratively declarative access scope is not an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteCtx, declarativeScope)
+	s.ErrorIs(err, errox.NotAuthorized, "upserting imperatively declarative access scope is an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteDeclarativeCtx, declarativeScope)
+	s.NoError(err, "attempting to upsert declaratively declarative access scope is not an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteDeclarativeCtx, declarativeScope)
+	s.NoError(err, "re-upserting declaratively declarative access scope is not an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteCtx, declarativeScope)
+	s.ErrorIs(err, errox.NotAuthorized, "re-upserting imperatively declarative access scope is an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteDeclarativeCtx, goodScope)
+	s.ErrorIs(err, errox.NotAuthorized, "upserting declaratively imperative access scope is an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteCtx, goodScope)
+	s.NoError(err, "attempting to upsert imperatively imperative access scope is not an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteCtx, goodScope)
+	s.NoError(err, "re-upserting imperatively imperative access scope is not an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteDeclarativeCtx, goodScope)
+	s.ErrorIs(err, errox.NotAuthorized, "re-upserting declaratively imperative access scope is an error")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteCtx, badScope)
+	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(imperative resource)")
+
+	err = s.dataStore.UpsertAccessScope(s.hasWriteDeclarativeCtx, badDeclarativeScope)
+	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(declarative resource)")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
