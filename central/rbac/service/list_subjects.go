@@ -7,19 +7,20 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
-	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	"github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 )
 
 var (
-	subjectFactory         = predicate.NewFactory("subject", (*storage.Subject)(nil))
-	roleBindingPredFactory = predicate.NewFactory("k8srolebinding", (*storage.K8SRoleBinding)(nil))
+	subjectFactory = predicate.NewFactory("subject", (*storage.Subject)(nil))
+	// the prefix sent to factory should exactly match the prefix that was used to create RoleBindings optionMap in RoleBindingsSchema
+	roleBindingPredFactory = predicate.NewFactory(strings.ToLower(schema.RoleBindingsSchema.TypeName), (*storage.K8SRoleBinding)(nil))
 )
 
 func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) (*v1.ListSubjectsResponse, error) {
@@ -139,7 +140,7 @@ func NewSubjectSearcher(k8sRoleBindingDatastore datastore.DataStore) *SubjectSea
 
 // Search implements the searcher interface
 func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	roleBindingQuery, _ := search.FilterQueryWithMap(q, roleBindingOptions.OptionsMap)
+	roleBindingQuery, _ := search.FilterQueryWithMap(q, schema.RoleBindingsSchema.OptionsMap)
 	roleBindingPred, err := roleBindingPredFactory.GeneratePredicate(roleBindingQuery)
 	if err != nil {
 		return nil, err
@@ -155,31 +156,19 @@ func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Res
 	if err != nil {
 		return nil, err
 	}
-	// Subject return only users and groups, there is a separate resolver for service accounts.
-	// subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
-	// Sort first then evaluate to not run evaluation twice.
-	// Sorting should be cheaper than reflect based evaluation
-	//if err := sortSubjects(q, subjects); err != nil {
-	//	return nil, err
-	//}
 
 	var results []search.Result
 	for _, binding := range bindings {
-		if result, match := roleBindingPred.Evaluate(binding); match {
+		if bindingResult, match := roleBindingPred.Evaluate(binding); match {
 			subjects := k8srbac.GetAllSubjects([]*storage.K8SRoleBinding{binding}, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 			for _, subject := range subjects {
-				if res, m := subjectPred.Evaluate(subject); m {
-					newRes := predicate.MergeResults(result, res)
-					results = append(results, *newRes)
+				if subjectResult, match := subjectPred.Evaluate(subject); match {
+					merged := predicate.MergeResults(bindingResult, subjectResult)
+					results = append(results, *merged)
 				}
 			}
 		}
 	}
-	//for _, subject := range subjects {
-	//	if result, match := subjectPred.Evaluate(subject); match {
-	//		results = append(results, *result)
-	//	}
-	//}
 
 	return results, nil
 }
@@ -201,7 +190,7 @@ func (s *SubjectSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 	numResults := 0
 	for _, subject := range subjects {
-		if _, match := pred.Evaluate(subject); match {
+		if match := pred.Matches(subject); match {
 			numResults++
 		}
 	}
