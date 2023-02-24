@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Button, Modal, Form, FormGroup, Checkbox } from '@patternfly/react-core';
+import { Button, Badge, Modal, Form, FormGroup, Checkbox, Flex } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import { useFormik, FormikProvider } from 'formik';
+import { Globe } from 'react-feather';
 
 import { DefaultFilters, Severity, FixableStatus } from './types';
 
 function DefaultFilterModal({ defaultFilters, setLocalStorage }) {
     const [isOpen, setIsOpen] = useState(false);
+    const totalFilters = defaultFilters.Severity.length + defaultFilters.Fixable.length;
 
     const formik = useFormik({
         initialValues: cloneDeep(defaultFilters),
@@ -49,8 +51,14 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }) {
 
     return (
         <>
-            <Button variant="link" onClick={handleModalToggle}>
-                Default vulnerability filters
+            <Button variant="plain" onClick={handleModalToggle}>
+                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <Globe className="pf-u-mr-sm" />
+                    Default vulnerability filters
+                    <Badge key={1} isRead className="pf-u-ml-sm">
+                        {totalFilters}
+                    </Badge>
+                </Flex>
             </Button>
             <Modal
                 title="Default vulnerability filters"
