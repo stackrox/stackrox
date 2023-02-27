@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -204,7 +203,7 @@ func (s *serviceImpl) runRecorder() {
 			log.Warnf("failed to write string to collector recorder: %s", err)
 		}
 
-		byteContent, err := proto.Marshal(content)
+		byteContent, err := content.Marshal()
 		if err != nil {
 			log.Warnf("failed to marshal message into bytes; %s", err)
 			continue

@@ -1,8 +1,8 @@
 package networkflow
 
 import (
-	"bytes"
 	"os"
+	"path"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/logging"
@@ -27,24 +27,32 @@ func (f *FlowInjector) ReaderC() <-chan *sensor.NetworkConnectionInfoMessage {
 }
 
 func (f *FlowInjector) RunInjector() {
-	fileContent, err := os.ReadFile(f.binFilePath)
+	entries, err := os.ReadDir(f.binFilePath)
 	if err != nil {
-		log.Warnf("can't read injector binary file (%s) for Network Flows: %s", f.binFilePath, err)
+		log.Warnf("can't read injector binary folder (%s) for Network Flows: %s", f.binFilePath, err)
 		return
 	}
 
-	connectionMessages := bytes.Split(fileContent, []byte{0xFA, 0xFB, 0xFC, 0xFD})
+	log.Infof("Found %d recorded network flows to send", len(entries))
 
-	log.Infof("Fake Injector starting: %d messages found in binary file", len(connectionMessages))
-	for idx, msg := range connectionMessages {
-		m := &sensor.NetworkConnectionInfoMessage{}
-		err := m.Unmarshal(msg)
+	for _, entryFile := range entries {
+		content, err := os.ReadFile(path.Join(f.binFilePath, entryFile.Name()))
 		if err != nil {
-			log.Warnf("failed to unmarshal message at position %d: %s", idx, err)
+			log.Warnf("failed to read file %s from network flow folder: %s", entryFile.Name(), err)
 			continue
 		}
-		f.writeChan <- m
+
+		var message sensor.NetworkConnectionInfoMessage
+		err = message.Unmarshal(content)
+		if err != nil {
+			log.Warnf("failed to unmarshal NetworkConnectionInfoMessage: %s", err)
+			continue
+		}
+
+		f.writeChan <- &message
 	}
+
+	log.Infof("Finished processing all recorded network flows")
 
 	close(f.writeChan)
 }
