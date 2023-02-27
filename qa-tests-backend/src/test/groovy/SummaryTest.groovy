@@ -33,7 +33,8 @@ class SummaryTest extends BaseSpecification {
             def stackroxSummaryCounts = SummaryService.getCounts()
             List<String> orchestratorResourceNames = orchestrator.getDeploymentCount() +
                     orchestrator.getDaemonSetCount() +
-                    orchestrator.getStaticPodCount() +
+                    // Static pods get renamed as "static-<name>-pods" in sensor, so match it for easy debugging
+                    orchestrator.getStaticPodCount().collect {  "static-" + it + "-pods"  } +
                     orchestrator.getStatefulSetCount() +
                     orchestrator.getJobCount()
 
@@ -47,6 +48,10 @@ class SummaryTest extends BaseSpecification {
                         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                         .build()
                 log.info javers.compare(stackroxDeploymentNames, orchestratorResourceNames).prettyPrint()
+
+                log.info "Use the full set of deployments to compare manually if diff isn't helpful"
+                log.info "Stackrox deployments: " + stackroxDeploymentNames.join(",")
+                log.info "Orchestrator deployments: " + orchestratorResourceNames.join(",")
             }
 
             assert stackroxSummaryCounts.numDeployments == orchestratorResourceNames.size()
