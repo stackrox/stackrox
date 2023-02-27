@@ -70,27 +70,30 @@ def dump_report(images, as_json=False):
     if as_json:
         print(json.dumps(images))
     else:
-        print("{:<30} {:<20} {:<20} {:<20} {:<80} {:<10}".format(
-            "IMAGE", "TAG",
-            "PACKAGE NAME", "PACKAGE VERSION",
-            "VULNERABILITY", "SEVERITY"
+        print("{:<30} {:<10} {:<20} {:<20} {:<80}".format(
+            "IMAGE",
+            "SEVERITY", "PACKAGE NAME",
+            "PACKAGE VERSION", "VULNERABILITY",
         ))
         print("=" * 185)
 
+        output = []
         for i in images["images"]:
             if len(i["vulnerable_packages"]) > 0:
-                image, tag = i["name"], i["tag"]
-
-                i["vulnerable_packages"].sort(key=lambda p: p["name"])
                 for package in i["vulnerable_packages"]:
-                    package_name, package_version = package["name"], package["version"]
-
-                    package["vulnerabilities"].sort(key=lambda v: v["name"])
                     for vuln in package["vulnerabilities"]:
-                        vuln_name, vuln_severity = vuln["name"], vuln["severity"]
-                        print("{:<30} {:<20} {:<20} {:<20} {:<80} {:<10}".format(
-                            image, tag, package_name, package_version, vuln_name, vuln_severity
-                        ))
+                        output.append({
+                            "image": i["name"], "vuln_name": vuln["name"], "vuln_severity": vuln["severity"],
+                            "package_name": package["name"], "package_version": package["version"]
+                        })
+
+
+        output.sort(key=lambda x: (x["image"], x["vuln_severity"], x["package_name"]))
+        for x in output:
+            print("{:<30} {:<10} {:<20} {:<20} {:<80}".format(
+                x["image"], x["vuln_severity"],
+                x["package_name"], x["package_version"], x["vuln_name"],
+            ))
 
 
 def main():
@@ -101,6 +104,7 @@ def main():
 
     # Vulnerability information is attached to the child manifest, suffix -amd64
     tag = f"{args.tag}-amd64"
+    tag = args.tag
     images = {
         "images": [
             {"name": "central-db", "tag": tag},
