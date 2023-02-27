@@ -29,6 +29,17 @@ function AccessControl(): ReactElement {
                                 <b>AuthProvider, Group, Licenses, and User</b>
                             </ListItem>
                             <ListItem>
+                                <b>Administration</b> replaces{' '}
+                                <b>
+                                    AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,
+                                    ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and
+                                    ServiceIdentity
+                                </b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Compliance</b> replaces <b>ComplianceRuns</b>
+                            </ListItem>
+                            <ListItem>
                                 <b>DeploymentExtension</b> replaces{' '}
                                 <b>Indicator, NetworkBaseline, ProcessWhitelist, and Risk</b>
                             </ListItem>
@@ -54,20 +65,6 @@ function AccessControl(): ReactElement {
                         <List>
                             <ListItem>
                                 <b>Access</b> will replace <b>Role</b>
-                            </ListItem>
-                            <ListItem>
-                                <b>Administration</b> will replace{' '}
-                                <b>
-                                    AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,
-                                    ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and
-                                    ServiceIdentity
-                                </b>
-                            </ListItem>
-                            <ListItem>
-                                <b>Compliance</b> will replace <b>ComplianceRuns</b>
-                            </ListItem>
-                            <ListItem>
-                                <b>Cluster</b> will cover <b>ClusterCVE</b>
                             </ListItem>
                             <ListItem>
                                 <b>WorkflowAdministration</b> will replace{' '}
