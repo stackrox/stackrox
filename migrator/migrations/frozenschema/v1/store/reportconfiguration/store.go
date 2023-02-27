@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -18,8 +18,13 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// This file is a partial copy of central/reportconfigurations/store/postgres/store.go
+// in the state it had when the migration was written.
+// Only the relevant functions (Upsert, UpsertMany, DeleteMany and Walk) are kept.
+// The kept functions are stripped from the scoped access control checks.
+
 const (
-	baseTable = "policy_category_edges"
+	baseTable = "report_configurations"
 
 	batchAfter = 100
 
@@ -34,16 +39,16 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = frozenSchema.PolicyCategoryEdgesSchema
+	schema = pkgSchema.ReportConfigurationsSchema
 )
 
-// Store is the interface to interact with the storage for storage.PolicyCategoryEdge
+// Store is the interface to interact with the storage for storage.ReportConfiguration
 type Store interface {
-	GetAll(ctx context.Context) ([]*storage.PolicyCategoryEdge, error)
-	UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error
-	DeleteMany(ctx context.Context, ids []string) error
+	Upsert(ctx context.Context, obj *storage.ReportConfiguration) error
+	UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error
+	DeleteMany(ctx context.Context, identifiers []string) error
 
-	Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error
 }
 
 type storeImpl struct {
@@ -58,7 +63,9 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoPolicyCategoryEdges(ctx context.Context, batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {
+//// Helper functions
+
+func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *storage.ReportConfiguration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -68,18 +75,18 @@ func insertIntoPolicyCategoryEdges(ctx context.Context, batch *pgx.Batch, obj *s
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetPolicyId(),
-		obj.GetCategoryId(),
+		obj.GetName(),
+		obj.GetType(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO policy_category_edges (Id, PolicyId, CategoryId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, PolicyId = EXCLUDED.PolicyId, CategoryId = EXCLUDED.CategoryId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_configurations (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.PolicyCategoryEdge) error {
+func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
 
 	inputRows := [][]interface{}{}
 
@@ -93,16 +100,18 @@ func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx pgx.Tx, 
 
 		"id",
 
-		"policyid",
+		"name",
 
-		"categoryid",
+		"type",
 
 		"serialized",
 	}
 
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -113,14 +122,14 @@ func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx pgx.Tx, 
 
 			obj.GetId(),
 
-			obj.GetPolicyId(),
+			obj.GetName(),
 
-			obj.GetCategoryId(),
+			obj.GetType(),
 
 			serialized,
 		})
 
-		// Add the id to be deleted.
+		// Add the ID to be deleted.
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
@@ -134,7 +143,7 @@ func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx pgx.Tx, 
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_category_edges"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -148,8 +157,16 @@ func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx pgx.Tx, 
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PolicyCategoryEdge) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "PolicyCategoryEdge")
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, conn.Release, nil
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfiguration) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
 	if err != nil {
 		return err
 	}
@@ -160,7 +177,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PolicyCategor
 		return err
 	}
 
-	if err := s.copyFromPolicyCategoryEdges(ctx, tx, objs...); err != nil {
+	if err := s.copyFromReportConfigurations(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -172,8 +189,8 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PolicyCategor
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryEdge) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "PolicyCategoryEdge")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfiguration) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
 	if err != nil {
 		return err
 	}
@@ -181,7 +198,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryE
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoPolicyCategoryEdges(ctx, batch, obj); err != nil {
+		if err := insertIntoReportConfigurations(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -200,7 +217,19 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryE
 	return nil
 }
 
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error {
+//// Helper functions - END
+
+//// Interface functions
+
+// Upsert saves the current state of an object in storage.
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ReportConfiguration) error {
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
+}
+
+// UpsertMany saves the state of multiple objects in the storage.
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error {
 	return pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
@@ -215,53 +244,45 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCatego
 	})
 }
 
-func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.PolicyCategoryEdge, error) {
-	var objs []*storage.PolicyCategoryEdge
-	err := s.Walk(ctx, func(obj *storage.PolicyCategoryEdge) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
-}
-
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+// DeleteMany removes the objects associated to the specified IDs from the store.
+func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
 	var sacQueryFilter *v1.Query
+
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(ids)
+	numRecordsToDelete := len(identifiers)
 	for {
-		if len(ids) == 0 {
+		if len(identifiers) == 0 {
 			break
 		}
 
-		if len(ids) < localBatchSize {
-			localBatchSize = len(ids)
+		if len(identifiers) < localBatchSize {
+			localBatchSize = len(identifiers)
 		}
 
-		idBatch := ids[:localBatchSize]
+		identifierBatch := identifiers[:localBatchSize]
 		q := search.ConjunctionQuery(
 			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
 		)
 
 		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
 			log.Error(err)
 			return err
 		}
 
 		// Move the slice forward to start the next batch
-		ids = ids[localBatchSize:]
+		identifiers = identifiers[localBatchSize:]
 	}
 
 	return nil
 }
 
-// Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error {
+// Walk iterates over all of the objects in the store and applies the closure.
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.PolicyCategoryEdge](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ReportConfiguration](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -281,12 +302,4 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategor
 		}
 	}
 	return nil
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
 }

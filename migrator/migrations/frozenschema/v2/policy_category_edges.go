@@ -6,7 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	v73Schema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	v1Schema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
@@ -23,8 +23,8 @@ var (
 	PolicyCategoryEdgesSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.PolicyCategoryEdge)(nil)), "policy_category_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Policy":         v73Schema.PoliciesSchema,
-			"storage.PolicyCategory": v73Schema.PolicyCategoriesSchema,
+			"storage.Policy":         v1Schema.PoliciesSchema,
+			"storage.PolicyCategory": v1Schema.PolicyCategoriesSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -50,6 +50,6 @@ type PolicyCategoryEdges struct {
 	PolicyID            string                     `gorm:"column:policyid;type:varchar"`
 	CategoryID          string                     `gorm:"column:categoryid;type:varchar"`
 	Serialized          []byte                     `gorm:"column:serialized;type:bytea"`
-	PoliciesRef         v73Schema.Policies         `gorm:"foreignKey:policyid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	PolicyCategoriesRef v73Schema.PolicyCategories `gorm:"foreignKey:categoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	PoliciesRef         v1Schema.Policies         `gorm:"foreignKey:policyid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	PolicyCategoriesRef v1Schema.PolicyCategories `gorm:"foreignKey:categoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

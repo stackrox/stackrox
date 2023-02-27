@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -18,13 +18,13 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// This file is a partial copy of central/reportconfigurations/store/postgres/store.go
-// in the state it had when the migration was written.
-// Only the relevant functions (Upsert, UpsertMany, DeleteMany and Walk) are kept.
+// This file is a partial copy of central/role/store/permissionset/postgres/store.go
+// in the state it had when the v1 schema was frozen.
+// Only the relevant functions (Walk, DeleteMany and UpsertMany) are kept.
 // The kept functions are stripped from the scoped access control checks.
 
 const (
-	baseTable = "report_configurations"
+	baseTable = "permission_sets"
 
 	batchAfter = 100
 
@@ -39,16 +39,14 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ReportConfigurationsSchema
+	schema = frozenSchema.PermissionSetsSchema
 )
 
-// Store is the interface to interact with the storage for storage.ReportConfiguration
+// Store is the interface for interactions with the database storage
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.ReportConfiguration) error
-	UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error
-	DeleteMany(ctx context.Context, identifiers []string) error
-
-	Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error
+	DeleteMany(ctx context.Context, ids []string) error
+	UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error
+	Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error
 }
 
 type storeImpl struct {
@@ -63,9 +61,7 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-//// Helper functions
-
-func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *storage.ReportConfiguration) error {
+func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storage.PermissionSet) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -74,19 +70,18 @@ func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetType(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_configurations (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO permission_sets (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
+func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs ...*storage.PermissionSet) error {
 
 	inputRows := [][]interface{}{}
 
@@ -102,16 +97,12 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx,
 
 		"name",
 
-		"type",
-
 		"serialized",
 	}
 
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -120,16 +111,14 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
-
-			obj.GetType(),
 
 			serialized,
 		})
 
-		// Add the ID to be deleted.
+		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
@@ -143,7 +132,7 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx,
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"permission_sets"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -157,16 +146,8 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx,
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfiguration) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PermissionSet) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "PermissionSet")
 	if err != nil {
 		return err
 	}
@@ -177,7 +158,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfigu
 		return err
 	}
 
-	if err := s.copyFromReportConfigurations(ctx, tx, objs...); err != nil {
+	if err := s.copyFromPermissionSets(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -189,8 +170,8 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfigu
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfiguration) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PermissionSet) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "PermissionSet")
 	if err != nil {
 		return err
 	}
@@ -198,7 +179,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfigura
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoReportConfigurations(ctx, batch, obj); err != nil {
+		if err := insertIntoPermissionSets(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -217,19 +198,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfigura
 	return nil
 }
 
-//// Helper functions - END
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error {
 
-//// Interface functions
-
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ReportConfiguration) error {
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error {
 	return pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
@@ -244,45 +214,53 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfig
 	})
 }
 
-// DeleteMany removes the objects associated to the specified IDs from the store.
-func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, conn.Release, nil
+}
+
+// DeleteMany removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	var sacQueryFilter *v1.Query
 
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(identifiers)
+	numRecordsToDelete := len(ids)
 	for {
-		if len(identifiers) == 0 {
+		if len(ids) == 0 {
 			break
 		}
 
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
+		if len(ids) < localBatchSize {
+			localBatchSize = len(ids)
 		}
 
-		identifierBatch := identifiers[:localBatchSize]
+		idBatch := ids[:localBatchSize]
 		q := search.ConjunctionQuery(
 			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
+			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
 		)
 
 		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
 			log.Error(err)
 			return err
 		}
 
 		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
+		ids = ids[localBatchSize:]
 	}
 
 	return nil
 }
 
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error {
+// Walk iterates over all of the objects in the store and applies the closure
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ReportConfiguration](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.PermissionSet](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}

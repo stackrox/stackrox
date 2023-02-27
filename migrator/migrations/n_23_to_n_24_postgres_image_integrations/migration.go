@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_23_to_n_24_postgres_image_integrations/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_23_to_n_24_postgres_image_integrations/postgres"

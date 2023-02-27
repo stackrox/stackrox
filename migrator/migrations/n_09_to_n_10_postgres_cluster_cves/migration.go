@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/migrator/dackboxhelper"
 	"github.com/stackrox/rox/migrator/migrations"
 	cveUtil "github.com/stackrox/rox/migrator/migrations/cvehelper"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_09_to_n_10_postgres_cluster_cves/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_09_to_n_10_postgres_cluster_cves/postgres"

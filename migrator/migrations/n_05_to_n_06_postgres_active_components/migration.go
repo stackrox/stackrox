@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/dackboxhelper"
 	"github.com/stackrox/rox/migrator/migrations"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_05_to_n_06_postgres_active_components/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_05_to_n_06_postgres_active_components/postgres"

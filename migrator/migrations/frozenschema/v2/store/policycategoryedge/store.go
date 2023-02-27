@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v2"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -18,13 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// This file is a partial copy of central/role/store/permissionset/postgres/store.go
-// in the state it had when the v73 schema was frozen.
-// Only the relevant functions (Walk, DeleteMany and UpsertMany) are kept.
-// The kept functions are stripped from the scoped access control checks.
-
 const (
-	baseTable = "permission_sets"
+	baseTable = "policy_category_edges"
 
 	batchAfter = 100
 
@@ -39,14 +34,16 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = frozenSchema.PermissionSetsSchema
+	schema = frozenSchema.PolicyCategoryEdgesSchema
 )
 
-// Store is the interface for interactions with the database storage
+// Store is the interface to interact with the storage for storage.PolicyCategoryEdge
 type Store interface {
+	GetAll(ctx context.Context) ([]*storage.PolicyCategoryEdge, error)
+	UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error
 	DeleteMany(ctx context.Context, ids []string) error
-	UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error
-	Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error
+
+	Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error
 }
 
 type storeImpl struct {
@@ -61,7 +58,7 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storage.PermissionSet) error {
+func insertIntoPolicyCategoryEdges(ctx context.Context, batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -70,18 +67,19 @@ func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storag
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(obj.GetId()),
-		obj.GetName(),
+		obj.GetId(),
+		obj.GetPolicyId(),
+		obj.GetCategoryId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO permission_sets (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO policy_category_edges (Id, PolicyId, CategoryId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, PolicyId = EXCLUDED.PolicyId, CategoryId = EXCLUDED.CategoryId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs ...*storage.PermissionSet) error {
+func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.PolicyCategoryEdge) error {
 
 	inputRows := [][]interface{}{}
 
@@ -95,7 +93,9 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs 
 
 		"id",
 
-		"name",
+		"policyid",
+
+		"categoryid",
 
 		"serialized",
 	}
@@ -111,9 +111,11 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs 
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetId(),
 
-			obj.GetName(),
+			obj.GetPolicyId(),
+
+			obj.GetCategoryId(),
 
 			serialized,
 		})
@@ -132,7 +134,7 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs 
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"permission_sets"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_category_edges"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -146,8 +148,8 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs 
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PermissionSet) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "PermissionSet")
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PolicyCategoryEdge) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "PolicyCategoryEdge")
 	if err != nil {
 		return err
 	}
@@ -158,7 +160,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PermissionSet
 		return err
 	}
 
-	if err := s.copyFromPermissionSets(ctx, tx, objs...); err != nil {
+	if err := s.copyFromPolicyCategoryEdges(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -170,8 +172,8 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PermissionSet
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PermissionSet) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "PermissionSet")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryEdge) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "PolicyCategoryEdge")
 	if err != nil {
 		return err
 	}
@@ -179,7 +181,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PermissionSet) 
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoPermissionSets(ctx, batch, obj); err != nil {
+		if err := insertIntoPolicyCategoryEdges(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -198,8 +200,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PermissionSet) 
 	return nil
 }
 
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error {
-
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error {
 	return pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
@@ -214,18 +215,18 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PermissionSe
 	})
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.PolicyCategoryEdge, error) {
+	var objs []*storage.PolicyCategoryEdge
+	err := s.Walk(ctx, func(obj *storage.PolicyCategoryEdge) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
-// DeleteMany removes the specified IDs from the store
+// Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	var sacQueryFilter *v1.Query
-
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
 	numRecordsToDelete := len(ids)
@@ -258,9 +259,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error {
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.PermissionSet](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.PolicyCategoryEdge](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -280,4 +281,12 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PermissionSet
 		}
 	}
 	return nil
+}
+
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, conn.Release, nil
 }

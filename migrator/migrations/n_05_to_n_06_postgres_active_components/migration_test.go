@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_05_to_n_06_postgres_active_components/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_05_to_n_06_postgres_active_components/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"

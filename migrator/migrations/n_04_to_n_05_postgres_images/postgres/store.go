@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/common/v2"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/store"
 	"github.com/stackrox/rox/pkg/postgres"

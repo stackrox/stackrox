@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/frozenschema/v73/store/permissionset"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
+	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/frozenschema/v1/store/permissionset"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"

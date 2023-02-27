@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
