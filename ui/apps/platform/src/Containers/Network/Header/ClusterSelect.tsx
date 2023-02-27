@@ -31,8 +31,7 @@ const ClusterSelect = ({
         closeSelect();
         closeSidePanel();
     }
-    const fetchResult = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
-    const { clusters } = fetchResult;
+    const { clusters } = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
 
     return (
         <Select
