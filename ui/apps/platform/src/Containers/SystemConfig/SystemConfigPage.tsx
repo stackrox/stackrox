@@ -27,8 +27,7 @@ const SystemConfigPage = (): ReactElement => {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     */
     const { hasReadWriteAccess } = usePermissions();
-    // TODO: ROX-12750 Replace Config with Administration
-    const hasReadWriteAccessForConfig = hasReadWriteAccess('Config');
+    const hasReadWriteAccessForAdministration = hasReadWriteAccess('Administration');
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
         'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
@@ -113,7 +112,7 @@ const SystemConfigPage = (): ReactElement => {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">System Configuration</Title>
                     </FlexItem>
-                    {hasReadWriteAccessForConfig && (
+                    {hasReadWriteAccessForAdministration && (
                         <FlexItem align={{ default: 'alignRight' }}>
                             <Button
                                 variant="primary"
