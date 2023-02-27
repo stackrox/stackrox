@@ -58,8 +58,7 @@ function MainPage(): ReactElement {
         return <LoadingSection message="Loading..." />;
     }
 
-    // TODO: ROX-12750 Replace ServiceIdentity with Administration
-    const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
+    const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
 
     return (
         <>
@@ -68,11 +67,11 @@ function MainPage(): ReactElement {
             <AnnouncementBanner />
             <CredentialExpiryBanner
                 component="CENTRAL"
-                hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
+                hasAdministrationWritePermission={hasAdministrationWritePermission}
             />
             <CredentialExpiryBanner
                 component="SCANNER"
-                hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
+                hasAdministrationWritePermission={hasAdministrationWritePermission}
             />
             <OutdatedVersionBanner />
             <DatabaseStatusBanner />
