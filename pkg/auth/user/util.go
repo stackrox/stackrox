@@ -3,9 +3,12 @@ package user
 import (
 	"sort"
 
+	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"go.uber.org/zap"
 )
 
 // ConvertAttributes converts a map of user attributes to v1.UserAttribute
@@ -28,13 +31,43 @@ func ConvertAttributes(attrMap map[string][]string) []*v1.UserAttribute {
 	return result
 }
 
+type loggableAuthProvider struct {
+	Id   string
+	Name string
+	Type string
+}
+
+func protoToJSON(log *logging.Logger, message proto.Message) string {
+	result, err := jsonutil.ProtoToJSON(message, jsonutil.OptCompact, jsonutil.OptUnEscape)
+	if err != nil {
+		log.Error("Failed to convert proto to JSON: ", err)
+	} else {
+		return result
+	}
+	return ""
+}
+
 // LogSuccessfulUserLogin logs user attributes in the specified logger instance.
 func LogSuccessfulUserLogin(log *logging.Logger, user *v1.AuthStatus) {
-	loggableUser := user.Clone()
-	// Auth provider config can contain sensitive data(client secret, certificates etc.) so it shouldn't be logged.
-	if loggableUser != nil {
-		loggableUser.AuthProvider = nil
+	serviceIdStr := ""
+	permissionsStr := ""
+	if user.GetServiceId() != nil {
+		serviceIdStr = protoToJSON(log, user.GetServiceId())
 	}
-	userJSON, _ := jsonutil.ProtoToJSON(loggableUser)
-	log.Warnf("User successfully logged in with user attributes: %s", userJSON)
+	if user.GetUserInfo().GetPermissions() != nil {
+		permissionsStr = protoToJSON(log, user.GetServiceId())
+	}
+	log.Warnw("User successfully logged in with user attributes",
+		zap.String("userID", user.GetUserId()),
+		zap.String("serviceID", serviceIdStr),
+		zap.Any("expires", user.GetExpires()),
+		zap.String("username", user.GetUserInfo().GetUsername()),
+		zap.String("friendlyName", user.GetUserInfo().GetFriendlyName()),
+		zap.Any("roleNames", utils.RoleNamesFromUserInfo(user.GetUserInfo().GetRoles())),
+		zap.String("permissions", permissionsStr),
+		zap.Any("authProvider", &loggableAuthProvider{
+			Id:   user.GetAuthProvider().GetId(),
+			Type: user.GetAuthProvider().GetType(),
+			Name: user.GetAuthProvider().GetName(),
+		}))
 }
