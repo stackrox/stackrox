@@ -117,20 +117,6 @@ func (mr *MockDataStoreMockRecorder) ListAlerts(ctx, request interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAlerts", reflect.TypeOf((*MockDataStore)(nil).ListAlerts), ctx, request)
 }
 
-// MarkAlertStale mocks base method.
-func (m *MockDataStore) MarkAlertStale(ctx context.Context, id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkAlertStale", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkAlertStale indicates an expected call of MarkAlertStale.
-func (mr *MockDataStoreMockRecorder) MarkAlertStale(ctx, id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAlertStale", reflect.TypeOf((*MockDataStore)(nil).MarkAlertStale), ctx, id)
-}
-
 // MarkAlertStaleBatch mocks base method.
 func (m *MockDataStore) MarkAlertStaleBatch(ctx context.Context, id ...string) ([]*storage.Alert, error) {
 	m.ctrl.T.Helper()

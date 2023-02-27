@@ -57,14 +57,6 @@ func BenchmarkDBs(b *testing.B) {
 		}
 	})
 
-	b.Run("markStale", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			for _, id := range ids {
-				require.NoError(b, datastore.MarkAlertStale(ctx, id))
-			}
-		}
-	})
-
 	b.Run("markStaleBatch", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, err := datastore.MarkAlertStaleBatch(ctx, ids...)
