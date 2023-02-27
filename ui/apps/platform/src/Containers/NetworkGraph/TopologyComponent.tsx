@@ -77,7 +77,6 @@ const TopologyComponent = ({
     selectedNode,
     simulator,
     setNetworkPolicyModification,
-    applyNetworkPolicyModification,
     edgeState,
 }: TopologyComponentProps) => {
     const firstRenderRef = useRef(true);
@@ -178,7 +177,6 @@ const TopologyComponent = ({
                             selectedClusterId={selectedClusterId}
                             simulator={simulator}
                             setNetworkPolicyModification={setNetworkPolicyModification}
-                            applyNetworkPolicyModification={applyNetworkPolicyModification}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'NAMESPACE' && (

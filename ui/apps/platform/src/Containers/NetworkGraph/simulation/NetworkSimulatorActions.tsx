@@ -16,7 +16,6 @@ type NetworkSimulatorActionsProps = {
         _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
         file: File
     ) => void;
-    applyNetworkPolicies?: () => void;
     openNotifyYAMLModal?: () => void;
 };
 
@@ -25,7 +24,6 @@ const actionsDropdownId = 'network-simulator-actions-dropdown';
 const labels = {
     generate: 'Rebuild rules from active traffic',
     undo: 'Revert rules to previously applied YAML',
-    apply: 'Apply network policies',
     notify: 'Share YAML with notifiers',
 };
 
@@ -33,7 +31,6 @@ function NetworkSimulatorActions({
     generateNetworkPolicies,
     undoNetworkPolicies,
     onFileInputChange,
-    applyNetworkPolicies,
     openNotifyYAMLModal,
 }: NetworkSimulatorActionsProps) {
     const [isActionsOpen, setIsActionsOpen] = React.useState(false);
@@ -65,14 +62,6 @@ function NetworkSimulatorActions({
         actionsDropdownItems.unshift(
             <DropdownItem key="notify" tooltip="" onClick={openNotifyYAMLModal}>
                 {labels.notify}
-            </DropdownItem>
-        );
-    }
-
-    if (applyNetworkPolicies) {
-        actionsDropdownItems.unshift(
-            <DropdownItem key="apply" tooltip="" onClick={applyNetworkPolicies}>
-                {labels.apply}
             </DropdownItem>
         );
     }
