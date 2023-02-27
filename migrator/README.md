@@ -151,7 +151,7 @@ This tool also generates conversion tools for schema, you may remove the
 For the initial data push to postgres, the generated schemas under `migrator/migrations/frozenschema/v73` were used.
 The auto-generation scripts are removed so the schemas are frozen after 3.73.
 
-In 3.74, snapshots of the schemas are taken with an on-demand basis. 
+In 3.74, snapshots of the schemas are taken with an on-demand basis.
 
 Starting from release 4.0, we recommend to keep frozen schemas inside a new migration:
 - If the migration does not change the schema but need to access the data of a table, it needs to freeze its schema in the migration.
@@ -170,8 +170,8 @@ In migrator, there are a multiple ways to access data.
 
 1. Raw SQL commands
 
-    Raw SQL commands are always available to databases and it has good isolation from current release. It is used frequently in 
-    migrations before Postgres. Migrations with raw SQL command needs less maintenance but it may not be convenient 
+    Raw SQL commands are always available to databases and it has good isolation from current release. It is used frequently in
+    migrations before Postgres. Migrations with raw SQL command needs less maintenance but it may not be convenient
     and it could be error-prone.
     We try to provide more convenient way to read and update the data.
 
@@ -221,7 +221,7 @@ In migrator, there are a multiple ways to access data.
        Serialized []byte    `gorm:"column:serialized;type:bytea"`
    }
    ```
-   
+
 3. Duplicate the Postgres Store
    This method is used in version 73 and 74 to migrate all tables from RocksDB to Postgres. In addition to frozen schema,
    the store to access the data are also frozen for migration. The migrations with this method are closely associated
