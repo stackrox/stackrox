@@ -1004,7 +1004,6 @@ openshift_ci_mods() {
     fi
 
     # Provide Circle CI vars that are commonly used
-    export CIRCLE_JOB="${JOB_NAME:-${OPENSHIFT_BUILD_NAME}}"
     CIRCLE_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
     export CIRCLE_TAG
 
@@ -1374,8 +1373,10 @@ save_junit_success() {
 
     local class="$1"
     local description="$2"
+    local timestamp
+    timestamp="$(date -u +"%s.%N")"
 
-    cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
+    cat << EOF > "${ARTIFACT_DIR}/junit-${class}-${timestamp}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="0" errors="0">
     <testcase name="${description}" classname="${class}">
     </testcase>
@@ -1396,11 +1397,13 @@ save_junit_failure() {
     local class="$1"
     local description="$2"
     local details="$3"
+    local timestamp
+    timestamp="$(date -u +"%s.%N")"
 
-    cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
+    cat << EOF > "${ARTIFACT_DIR}/junit-${class}-${timestamp}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
     <testcase name="${description}" classname="${class}">
-        <failure>${details}</failure>
+        <failure><![CDATA[${details}]]></failure>
     </testcase>
 </testsuite>
 EOF
@@ -1517,6 +1520,44 @@ slack_prow_notice() {
     --arg github_url "$github_url" \
     '{"text": ":prow: Prow CI for tag <\($github_url)|\($tag)> started! Check the status of the tests under the following URL: \($build_url)"}' \
 | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+}
+
+highlight_cluster_versions() {
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "No place for artifacts, skipping cluster version dump"
+        return
+    fi
+
+    artifact_file="$ARTIFACT_DIR/cluster-version-summary.html"
+
+    cat > "$artifact_file" <<- HEAD
+<html style="background: #fff">
+    <head>
+        <title><h4>Cluster Versions</h4></title>
+    </head>
+    <body>
+HEAD
+
+    local nodes
+    nodes="$(kubectl get nodes -o wide 2>&1 || true)"
+    local versions
+    versions="$(kubectl version -o json 2>&1 || true)"
+
+    cat >> "$artifact_file" << DETAILS
+      <h3>Nodes:</h3>
+      kubectl get nodes -o wide
+      <pre>$nodes</pre>
+      <h3>Versions:</h3>
+      kubectl version -o json
+      <pre>$versions</pre>
+DETAILS
+
+    cat >> "$artifact_file" <<- FOOT
+    <br />
+    <br />
+  </body>
+</html>
+FOOT
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

@@ -4,10 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	undoDeploymentPostgres "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/postgres"
 	undoDeploymentRocksDB "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/rocksdb"
@@ -16,6 +15,7 @@ import (
 	undopostgres "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"go.etcd.io/bbolt"
 )
@@ -66,8 +66,8 @@ func New(storage store.Store, undoStorage undostore.UndoStore, undoDeploymentSto
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
+func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
 	undodbstore := undopostgres.New(pool)
 	undodeploymentdbstore := undoDeploymentPostgres.New(pool)
 	return New(dbstore, undodbstore, undodeploymentdbstore), nil

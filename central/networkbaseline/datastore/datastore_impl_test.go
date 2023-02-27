@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkbaseline/store"
 	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
 	rdbStore "github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -36,7 +36,7 @@ type NetworkBaselineDataStoreTestSuite struct {
 
 	datastore DataStore
 	storage   store.Store
-	pool      *pgxpool.Pool
+	pool      *postgres.DB
 	engine    *rocksdb.RocksDB
 }
 
@@ -49,9 +49,9 @@ func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ctx := context.Background()
 		source := pgtest.GetConnectionString(suite.T())
-		config, err := pgxpool.ParseConfig(source)
+		config, err := postgres.ParseConfig(source)
 		suite.NoError(err)
-		suite.pool, err = pgxpool.ConnectConfig(ctx, config)
+		suite.pool, err = postgres.New(ctx, config)
 		suite.NoError(err)
 		pgStore.Destroy(ctx, suite.pool)
 		gormDB := pgtest.OpenGormDB(suite.T(), source)

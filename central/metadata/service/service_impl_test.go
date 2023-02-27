@@ -139,7 +139,7 @@ func (s *serviceImplTestSuite) TestDatabaseStatus() {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		tp := pgtest.ForT(s.T())
-		service := serviceImpl{db: tp.Pool}
+		service := serviceImpl{db: tp.DB}
 
 		dbStatus, err := service.GetDatabaseStatus(ctx, nil)
 		s.NoError(err)
@@ -177,8 +177,8 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	defer tp.Teardown(s.T())
 
 	srv := &serviceImpl{
-		db:              tp.Pool,
-		systemInfoStore: systemInfoStorage.New(tp.Pool),
+		db:              tp.DB,
+		systemInfoStore: systemInfoStorage.New(tp.DB),
 	}
 	ctx := sac.WithAllAccess(context.Background())
 	expected := &storage.SystemInfo{

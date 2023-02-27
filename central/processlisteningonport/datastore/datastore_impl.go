@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
+	countMetrics "github.com/stackrox/rox/central/metrics"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -87,7 +88,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			indicatorID = indicator.GetId()
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
-			// TODO ROX-14377: Create a metric for this
+			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
 			log.Warnf("Found no matching indicators for %s", key)
 			processInfo = val.Process
 		}
@@ -138,7 +139,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			indicatorID = indicator.GetId()
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
-			// TODO ROX-14377: Create a metric for this
+			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
 			log.Warnf("Found no matching indicators for %s", key)
 			processInfo = val.Process
 		}
@@ -190,7 +191,12 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 	processesListeningOnPorts, err = ds.storage.GetProcessListeningOnPort(ctx, deploymentID)
 
 	if err != nil {
+		log.Warnf("In GetProcessListeningOnPort. Query for deployment %s returned err: %+v", deploymentID, err)
 		return nil, err
+	}
+
+	if processesListeningOnPorts == nil {
+		log.Warnf("In GetProcessListeningOnPort. Query for deployment %s returned nil", deploymentID)
 	}
 
 	return processesListeningOnPorts, nil

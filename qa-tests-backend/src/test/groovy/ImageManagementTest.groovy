@@ -8,7 +8,6 @@ import objects.GenericNotifier
 import services.CVEService
 import services.ImageService
 import services.PolicyService
-import util.Env
 
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -221,9 +220,9 @@ class ImageManagementTest extends BaseSpecification {
         def deployment = new Deployment()
                 .setName("risk-image")
                 .setReplicas(1)
-                .setImage("mysql@sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
+                .setImage("quay.io/rhacs-eng/qa:mysql-from-docker-io")
                 .setCommand(["sleep", "60000"])
-                .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
+                .setSkipReplicaWait(false)
 
         orchestrator.createDeployment(deployment)
 
@@ -231,7 +230,7 @@ class ImageManagementTest extends BaseSpecification {
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
             def image = ImageService.getImage(
-                    "sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
+                    "sha256:5c508e03f7f1987a393816a9ce2358f4abbdd36629972ba870af8f4cfcd031c0")
             assert image != null && image.riskScore != 0
         }
 

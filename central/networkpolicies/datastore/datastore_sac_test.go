@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	boltStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	pgdbStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -36,7 +36,7 @@ type networkPolicySACSuite struct {
 
 	datastore DataStore
 
-	pool *pgxpool.Pool
+	pool *postgres.DB
 
 	engine *bolt.DB
 
@@ -51,9 +51,9 @@ func (s *networkPolicySACSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ctx := context.Background()
 		src := pgtest.GetConnectionString(s.T())
-		cfg, err := pgxpool.ParseConfig(src)
+		cfg, err := postgres.ParseConfig(src)
 		s.Require().NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
+		s.pool, err = postgres.New(ctx, cfg)
 		s.Require().NoError(err)
 		pgdbStore.Destroy(ctx, s.pool)
 		gormDB := pgtest.OpenGormDB(s.T(), src)

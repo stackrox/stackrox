@@ -22,7 +22,7 @@ func TestListener(t *testing.T) {
 
 	testDB := pgtest.ForT(t)
 	defer testDB.Teardown(t)
-	sysInfoStore := systemInfoStorage.New(testDB.Pool)
+	sysInfoStore := systemInfoStorage.New(testDB.DB)
 	listener := newBackupListener(sysInfoStore)
 
 	ctx := sac.WithAllAccess(context.Background())

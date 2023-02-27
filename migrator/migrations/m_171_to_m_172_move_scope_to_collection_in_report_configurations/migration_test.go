@@ -388,9 +388,9 @@ func TestMigration(t *testing.T) {
 
 func (s *reportConfigsMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
-	s.reportConfigStore = reportConfigurationPostgres.New(s.db.Pool)
-	s.accessScopeStore = accessScopePostgres.New(s.db.Pool)
-	s.collectionStore = collectionPostgres.New(s.db.Pool)
+	s.reportConfigStore = reportConfigurationPostgres.New(s.db.DB)
+	s.accessScopeStore = accessScopePostgres.New(s.db.DB)
+	s.collectionStore = collectionPostgres.New(s.db.DB)
 
 	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.ReportConfigurationsTableName)
 	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.SimpleAccessScopesTableName)
@@ -413,7 +413,7 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 	}
 
 	dbs := &types.Databases{
-		PostgresDB: s.db.Pool,
+		PostgresDB: s.db.DB,
 		GormDB:     s.db.GetGormDB(),
 	}
 
@@ -467,7 +467,7 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 
 func (s *reportConfigsMigrationTestSuite) TestMigrationOnCleanDB() {
 	dbs := &types.Databases{
-		PostgresDB: s.db.Pool,
+		PostgresDB: s.db.DB,
 		GormDB:     s.db.GetGormDB(),
 	}
 	s.NoError(migration.Run(dbs))

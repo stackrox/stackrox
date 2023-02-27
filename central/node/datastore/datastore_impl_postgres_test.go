@@ -10,12 +10,11 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/node/datastore/search"
-	"github.com/stackrox/rox/central/node/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentDS "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentSearch "github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
@@ -30,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/nodes/converter"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -48,7 +48,7 @@ type NodePostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx                context.Context
-	db                 *pgxpool.Pool
+	db                 *postgres.DB
 	gormDB             *gorm.DB
 	datastore          DataStore
 	mockCtrl           *gomock.Controller
@@ -68,22 +68,22 @@ func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(suite.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	suite.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(suite.ctx, config)
+	pool, err := postgres.New(suite.ctx, config)
 	suite.NoError(err)
 	suite.gormDB = pgtest.OpenGormDB(suite.T(), source)
 	suite.db = pool
 }
 
 func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
-	postgres.Destroy(suite.ctx, suite.db)
+	pgStore.Destroy(suite.ctx, suite.db)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
-	storage := postgres.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
-	indexer := postgres.NewIndexer(suite.db)
+	storage := pgStore.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
+	indexer := pgStore.NewIndexer(suite.db)
 	searcher := search.NewV2(storage, indexer)
 	suite.datastore = NewWithPostgres(storage, indexer, searcher, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 

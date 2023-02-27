@@ -11,7 +11,7 @@ import "internalapi/central/telemetry.proto";
 package v1;
 
 message ConfigureTelemetryRequest {
-    bool enabled = 1;
+    bool enabled = 1 [deprecated = true];
 }
 
 service TelemetryService {
@@ -19,6 +19,7 @@ service TelemetryService {
         option (google.api.http) = {
             get: "/v1/telemetry/configure"
         };
+        option deprecated = true;
     }
 
     rpc ConfigureTelemetry (ConfigureTelemetryRequest) returns (storage.TelemetryConfiguration) {
@@ -26,6 +27,7 @@ service TelemetryService {
             put: "/v1/telemetry/configure"
             body: "*"
         };
+        option deprecated = true;
     }
 
     rpc GetConfig (Empty) returns (central.TelemetryConfig) {

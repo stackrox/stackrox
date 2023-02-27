@@ -7,6 +7,7 @@ import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
 import Loader from 'Components/Loader';
 
+import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './Process/Details';
@@ -39,13 +40,20 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
         { text: 'Deployment Details' },
         { text: 'Process Discovery' },
     ];
+
+    const networkGraphLink = getURLLinkToDeployment({
+        cluster: selectedDeployment.clusterName,
+        namespace: selectedDeployment.namespace,
+        deploymentId: selectedDeployment.id,
+    });
+
     return (
         <Tabs headers={riskPanelTabs}>
             <Tab>
                 <div className="flex flex-col pb-5">
                     <Link
                         className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
-                        to={`/main/network/${selectedDeployment.id}`}
+                        to={networkGraphLink}
                         data-testid="view-deployments-in-network-graph-button"
                     >
                         View Deployment in Network Graph
@@ -88,6 +96,8 @@ RiskSidePanelContent.propTypes = {
     isFetching: PropTypes.bool.isRequired,
     selectedDeployment: PropTypes.shape({
         id: PropTypes.string.isRequired,
+        clusterName: PropTypes.string.isRequired,
+        namespace: PropTypes.string.isRequired,
     }),
     deploymentRisk: PropTypes.shape({}),
     processGroup: PropTypes.shape({

@@ -21,7 +21,7 @@ import (
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
@@ -266,7 +266,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[0]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[0]}),
 						IsFixable:  true,
 						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.1"},
 						ClusterId:  clusterIDs[0],
@@ -290,7 +290,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[1]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[1]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
@@ -300,7 +300,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 				},
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[1]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[1]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[1],
@@ -325,7 +325,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[2]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[2]}),
 						IsFixable:  true,
 						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.2"},
 						ClusterId:  clusterIDs[1],
@@ -346,7 +346,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[3]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[3]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
@@ -356,7 +356,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 				},
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[3]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[3]}),
 						IsFixable:  true,
 						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.4"},
 						ClusterId:  clusterIDs[1],
@@ -377,7 +377,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[4]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[4]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],

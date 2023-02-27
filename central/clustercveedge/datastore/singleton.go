@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/central/clustercveedge/index"
 	"github.com/stackrox/rox/central/clustercveedge/search"
 	"github.com/stackrox/rox/central/clustercveedge/store"
@@ -27,8 +27,8 @@ func initialize() {
 	var indexer index.Indexer
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.NewFullStore(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		storage = pgStore.NewFullStore(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 		ad, err = New(nil, storage, indexer, search.NewV2(storage, indexer))
 		utils.CrashOnError(err)
 		return

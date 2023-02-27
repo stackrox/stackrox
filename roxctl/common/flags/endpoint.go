@@ -6,11 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
 var (
-	endpoint   string
+	endpoint        string
+	endpointChanged *bool
+
 	serverName string
 	directGRPC bool
 	forceHTTP1 bool
@@ -27,7 +30,9 @@ var (
 
 // AddConnectionFlags adds connection-related flags to roxctl.
 func AddConnectionFlags(c *cobra.Command) {
-	c.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", "localhost:8443", "endpoint for service to contact")
+	c.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", "localhost:8443",
+		"endpoint for service to contact. Alternatively, set the endpoint via the ROX_ENDPOINT environment variable")
+	endpointChanged = &c.PersistentFlags().Lookup("endpoint").Changed
 	c.PersistentFlags().StringVarP(&serverName, "server-name", "s", "", "TLS ServerName to use for SNI (if empty, derived from endpoint)")
 	c.PersistentFlags().BoolVar(&directGRPC, "direct-grpc", false, "Use direct gRPC (advanced; only use if you encounter connection issues)")
 	c.PersistentFlags().BoolVar(&forceHTTP1, "force-http1", false, "Always use HTTP/1 for all connections (advanced; only use if you encounter connection issues)")
@@ -43,6 +48,7 @@ func AddConnectionFlags(c *cobra.Command) {
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to
 // connect in plaintext mode.
 func EndpointAndPlaintextSetting() (string, bool, error) {
+	endpoint = flagOrSettingValue(endpoint, *endpointChanged, env.EndpointEnv)
 	if !strings.Contains(endpoint, "://") {
 		return endpoint, plaintext, nil
 	}
@@ -63,7 +69,7 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 	case "https":
 		usePlaintext = false
 	default:
-		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL", u.Scheme)
+		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL, the scheme should be: http(s)://<endpoint>:<port>", u.Scheme)
 	}
 
 	if *plaintextSet {

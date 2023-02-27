@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -36,7 +36,7 @@ type GraphQLNodeComponentTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	db       *pgxpool.Pool
+	db       *postgres.DB
 	gormDB   *gorm.DB
 	resolver *Resolver
 }

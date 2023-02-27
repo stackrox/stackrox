@@ -20,6 +20,6 @@ IFS=$'\n' read -d '' -r -a allowlist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${A
 
 allowlist_pattern="$(join_by '|' "${allowlist_subpatterns[@]}")"
 
-grep -vP "$allowlist_pattern" "$@" | grep >&2 -Pni "$blocklist_pattern" && exit 1
+grep -vP "$allowlist_pattern" "$@" | grep -Pni "$blocklist_pattern" && exit 1
 
 exit 0

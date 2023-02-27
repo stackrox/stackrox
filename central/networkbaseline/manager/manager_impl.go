@@ -7,7 +7,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
@@ -29,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
@@ -923,7 +923,7 @@ func New(
 }
 
 // GetTestPostgresManager provides a network baseline manager connected to postgres for testing purposes.
-func GetTestPostgresManager(t *testing.T, pool *pgxpool.Pool) (Manager, error) {
+func GetTestPostgresManager(t *testing.T, pool *postgres.DB) (Manager, error) {
 	networkBaselineStore, err := datastore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err

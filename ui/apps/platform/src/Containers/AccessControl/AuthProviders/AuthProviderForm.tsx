@@ -69,7 +69,12 @@ function getRuleAttributes(type, availableProviderTypes) {
 }
 
 function testModeSupported(provider) {
-    return provider.type === 'auth0' || provider.type === 'oidc' || provider.type === 'saml';
+    return (
+        provider.type === 'auth0' ||
+        provider.type === 'oidc' ||
+        provider.type === 'saml' ||
+        provider.type === 'openshift'
+    );
 }
 
 function AuthProviderForm({

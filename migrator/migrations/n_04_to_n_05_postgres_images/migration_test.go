@@ -58,7 +58,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 func (s *postgresMigrationSuite) TestImageMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool, true)
+	newStore := pgStore.New(s.postgresDB.DB, true)
 	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	s.NoError(err)
 	legacyStore := legacy.New(dacky, concurrency.NewKeyFence(), false)
@@ -148,7 +148,7 @@ func (s *postgresMigrationSuite) TestImageMigration() {
 	}
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify Count
 	count, err := newStore.Count(s.ctx)

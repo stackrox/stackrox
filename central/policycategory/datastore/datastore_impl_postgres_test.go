@@ -7,15 +7,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	policyCategorySearch "github.com/stackrox/rox/central/policycategory/search"
-	"github.com/stackrox/rox/central/policycategory/store/postgres"
+	pgStore "github.com/stackrox/rox/central/policycategory/store/postgres"
 	edgeDataStore "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	policyCategoryEdgeSearch "github.com/stackrox/rox/central/policycategoryedge/search"
 	policyCategoryEdgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -31,7 +31,7 @@ type PolicyCategoryPostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx           context.Context
-	db            *pgxpool.Pool
+	db            *postgres.DB
 	gormDB        *gorm.DB
 	datastore     DataStore
 	edgeDatastore edgeDataStore.DataStore
@@ -48,17 +48,17 @@ func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool
 }
 
 func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupTest() {
-	postgres.Destroy(s.ctx, s.db)
+	pgStore.Destroy(s.ctx, s.db)
 	policyCategoryEdgePostgres.Destroy(s.ctx, s.db)
 
 	policyCategoryEdgeStorage := policyCategoryEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
@@ -66,8 +66,8 @@ func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupTest() {
 	policyCategorySearcher := policyCategoryEdgeSearch.New(policyCategoryEdgeStorage, policyCategoryEdgeIndexer)
 	s.edgeDatastore = edgeDataStore.New(policyCategoryEdgeStorage, policyCategoryEdgeIndexer, policyCategorySearcher)
 
-	policyCategoryStore := postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	policyCategoryIndexer := postgres.NewIndexer(s.db)
+	policyCategoryStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	policyCategoryIndexer := pgStore.NewIndexer(s.db)
 	s.datastore = New(policyCategoryStore, policyCategoryIndexer,
 		policyCategorySearch.New(policyCategoryStore, policyCategoryIndexer), s.edgeDatastore)
 }

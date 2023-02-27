@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/idmap"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/store"
-	"github.com/stackrox/rox/central/namespace/store/postgres"
+	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -28,8 +28,8 @@ func initialize() {
 	var indexer index.Indexer
 	var dackBox *dackbox.DackBox
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		storage = pgStore.New(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 	} else {
 		dackBox = globalDackbox.GetGlobalDackBox()
 		storage = rocksdb.New(globaldb.GetRocksDB())

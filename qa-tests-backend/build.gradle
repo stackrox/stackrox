@@ -20,7 +20,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.21.12'
 def protobufVersion = '3.21.12'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '6.1.1'
+def fabric8Version = '6.4.1'
 def jacksonVersion = '2.13.2'
 
 protobuf {
@@ -60,7 +60,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.9.0'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.11.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.14.1"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -69,7 +69,7 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.8')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.9')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
@@ -119,7 +119,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.21")
     }
 
-    implementation 'org.javers:javers-core:6.9.1'
+    implementation 'org.javers:javers-core:6.11.0'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.15'

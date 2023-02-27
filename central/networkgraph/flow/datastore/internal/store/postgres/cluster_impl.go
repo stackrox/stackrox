@@ -3,13 +3,13 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.
-func NewClusterStore(db *pgxpool.Pool) store.ClusterStore {
+func NewClusterStore(db *postgres.DB) store.ClusterStore {
 	return &clusterStoreImpl{
 		db:        db,
 		flowStore: make(map[string]store.FlowStore),
@@ -17,7 +17,7 @@ func NewClusterStore(db *pgxpool.Pool) store.ClusterStore {
 }
 
 type clusterStoreImpl struct {
-	db        *pgxpool.Pool
+	db        *postgres.DB
 	lock      sync.Mutex
 	flowStore map[string]store.FlowStore
 }

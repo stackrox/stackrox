@@ -12,11 +12,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -765,7 +762,7 @@ func (t *tracedRows) CommandTag() pgconn.CommandTag {
 	return t.Rows.CommandTag()
 }
 
-func tracedQuery(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) (*tracedRows, error) {
+func tracedQuery(ctx context.Context, pool *postgres.DB, sql string, args ...interface{}) (*tracedRows, error) {
 	t := time.Now()
 	rows, err := pool.Query(ctx, sql, args...)
 	return &tracedRows{
@@ -774,7 +771,7 @@ func tracedQuery(ctx context.Context, pool *pgxpool.Pool, sql string, args ...in
 	}, err
 }
 
-func tracedQueryRow(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) pgx.Row {
+func tracedQueryRow(ctx context.Context, pool *postgres.DB, sql string, args ...interface{}) pgx.Row {
 	t := time.Now()
 	row := pool.QueryRow(ctx, sql, args...)
 	postgres.AddTracedQuery(ctx, t, sql, args)
@@ -782,7 +779,7 @@ func tracedQueryRow(ctx context.Context, pool *pgxpool.Pool, sql string, args ..
 }
 
 // RunSearchRequest executes a request against the database for given category
-func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
+func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *postgres.DB) ([]searchPkg.Result, error) {
 	schema := mapping.GetTableFromCategory(category)
 
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
@@ -791,7 +788,7 @@ func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Que
 	})
 }
 
-func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db *pgxpool.Pool) ([]searchPkg.Result, error) {
+func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db *postgres.DB) ([]searchPkg.Result, error) {
 	queryStr := query.AsSQL()
 
 	// Assumes that ids are strings.
@@ -820,19 +817,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		if ctx.Err() == context.Canceled {
-			return nil, err
-		}
-		if !pgutils.IsTransientError(err) {
-			debug.PrintStack()
-		} else {
-			log.Debugf("%s", debug.Stack())
-		}
-		log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
-		return nil, err
+		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
 	}
 	defer rows.Close()
-	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, redactedQueryData(query))
 
 	for rows.Next() {
 		if err := rows.Scan(bufferToScanRowInto...); err != nil {
@@ -869,7 +856,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 					returnedValue = field.PostTransform(returnedValue)
 				}
 				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
-					result.Matches[field.FieldPath] = matches
+					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
 				}
 			}
 		}
@@ -878,7 +865,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 	return searchResults, nil
 }
 
-func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, query *query) ([]*T, error) {
+func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, query *query) ([]*T, error) {
 	if len(query.SelectedFields) == 0 {
 		return nil, errors.New("select fields a must for select query")
 	}
@@ -887,19 +874,9 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		if ctx.Err() == context.Canceled {
-			return nil, err
-		}
-		if !pgutils.IsTransientError(err) {
-			debug.PrintStack()
-		} else {
-			log.Debugf("%s", debug.Stack())
-		}
-		log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
-		return nil, err
+		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
 	}
 	defer rows.Close()
-	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, redactedQueryData(query))
 
 	var scannedRows []*T
 	if err := pgxscan.ScanAll(&scannedRows, rows); err != nil {
@@ -909,7 +886,7 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.
 }
 
 // RunSearchRequestForSchema executes a request against the database for given schema
-func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
+func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *postgres.DB) ([]searchPkg.Result, error) {
 	var query *query
 	var err error
 	// Add this to be safe and convert panics to errors,
@@ -919,7 +896,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	defer func() {
 		if r := recover(); r != nil {
 			if query != nil {
-				log.Errorf("Query issue: %s %+v: %v", query.AsSQL(), redactedQueryData(query), r)
+				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
 			} else {
 				log.Errorf("Unexpected error running search request: %v", r)
 			}
@@ -944,7 +921,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
-func RunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, schema *walker.Schema, q *v1.Query) ([]*T, error) {
+func RunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
 	var query *query
 	var err error
 	// Add this to be safe and convert panics to errors,
@@ -954,7 +931,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, sch
 	defer func() {
 		if r := recover(); r != nil {
 			if query != nil {
-				log.Errorf("Query issue: %s %+v: %v", query.AsSQL(), redactedQueryData(query), r)
+				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
 			} else {
 				log.Errorf("Unexpected error running search request: %v", r)
 			}
@@ -977,7 +954,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db *pgxpool.Pool, sch
 }
 
 // RunCountRequest executes a request for just the count against the database
-func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (int, error) {
+func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *postgres.DB) (int, error) {
 	schema := mapping.GetTableFromCategory(category)
 
 	return pgutils.Retry2(func() (int, error) {
@@ -987,7 +964,7 @@ func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Quer
 }
 
 // RunCountRequestForSchema executes a request for just the count against the database
-func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (int, error) {
+func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *postgres.DB) (int, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, COUNT)
 	if err != nil || query == nil {
 		return 0, err
@@ -995,20 +972,10 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	queryStr := query.AsSQL()
 
 	return pgutils.Retry2(func() (int, error) {
-
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
-			if ctx.Err() == context.Canceled {
-				return 0, err
-			}
-			if !pgutils.IsTransientError(err) {
-				debug.PrintStack()
-			} else {
-				log.Debugf("%s", debug.Stack())
-			}
-			log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
-			return 0, err
+			return 0, errors.Wrapf(err, "error executing query %s", queryStr)
 		}
 		return count, nil
 	})
@@ -1020,7 +987,7 @@ type unmarshaler[T any] interface {
 }
 
 // RunGetQueryForSchema executes a request for just the search against the database
-func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (*T, error) {
+func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *postgres.DB) (*T, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err
@@ -1037,7 +1004,7 @@ func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema 
 	})
 }
 
-func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, query *query, db *pgxpool.Pool) ([]*T, error) {
+func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, query *query, db *postgres.DB) ([]*T, error) {
 	queryStr := query.AsSQL()
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
@@ -1049,7 +1016,7 @@ func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Con
 }
 
 // RunGetManyQueryForSchema executes a request for just the search against the database and unmarshal it to given type.
-func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([]*T, error) {
+func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *postgres.DB) ([]*T, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err
@@ -1065,7 +1032,7 @@ func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sch
 }
 
 // RunCursorQueryForSchema creates a cursor against the database
-func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (fetcher func(n int) ([]*T, error), closer func(), err error) {
+func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error creating query")
@@ -1109,31 +1076,20 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
-func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) error {
+func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *postgres.DB) error {
 	query, err := standardizeQueryAndPopulatePath(q, schema, DELETE)
 	if err != nil || query == nil {
 		return err
 	}
 
+	queryStr := query.AsSQL()
 	return pgutils.Retry(func() error {
-
-		_, err = db.Exec(ctx, query.AsSQL(), query.Data...)
+		_, err = db.Exec(ctx, queryStr, query.Data...)
 		if err != nil {
-			return errors.Wrapf(err, "could not delete from %q", schema.Table)
+			return errors.Wrapf(err, "could not delete from %q with query %s", schema.Table, queryStr)
 		}
 		return err
 	})
-}
-
-// redactedQueryData returns query.Data for logging purposes if this is a dev build. Otherwise, it redacts it as it
-// may contain sensitive data.
-func redactedQueryData(query *query) interface{} {
-	if !devbuild.IsEnabled() || buildinfo.ReleaseBuild {
-		// On a release build or non-dev build, redact query data
-		return "[REDACTED]"
-	}
-	// Otherwise, allow the logging
-	return query.Data
 }
 
 // helper functions

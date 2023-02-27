@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
 	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
@@ -31,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -44,7 +44,7 @@ func TestGetActiveImageIDs(t *testing.T) {
 	testCtx := sac.WithAllAccess(context.Background())
 
 	var (
-		pool          *pgxpool.Pool
+		pool          *postgres.DB
 		imageDS       imageDatastore.DataStore
 		deploymentsDS deploymentDatastore.DataStore
 		indexingQ     queue.WaitableQueue
@@ -53,7 +53,7 @@ func TestGetActiveImageIDs(t *testing.T) {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testingDB := pgtest.ForT(t)
-		pool = testingDB.Pool
+		pool = testingDB.DB
 		defer pool.Close()
 
 		imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, dackboxConcurrency.NewKeyFence()), imagePG.NewIndexer(pool), nil, ranking.ImageRanker(), ranking.ComponentRanker())

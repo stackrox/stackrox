@@ -11,7 +11,7 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
-	"github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
+	pgStore "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	"github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/central/imagecveedge/store"
@@ -32,8 +32,8 @@ func initialize() {
 	var searcher search.Searcher
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		storage = pgStore.New(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, indexer)
 		ad = New(nil, storage, searcher)
 		return

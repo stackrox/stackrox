@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/index"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
-	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -27,7 +27,7 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage postgres.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(storage pgStore.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
@@ -37,9 +37,9 @@ func New(storage postgres.Store, indexer index.Indexer, searcher search.Searcher
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool *pgxpool.Pool) DataStore {
-	dbstore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
+func GetTestPostgresDataStore(_ testing.TB, pool *postgres.DB) DataStore {
+	dbstore := pgStore.New(pool)
+	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
 	return New(dbstore, indexer, searcher)
 }

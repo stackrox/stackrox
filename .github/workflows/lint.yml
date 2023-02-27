@@ -18,3 +18,9 @@ jobs:
       - name: Check workflow files
         run: ${{ steps.get_actionlint.outputs.executable }} -color
         shell: bash
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check scripts with shellcheck
+        run: shellcheck ./.github/workflows/scripts/*

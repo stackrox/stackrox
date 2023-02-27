@@ -7,8 +7,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -18,9 +18,9 @@ import (
 func TestStore(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	source := pgtest.GetConnectionString(t)
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	require.NoError(t, err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := postgres.New(context.Background(), config)
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 

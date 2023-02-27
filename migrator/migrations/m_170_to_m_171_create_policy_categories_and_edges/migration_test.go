@@ -35,9 +35,9 @@ func TestMigration(t *testing.T) {
 
 func (s *categoriesMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
-	s.policyStore = policyPostgresStore.New(s.db.Pool)
-	s.categoryStore = policyCategoryPostgresStore.New(s.db.Pool)
-	s.edgeStore = policyCategoryEdgePostgresStore.New(s.db.Pool)
+	s.policyStore = policyPostgresStore.New(s.db.DB)
+	s.categoryStore = policyCategoryPostgresStore.New(s.db.DB)
+	s.edgeStore = policyCategoryEdgePostgresStore.New(s.db.DB)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePoliciesStmt)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePolicyCategoriesStmt)
 
@@ -55,7 +55,7 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
 
 	dbs := &types.Databases{
-		PostgresDB: s.db.Pool,
+		PostgresDB: s.db.DB,
 		GormDB:     s.db.GetGormDB(),
 	}
 

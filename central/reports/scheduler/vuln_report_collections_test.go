@@ -12,7 +12,6 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
 	imageComponentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
@@ -30,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -48,7 +48,7 @@ type ReportingWithCollectionsTestSuite struct {
 	suite.Suite
 
 	ctx             context.Context
-	db              *pgxpool.Pool
+	db              *postgres.DB
 	gormDB          *gorm.DB
 	reportScheduler *scheduler
 	resolver        *resolvers.Resolver

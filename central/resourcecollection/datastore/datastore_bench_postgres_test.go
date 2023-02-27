@@ -8,11 +8,11 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -30,10 +30,10 @@ func BenchmarkCollections(b *testing.B) {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(b)
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	require.NoError(b, err)
 
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.New(ctx, config)
 	require.NoError(b, err)
 	gormDB := pgtest.OpenGormDB(b, source)
 	defer pgtest.CloseGormDB(b, gormDB)
@@ -41,9 +41,9 @@ func BenchmarkCollections(b *testing.B) {
 	db := pool
 	defer db.Close()
 
-	postgres.Destroy(ctx, db)
-	store := postgres.CreateTableAndNewStore(ctx, db, gormDB)
-	index := postgres.NewIndexer(db)
+	pgStore.Destroy(ctx, db)
+	store := pgStore.CreateTableAndNewStore(ctx, db, gormDB)
+	index := pgStore.NewIndexer(db)
 	datastore, _, err := New(store, index, search.New(store, index))
 	require.NoError(b, err)
 

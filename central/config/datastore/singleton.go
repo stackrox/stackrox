@@ -5,7 +5,7 @@ import (
 
 	configStore "github.com/stackrox/rox/central/config/store"
 	"github.com/stackrox/rox/central/config/store/bolt"
-	"github.com/stackrox/rox/central/config/store/postgres"
+	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -58,7 +58,7 @@ var (
 func initialize() {
 	var store configStore.Store
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		store = postgres.New(globaldb.GetPostgres())
+		store = pgStore.New(globaldb.GetPostgres())
 	} else {
 		store = bolt.New(globaldb.GetGlobalDB())
 	}

@@ -35,9 +35,9 @@ func (m *MockTelemeter) EXPECT() *MockTelemeterMockRecorder {
 }
 
 // Group mocks base method.
-func (m *MockTelemeter) Group(groupID string, props map[string]any, opts ...telemeter.Option) {
+func (m *MockTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{groupID, props}
+	varargs := []interface{}{props}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
@@ -45,9 +45,9 @@ func (m *MockTelemeter) Group(groupID string, props map[string]any, opts ...tele
 }
 
 // Group indicates an expected call of Group.
-func (mr *MockTelemeterMockRecorder) Group(groupID, props interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Group(props interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{groupID, props}, opts...)
+	varargs := append([]interface{}{props}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), varargs...)
 }
 

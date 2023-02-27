@@ -1,4 +1,3 @@
-.github/workflows/scripts/patch-changelog.sh
 deploy/common/docker-auth.sh
 deploy/common/k8sbased.sh
 deploy/openshift/deploy-local.sh
@@ -72,6 +71,8 @@ tests/roxctl/authz-trace.sh
 tests/roxctl/helm-chart-generation.sh
 tests/roxctl/istio-support.sh
 tests/roxctl/slim-collector.sh
+tests/upgrade/legacy_to_postgres_run.sh
+tests/upgrade/lib.sh
 tests/upgrade/postgres_run.sh
 tests/upgrade/postgres_sensor_run.sh
 tests/yamls/roxctl_verification.sh

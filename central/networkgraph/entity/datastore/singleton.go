@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -24,7 +24,7 @@ func Singleton() EntityDataStore {
 		var storage store.EntityStore
 		var err error
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			storage = postgres.New(globaldb.GetPostgres())
+			storage = pgStore.New(globaldb.GetPostgres())
 		} else {
 			storage, err = rocksdb.New(globaldb.GetRocksDB())
 			utils.CrashOnError(err)

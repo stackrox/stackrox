@@ -8,11 +8,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/search"
-	"github.com/stackrox/rox/central/policy/store/postgres"
+	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	categorySearch "github.com/stackrox/rox/central/policycategory/search"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -38,7 +38,7 @@ type PolicyPostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx            context.Context
-	db             *pgxpool.Pool
+	db             *postgres.DB
 	gormDB         *gorm.DB
 	mockClusterDS  *clusterDSMocks.MockDataStore
 	mockNotifierDS *notifierDSMocks.MockDataStore
@@ -59,17 +59,17 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
-	postgres.Destroy(s.ctx, s.db)
+	pgStore.Destroy(s.ctx, s.db)
 	categoryPostgres.Destroy(s.ctx, s.db)
 	edgePostgres.Destroy(s.ctx, s.db)
 
@@ -86,8 +86,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, categoryIndex, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeIndex, edgeSearcher))
 
-	policyStore := postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	policyIndex := postgres.NewIndexer(s.db)
+	policyStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	policyIndex := pgStore.NewIndexer(s.db)
 	s.datastore = New(policyStore, policyIndex, search.New(policyStore, policyIndex), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
 }

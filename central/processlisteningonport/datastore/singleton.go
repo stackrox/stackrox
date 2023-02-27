@@ -3,7 +3,7 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/processlisteningonport/store/postgres"
+	pgStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -15,7 +15,7 @@ var (
 )
 
 func initialize() {
-	plopStore := postgres.NewFullStore(globaldb.GetPostgres())
+	plopStore := pgStore.NewFullStore(globaldb.GetPostgres())
 	indicatorDataStore := processIndicatorDataStore.Singleton()
 	dataStore = New(plopStore, indicatorDataStore)
 }

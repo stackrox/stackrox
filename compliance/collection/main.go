@@ -109,32 +109,15 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-// manageSendingToSensor sends everything from sensorC channel to sensor
-func manageSendingToSensor(ctx context.Context, cli sensor.ComplianceServiceClient, sensorC <-chan *sensor.MsgFromCompliance) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case sc := <-sensorC:
-			client, _, err := initializeStream(ctx, cli)
-			if err != nil && ctx.Err() == nil {
-				// error even after retries
-				log.Fatalf("unable to establish send stream to sensor: %v", err)
-			}
-			if err := client.Send(sc); err != nil {
-				log.Errorf("failed sending nodeScanV2 to sensor: %v", err)
-			}
-		}
-	}
-}
-
-func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
+func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, sensorC <-chan *sensor.MsgFromCompliance) {
 	for {
 		select {
 		case <-ctx.Done():
 			sig.Signal()
 			return
 		default:
+			// initializeStream must only be called once across all Compliance components,
+			// as multiple calls would overwrite associations on the Sensor side.
 			client, config, err := initializeStream(ctx, cli)
 			if err != nil {
 				if ctx.Err() != nil {
@@ -143,8 +126,29 @@ func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient
 				}
 				log.Fatalf("error initializing stream to sensor: %v", err)
 			}
+			// A second Context is introduced for cancelling the goroutine if runRecv returns.
+			// runRecv only returns on errors, upon which the client will get reinitialized,
+			// orphaning manageSendToSensor in the process.
+			ctx2, cancelFn := context.WithCancel(ctx)
+			if sensorC != nil {
+				go manageSendToSensor(ctx2, client, sensorC)
+			}
 			if err := runRecv(ctx, client, config); err != nil {
 				log.Errorf("error running recv: %v", err)
+			}
+			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next  call to initializeStream
+		}
+	}
+}
+
+func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_CommunicateClient, sensorC <-chan *sensor.MsgFromCompliance) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case sc := <-sensorC:
+			if err := cli.Send(sc); err != nil {
+				log.Errorf("failed sending node scan to sensor: %v", err)
 			}
 		}
 	}
@@ -278,15 +282,14 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
-	go manageReceiveStream(ctx, cli, &stoppedSig)
+	sensorC := make(chan *sensor.MsgFromCompliance)
+	defer close(sensorC)
+	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
 	if features.RHCOSNodeScanning.Enabled() {
 		rescanInterval := env.NodeRescanInterval.DurationSetting()
 		cmetrics.ObserveRescanInterval(rescanInterval, getNode())
 		log.Infof("Node Rescan interval: %s", rescanInterval.String())
-		sensorC := make(chan *sensor.MsgFromCompliance)
-		defer close(sensorC)
-		go manageSendingToSensor(ctx, cli, sensorC)
 
 		var scanner nodeinventorizer.NodeInventorizer
 		if features.UseFakeNodeInventory.Enabled() {

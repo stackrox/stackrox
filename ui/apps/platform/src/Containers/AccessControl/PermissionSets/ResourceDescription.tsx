@@ -15,7 +15,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
         'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs.',
     Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A',
     DeploymentExtension:
-        'Read: View network and process baseline extensions, risk score of deployments. Write: Modify the process and network baseline extensions of deployments.',
+        'Read: View network, process listening on ports, and process baseline extensions, risk score of deployments. Write: Modify the process, process listening on ports, and network baseline extensions of deployments.',
     Detection: 'Read: Check build-time policies against images or deployment YAMLs. Write: N/A',
     Image: 'Read: View images, their components, and their vulnerabilities. Write: N/A',
     Integration:

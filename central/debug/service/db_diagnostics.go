@@ -5,15 +5,15 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 const (
 	databaseType = "PostgresDB"
 )
 
-func buildDBDiagnosticData(ctx context.Context, dbConfig *pgxpool.Config, dbPool *pgxpool.Pool) centralDBDiagnosticData {
+func buildDBDiagnosticData(ctx context.Context, dbConfig *postgres.Config, dbPool *postgres.DB) centralDBDiagnosticData {
 	diagnosticData := centralDBDiagnosticData{}
 
 	// Add the database version if Postgres
@@ -44,7 +44,7 @@ func getDBClientVersion() string {
 	return strings.TrimSpace(string(clientVersion))
 }
 
-func getPostgresExtensions(ctx context.Context, dbPool *pgxpool.Pool) []dbExtension {
+func getPostgresExtensions(ctx context.Context, dbPool *postgres.DB) []dbExtension {
 	extensionQuery := "SELECT extname, extversion FROM pg_extension;"
 
 	ctx, cancel := context.WithTimeout(ctx, globaldb.PostgresQueryTimeout)

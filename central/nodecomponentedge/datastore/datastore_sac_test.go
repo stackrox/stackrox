@@ -15,7 +15,7 @@ import (
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,7 +71,7 @@ func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) str
 func getEdgeID(nodeID string, component *storage.EmbeddedNodeScanComponent, os string) string {
 	componentID := getComponentID(component, os)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.IDFromPks([]string{nodeID, componentID})
+		return pgSearch.IDFromPks([]string{nodeID, componentID})
 	}
 	return edges.EdgeID{ParentID: nodeID, ChildID: componentID}.ToString()
 }

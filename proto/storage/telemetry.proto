@@ -9,6 +9,6 @@ import "google/protobuf/timestamp.proto";
 package storage;
 
 message TelemetryConfiguration {
-    bool                      enabled       = 1;
-    google.protobuf.Timestamp last_set_time = 2;
+    bool                      enabled       = 1 [deprecated = true];
+    google.protobuf.Timestamp last_set_time = 2 [deprecated = true];
 }

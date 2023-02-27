@@ -5,13 +5,13 @@ package version
 import (
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/version/postgres"
+	pgStore "github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -29,15 +29,15 @@ type EnsurerTestSuite struct {
 
 	boltDB       *bolt.DB
 	rocksDB      *rocksdb.RocksDB
-	pgStore      postgres.Store
-	pool         *pgxpool.Pool
+	pgStore      pgStore.Store
+	pool         *postgres.DB
 	versionStore store.Store
 }
 
 func (suite *EnsurerTestSuite) SetupTest() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testDB := pgtest.ForT(suite.T())
-		suite.pool = testDB.Pool
+		suite.pool = testDB.DB
 
 		suite.versionStore = store.NewPostgres(suite.pool)
 	} else {

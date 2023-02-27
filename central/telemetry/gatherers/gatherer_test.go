@@ -9,7 +9,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	installation "github.com/stackrox/rox/central/installation/store"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -60,12 +60,12 @@ func (s *gathererTestSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.tp = pgtest.ForTCustomDB(s.T(), "postgres")
 		source := pgtest.GetConnectionString(s.T())
-		adminConfig, err := pgxpool.ParseConfig(source)
+		adminConfig, err := postgres.ParseConfig(source)
 		s.NoError(err)
 
-		installationStore = installationPostgres.New(s.tp.Pool)
+		installationStore = installationPostgres.New(s.tp.DB)
 
-		s.gatherer = newCentralGatherer(installationStore, newDatabaseGatherer(nil, nil, nil, newPostgresGatherer(s.tp.Pool, adminConfig)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
+		s.gatherer = newCentralGatherer(installationStore, newDatabaseGatherer(nil, nil, nil, newPostgresGatherer(s.tp.DB, adminConfig)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
 	} else {
 
 		boltDB, err := bolthelper.NewTemp("gatherer_test.db")

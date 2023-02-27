@@ -31,7 +31,7 @@ func TestExpiredVulnReqsPruning(t *testing.T) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testingDB := pgtest.ForT(t)
 		defer testingDB.Teardown(t)
-		datastore, err = vulnReqDataStore.GetTestPostgresDataStore(t, testingDB.Pool, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
+		datastore, err = vulnReqDataStore.GetTestPostgresDataStore(t, testingDB.DB, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
 		require.NoError(t, err)
 	} else {
 		db := rocksdbtest.RocksDBForT(t)

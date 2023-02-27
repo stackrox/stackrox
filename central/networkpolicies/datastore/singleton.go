@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/postgres"
+	pgStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/postgres"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/rocksdb"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/pkg/env"
@@ -21,7 +21,7 @@ var (
 func initialize() {
 	var undoDeploymentStorage undodeploymentstore.UndoDeploymentStore
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		undoDeploymentStorage = postgres.New(globaldb.GetPostgres())
+		undoDeploymentStorage = pgStore.New(globaldb.GetPostgres())
 	} else {
 		var err error
 		undoDeploymentStorage, err = rocksdb.New(globaldb.GetRocksDB())

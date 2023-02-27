@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/clone/metadata"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -42,8 +42,8 @@ type versionPair struct {
 
 type PostgresCloneManagerSuite struct {
 	suite.Suite
-	pool      *pgxpool.Pool
-	config    *pgxpool.Config
+	pool      *postgres.DB
+	config    *postgres.Config
 	sourceMap map[string]string
 	ctx       context.Context
 	gc        migGorm.Config
@@ -57,9 +57,9 @@ func (s *PostgresCloneManagerSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.New(ctx, config)
 	s.Require().NoError(err)
 	s.gc = migGorm.SetupAndGetMockConfig(s.T())
 

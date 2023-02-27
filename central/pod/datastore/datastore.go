@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/central/pod/index"
 	"github.com/stackrox/rox/central/pod/store/cache"
-	"github.com/stackrox/rox/central/pod/store/postgres"
+	pgStore "github.com/stackrox/rox/central/pod/store/postgres"
 	"github.com/stackrox/rox/central/pod/store/rocksdb"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	piFilter "github.com/stackrox/rox/central/processindicator/filter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -51,18 +51,18 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 }
 
 // NewPostgresDB creates a pod datastore based on Postgres
-func NewPostgresDB(db *pgxpool.Pool, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store, err := cache.NewCachedStore(postgres.New(db))
+func NewPostgresDB(db *postgres.DB, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
+	store, err := cache.NewCachedStore(pgStore.New(db))
 	if err != nil {
 		return nil, err
 	}
-	indexer := postgres.NewIndexer(db)
+	indexer := pgStore.NewIndexer(db)
 	searcher := search.New(store, indexer)
 	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
 	processIndicatorStore, err := piDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err

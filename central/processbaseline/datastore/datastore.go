@@ -5,18 +5,18 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
-	"github.com/stackrox/rox/central/processbaseline/store/postgres"
+	pgStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -59,9 +59,9 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, p
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
+func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
+	indexer := pgStore.NewIndexer(pool)
 	searcher, err := search.New(dbstore, indexer)
 	if err != nil {
 		return nil, err

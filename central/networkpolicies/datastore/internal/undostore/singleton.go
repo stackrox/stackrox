@@ -3,7 +3,7 @@ package undostore
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/bolt"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/postgres"
+	pgStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/postgres"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,7 +17,7 @@ var (
 func Singleton() UndoStore {
 	undoStoreInstanceInit.Do(func() {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			undoStoreInstance = postgres.New(globaldb.GetPostgres())
+			undoStoreInstance = pgStore.New(globaldb.GetPostgres())
 		} else {
 			undoStoreInstance = bolt.New(globaldb.GetGlobalDB())
 		}

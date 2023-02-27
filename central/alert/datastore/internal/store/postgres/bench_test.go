@@ -29,7 +29,7 @@ func BenchmarkGetMany(b *testing.B) {
 	}
 
 	testDB := pgtest.ForT(b)
-	store := New(testDB.Pool)
+	store := New(testDB.DB)
 
 	ctx := sac.WithAllAccess(context.Background())
 	err := store.UpsertMany(ctx, alerts)

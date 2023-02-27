@@ -63,7 +63,7 @@ func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testDB := pgtest.ForT(t)
 		assert.NotNil(t, testDB)
-		alertsDS, err := datastore.GetTestPostgresDataStore(t, testDB.Pool)
+		alertsDS, err := datastore.GetTestPostgresDataStore(t, testDB.DB)
 		require.NoError(t, err)
 
 		err = alertsDS.UpsertAlerts(sac.WithAllAccess(context.Background()), alerts)

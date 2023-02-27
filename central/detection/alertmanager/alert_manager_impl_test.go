@@ -602,6 +602,20 @@ func TestMergeRunTimeAlerts(t *testing.T) {
 			expectedOutput: true,
 		},
 		{
+			desc:           "Empty old alert; non-empty new alert",
+			old:            getFakeRuntimeAlert(),
+			new:            getFakeRuntimeAlert(yesterdayProcess),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(yesterdayProcess)),
+			expectedOutput: true,
+		},
+		{
+			desc:           "Empty old alert; non-empty new alert; again",
+			old:            getFakeRuntimeAlert(),
+			new:            getFakeRuntimeAlert(yesterdayProcess, nowProcess),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(yesterdayProcess, nowProcess)),
+			expectedOutput: true,
+		},
+		{
 			desc:           "No process; no event",
 			old:            getFakeRuntimeAlert(),
 			new:            getFakeRuntimeAlert(),

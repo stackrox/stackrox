@@ -5,10 +5,10 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
@@ -50,7 +50,7 @@ func LoadRestoreStream(fileReader io.Reader) error {
 	return nil
 }
 
-func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config *pgxpool.Config, restoreDB string) error {
+func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config *postgres.Config, restoreDB string) error {
 	// Set the options for pg_dump from the connection config
 	options := []string{
 		"-d",
@@ -85,7 +85,7 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 }
 
 // CheckIfRestoreDBExists - checks to see if a restore database exists
-func CheckIfRestoreDBExists(dbConfig *pgxpool.Config) bool {
+func CheckIfRestoreDBExists(dbConfig *postgres.Config) bool {
 	return pgadmin.CheckIfDBExists(dbConfig, getRestoreDBName())
 }
 

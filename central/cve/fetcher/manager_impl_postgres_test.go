@@ -12,7 +12,6 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
@@ -36,10 +35,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -139,7 +139,7 @@ func TestReconcileIstioCVEsInPostgres(t *testing.T) {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:        postgres.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String())}),
+						Id:        pgSearch.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String())}),
 						IsFixable: false,
 						ClusterId: "test_cluster_id1",
 						CveId:     cve.ID("CVE-4", storage.CVE_ISTIO_CVE.String()),
@@ -337,7 +337,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:        postgres.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-1", storage.CVE_K8S_CVE.String())}),
+						Id:        pgSearch.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-1", storage.CVE_K8S_CVE.String())}),
 						IsFixable: true,
 						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{
 							FixedBy: "1.10.9",
@@ -378,7 +378,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:        postgres.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-2", storage.CVE_K8S_CVE.String())}),
+						Id:        pgSearch.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-2", storage.CVE_K8S_CVE.String())}),
 						IsFixable: false,
 						ClusterId: "test_cluster_id1",
 						CveId:     cve.ID("CVE-2", storage.CVE_K8S_CVE.String()),
@@ -416,7 +416,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:        postgres.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-3", storage.CVE_K8S_CVE.String())}),
+						Id:        pgSearch.IDFromPks([]string{"test_cluster_id1", cve.ID("CVE-3", storage.CVE_K8S_CVE.String())}),
 						IsFixable: false,
 						ClusterId: "test_cluster_id1",
 						CveId:     cve.ID("CVE-3", storage.CVE_K8S_CVE.String()),
@@ -460,7 +460,7 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 
 	mockCtrl            *gomock.Controller
 	ctx                 context.Context
-	db                  *pgxpool.Pool
+	db                  *postgres.DB
 	gormDB              *gorm.DB
 	clusterDataStore    clusterDS.DataStore
 	clusterCVEDatastore clusterCVEDataStore.DataStore
@@ -482,10 +482,10 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.NoError(err)
 
-	db, err := pgxpool.ConnectConfig(s.ctx, config)
+	db, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.db = db
 

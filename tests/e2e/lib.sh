@@ -33,6 +33,8 @@ deploy_stackrox() {
 
     sensor_wait
 
+    wait_for_collectors_to_be_operational
+
     touch "${STATE_DEPLOYED}"
 }
 
@@ -69,6 +71,8 @@ deploy_stackrox_with_custom_sensor() {
 
     sensor_wait
 
+    wait_for_collectors_to_be_operational
+
     touch "${STATE_DEPLOYED}"
 }
 
@@ -94,6 +98,7 @@ export_test_environment() {
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
+    ci_export ROX_PROCESSES_LISTENING_ON_PORT "${ROX_PROCESSES_LISTENING_ON_PORT:-true}"
 }
 
 deploy_stackrox_operator() {
@@ -169,6 +174,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
     customize_envVars+=$'\n      - name: ROX_POSTGRES_DATASTORE'
     customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
+    customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
+    customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
 
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
@@ -260,6 +267,11 @@ deploy_sensor_via_operator() {
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
        kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
+
+    if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
+       kubectl -n stackrox set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+       kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+    fi
 }
 
 export_central_basic_auth_creds() {
@@ -329,6 +341,43 @@ setup_podsecuritypolicies_config() {
         ci_export "POD_SECURITY_POLICIES" "true"
         info "POD_SECURITY_POLICIES set to true"
     fi
+}
+
+# wait_for_collectors_to_be_operational() ensures that collector pods are able
+# to load kernel objects and create network connections.
+wait_for_collectors_to_be_operational() {
+    info "Will wait for collectors to reach a ready state"
+
+    local readiness_indicator="Successfully established GRPC stream for signals"
+    local timeout=300
+    local retry_interval=10
+
+    local start_time
+    start_time="$(date '+%s')"
+    local all_ready="false"
+    while [[ "$all_ready" == "false" ]]; do
+        all_ready="true"
+        for pod in $(kubectl -n stackrox get pods -l app=collector -o json | jq -r '.items[].metadata.name'); do
+            echo "Checking readiness of $pod"
+            if kubectl -n stackrox logs -c collector "$pod" | grep "$readiness_indicator" > /dev/null 2>&1; then
+                echo "$pod is deemed ready"
+            else
+                info "$pod is not ready"
+                kubectl -n stackrox logs -c collector "$pod"
+                all_ready="false"
+                break
+            fi
+        done
+        if (( $(date '+%s') - start_time > "$timeout" )); then
+            echo "ERROR: Collector readiness check timed out after $timeout seconds"
+            echo "Not all collector logs contain: $readiness_indicator"
+            exit 1
+        fi
+        if [[ "$all_ready" == "false" ]]; then
+            info "Found at least one unready collector pod, will check again in $retry_interval seconds"
+            sleep "$retry_interval"
+        fi
+    done
 }
 
 patch_resources_for_test() {
@@ -423,7 +472,7 @@ check_for_stackrox_restarts() {
     if [[ -n "$previous_logs" ]]; then
         echo >&2 "Previous logs found"
         # shellcheck disable=SC2086
-        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME:-${CIRCLE_JOB}}" $previous_logs; then
+        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs; then
             exit 1
         fi
     fi
@@ -446,9 +495,13 @@ check_for_errors_in_stackrox_logs() {
     # shellcheck disable=SC2010,SC2086
     filtered=$(ls $logs | grep -Ev "(previous|_describe).log$" || true)
     if [[ -n "$filtered" ]]; then
+        local check_out=""
         # shellcheck disable=SC2086
-        if ! scripts/ci/logcheck/check.sh $filtered; then
+        if ! check_out="$(scripts/ci/logcheck/check.sh $filtered)"; then
+            save_junit_failure "SuspiciousLog" "Suspicious entries in log file(s)" "$check_out"
             die "ERROR: Found at least one suspicious log file entry."
+        else
+            save_junit_success "SuspiciousLog" "Suspicious entries in log file(s)"
         fi
     fi
 }

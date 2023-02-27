@@ -99,6 +99,7 @@ import (
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
+	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
@@ -181,6 +182,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
@@ -316,7 +318,10 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
-	centralclient.InstanceConfig().Gatherer().Start()
+
+	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -396,6 +401,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
+		servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}
@@ -480,7 +486,7 @@ func startGRPCServer() {
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
 	if features.DeclarativeConfiguration.Enabled() {
-		declarativeconfig.ManagerSingleton().WatchDeclarativeConfigDir()
+		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
 
 	clusterInitBackend := backend.Singleton()
@@ -535,7 +541,7 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	centralclient.RegisterCentralClient(config, basicAuthProvider.ID())
+	centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,

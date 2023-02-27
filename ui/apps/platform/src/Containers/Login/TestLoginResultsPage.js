@@ -6,7 +6,6 @@ import upperFirst from 'lodash/upperFirst';
 import { Message } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
-import AppWrapper from '../AppWrapper';
 
 function closeThisWindow() {
     window.close();
@@ -93,7 +92,7 @@ function TestLoginResultsPage({ authProviderTestResults }) {
     const { messageBody, messageType } = getMessage(authProviderTestResults);
 
     return (
-        <AppWrapper>
+        <>
             <div className="flex flex-col items-center justify-center h-full theme-light">
                 <div className="flex flex-col items-center pf-u-background-color-100 w-4/5 relative">
                     <div className="p-4 w-full">
@@ -115,7 +114,7 @@ function TestLoginResultsPage({ authProviderTestResults }) {
                     </div>
                 </div>
             </div>
-        </AppWrapper>
+        </>
     );
 }
 

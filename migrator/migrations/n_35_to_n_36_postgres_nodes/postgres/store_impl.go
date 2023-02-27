@@ -9,15 +9,15 @@ import (
 	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/common/v2"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -50,12 +50,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 *pgxpool.Pool
+	db                 *postgres.DB
 	noUpdateTimestamps bool
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool) Store {
+func New(db *postgres.DB, noUpdateTimestamps bool) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -550,7 +550,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 func (s *storeImpl) retryableCount(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
-	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Get returns the object, if it exists from the store
@@ -708,7 +708,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 	return componentIDToEdgesMap, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err

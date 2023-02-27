@@ -193,6 +193,16 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
         	            	value "not a uuid" in search query must be valid UUID`,
 		},
+		{
+			desc: "search of child schema mutliple results for base ID",
+			q: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.ImageName, search.EnvironmentKey},
+				[]string{search.WildcardString, search.WildcardString}).
+				ProtoQuery(),
+			expectedFrom:       "deployments",
+			expectedWhere:      "(deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)",
+			expectedJoinTables: []string{"deployments_containers", "deployments_containers_envs"},
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, SEARCH)

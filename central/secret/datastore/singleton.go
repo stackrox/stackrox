@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
-	"github.com/stackrox/rox/central/secret/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/secret/internal/store/postgres"
 	"github.com/stackrox/rox/central/secret/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/secret/search"
 	"github.com/stackrox/rox/pkg/env"
@@ -25,8 +25,8 @@ func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		storage = pgStore.New(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 		indexer = index.New(globalindex.GetGlobalTmpIndex())

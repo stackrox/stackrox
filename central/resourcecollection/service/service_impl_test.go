@@ -54,7 +54,7 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 
 	var err error
 	suite.testDB = pgtest.ForT(suite.T())
-	suite.resourceConfigDS, err = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.Pool)
+	suite.resourceConfigDS, err = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
 	suite.NoError(err)
 	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS, suite.resourceConfigDS)
 

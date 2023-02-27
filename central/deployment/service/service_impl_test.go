@@ -181,7 +181,7 @@ func setupRocksDB(t *testing.T) (datastore.DataStore, queue.WaitableQueue, func(
 
 func setupPostgresDatastore(t *testing.T) (datastore.DataStore, func()) {
 	testingDB := pgtest.ForT(t)
-	pool := testingDB.Pool
+	pool := testingDB.DB
 
 	mockCtrl := gomock.NewController(t)
 	riskDataStore := riskMocks.NewMockDataStore(mockCtrl)

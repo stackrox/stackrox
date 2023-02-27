@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -28,7 +28,7 @@ type NetworkflowStoreSuite struct {
 	suite.Suite
 	store  FlowStore
 	ctx    context.Context
-	pool   *pgxpool.Pool
+	pool   *postgres.DB
 	gormDB *gorm.DB
 }
 
@@ -47,9 +47,9 @@ func (s *NetworkflowStoreSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
-	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
+	s.pool, err = postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 }

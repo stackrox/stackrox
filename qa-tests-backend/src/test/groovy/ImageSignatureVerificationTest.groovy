@@ -10,15 +10,11 @@ import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegra
 import objects.Deployment
 import services.PolicyService
 import services.SignatureIntegrationService
-import util.Env
 
-import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
-// Do not run tests on crio due to an issue with crio trying to pull images referenced by digest from gcr.io.
-@IgnoreIf({ Env.CI_JOBNAME.contains("crio") })
 class ImageSignatureVerificationTest extends BaseSpecification {
 
     static final private String SIGNATURE_TESTING_NAMESPACE = "qa-signature-tests"

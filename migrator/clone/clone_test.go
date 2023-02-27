@@ -10,14 +10,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/migrator/clone/metadata"
-	"github.com/stackrox/rox/migrator/clone/postgres"
+	pgClone "github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -373,7 +373,7 @@ func doTestForceRollbackFailure(t *testing.T) {
 	}
 	var forceRollbackClone string
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		forceRollbackClone = postgres.CurrentClone
+		forceRollbackClone = pgClone.CurrentClone
 	} else {
 		forceRollbackClone = rocksdb.CurrentClone
 	}
@@ -441,7 +441,7 @@ func doTestForceRollbackFailure(t *testing.T) {
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				source := pgtest.GetConnectionString(t)
 				sourceMap, _ := pgconfig.ParseSource(source)
-				config, err := pgxpool.ParseConfig(source)
+				config, err := postgres.ParseConfig(source)
 				require.NoError(t, err)
 
 				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
@@ -485,7 +485,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 	}
 	var forceRollbackClone string
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		forceRollbackClone = postgres.CurrentClone
+		forceRollbackClone = pgClone.CurrentClone
 	} else {
 		forceRollbackClone = rocksdb.CurrentClone
 	}
@@ -554,7 +554,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				source := pgtest.GetConnectionString(t)
 				sourceMap, _ := pgconfig.ParseSource(source)
-				config, err := pgxpool.ParseConfig(source)
+				config, err := postgres.ParseConfig(source)
 				require.NoError(t, err)
 
 				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)

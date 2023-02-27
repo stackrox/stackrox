@@ -7,11 +7,11 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -125,7 +125,7 @@ type FlowStore interface {
 }
 
 type flowStoreImpl struct {
-	db        *pgxpool.Pool
+	db        *postgres.DB
 	mutex     sync.Mutex
 	clusterID uuid.UUID
 }
@@ -201,7 +201,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, clusterID string) FlowStore {
+func New(db *postgres.DB, clusterID string) FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Errorf("cluster ID is not valid.  %v", err)
@@ -284,7 +284,7 @@ func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*stora
 	return s.copyFrom(ctx, flows...)
 }
 
-func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
@@ -614,17 +614,17 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 
 //// Used for testing
 
-func dropTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNetworkflow(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows CASCADE")
 }
 
 // Destroy destroys the tables
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.DB) {
 	dropTableNetworkflow(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, clusterID string) FlowStore {
+func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB, clusterID string) FlowStore {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
 	return New(db, clusterID)
 }

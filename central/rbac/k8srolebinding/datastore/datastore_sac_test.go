@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -33,7 +33,7 @@ type k8sRoleBindingSACSuite struct {
 
 	datastore DataStore
 
-	pool *pgxpool.Pool
+	pool *postgres.DB
 
 	engine *rocksdb.RocksDB
 	index  bleve.Index
@@ -50,7 +50,7 @@ func (s *k8sRoleBindingSACSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(s.T())
 		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
+		s.pool = pgtestbase.DB
 		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
 		s.Require().NoError(err)
 		s.optionsMap = schema.RoleBindingsSchema.OptionsMap

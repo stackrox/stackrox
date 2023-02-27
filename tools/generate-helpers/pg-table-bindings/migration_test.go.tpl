@@ -75,7 +75,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 func (s *postgresMigrationSuite) Test{{.TrimmedType}}Migration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.DB)
 	{{- if .Migration.SingletonStore}}
 	legacyStore := legacy.New(s.legacyDB)
 	{{- else if $dackbox}}
@@ -107,7 +107,7 @@ func (s *postgresMigrationSuite) Test{{.TrimmedType}}Migration() {
 	{{- end}}{{/* non-singleton store*/}}
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	{{- if .Migration.SingletonStore}}

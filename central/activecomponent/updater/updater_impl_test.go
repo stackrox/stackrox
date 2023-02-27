@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -251,7 +251,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 
 			var imageComponent string
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				imageComponent = postgres.IDToParts(ac.GetComponentId())[0]
+				imageComponent = pgSearch.IDToParts(ac.GetComponentId())[0]
 			} else {
 				edge, err := edges.FromString(ac.GetComponentId())
 				s.NoError(err)

@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/version/postgres"
+	pgStore "github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -30,8 +30,8 @@ type VersionStoreTestSuite struct {
 
 	boltDB  *bolt.DB
 	rocksDB *rocksdb.RocksDB
-	pgStore postgres.Store
-	pool    *pgxpool.Pool
+	pgStore pgStore.Store
+	pool    *postgres.DB
 	ctx     context.Context
 	store   Store
 }
@@ -41,7 +41,7 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 		suite.ctx = sac.WithAllAccess(context.Background())
 
 		testDB := pgtest.ForT(suite.T())
-		suite.pool = testDB.Pool
+		suite.pool = testDB.DB
 
 		suite.store = NewPostgres(suite.pool)
 	} else {
@@ -59,7 +59,7 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 func (suite *VersionStoreTestSuite) TearDownTest() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if suite.pool != nil {
-			postgres.Destroy(suite.ctx, suite.pool)
+			pgStore.Destroy(suite.ctx, suite.pool)
 			suite.pool.Close()
 		}
 	} else {

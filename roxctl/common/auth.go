@@ -22,11 +22,15 @@ func checkAuthParameters() error {
 		return errox.InvalidArgs.New("cannot use password- and token-based authentication at the same time")
 	}
 	if flags.APITokenFile() == "" && env.TokenEnv.Setting() == "" && flags.Password() == "" {
-		return errox.InvalidArgs.New("no token set via either token file or the environment variable ROX_API_TOKEN")
+		return errox.InvalidArgs.New(authHelp)
 	}
 
 	return nil
 }
+
+const authHelp = `No authentication information is set.
+Either set a token within the token file provided in the --token-file flag, or the environment variable ROX_API_TOKEN.
+Alternatively, you can pass the admin password via the --password/-p flag.`
 
 // #nosec G101 -- This is a false positive
 const userHelpLiteralToken = `There is no token in file %q. The token file should only contain a single authentication token.

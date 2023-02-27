@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -39,7 +39,7 @@ type metadataIndex interface {
 }
 
 // NewStore returns a compliance store based on Postgres
-func NewStore(db *pgxpool.Pool) store.Store {
+func NewStore(db *postgres.DB) store.Store {
 	return &storeImpl{
 		domain:        domainStore.New(db),
 		metadata:      metadataStore.New(db),

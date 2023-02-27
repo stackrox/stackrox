@@ -33,5 +33,7 @@ func init() {
 		acquireDBConnHistogramVec,
 		clusterMetricsNodeCountGaugeVec,
 		clusterMetricsCPUCapacityGaugeVec,
+		totalOrphanedPLOPCounter,
+		processQueueLengthGauge,
 	)
 }

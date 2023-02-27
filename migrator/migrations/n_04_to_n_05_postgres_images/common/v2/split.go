@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	converter "github.com/stackrox/rox/migrator/migrations/cvehelper"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -69,7 +69,7 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 
 func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.ImageCVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
 	ret := &storage.ComponentCVEEdge{
-		Id:               postgres.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
+		Id:               pgSearch.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
 		IsFixable:        embedded.GetFixedBy() != "",
 		ImageCveId:       convertedCVE.GetId(),
 		ImageComponentId: convertedComponent.GetId(),
@@ -104,7 +104,7 @@ func generateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 
 func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.ImageComponent, embedded *storage.EmbeddedImageScanComponent) *storage.ImageComponentEdge {
 	ret := &storage.ImageComponentEdge{
-		Id:               postgres.IDFromPks([]string{image.GetId(), convImgComponent.GetId()}),
+		Id:               pgSearch.IDFromPks([]string{image.GetId(), convImgComponent.GetId()}),
 		ImageId:          image.GetId(),
 		ImageComponentId: convImgComponent.GetId(),
 		Location:         embedded.GetLocation(),
@@ -120,7 +120,7 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 
 func generateImageCVEEdge(imageID string, convertedCVE *storage.ImageCVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
 	ret := &storage.ImageCVEEdge{
-		Id:         postgres.IDFromPks([]string{imageID, convertedCVE.GetId()}),
+		Id:         pgSearch.IDFromPks([]string{imageID, convertedCVE.GetId()}),
 		State:      embedded.GetState(),
 		ImageId:    imageID,
 		ImageCveId: convertedCVE.GetId(),
