@@ -7,6 +7,14 @@ import requests
 
 QUAY_ORG="rhacs-eng"
 
+VULNERABILITY_LEVELS = {
+    "Unknown": 0,
+    "Negligible": 1,
+    "Low": 2,
+    "Medium": 3,
+    "High": 4,
+    "Critical": 5,
+}
 
 def wrap_quay_api(image, endpoint, query_params):
     BEARER_TOKEN=os.getenv("QUAY_BEARER_TOKEN")
@@ -26,7 +34,7 @@ def find_manifest(image, tag):
     tag_data = wrap_quay_api(image, "tag", {"onlyActiveTags": "true", "specificTag": tag, "limit": 1})
     number_of_tags = len(tag_data["tags"])
     if number_of_tags != 1:
-        raise Exception(f"Failed to identify tag - {number_of_tags} tag(s) returned from Quay.")
+        raise Exception(f"Failed to identify tag - {number_of_tags} tag(s) returned from Quay for {image}:{tag}.")
 
     return tag_data["tags"][0]["manifest_digest"]
 
@@ -56,6 +64,7 @@ def collect_vulnerability_information(package):
             "name": vuln["Name"],
             "severity": vuln["Severity"],
             "link": vuln["Link"],
+            "severity_level": VULNERABILITY_LEVELS.get(vuln["Severity"], -1)
         })
 
     return package_information
@@ -84,11 +93,12 @@ def dump_report(images, as_json=False):
                     for vuln in package["vulnerabilities"]:
                         output.append({
                             "image": i["name"], "vuln_name": vuln["name"], "vuln_severity": vuln["severity"],
+                            "vuln_severity_level": vuln["severity_level"],
                             "package_name": package["name"], "package_version": package["version"]
                         })
 
 
-        output.sort(key=lambda x: (x["image"], x["vuln_severity"], x["package_name"]))
+        output.sort(key=lambda x: (-x["vuln_severity_level"], x["image"], x["package_name"]))
         for x in output:
             print("{:<30} {:<10} {:<20} {:<20} {:<80}".format(
                 x["image"], x["vuln_severity"],
