@@ -419,9 +419,6 @@ jobs:
           # Prevent fatal error "detected dubious ownership in repository" from recent git.
           git config --global --add safe.directory "$(pwd)"
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Resolve mods for protos
