@@ -104,7 +104,6 @@ def main():
 
     # Vulnerability information is attached to the child manifest, suffix -amd64
     tag = f"{args.tag}-amd64"
-    tag = args.tag
     images = {
         "images": [
             {"name": "central-db", "tag": tag},
