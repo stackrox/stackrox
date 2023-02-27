@@ -62,7 +62,7 @@ type Store interface {
 
 type storeImpl struct {
 	db    *postgres.DB
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
