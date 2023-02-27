@@ -322,6 +322,9 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 
 	userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
 	if err != nil {
+		if testMode {
+			return nil, errors.Wrap(err, "cannot create role based identity")
+		}
 		log.Warnf("error creating role based identity: %v", err)
 	}
 	userPkg.LogSuccessfulUserLogin(log, userMetadata)
