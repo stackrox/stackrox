@@ -261,9 +261,11 @@ func main() {
 		"	Integration replaces APIToken, BackupPlugins, ImageIntegration, Notifier, and SignatureIntegration\n" +
 		"	Image now also covers ImageComponent\n" +
 		"The following permission resources will be replaced in the upcoming versions:\n" +
-		"	Administration will replace AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
-		"	Compliance will replace ComplianceRuns\n" +
-		"	Cluster will cover ClusterCVE.")
+		"   Access will replace Role\n" +
+		"   Administration will replace AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
+		"   Compliance will replace ComplianceRuns\n" +
+		"   Cluster will cover ClusterCVE\n" +
+		"   WorkflowAdministration will replace Policy and VulnerabilityReports.")
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version

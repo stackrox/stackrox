@@ -23,11 +23,11 @@ import spock.lang.Unroll
 class DiagnosticBundleTest extends BaseSpecification {
 
     @Shared
-    private String debugLogsReaderRoleName
+    private String administrationReaderRoleName
     @Shared
     private GenerateTokenResponse adminToken
     @Shared
-    private GenerateTokenResponse debugLogsReaderToken
+    private GenerateTokenResponse administrationReaderToken
     @Shared
     private GenerateTokenResponse noAccessToken
     @Shared
@@ -35,21 +35,19 @@ class DiagnosticBundleTest extends BaseSpecification {
 
     def setupSpec() {
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
-        debugLogsReaderRoleName = UUID.randomUUID()
-        RoleService.createRoleWithScopeAndPermissionSet(debugLogsReaderRoleName,
+        administrationReaderRoleName = UUID.randomUUID()
+        RoleService.createRoleWithScopeAndPermissionSet(administrationReaderRoleName,
                 UNRESTRICTED_SCOPE_ID,
                 [
-                        // TODO: ROX-12750 Replace DebugLogs with Administration
-                        "DebugLogs": RoleOuterClass.Access.READ_ACCESS,
+                        "Administration": RoleOuterClass.Access.READ_ACCESS,
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
                 ]
         )
-        debugLogsReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
-                debugLogsReaderRoleName)
+        administrationReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
+                administrationReaderRoleName)
         Map<String, RoleOuterClass.Access> resourceToAccess =
                 [
-                        // TODO: ROX-12750 Replace DebugLogs with Administration
-                        "DebugLogs": RoleOuterClass.Access.NO_ACCESS,
+                        "Administration": RoleOuterClass.Access.NO_ACCESS,
                         "Cluster": RoleOuterClass.Access.NO_ACCESS,
                 ]
 
@@ -62,8 +60,8 @@ class DiagnosticBundleTest extends BaseSpecification {
         if (adminToken != null) {
             services.ApiTokenService.revokeToken(adminToken.metadata.id)
         }
-        if (debugLogsReaderToken != null) {
-            services.ApiTokenService.revokeToken(debugLogsReaderToken.metadata.id)
+        if (administrationReaderToken != null) {
+            services.ApiTokenService.revokeToken(administrationReaderToken.metadata.id)
         }
         if (noAccessToken != null) {
             services.ApiTokenService.revokeToken(noAccessToken.metadata.id)
@@ -71,7 +69,7 @@ class DiagnosticBundleTest extends BaseSpecification {
         if (noAccessRole != null) {
             RoleService.deleteRole(noAccessRole.name)
         }
-        RoleService.deleteRole(debugLogsReaderRoleName)
+        RoleService.deleteRole(administrationReaderRoleName)
     }
 
     @Unroll
@@ -84,8 +82,8 @@ class DiagnosticBundleTest extends BaseSpecification {
             case "noAccess":
                 token = noAccessToken.token
                 break
-            case "debugLogsRead":
-                token = debugLogsReaderToken.token
+            case "administrationRead":
+                token = administrationReaderToken.token
                 break
             case "adminAccess":
                 token = adminToken.token
@@ -131,10 +129,10 @@ class DiagnosticBundleTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        statusCode | authMethod      | desc
-        401        | ""              | "does not succeed without auth"
-        403        | "noAccess"      | "does not succeed with no access token"
-        200        | "debugLogsRead" | "succeeds with debug logs reader token"
-        200        | "adminAccess"   | "succeeds with admin access token"
+        statusCode | authMethod           | desc
+        401        | ""                   | "does not succeed without auth"
+        403        | "noAccess"           | "does not succeed with no access token"
+        200        | "administrationRead" | "succeeds with debug logs reader token"
+        200        | "adminAccess"        | "succeeds with admin access token"
     }
 }
