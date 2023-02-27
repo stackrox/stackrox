@@ -7,7 +7,7 @@ import requests
 
 QUAY_ORG="rhacs-eng"
 
-VULNERABILITY_LEVELS = {
+VULNERABILITY_SEVERITIES = {
     "Unknown": 0,
     "Negligible": 1,
     "Low": 2,
@@ -64,7 +64,7 @@ def collect_vulnerability_information(package):
             "name": vuln["Name"],
             "severity": vuln["Severity"],
             "link": vuln["Link"],
-            "severity_level": VULNERABILITY_LEVELS.get(vuln["Severity"], -1)
+            "severity_level": VULNERABILITY_SEVERITIES.get(vuln["Severity"], -1)
         })
 
     return package_information
