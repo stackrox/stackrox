@@ -17,13 +17,14 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { defaultMinimalReadAccessResources, originLabelColours } from 'constants/accessControl';
-import { getTraitsOriginLabel, PermissionSet } from 'services/RolesService';
+import { defaultMinimalReadAccessResources } from 'constants/accessControl';
+import { PermissionSet } from 'services/RolesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
 import usePermissions from '../../../hooks/usePermissions';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
@@ -126,13 +127,7 @@ function PermissionSetForm({
                     </ToolbarItem>
                     {action !== 'create' && (
                         <ToolbarItem>
-                            <Label
-                                color={
-                                    originLabelColours[getTraitsOriginLabel(permissionSet.traits)]
-                                }
-                            >
-                                {getTraitsOriginLabel(permissionSet.traits)}
-                            </Label>
+                            <TraitsOriginLabel traits={permissionSet.traits} />
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (

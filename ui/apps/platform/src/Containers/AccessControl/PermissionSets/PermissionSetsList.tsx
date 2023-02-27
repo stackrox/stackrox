@@ -3,7 +3,6 @@ import {
     Alert,
     AlertVariant,
     Button,
-    Label,
     Modal,
     ModalVariant,
     PageSection,
@@ -12,11 +11,12 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { getTraitsOriginLabel, isUserResource, PermissionSet, Role } from 'services/RolesService';
+import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 import usePermissions from '../../../hooks/usePermissions';
-import { originLabelColours } from '../../../constants/accessControl';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
+import { isUserResource } from '../traits';
 
 const entityType = 'PERMISSION_SET';
 
@@ -78,10 +78,10 @@ function PermissionSetsList({
                 <TableComposable variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th width={20}>Name</Th>
+                            <Th width={15}>Name</Th>
                             <Th width={15}>Origin</Th>
-                            <Th width={30}>Description</Th>
-                            <Th width={40}>Roles</Th>
+                            <Th width={25}>Description</Th>
+                            <Th width={35}>Roles</Th>
                             <Th width={10} aria-label="Row actions" />
                         </Tr>
                     </Thead>
@@ -96,9 +96,7 @@ function PermissionSetsList({
                                     />
                                 </Td>
                                 <Td dataLabel="Origin">
-                                    <Label color={originLabelColours[getTraitsOriginLabel(traits)]}>
-                                        {getTraitsOriginLabel(traits)}
-                                    </Label>
+                                    <TraitsOriginLabel traits={traits} />
                                 </Td>
                                 <Td dataLabel="Description">{description}</Td>
                                 <Td dataLabel="Roles">

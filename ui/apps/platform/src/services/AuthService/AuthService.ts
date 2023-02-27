@@ -4,7 +4,7 @@ import store from 'store';
 import axios from 'services/instance';
 import queryString from 'qs';
 
-import { Role, Traits } from 'services/RolesService';
+import { Role } from 'services/RolesService';
 
 import { Empty } from 'services/types';
 import AccessTokenManager from './AccessTokenManager';
@@ -12,6 +12,7 @@ import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
 import { authProviderLabels } from '../../constants/accessControl';
+import { Traits } from '../../types/traits.proto';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';

@@ -22,7 +22,6 @@ import {
     fetchResources,
     fetchRolesAsArray,
     updatePermissionSet,
-    isUserResource,
 } from 'services/RolesService';
 
 import AccessControlDescription from '../AccessControlDescription';
@@ -37,6 +36,7 @@ import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlNoPermission from '../AccessControlNoPermission';
 import usePermissions from '../../../hooks/usePermissions';
+import { isUserResource } from '../traits';
 
 const entityType = 'PERMISSION_SET';
 
