@@ -56,11 +56,11 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	initialBackoff := env.NodeScanInitialBackoff.DurationSetting()
 	currentBackoff := readBackoff(c.opts.BackoffFilePath)
 
-	if *currentBackoff > initialBackoff {
+	if currentBackoff > initialBackoff {
 		log.Warnf("Found existing node scan backoff file - last scan may have failed. Waiting %v seconds before retrying", currentBackoff.Seconds())
-		c.opts.BackoffWaitCallback(*currentBackoff)
+		c.opts.BackoffWaitCallback(currentBackoff)
 	}
-	writeBackoff(calcNextBackoff(*currentBackoff), c.opts.BackoffFilePath)
+	writeBackoff(calcNextBackoff(currentBackoff), c.opts.BackoffFilePath)
 
 	// if no inventory exists, or it is too old, collect a fresh one and save it to the cache
 	newInventory, err := collectInventory(nodeName) // opts.Scanner.Scan(opts.NodeName)
@@ -80,7 +80,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 }
 
 // readBackoff returns a backoff if found in given file, or the MaxBackoff on any error
-func readBackoff(path string) *time.Duration {
+func readBackoff(path string) time.Duration {
 	backoff := env.NodeScanInitialBackoff.DurationSetting()
 	maxBackoff := env.NodeScanMaxBackoff.DurationSetting()
 
@@ -88,20 +88,20 @@ func readBackoff(path string) *time.Duration {
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Debug("No node scan backoff file found, continuing without pause")
-			return &backoff
+			return backoff
 		}
 		log.Warnf("Error while reading node scan backoff file, continuing with MaxBackoff of %v. Error: %v", maxBackoff, err)
-		return &maxBackoff
+		return maxBackoff
 	}
 
 	// We have an existing backoff counter
 	backoff, err = time.ParseDuration(string(backoffFileContents))
 	if err != nil {
 		log.Warnf("Error while parsing node scan backoff from file, continuing with MaxBackoff of %v. Error: %v", maxBackoff, err)
-		return &maxBackoff
+		return maxBackoff
 	}
 
-	return &backoff
+	return backoff
 }
 
 func writeBackoff(backoff time.Duration, path string) {

@@ -48,7 +48,18 @@ func (s *TestComplianceCachingSuite) TestGetCurrentBackoff() {
 
 	currentBackoff := readBackoff(s.mockInventoryScanOpts.BackoffFilePath)
 
-	s.Equal(d, *currentBackoff)
+	s.Equal(d, currentBackoff)
+}
+
+func (s *TestComplianceCachingSuite) TestGetCurrentBackoffReturnMaxOnError() {
+	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
+	s.T().Setenv(env.NodeScanMaxBackoff.EnvVar(), "42s")
+	err := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte("notADuration"), 0600)
+	s.NoError(err)
+
+	currentBackoff := readBackoff(s.mockInventoryScanOpts.BackoffFilePath)
+
+	s.Equal(env.NodeScanMaxBackoff.DurationSetting(), currentBackoff)
 }
 
 func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
