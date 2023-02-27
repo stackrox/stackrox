@@ -82,13 +82,6 @@ export function useEnrichNamespacesWithDeploymentCounts(
                 }
             });
             if (!shouldBreak) {
-                enrichedNamespaces.push({
-                    metadata: {
-                        id: 'dummy entry',
-                        name: 'dummy entry',
-                    },
-                    deploymentCount: 0,
-                });
                 setResponse({
                     loading: false,
                     error: '',
