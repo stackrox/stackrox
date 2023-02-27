@@ -62,6 +62,18 @@ func (s *TestComplianceCachingSuite) TestGetCurrentBackoffReturnMaxOnError() {
 	s.Equal(env.NodeScanMaxBackoff.DurationSetting(), currentBackoff)
 }
 
+func (s *TestComplianceCachingSuite) TestGetCurrentBackoffReturnMaxOnBigValue() {
+	d, _ := time.ParseDuration("100h")
+	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
+	s.T().Setenv(env.NodeScanMaxBackoff.EnvVar(), "42s")
+	err := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte(d.String()), 0600)
+	s.NoError(err)
+
+	currentBackoff := readBackoff(s.mockInventoryScanOpts.BackoffFilePath)
+
+	s.Equal(env.NodeScanMaxBackoff.DurationSetting(), currentBackoff)
+}
+
 func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
 	s.T().Setenv(env.NodeScanBackoffIncrement.EnvVar(), "24s")
 	baseBackoff, _ := time.ParseDuration("10s")
@@ -106,31 +118,23 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryWithoutResultCache(
 	s.Equal(nodeName, actual.GetNodeName())
 }
 
-func (s *TestComplianceCachingSuite) TestIsCachedInventoryValid() {
+func (s *TestComplianceCachingSuite) TestIsCachedInventoryValidSuccess() {
 	s.T().Setenv(env.NodeScanCacheDuration.EnvVar(), "1m")
+	t := time.Now()
 
-	tests := map[string]struct {
-		created        time.Time
-		expectedResult bool
-	}{
-		"cachedResult": {
-			created:        time.Now(),
-			expectedResult: true,
-		},
-		"cacheTooOld": {
-			created:        time.Now().Add(-2 * time.Minute),
-			expectedResult: false,
-		},
-		"cacheVeryOld": {
-			created:        time.Unix(42, 0),
-			expectedResult: false,
-		},
-	}
+	s.Equal(true, isCachedInventoryValid(t))
+}
 
-	for name, t := range tests {
-		s.Run(name, func() {
-			actual := isCachedInventoryValid(t.created)
-			s.Equal(t.expectedResult, actual)
-		})
-	}
+func (s *TestComplianceCachingSuite) TestIsCachedInventoryValidOutOfCache() {
+	s.T().Setenv(env.NodeScanCacheDuration.EnvVar(), "1m")
+	t := time.Now().Add(-5 * time.Minute) // 5 minutes ago, with cache duration at 1 minute
+
+	s.Equal(false, isCachedInventoryValid(t))
+}
+
+func (s *TestComplianceCachingSuite) TestIsCachedInventoryValidFuture() {
+	s.T().Setenv(env.NodeScanCacheDuration.EnvVar(), "1m")
+	t := time.Now().Add(3 * time.Hour) // 3 hours in the future, which is considered invalid
+
+	s.Equal(false, isCachedInventoryValid(t))
 }

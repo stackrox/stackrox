@@ -79,7 +79,9 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	return newInventory, nil
 }
 
-// readBackoff returns a backoff if found in given file, or the MaxBackoff on any error
+// readBackoff returns a backoff if found in given file, or the MaxBackoff on any error.
+//
+// It also checks the loaded backoff to not exceed the configured MaxBackoff.
 func readBackoff(path string) time.Duration {
 	backoff := env.NodeScanInitialBackoff.DurationSetting()
 	maxBackoff := env.NodeScanMaxBackoff.DurationSetting()
@@ -90,14 +92,20 @@ func readBackoff(path string) time.Duration {
 			log.Debug("No node scan backoff file found, continuing without pause")
 			return backoff
 		}
-		log.Warnf("Error while reading node scan backoff file, continuing with MaxBackoff of %v. Error: %v", maxBackoff, err)
+		log.Warnf("Error reading node scan backoff file, continuing with MaxBackoff of %v. Error: %v", maxBackoff, err)
 		return maxBackoff
 	}
 
 	// We have an existing backoff counter
 	backoff, err = time.ParseDuration(string(backoffFileContents))
 	if err != nil {
-		log.Warnf("Error while parsing node scan backoff from file, continuing with MaxBackoff of %v. Error: %v", maxBackoff, err)
+		log.Warnf("Error reading node scan backoff duration from file, continuing with MaxBackoff of %v. Error: %v", maxBackoff, err)
+		return maxBackoff
+	}
+
+	// Sanity-check the backoff loaded from disk
+	if backoff > maxBackoff {
+		log.Warnf("Existing node scan backoff exceeds MaxBackoff. Continuing with MaxBackoff of %v", maxBackoff)
 		return maxBackoff
 	}
 
@@ -115,7 +123,6 @@ func calcNextBackoff(currentBackoff time.Duration) time.Duration {
 	maxBackoff := env.NodeScanMaxBackoff.DurationSetting()
 	nextBackoffInterval := currentBackoff + env.NodeScanBackoffIncrement.DurationSetting()
 	if nextBackoffInterval > maxBackoff {
-		log.Debugf("Backoff interval hit upper boundary. Cutting from %v to %v", nextBackoffInterval, maxBackoff)
 		nextBackoffInterval = maxBackoff
 	}
 	return nextBackoffInterval
@@ -127,6 +134,7 @@ func removeBackoff(backoffFilePath string) {
 	}
 }
 
+// inventoryWrap is a private struct that saves a given inventory alongside a creation timestamp which determines its freshness.
 type inventoryWrap struct {
 	Created   time.Time
 	Inventory string
@@ -163,9 +171,12 @@ func readInventory(path string) (inventory *storage.NodeInventory, created time.
 	return &cachedInv, wrap.Created
 }
 
+// isCachedInventoryValid returns if a given creation time is considered below the cache threshold.
+//
+// Additionally, the timestamp is considered invalid if it is based in the future.
 func isCachedInventoryValid(created time.Time) bool {
 	cacheThreshold := timestamp.TimestampNow().GetSeconds() - int64(env.NodeScanCacheDuration.DurationSetting().Seconds())
-	return created.Unix() > cacheThreshold
+	return created.Unix() > cacheThreshold && created.Unix() <= time.Now().Unix()
 }
 
 // writeInventory saves a given inventory to disk.
