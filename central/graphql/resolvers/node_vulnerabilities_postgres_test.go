@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -478,10 +477,4 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerability() {
 	topVuln, err = node.TopNodeVulnerability(ctx, RawQuery{})
 	s.NoError(err)
 	s.Nil(topVuln)
-}
-
-func (s *GraphQLNodeVulnerabilityTestSuite) dropTable(name string) {
-	sql := fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE", name)
-	_, err := s.db.Exec(s.ctx, sql)
-	s.NoError(err)
 }
