@@ -195,33 +195,6 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 	return nil
 }
 
-func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStale")
-
-	ds.keyedMutex.Lock(id)
-	defer ds.keyedMutex.Unlock(id)
-
-	// Avoid `ds.GetAlert` since that leads to extra read SAC check in addition to read-write check below.
-	alert, exists, err := ds.storage.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.Errorf("alert with id '%s' does not exist", id)
-	}
-
-	ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	alert.State = storage.ViolationState_RESOLVED
-	alert.ResolvedAt = types.TimestampNow()
-	return ds.updateAlertNoLock(ctx, alert)
-}
-
 func (ds *datastoreImpl) MarkAlertStaleBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStaleBatch")
 
