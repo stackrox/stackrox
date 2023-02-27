@@ -34,5 +34,6 @@ export const selectors = {
         downloadedToReissueCertificate: '[data-testid="downloadedToReissueCertificate"]',
         upgradeToReissueCertificate: '[data-testid="upgradeToReissueCertificate"]',
         upgradedToReissueCertificate: '[data-testid="upgradedToReissueCertificate"]',
+        manageTokensButton: '[data-testid="manageTokens"]',
     }),
 };
