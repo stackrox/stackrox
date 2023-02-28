@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -66,10 +67,11 @@ func newCVESummaryForPrinting(scanResults *storage.ImageScan) *cveJSONResult {
 	var vulnerabilitiesJSON []cveVulnerabilityJSON
 	components := sortComponentsByName(scanResults.GetComponents())
 	vulnSummaryMap := createNumOfVulnerabilitiesBySeverityMap()
+	uniqueCVEs := set.NewStringSet()
 
 	for _, comp := range components {
 		vulns := comp.GetVulns()
-		vulnsJSON := getVulnerabilityJSON(vulns, comp, vulnSummaryMap)
+		vulnsJSON := getVulnerabilityJSON(vulns, comp, vulnSummaryMap, uniqueCVEs)
 		if len(vulnsJSON) != 0 {
 			vulnerabilitiesJSON = append(vulnerabilitiesJSON, vulnsJSON...)
 			vulnSummaryMap[totalComponentsMapKey]++
@@ -84,7 +86,8 @@ func newCVESummaryForPrinting(scanResults *storage.ImageScan) *cveJSONResult {
 	}
 }
 
-func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp *storage.EmbeddedImageScanComponent, numOfVulnsBySeverity map[string]int) []cveVulnerabilityJSON {
+func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp *storage.EmbeddedImageScanComponent,
+	numOfVulnsBySeverity map[string]int, uniqueCVEs set.StringSet) []cveVulnerabilityJSON {
 	// sort vulnerabilities by severity
 	vulnerabilities = sortVulnerabilitiesForSeverity(vulnerabilities)
 
@@ -99,8 +102,13 @@ func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp
 			ComponentVersion:      comp.GetVersion(),
 			ComponentFixedVersion: vulnerability.GetFixedBy(),
 		}
-		numOfVulnsBySeverity[severity.String()]++
-		numOfVulnsBySeverity[totalVulnerabilitiesMapKey]++
+
+		// Only increase the number of vulnerabilities by severity if the CVE ID has not been added before.
+		// The severity will also match across CVEs, since they are assigned to the unique CVE.
+		if uniqueCVEs.Add(vulnerability.GetCve()) {
+			numOfVulnsBySeverity[totalVulnerabilitiesMapKey] = uniqueCVEs.Cardinality()
+			numOfVulnsBySeverity[severity.String()]++
+		}
 		vulnerabilitiesJSON = append(vulnerabilitiesJSON, vulnJSON)
 	}
 	return vulnerabilitiesJSON
