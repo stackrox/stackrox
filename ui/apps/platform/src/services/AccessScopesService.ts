@@ -15,6 +15,8 @@ export const defaultAccessScopeIds = {
     DenyAllPostgres: 'ffffffff-ffff-fff4-f5ff-fffffffffffe',
 };
 
+// The only remaining usage of this function is in ResourceScopeSelection.tsx file,
+// which will be deleted when Collections supersede Access Scopes in Vulnerability Reporting.
 export function getIsDefaultAccessScopeId(id: string): boolean {
     return Object.values(defaultAccessScopeIds).includes(id);
 }
