@@ -19,6 +19,7 @@ type DataStore interface {
 	GetRegistriesAndScanners(ctx context.Context) ([]*storage.IntegrationHealth, error)
 	GetNotifierPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error)
 	GetBackupPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error)
+	GetDeclarativeConfigs(ctx context.Context) ([]*storage.IntegrationHealth, error)
 
 	UpdateIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error
 	RemoveIntegrationHealth(ctx context.Context, id string) error

@@ -1,0 +1,197 @@
+package datastore
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stackrox/rox/central/integrationhealth/store"
+	postgresIntegrationStore "github.com/stackrox/rox/central/integrationhealth/store/postgres"
+	rocksdbIntegrationStore "github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/suite"
+)
+
+func TestIntegrationHealthDatastore(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(integrationHealthDatastoreTestSuite))
+}
+
+type integrationHealthDatastoreTestSuite struct {
+	suite.Suite
+
+	hasReadCtx     context.Context
+	hasWriteCtx    context.Context
+	hasNoAccessCtx context.Context
+
+	datastore    DataStore
+	rocksie      *rocksdb.RocksDB
+	postgresTest *pgtest.TestPostgres
+}
+
+func (s *integrationHealthDatastoreTestSuite) SetupTest() {
+	var integrationStore store.Store
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.postgresTest = pgtest.ForT(s.T())
+		s.Require().NotNil(s.postgresTest)
+		integrationStore = postgresIntegrationStore.New(s.postgresTest.DB)
+	} else {
+		s.rocksie = rocksdbtest.RocksDBForT(s.T())
+		integrationStore = rocksdbIntegrationStore.New(s.rocksie)
+	}
+	s.datastore = New(integrationStore)
+
+	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Integration),
+		),
+	)
+
+	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Integration),
+		),
+	)
+	s.hasNoAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
+}
+
+func (s *integrationHealthDatastoreTestSuite) TearDownTest() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.postgresTest.Close()
+	} else {
+		rocksdbtest.TearDownRocksDB(s.rocksie)
+	}
+}
+
+func (s *integrationHealthDatastoreTestSuite) TestGetRegistriesAndScanners() {
+	s.testGetIntegrationHealth(s.datastore.GetRegistriesAndScanners)
+
+	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_IMAGE_INTEGRATION)
+
+	err := s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	s.NoError(err)
+
+	receivedIntegrationHealths, err := s.datastore.GetRegistriesAndScanners(s.hasReadCtx)
+	s.NoError(err)
+	s.ElementsMatch([]*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
+}
+
+func (s *integrationHealthDatastoreTestSuite) TestGetNotifierPlugins() {
+	s.testGetIntegrationHealth(s.datastore.GetNotifierPlugins)
+
+	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_NOTIFIER)
+
+	err := s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	s.NoError(err)
+
+	receivedIntegrationHealths, err := s.datastore.GetNotifierPlugins(s.hasReadCtx)
+	s.NoError(err)
+	s.ElementsMatch([]*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
+}
+
+func (s *integrationHealthDatastoreTestSuite) TestGetBackupPlugins() {
+	s.testGetIntegrationHealth(s.datastore.GetBackupPlugins)
+
+	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_BACKUP)
+
+	err := s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	s.NoError(err)
+
+	receivedIntegrationHealths, err := s.datastore.GetBackupPlugins(s.hasReadCtx)
+	s.NoError(err)
+	s.ElementsMatch([]*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
+}
+
+func (s *integrationHealthDatastoreTestSuite) TestGetDeclarativeConfigs() {
+	s.testGetIntegrationHealth(s.datastore.GetDeclarativeConfigs)
+
+	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_DECLARATIVE_CONFIG)
+
+	err := s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	s.NoError(err)
+
+	receivedIntegrationHealths, err := s.datastore.GetDeclarativeConfigs(s.hasReadCtx)
+	s.NoError(err)
+	s.ElementsMatch([]*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
+}
+
+func (s *integrationHealthDatastoreTestSuite) TestUpdateIntegrationHealth() {
+	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_IMAGE_INTEGRATION)
+
+	// 1. With no access should return a sac.ErrResourceAccessDenied error.
+	err := s.datastore.UpdateIntegrationHealth(s.hasNoAccessCtx, integrationHealth)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	// 2. With READ access should return a sac.ErrResourceAccessDenied error.
+	err = s.datastore.UpdateIntegrationHealth(s.hasReadCtx, integrationHealth)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	// 3. With WRITE access should not return an error and the integration should be retrievable.
+	err = s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	s.NoError(err)
+	receivedIntegrationHealth, exists, err := s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(integrationHealth, receivedIntegrationHealth)
+
+	// 4. Updating an invalid integration health type should not be possible.
+	integrationHealth.Type = storage.IntegrationHealth_UNKNOWN
+	err = s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	s.ErrorIs(err, errox.InvalidArgs)
+}
+
+func (s *integrationHealthDatastoreTestSuite) TestRemoveIntegrationHealth() {
+	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_IMAGE_INTEGRATION)
+
+	// 1. With no access should return a sac.ErrResourceAccessDenied error.
+	err := s.datastore.RemoveIntegrationHealth(s.hasNoAccessCtx, integrationHealth.GetId())
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	// 2. With READ access should return a sac.ErrResourceAccessDenied error.
+	err = s.datastore.RemoveIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	// 3. With WRITE access should return an error if integration health is not found.
+	err = s.datastore.RemoveIntegrationHealth(s.hasWriteCtx, integrationHealth.GetId())
+	s.ErrorIs(err, errox.NotFound)
+
+	// 4. With WRITE access and existing integration health remove should not return an error.
+	err = s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	s.NoError(err)
+	err = s.datastore.RemoveIntegrationHealth(s.hasWriteCtx, integrationHealth.GetId())
+	s.NoError(err)
+}
+
+func (s *integrationHealthDatastoreTestSuite) testGetIntegrationHealth(getIntegrationHealth func(ctx context.Context) ([]*storage.IntegrationHealth, error)) {
+	// 1. With no access should return a sac.ErrResourceAccessDenied error.
+	_, err := getIntegrationHealth(s.hasNoAccessCtx)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	// 2. With READ access should not return an error.
+	_, err = getIntegrationHealth(s.hasReadCtx)
+	s.NoError(err)
+
+	// 3. With WRITE access should not return an error.
+	_, err = getIntegrationHealth(s.hasWriteCtx)
+	s.NoError(err)
+}
+
+func newIntegrationHealth(typ storage.IntegrationHealth_Type) *storage.IntegrationHealth {
+	return &storage.IntegrationHealth{
+		Id:           uuid.NewV4().String(),
+		Name:         "",
+		Type:         typ,
+		Status:       0,
+		ErrorMessage: "",
+	}
+}
