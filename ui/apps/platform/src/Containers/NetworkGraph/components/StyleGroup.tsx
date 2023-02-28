@@ -72,6 +72,8 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
                 delete newData[key];
             }
         });
+        // look into using `React.useMemo<CustomGroupNodeData>` instead of `as CustomGroupNodeData`
+        // https://www.freecodecamp.org/news/react-typescript-how-to-set-up-types-on-hooks/#set-types-on-usememo
         return newData as CustomGroupNodeData;
     }, [data]);
 
