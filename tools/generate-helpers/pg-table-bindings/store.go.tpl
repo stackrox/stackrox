@@ -113,7 +113,7 @@ type Store interface {
 
 type storeImpl struct {
     db *postgres.DB
-    mutex sync.Mutex
+    mutex sync.RWMutex
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
@@ -464,12 +464,15 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
+		if len(objs) < batchAfter {
+		    s.mutex.RLock()
+		    defer s.mutex.RUnlock()
+
+		    return s.upsert(ctx, objs...)
+		}
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
 
-		if len(objs) < batchAfter {
-			return s.upsert(ctx, objs...)
-		}
 		return s.copyFrom(ctx, objs...)
 	})
     {{- end }}
