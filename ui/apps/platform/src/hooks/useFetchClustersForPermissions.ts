@@ -32,13 +32,11 @@ function useFetchClustersForPermissions(permissions: string[]): Result {
 
         getClustersForPermissions(requestedPermissions)
             .then((data) => {
-                const responseClusters = data.clusters;
-                const clusters: Cluster[] = [];
-                responseClusters.forEach((responseCluster: ScopeObject) => {
-                    const cluster: Cluster = {} as Cluster;
-                    cluster.id = responseCluster.id;
-                    cluster.name = responseCluster.name;
-                    clusters.push(cluster);
+                const clusters: Cluster[] = data.clusters.map((responseCluster: ScopeObject) => {
+                    return {
+                        id: responseCluster.id,
+                        name: responseCluster.name,
+                    } as Cluster;
                 });
                 setResult({
                     clusters: clusters || [],

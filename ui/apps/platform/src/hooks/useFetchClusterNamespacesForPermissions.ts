@@ -21,27 +21,25 @@ const emptyResponse: NamespaceResponse = {
 
 export function useFetchClusterNamespacesForPermissions(
     permissions: string[],
-    selectedClusterId?: string
+    selectedClusterId?: string|null
 ) {
     const [requestedPermissions] = useState<string[]>(permissions);
     const [namespaceResponse, setNamespaceResponse] = useState<NamespaceResponse>(emptyResponse);
 
     useEffect(() => {
-        setNamespaceResponse({
-            loading: true,
-            error: '',
-            namespaces: [],
-        });
         if (selectedClusterId) {
+            setNamespaceResponse({
+                loading: true,
+                error: '',
+                namespaces: [],
+            });
             getNamespacesForClusterAndPermissions(selectedClusterId, requestedPermissions)
                 .then((data) => {
-                    const responseNamespaces = data.namespaces;
-                    const namespaces: Namespace[] = [];
-                    responseNamespaces.forEach((responseNamespace: ScopeObject) => {
-                        const namespace: Namespace = {} as Namespace;
-                        namespace.id = responseNamespace.id;
-                        namespace.name = responseNamespace.name;
-                        namespaces.push(namespace);
+                    const namespaces: Namespace[] = data.namespaces.map((ns: ScopeObject) => {
+                        return {
+                            id: ns.id,
+                            name: ns.name,
+                        } as Namespace;
                     });
                     setNamespaceResponse({
                         loading: false,

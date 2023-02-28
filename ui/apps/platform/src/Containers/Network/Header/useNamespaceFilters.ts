@@ -18,11 +18,9 @@ function useNamespaceFilters() {
         SelectorResult
     >(selector);
 
-    const targetClusterId: string | undefined =
-        selectedClusterId == null ? undefined : selectedClusterId;
     const { loading, error, namespaces } = useFetchClusterNamespacesForPermissions(
         ['NetworkGraph', 'Deployment'],
-        targetClusterId
+        selectedClusterId
     );
     const availableNamespaceFilters = namespaces.map((namespace) => namespace.name);
 
