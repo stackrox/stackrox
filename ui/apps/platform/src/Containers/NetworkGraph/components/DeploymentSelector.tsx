@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Select, SelectGroup, SelectOption, SelectVariant } from '@patternfly/react-core';
+import { Button, Select, SelectGroup, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
@@ -18,7 +18,11 @@ function DeploymentSelector({
     searchFilter,
     setSearchFilter,
 }: DeploymentSelectorProps) {
-    const { isOpen: isDeploymentOpen, toggleSelect: toggleIsDeploymentOpen } = useSelectToggle();
+    const {
+        isOpen: isDeploymentOpen,
+        toggleSelect: toggleIsDeploymentOpen,
+        closeSelect,
+    } = useSelectToggle();
 
     const onFilterDeployments = useCallback(
         (_, filterValue: string) => {
@@ -50,6 +54,13 @@ function DeploymentSelector({
 
         const modifiedSearchObject = { ...searchFilter };
         modifiedSearchObject.Deployment = newSelection;
+        setSearchFilter(modifiedSearchObject);
+    };
+
+    const onClearSelections = () => {
+        const modifiedSearchObject = { ...searchFilter };
+        delete modifiedSearchObject.Deployment;
+        closeSelect();
         setSearchFilter(modifiedSearchObject);
     };
 
@@ -86,6 +97,11 @@ function DeploymentSelector({
             hasInlineFilter
             isGrouped
             isPlain
+            footer={
+                <Button variant="link" isInline onClick={onClearSelections}>
+                    Clear selections
+                </Button>
+            }
         >
             {deploymentSelectOptions}
         </Select>
