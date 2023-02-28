@@ -646,7 +646,7 @@ mark_collector_release() {
     # We need to make sure the file ends with a newline so as not to corrupt it when appending.
     [[ ! -f RELEASED_VERSIONS ]] || sed --in-place -e '$a'\\ RELEASED_VERSIONS
     if grep -q "${tag}" RELEASED_VERSIONS; then
-        echo "Skip RELEASED_VERSIONS file update, already up to date ..." >> "${GITHUB_STEP_SUMMARY}"
+        echo "Skip RELEASED_VERSIONS file change, already up to date ..." >> "${GITHUB_STEP_SUMMARY}"
     else
         echo "Update RELEASED_VERSIONS file ..." >> "${GITHUB_STEP_SUMMARY}"
         echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
