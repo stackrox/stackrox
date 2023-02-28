@@ -52,7 +52,7 @@ func TestExtractUserLogFields_MainFieldsTransformed(t *testing.T) {
 	assert.True(t, fields[5].(zap.Field).Equals(zap.Any("roleNames", []string{"Admin", "Analyst"})))
 	assert.True(t, fields[6].(zap.Field).Equals(zap.String("permissions", "{\"resourceToAccess\":{\"Close Magic Doors\":\"READ_ACCESS\",\"Open Magic Doors\":\"READ_WRITE_ACCESS\"}}")))
 	assert.True(t, fields[7].(zap.Field).Equals(zap.Any("authProvider", &loggableAuthProvider{
-		Id:   user.GetAuthProvider().GetId(),
+		ID:   user.GetAuthProvider().GetId(),
 		Name: user.GetAuthProvider().GetName(),
 		Type: user.GetAuthProvider().GetType(),
 	})))
@@ -80,7 +80,7 @@ func TestExtractUserLogFields_ServiceIdTransformed(t *testing.T) {
 	assert.True(t, fields[5].(zap.Field).Equals(zap.Any("roleNames", []string{})))
 	assert.True(t, fields[6].(zap.Field).Equals(zap.String("permissions", "")))
 	assert.True(t, fields[7].(zap.Field).Equals(zap.Any("authProvider", &loggableAuthProvider{
-		Id:   "",
+		ID:   "",
 		Name: "",
 		Type: "",
 	})))
@@ -100,7 +100,7 @@ func TestExtractUserLogFields_NilTransformed(t *testing.T) {
 	assert.True(t, fields[5].(zap.Field).Equals(zap.Any("roleNames", []string{})))
 	assert.True(t, fields[6].(zap.Field).Equals(zap.String("permissions", "")))
 	assert.True(t, fields[7].(zap.Field).Equals(zap.Any("authProvider", &loggableAuthProvider{
-		Id:   "",
+		ID:   "",
 		Name: "",
 		Type: "",
 	})))

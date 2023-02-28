@@ -34,7 +34,7 @@ func ConvertAttributes(attrMap map[string][]string) []*v1.UserAttribute {
 }
 
 type loggableAuthProvider struct {
-	Id   string
+	ID   string
 	Name string
 	Type string
 }
@@ -57,24 +57,24 @@ func LogSuccessfulUserLogin(log *logging.Logger, user *v1.AuthStatus) {
 // is because log.Warnw accepts ...interface{} and []zap.Field does not convert automatically
 // to []interface{}.
 func extractUserLogFields(user *v1.AuthStatus) []interface{} {
-	serviceIdStr := ""
+	serviceIDStr := ""
 	permissionsStr := ""
 	if user.GetServiceId() != nil {
-		serviceIdStr = protoToJSON(user.GetServiceId())
+		serviceIDStr = protoToJSON(user.GetServiceId())
 	}
 	if user.GetUserInfo().GetPermissions() != nil {
 		permissionsStr = protoToJSON(user.GetUserInfo().GetPermissions())
 	}
 	return []interface{}{
 		zap.String("userID", user.GetUserId()),
-		zap.String("serviceID", serviceIdStr),
+		zap.String("serviceID", serviceIDStr),
 		zap.Any("expires", user.GetExpires()),
 		zap.String("username", user.GetUserInfo().GetUsername()),
 		zap.String("friendlyName", user.GetUserInfo().GetFriendlyName()),
 		zap.Any("roleNames", utils.RoleNamesFromUserInfo(user.GetUserInfo().GetRoles())),
 		zap.String("permissions", permissionsStr),
 		zap.Any("authProvider", &loggableAuthProvider{
-			Id:   user.GetAuthProvider().GetId(),
+			ID:   user.GetAuthProvider().GetId(),
 			Type: user.GetAuthProvider().GetType(),
 			Name: user.GetAuthProvider().GetName(),
 		}),
