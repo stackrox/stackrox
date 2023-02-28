@@ -109,6 +109,9 @@ import util.Helpers
 import util.Timer
 import util.Env
 
+import static Helpers.withRetry
+import static Helpers.evaluateWithRetry
+
 @CompileStatic
 @Slf4j
 class Kubernetes implements OrchestratorMain {
@@ -277,7 +280,7 @@ class Kubernetes implements OrchestratorMain {
     List<Pod> getPodsByLabel(String ns, Map<String, String> label) {
         def selector = new LabelSelector()
         selector.matchLabels = label
-        PodList list = Helpers.evaluateWithRetry(null, 2, 3) {
+        PodList list = evaluateWithRetry(null, 2, 3) {
             return client.pods().inNamespace(ns).withLabelSelector(selector).list()
         }
         return list.getItems()
@@ -299,11 +302,11 @@ class Kubernetes implements OrchestratorMain {
     void deleteAllPodsAndWait(String ns, Map<String, String> labels) {
         log.debug "Will delete all pods in ${ns} with labels ${labels} and wait for deletion"
 
-        List<Pod> beforePods = Helpers.evaluateWithRetry(null, 2, 3) {
+        List<Pod> beforePods = evaluateWithRetry(null, 2, 3) {
             client.pods().inNamespace(ns).withLabels(labels).list().getItems()
         }
         beforePods.each { pod ->
-            Helpers.evaluateWithRetry(null, 2, 3) {
+            evaluateWithRetry(null, 2, 3) {
                 client.pods().inNamespace(ns).withName(pod.metadata.name).delete()
             }
         }
@@ -313,7 +316,7 @@ class Kubernetes implements OrchestratorMain {
         while (!allDeleted && t.IsValid()) {
             allDeleted = true
             beforePods.each { deleted ->
-                Pod pod = Helpers.evaluateWithRetry(null, 2, 3) {
+                Pod pod = evaluateWithRetry(null, 2, 3) {
                     client.pods().inNamespace(ns).withName(deleted.metadata.name).get()
                 }
                 if (pod == null) {
@@ -512,7 +515,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     List<String> getDeployments(String ns) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             this.deployments.inNamespace(ns).list().getItems().collect { it.metadata.name }
         }
     }
@@ -747,7 +750,7 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def deleteContainer(String containerName, String namespace = this.namespace) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             client.pods().inNamespace(namespace).withName(containerName).delete()
         }
     }
@@ -777,7 +780,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def isKubeDashboardRunning() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             PodList pods = client.pods().inAnyNamespace().list()
             List<Pod> kubeDashboards = pods.getItems().findAll {
                 it.getSpec().getContainers().find {
@@ -793,7 +796,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     Set<String> getStaticPodCount(String ns = null) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             // This method assumes that a static pod name will contain the node name that the pod is running on
             def nodeNames = client.nodes().list().items.collect { it.metadata.name }
             Set<String> staticPods = [] as Set
@@ -814,7 +817,7 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def createService(Deployment deployment) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             Service service = new Service(
                     metadata: new ObjectMeta(
                             name: deployment.serviceName ? deployment.serviceName : deployment.name,
@@ -850,7 +853,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def createService(objects.Service s) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             Service service = new Service(
                     metadata: new ObjectMeta(
                             name: s.name,
@@ -890,7 +893,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteService(String name, String namespace = this.namespace) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             log.debug "${name}: Service deleting..."
             client.services().inNamespace(namespace).withName(name).delete()
         }
@@ -922,7 +925,7 @@ class Kubernetes implements OrchestratorMain {
     def addOrUpdateServiceLabel(String serviceName, String ns, String name, String value) {
         Map<String, String> label = [:]
         label.put(name, value)
-        Helpers.evaluateWithRetry(null, 2, 3) {
+        evaluateWithRetry(null, 2, 3) {
             client.services().inNamespace(ns).withName(serviceName).edit {
                 s ->
                     new ServiceBuilder(s).editMetadata().addToLabels(label).endMetadata().build()
@@ -1053,7 +1056,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     String createSecret(String name, String namespace = this.namespace) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             Map<String, String> data = new HashMap<String, String>()
             data.put("username", "YWRtaW4=")
             data.put("password", "MWYyZDFlMmU2N2Rm")
@@ -1082,13 +1085,13 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def updateSecret(K8sSecret secret) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             client.secrets().inNamespace(secret.metadata.namespace).createOrReplace(secret)
         }
     }
 
     def deleteSecret(String name, String namespace = this.namespace) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             client.secrets().inNamespace(namespace).withName(name).delete()
         }
         sleep(sleepDurationSeconds * 1000)
@@ -1096,7 +1099,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     int getSecretCount(String ns) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.secrets().inNamespace(ns).list().getItems().findAll {
                 !it.type.startsWith("kubernetes.io/service-account-token")
             }.size()
@@ -1104,7 +1107,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     int getSecretCount() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.secrets().list().getItems().findAll {
                 !it.type.startsWith("kubernetes.io/service-account-token")
             }.size()
@@ -1112,7 +1115,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     K8sSecret getSecret(String name, String namespace) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.secrets().inNamespace(namespace).withName(name).get()
         }
     }
@@ -1122,7 +1125,7 @@ class Kubernetes implements OrchestratorMain {
     */
 
     String applyNetworkPolicy(NetworkPolicy policy) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy networkPolicy =
                     createNetworkPolicyObject(policy)
 
@@ -1139,7 +1142,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     boolean deleteNetworkPolicy(NetworkPolicy policy) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             Boolean status = client.network().networkPolicies()
                     .inNamespace(policy.namespace ? policy.namespace : this.namespace)
                     .withName(policy.name)
@@ -1154,13 +1157,13 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def getNetworkPolicyCount(String ns) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.network().networkPolicies().inNamespace(ns).list().items.size()
         }
     }
 
     def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated = false) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             Map<String, List<String>> networkPolicies = [:]
             client.network().networkPolicies().inAnyNamespace().list().items.each {
                 boolean skip = false
@@ -1182,13 +1185,13 @@ class Kubernetes implements OrchestratorMain {
      */
 
     def getNodeCount() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.nodes().list().getItems().size()
         }
     }
 
     List<Node> getNodeDetails() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.nodes().list().items.collect {
                 new Node(
                         uid: it.metadata.uid,
@@ -1208,7 +1211,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def isGKE() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             List<Node> gkeNodes = client.nodes().list().getItems().findAll {
                 it.getStatus().getNodeInfo().getKubeletVersion().contains("gke")
             } as List<Node>
@@ -1221,7 +1224,7 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<objects.Namespace> getNamespaceDetails() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.namespaces().list().items.collect {
                 new objects.Namespace(
                         uid: it.metadata.uid,
@@ -1248,7 +1251,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     List<String> getNamespaces() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.namespaces().list().items.collect {
                 it.metadata.name
             }
@@ -1260,7 +1263,7 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sServiceAccount> getServiceAccounts() {
-        return Helpers.evaluateWithRetry(null, 1, 2) {
+        return evaluateWithRetry(null, 1, 2) {
             List<K8sServiceAccount> serviceAccounts = []
             client.serviceAccounts().inAnyNamespace().list().items.each {
                 // Ingest the K8s service account to a K8sServiceAccount() in a manner similar to the SR product.
@@ -1284,7 +1287,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def createServiceAccount(K8sServiceAccount serviceAccount) {
-        Helpers.withRetry(null, 1, 2) {
+        withRetry(null, 1, 2) {
             ServiceAccount sa = new ServiceAccount(
                     metadata: new ObjectMeta(
                             name: serviceAccount.name,
@@ -1301,13 +1304,13 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteServiceAccount(K8sServiceAccount serviceAccount) {
-        Helpers.withRetry(null, 1, 2) {
+        withRetry(null, 1, 2) {
             client.serviceAccounts().inNamespace(serviceAccount.namespace).withName(serviceAccount.name).delete()
         }
     }
 
     def addServiceAccountImagePullSecret(String accountName, String secretName, String namespace = this.namespace) {
-        Helpers.withRetry(null, 1, 2) {
+        withRetry(null, 1, 2) {
             ServiceAccount serviceAccount = client.serviceAccounts()
                     .inNamespace(namespace)
                     .withName(accountName)
@@ -1390,7 +1393,7 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sRole> getRoles() {
-        return Helpers.evaluateWithRetry(null, 1, 2) {
+        return evaluateWithRetry(null, 1, 2) {
             List<K8sRole> roles = []
             client.rbac().roles().inAnyNamespace().list().items.each {
                 roles.add(new K8sRole(
@@ -1415,7 +1418,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def createRole(K8sRole role) {
-        Helpers.withRetry(null, 1, 2) {
+        withRetry(null, 1, 2) {
             Role r = new Role(
                     metadata: new ObjectMeta(
                             name: role.name,
@@ -1438,7 +1441,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteRole(K8sRole role) {
-        Helpers.withRetry(null, 1, 2) {
+        withRetry(null, 1, 2) {
             client.rbac().roles().inNamespace(role.namespace).withName(role.name).delete()
         }
     }
@@ -1448,7 +1451,7 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sRoleBinding> getRoleBindings() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             List<K8sRoleBinding> bindings = []
             client.rbac().roleBindings().inAnyNamespace().list().items.each {
                 def b = new K8sRoleBinding(
@@ -1476,7 +1479,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def createRoleBinding(K8sRoleBinding roleBinding) {
-        Helpers.withRetry(null, 1, 2) {
+        withRetry(null, 1, 2) {
             RoleBinding r = new RoleBinding(
                     metadata: new ObjectMeta(
                             name: roleBinding.name,
@@ -1497,7 +1500,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteRoleBinding(K8sRoleBinding roleBinding) {
-        Helpers.withRetry(null, 1, 2) {
+        withRetry(null, 1, 2) {
             client.rbac().roleBindings()
                     .inNamespace(roleBinding.namespace)
                     .withName(roleBinding.name)
@@ -1510,7 +1513,7 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sRole> getClusterRoles() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             List<K8sRole> clusterRoles = []
             client.rbac().clusterRoles().list().items.each {
                 clusterRoles.add(new K8sRole(
@@ -1535,7 +1538,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def createClusterRole(K8sRole role) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             ClusterRole r = new ClusterRole(
                     metadata: new ObjectMeta(
                             name: role.name,
@@ -1557,7 +1560,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteClusterRole(K8sRole role) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             client.rbac().clusterRoles().withName(role.name).delete()
         }
     }
@@ -1567,7 +1570,7 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sRoleBinding> getClusterRoleBindings() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             List<K8sRoleBinding> clusterBindings = []
             client.rbac().clusterRoleBindings().list().items.each {
                 def b = new K8sRoleBinding(
@@ -1594,7 +1597,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def createClusterRoleBinding(K8sRoleBinding roleBinding) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             ClusterRoleBinding r = new ClusterRoleBinding(
                     metadata: new ObjectMeta(
                             name: roleBinding.name,
@@ -1614,7 +1617,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteClusterRoleBinding(K8sRoleBinding roleBinding) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             client.rbac().clusterRoleBindings().withName(roleBinding.name).delete()
         }
     }
@@ -1683,13 +1686,13 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<String> getJobCount(String ns) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.batch().v1().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
         }
     }
 
     List<String> getJobCount() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.batch().v1().jobs().list().getItems().collect { it.metadata.name }
         }
     }
@@ -1722,7 +1725,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     ConfigMap getConfigMap(String name, String namespace) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             K8sConfigMap conf = client.configMaps().inNamespace(namespace).withName(name).get()
             return new ConfigMap(
                     name: conf.metadata.name,
@@ -1733,7 +1736,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteConfigMap(String name, String namespace) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             client.configMaps().inNamespace(namespace).withName(name).delete()
         }
         sleep(sleepDurationSeconds * 1000)
@@ -1865,7 +1868,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     String getSensorContainerName() {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             return client.pods().inNamespace("stackrox").list().items.find {
                 it.metadata.name.startsWith("sensor")
             }.metadata.name
@@ -2228,7 +2231,7 @@ class Kubernetes implements OrchestratorMain {
     def updateDeploymentDetails(Deployment deployment) {
         // Filtering pod query by using the "name=<name>" because it should always be present in the deployment
         // object - IF this is ever missing, it may cause problems fetching pod details
-        def deployedPods = Helpers.evaluateWithRetry(null, 2, 3) {
+        def deployedPods = evaluateWithRetry(null, 2, 3) {
             return client.pods().inNamespace(deployment.namespace).withLabel("name", deployment.name).list()
         }
         for (Pod pod : deployedPods.getItems()) {
@@ -2340,7 +2343,7 @@ class Kubernetes implements OrchestratorMain {
      * Note that createNamespace does not provision service account.
      */
     String createNamespace(String ns) {
-        return Helpers.evaluateWithRetry(null, 2, 3) {
+        return evaluateWithRetry(null, 2, 3) {
             Namespace namespace = newNamespace(ns)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
             defaultPspForNamespace(ns)
@@ -2358,7 +2361,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteNamespace(String ns, Boolean waitForDeletion = true) {
-        Helpers.withRetry(null, 2, 3) {
+        withRetry(null, 2, 3) {
             client.namespaces().withName(ns).delete()
         }
         if (waitForDeletion) {
