@@ -40,6 +40,11 @@ var (
 	once sync.Once
 )
 
+// nodeInventorizer is the interface that defines the interface a node scanner must implement
+type nodeInventorizer interface {
+	Scan(nodeName string) (*storage.NodeInventory, error)
+}
+
 func getNode() string {
 	once.Do(func() {
 		node = os.Getenv(string(orchestrators.NodeName))

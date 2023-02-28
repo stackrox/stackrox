@@ -22,8 +22,8 @@ func (ms *mockSleeper) mockWaitCallback(d time.Duration) {
 
 type TestComplianceCachingSuite struct {
 	suite.Suite
-	mockInventoryScanOpts *CachingScannerOpts
-	sleeper               mockSleeper
+	cs      CachingScanner
+	sleeper mockSleeper
 }
 
 func TestComplianceCaching(t *testing.T) {
@@ -33,20 +33,20 @@ func TestComplianceCaching(t *testing.T) {
 // run before each test
 func (s *TestComplianceCachingSuite) SetupTest() {
 	s.sleeper = mockSleeper{callCount: 0}
-	s.mockInventoryScanOpts = &CachingScannerOpts{
-		InventoryCachePath:  fmt.Sprintf("%s/inventory-cache", s.T().TempDir()),
-		BackoffFilePath:     fmt.Sprintf("%s/inventory-backoff", s.T().TempDir()),
-		BackoffWaitCallback: s.sleeper.mockWaitCallback,
-	}
+	s.cs = *NewCachingScanner(
+		fmt.Sprintf("%s/inventory-cache", s.T().TempDir()),
+		fmt.Sprintf("%s/inventory-backoff", s.T().TempDir()),
+		s.sleeper.mockWaitCallback,
+	)
 }
 
 func (s *TestComplianceCachingSuite) TestGetCurrentBackoff() {
 	d, _ := time.ParseDuration("42s")
 	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
-	err := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte(d.String()), 0600)
+	err := os.WriteFile(s.cs.BackoffFilePath, []byte(d.String()), 0600)
 	s.NoError(err)
 
-	currentBackoff := readBackoff(s.mockInventoryScanOpts.BackoffFilePath)
+	currentBackoff := readBackoff(s.cs.BackoffFilePath)
 
 	s.Equal(d, currentBackoff)
 }
@@ -54,10 +54,10 @@ func (s *TestComplianceCachingSuite) TestGetCurrentBackoff() {
 func (s *TestComplianceCachingSuite) TestGetCurrentBackoffReturnMaxOnError() {
 	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
 	s.T().Setenv(env.NodeScanMaxBackoff.EnvVar(), "42s")
-	err := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte("notADuration"), 0600)
+	err := os.WriteFile(s.cs.BackoffFilePath, []byte("notADuration"), 0600)
 	s.NoError(err)
 
-	currentBackoff := readBackoff(s.mockInventoryScanOpts.BackoffFilePath)
+	currentBackoff := readBackoff(s.cs.BackoffFilePath)
 
 	s.Equal(env.NodeScanMaxBackoff.DurationSetting(), currentBackoff)
 }
@@ -66,10 +66,10 @@ func (s *TestComplianceCachingSuite) TestGetCurrentBackoffReturnMaxOnBigValue() 
 	d, _ := time.ParseDuration("100h")
 	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
 	s.T().Setenv(env.NodeScanMaxBackoff.EnvVar(), "42s")
-	err := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte(d.String()), 0600)
+	err := os.WriteFile(s.cs.BackoffFilePath, []byte(d.String()), 0600)
 	s.NoError(err)
 
-	currentBackoff := readBackoff(s.mockInventoryScanOpts.BackoffFilePath)
+	currentBackoff := readBackoff(s.cs.BackoffFilePath)
 
 	s.Equal(env.NodeScanMaxBackoff.DurationSetting(), currentBackoff)
 }
@@ -97,9 +97,9 @@ func (s *TestComplianceCachingSuite) TestCalcNextBackoffUpperBoundary() {
 
 func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
 	d, _ := time.ParseDuration("3m")
-	e := os.WriteFile(s.mockInventoryScanOpts.BackoffFilePath, []byte(d.String()), 0600)
+	e := os.WriteFile(s.cs.BackoffFilePath, []byte(d.String()), 0600)
 	s.NoError(e)
-	c := NewCachingScanner(s.mockInventoryScanOpts.InventoryCachePath, s.mockInventoryScanOpts.BackoffFilePath, s.mockInventoryScanOpts.BackoffWaitCallback)
+	c := NewCachingScanner(s.cs.InventoryCachePath, s.cs.BackoffFilePath, s.cs.BackoffWaitCallback)
 
 	_, err := c.Scan("testme")
 
@@ -110,7 +110,7 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
 
 func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryWithoutResultCache() {
 	nodeName := "testme"
-	c := NewCachingScanner(s.mockInventoryScanOpts.InventoryCachePath, s.mockInventoryScanOpts.BackoffFilePath, s.mockInventoryScanOpts.BackoffWaitCallback)
+	c := NewCachingScanner(s.cs.InventoryCachePath, s.cs.BackoffFilePath, s.cs.BackoffWaitCallback)
 
 	actual, e := c.Scan(nodeName)
 

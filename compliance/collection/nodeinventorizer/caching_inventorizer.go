@@ -18,13 +18,6 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// CachingScannerOpts control behaviour of all CachingScanner related functions
-type CachingScannerOpts struct {
-	InventoryCachePath  string              // Path to which a cached inventory is written to
-	BackoffFilePath     string              // Path to which the backoff file is written to
-	BackoffWaitCallback func(time.Duration) // Callback that gets called if a backoff file is found
-}
-
 // CachingScanner is an implementation of NodeInventorizer that keeps a local cache of results.
 //
 // To reduce strain on the Node, a linear backoff is checked before collecting an inventory.
@@ -38,17 +31,17 @@ type CachingScanner struct {
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
 func NewCachingScanner(inventoryCachePath string, backoffFilePath string, backoffCallback func(time.Duration)) *CachingScanner {
-	return &CachingScanner{opts: &CachingScannerOpts{
+	return &CachingScanner{
 		InventoryCachePath:  inventoryCachePath,
 		BackoffFilePath:     backoffFilePath,
 		BackoffWaitCallback: backoffCallback,
-	}}
+	}
 }
 
 // Scan scans the current node and returns the results as storage.NodeInventory struct
 func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	// check whether a cached inventory exists that is recent enough to use
-	cachedInventory, creationTime := readInventory(c.opts.InventoryCachePath)
+	cachedInventory, creationTime := readInventory(c.InventoryCachePath)
 	if cachedInventory != nil && isCachedInventoryValid(creationTime) {
 		log.Debugf("Using cached node scan created at %v", creationTime)
 		return cachedInventory, nil
@@ -56,13 +49,13 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 
 	// check for existing backoff, wait for specified duration if needed, then persist the new backoff duration
 	initialBackoff := env.NodeScanInitialBackoff.DurationSetting()
-	currentBackoff := readBackoff(c.opts.BackoffFilePath)
+	currentBackoff := readBackoff(c.BackoffFilePath)
 
 	if currentBackoff > initialBackoff {
 		log.Warnf("Found existing node scan backoff file - last scan may have failed. Waiting %v seconds before retrying", currentBackoff.Seconds())
-		c.opts.BackoffWaitCallback(currentBackoff)
+		c.BackoffWaitCallback(currentBackoff)
 	}
-	writeBackoff(calcNextBackoff(currentBackoff), c.opts.BackoffFilePath)
+	writeBackoff(calcNextBackoff(currentBackoff), c.BackoffFilePath)
 
 	// if no inventory exists, or it is too old, collect a fresh one and save it to the cache
 	newInventory, err := collectInventory(nodeName)
@@ -70,13 +63,13 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 		return nil, err
 	}
 
-	if err = writeInventory(newInventory, c.opts.InventoryCachePath); err != nil {
+	if err = writeInventory(newInventory, c.InventoryCachePath); err != nil {
 		return nil, errors.Wrap(err, "persisting inventory to cache")
 	}
 
 	// Remove backoff directly before returning message, so that a failing/killed container does not lead to
 	// frequent rescans of a Node, which are costly and might impact Node performance
-	removeBackoff(c.opts.BackoffFilePath)
+	removeBackoff(c.BackoffFilePath)
 	return newInventory, nil
 }
 
