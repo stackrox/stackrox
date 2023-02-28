@@ -13,6 +13,7 @@ import addTokenRefreshInterceptors, {
 } from './addTokenRefreshInterceptors';
 import { authProviderLabels } from '../../constants/accessControl';
 import { Traits } from '../../types/traits.proto';
+import { isUserResource } from '../../Containers/AccessControl/traits';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
@@ -412,8 +413,11 @@ export function addAuthInterceptors(authHttpErrorHandler): void {
  */
 export function getIsAuthProviderImmutable(authProvider: AuthProvider): boolean {
     return (
-        'traits' in authProvider &&
-        authProvider.traits != null &&
-        authProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE'
+        ('traits' in authProvider &&
+            authProvider.traits != null &&
+            authProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE') ||
+        // Having both these conditions checked allows for seamless transition period
+        // between using mutabilityMode and origin in ACSCS auth provider.
+        !isUserResource(authProvider.traits)
     );
 }

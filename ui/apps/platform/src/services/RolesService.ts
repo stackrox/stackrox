@@ -26,6 +26,7 @@ export type Role = {
     description: string;
     permissionSetId: string;
     accessScopeId: string;
+    traits?: Traits;
 };
 
 /**

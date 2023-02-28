@@ -1,5 +1,6 @@
 import axios from './instance';
 import { Empty } from './types';
+import { Traits } from '../types/traits.proto';
 
 const accessScopessUrl = '/v1/simpleaccessscopes';
 
@@ -61,6 +62,7 @@ export type AccessScope = {
     name: string;
     description: string;
     rules: SimpleAccessScopeRules;
+    traits?: Traits;
 };
 
 export const accessScopeNew: AccessScope = {
