@@ -161,7 +161,9 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQu
 				log.Errorf("Error handling sensor message: %v", err)
 			}
 		})
-		log.Errorf("UNEXPECTED panic in handle message: %v", err)
+		if err != nil {
+			log.Errorf("UNEXPECTED panic in handle message: %v", err)
+		}
 	}
 	c.eventPipeline.OnFinish(c.clusterID)
 	c.stoppedSig.SignalWithError(c.stopSig.Err())

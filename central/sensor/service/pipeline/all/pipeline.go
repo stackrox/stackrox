@@ -56,14 +56,11 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 			matchCount++
 
 			err := safe.Run(func() {
-				if err := c.handleMessage(ctx, msg); err != nil {
-					log.Errorf("Error handling sensor message: %v", err)
-				}
+				errorList.AddError(fragment.Run(ctx, s.clusterID, msg, injector))
 			})
-			errorList.add
-			log.Errorf("UNEXPECTED panic in handle message: %v", err)
-
-			errorList.AddError(fragment.Run(ctx, s.clusterID, msg, injector))
+			if err != nil {
+				log.Errorf("UNEXPECTED panic in handle message: %v", err)
+			}
 		}
 	}
 	if matchCount == 0 {
