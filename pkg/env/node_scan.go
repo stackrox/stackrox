@@ -21,9 +21,6 @@ var (
 	// NodeScanInitialBackoff defines the initial time in seconds a Node scan will be delayed if a backoff file is found
 	NodeScanInitialBackoff = registerDurationSetting("ROX_NODE_SCAN_INITIAL_BACKOFF", 30*time.Second)
 
-	// NodeScanBackoffIncrement sets the seconds that are added on each interrupted run
-	NodeScanBackoffIncrement = registerDurationSetting("ROX_NODE_SCAN_BACKOFF_INCREMENT", 5*time.Second)
-
 	// NodeScanMaxBackoff is the upper boundary of backoff. Defaults to 5m in seconds, being 50% of Kubernetes restart policy stability timer.
 	NodeScanMaxBackoff = registerDurationSetting("ROX_NODE_SCAN_MAX_BACKOFF", 300*time.Second)
 )

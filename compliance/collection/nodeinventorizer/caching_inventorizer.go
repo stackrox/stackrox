@@ -17,6 +17,10 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+const (
+	backoffMultiplier = 2
+)
+
 // CachingScanner is an implementation of NodeInventorizer that keeps a local cache of results.
 //
 // To reduce strain on the Node, a linear backoff is checked before collecting an inventory.
@@ -94,7 +98,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 
 func calcNextBackoff(currentBackoff time.Duration) time.Duration {
 	maxBackoff := env.NodeScanMaxBackoff.DurationSetting()
-	nextBackoffInterval := currentBackoff + env.NodeScanBackoffIncrement.DurationSetting()
+	nextBackoffInterval := currentBackoff * backoffMultiplier
 	if nextBackoffInterval > maxBackoff {
 		return maxBackoff
 	}

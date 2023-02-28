@@ -61,9 +61,8 @@ func (s *TestComplianceCachingSuite) TestValidateBackoffMaxOnBigValue() {
 }
 
 func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
-	s.T().Setenv(env.NodeScanBackoffIncrement.EnvVar(), "24s")
 	baseBackoff, _ := time.ParseDuration("10s")
-	expectedBackoff, _ := time.ParseDuration("34s")
+	expectedBackoff := baseBackoff * backoffMultiplier
 
 	newBackoff := calcNextBackoff(baseBackoff)
 
@@ -72,7 +71,6 @@ func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
 
 func (s *TestComplianceCachingSuite) TestCalcNextBackoffUpperBoundary() {
 	s.T().Setenv(env.NodeScanMaxBackoff.EnvVar(), "5s")
-	s.T().Setenv(env.NodeScanBackoffIncrement.EnvVar(), "24s")
 	baseBackoff, _ := time.ParseDuration("10s")
 	expectedBackoff, _ := time.ParseDuration("5s")
 
@@ -83,7 +81,6 @@ func (s *TestComplianceCachingSuite) TestCalcNextBackoffUpperBoundary() {
 
 func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
 	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
-	s.T().Setenv(env.NodeScanBackoffIncrement.EnvVar(), "3s")
 
 	d, _ := time.ParseDuration("8s")
 	w := inventoryWrap{
