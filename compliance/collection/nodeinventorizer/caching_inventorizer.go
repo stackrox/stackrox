@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -28,10 +27,10 @@ const (
 // Note: This does not prevent strain in case of repeated pod recreation, as both mechanisms are based on an EmptyDir.
 type CachingScanner struct {
 	inventoryCachePath  string              // Path to which a cached inventory is written to
-	backoffWaitCallback func(time.Duration) // Callback that gets called if a backoff file is found
+	cacheDuration       time.Duration       // Duration for which a cached inventory will be considered new enough
 	initialBackoff      time.Duration       // First backoff interval the node scan starts with
 	maxBackoff          time.Duration       // Maximum duration that the backoff is allowed to grow to
-	cacheDuration       time.Duration       // Duration for which a cached inventory will be considered new enough
+	backoffWaitCallback func(time.Duration) // Callback that gets called if a backoff file is found
 }
 
 // inventoryWrap is a private struct that saves a given inventory alongside some meta-information.
@@ -42,13 +41,13 @@ type inventoryWrap struct {
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
-func NewCachingScanner(inventoryCachePath string, backoffCallback func(time.Duration)) *CachingScanner {
+func NewCachingScanner(inventoryCachePath string, cacheDuration time.Duration, initialBackoff time.Duration, maxBackoff time.Duration, backoffCallback func(time.Duration)) *CachingScanner {
 	return &CachingScanner{
 		inventoryCachePath:  inventoryCachePath,
+		cacheDuration:       cacheDuration,
+		initialBackoff:      initialBackoff,
+		maxBackoff:          maxBackoff,
 		backoffWaitCallback: backoffCallback,
-		initialBackoff:      env.NodeScanInitialBackoff.DurationSetting(),
-		maxBackoff:          env.NodeScanMaxBackoff.DurationSetting(),
-		cacheDuration:       env.NodeScanCacheDuration.DurationSetting(),
 	}
 }
 
