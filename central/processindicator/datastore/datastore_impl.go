@@ -106,7 +106,9 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 	if err != nil {
 		return err
 	}
-
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil
+	}
 	if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
 		return err
 	}
