@@ -198,7 +198,9 @@ func (m *managerImpl) flushIndicatorQueue() {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
+	now := time.Now()
 	m.processAggregator.Add(indicatorSlice)
+	centralMetrics.SetFunctionSegmentDuration(now, "AddProcessToAggregator")
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 

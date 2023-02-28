@@ -1,12 +1,12 @@
 {
   "result": {
     "summary": {
-      "[31;1mCRITICAL[0m": 5,
-      "[31mIMPORTANT[0m": 4,
-      "[34;2mLOW[0m": 3,
-      "MODERATE": 5,
+      "[31;1mCRITICAL[0m": 3,
+      "[31mIMPORTANT[0m": 3,
+      "[34;2mLOW[0m": 2,
+      "MODERATE": 3,
       "TOTAL-COMPONENTS": 5,
-      "TOTAL-VULNERABILITIES": 17
+      "TOTAL-VULNERABILITIES": 11
     },
     "vulnerabilities": [
       {

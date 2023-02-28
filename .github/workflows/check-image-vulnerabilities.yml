@@ -1,0 +1,48 @@
+name: Check image vulnerabilities
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Full version tag
+        required: true
+        default: 0.0.0-test-rc.1
+        type: string
+
+env:
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/check-image-vulnerabilities.py?ref=${{ github.ref_name }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
+run-name: ${{ format('Check image vulnerabilities for {0}', inputs.version) }}
+
+jobs:
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          {
+            echo "Event: ${{ github.event_name }}"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo '```'
+              echo "${{ toJSON(inputs) }}"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  check-image-vulnerabilities:
+    name: Checks images in version ${{ inputs.version }} for vulnerabilities
+    runs-on: ubuntu-latest
+    env:
+      QUAY_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
+    steps:
+      - run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" > check-image-vulnerabilities.py
+          pip install requests==2.28.2
+          {
+            echo "\`\`\`";
+            python check-image-vulnerabilities.py "${{ inputs.version }}";
+            echo "\`\`\`";
+          } >>"$GITHUB_STEP_SUMMARY"

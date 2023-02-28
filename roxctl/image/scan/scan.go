@@ -247,7 +247,7 @@ func printCVESummary(image string, cveSummary map[string]int, out logger.Logger)
 // print warning with amount of CVEs found in components
 func printCVEWarning(numOfVulns int, numOfComponents int, out logger.Logger) {
 	if numOfVulns != 0 {
-		out.WarnfLn("A total of %d vulnerabilities were found in %d components",
+		out.WarnfLn("A total of %d unique vulnerabilities were found in %d components",
 			numOfVulns, numOfComponents)
 	}
 }

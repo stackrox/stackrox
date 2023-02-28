@@ -86,6 +86,74 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 				},
 			},
 		},
+		"duplicated CVEs across multiple components": {
+			scan: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "dbus",
+						Version: "1:1.12.20-6.el9.x86_64",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:      "CVE-2022-42010",
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+					{
+						Name:    "dbus-common",
+						Version: "1:1.12.20-6.el9.noarch",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:      "CVE-2022-42010",
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+					{
+						Name:    "dbus-libs",
+						Version: "1:1.12.20-6.el9.x86_64",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:      "CVE-2022-42010",
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+				},
+			},
+			expectedOutput: &cveJSONResult{
+				Result: cveJSONStructure{
+					Summary: map[string]int{
+						"TOTAL-VULNERABILITIES": 1,
+						"TOTAL-COMPONENTS":      3,
+						"LOW":                   0,
+						"MODERATE":              1,
+						"IMPORTANT":             0,
+						"CRITICAL":              0,
+					},
+					Vulnerabilities: []cveVulnerabilityJSON{
+						{
+							CveID:            "CVE-2022-42010",
+							CveSeverity:      "MODERATE",
+							ComponentName:    "dbus",
+							ComponentVersion: "1:1.12.20-6.el9.x86_64",
+						},
+						{
+							CveID:            "CVE-2022-42010",
+							CveSeverity:      "MODERATE",
+							ComponentName:    "dbus-common",
+							ComponentVersion: "1:1.12.20-6.el9.noarch",
+						},
+						{
+							CveID:            "CVE-2022-42010",
+							CveSeverity:      "MODERATE",
+							ComponentName:    "dbus-libs",
+							ComponentVersion: "1:1.12.20-6.el9.x86_64",
+						},
+					},
+				},
+			},
+		},
 		"components with vulnerabilities of all severity": {
 			scan: &storage.ImageScan{
 				Components: []*storage.EmbeddedImageScanComponent{
@@ -126,12 +194,12 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 			expectedOutput: &cveJSONResult{
 				Result: cveJSONStructure{
 					Summary: map[string]int{
-						"TOTAL-VULNERABILITIES": 13,
+						"TOTAL-VULNERABILITIES": 5,
 						"TOTAL-COMPONENTS":      4,
-						"LOW":                   3,
-						"MODERATE":              3,
-						"IMPORTANT":             3,
-						"CRITICAL":              4,
+						"LOW":                   1,
+						"MODERATE":              1,
+						"IMPORTANT":             1,
+						"CRITICAL":              2,
 					},
 					Vulnerabilities: append(expectedVulnsComponentA, append(expectedVulnsComponentB, append(expectedVulnsComponentC, expectedVulnsComponentD...)...)...),
 				},
