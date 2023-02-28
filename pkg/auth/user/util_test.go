@@ -11,8 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestExtractUserLogFields(t *testing.T) {
-	// 1. Main fields are transformed properly.
+func TestExtractUserLogFields_MainFieldsTransformed(t *testing.T) {
 	user := &v1.AuthStatus{
 		Id: &v1.AuthStatus_UserId{
 			UserId: "UserID",
@@ -58,9 +57,10 @@ func TestExtractUserLogFields(t *testing.T) {
 		Type: user.GetAuthProvider().GetType(),
 	})))
 	assert.True(t, fields[8].(zap.Field).Equals(zap.Any("userAttributes", user.GetUserAttributes())))
+}
 
-	// 2. Service id is transformed to string properly.
-	user = &v1.AuthStatus{
+func TestExtractUserLogFields_ServiceIdTransformed(t *testing.T) {
+	user := &v1.AuthStatus{
 		Id: &v1.AuthStatus_ServiceId{
 			ServiceId: &storage.ServiceIdentity{
 				Id:           "id",
@@ -70,7 +70,7 @@ func TestExtractUserLogFields(t *testing.T) {
 			},
 		},
 	}
-	fields = extractUserLogFields(user)
+	fields := extractUserLogFields(user)
 	assert.Len(t, fields, 9)
 	assert.True(t, fields[0].(zap.Field).Equals(zap.String("userID", "")))
 	assert.True(t, fields[1].(zap.Field).Equals(zap.String("serviceID", "{\"serialStr\":\"serialStr\",\"id\":\"id\",\"type\":\"CENTRAL_SERVICE\",\"initBundleId\":\"initBundleId\"}")))
@@ -86,9 +86,11 @@ func TestExtractUserLogFields(t *testing.T) {
 	})))
 	assert.True(t, fields[8].(zap.Field).Equals(zap.Any("userAttributes", user.GetUserAttributes())))
 
-	// 3. Nil is handled without panic.
-	user = nil
-	fields = extractUserLogFields(user)
+}
+
+func TestExtractUserLogFields_NilTransformed(t *testing.T) {
+	var user *v1.AuthStatus
+	fields := extractUserLogFields(user)
 	assert.Len(t, fields, 9)
 	assert.True(t, fields[0].(zap.Field).Equals(zap.String("userID", "")))
 	assert.True(t, fields[1].(zap.Field).Equals(zap.String("serviceID", "")))
