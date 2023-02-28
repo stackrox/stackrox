@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/branding"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/utils"
@@ -17,6 +16,7 @@ import (
 const (
 	batchV1      = "batch/v1"
 	batchV1beta1 = "batch/v1beta1"
+	fieldManager = "StackRox"
 )
 
 // Suspend suspends the cron job
@@ -47,7 +47,7 @@ func Suspend(ctx context.Context, client kubernetes.Interface, deploymentInfo *c
 					Kind:       deploymentInfo.GetDeploymentType(),
 					APIVersion: batchV1,
 				},
-				FieldManager: branding.GetProductName(),
+				FieldManager: fieldManager,
 				Force:        &forcePatch,
 			})
 		if err != nil {
@@ -76,7 +76,7 @@ func Suspend(ctx context.Context, client kubernetes.Interface, deploymentInfo *c
 					Kind:       deploymentInfo.GetDeploymentType(),
 					APIVersion: batchV1beta1,
 				},
-				FieldManager: branding.GetProductName(),
+				FieldManager: fieldManager,
 				Force:        &forcePatch,
 			})
 		if err != nil {
