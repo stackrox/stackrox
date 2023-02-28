@@ -19,11 +19,7 @@ SILENT ?= @
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests"
 
 ifeq ($(TAG),)
-ifeq (,$(wildcard CI_TAG))
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
-else
-TAG=$(shell cat CI_TAG)
-endif
 endif
 
 # Set expiration on Quay.io for non-release tags.
@@ -133,7 +129,7 @@ $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tool
 style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
 
 .PHONY: golangci-lint
-golangci-lint: $(GOLANGCILINT_BIN)
+golangci-lint: $(GOLANGCILINT_BIN) deps
 ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
@@ -414,14 +410,7 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
-ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
-	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --name builder $(BUILD_IMAGE) make main-build-nodeps
-	docker cp $(GOPATH) builder:/
-	docker start -i builder
-	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
-else
 	docker run $(DOCKER_USER) -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
-endif
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
@@ -694,14 +683,10 @@ clean-image:
 
 .PHONY: tag
 tag:
-ifneq (,$(wildcard CI_TAG))
-	@cat CI_TAG
-else
 ifdef COMMIT
 	@git describe $(COMMIT) --tags --abbrev=10 --long --exclude '*-nightly-*'
 else
 	@echo $(TAG)
-endif
 endif
 
 .PHONY: shortcommit

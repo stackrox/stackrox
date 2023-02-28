@@ -1,25 +1,20 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import StatusChip from 'Components/StatusChip';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
-import BinderTabs from 'Components/BinderTabs';
-import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
-import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
-import TableWidget from '../TableWidget';
 
 const emptyNamespace = {
     deploymentCount: 0,
@@ -59,7 +54,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     }
 
     const { clusterName, clusterId, priority, labels, id } = metadata;
-    const { failingPolicies, status } = policyStatus;
+    const { status } = policyStatus;
     const metadataKeyValuePairs = [];
 
     if (!entityContext[entityTypes.CLUSTER]) {
@@ -117,34 +112,14 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                 </CollapsibleSection>
                 <CollapsibleSection title="Namespace findings">
                     <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
-                        <BinderTabs>
-                            <Tab title="Policies">
-                                <TableWidget
-                                    header={`${failingPolicies.length} failing ${pluralize(
-                                        entityTypes.POLICY,
-                                        failingPolicies.length
-                                    )} across this namespace`}
-                                    entityType={entityTypes.POLICY}
-                                    rows={failingPolicies}
-                                    noDataText="No failing policies"
-                                    className="bg-base-100"
-                                    columns={getPolicyTableColumns(workflowState)}
-                                    idAttribute="id"
-                                />
-                            </Tab>
-                            <Tab title="Fixable CVEs">
-                                <TableWidgetFixableCves
-                                    workflowState={workflowState}
-                                    entityContext={entityContext}
-                                    entityType={entityTypes.NAMESPACE}
-                                    name={safeData?.metadata?.name}
-                                    id={safeData?.metadata?.id}
-                                    vulnType={
-                                        showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE
-                                    }
-                                />
-                            </Tab>
-                        </BinderTabs>
+                        <TableWidgetFixableCves
+                            workflowState={workflowState}
+                            entityContext={entityContext}
+                            entityType={entityTypes.NAMESPACE}
+                            name={safeData?.metadata?.name}
+                            id={safeData?.metadata?.id}
+                            vulnType={showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE}
+                        />
                     </div>
                 </CollapsibleSection>
             </div>

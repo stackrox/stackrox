@@ -1,16 +1,17 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
+    clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
     clickOnSingularEntityWidgetInSidePanel,
     entityListCountMatchesTableLinkCount,
-    hasTabsFor,
+    hasCountWidgetsFor,
     hasRelatedEntityFor,
+    hasTabsFor,
+    navigateToSingleEntityPage,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'deployments';
@@ -57,7 +58,8 @@ describe('Configuration Management Deployments', () => {
     });
 
     it('should click on the images count widget in the entity page and show the images tab', () => {
-        visitConfigurationManagementEntityInSidePanel(entitiesKey, 'collector');
+        const columnIndexForImages = 6;
+        clickEntityTableRowThatHasLinkInColumn(entitiesKey, columnIndexForImages);
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('images', 'entityList');
     });

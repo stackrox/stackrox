@@ -4,6 +4,9 @@ collectors:
 - type: pod
   selector: app=central
   tail: -1
+- type: pod
+  selector: app=central-db
+  tail: -1
 ---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central

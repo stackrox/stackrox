@@ -14,11 +14,11 @@ import LoadingSection from 'Components/PatternFly/LoadingSection';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
-import UnreachableWarning from 'Containers/UnreachableWarning';
 import Labeled from 'Components/Labeled';
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 import BrandLogo from 'Components/PatternFly/BrandLogo';
-import AppWrapper from '../AppWrapper';
+
+import ServerStatusBanner from '../MainPage/Banners/ServerStatusBanner';
 import LoginNotice from './LoginNotice';
 
 import { loginWithBasicAuth } from '../../services/AuthService';
@@ -48,8 +48,6 @@ class LoginPage extends Component {
             username: PropTypes.string,
             password: PropTypes.string,
         }).isRequired,
-        serverState: PropTypes.oneOf(['UP', 'UNREACHABLE', 'RESURRECTED', undefined, null])
-            .isRequired,
         ...reduxFormPropTypes,
     };
 
@@ -210,10 +208,9 @@ class LoginPage extends Component {
     };
 
     render() {
-        const { serverState } = this.props;
         return (
-            <AppWrapper>
-                <UnreachableWarning serverState={serverState} />
+            <>
+                <ServerStatusBanner />
                 <main className="flex h-full items-center justify-center">
                     <div className="flex items-start">
                         <form
@@ -230,7 +227,7 @@ class LoginPage extends Component {
                         <BrandLogo className="pf-u-p-2xl" />
                     </div>
                 </main>
-            </AppWrapper>
+            </>
         );
     }
 }
@@ -244,7 +241,6 @@ const mapStateToProps = createStructuredSelector({
     authStatus: selectors.getAuthStatus,
     authProviderResponse: selectors.getAuthProviderError,
     formValues: (state) => selector(state, 'authProvider', 'username', 'password'),
-    serverState: selectors.getServerState,
 });
 
 const Form = reduxForm({

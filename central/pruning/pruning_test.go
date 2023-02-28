@@ -403,7 +403,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	imageIntegrationDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).AnyTimes().Return()
 	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	imageIntegrationDataStore.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)

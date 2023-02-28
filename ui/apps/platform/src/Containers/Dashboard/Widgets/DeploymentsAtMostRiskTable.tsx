@@ -4,10 +4,10 @@ import { Truncate } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { ListDeployment } from 'types/deployment.proto';
-import { networkBasePathPF, riskBasePath } from 'routePaths';
+import { riskBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getQueryString } from 'utils/queryStringUtils';
+import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 
 const columnNames = {
     deployment: 'Deployment',
@@ -44,21 +44,18 @@ function DeploymentsAtMostRiskTable({
                 </Tr>
             </Thead>
             <Tbody>
-                {deployments.map(({ id, name, cluster, namespace, priority }) => {
-                    // @TODO: Consider a more secure approach to creating links to the network graph so that
-                    // areas outside of the Network Graph don't need to know the URL architecture of that feature
-                    // Reference to discussion: https://github.com/stackrox/stackrox/pull/4955#discussion_r1112450278
-                    const queryString = getQueryString({
-                        s: {
-                            Cluster: cluster,
-                            Namespace: namespace,
-                        },
+                {deployments.map(({ id: deploymentId, name, cluster, namespace, priority }) => {
+                    const networkGraphLink = getURLLinkToDeployment({
+                        cluster,
+                        namespace,
+                        deploymentId,
                     });
-                    const networkGraphLink = `${networkBasePathPF}/deployment/${id}${queryString}`;
                     return (
-                        <Tr key={id}>
+                        <Tr key={deploymentId}>
                             <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
-                                <Link to={riskPageLinkToDeployment(id, name, searchFilter)}>
+                                <Link
+                                    to={riskPageLinkToDeployment(deploymentId, name, searchFilter)}
+                                >
                                     <Truncate position="middle" content={name} />
                                 </Link>
                             </Td>

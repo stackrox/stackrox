@@ -9,7 +9,6 @@ import rootSaga from 'sagas';
 import createRootReducer from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import * as AuthService from 'services/AuthService';
-import { actions as serverErrorActions } from 'reducers/serverError';
 import registerServerErrorHandler from 'services/serverErrorHandler';
 
 const sagaMiddleware = createSagaMiddleware({
@@ -43,8 +42,8 @@ export default function configureStore(initialState = {}, history) {
     );
 
     registerServerErrorHandler(
-        () => store.dispatch(serverErrorActions.recordServerSuccess()),
-        () => store.dispatch(serverErrorActions.recordServerError())
+        () => store.dispatch({ type: 'serverStatus/RESPONSE_SUCCESS' }),
+        () => store.dispatch({ type: 'serverStatus/RESPONSE_FAILURE', now: Date.now() })
     );
     sagaMiddleware.run(rootSaga);
     return store;

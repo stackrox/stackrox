@@ -185,6 +185,13 @@ var (
 		Name:      "orphaned_plop_total",
 		Help:      "A counter of the total number of PLOP objects without a reference to a ProcessIndicator",
 	}, []string{"ClusterID"})
+
+	processQueueLengthGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_queue_length",
+		Help:      "A gauge that indicates the current number of processes that have not been flushed",
+	})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -307,4 +314,9 @@ func SetClusterMetrics(clusterID string, clusterMetrics *central.ClusterMetrics)
 // received at all. This type of situations require investigation.
 func IncrementOrphanedPLOPCounter(clusterID string) {
 	totalOrphanedPLOPCounter.With(prometheus.Labels{"ClusterID": clusterID}).Inc()
+}
+
+// ModifyProcessQueueLength modifies the metric for the number of processes that have not been flushed
+func ModifyProcessQueueLength(delta int) {
+	processQueueLengthGauge.Add(float64(delta))
 }

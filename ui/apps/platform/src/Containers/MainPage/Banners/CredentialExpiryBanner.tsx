@@ -73,7 +73,7 @@ function CredentialExpiryBanner({
     );
 
     return (
-        <Banner className="pf-u-text-align-center" isSticky variant={type}>
+        <Banner className="pf-u-text-align-center" variant={type}>
             {message}
         </Banner>
     );

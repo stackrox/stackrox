@@ -56,6 +56,7 @@ function ClusterEditForm({
                     isDecommissionedClusterRetentionEnabled={
                         isDecommissionedClusterRetentionEnabled
                     }
+                    isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                 />
             )}
             <form

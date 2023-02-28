@@ -1,15 +1,19 @@
-import reducer, { actions } from './serverError';
+import reducer from './serverResponseStatus';
 
 describe('Server Error Reducer', () => {
     const initialTimestamp = 946684799000; // 1999-12-31T23:59:59+0000
     const initialState = {
-        serverError: null,
+        serverResponseStatus: {
+            firstFailure: 0,
+            numSuccessiveFailures: 0,
+            serverStatus: '',
+        },
     };
     const successState = {
-        serverError: {
+        serverResponseStatus: {
+            firstFailure: 0,
             numSuccessiveFailures: 0,
-            firstFailure: null,
-            serverState: 'UP',
+            serverStatus: 'UP',
         },
     };
 
@@ -29,7 +33,7 @@ describe('Server Error Reducer', () => {
             ...initialState,
         };
 
-        const nextState = reducer(prevState, actions.recordServerSuccess());
+        const nextState = reducer(prevState, { type: 'serverStatus/RESPONSE_SUCCESS' });
 
         expect(nextState).toEqual(successState);
     });
@@ -39,17 +43,17 @@ describe('Server Error Reducer', () => {
             ...successState,
         };
 
-        const nextState = reducer(prevState, actions.recordServerSuccess());
+        const nextState = reducer(prevState, { type: 'serverStatus/RESPONSE_SUCCESS' });
 
         expect(nextState).toEqual(successState);
     });
 
     it('should start tracking failures when an API call fails', () => {
         const firstFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 1,
                 firstFailure: initialTimestamp,
-                serverState: 'UP',
+                serverStatus: 'UP',
             },
         };
 
@@ -57,49 +61,55 @@ describe('Server Error Reducer', () => {
             ...successState,
         };
 
-        const nextState = reducer(prevState, actions.recordServerError());
+        const nextState = reducer(prevState, {
+            type: 'serverStatus/RESPONSE_FAILURE',
+            now: Date.now(),
+        });
 
         expect(nextState).toEqual(firstFailureState);
     });
 
     it('should increment the failure count when another API call fails', () => {
         const firstFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 1,
                 firstFailure: initialTimestamp,
-                serverState: 'UP',
+                serverStatus: 'UP',
             },
         };
 
         const nextFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 2,
                 firstFailure: initialTimestamp,
-                serverState: 'UP',
+                serverStatus: 'UP',
             },
         };
         const prevState = {
             ...firstFailureState,
         };
-        const nextState = reducer(prevState, actions.recordServerError());
+        const nextState = reducer(prevState, {
+            type: 'serverStatus/RESPONSE_FAILURE',
+            now: Date.now(),
+        });
 
         expect(nextState).toEqual(nextFailureState);
     });
 
     it('should toggle to UNREACHABLE when a fifth API call fails, at least 15 seconds after first failure', () => {
         const penultimateFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 4,
                 firstFailure: initialTimestamp,
-                serverState: 'UP',
+                serverStatus: 'UP',
             },
         };
 
         const nextFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 5,
                 firstFailure: initialTimestamp,
-                serverState: 'UNREACHABLE',
+                serverStatus: 'UNREACHABLE',
             },
         };
         const prevState = {
@@ -108,7 +118,10 @@ describe('Server Error Reducer', () => {
 
         Date.now = jest.fn(() => initialTimestamp + 15001); // tick the "clock" ahead 15 secs.
 
-        const nextState = reducer(prevState, actions.recordServerError());
+        const nextState = reducer(prevState, {
+            type: 'serverStatus/RESPONSE_FAILURE',
+            now: Date.now(),
+        });
 
         expect(nextState).toEqual(nextFailureState);
 
@@ -117,25 +130,25 @@ describe('Server Error Reducer', () => {
 
     it('should toggle to RESURRECTED when a fifth API call fails, at least 15 seconds after first failure', () => {
         const finalFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 5,
                 firstFailure: initialTimestamp,
-                serverState: 'UNREACHABLE',
+                serverStatus: 'UNREACHABLE',
             },
         };
 
         const nextFailureState = {
-            serverError: {
+            serverResponseStatus: {
                 numSuccessiveFailures: 0,
-                firstFailure: null,
-                serverState: 'RESURRECTED',
+                firstFailure: 0,
+                serverStatus: 'RESURRECTED',
             },
         };
         const prevState = {
             ...finalFailureState,
         };
 
-        const nextState = reducer(prevState, actions.recordServerSuccess());
+        const nextState = reducer(prevState, { type: 'serverStatus/RESPONSE_SUCCESS' });
 
         expect(nextState).toEqual(nextFailureState);
     });

@@ -7,8 +7,7 @@ import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
 import Loader from 'Components/Loader';
 
-import { getQueryString } from 'utils/queryStringUtils';
-import { networkBasePathPF } from 'routePaths';
+import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './Process/Details';
@@ -42,16 +41,11 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
         { text: 'Process Discovery' },
     ];
 
-    // @TODO: Consider a more secure approach to creating links to the network graph so that
-    // areas outside of the Network Graph don't need to know the URL architecture of that feature
-    // Reference to discussion: https://github.com/stackrox/stackrox/pull/4955#discussion_r1112450278
-    const queryString = getQueryString({
-        s: {
-            Cluster: selectedDeployment.clusterName,
-            Namespace: selectedDeployment.namespace,
-        },
+    const networkGraphLink = getURLLinkToDeployment({
+        cluster: selectedDeployment.clusterName,
+        namespace: selectedDeployment.namespace,
+        deploymentId: selectedDeployment.id,
     });
-    const networkGraphLink = `${networkBasePathPF}/deployment/${selectedDeployment.id}${queryString}`;
 
     return (
         <Tabs headers={riskPanelTabs}>
