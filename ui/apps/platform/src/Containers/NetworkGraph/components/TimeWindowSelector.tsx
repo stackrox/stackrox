@@ -16,6 +16,7 @@ function TimeWindowSelector({
     isDisabled,
 }: TimeWindowSelectorProps) {
     const { closeSelect, isOpen, onToggle } = useSelectToggle();
+
     function selectTimeWindow(_event, selection) {
         closeSelect();
         setActiveTimeWindow(selection);
