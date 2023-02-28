@@ -85,7 +85,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
-            .setImage ("nginx")
+            .setImage ("quay.io/rhacs-eng/qa:latest") // this is docker.io/nginx:1.22-alpine but tagged as latest
             .addPort (22)
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
