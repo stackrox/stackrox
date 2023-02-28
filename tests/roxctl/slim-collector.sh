@@ -50,7 +50,7 @@ test_collector_image_references_in_deployment_bundles() {
     SLIM_COLLECTOR_FLAG="$1"
     EXPECTED_IMAGE_CONDITION="$2"
 
-    CLUSTER_NAME="test-cluster-$RANDOM"
+    CLUSTER_NAME="test-cluster-${RANDOM}-${RANDOM}-${RANDOM}"
     echo "Testing correctness of collector image references for clusters generated with $SLIM_COLLECTOR_FLAG (cluster name is $CLUSTER_NAME)"
 
     # Verify that generating a cluster works.
