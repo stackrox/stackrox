@@ -53,6 +53,9 @@ func LogSuccessfulUserLogin(log *logging.Logger, user *v1.AuthStatus) {
 	log.Warnw("User successfully logged in with user attributes", extractUserLogFields(user)...)
 }
 
+// The reason this function returns []interface{} instead of []zap.Field
+// is because log.Warnw accepts ...interface{} and []zap.Field does not convert automatically
+// to []interface{}.
 func extractUserLogFields(user *v1.AuthStatus) []interface{} {
 	serviceIdStr := ""
 	permissionsStr := ""
