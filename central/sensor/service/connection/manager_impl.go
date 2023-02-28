@@ -220,6 +220,25 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 	return oldConnection, nil
 }
 
+func (m *manager) getDeduper(clusterID string) *deduper {
+	m.deduperMutex.Lock()
+	defer m.deduperMutex.Unlock()
+
+	if d, ok := m.messageDedupers[clusterID]; ok {
+		return d
+	}
+	msgDeduper := newDeduper()
+	m.messageDedupers[clusterID] = msgDeduper
+	return msgDeduper
+}
+
+func (m *manager) deleteDeduper(clusterID string) {
+	m.deduperMutex.Lock()
+	defer m.deduperMutex.Unlock()
+
+	delete(m.messageDedupers, clusterID)
+}
+
 func (m *manager) CloseConnection(clusterID string) {
 	if conn := m.GetConnection(clusterID); conn != nil {
 		conn.Terminate(errors.New("cluster was deleted"))
@@ -228,25 +247,14 @@ func (m *manager) CloseConnection(clusterID string) {
 		}
 	}
 
-	m.deduperMutex.Lock()
-	defer m.deduperMutex.Unlock()
-
-	delete(m.messageDedupers, clusterID)
+	m.deleteDeduper(clusterID)
 }
 
 func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
 	clusterID := cluster.GetId()
 	clusterName := cluster.GetName()
 
-	var msgDeduper *deduper
-	concurrency.WithLock(&m.deduperMutex, func() {
-		if d, ok := m.messageDedupers[clusterID]; ok {
-			msgDeduper = d
-			return
-		}
-		msgDeduper = newDeduper()
-		m.messageDedupers[clusterID] = msgDeduper
-	})
+	msgDeduper := m.getDeduper(clusterID)
 	conn :=
 		newConnection(
 			sensorHello,

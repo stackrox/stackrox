@@ -1,14 +1,11 @@
 package connection
 
 import (
-	"hash"
-	"hash/fnv"
 	"reflect"
 
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/sensor/hash"
 )
 
 type key struct {
@@ -19,14 +16,14 @@ type key struct {
 func newDeduper() *deduper {
 	return &deduper{
 		lastReceived: make(map[key]uint64),
-		hasher:       fnv.New64a(),
+		hasher:       hash.NewHasher(),
 	}
 }
 
 type deduper struct {
 	lastReceived map[key]uint64
 
-	hasher hash.Hash64
+	hasher *hash.Hasher
 }
 
 func skipDedupe(msg *central.MsgFromSensor) bool {
@@ -63,13 +60,10 @@ func (d *deduper) dedupe(msg *central.MsgFromSensor) bool {
 	// Backwards compatibility with a previous Sensor
 	if event.GetSensorHashOneof() == nil {
 		// Compute the sensor hash
-		d.hasher.Reset()
-		hashValue, err := hashstructure.Hash(event.GetResource(), hashstructure.FormatV2, &hashstructure.HashOptions{
-			TagName: "sensorhash",
-			Hasher:  d.hasher,
-		})
-		utils.Should(err)
-
+		hashValue, ok := d.hasher.HashMsg(msg)
+		if !ok {
+			return false
+		}
 		receivedHash = hashValue
 	}
 	prevValue, ok := d.lastReceived[key]
