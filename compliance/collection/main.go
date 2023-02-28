@@ -293,7 +293,6 @@ func main() {
 			log.Infof("Using NodeInventoryCollector")
 			scanner = nodeinventorizer.NewCachingScanner(
 				"/cache/inventory-cache",
-				"/cache/inventory-backoff",
 				func(duration time.Duration) { time.Sleep(duration) })
 		}
 

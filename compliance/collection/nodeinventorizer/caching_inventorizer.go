@@ -27,9 +27,11 @@ const (
 // Additionally, a cached inventory from an earlier invocation may be used instead of a full inventory run if it is fresh enough.
 // Note: This does not prevent strain in case of repeated pod recreation, as both mechanisms are based on an EmptyDir.
 type CachingScanner struct {
-	InventoryCachePath  string              // Path to which a cached inventory is written to
-	BackoffFilePath     string              // Path to which the backoff file is written to
-	BackoffWaitCallback func(time.Duration) // Callback that gets called if a backoff file is found
+	inventoryCachePath  string              // Path to which a cached inventory is written to
+	backoffWaitCallback func(time.Duration) // Callback that gets called if a backoff file is found
+	initialBackoff      time.Duration       // First backoff interval the node scan starts with
+	maxBackoff          time.Duration       // Maximum duration that the backoff is allowed to grow to
+	cacheDuration       time.Duration       // Duration for which a cached inventory will be considered new enough
 }
 
 // inventoryWrap is a private struct that saves a given inventory alongside some meta-information.
@@ -40,11 +42,13 @@ type inventoryWrap struct {
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
-func NewCachingScanner(inventoryCachePath string, backoffFilePath string, backoffCallback func(time.Duration)) *CachingScanner {
+func NewCachingScanner(inventoryCachePath string, backoffCallback func(time.Duration)) *CachingScanner {
 	return &CachingScanner{
-		InventoryCachePath:  inventoryCachePath,
-		BackoffFilePath:     backoffFilePath,
-		BackoffWaitCallback: backoffCallback,
+		inventoryCachePath:  inventoryCachePath,
+		backoffWaitCallback: backoffCallback,
+		initialBackoff:      env.NodeScanInitialBackoff.DurationSetting(),
+		maxBackoff:          env.NodeScanMaxBackoff.DurationSetting(),
+		cacheDuration:       env.NodeScanCacheDuration.DurationSetting(),
 	}
 }
 
@@ -53,27 +57,26 @@ func NewCachingScanner(inventoryCachePath string, backoffFilePath string, backof
 // Otherwise, a new scan guarded by a backoff is run.
 func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	// check whether a cached inventory exists that has not exceeded its validity
-	cache := readInventoryWrap(c.InventoryCachePath)
+	cache := readInventoryWrap(c.inventoryCachePath)
 	if cache != nil && cache.Inventory != nil && cache.ValidUntil.After(time.Now()) {
 		log.Debugf("Using cached node scan (valid until %v)", cache.ValidUntil)
 		return cache.Inventory, nil
 	}
 
 	// check for existing backoff, wait for specified duration if needed, then persist the new backoff duration
-	initialBackoff := env.NodeScanInitialBackoff.DurationSetting()
-	backoffDuration := initialBackoff
+	backoffDuration := c.initialBackoff
 	if cache != nil {
-		backoffDuration = validateBackoff(cache.BackoffDuration)
+		backoffDuration = c.validateBackoff(cache.BackoffDuration)
 	}
 
-	if backoffDuration > initialBackoff {
+	if backoffDuration > c.initialBackoff {
 		log.Warnf("Found existing node scan backoff file - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
-		c.BackoffWaitCallback(backoffDuration)
+		c.backoffWaitCallback(backoffDuration)
 	}
 
 	// Write backoff duration to cache
-	backoff := inventoryWrap{BackoffDuration: calcNextBackoff(backoffDuration)}
-	if err := writeInventoryWrap(backoff, c.BackoffFilePath); err != nil {
+	backoff := inventoryWrap{BackoffDuration: c.calcNextBackoff(backoffDuration)}
+	if err := writeInventoryWrap(backoff, c.inventoryCachePath); err != nil {
 		log.Warnf("Error writing node scan backoff file: %v", err)
 	}
 
@@ -85,30 +88,29 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 
 	// Write inventory to cache
 	inventory := inventoryWrap{
-		ValidUntil:      time.Now().Add(env.NodeScanCacheDuration.DurationSetting()),
+		ValidUntil:      time.Now().Add(c.cacheDuration),
 		BackoffDuration: 0,
 		Inventory:       newInventory,
 	}
-	if err := writeInventoryWrap(inventory, c.InventoryCachePath); err != nil {
+	if err := writeInventoryWrap(inventory, c.inventoryCachePath); err != nil {
 		return nil, errors.Wrap(err, "persisting inventory to cache")
 	}
 
 	return newInventory, nil
 }
 
-func calcNextBackoff(currentBackoff time.Duration) time.Duration {
-	maxBackoff := env.NodeScanMaxBackoff.DurationSetting()
+func (c *CachingScanner) calcNextBackoff(currentBackoff time.Duration) time.Duration {
 	nextBackoffInterval := currentBackoff * backoffMultiplier
-	if nextBackoffInterval > maxBackoff {
-		return maxBackoff
+	if nextBackoffInterval > c.maxBackoff {
+		return c.maxBackoff
 	}
 	return nextBackoffInterval
 }
 
 // validateBackoff ensures that a given duration does not exceed the max backoff setting
-func validateBackoff(backoff time.Duration) time.Duration {
-	if backoff > env.NodeScanMaxBackoff.DurationSetting() {
-		return env.NodeScanMaxBackoff.DurationSetting()
+func (c *CachingScanner) validateBackoff(backoff time.Duration) time.Duration {
+	if backoff > c.maxBackoff {
+		return c.maxBackoff
 	}
 	return backoff
 }
