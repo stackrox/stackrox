@@ -31,7 +31,9 @@ type CachingScannerOpts struct {
 // Additionally, a cached inventory from an earlier invocation may be used instead of a full inventory run if it is fresh enough.
 // Note: This does not prevent strain in case of repeated pod recreation, as both mechanisms are based on an EmptyDir.
 type CachingScanner struct {
-	opts *CachingScannerOpts
+	InventoryCachePath  string              // Path to which a cached inventory is written to
+	BackoffFilePath     string              // Path to which the backoff file is written to
+	BackoffWaitCallback func(time.Duration) // Callback that gets called if a backoff file is found
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
@@ -63,13 +65,12 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	writeBackoff(calcNextBackoff(currentBackoff), c.opts.BackoffFilePath)
 
 	// if no inventory exists, or it is too old, collect a fresh one and save it to the cache
-	newInventory, err := collectInventory(nodeName) // opts.Scanner.Scan(opts.NodeName)
+	newInventory, err := collectInventory(nodeName)
 	if err != nil {
 		return nil, err
 	}
 
-	err = writeInventory(newInventory, c.opts.InventoryCachePath)
-	if err != nil {
+	if err = writeInventory(newInventory, c.opts.InventoryCachePath); err != nil {
 		return nil, errors.Wrap(err, "persisting inventory to cache")
 	}
 
@@ -113,8 +114,7 @@ func readBackoff(path string) time.Duration {
 }
 
 func writeBackoff(backoff time.Duration, path string) {
-	err := os.WriteFile(path, []byte(backoff.String()), 0644)
-	if err != nil {
+	if err := os.WriteFile(path, []byte(backoff.String()), 0644); err != nil {
 		log.Warnf("Error writing node scan backoff file: %v", err)
 	}
 }
@@ -123,7 +123,7 @@ func calcNextBackoff(currentBackoff time.Duration) time.Duration {
 	maxBackoff := env.NodeScanMaxBackoff.DurationSetting()
 	nextBackoffInterval := currentBackoff + env.NodeScanBackoffIncrement.DurationSetting()
 	if nextBackoffInterval > maxBackoff {
-		nextBackoffInterval = maxBackoff
+		return maxBackoff
 	}
 	return nextBackoffInterval
 }
