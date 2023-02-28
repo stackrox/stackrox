@@ -23,8 +23,6 @@ export type NetworkPolicySimulator =
 
 export type SetNetworkPolicyModification = (action: SetNetworkPolicyModificationAction) => void;
 
-export type ApplyNetworkPolicyModification = () => void;
-
 type SetNetworkPolicyModificationAction =
     | {
           state: 'ACTIVE';
@@ -71,7 +69,6 @@ const defaultResultState = {
 function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySimulatorParams): {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
-    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
 } {
     const [simulator, setSimulator] = useState<NetworkPolicySimulator>(defaultResultState);
 
@@ -197,42 +194,7 @@ function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySi
         }
     }
 
-    function applyNetworkPolicyModification() {
-        if (simulator.state === 'ACTIVE') {
-            return;
-        }
-        setSimulator({
-            state: simulator.state,
-            modification: simulator.modification,
-            error: '',
-            isLoading: true,
-        });
-        networkService
-            .applyNetworkPolicyModification(clusterId, simulator.modification)
-            .then(() => {
-                setNetworkPolicyModification({
-                    state: 'ACTIVE',
-                    options: {
-                        clusterId,
-                        searchQuery: '',
-                    },
-                });
-            })
-            .catch((error) => {
-                const message = getAxiosErrorMessage(error);
-                const errorMessage =
-                    message || 'An unknown error occurred while applying the network policies';
-
-                setSimulator({
-                    state: simulator.state,
-                    modification: simulator.modification,
-                    error: errorMessage,
-                    isLoading: false,
-                });
-            });
-    }
-
-    return { simulator, setNetworkPolicyModification, applyNetworkPolicyModification };
+    return { simulator, setNetworkPolicyModification };
 }
 
 export default useNetworkPolicySimulator;

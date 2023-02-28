@@ -28,7 +28,6 @@ import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
 
 import {
-    ApplyNetworkPolicyModification,
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
@@ -58,7 +57,6 @@ export type TopologyComponentProps = {
     selectedNode?: CustomNodeModel;
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
-    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
     edgeState: EdgeState;
 };
 
