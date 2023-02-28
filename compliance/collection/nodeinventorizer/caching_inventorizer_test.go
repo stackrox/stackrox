@@ -1,6 +1,7 @@
 package nodeinventorizer
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -40,36 +41,21 @@ func (s *TestComplianceCachingSuite) SetupTest() {
 	)
 }
 
-func (s *TestComplianceCachingSuite) TestGetCurrentBackoff() {
+func (s *TestComplianceCachingSuite) TestValidateBackoff() {
 	d, _ := time.ParseDuration("42s")
 	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
-	err := os.WriteFile(s.cs.BackoffFilePath, []byte(d.String()), 0600)
-	s.NoError(err)
 
-	currentBackoff := readBackoff(s.cs.BackoffFilePath)
+	currentBackoff := validateBackoff(d)
 
 	s.Equal(d, currentBackoff)
 }
 
-func (s *TestComplianceCachingSuite) TestGetCurrentBackoffReturnMaxOnError() {
-	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
-	s.T().Setenv(env.NodeScanMaxBackoff.EnvVar(), "42s")
-	err := os.WriteFile(s.cs.BackoffFilePath, []byte("notADuration"), 0600)
-	s.NoError(err)
-
-	currentBackoff := readBackoff(s.cs.BackoffFilePath)
-
-	s.Equal(env.NodeScanMaxBackoff.DurationSetting(), currentBackoff)
-}
-
-func (s *TestComplianceCachingSuite) TestGetCurrentBackoffReturnMaxOnBigValue() {
+func (s *TestComplianceCachingSuite) TestValidateBackoffMaxOnBigValue() {
 	d, _ := time.ParseDuration("100h")
 	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
 	s.T().Setenv(env.NodeScanMaxBackoff.EnvVar(), "42s")
-	err := os.WriteFile(s.cs.BackoffFilePath, []byte(d.String()), 0600)
-	s.NoError(err)
 
-	currentBackoff := readBackoff(s.cs.BackoffFilePath)
+	currentBackoff := validateBackoff(d)
 
 	s.Equal(env.NodeScanMaxBackoff.DurationSetting(), currentBackoff)
 }
@@ -96,8 +82,18 @@ func (s *TestComplianceCachingSuite) TestCalcNextBackoffUpperBoundary() {
 }
 
 func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
-	d, _ := time.ParseDuration("3m")
-	e := os.WriteFile(s.cs.BackoffFilePath, []byte(d.String()), 0600)
+	s.T().Setenv(env.NodeScanInitialBackoff.EnvVar(), "1s")
+	s.T().Setenv(env.NodeScanBackoffIncrement.EnvVar(), "3s")
+
+	d, _ := time.ParseDuration("8s")
+	w := inventoryWrap{
+		ValidUntil:      time.Time{},
+		BackoffDuration: 8000000000, // 8 seconds
+		Inventory:       nil,
+	}
+	jsonWrap, e := json.Marshal(&w)
+	s.NoError(e)
+	e = os.WriteFile(s.cs.InventoryCachePath, jsonWrap, 0600)
 	s.NoError(e)
 	c := NewCachingScanner(s.cs.InventoryCachePath, s.cs.BackoffFilePath, s.cs.BackoffWaitCallback)
 
@@ -116,25 +112,4 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryWithoutResultCache(
 
 	s.NoError(e)
 	s.Equal(nodeName, actual.GetNodeName())
-}
-
-func (s *TestComplianceCachingSuite) TestIsCachedInventoryValidSuccess() {
-	s.T().Setenv(env.NodeScanCacheDuration.EnvVar(), "1m")
-	t := time.Now()
-
-	s.Equal(true, isCachedInventoryValid(t))
-}
-
-func (s *TestComplianceCachingSuite) TestIsCachedInventoryValidOutOfCache() {
-	s.T().Setenv(env.NodeScanCacheDuration.EnvVar(), "1m")
-	t := time.Now().Add(-5 * time.Minute) // 5 minutes ago, with cache duration at 1 minute
-
-	s.Equal(false, isCachedInventoryValid(t))
-}
-
-func (s *TestComplianceCachingSuite) TestIsCachedInventoryValidFuture() {
-	s.T().Setenv(env.NodeScanCacheDuration.EnvVar(), "1m")
-	t := time.Now().Add(3 * time.Hour) // 3 hours in the future, which is considered invalid
-
-	s.Equal(false, isCachedInventoryValid(t))
 }

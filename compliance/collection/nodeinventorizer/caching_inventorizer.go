@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/scanner/database"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -29,6 +28,13 @@ type CachingScanner struct {
 	BackoffWaitCallback func(time.Duration) // Callback that gets called if a backoff file is found
 }
 
+// inventoryWrap is a private struct that saves a given inventory alongside some meta-information.
+type inventoryWrap struct {
+	ValidUntil      time.Time     // ValidUntil indicates whether the cached inventory is fresh enough to use.
+	BackoffDuration time.Duration // BackoffDuration contains the duration a scan waits before its next iteration.
+	Inventory       *storage.NodeInventory
+}
+
 // NewCachingScanner returns a ready to use instance of Caching Scanner
 func NewCachingScanner(inventoryCachePath string, backoffFilePath string, backoffCallback func(time.Duration)) *CachingScanner {
 	return &CachingScanner{
@@ -38,78 +44,52 @@ func NewCachingScanner(inventoryCachePath string, backoffFilePath string, backof
 	}
 }
 
-// Scan scans the current node and returns the results as storage.NodeInventory struct
+// Scan scans the current node and returns the results as storage.NodeInventory struct.
+// A cached version is returned if it exists and is fresh enough.
+// Otherwise, a new scan guarded by a backoff is run.
 func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
-	// check whether a cached inventory exists that is recent enough to use
-	cachedInventory, creationTime := readInventory(c.InventoryCachePath)
-	if cachedInventory != nil && isCachedInventoryValid(creationTime) {
-		log.Debugf("Using cached node scan created at %v", creationTime)
-		return cachedInventory, nil
+	// check whether a cached inventory exists that has not exceeded its validity
+	cache := readInventoryWrap(c.InventoryCachePath)
+	if cache != nil && cache.Inventory != nil && cache.ValidUntil.After(time.Now()) {
+		log.Debugf("Using cached node scan (valid until %v)", cache.ValidUntil)
+		return cache.Inventory, nil
 	}
 
 	// check for existing backoff, wait for specified duration if needed, then persist the new backoff duration
 	initialBackoff := env.NodeScanInitialBackoff.DurationSetting()
-	currentBackoff := readBackoff(c.BackoffFilePath)
-
-	if currentBackoff > initialBackoff {
-		log.Warnf("Found existing node scan backoff file - last scan may have failed. Waiting %v seconds before retrying", currentBackoff.Seconds())
-		c.BackoffWaitCallback(currentBackoff)
+	backoffDuration := initialBackoff
+	if cache != nil {
+		backoffDuration = validateBackoff(cache.BackoffDuration)
 	}
-	writeBackoff(calcNextBackoff(currentBackoff), c.BackoffFilePath)
 
-	// if no inventory exists, or it is too old, collect a fresh one and save it to the cache
+	if backoffDuration > initialBackoff {
+		log.Warnf("Found existing node scan backoff file - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
+		c.BackoffWaitCallback(backoffDuration)
+	}
+
+	// Write backoff duration to cache
+	backoff := inventoryWrap{BackoffDuration: calcNextBackoff(backoffDuration)}
+	if err := writeInventoryWrap(backoff, c.BackoffFilePath); err != nil {
+		log.Warnf("Error writing node scan backoff file: %v", err)
+	}
+
+	// if no inventory exists, or it is too old, collect a fresh one
 	newInventory, err := collectInventory(nodeName)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = writeInventory(newInventory, c.InventoryCachePath); err != nil {
+	// Write inventory to cache
+	inventory := inventoryWrap{
+		ValidUntil:      time.Now().Add(env.NodeScanCacheDuration.DurationSetting()),
+		BackoffDuration: 0,
+		Inventory:       newInventory,
+	}
+	if err := writeInventoryWrap(inventory, c.InventoryCachePath); err != nil {
 		return nil, errors.Wrap(err, "persisting inventory to cache")
 	}
 
-	// Remove backoff directly before returning message, so that a failing/killed container does not lead to
-	// frequent rescans of a Node, which are costly and might impact Node performance
-	removeBackoff(c.BackoffFilePath)
 	return newInventory, nil
-}
-
-// readBackoff returns a backoff if found in given file, or the MaxBackoff on any error.
-//
-// It also checks the loaded backoff to not exceed the configured MaxBackoff.
-func readBackoff(path string) time.Duration {
-	backoff := env.NodeScanInitialBackoff.DurationSetting()
-	maxBackoff := env.NodeScanMaxBackoff.DurationSetting()
-
-	backoffFileContents, err := os.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			log.Debug("No node scan backoff file found, continuing without pause")
-			return backoff
-		}
-		log.Warnf("Error reading node scan backoff file, continuing with MaxBackoff of %v. Error: %v", maxBackoff, err)
-		return maxBackoff
-	}
-
-	// We have an existing backoff counter
-	backoff, err = time.ParseDuration(string(backoffFileContents))
-	if err != nil {
-		log.Warnf("Error reading node scan backoff duration from file, continuing with MaxBackoff of %v. Error: %v", maxBackoff, err)
-		return maxBackoff
-	}
-
-	// Sanity-check the backoff loaded from disk
-	if backoff > maxBackoff {
-		log.Warnf("Existing node scan backoff exceeds MaxBackoff. Continuing with MaxBackoff of %v", maxBackoff)
-		return maxBackoff
-	}
-
-	return backoff
-}
-
-func writeBackoff(backoff time.Duration, path string) {
-	if err := os.WriteFile(path, []byte(backoff.String()), 0644); err != nil {
-		log.Warnf("Error writing node scan backoff file: %v", err)
-	}
 }
 
 func calcNextBackoff(currentBackoff time.Duration) time.Duration {
@@ -121,72 +101,36 @@ func calcNextBackoff(currentBackoff time.Duration) time.Duration {
 	return nextBackoffInterval
 }
 
-func removeBackoff(backoffFilePath string) {
-	if err := os.Remove(backoffFilePath); err != nil {
-		log.Warnf("Could not remove node scan backoff file, subsequent scans may be delayed: %v", err)
+// validateBackoff ensures that a given duration does not exceed the max backoff setting
+func validateBackoff(backoff time.Duration) time.Duration {
+	if backoff > env.NodeScanMaxBackoff.DurationSetting() {
+		return env.NodeScanMaxBackoff.DurationSetting()
 	}
+	return backoff
 }
 
-// inventoryWrap is a private struct that saves a given inventory alongside a creation timestamp which determines its freshness.
-type inventoryWrap struct {
-	Created   time.Time
-	Inventory string
-}
-
-// readInventory loads a cached inventory from disk and returns the inventory as well as the creation time.
-//
-// On any error, readInventory will log the error and return a nil inventory and a time 0.
-func readInventory(path string) (inventory *storage.NodeInventory, created time.Time) {
+func readInventoryWrap(path string) *inventoryWrap {
 	cacheContents, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Debug("No node scan cache file found, will run a new scan")
-			return nil, time.Time{}
+			return nil
 		}
 		log.Warnf("Unable to read node scan cache, will run a new scan. Error: %v", err)
-		return nil, time.Time{}
+		return nil
 	}
 
 	// deserialize stored inventory
 	var wrap inventoryWrap
 	if err := json.Unmarshal(cacheContents, &wrap); err != nil {
 		log.Warnf("Unable to load node scan cache contents, will run a new scan. Error: %v", err)
-		return nil, time.Time{}
+		return nil
 	}
-
-	var cachedInv storage.NodeInventory
-	if err := jsonutil.JSONToProto(wrap.Inventory, &cachedInv); err != nil {
-		// in this case, also collect a fresh inventory
-		log.Warnf("Unable to deserialize node scan cache - will run a new scan. Error: %v", err)
-		return nil, time.Time{}
-	}
-
-	return &cachedInv, wrap.Created
+	return &wrap
 }
 
-// isCachedInventoryValid returns if a given creation time is considered below the cache threshold.
-//
-// Additionally, the timestamp is considered invalid if it is based in the future.
-func isCachedInventoryValid(created time.Time) bool {
-	cacheThreshold := timestamp.TimestampNow().GetSeconds() - int64(env.NodeScanCacheDuration.DurationSetting().Seconds())
-	return created.Unix() > cacheThreshold && created.Unix() <= time.Now().Unix()
-}
-
-// writeInventory saves a given inventory to disk.
-//
-// The inventory is wrapped with a creation timestamp to ensure independence of fields in the protobuf.
-func writeInventory(inventory *storage.NodeInventory, path string) error {
-	inv, err := jsonutil.ProtoToJSON(inventory, jsonutil.OptUnEscape)
-	if err != nil {
-		return err
-	}
-
-	wrap := inventoryWrap{
-		Created:   time.Now(),
-		Inventory: inv,
-	}
-
-	jsonWrap, err := json.Marshal(&wrap)
+func writeInventoryWrap(w inventoryWrap, path string) error {
+	jsonWrap, err := json.Marshal(&w)
 	if err != nil {
 		return err
 	}
