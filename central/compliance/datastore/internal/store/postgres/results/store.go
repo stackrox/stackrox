@@ -105,7 +105,7 @@ func insertIntoComplianceRunResults(ctx context.Context, batch *pgx.Batch, obj *
 	return nil
 }
 
-func (s *storeImpl) copyFromComplianceRunResults(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceRunResults) error {
+func (s *storeImpl) copyFromComplianceRunResults(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComplianceRunResults) error {
 
 	inputRows := [][]interface{}{}
 

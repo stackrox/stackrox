@@ -96,7 +96,7 @@ func insertIntoNetworkBaselines(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkBaseline) error {
+func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkBaseline) error {
 
 	inputRows := [][]interface{}{}
 

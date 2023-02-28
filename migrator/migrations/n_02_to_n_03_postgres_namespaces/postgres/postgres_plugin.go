@@ -99,7 +99,7 @@ func insertIntoNamespaces(ctx context.Context, batch *pgx.Batch, obj *storage.Na
 	return nil
 }
 
-func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*storage.NamespaceMetadata) error {
+func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx *postgres.Tx, objs ...*storage.NamespaceMetadata) error {
 
 	inputRows := [][]interface{}{}
 

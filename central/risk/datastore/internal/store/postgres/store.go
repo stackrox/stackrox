@@ -106,7 +106,7 @@ func insertIntoRisks(ctx context.Context, batch *pgx.Batch, obj *storage.Risk) e
 	return nil
 }
 
-func (s *storeImpl) copyFromRisks(ctx context.Context, tx pgx.Tx, objs ...*storage.Risk) error {
+func (s *storeImpl) copyFromRisks(ctx context.Context, tx *postgres.Tx, objs ...*storage.Risk) error {
 
 	inputRows := [][]interface{}{}
 

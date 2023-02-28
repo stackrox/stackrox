@@ -5,7 +5,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -50,7 +49,7 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoConfigs(ctx context.Context, tx pgx.Tx, obj *storage.Config) error {
+func insertIntoConfigs(ctx context.Context, tx *postgres.Tx, obj *storage.Config) error {
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr

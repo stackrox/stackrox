@@ -100,7 +100,7 @@ func insertIntoSignatureIntegrations(ctx context.Context, batch *pgx.Batch, obj 
 	return nil
 }
 
-func (s *storeImpl) copyFromSignatureIntegrations(ctx context.Context, tx pgx.Tx, objs ...*storage.SignatureIntegration) error {
+func (s *storeImpl) copyFromSignatureIntegrations(ctx context.Context, tx *postgres.Tx, objs ...*storage.SignatureIntegration) error {
 
 	inputRows := [][]interface{}{}
 

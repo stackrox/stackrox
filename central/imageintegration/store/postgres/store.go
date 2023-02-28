@@ -103,7 +103,7 @@ func insertIntoImageIntegrations(ctx context.Context, batch *pgx.Batch, obj *sto
 	return nil
 }
 
-func (s *storeImpl) copyFromImageIntegrations(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageIntegration) error {
+func (s *storeImpl) copyFromImageIntegrations(ctx context.Context, tx *postgres.Tx, objs ...*storage.ImageIntegration) error {
 
 	inputRows := [][]interface{}{}
 

@@ -101,7 +101,7 @@ func insertIntoNotifiers(ctx context.Context, batch *pgx.Batch, obj *storage.Not
 	return nil
 }
 
-func (s *storeImpl) copyFromNotifiers(ctx context.Context, tx pgx.Tx, objs ...*storage.Notifier) error {
+func (s *storeImpl) copyFromNotifiers(ctx context.Context, tx *postgres.Tx, objs ...*storage.Notifier) error {
 
 	inputRows := [][]interface{}{}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -148,7 +147,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 	return conn, conn.Release, nil
 }
 
-func insert(ctx context.Context, tx pgx.Tx, obj *storage.SystemInfo) error {
+func insert(ctx context.Context, tx *postgres.Tx, obj *storage.SystemInfo) error {
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr

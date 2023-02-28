@@ -62,7 +62,7 @@ func New(db *postgres.DB, noUpdateTimestamps bool) Store {
 	}
 }
 
-func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpdated bool, iTime *protoTypes.Timestamp) error {
+func insertIntoNodes(ctx context.Context, tx *postgres.Tx, obj *storage.Node, scanUpdated bool, iTime *protoTypes.Timestamp) error {
 	cloned := obj
 	if cloned.GetScan().GetComponents() != nil {
 		cloned = obj.Clone()
@@ -155,7 +155,7 @@ func getPartsAsSlice(parts *common.NodeParts) ([]*storage.NodeComponent, []*stor
 	return components, vulns, nodeComponentEdges, componentCVEEdges
 }
 
-func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, nodeID string, idx int) error {
+func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Taint, nodeID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -180,7 +180,7 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 	return nil
 }
 
-func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponent) error {
+func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
 	inputRows := [][]interface{}{}
 	var err error
 	var deletes []string
@@ -238,7 +238,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 	return err
 }
 
-func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentEdge) error {
+func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -285,7 +285,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage
 	return err
 }
 
-func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
+func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -367,7 +367,7 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 	return err
 }
 
-func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentCVEEdge) error {
+func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	componentIDsToDelete := set.NewStringSet()
@@ -496,7 +496,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	})
 }
 
-func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.Taint) error {
+func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.Taint) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -574,7 +574,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	return s.getFullNode(ctx, tx, id)
 }
 
-func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (*storage.Node, bool, error) {
+func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
 	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -645,7 +645,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	return common.Merge(nodeParts), true, nil
 }
 
-func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
+func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
 	if err != nil {
 		return nil, err
@@ -666,7 +666,7 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 	return componentIDToEdgeMap, nil
 }
 
-func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
+func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
@@ -687,7 +687,7 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 	return idToComponentMap, nil
 }
 
-func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
+func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
@@ -737,7 +737,7 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 	return &msg, true, nil
 }
 
-func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
+func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeCVEsTable+" WHERE id = ANY($1::text[])", cveIDs)
 	if err != nil {
 		return nil, err

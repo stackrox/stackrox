@@ -127,7 +127,7 @@ func insertIntoPodsLiveInstances(ctx context.Context, batch *pgx.Batch, obj *sto
 	return nil
 }
 
-func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storage.Pod) error {
+func (s *storeImpl) copyFromPods(ctx context.Context, tx *postgres.Tx, objs ...*storage.Pod) error {
 
 	inputRows := [][]interface{}{}
 
@@ -216,7 +216,7 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 	return err
 }
 
-func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.ContainerInstance) error {
+func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.Tx, pods_Id string, objs ...*storage.ContainerInstance) error {
 
 	inputRows := [][]interface{}{}
 

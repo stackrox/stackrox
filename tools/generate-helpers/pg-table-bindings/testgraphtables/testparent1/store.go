@@ -128,7 +128,7 @@ func insertIntoTestParent1Childrens(ctx context.Context, batch *pgx.Batch, obj *
 	return nil
 }
 
-func (s *storeImpl) copyFromTestParent1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestParent1) error {
+func (s *storeImpl) copyFromTestParent1(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestParent1) error {
 
 	inputRows := [][]interface{}{}
 
@@ -207,7 +207,7 @@ func (s *storeImpl) copyFromTestParent1(ctx context.Context, tx pgx.Tx, objs ...
 	return err
 }
 
-func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx pgx.Tx, test_parent1_Id string, objs ...*storage.TestParent1_Child1Ref) error {
+func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx *postgres.Tx, test_parent1_Id string, objs ...*storage.TestParent1_Child1Ref) error {
 
 	inputRows := [][]interface{}{}
 
