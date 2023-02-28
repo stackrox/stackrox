@@ -34,11 +34,10 @@ function NetworkGraph({
         newController.registerComponentFactory(stylesComponentFactory);
         return newController;
     }, []);
-    const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
-        useNetworkPolicySimulator({
-            simulation,
-            clusterId: selectedClusterId,
-        });
+    const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
+        simulation,
+        clusterId: selectedClusterId,
+    });
 
     const isSimulating =
         simulator.state === 'GENERATED' ||
@@ -56,7 +55,6 @@ function NetworkGraph({
                     simulator={simulator}
                     selectedNode={selectedNode}
                     setNetworkPolicyModification={setNetworkPolicyModification}
-                    applyNetworkPolicyModification={applyNetworkPolicyModification}
                     edgeState={edgeState}
                 />
             </VisualizationProvider>

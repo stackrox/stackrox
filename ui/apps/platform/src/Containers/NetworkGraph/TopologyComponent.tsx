@@ -28,7 +28,6 @@ import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
 
 import {
-    ApplyNetworkPolicyModification,
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
@@ -58,7 +57,6 @@ export type TopologyComponentProps = {
     selectedNode?: CustomNodeModel;
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
-    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
     edgeState: EdgeState;
 };
 
@@ -77,7 +75,6 @@ const TopologyComponent = ({
     selectedNode,
     simulator,
     setNetworkPolicyModification,
-    applyNetworkPolicyModification,
     edgeState,
 }: TopologyComponentProps) => {
     const firstRenderRef = useRef(true);
@@ -178,7 +175,6 @@ const TopologyComponent = ({
                             selectedClusterId={selectedClusterId}
                             simulator={simulator}
                             setNetworkPolicyModification={setNetworkPolicyModification}
-                            applyNetworkPolicyModification={applyNetworkPolicyModification}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'NAMESPACE' && (
