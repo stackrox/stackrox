@@ -1,5 +1,5 @@
 import React, { useCallback, ChangeEvent } from 'react';
-import { Badge, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
+import { Badge, Button, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Namespace } from 'hooks/useFetchClusterNamespaces';
@@ -37,7 +37,11 @@ function NamespaceSelector({
     searchFilter,
     setSearchFilter,
 }: NamespaceSelectorProps) {
-    const { isOpen: isNamespaceOpen, toggleSelect: toggleIsNamespaceOpen } = useSelectToggle();
+    const {
+        isOpen: isNamespaceOpen,
+        toggleSelect: toggleIsNamespaceOpen,
+        closeSelect,
+    } = useSelectToggle();
 
     const onFilterNamespaces = useCallback(
         (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
@@ -84,6 +88,14 @@ function NamespaceSelector({
         setSearchFilter(modifiedSearchObject);
     };
 
+    const onClearSelections = () => {
+        const modifiedSearchObject = { ...searchFilter };
+        delete modifiedSearchObject.Namespace;
+        delete modifiedSearchObject.Deployment;
+        closeSelect();
+        setSearchFilter(modifiedSearchObject);
+    };
+
     const namespaceSelectOptions: JSX.Element[] = namespaces.map((namespace) => {
         return (
             <SelectOption
@@ -121,6 +133,11 @@ function NamespaceSelector({
             maxHeight="275px"
             hasInlineFilter
             isPlain
+            footer={
+                <Button variant="link" isInline onClick={onClearSelections}>
+                    Clear selections
+                </Button>
+            }
         >
             {namespaceSelectOptions}
         </Select>
