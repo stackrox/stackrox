@@ -1,8 +1,9 @@
-export type Severity = 'Critical' | 'Important' | 'Moderate' | 'Low';
+import { VulnerabilitySeverity } from 'types/cve.proto';
+
 export type FixableStatus = 'Fixable' | 'Not fixable';
 
 export type DefaultFilters = {
-    Severity: Severity[];
+    Severity: VulnerabilitySeverity[];
     Fixable: FixableStatus[];
 };
 

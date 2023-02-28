@@ -4,9 +4,15 @@ import cloneDeep from 'lodash/cloneDeep';
 import { useFormik, FormikProvider } from 'formik';
 import { Globe } from 'react-feather';
 
-import { DefaultFilters, Severity, FixableStatus } from './types';
+import { VulnerabilitySeverity } from 'types/cve.proto';
+import { DefaultFilters, FixableStatus } from './types';
 
-function DefaultFilterModal({ defaultFilters, setLocalStorage }) {
+type DefaultFilterModalProps = {
+    defaultFilters: DefaultFilters;
+    setLocalStorage: (values) => void;
+};
+
+function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterModalProps) {
     const [isOpen, setIsOpen] = useState(false);
     const totalFilters = defaultFilters.Severity.length + defaultFilters.Fixable.length;
 
@@ -29,7 +35,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }) {
         setIsOpen(!isOpen);
     }
 
-    function handleSeverityChange(severity: Severity, isChecked: boolean) {
+    function handleSeverityChange(severity: VulnerabilitySeverity, isChecked: boolean) {
         let newSeverityValues = [...severityValues];
         if (isChecked) {
             newSeverityValues.push(severity);
@@ -81,33 +87,48 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }) {
                             <Checkbox
                                 label="Critical"
                                 id="critical-severity"
-                                isChecked={severityValues.includes('Critical')}
+                                isChecked={severityValues.includes(
+                                    'CRITICAL_VULNERABILITY_SEVERITY'
+                                )}
                                 onChange={(isChecked) => {
-                                    handleSeverityChange('Critical', isChecked);
+                                    handleSeverityChange(
+                                        'CRITICAL_VULNERABILITY_SEVERITY',
+                                        isChecked
+                                    );
                                 }}
                             />
                             <Checkbox
                                 label="Important"
                                 id="important-severity"
-                                isChecked={severityValues.includes('Important')}
+                                isChecked={severityValues.includes(
+                                    'IMPORTANT_VULNERABILITY_SEVERITY'
+                                )}
                                 onChange={(isChecked) => {
-                                    handleSeverityChange('Important', isChecked);
+                                    handleSeverityChange(
+                                        'IMPORTANT_VULNERABILITY_SEVERITY',
+                                        isChecked
+                                    );
                                 }}
                             />
                             <Checkbox
                                 label="Moderate"
                                 id="moderate-severity"
-                                isChecked={severityValues.includes('Moderate')}
+                                isChecked={severityValues.includes(
+                                    'MODERATE_VULNERABILITY_SEVERITY'
+                                )}
                                 onChange={(isChecked) => {
-                                    handleSeverityChange('Moderate', isChecked);
+                                    handleSeverityChange(
+                                        'MODERATE_VULNERABILITY_SEVERITY',
+                                        isChecked
+                                    );
                                 }}
                             />
                             <Checkbox
                                 label="Low"
                                 id="low-severity"
-                                isChecked={severityValues.includes('Low')}
+                                isChecked={severityValues.includes('LOW_VULNERABILITY_SEVERITY')}
                                 onChange={(isChecked) => {
-                                    handleSeverityChange('Low', isChecked);
+                                    handleSeverityChange('LOW_VULNERABILITY_SEVERITY', isChecked);
                                 }}
                             />
                         </FormGroup>
