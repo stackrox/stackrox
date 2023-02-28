@@ -60,8 +60,7 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	serviceAccountResolvers, err := resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
-	return paginate(query.GetPagination(), serviceAccountResolvers, err)
+	return resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
 }
 
 // ServiceAccountCount returns count of all service accounts across infrastructure
