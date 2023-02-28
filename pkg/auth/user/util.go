@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var utilLog = logging.LoggerForModule()
+
 // ConvertAttributes converts a map of user attributes to v1.UserAttribute
 func ConvertAttributes(attrMap map[string][]string) []*v1.UserAttribute {
 	if attrMap == nil {
@@ -37,10 +39,10 @@ type loggableAuthProvider struct {
 	Type string
 }
 
-func protoToJSON(log *logging.Logger, message proto.Message) string {
+func protoToJSON(message proto.Message) string {
 	result, err := jsonutil.ProtoToJSON(message, jsonutil.OptCompact, jsonutil.OptUnEscape)
 	if err != nil {
-		log.Error("Failed to convert proto to JSON: ", err)
+		utilLog.Error("Failed to convert proto to JSON: ", err)
 		return ""
 	}
 	return result
@@ -48,15 +50,19 @@ func protoToJSON(log *logging.Logger, message proto.Message) string {
 
 // LogSuccessfulUserLogin logs user attributes in the specified logger instance.
 func LogSuccessfulUserLogin(log *logging.Logger, user *v1.AuthStatus) {
+	log.Warnw("User successfully logged in with user attributes", extractUserLogFields(user)...)
+}
+
+func extractUserLogFields(user *v1.AuthStatus) []interface{} {
 	serviceIdStr := ""
 	permissionsStr := ""
 	if user.GetServiceId() != nil {
-		serviceIdStr = protoToJSON(log, user.GetServiceId())
+		serviceIdStr = protoToJSON(user.GetServiceId())
 	}
 	if user.GetUserInfo().GetPermissions() != nil {
-		permissionsStr = protoToJSON(log, user.GetUserInfo().GetPermissions())
+		permissionsStr = protoToJSON(user.GetUserInfo().GetPermissions())
 	}
-	log.Warnw("User successfully logged in with user attributes",
+	return []interface{}{
 		zap.String("userID", user.GetUserId()),
 		zap.String("serviceID", serviceIdStr),
 		zap.Any("expires", user.GetExpires()),
@@ -68,5 +74,7 @@ func LogSuccessfulUserLogin(log *logging.Logger, user *v1.AuthStatus) {
 			Id:   user.GetAuthProvider().GetId(),
 			Type: user.GetAuthProvider().GetType(),
 			Name: user.GetAuthProvider().GetName(),
-		}))
+		}),
+		zap.Any("userAttributes", user.GetUserAttributes()),
+	}
 }
