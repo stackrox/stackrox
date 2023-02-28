@@ -25,6 +25,7 @@ func init() {
 				"firstDiscoveredInSystem: Time",
 				"topCVSS: Float!",
 			}),
+		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
 	)
 }
@@ -44,6 +45,29 @@ func (resolver *Resolver) wrapImageCVECoresWithContext(ctx context.Context, valu
 		output[i] = &imageCVECoreResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+// ImageCVECount returns the count of image cves satisfying the specified query.
+// Note: Client must explicitly pass observed/deferred CVEs.
+func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
+
+	if !features.VulnMgmtWorkloadCVEs.Enabled() {
+		return 0, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
+	}
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := resolver.ImageCVEView.Count(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(count), nil
 }
 
 // ImageCVEs returns graphQL resolver for image cves satisfying the specified query.
