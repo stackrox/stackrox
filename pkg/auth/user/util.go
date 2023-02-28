@@ -41,10 +41,9 @@ func protoToJSON(log *logging.Logger, message proto.Message) string {
 	result, err := jsonutil.ProtoToJSON(message, jsonutil.OptCompact, jsonutil.OptUnEscape)
 	if err != nil {
 		log.Error("Failed to convert proto to JSON: ", err)
-	} else {
-		return result
+		return ""
 	}
-	return ""
+	return result
 }
 
 // LogSuccessfulUserLogin logs user attributes in the specified logger instance.
@@ -55,7 +54,7 @@ func LogSuccessfulUserLogin(log *logging.Logger, user *v1.AuthStatus) {
 		serviceIdStr = protoToJSON(log, user.GetServiceId())
 	}
 	if user.GetUserInfo().GetPermissions() != nil {
-		permissionsStr = protoToJSON(log, user.GetServiceId())
+		permissionsStr = protoToJSON(log, user.GetUserInfo().GetPermissions())
 	}
 	log.Warnw("User successfully logged in with user attributes",
 		zap.String("userID", user.GetUserId()),
