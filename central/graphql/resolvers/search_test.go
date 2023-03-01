@@ -132,7 +132,7 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 		expected []string
 	}{
 		{
-			desc: "Search by subject name",
+			desc: "Subject name autocomplete",
 			request: searchRequest{
 				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].Subjects[1].Name),
 				Categories: &[]string{"SUBJECTS"},
@@ -140,7 +140,7 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 			expected: []string{roleBindings[0].Subjects[1].Name},
 		},
 		{
-			desc: "Search by subject kind",
+			desc: "Subject Kind autocomplete",
 			request: searchRequest{
 				Query:      "Subject Kind:",
 				Categories: &[]string{"SUBJECTS"},
@@ -148,7 +148,7 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 			expected: []string{"user", "group"},
 		},
 		{
-			desc: "Search by cluster name",
+			desc: "Cluster name autocomplete",
 			request: searchRequest{
 				Query:      fmt.Sprintf("Cluster:%s", roleBindings[1].ClusterName),
 				Categories: &[]string{"SUBJECTS"},
@@ -156,7 +156,7 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 			expected: []string{roleBindings[1].ClusterName},
 		},
 		{
-			desc: "Search by cluster role",
+			desc: "Cluster role autocomplete",
 			request: searchRequest{
 				Query:      "Cluster Role:tr",
 				Categories: &[]string{"SUBJECTS"},
@@ -164,7 +164,7 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 			expected: []string{"true"},
 		},
 		{
-			desc: "Search by cluster name and subject name",
+			desc: "Cluster name + Subject name autocomplete",
 			request: searchRequest{
 				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].ClusterName),
 				Categories: &[]string{"SUBJECTS"},

@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/rox/central/rbac/service/mapping"
+	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -56,7 +56,7 @@ func getFilteredSubjectsByRoleBinding(rawQuery *v1.RawQuery, bindings []*storage
 	// Filter the input query to only have subject fields.
 	subjectQuery := &v1.RawQuery{
 		Query: search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
-			_, isSubjectField := mapping.OptionsMap.Get(field)
+			_, isSubjectField := subjectMapping.OptionsMap.Get(field)
 			return isSubjectField
 		}),
 	}
@@ -141,18 +141,22 @@ func NewSubjectSearcher(k8sRoleBindingDatastore datastore.DataStore) *SubjectSea
 // Search implements the searcher interface
 func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	roleBindingQuery, _ := search.FilterQueryWithMap(q, schema.RoleBindingsSchema.OptionsMap)
+	roleBindingQuery, _ = search.InverseFilterQueryWithMap(roleBindingQuery, subjectMapping.OptionsMap)
 	roleBindingPred, err := roleBindingPredFactory.GeneratePredicate(roleBindingQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	subjectQuery, _ := search.FilterQueryWithMap(q, mapping.OptionsMap)
+	subjectQuery, _ := search.FilterQueryWithMap(q, subjectMapping.OptionsMap)
 	subjectPred, err := subjectFactory.GeneratePredicate(subjectQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, roleBindingQuery)
+	q = search.ConjunctionQuery(q, search.NewQueryBuilder().
+		AddStrings(search.SubjectKind, storage.SubjectKind_USER.String(), storage.SubjectKind_GROUP.String()).
+		ProtoQuery())
+	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -164,6 +168,7 @@ func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Res
 			for _, subject := range subjects {
 				if subjectResult, match := subjectPred.Evaluate(subject); match {
 					merged := predicate.MergeResults(bindingResult, subjectResult)
+					merged.ID = subject.GetName()
 					results = append(results, *merged)
 				}
 			}
@@ -175,7 +180,7 @@ func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Res
 
 // Count returns the number of search results from the query
 func (s *SubjectSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
-	subjectQuery, _ := search.FilterQueryWithMap(q, mapping.OptionsMap)
+	subjectQuery, _ := search.FilterQueryWithMap(q, subjectMapping.OptionsMap)
 	pred, err := subjectFactory.GeneratePredicate(subjectQuery)
 	if err != nil {
 		return 0, err
@@ -200,7 +205,7 @@ func (s *SubjectSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 // SearchSubjects implements the search interface that returns v1.SearchResult
 func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	subjectQuery, _ := search.FilterQueryWithMap(q, mapping.OptionsMap)
+	subjectQuery, _ := search.FilterQueryWithMap(q, subjectMapping.OptionsMap)
 	pred, err := subjectFactory.GeneratePredicate(subjectQuery)
 	if err != nil {
 		return nil, err
