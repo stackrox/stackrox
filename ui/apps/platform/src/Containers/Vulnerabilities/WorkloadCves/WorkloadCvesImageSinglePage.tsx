@@ -70,7 +70,8 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
             )}
             {scan && (
                 <Label isCompact>
-                    Scan time: {getDateTime(scan.scanTime)} by {scan.dataSource.name}
+                    Scan time: {getDateTime(scan.scanTime)} by{' '}
+                    {scan?.dataSource?.name ?? 'Unknown Scanner'}
                 </Label>
             )}
             {sha && (
@@ -109,7 +110,7 @@ export type ImageDetailsResponse = {
         } | null;
 
         scan: {
-            dataSource: { name: string };
+            dataSource: { name: string } | null;
             scanTime: Date | null;
         };
     };
@@ -118,6 +119,7 @@ export type ImageDetailsResponse = {
 export const imageDetailsQuery = gql`
     query getImageDetails($id: ID!) {
         image(id: $id) {
+            id
             deploymentCount
             name {
                 fullName
@@ -197,22 +199,27 @@ function WorkloadCvesImageSinglePage() {
                         </Flex>
                     )}
                 </PageSection>
-                <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                <PageSection
+                    className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                    padding={{ default: 'noPadding' }}
+                >
                     <Tabs
                         activeKey={activeTabKey}
                         onSelect={handleTabClick}
                         component={TabsComponent.nav}
-                        className="pf-u-pl-md"
+                        className="pf-u-pl-md pf-u-background-color-100"
                         mountOnEnter
                         unmountOnExit
                     >
                         <Tab
+                            className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
-                            <ImageSingleVulnerabilities />
+                            <ImageSingleVulnerabilities imageId={imageId} />
                         </Tab>
                         <Tab
+                            className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                             eventKey="Resources"
                             title={<TabTitleText>Resources</TabTitleText>}
                             isDisabled
