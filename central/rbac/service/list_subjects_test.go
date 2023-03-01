@@ -284,7 +284,9 @@ func (s *SubjectSearcherTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockBindingsStore = roleBindingMocks.NewMockDataStore(s.mockCtrl)
 	s.subjectSearcher = NewSubjectSearcher(s.mockBindingsStore)
-	s.testBindings = fixtures.GetMultipleK8sRoleBindings(2, 3)
+	s.testBindings = fixtures.GetMultipleK8sRoleBindings(3, 3)
+	// For one binding, keep only the SERVICE_ACCOUNT kind subject
+	s.testBindings[2].Subjects = s.testBindings[2].Subjects[:1]
 }
 
 func (s *SubjectSearcherTestSuite) TearDownTest() {
@@ -294,10 +296,7 @@ func (s *SubjectSearcherTestSuite) TearDownTest() {
 func (s *SubjectSearcherTestSuite) TestSearcher() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedQ := search.ConjunctionQuery(tc.query, search.NewQueryBuilder().
-				AddStrings(search.SubjectKind, storage.SubjectKind_USER.String(), storage.SubjectKind_GROUP.String()).
-				ProtoQuery())
-			s.mockBindingsStore.EXPECT().SearchRawRoleBindings(s.ctx, expectedQ).Times(3).Return(tc.expectedBindings, nil)
+			s.mockBindingsStore.EXPECT().SearchRawRoleBindings(s.ctx, tc.query).Times(3).Return(tc.expectedBindings, nil)
 			results, err := s.subjectSearcher.Search(s.ctx, tc.query)
 			s.NoError(err)
 			s.ElementsMatch(tc.expected, s.standardizeResults(results))
@@ -331,7 +330,7 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 		{
 			desc:             "Search by subject kind",
 			query:            search.NewQueryBuilder().AddStrings(search.SubjectKind, "").ProtoQuery(),
-			expectedBindings: []*storage.K8SRoleBinding{s.testBindings[0], s.testBindings[1]},
+			expectedBindings: []*storage.K8SRoleBinding{s.testBindings[0], s.testBindings[1], s.testBindings[2]},
 			expected: []search.Result{
 				{
 					ID: s.testBindings[0].Subjects[1].Name,
@@ -381,7 +380,7 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 		{
 			desc:             "Search by cluster role",
 			query:            search.NewQueryBuilder().AddStrings(search.ClusterRole, "tr").ProtoQuery(),
-			expectedBindings: []*storage.K8SRoleBinding{s.testBindings[0]},
+			expectedBindings: []*storage.K8SRoleBinding{s.testBindings[0], s.testBindings[2]},
 			expected: []search.Result{
 				{
 					ID: s.testBindings[0].Subjects[1].Name,
@@ -396,6 +395,12 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 					},
 				},
 			},
+		},
+		{
+			desc:             "Search by an unsupported field",
+			query:            search.NewQueryBuilder().AddStrings(search.DeploymentName, "d1").ProtoQuery(),
+			expectedBindings: []*storage.K8SRoleBinding{},
+			expected:         []search.Result{},
 		},
 	}
 }

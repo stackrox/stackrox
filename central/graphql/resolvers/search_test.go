@@ -173,6 +173,14 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 			},
 			expected: []string{roleBindings[0].Subjects[1].Name, roleBindings[0].Subjects[2].Name},
 		},
+		{
+			desc: "Autocomplete on unsupported option",
+			request: searchRequest{
+				Query:      fmt.Sprintf("Deployment:d1"),
+				Categories: &[]string{"SUBJECTS"},
+			},
+			expected: []string{},
+		},
 	}
 
 	for _, tc := range testCases {
