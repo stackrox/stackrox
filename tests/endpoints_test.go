@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -264,7 +263,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		if useHTTP2 {
 			transport = &http2.Transport{
 				AllowHTTP: true,
-				DialTLS: func(network string, _ string, _ *tls.Config) (net.Conn, error) {
+				DialTLSContext: func(ctx context.Context, network string, _ string, _ *tls.Config) (net.Conn, error) {
 					return dialer.Dial(network, c.endpoint())
 				},
 			}
@@ -275,7 +274,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		tlsConfig := testCtx.tlsConfig(c.clientCert, targetHost, true)
 		if useHTTP2 {
 			transport = &http2.Transport{
-				DialTLS: func(network string, _ string, tlsConf *tls.Config) (net.Conn, error) {
+				DialTLSContext: func(ctx context.Context, network string, _ string, tlsConf *tls.Config) (net.Conn, error) {
 					return tls.Dial(network, c.endpoint(), tlsConf)
 				},
 				TLSClientConfig: tlsConfig,
@@ -298,19 +297,13 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 	if resp != nil {
 		defer utils.IgnoreError(resp.Body.Close)
 	}
+	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
+		return
+	}
 	if !c.expectHTTPSuccess {
 		// If we're in this branch, that means we're speaking to a gRPC-only server, which cannot handle normal HTTP
 		// requests.
-		var body string
-		if resp != nil {
-			b, err := io.ReadAll(resp.Body)
-			assert.NoError(t, err)
-			body = resp.Status + "\n" + string(b)
-		}
-		assert.Error(t, err, "expected HTTP request to fail at the transport level\n"+body)
-		return
-	}
-	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
+		assert.Equal(t, http.StatusUnsupportedMediaType, resp.StatusCode, "expected HTTP request to fail")
 		return
 	}
 
