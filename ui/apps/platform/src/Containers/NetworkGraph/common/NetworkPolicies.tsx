@@ -22,6 +22,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
 
 type NetworkPoliciesProps = {
+    entityName: string;
     policyIds: string[];
 };
 
@@ -30,18 +31,14 @@ type NetworkPolicyYAML = {
     yaml: string;
 };
 
-const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
-    download(`${fileName}.yml`, fileContent, 'yml');
-};
-
-function NetworkPolicies({ policyIds }: NetworkPoliciesProps): React.ReactElement {
+function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
     const { networkPolicies, isLoading, error } = useFetchNetworkPolicies(policyIds);
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
 
     const allNetworkPoliciesYAML = useMemo(
         () => ({
-            name: 'All network policies',
+            name: 'all',
             yaml: networkPolicies.map((networkPolicy) => networkPolicy.yaml).join('---\n'),
         }),
         [networkPolicies]
@@ -60,13 +57,22 @@ function NetworkPolicies({ policyIds }: NetworkPoliciesProps): React.ReactElemen
     }
 
     function handleSelectedNetworkPolicy(_, value: string) {
-        if (value !== 'All network policies') {
+        if (value !== 'all') {
             const newlySelectedNetworkPolicy = networkPolicies.find(
                 (networkPolicy) => networkPolicy.name === value
             );
             setSelectedNetworkPolicy(newlySelectedNetworkPolicy);
         } else {
             setSelectedNetworkPolicy(allNetworkPoliciesYAML);
+        }
+    }
+
+    function exportYAMLHandler() {
+        if (selectedNetworkPolicy) {
+            const fileName =
+                selectedNetworkPolicy.name === 'all' ? entityName : selectedNetworkPolicy.name;
+            const fileContent = selectedNetworkPolicy.yaml;
+            download(`${fileName}.yml`, fileContent, 'yml');
         }
     }
 
@@ -116,9 +122,7 @@ function NetworkPolicies({ policyIds }: NetworkPoliciesProps): React.ReactElemen
                         handleSelect={handleSelectedNetworkPolicy}
                         placeholderText="Select a network policy"
                     >
-                        <SelectOption value="All network policies">
-                            All network policies
-                        </SelectOption>
+                        <SelectOption value="all">All network policies</SelectOption>
                         <Divider component="li" />
                         <>
                             {networkPolicies.map((networkPolicy) => {
@@ -152,14 +156,7 @@ function NetworkPolicies({ policyIds }: NetworkPoliciesProps): React.ReactElemen
                 )}
                 {selectedNetworkPolicy && (
                     <StackItem>
-                        <Button
-                            onClick={downloadYAMLHandler(
-                                selectedNetworkPolicy.name,
-                                selectedNetworkPolicy.yaml
-                            )}
-                        >
-                            Export YAML
-                        </Button>
+                        <Button onClick={exportYAMLHandler}>Export YAML</Button>
                     </StackItem>
                 )}
             </Stack>
