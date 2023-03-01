@@ -367,6 +367,8 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
+require gopkg.in/mcuadros/go-syslog.v2 v2.3.0
+
 // To bump the version of a replacement package, use:
 //
 //   $ go mod edit -replace <package>=<replacement>@<branch or commit reference>
