@@ -17,12 +17,12 @@ import (
 )
 
 const (
-	backoffMultiplier = 2
+	backoffMultiplier = 1.5
 )
 
 // CachingScanner is an implementation of NodeInventorizer that keeps a local cache of results.
 //
-// To reduce strain on the Node, a linear backoff is checked before collecting an inventory.
+// To reduce strain on the Node, an exponential backoff is checked before collecting an inventory.
 // Additionally, a cached inventory from an earlier invocation may be used instead of a full inventory run if it is fresh enough.
 // Note: This does not prevent strain in case of repeated pod recreation, as both mechanisms are based on an EmptyDir.
 type CachingScanner struct {
@@ -35,9 +35,9 @@ type CachingScanner struct {
 
 // inventoryWrap is a private struct that saves a given inventory alongside some meta-information.
 type inventoryWrap struct {
-	ValidUntil      time.Time     // ValidUntil indicates whether the cached inventory is fresh enough to use.
-	BackoffDuration time.Duration // BackoffDuration contains the duration a scan waits before its next iteration.
-	Inventory       *storage.NodeInventory
+	CacheValidUntil      time.Time     // CacheValidUntil indicates whether the cached inventory is fresh enough to use.
+	RetryBackoffDuration time.Duration // RetryBackoffDuration contains the duration a scan waits before its next iteration.
+	CachedInventory       *storage.NodeInventory
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
@@ -66,9 +66,6 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	backoffDuration := c.initialBackoff
 	if cache != nil {
 		backoffDuration = c.validateBackoff(cache.BackoffDuration)
-	}
-
-	if backoffDuration > c.initialBackoff {
 		log.Warnf("Found existing node scan backoff file - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
 		c.backoffWaitCallback(backoffDuration)
 	}
@@ -76,7 +73,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	// Write backoff duration to cache
 	backoff := inventoryWrap{BackoffDuration: c.calcNextBackoff(backoffDuration)}
 	if err := writeInventoryWrap(backoff, c.inventoryCachePath); err != nil {
-		log.Warnf("Error writing node scan backoff file: %v", err)
+		return nil, errors.Wrap(err, " writing node scan backoff file")
 	}
 
 	// if no inventory exists, or it is too old, collect a fresh one
@@ -86,7 +83,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	}
 
 	// Write inventory to cache
-	inventory := inventoryWrap{
+	cacheWrap := inventoryWrap{
 		ValidUntil:      time.Now().Add(c.cacheDuration),
 		BackoffDuration: 0,
 		Inventory:       newInventory,
@@ -99,11 +96,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 }
 
 func (c *CachingScanner) calcNextBackoff(currentBackoff time.Duration) time.Duration {
-	nextBackoffInterval := currentBackoff * backoffMultiplier
-	if nextBackoffInterval > c.maxBackoff {
-		return c.maxBackoff
-	}
-	return nextBackoffInterval
+	return validateBackoff(currentBackoff * backoffMultiplier)
 }
 
 // validateBackoff ensures that a given duration does not exceed the max backoff setting
@@ -118,17 +111,17 @@ func readInventoryWrap(path string) *inventoryWrap {
 	cacheContents, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			log.Debug("No node scan cache file found, will run a new scan")
+			log.Debug("No node scan cache file found")
 			return nil
 		}
-		log.Warnf("Unable to read node scan cache, will run a new scan. Error: %v", err)
+		log.Warnf("Unable to read node scan cache. Error: %v", err)
 		return nil
 	}
 
 	// deserialize stored inventory
 	var wrap inventoryWrap
 	if err := json.Unmarshal(cacheContents, &wrap); err != nil {
-		log.Warnf("Unable to load node scan cache contents, will run a new scan. Error: %v", err)
+		log.Warnf("Unable to load node scan cache contents. Error: %v", err)
 		return nil
 	}
 	return &wrap
@@ -140,10 +133,7 @@ func writeInventoryWrap(w inventoryWrap, path string) error {
 		return err
 	}
 
-	if err := os.WriteFile(path, jsonWrap, 0600); err != nil {
-		return err
-	}
-	return nil
+	return os.WriteFile(path, jsonWrap, 0600)
 }
 
 // collectInventory scans the current node and returns the results as storage.NodeInventory object
@@ -151,13 +141,15 @@ func collectInventory(nodeName string) (*storage.NodeInventory, error) {
 	metrics.ObserveScansTotal(nodeName)
 	startTime := time.Now()
 
+	log.Debug("Starting the node scan")
+
 	// uncertifiedRHEL is set to false, as scans are only supported on RHCOS for now,
 	// which only exists in certified versions
 	componentsHost, err := nodes.Analyze(nodeName, "/host/", nodes.AnalyzeOpts{UncertifiedRHEL: false, IsRHCOSRequired: true})
 
 	scanDuration := time.Since(startTime)
 	metrics.ObserveScanDuration(scanDuration, nodeName, err)
-	log.Debugf("Collecting Node Inventory took %f seconds", scanDuration.Seconds())
+	log.Debugf("Scanning the node took %f seconds", scanDuration.Seconds())
 
 	if err != nil {
 		log.Errorf("Error scanning node /host inventory: %v", err)
@@ -189,7 +181,7 @@ func collectInventory(nodeName string) (*storage.NodeInventory, error) {
 	return m, nil
 }
 
-// TODO(ROX-14029): Move conversion function into Sensor
+// TODO(ROX-14029): Move conversion function into Scanner
 func protoComponentsFromScanComponents(c *nodes.Components) *storage.NodeInventory_Components {
 	if c == nil {
 		return nil

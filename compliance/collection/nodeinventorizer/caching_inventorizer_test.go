@@ -64,7 +64,7 @@ func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
 	initial, _ := time.ParseDuration("2s")
 	cache := initial
 	maxBackoff, _ := time.ParseDuration("10s")
-	cs := *NewCachingScanner("", cache, initial, maxBackoff, func(time.Duration) {})
+	cs := NewCachingScanner("", cache, initial, maxBackoff, func(time.Duration) {})
 	expectedBackoff := initial * backoffMultiplier
 
 	newBackoff := cs.calcNextBackoff(initial)
