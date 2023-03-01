@@ -3,11 +3,9 @@ package search
 import (
 	"strings"
 
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -112,7 +110,7 @@ func parsePair(pair string, allowEmpty bool) (key string, values string, valid b
 func queryFromFieldValues(field string, values []string, highlight bool) *v1.Query {
 	// A SQL query can have no more than 65535 parameters.
 	if len(values) > MaxQueryParameters {
-		utils.Should(errors.Errorf("too many parameters %d for a query.  No more than %d parameters allowed in single query", len(values), MaxQueryParameters))
+		log.Errorf("UNEXPECTED: too many parameters %d for a query.  No more than %d parameters allowed in single query", len(values), MaxQueryParameters)
 	}
 	queries := make([]*v1.Query, 0, len(values))
 	for _, value := range values {
