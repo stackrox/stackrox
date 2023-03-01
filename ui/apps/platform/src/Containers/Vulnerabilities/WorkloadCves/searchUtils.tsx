@@ -1,5 +1,7 @@
 import qs from 'qs';
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { SearchFilter } from 'types/search';
+import { getQueryString } from 'utils/queryStringUtils';
 
 export type CveStatusTab = 'Observed' | 'Deferred' | 'False Positive';
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
@@ -24,4 +26,8 @@ export function parseWorkloadCvesOverviewSearchString(search: string): WorkloadC
     return {
         cveStatusTab: isValidCveStatusTab(cveStatusTab) ? cveStatusTab : 'Observed',
     };
+}
+
+export function getOverviewCvesPath(workloadCvesSearch: WorkloadCvesSearch) {
+    return `${vulnerabilitiesWorkloadCvesPath}${getQueryString(workloadCvesSearch)}`;
 }

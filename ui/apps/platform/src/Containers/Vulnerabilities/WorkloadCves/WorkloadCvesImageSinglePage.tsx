@@ -25,7 +25,6 @@ import { useQuery } from '@apollo/client';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
@@ -37,8 +36,12 @@ import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
 import useDetailsTabParameter from './hooks/useDetailsTabParameter';
 import { isDetailsTab } from './types';
+import { getOverviewCvesPath } from './searchUtils';
 
-const workloadCveOverviewImagePath = `${vulnerabilitiesWorkloadCvesPath}?cveStatusTab=Observed&entityTab=Image`;
+const workloadCveOverviewImagePath = getOverviewCvesPath({
+    cveStatusTab: 'Observed',
+    entityTab: 'Image',
+});
 
 function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['image'] }) {
     const [hasSuccessfulCopy, setHasSuccessfulCopy] = useState(false);
