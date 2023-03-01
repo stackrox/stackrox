@@ -153,7 +153,7 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 		"serialized",
 	}
 
-	for idx, obj := range objs {
+	for _, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
@@ -196,25 +196,16 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 		// Add the ID to be deleted.
 		deletes = append(deletes, obj.GetId())
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
+		}
+		// clear the inserts and vals for the next batch
+		deletes = nil
 
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = nil
+		_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, pgx.CopyFromRows(inputRows))
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		if err != nil {
+			return err
 		}
 	}
 
