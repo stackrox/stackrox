@@ -186,6 +186,9 @@ func (s *SubjectSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
 		return 0, err
 	}
 
+	q = search.ConjunctionQuery(q, search.NewQueryBuilder().
+		AddStrings(search.SubjectKind, storage.SubjectKind_USER.String(), storage.SubjectKind_GROUP.String()).
+		ProtoQuery())
 	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return 0, err
@@ -211,6 +214,9 @@ func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v
 		return nil, err
 	}
 
+	q = search.ConjunctionQuery(q, search.NewQueryBuilder().
+		AddStrings(search.SubjectKind, storage.SubjectKind_USER.String(), storage.SubjectKind_GROUP.String()).
+		ProtoQuery())
 	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
