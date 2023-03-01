@@ -21,12 +21,14 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
-import { gql, useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import { useParams } from 'react-router-dom';
 
+import { graphql } from 'gql';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { GetImageDetailsQuery } from 'gql/graphql';
 import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
 import useDetailsTabParameter from './hooks/useDetailsTabParameter';
@@ -38,7 +40,11 @@ const workloadCveOverviewImagePath = getOverviewCvesPath({
     entityTab: 'Image',
 });
 
-function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['image'] }) {
+function ImageDetailBadges({
+    imageData,
+}: {
+    imageData: NonNullable<GetImageDetailsQuery['image']>;
+}) {
     const [hasSuccessfulCopy, setHasSuccessfulCopy] = useState(false);
 
     const { deploymentCount, operatingSystem, metadata, scan } = imageData;
@@ -70,7 +76,8 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
             )}
             {scan && (
                 <Label isCompact>
-                    Scan time: {getDateTime(scan.scanTime)} by {scan.dataSource.name}
+                    Scan time: {getDateTime(scan.scanTime)} by{' '}
+                    {scan?.dataSource?.name ?? 'Unknown scanner'}
                 </Label>
             )}
             {sha && (
@@ -90,32 +97,7 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
     );
 }
 
-export type ImageDetailsVariables = {
-    id: string;
-};
-
-export type ImageDetailsResponse = {
-    image: {
-        deploymentCount: number;
-        name: {
-            fullName: string;
-        } | null;
-        operatingSystem: string;
-        metadata: {
-            v1: {
-                created: Date | null;
-                digest: string;
-            } | null;
-        } | null;
-
-        scan: {
-            dataSource: { name: string };
-            scanTime: Date | null;
-        };
-    };
-};
-
-export const imageDetailsQuery = gql`
+export const imageDetailsQuery = graphql(/* GraphQl */ `
     query getImageDetails($id: ID!) {
         image(id: $id) {
             deploymentCount
@@ -137,16 +119,11 @@ export const imageDetailsQuery = gql`
             }
         }
     }
-`;
+`);
 
 function WorkloadCvesImageSinglePage() {
-    const { imageId } = useParams();
-    const { data, error } = useQuery<ImageDetailsResponse, ImageDetailsVariables>(
-        imageDetailsQuery,
-        {
-            variables: { id: imageId },
-        }
-    );
+    const { imageId } = useParams() as { imageId: string };
+    const { data, error } = useQuery(imageDetailsQuery, { variables: { id: imageId } });
 
     const [activeTabKey, setActiveTabKey] = useDetailsTabParameter();
 

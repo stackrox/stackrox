@@ -1,3 +1,4 @@
 *.pb.go         linguist-generated=true
 *.pb.gw.go      linguist-generated=true
 *.swagger.json  linguist-generated=true
+ui/apps/platform/src/gql/*.*   linguist-generated=true

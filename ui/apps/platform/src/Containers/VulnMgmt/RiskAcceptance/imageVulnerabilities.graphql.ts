@@ -142,7 +142,11 @@ export const GET_IMAGE_VULNERABILITIES = gql`
 `;
 
 export const GET_IMAGE_VULNERABILITIES_LEGACY = gql`
-    query getImageVulnerabilities($imageId: ID!, $vulnsQuery: String, $pagination: Pagination) {
+    query getImageVulnerabilitiesLegacy(
+        $imageId: ID!
+        $vulnsQuery: String
+        $pagination: Pagination
+    ) {
         image(id: $imageId) {
             name {
                 registry

@@ -44,35 +44,63 @@ function getViewAllLink(searchFilter: SearchFilter) {
 }
 
 export function getImagesQuery(useUpdatedVmResolver: boolean) {
-    return gql`
-    query getImages($query: String) {
-        images(
-            query: $query
-            pagination: { limit: 6, sortOption: { field: "Image Risk Priority", reversed: false } }
-        ) {
-            id
-            name {
-                remote
-                fullName
-            }
-            priority
-            ${
-                useUpdatedVmResolver
-                    ? 'imageVulnerabilityCounter'
-                    : 'imageVulnerabilityCounter: vulnCounter'
-            } {
-                important {
-                    total
-                    fixable
-                }
-                critical {
-                    total
-                    fixable
-                }
-            }
-        }
-    }
-`;
+    return useUpdatedVmResolver
+        ? gql`
+              query getImagesAtMostRisk($query: String) {
+                  images(
+                      query: $query
+                      pagination: {
+                          limit: 6
+                          sortOption: { field: "Image Risk Priority", reversed: false }
+                      }
+                  ) {
+                      id
+                      name {
+                          remote
+                          fullName
+                      }
+                      priority
+                      imageVulnerabilityCounter {
+                          important {
+                              total
+                              fixable
+                          }
+                          critical {
+                              total
+                              fixable
+                          }
+                      }
+                  }
+              }
+          `
+        : gql`
+              query getImagesAtMostRiskLegacy($query: String) {
+                  images(
+                      query: $query
+                      pagination: {
+                          limit: 6
+                          sortOption: { field: "Image Risk Priority", reversed: false }
+                      }
+                  ) {
+                      id
+                      name {
+                          remote
+                          fullName
+                      }
+                      priority
+                      imageVulnerabilityCounter: vulnCounter {
+                          important {
+                              total
+                              fixable
+                          }
+                          critical {
+                              total
+                              fixable
+                          }
+                      }
+                  }
+              }
+          `;
 }
 
 // If no resource scope is applied and the user selects "Active images" only, we
