@@ -12,6 +12,7 @@ import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
 import { authProviderLabels } from '../../constants/accessControl';
+import { Traits } from '../../types/traits.proto';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
@@ -77,12 +78,6 @@ export type AuthProvider = {
     requiredAttributes: AuthProviderRequiredAttributes[];
     traits?: Traits;
 };
-
-export type Traits = {
-    mutabilityMode: MutabilityMode;
-};
-
-export type MutabilityMode = 'ALLOW_MUTATE' | 'ALLOW_MUTATE_FORCED';
 
 export type AuthProviderInfo = {
     label: string;
