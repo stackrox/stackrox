@@ -7,27 +7,27 @@ import (
 	"testing"
 
 	notificationschedulestore "github.com/stackrox/rox/migrator/migrations/m_173_to_m_174_create_notification_schedule_table/notificationschedulestore"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMigration(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
-	pgTest := pgtest.ForT(t)
+	pgTest := pghelper.ForT(t, false)
 	assert.NotNil(t, pgTest)
 
 	storage := notificationschedulestore.New(pgTest.DB)
 	// Test get from the not-created-table returns an error
 	_, _, errPre := storage.Get(ctx)
-	assert.ErrorIs(t, errPre, "table notification_schedules does not exist")
+	assert.ErrorContains(t, errPre, "relation \"notification_schedules\" does not exist")
 
 	// Create the table
-	createNotificationScheduleTable(pgTest.DB, pgTest.GetGormDB(t))
+	createNotificationScheduleTable(pgTest.DB, pgTest.GetGormDB())
 
 	// Test get from the created table returns nil
 	objPost, foundPost, errPost := storage.Get(ctx)
 	assert.NoError(t, errPost)
-	assert.False(foundPost)
+	assert.False(t, foundPost)
 	assert.Nil(t, objPost)
 }
