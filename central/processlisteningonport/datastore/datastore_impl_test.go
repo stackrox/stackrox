@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package datastore
 
 import (
@@ -197,6 +195,65 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddNil() {
+	testNamespace := "test_namespace"
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container2",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process2",
+				Args:         "test_arguments2",
+				ExecFilePath: "test_path2",
+			},
+		},
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{}
+	plopObjects = nil
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
+	// Verify that newly added PLOP object doesn't have Process field set in
+	// the serialized column (because all the info is stored in the referenced
+	// process indicator record)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 0)
 }
 
 // TestPLOPAddClosed: Happy path for ProcessListeningOnPort closing, one PLOP object is added
@@ -831,6 +888,344 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetry() {
+	testNamespace := "test_namespace"
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: nil,
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Verify that the table is empty before the test
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	err := suite.datastore.WalkAll(suite.hasWriteCtx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			plopsFromDB = append(plopsFromDB, plop)
+			return nil
+		})
+	suite.NoError(err)
+	suite.Len(plopsFromDB, 0)
+
+	// Verify that the table is empty before the test
+	indicatorsFromDB := suite.getProcessIndicatorsFromDB()
+	suite.Len(indicatorsFromDB, 0)
+
+	// Add PLOP referencing non existing indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
+	// Verify the state of the table after the test
+	// Process should not be nil as we were not able to find
+	// a matching process indicator
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               plopObjects[0].GetPort(),
+		Protocol:           plopObjects[0].GetProtocol(),
+		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId: "",
+		Closed:             false,
+		Process:            plopObjects[0].GetProcess(),
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	plopObjects2 := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           2345,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: nil,
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID2,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects2...))
+
+	// Fetch inserted PLOP back
+	newPlops2, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops2, 1)
+	suite.Equal(*newPlops2[0], storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     testNamespace,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
+
+	// Fetch inserted PLOP back
+	newPlops3, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment2)
+	suite.NoError(err)
+
+	suite.Len(newPlops3, 1)
+	suite.Equal(*newPlops3[0], storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodUID2,
+		DeploymentId:  fixtureconsts.Deployment2,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     testNamespace,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     2345,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
+
+	newPlopsFromDB2 := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB2, 2)
+
+	expectedPlopStorage2 := []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:                 newPlopsFromDB2[0].GetId(),
+			Port:               plopObjects2[0].GetPort(),
+			Protocol:           plopObjects2[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: indicators[1].GetId(),
+			Closed:             false,
+			Process:            nil,
+		},
+		{
+			Id:                 newPlopsFromDB2[1].GetId(),
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: indicators[0].GetId(),
+			Closed:             false,
+			Process:            nil,
+		},
+	}
+
+	suite.Equal(expectedPlopStorage2[0], newPlopsFromDB2[0])
+	suite.Equal(expectedPlopStorage2[1], newPlopsFromDB2[1])
+}
+
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetryNil() {
+	testNamespace := "test_namespace"
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: nil,
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Verify that the table is empty before the test
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	err := suite.datastore.WalkAll(suite.hasWriteCtx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			plopsFromDB = append(plopsFromDB, plop)
+			return nil
+		})
+	suite.NoError(err)
+	suite.Len(plopsFromDB, 0)
+
+	// Verify that the table is empty before the test
+	indicatorsFromDB := suite.getProcessIndicatorsFromDB()
+	suite.Len(indicatorsFromDB, 0)
+
+	// Add PLOP referencing non existing indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
+	// Verify the state of the table after the test
+	// Process should not be nil as we were not able to find
+	// a matching process indicator
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               plopObjects[0].GetPort(),
+		Protocol:           plopObjects[0].GetProtocol(),
+		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId: "",
+		Closed:             false,
+		Process:            plopObjects[0].GetProcess(),
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodId:         fixtureconsts.PodUID1,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+		{
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodId:         fixtureconsts.PodUID2,
+			ClusterId:     fixtureconsts.Cluster1,
+			ContainerName: "test_container1",
+			Namespace:     testNamespace,
+
+			Signal: &storage.ProcessSignal{
+				Name:         "test_process1",
+				Args:         "test_arguments1",
+				ExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	plopObjects2 := []*storage.ProcessListeningOnPortFromSensor{}
+	plopObjects2 = nil
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects2...))
+
+	// Fetch inserted PLOP back
+	newPlops2, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops2, 1)
+	suite.Equal(*newPlops2[0], storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     testNamespace,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
+
+	// Fetch inserted PLOP back
+	newPlops3, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment2)
+	suite.NoError(err)
+
+	suite.Len(newPlops3, 0)
+
+	newPlopsFromDB2 := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB2, 1)
+
+	expectedPlopStorage2 := []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:                 newPlopsFromDB2[0].GetId(),
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: indicators[0].GetId(),
+			Closed:             false,
+			Process:            nil,
+		},
+	}
+
+	suite.Equal(expectedPlopStorage2[0], newPlopsFromDB2[0])
 }
 
 // TestPLOPAddMultipleIndicators: A PLOP object is added with a valid reference
