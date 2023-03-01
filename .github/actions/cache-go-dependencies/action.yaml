@@ -11,16 +11,12 @@ runs:
       shell: bash
 
     - name: Cache Go Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
-          ${{ steps.cache-paths.outputs.GOCACHE }}
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
-          /github/home/.cache/go-build
-          /github/home/.cache/golangci-lint
-          /github/home/.cache/staticcheck
-        key: go-v2-${{ hashFiles('**/go.sum') }}-${{ github.job }}
+          ${{ steps.cache-paths.outputs.GOCACHE }}
+        key: go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          go-v2-${{ hashFiles('**/go.sum') }}-${{ github.job }}
-          go-v2-${{ hashFiles('**/go.sum') }}-
-          go-v2-
+          go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+          go-v3-${{ github.job }}-
