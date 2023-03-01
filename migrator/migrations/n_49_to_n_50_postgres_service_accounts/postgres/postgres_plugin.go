@@ -100,7 +100,7 @@ func insertIntoServiceAccounts(ctx context.Context, batch *pgx.Batch, obj *stora
 	return nil
 }
 
-func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx pgx.Tx, objs ...*storage.ServiceAccount) error {
+func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx *postgres.Tx, objs ...*storage.ServiceAccount) error {
 
 	inputRows := [][]interface{}{}
 

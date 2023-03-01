@@ -93,7 +93,7 @@ func insertIntoNetworkpoliciesundodeployments(ctx context.Context, batch *pgx.Ba
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 
 	inputRows := [][]interface{}{}
 

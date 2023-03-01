@@ -99,7 +99,7 @@ func insertIntoRoles(ctx context.Context, batch *pgx.Batch, obj *storage.Role) e
 	return nil
 }
 
-func (s *storeImpl) copyFromRoles(ctx context.Context, tx pgx.Tx, objs ...*storage.Role) error {
+func (s *storeImpl) copyFromRoles(ctx context.Context, tx *postgres.Tx, objs ...*storage.Role) error {
 
 	inputRows := [][]interface{}{}
 

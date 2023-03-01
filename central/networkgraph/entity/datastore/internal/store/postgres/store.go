@@ -99,7 +99,7 @@ func insertIntoNetworkEntities(ctx context.Context, batch *pgx.Batch, obj *stora
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkEntity) error {
+func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkEntity) error {
 
 	inputRows := [][]interface{}{}
 

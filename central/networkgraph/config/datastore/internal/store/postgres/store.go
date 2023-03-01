@@ -99,7 +99,7 @@ func insertIntoNetworkGraphConfigs(ctx context.Context, batch *pgx.Batch, obj *s
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkGraphConfigs(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkGraphConfig) error {
+func (s *storeImpl) copyFromNetworkGraphConfigs(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkGraphConfig) error {
 
 	inputRows := [][]interface{}{}
 

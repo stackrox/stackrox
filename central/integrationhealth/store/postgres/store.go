@@ -99,7 +99,7 @@ func insertIntoIntegrationHealths(ctx context.Context, batch *pgx.Batch, obj *st
 	return nil
 }
 
-func (s *storeImpl) copyFromIntegrationHealths(ctx context.Context, tx pgx.Tx, objs ...*storage.IntegrationHealth) error {
+func (s *storeImpl) copyFromIntegrationHealths(ctx context.Context, tx *postgres.Tx, objs ...*storage.IntegrationHealth) error {
 
 	inputRows := [][]interface{}{}
 

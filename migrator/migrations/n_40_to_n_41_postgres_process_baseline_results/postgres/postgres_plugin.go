@@ -96,7 +96,7 @@ func insertIntoProcessBaselineResults(ctx context.Context, batch *pgx.Batch, obj
 	return nil
 }
 
-func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
+func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx *postgres.Tx, objs ...*storage.ProcessBaselineResults) error {
 
 	inputRows := [][]interface{}{}
 

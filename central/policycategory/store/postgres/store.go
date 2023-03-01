@@ -102,7 +102,7 @@ func insertIntoPolicyCategories(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx pgx.Tx, objs ...*storage.PolicyCategory) error {
+func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx *postgres.Tx, objs ...*storage.PolicyCategory) error {
 
 	inputRows := [][]interface{}{}
 

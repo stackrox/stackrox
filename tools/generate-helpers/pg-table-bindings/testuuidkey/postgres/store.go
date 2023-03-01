@@ -112,7 +112,7 @@ func insertIntoTestSingleUuidKeyStructs(ctx context.Context, batch *pgx.Batch, o
 	return nil
 }
 
-func (s *storeImpl) copyFromTestSingleUuidKeyStructs(ctx context.Context, tx pgx.Tx, objs ...*storage.TestSingleUUIDKeyStruct) error {
+func (s *storeImpl) copyFromTestSingleUuidKeyStructs(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestSingleUUIDKeyStruct) error {
 
 	inputRows := [][]interface{}{}
 

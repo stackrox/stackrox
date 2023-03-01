@@ -155,7 +155,7 @@ func insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, batch *pg
 	return nil
 }
 
-func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, objs ...*storage.TestGrandparent) error {
+func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestGrandparent) error {
 
 	inputRows := [][]interface{}{}
 
@@ -238,7 +238,7 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, obj
 	return err
 }
 
-func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx pgx.Tx, test_grandparents_Id string, objs ...*storage.TestGrandparent_Embedded) error {
+func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx *postgres.Tx, test_grandparents_Id string, objs ...*storage.TestGrandparent_Embedded) error {
 
 	inputRows := [][]interface{}{}
 
@@ -295,7 +295,7 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx pg
 	return err
 }
 
-func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, tx pgx.Tx, test_grandparents_Id string, test_grandparents_embeddeds_idx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
+func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, tx *postgres.Tx, test_grandparents_Id string, test_grandparents_embeddeds_idx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
 
 	inputRows := [][]interface{}{}
 

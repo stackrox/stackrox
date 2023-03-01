@@ -110,7 +110,7 @@ func insertIntoNodeCves(ctx context.Context, batch *pgx.Batch, obj *storage.Node
 	return nil
 }
 
-func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeCVE) error {
+func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeCVE) error {
 
 	inputRows := [][]interface{}{}
 

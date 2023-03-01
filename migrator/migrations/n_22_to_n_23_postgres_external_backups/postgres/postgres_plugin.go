@@ -89,7 +89,7 @@ func insertIntoExternalBackups(ctx context.Context, batch *pgx.Batch, obj *stora
 	return nil
 }
 
-func (s *storeImpl) copyFromExternalBackups(ctx context.Context, tx pgx.Tx, objs ...*storage.ExternalBackup) error {
+func (s *storeImpl) copyFromExternalBackups(ctx context.Context, tx *postgres.Tx, objs ...*storage.ExternalBackup) error {
 
 	inputRows := [][]interface{}{}
 

@@ -97,7 +97,7 @@ func insertIntoClusterCves(ctx context.Context, batch *pgx.Batch, obj *storage.C
 	return nil
 }
 
-func (s *storeImpl) copyFromClusterCves(ctx context.Context, tx pgx.Tx, objs ...*storage.ClusterCVE) error {
+func (s *storeImpl) copyFromClusterCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.ClusterCVE) error {
 
 	inputRows := [][]interface{}{}
 
