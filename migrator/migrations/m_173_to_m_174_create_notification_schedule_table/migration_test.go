@@ -23,7 +23,7 @@ func TestMigration(t *testing.T) {
 	assert.ErrorContains(t, errPre, "relation \"notification_schedules\" does not exist")
 
 	// Create the table
-	createNotificationScheduleTable(pgTest.DB, pgTest.GetGormDB())
+	assert.NoError(t, createNotificationScheduleTable(pgTest.DB, pgTest.GetGormDB()))
 
 	// Test get from the created table returns nil
 	objPost, foundPost, errPost := storage.Get(ctx)
