@@ -21,17 +21,12 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
-import { useQuery } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import {
-    imageDetailsQuery,
-    ImageDetailsResponse,
-    ImageDetailsVariables,
-} from './queries/imageDetails';
 import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
 import useDetailsTabParameter from './hooks/useDetailsTabParameter';
@@ -94,6 +89,55 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
         </LabelGroup>
     );
 }
+
+export type ImageDetailsVariables = {
+    id: string;
+};
+
+export type ImageDetailsResponse = {
+    image: {
+        deploymentCount: number;
+        name: {
+            fullName: string;
+        } | null;
+        operatingSystem: string;
+        metadata: {
+            v1: {
+                created: Date | null;
+                digest: string;
+            } | null;
+        } | null;
+
+        scan: {
+            dataSource: { name: string };
+            scanTime: Date | null;
+        };
+    };
+};
+
+export const imageDetailsQuery = gql`
+    query getImageDetails($id: ID!) {
+        image(id: $id) {
+            deploymentCount
+            name {
+                fullName
+            }
+            operatingSystem
+            metadata {
+                v1 {
+                    created
+                    digest
+                }
+            }
+            scan {
+                dataSource {
+                    name
+                }
+                scanTime
+            }
+        }
+    }
+`;
 
 function WorkloadCvesImageSinglePage() {
     const { imageId } = useParams();
