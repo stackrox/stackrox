@@ -4,6 +4,7 @@ import {
     AlertVariant,
     Bullseye,
     Button,
+    Divider,
     EmptyState,
     EmptyStateVariant,
     SelectOption,
@@ -115,9 +116,10 @@ function NetworkPolicies({ policyIds }: NetworkPoliciesProps): React.ReactElemen
                         handleSelect={handleSelectedNetworkPolicy}
                         placeholderText="Select a network policy"
                     >
-                        <SelectOption key="All network policies" value="All network policies">
+                        <SelectOption value="All network policies">
                             All network policies
                         </SelectOption>
+                        <Divider component="li" />
                         <>
                             {networkPolicies.map((networkPolicy) => {
                                 return (
