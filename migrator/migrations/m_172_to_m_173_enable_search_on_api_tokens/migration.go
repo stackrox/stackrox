@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v75"
 	newAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_enable_search_on_api_tokens/newapitokenpostgresstore"
 	oldAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_enable_search_on_api_tokens/oldapitokenpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
