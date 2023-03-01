@@ -195,18 +195,16 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 		// Add the ID to be deleted.
 		deletes = append(deletes, obj.GetId())
+	}
 
-		if err := s.DeleteMany(ctx, deletes); err != nil {
-			return err
-		}
-		// clear the inserts and vals for the next batch
-		deletes = nil
+	if err := s.DeleteMany(ctx, deletes); err != nil {
+		return err
+	}
 
-		_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, pgx.CopyFromRows(inputRows))
+	_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, pgx.CopyFromRows(inputRows))
 
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	return err
