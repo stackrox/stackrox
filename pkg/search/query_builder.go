@@ -106,6 +106,7 @@ func (s *Select) Distinct() *Select {
 	return s
 }
 
+// Proto returns the select clause as *v1.QuerySelect.
 func (s *Select) Proto() *v1.QuerySelect {
 	return s.qs
 }

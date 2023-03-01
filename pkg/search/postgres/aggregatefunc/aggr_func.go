@@ -27,10 +27,12 @@ func newAggrFunc(name string, dataType postgres.DataType) AggrFunc {
 	return f
 }
 
+// DataType returns the response datatype of the aggregate function. If empty, the datatype of underlying field applies.
 func (a AggrFunc) DataType() postgres.DataType {
 	return a.dataType
 }
 
+// String returns the name for aggregate function.
 func (a AggrFunc) String() string {
 	return a.name
 }
