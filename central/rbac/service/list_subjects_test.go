@@ -367,13 +367,13 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 				{
 					ID: s.testBindings[1].Subjects[1].Name,
 					Matches: map[string][]string{
-						"k8srolebinding.cluster_name": []string{s.testBindings[1].ClusterName},
+						"k8srolebinding.cluster_name": {s.testBindings[1].ClusterName},
 					},
 				},
 				{
 					ID: s.testBindings[1].Subjects[2].Name,
 					Matches: map[string][]string{
-						"k8srolebinding.cluster_name": []string{s.testBindings[1].ClusterName},
+						"k8srolebinding.cluster_name": {s.testBindings[1].ClusterName},
 					},
 				},
 			},
