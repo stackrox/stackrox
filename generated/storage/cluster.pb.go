@@ -2640,7 +2640,6 @@ type ScannerHealthInfo struct {
 	//	*ScannerHealthInfo_TotalDesiredAnalyzerPods
 	TotalDesiredAnalyzerPodsOpt isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt `protobuf_oneof:"total_desired_analyzer_pods_opt"`
 	// Types that are valid to be assigned to TotalReadyAnalyzerPodsOpt:
-	//
 	//	*ScannerHealthInfo_TotalReadyAnalyzerPods
 	TotalReadyAnalyzerPodsOpt isScannerHealthInfo_TotalReadyAnalyzerPodsOpt `protobuf_oneof:"total_ready_analyzer_pods_opt"`
 	// Types that are valid to be assigned to TotalDesiredDbPodsOpt:
