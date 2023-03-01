@@ -27,6 +27,7 @@ export function useEnrichNamespacesWithDeploymentCounts(
         error: '',
         namespaces: [],
     });
+    const [responseCount, setResponseCount] = useState<number>(0);
     useEffect(() => {
         if (clusterId) {
             setResponse({
@@ -70,6 +71,7 @@ export function useEnrichNamespacesWithDeploymentCounts(
                                 },
                                 deploymentCount: count,
                             });
+                            setResponseCount((prevState) => prevState + 1);
                         })
                         .catch((error) => {
                             const message = getAxiosErrorMessage(error);
@@ -96,5 +98,10 @@ export function useEnrichNamespacesWithDeploymentCounts(
             }
         }
     }, [clusterId, namespaceData]);
-    return response;
+
+    return {
+        loading: responseCount !== namespaceData.length,
+        error: response.error,
+        namespaces: responseCount === namespaceData.length ? response.namespaces : [],
+    };
 }
