@@ -108,8 +108,16 @@ func parsePair(pair string, allowEmpty bool) (key string, values string, valid b
 }
 
 func queryFromFieldValues(field string, values []string, highlight bool) *v1.Query {
-	queries := make([]*v1.Query, 0, len(values))
-	for _, value := range values {
+	queryLength := len(values)
+	if queryLength > MaxQueryParameters {
+		queryLength = MaxQueryParameters
+	}
+	queries := make([]*v1.Query, 0, queryLength)
+	for idx, value := range values {
+		if idx == MaxQueryParameters {
+			log.Warnf("the query contained %d parameters and was truncated to %d parameters", len(values), MaxQueryParameters)
+			break
+		}
 		queries = append(queries, MatchFieldQuery(field, value, highlight))
 	}
 

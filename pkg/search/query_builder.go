@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -30,6 +31,9 @@ const (
 
 	// EqualityPrefixSuffix is the prefix for an exact match
 	EqualityPrefixSuffix = `"`
+
+	// MaxQueryParameters is the maximum number of query parameters for a single statement
+	MaxQueryParameters = math.MaxUint16
 )
 
 var (
