@@ -18,14 +18,10 @@ import (
 )
 
 const (
-	// notificationInterval = 1 * time.Hour      // 1 hour
-	// staleNotificationAge = 24 * time.Hour     // 1 day
-	// expirationWindow     = 7 * 24 * time.Hour // 1 week
-	// expirationSlice      = 24 * time.Hour     // 1 day
-	notificationInterval = 10 * time.Minute // 1 hour
-	staleNotificationAge = 1 * time.Hour    // 1 day
-	expirationWindow     = 6 * time.Hour    // 1 week
-	expirationSlice      = 1 * time.Hour    // 1 day
+	notificationInterval = 1 * time.Hour      // 1 hour
+	staleNotificationAge = 24 * time.Hour     // 1 day
+	expirationWindow     = 7 * 24 * time.Hour // 1 week
+	expirationSlice      = 24 * time.Hour     // 1 day
 
 	// The timestamp format / layout is borrowed from `pkg/search/postgres/query/time_query.go`. It would be worth exporting.
 	timestampLayout = "01/02/2006 3:04:05 PM MST"
