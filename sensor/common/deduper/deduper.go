@@ -68,12 +68,12 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		event.SensorHashOneof = &central.SensorEvent_SensorHash{
 			SensorHash: hashValue,
 		}
+		d.lastSent[key] = hashValue
 	}
 
 	if err := d.stream.Send(msg); err != nil {
 		return err
 	}
-	d.lastSent[key] = hashValue
 
 	return nil
 }
