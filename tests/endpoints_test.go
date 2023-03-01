@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -300,7 +301,13 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 	if !c.expectHTTPSuccess {
 		// If we're in this branch, that means we're speaking to a gRPC-only server, which cannot handle normal HTTP
 		// requests.
-		assert.Error(t, err, "expected HTTP request to fail at the transport level")
+		var body string
+		if resp != nil {
+			b, err := io.ReadAll(resp.Body)
+			assert.NoError(t, err)
+			body = resp.Status + "\n" + string(b)
+		}
+		assert.Error(t, err, "expected HTTP request to fail at the transport level\n"+body)
 		return
 	}
 	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
