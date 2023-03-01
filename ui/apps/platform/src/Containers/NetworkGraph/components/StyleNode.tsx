@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import * as React from 'react';
 import {
@@ -51,7 +50,7 @@ type StyleNodeProps = {
     WithDragNodeProps &
     WithSelectionProps;
 
-const getTypeIcon = (type?: NodeDataType): any => {
+const getTypeIcon = (type?: NodeDataType): React.ComponentClass<SVGIconProps> => {
     switch (type) {
         case 'EXTERNAL_ENTITIES':
         case 'CIDR_BLOCK':
@@ -184,8 +183,8 @@ const StyleNode: React.FunctionComponent<StyleNodeProps> = ({
     }, [data]);
 
     React.useEffect(() => {
-        if (detailsLevel === ScaleDetailsLevel.low) {
-            onHideCreateConnector && onHideCreateConnector();
+        if (detailsLevel === ScaleDetailsLevel.low && onHideCreateConnector) {
+            onHideCreateConnector();
         }
     }, [detailsLevel, onHideCreateConnector]);
 

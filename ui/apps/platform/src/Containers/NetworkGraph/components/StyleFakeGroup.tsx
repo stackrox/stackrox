@@ -11,6 +11,7 @@ import {
 import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
+import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
 import DefaultFakeGroup from './DefaultFakeGroup';
 
 const ICON_PADDING = 20;
@@ -39,7 +40,7 @@ const StyleFakeGroup: React.FunctionComponent<StyleGroupProps> = ({
     const data = element.getData();
     const detailsLevel = useDetailsLevel();
 
-    const getTypeIcon = (dataType?: DataTypes): any => {
+    const getTypeIcon = (dataType?: DataTypes): React.ComponentClass<SVGIconProps> => {
         switch (dataType) {
             case DataTypes.Alternate:
                 return AlternateIcon;
