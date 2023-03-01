@@ -21,10 +21,13 @@ func NewHasher() *Hasher {
 	}
 }
 
-// HashMsg hashes the message from Sensor
-func (h *Hasher) HashMsg(msg *central.MsgFromSensor) (uint64, bool) {
+// HashEvent hashes the message from Sensor
+func (h *Hasher) HashEvent(event *central.SensorEvent) (uint64, bool) {
+	if event == nil {
+		return 0, false
+	}
 	h.hasher.Reset()
-	hashValue, err := hashstructure.Hash(msg.GetEvent().GetResource(), hashstructure.FormatV2, &hashstructure.HashOptions{
+	hashValue, err := hashstructure.Hash(event.GetResource(), hashstructure.FormatV2, &hashstructure.HashOptions{
 		TagName: "sensorhash",
 		Hasher:  h.hasher,
 	})

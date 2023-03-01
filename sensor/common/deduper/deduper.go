@@ -59,7 +59,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		return d.stream.Send(msg)
 	}
 
-	hashValue, ok := d.hasher.HashMsg(msg)
+	hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
 	if ok {
 		// If the hash is valid, then check for deduping
 		if d.lastSent[key] == hashValue {

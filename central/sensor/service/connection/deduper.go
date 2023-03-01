@@ -60,7 +60,7 @@ func (d *deduper) dedupe(msg *central.MsgFromSensor) bool {
 	// Backwards compatibility with a previous Sensor
 	if event.GetSensorHashOneof() == nil {
 		// Compute the sensor hash
-		hashValue, ok := d.hasher.HashMsg(msg)
+		hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
 		if !ok {
 			return false
 		}
