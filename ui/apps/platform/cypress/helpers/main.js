@@ -7,7 +7,7 @@ import { visit } from './visit';
  * Import relevant alias constants in test files that call visitMainDashboard function
  * with staticResponseMap argument to provide mock data for a widget.
  */
-export const summaryCountsOpname = 'summary_counts';
+export const summaryCountsOpname = 'cluster_summary_counts';
 export const getAllNamespacesByClusterOpname = 'getAllNamespacesByCluster';
 export const alertCountsBySeverityOpname = 'alertCountsBySeverity';
 export const mostRecentAlertsOpname = 'mostRecentAlerts';

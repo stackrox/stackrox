@@ -1,22 +1,11 @@
 import React from 'react';
 import { LabelGroup, Label } from '@patternfly/react-core';
-import { gql } from '@apollo/client';
 
 import { getDistanceStrict, getDateTime } from 'utils/dateUtils';
+import { graphql } from 'generated/graphql-codegen';
+import { ImageDetailsFragment } from 'generated/graphql-codegen/graphql';
 
-export type ImageDetails = {
-    deploymentCount: number;
-    operatingSystem: string;
-    metadata: {
-        v1: {
-            created: string | null;
-        } | null;
-    } | null;
-    dataSource: { name: string } | null;
-    scanTime: string | null;
-};
-
-export const imageDetailsFragment = gql`
+export const imageDetailsFragment = graphql(/* GraphQL */ `
     fragment ImageDetails on Image {
         deploymentCount
         operatingSystem
@@ -30,10 +19,10 @@ export const imageDetailsFragment = gql`
         }
         scanTime
     }
-`;
+`);
 
 export type ImageDetailBadgesProps = {
-    imageData: ImageDetails;
+    imageData: ImageDetailsFragment;
 };
 
 function ImageDetailBadges({ imageData }: ImageDetailBadgesProps) {
@@ -44,7 +33,7 @@ function ImageDetailBadges({ imageData }: ImageDetailBadgesProps) {
     return (
         <LabelGroup numLabels={Infinity}>
             <Label color={isActive ? 'green' : 'gold'}>{isActive ? 'Active' : 'Inactive'}</Label>
-            {operatingSystem && <Label>OS: {operatingSystem}</Label>}
+            <Label>OS: {operatingSystem}</Label>
             {created && <Label>Age: {getDistanceStrict(created, new Date())}</Label>}
             {scanTime && (
                 <Label>

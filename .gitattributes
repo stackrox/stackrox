@@ -2,3 +2,5 @@
 *.pb.gw.go      linguist-generated=true
 *.swagger.json  linguist-generated=true
 **/go.sum       linguist-generated=true
+ui/apps/platform/src/generated/graphql-codegen/*.*   linguist-generated=true
+

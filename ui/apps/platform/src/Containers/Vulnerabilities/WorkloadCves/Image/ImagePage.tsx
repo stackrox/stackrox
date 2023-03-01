@@ -16,29 +16,26 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
-import { gql, useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 
+import { graphql } from 'generated/graphql-codegen';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import ImagePageVulnerabilities from './ImagePageVulnerabilities';
-import ImagePageResources from './ImagePageResources';
-import { detailsTabValues } from '../types';
+import ImageDetailBadges from '../components/ImageDetailBadges';
 import { getOverviewCvesPath } from '../searchUtils';
-import ImageDetailBadges, {
-    ImageDetails,
-    imageDetailsFragment,
-} from '../components/ImageDetailBadges';
+import { detailsTabValues } from '../types';
+import ImagePageResources from './ImagePageResources';
+import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
     entityTab: 'Image',
 });
 
-export const imageDetailsQuery = gql`
-    ${imageDetailsFragment}
+export const imageDetailsQuery = graphql(/* GraphQL */ `
     query getImageDetails($id: ID!) {
         image(id: $id) {
             id
@@ -50,27 +47,11 @@ export const imageDetailsQuery = gql`
             ...ImageDetails
         }
     }
-`;
+`);
 
 function ImagePage() {
     const { imageId } = useParams();
-    const { data, error } = useQuery<
-        {
-            image: {
-                id: string;
-                name: {
-                    registry: string;
-                    remote: string;
-                    tag: string;
-                } | null;
-            } & ImageDetails;
-        },
-        {
-            id: string;
-        }
-    >(imageDetailsQuery, {
-        variables: { id: imageId },
-    });
+    const { data, error } = useQuery(imageDetailsQuery, { variables: { id: imageId } });
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const imageData = data && data.image;
