@@ -106,6 +106,15 @@ func (s *Select) Distinct() *Select {
 	return s
 }
 
+// Filter sets filter on the select field.
+func (s *Select) Filter(name string, q *v1.Query) *Select {
+	s.qs.Filter = &v1.QuerySelectFilter{
+		Name:  name,
+		Query: q,
+	}
+	return s
+}
+
 // Proto returns the select clause as *v1.QuerySelect.
 func (s *Select) Proto() *v1.QuerySelect {
 	return s.qs

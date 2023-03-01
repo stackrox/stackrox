@@ -106,8 +106,14 @@ message QueryField {
     bool   distinct       = 3;
 }
 
+message QuerySelectFilter {
+    string name = 1;
+    Query query = 2;
+}
+
 message QuerySelect {
     QueryField        field  = 1;
+    QuerySelectFilter filter = 2;
 }
 
 message QueryGroupBy {
