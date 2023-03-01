@@ -148,8 +148,8 @@ function WorkloadCvesImageSinglePage() {
                             spaceItems={{ default: 'spaceItemsXs' }}
                             className="pf-u-w-50"
                         >
-                            <Skeleton fontSize="2xl" />
-                            <Skeleton fontSize="sm" />
+                            <Skeleton screenreaderText="Loading image name" fontSize="2xl" />
+                            <Skeleton screenreaderText="Loading image metadata" fontSize="sm" />
                         </Flex>
                     )}
                 </PageSection>
