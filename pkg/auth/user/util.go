@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var utilLog = logging.LoggerForModule()
+var log = logging.LoggerForModule()
 
 // ConvertAttributes converts a map of user attributes to v1.UserAttribute
 func ConvertAttributes(attrMap map[string][]string) []*v1.UserAttribute {
@@ -42,37 +42,37 @@ type loggableAuthProvider struct {
 func protoToJSON(message proto.Message) string {
 	result, err := jsonutil.ProtoToJSON(message, jsonutil.OptCompact, jsonutil.OptUnEscape)
 	if err != nil {
-		utilLog.Error("Failed to convert proto to JSON: ", err)
+		log.Error("Failed to convert proto to JSON: ", err)
 		return ""
 	}
 	return result
 }
 
 // LogSuccessfulUserLogin logs user attributes in the specified logger instance.
-func LogSuccessfulUserLogin(log *logging.Logger, user *v1.AuthStatus) {
-	log.Warnw("User successfully logged in with user attributes", extractUserLogFields(user)...)
+func LogSuccessfulUserLogin(logger *logging.Logger, user *v1.AuthStatus) {
+	logger.Warnw("User successfully logged in with user attributes", extractUserLogFields(user)...)
 }
 
 // The reason this function returns []interface{} instead of []zap.Field
 // is because log.Warnw accepts ...interface{} and []zap.Field does not convert automatically
 // to []interface{}.
 func extractUserLogFields(user *v1.AuthStatus) []interface{} {
-	serviceIDStr := ""
-	permissionsStr := ""
+	serviceIDJSON := ""
+	permissionsJSON := ""
 	if user.GetServiceId() != nil {
-		serviceIDStr = protoToJSON(user.GetServiceId())
+		serviceIDJSON = protoToJSON(user.GetServiceId())
 	}
 	if user.GetUserInfo().GetPermissions() != nil {
-		permissionsStr = protoToJSON(user.GetUserInfo().GetPermissions())
+		permissionsJSON = protoToJSON(user.GetUserInfo().GetPermissions())
 	}
 	return []interface{}{
 		zap.String("userID", user.GetUserId()),
-		zap.String("serviceID", serviceIDStr),
+		zap.String("serviceID", serviceIDJSON),
 		zap.Any("expires", user.GetExpires()),
 		zap.String("username", user.GetUserInfo().GetUsername()),
 		zap.String("friendlyName", user.GetUserInfo().GetFriendlyName()),
 		zap.Any("roleNames", utils.RoleNamesFromUserInfo(user.GetUserInfo().GetRoles())),
-		zap.String("permissions", permissionsStr),
+		zap.String("permissions", permissionsJSON),
 		zap.Any("authProvider", &loggableAuthProvider{
 			ID:   user.GetAuthProvider().GetId(),
 			Type: user.GetAuthProvider().GetType(),
