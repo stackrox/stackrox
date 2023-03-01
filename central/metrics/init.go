@@ -35,5 +35,6 @@ func init() {
 		clusterMetricsCPUCapacityGaugeVec,
 		totalOrphanedPLOPCounter,
 		processQueueLengthGauge,
+		sensorEventsDeduperCounter,
 	)
 }
