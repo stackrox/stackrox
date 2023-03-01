@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -84,8 +85,11 @@ func NewClient(endpoint string) (*Client, error) {
 		},
 	}
 	httpClient := &http.Client{
-		Transport: &http.Transport{TLSClientConfig: tlsConf},
-		Timeout:   requestTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConf,
+			Proxy:           proxy.FromConfig(),
+		},
+		Timeout: requestTimeout,
 	}
 
 	return &Client{
