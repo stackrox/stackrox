@@ -1974,7 +1974,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def waitForDeploymentStart(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
-        Timer t = new Timer(30, 3)
+        Timer t = new Timer(60, 3)
         while (t.IsValid()) {
             log.debug "Waiting for ${deploymentName} to start"
             K8sDeployment d = null
