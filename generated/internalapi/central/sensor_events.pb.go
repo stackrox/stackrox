@@ -2297,6 +2297,7 @@ func (m *NetworkPoliciesResponse_Error) Clone() *NetworkPoliciesResponse_Error {
 
 type NetworkPoliciesResponse_Payload struct {
 	// Types that are valid to be assigned to Cmd:
+	//
 	//	*NetworkPoliciesResponse_Payload_Error
 	//
 	//	*NetworkPoliciesResponse_Payload_Apply
