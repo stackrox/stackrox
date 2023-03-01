@@ -219,7 +219,7 @@ func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
 }
 
 func (m *managerImpl) addBaseline(deploymentID string) {
-	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "AddBaseline")
 
 	// Simply use search to find the process indicators for the deployment
 	indicatorSlice, _ := m.processesDataStore.SearchRawProcessIndicators(
