@@ -9,5 +9,6 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message NotificationSchedule {
-    google.protobuf.Timestamp last_run = 1;
+    reserved 1; // id, future field
+    google.protobuf.Timestamp last_run = 2;
 }
