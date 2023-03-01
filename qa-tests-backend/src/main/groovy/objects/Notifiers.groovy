@@ -177,7 +177,7 @@ class GenericNotifier extends Notifier {
 }
 
 class SlackNotifier extends Notifier {
-    SlackNotifier(String integrationName = "Slack Test", String labelKey = "#slack-test") {
+    SlackNotifier(String integrationName = "Slack Test", String labelKey = "#acs-slack-integration-testing") {
         notifier = NotifierService.getSlackIntegrationConfig(integrationName, labelKey)
     }
 }
