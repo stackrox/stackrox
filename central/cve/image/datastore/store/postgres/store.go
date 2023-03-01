@@ -110,7 +110,7 @@ func insertIntoImageCves(ctx context.Context, batch *pgx.Batch, obj *storage.Ima
 	return nil
 }
 
-func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageCVE) error {
+func (s *storeImpl) copyFromImageCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.ImageCVE) error {
 
 	inputRows := [][]interface{}{}
 

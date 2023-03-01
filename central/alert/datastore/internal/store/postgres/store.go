@@ -131,7 +131,7 @@ func insertIntoAlerts(ctx context.Context, batch *pgx.Batch, obj *storage.Alert)
 	return nil
 }
 
-func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*storage.Alert) error {
+func (s *storeImpl) copyFromAlerts(ctx context.Context, tx *postgres.Tx, objs ...*storage.Alert) error {
 
 	inputRows := [][]interface{}{}
 

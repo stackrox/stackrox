@@ -105,7 +105,7 @@ func insertIntoProcessListeningOnPorts(ctx context.Context, batch *pgx.Batch, ob
 	return nil
 }
 
-func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessListeningOnPortStorage) error {
+func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx *postgres.Tx, objs ...*storage.ProcessListeningOnPortStorage) error {
 
 	inputRows := [][]interface{}{}
 

@@ -14,7 +14,6 @@ import (
     "strings"
     "time"
 
-    "github.com/jackc/pgx/v4"
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/pkg/errors"
     {{- if not $inMigration}}
@@ -78,7 +77,7 @@ func New(db *postgres.DB) Store {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
         return marshalErr

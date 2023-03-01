@@ -78,7 +78,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error
 	return nil
 }
 
-func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*storage.Policy) error {
+func (s *storeImpl) copyFromPolicies(ctx context.Context, tx *postgres.Tx, objs ...*storage.Policy) error {
 
 	inputRows := [][]interface{}{}
 

@@ -104,7 +104,7 @@ func insertIntoTestChild2(ctx context.Context, batch *pgx.Batch, obj *storage.Te
 	return nil
 }
 
-func (s *storeImpl) copyFromTestChild2(ctx context.Context, tx pgx.Tx, objs ...*storage.TestChild2) error {
+func (s *storeImpl) copyFromTestChild2(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestChild2) error {
 
 	inputRows := [][]interface{}{}
 

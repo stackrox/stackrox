@@ -114,7 +114,7 @@ func insertIntoProcessIndicators(ctx context.Context, batch *pgx.Batch, obj *sto
 	return nil
 }
 
-func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessIndicator) error {
+func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx *postgres.Tx, objs ...*storage.ProcessIndicator) error {
 
 	inputRows := [][]interface{}{}
 

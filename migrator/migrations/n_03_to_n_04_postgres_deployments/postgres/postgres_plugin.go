@@ -308,7 +308,7 @@ func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Bat
 	return nil
 }
 
-func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...*storage.Deployment) error {
+func (s *storeImpl) copyFromDeployments(ctx context.Context, tx *postgres.Tx, objs ...*storage.Deployment) error {
 
 	inputRows := [][]interface{}{}
 
@@ -448,7 +448,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx, deployments_Id string, objs ...*storage.Container) error {
+func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postgres.Tx, deployments_Id string, objs ...*storage.Container) error {
 
 	inputRows := [][]interface{}{}
 
@@ -561,7 +561,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
+func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *postgres.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
 
 	inputRows := [][]interface{}{}
 
@@ -624,7 +624,7 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx pg
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.Volume) error {
+func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx *postgres.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.Volume) error {
 
 	inputRows := [][]interface{}{}
 
@@ -695,7 +695,7 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.EmbeddedSecret) error {
+func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx *postgres.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.EmbeddedSecret) error {
 
 	inputRows := [][]interface{}{}
 
@@ -754,7 +754,7 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx pgx.Tx, deployments_Id string, objs ...*storage.PortConfig) error {
+func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.Tx, deployments_Id string, objs ...*storage.PortConfig) error {
 
 	inputRows := [][]interface{}{}
 
@@ -821,7 +821,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx pgx.Tx, dep
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_ports_idx int, objs ...*storage.PortConfig_ExposureInfo) error {
+func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, tx *postgres.Tx, deployments_Id string, deployments_ports_idx int, objs ...*storage.PortConfig_ExposureInfo) error {
 
 	inputRows := [][]interface{}{}
 

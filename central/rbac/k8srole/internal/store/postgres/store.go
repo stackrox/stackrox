@@ -109,7 +109,7 @@ func insertIntoK8sRoles(ctx context.Context, batch *pgx.Batch, obj *storage.K8SR
 	return nil
 }
 
-func (s *storeImpl) copyFromK8sRoles(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRole) error {
+func (s *storeImpl) copyFromK8sRoles(ctx context.Context, tx *postgres.Tx, objs ...*storage.K8SRole) error {
 
 	inputRows := [][]interface{}{}
 

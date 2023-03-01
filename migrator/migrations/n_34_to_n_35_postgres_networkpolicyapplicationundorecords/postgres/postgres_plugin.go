@@ -93,7 +93,7 @@ func insertIntoNetworkpolicyapplicationundorecords(ctx context.Context, batch *p
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkpolicyapplicationundorecords(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
+func (s *storeImpl) copyFromNetworkpolicyapplicationundorecords(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
 
 	inputRows := [][]interface{}{}
 

@@ -92,7 +92,7 @@ func insertIntoComplianceRunMetadata(ctx context.Context, batch *pgx.Batch, obj 
 	return nil
 }
 
-func (s *storeImpl) copyFromComplianceRunMetadata(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceRunMetadata) error {
+func (s *storeImpl) copyFromComplianceRunMetadata(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComplianceRunMetadata) error {
 
 	inputRows := [][]interface{}{}
 

@@ -132,7 +132,7 @@ func insertIntoRoleBindingsSubjects(ctx context.Context, batch *pgx.Batch, obj *
 	return nil
 }
 
-func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRoleBinding) error {
+func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx *postgres.Tx, objs ...*storage.K8SRoleBinding) error {
 
 	inputRows := [][]interface{}{}
 
@@ -237,7 +237,7 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ..
 	return err
 }
 
-func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, role_bindings_Id string, objs ...*storage.Subject) error {
+func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgres.Tx, role_bindings_Id string, objs ...*storage.Subject) error {
 
 	inputRows := [][]interface{}{}
 

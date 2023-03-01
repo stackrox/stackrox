@@ -4,7 +4,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/pkg/logging"
@@ -44,7 +43,7 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoSensorUpgradeConfigs(ctx context.Context, tx pgx.Tx, obj *storage.SensorUpgradeConfig) error {
+func insertIntoSensorUpgradeConfigs(ctx context.Context, tx *postgres.Tx, obj *storage.SensorUpgradeConfig) error {
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr

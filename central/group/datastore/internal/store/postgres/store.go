@@ -100,7 +100,7 @@ func insertIntoGroups(ctx context.Context, batch *pgx.Batch, obj *storage.Group)
 	return nil
 }
 
-func (s *storeImpl) copyFromGroups(ctx context.Context, tx pgx.Tx, objs ...*storage.Group) error {
+func (s *storeImpl) copyFromGroups(ctx context.Context, tx *postgres.Tx, objs ...*storage.Group) error {
 
 	inputRows := [][]interface{}{}
 
