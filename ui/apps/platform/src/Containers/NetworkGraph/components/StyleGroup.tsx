@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import * as React from 'react';
 import {
     DefaultGroup,
@@ -12,6 +11,8 @@ import {
 import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
+import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
+import { CustomGroupNodeData } from '../types/topology.type';
 
 const ICON_PADDING = 20;
 
@@ -40,7 +41,7 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
     const data = element.getData();
     const detailsLevel = useDetailsLevel();
 
-    const getTypeIcon = (dataType?: DataTypes): any => {
+    const getTypeIcon = (dataType?: DataTypes): React.ComponentClass<SVGIconProps> => {
         switch (dataType) {
             case DataTypes.Alternate:
                 return AlternateIcon;
@@ -71,7 +72,9 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
                 delete newData[key];
             }
         });
-        return newData;
+        // look into using `React.useMemo<CustomGroupNodeData>` instead of `as CustomGroupNodeData`
+        // https://www.freecodecamp.org/news/react-typescript-how-to-set-up-types-on-hooks/#set-types-on-usememo
+        return newData as CustomGroupNodeData;
     }, [data]);
 
     return (
