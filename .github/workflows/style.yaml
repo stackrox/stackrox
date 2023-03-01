@@ -35,6 +35,15 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
+      - name: Cache golangci-lint
+        uses: actions/cache@v3
+        with:
+          path: /github/home/.cache/golangci-lint
+          key: go-lint-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-lint-${{ hashFiles('**/go.sum') }}
+            go-lint-
+
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
       - name: Cache UI dependencies
