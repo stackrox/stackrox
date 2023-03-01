@@ -50,6 +50,21 @@ func (mr *MockDataStoreMockRecorder) GetBackupPlugins(ctx interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackupPlugins", reflect.TypeOf((*MockDataStore)(nil).GetBackupPlugins), ctx)
 }
 
+// GetDeclarativeConfigs mocks base method.
+func (m *MockDataStore) GetDeclarativeConfigs(ctx context.Context) ([]*storage.IntegrationHealth, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDeclarativeConfigs", ctx)
+	ret0, _ := ret[0].([]*storage.IntegrationHealth)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDeclarativeConfigs indicates an expected call of GetDeclarativeConfigs.
+func (mr *MockDataStoreMockRecorder) GetDeclarativeConfigs(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeclarativeConfigs", reflect.TypeOf((*MockDataStore)(nil).GetDeclarativeConfigs), ctx)
+}
+
 // GetIntegrationHealth mocks base method.
 func (m *MockDataStore) GetIntegrationHealth(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
 	m.ctrl.T.Helper()
