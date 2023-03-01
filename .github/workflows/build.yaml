@@ -386,7 +386,7 @@ jobs:
       run: make docker-build-main-image
 
     - name: Push to quay.io/rhacs-eng
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v4
       with:
         context: image/rhel
         push: true
@@ -498,7 +498,7 @@ jobs:
         password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
     - name: Push to quay.io/rhacs-eng
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v4
       with:
         context: integration-tests/mock-grpc-server/image
         push: true
