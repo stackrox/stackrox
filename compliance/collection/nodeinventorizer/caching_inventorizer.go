@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	backoffMultiplier = 1.5
+	backoffMultiplier = 2
 )
 
 // CachingScanner is an implementation of NodeInventorizer that keeps a local cache of results.
@@ -37,7 +37,7 @@ type CachingScanner struct {
 type inventoryWrap struct {
 	CacheValidUntil      time.Time     // CacheValidUntil indicates whether the cached inventory is fresh enough to use.
 	RetryBackoffDuration time.Duration // RetryBackoffDuration contains the duration a scan waits before its next iteration.
-	CachedInventory       *storage.NodeInventory
+	CachedInventory      *storage.NodeInventory
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
@@ -57,21 +57,21 @@ func NewCachingScanner(inventoryCachePath string, cacheDuration time.Duration, i
 func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	// check whether a cached inventory exists that has not exceeded its validity
 	cache := readInventoryWrap(c.inventoryCachePath)
-	if cache != nil && cache.Inventory != nil && cache.ValidUntil.After(time.Now()) {
-		log.Debugf("Using cached node scan (valid until %v)", cache.ValidUntil)
-		return cache.Inventory, nil
+	if cache != nil && cache.CachedInventory != nil && cache.CacheValidUntil.After(time.Now()) {
+		log.Debugf("Using cached node scan (valid until %v)", cache.CacheValidUntil)
+		return cache.CachedInventory, nil
 	}
 
 	// check for existing backoff, wait for specified duration if needed, then persist the new backoff duration
 	backoffDuration := c.initialBackoff
 	if cache != nil {
-		backoffDuration = c.validateBackoff(cache.BackoffDuration)
+		backoffDuration = c.validateBackoff(cache.RetryBackoffDuration)
 		log.Warnf("Found existing node scan backoff file - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
 		c.backoffWaitCallback(backoffDuration)
 	}
 
 	// Write backoff duration to cache
-	backoff := inventoryWrap{BackoffDuration: c.calcNextBackoff(backoffDuration)}
+	backoff := inventoryWrap{RetryBackoffDuration: c.calcNextBackoff(backoffDuration)}
 	if err := writeInventoryWrap(backoff, c.inventoryCachePath); err != nil {
 		return nil, errors.Wrap(err, " writing node scan backoff file")
 	}
@@ -84,11 +84,11 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 
 	// Write inventory to cache
 	cacheWrap := inventoryWrap{
-		ValidUntil:      time.Now().Add(c.cacheDuration),
-		BackoffDuration: 0,
-		Inventory:       newInventory,
+		CacheValidUntil:      time.Now().Add(c.cacheDuration),
+		RetryBackoffDuration: 0,
+		CachedInventory:      newInventory,
 	}
-	if err := writeInventoryWrap(inventory, c.inventoryCachePath); err != nil {
+	if err := writeInventoryWrap(cacheWrap, c.inventoryCachePath); err != nil {
 		return nil, errors.Wrap(err, "persisting inventory to cache")
 	}
 
@@ -96,7 +96,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 }
 
 func (c *CachingScanner) calcNextBackoff(currentBackoff time.Duration) time.Duration {
-	return validateBackoff(currentBackoff * backoffMultiplier)
+	return c.validateBackoff(currentBackoff * backoffMultiplier)
 }
 
 // validateBackoff ensures that a given duration does not exceed the max backoff setting

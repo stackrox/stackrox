@@ -106,9 +106,9 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
 	cs := *NewCachingScanner(fmt.Sprintf("%s/inventory-cache", s.T().TempDir()), cache, initial, maxBackoff, sleeper.mockWaitCallback)
 
 	w := inventoryWrap{
-		ValidUntil:      time.Time{},
-		BackoffDuration: 4000000000, // 4 seconds
-		Inventory:       nil,
+		CacheValidUntil:      time.Time{},
+		RetryBackoffDuration: 4000000000, // 4 seconds
+		CachedInventory:      nil,
 	}
 	jsonWrap, e := json.Marshal(&w)
 	s.NoError(e)
