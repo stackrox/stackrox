@@ -64,7 +64,7 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 			}
 			if panicErr != nil {
 				metrics.IncrementPipelinePanics(msg)
-				return errors.Wrap(err, "panic in pipeline execution")
+				return errors.Wrap(panicErr, "panic in pipeline execution")
 			}
 		}
 	}
