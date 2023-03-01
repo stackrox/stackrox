@@ -13,7 +13,6 @@ import {
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
-import { getIsDefaultRoleName } from 'constants/accessControl';
 import {
     PermissionSet,
     Role,
@@ -37,6 +36,7 @@ import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlNoPermission from '../AccessControlNoPermission';
 import usePermissions from '../../../hooks/usePermissions';
+import { isUserResource } from '../traits';
 
 const entityType = 'PERMISSION_SET';
 
@@ -244,7 +244,7 @@ function PermissionSets(): ReactElement {
                     />
                 ) : (
                     <PermissionSetForm
-                        isActionable={!permissionSet || !getIsDefaultRoleName(permissionSet.name)}
+                        isActionable={!permissionSet || isUserResource(permissionSet.traits)}
                         action={action}
                         permissionSet={
                             permissionSet

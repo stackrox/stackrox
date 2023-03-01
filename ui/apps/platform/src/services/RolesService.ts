@@ -1,3 +1,4 @@
+import { Traits } from 'types/traits.proto';
 import axios from './instance';
 import { Empty } from './types';
 
@@ -84,6 +85,7 @@ export type PermissionSet = {
     name: string;
     description: string;
     resourceToAccess: PermissionsMap;
+    traits?: Traits;
 };
 
 /*
