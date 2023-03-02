@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
@@ -66,6 +67,42 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.ImageSHA).
+			AggrFunc(aggregatefunc.Count).
+			Filter("images_with_critical_severity",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(search.ImageSHA).
+			AggrFunc(aggregatefunc.Count).
+			Filter("images_with_important_severity",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(search.ImageSHA).
+			AggrFunc(aggregatefunc.Count).
+			Filter("images_with_moderate_severity",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(search.ImageSHA).
+			AggrFunc(aggregatefunc.Count).
+			Filter("images_with_low_severity",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
 		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.ImageSHA).AggrFunc(aggregatefunc.Count).Proto(),
 		search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto(),

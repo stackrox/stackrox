@@ -20,7 +20,7 @@ func init() {
 		schema.AddType("ImageCVECore",
 			[]string{
 				"affectedImages: Int!",
-
+				"affectedImagesBySeverity: ResourceCountByCVESeverity",
 				"cve: String!",
 				"firstDiscoveredInSystem: Time",
 				"topCVSS: Float!",
@@ -94,16 +94,20 @@ func (resolver *imageCVECoreResolver) AffectedImages(_ context.Context) int32 {
 	return int32(resolver.data.GetAffectedImages())
 }
 
-func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
-	return resolver.data.GetCVE()
+func (resolver *imageCVECoreResolver) AffectedImagesBySeverity(ctx context.Context) (*resourceCountBySeverityResolver, error) {
+	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, resolver.data.GetImagesBySeverity(), nil)
 }
 
-func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
-	return float64(resolver.data.GetTopCVSS())
+func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
+	return resolver.data.GetCVE()
 }
 
 func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {
 	return &graphql.Time{
 		Time: resolver.data.GetFirstDiscoveredInSystem(),
 	}
+}
+
+func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
+	return float64(resolver.data.GetTopCVSS())
 }
