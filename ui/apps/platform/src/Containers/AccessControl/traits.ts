@@ -1,7 +1,7 @@
 import { Traits } from '../../types/traits.proto';
 
 export function isUserResource(traits?: Traits): boolean {
-    return traits == null || traits.origin === 'IMPERATIVE';
+    return traits == null || traits.origin == null || traits.origin === 'IMPERATIVE';
 }
 
 export const traitsOriginLabels = {
