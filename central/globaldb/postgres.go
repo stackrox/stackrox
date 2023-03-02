@@ -151,6 +151,7 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 		log.Errorf("error fetching object counts: %v", err)
 		return dbStats
 	}
+	defer rows.Close()
 
 	statsSlice := make([]*stats.TableStats, 0)
 
@@ -186,7 +187,6 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 		statsSlice = append(statsSlice, tableStat)
 	}
 
-	rows.Close()
 	if rows.Err() != nil {
 		log.Errorf("error getting complete table statistic information: %v", rows.Err())
 	}

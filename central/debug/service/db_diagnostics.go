@@ -54,6 +54,7 @@ func getPostgresExtensions(ctx context.Context, dbPool *postgres.DB) []dbExtensi
 		log.Errorf("error fetching Postgres extensions: %v", err)
 		return nil
 	}
+	defer rows.Close()
 
 	extSlice := make([]dbExtension, 0)
 
@@ -75,7 +76,6 @@ func getPostgresExtensions(ctx context.Context, dbPool *postgres.DB) []dbExtensi
 		extSlice = append(extSlice, dbExt)
 	}
 
-	rows.Close()
 	if rows.Err() != nil {
 		log.Errorf("error getting complete extension information: %v", rows.Err())
 	}
