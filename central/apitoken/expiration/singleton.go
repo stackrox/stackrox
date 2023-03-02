@@ -7,17 +7,16 @@ import (
 )
 
 var (
-	notifier Notifier
+	notifier TokenExpirationLoop
 	once     sync.Once
 )
 
-// Singleton ...
-func Singleton() Notifier {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
+// Singleton returns the global instance of the expiring API Token notifier loop
+func Singleton() TokenExpirationLoop {
 	once.Do(func() {
-		notifier = newExpirationNotifier(datastore.Singleton())
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			notifier = newExpirationNotifier(datastore.Singleton())
+		}
 	})
 	return notifier
 }

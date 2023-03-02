@@ -29,12 +29,15 @@ type apiTokenExpirationNotifierTestSuite struct {
 
 	datastore apiTokenDataStore.DataStore
 	notifier  *expirationNotifierImpl
+
+	ctx context.Context
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) SetupSuite() {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Notification of expired API tokens is only supported in Postgres mode.")
 	}
+	s.ctx = sac.WithAllAccess(context.Background())
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) SetupTest() {
@@ -77,12 +80,11 @@ func generateToken(now *time.Time,
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) TestSelectTokenAboutToExpire() {
-	ctx := sac.WithAllAccess(context.Background())
 	now := time.Now()
 	expiration := now.Add(2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
 	token := generateToken(&now, &expiration, false)
-	s.Require().NoError(s.datastore.AddToken(ctx, token))
+	s.Require().NoError(s.datastore.AddToken(s.ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
@@ -92,12 +94,11 @@ func (s *apiTokenExpirationNotifierTestSuite) TestSelectTokenAboutToExpire() {
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectTokenNotAboutToExpire() {
-	ctx := sac.WithAllAccess(context.Background())
 	now := time.Now()
 	expiration := now.Add(7 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
 	token := generateToken(&now, &expiration, false)
-	s.Require().NoError(s.datastore.AddToken(ctx, token))
+	s.Require().NoError(s.datastore.AddToken(s.ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
@@ -106,12 +107,11 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectTokenNotAboutToExpir
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectRevokedToken() {
-	ctx := sac.WithAllAccess(context.Background())
 	now := time.Now()
 	expiration := now.Add(2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
 	token := generateToken(&now, &expiration, true)
-	s.Require().NoError(s.datastore.AddToken(ctx, token))
+	s.Require().NoError(s.datastore.AddToken(s.ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
@@ -120,12 +120,11 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectRevokedToken() {
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectExpiredToken() {
-	ctx := sac.WithAllAccess(context.Background())
 	now := time.Now()
 	expiration := now.Add(-2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
 	token := generateToken(&now, &expiration, false)
-	s.Require().NoError(s.datastore.AddToken(ctx, token))
+	s.Require().NoError(s.datastore.AddToken(s.ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
