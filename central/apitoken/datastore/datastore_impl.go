@@ -167,16 +167,14 @@ func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*st
 
 func (b *datastoreImpl) GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error) {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		log.Warn("Tried to retrieve API Token notification schedule not on Postgres, ignoring.")
-		return nil, false, nil
+		return nil, false, fmt.Errorf("API Token notification schedule retrieval is only supported in postgres mode")
 	}
 	return b.scheduleStorage.Get(ctx)
 }
 
 func (b *datastoreImpl) UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		log.Warn("Tried to update API Token notification schedule not on Postgres, ignoring.")
-		return nil
+		return fmt.Errorf("API Token notification schedule update is only supported in postgres mode")
 	}
 	return b.scheduleStorage.Upsert(ctx, schedule)
 }
