@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -37,7 +36,7 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoNotificationSchedules(ctx context.Context, tx pgx.Tx, obj *storage.NotificationSchedule) error {
+func insertIntoNotificationSchedules(ctx context.Context, tx *postgres.Tx, obj *storage.NotificationSchedule) error {
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
