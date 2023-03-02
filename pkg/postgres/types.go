@@ -1,4 +1,4 @@
-package walker
+package postgres
 
 // DataType is the internal enum representation of the type
 type DataType string

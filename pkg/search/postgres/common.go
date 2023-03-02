@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
@@ -139,7 +140,7 @@ func (q *query) populatePrimaryKeySelectFields() {
 	pks := q.Schema.PrimaryKeys()
 	for idx := range pks {
 		pk := &pks[idx]
-		q.PrimaryKeyFields = append(q.PrimaryKeyFields, selectQueryField(pk.Search.FieldName, pk, false, UnsetAggrFunc))
+		q.PrimaryKeyFields = append(q.PrimaryKeyFields, selectQueryField(pk.Search.FieldName, pk, false, aggregatefunc.Unset))
 
 		if len(q.PrimaryKeyFields) == 0 {
 			return
@@ -303,26 +304,26 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QueryField, queryFields map[string]searchFieldMetadata) error {
+func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata) error {
 	if len(querySelects) == 0 {
 		return nil
 	}
 
 	for _, qs := range querySelects {
 		field := qs.GetField()
-		fieldMetadata := queryFields[field]
+		fieldMetadata := queryFields[field.GetName()]
 		dbField := fieldMetadata.baseField
 		if dbField == nil {
 			return errors.Errorf("field %s in select portion of query does not exist in table %s or connected tables", field, schema.Table)
 		}
 		// TODO(mandar): Add support for the following.
-		if dbField.DataType == walker.StringArray || dbField.DataType == walker.IntArray ||
-			dbField.DataType == walker.EnumArray || dbField.DataType == walker.Map {
+		if dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
+			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map {
 			return errors.Errorf("field %s in select portion of query is unsupported", field)
 		}
 
 		querySoFar.SelectedFields = append(querySoFar.SelectedFields,
-			selectQueryField(field, dbField, qs.Distinct, AggrFunc(qs.AggregateFunc)),
+			selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc())),
 		)
 	}
 	return nil
@@ -362,7 +363,7 @@ func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker
 			querySoFar.GroupByPrimaryKey = true
 		}
 
-		selectField := selectQueryField(groupByField, dbField, false, UnsetAggrFunc)
+		selectField := selectQueryField(groupByField, dbField, false, aggregatefunc.Unset)
 		selectField.FromGroupBy = true
 		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
 	}
@@ -374,7 +375,7 @@ func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
 	pks := schema.PrimaryKeys()
 	for idx := range pks {
 		pk := &pks[idx]
-		selectField := selectQueryField("", pk, false, UnsetAggrFunc)
+		selectField := selectQueryField("", pk, false, aggregatefunc.Unset)
 		selectField.FromGroupBy = true
 		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
 	}
@@ -397,7 +398,7 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
 				Field: pgsearch.SelectQueryField{
 					SelectPath: qualifyColumn(schema.Table, schema.ID().ColumnName, cast),
-					FieldType:  walker.String,
+					FieldType:  postgres.String,
 				},
 				Descending:  so.GetReversed(),
 				SearchAfter: so.GetSearchAfter(),
@@ -412,7 +413,7 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 
 		if fieldMetadata.derivedMetadata == nil {
 			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-				Field:       selectQueryField(so.GetField(), dbField, false, UnsetAggrFunc),
+				Field:       selectQueryField(so.GetField(), dbField, false, aggregatefunc.Unset),
 				Descending:  so.GetReversed(),
 				SearchAfter: so.GetSearchAfter(),
 			})
@@ -421,10 +422,10 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			var descending bool
 			switch fieldMetadata.derivedMetadata.DerivationType {
 			case searchPkg.CountDerivationType:
-				selectField = selectQueryField(so.GetField(), dbField, false, CountAggrFunc)
+				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Count)
 				descending = so.GetReversed()
 			case searchPkg.SimpleReverseSortDerivationType:
-				selectField = selectQueryField(so.GetField(), dbField, false, UnsetAggrFunc)
+				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Unset)
 				descending = !so.GetReversed()
 			default:
 				log.Errorf("Unsupported derived field %s found in query", so.GetField())
@@ -713,7 +714,7 @@ func valueFromStringPtrInterface(value interface{}) string {
 
 func standardizeFieldNamesInQuery(q *v1.Query) {
 	for idx, s := range q.GetSelects() {
-		q.Selects[idx].Field = strings.ToLower(s.GetField())
+		q.Selects[idx].Field.Name = strings.ToLower(s.GetField().GetName())
 	}
 
 	// Lowercase all field names in the query, for standardization.
@@ -1123,9 +1124,9 @@ func qualifyColumn(table, column, cast string) string {
 	return table + "." + column + cast
 }
 
-func selectQueryField(searchField string, field *walker.Field, selectDistinct bool, aggrFunc AggrFunc) pgsearch.SelectQueryField {
+func selectQueryField(searchField string, field *walker.Field, selectDistinct bool, aggrFunc aggregatefunc.AggrFunc) pgsearch.SelectQueryField {
 	var cast string
-	var dataType walker.DataType
+	var dataType postgres.DataType
 	if field.SQLType == "uuid" {
 		cast = "::text"
 	}
@@ -1134,9 +1135,9 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 	if selectDistinct {
 		selectPath = fmt.Sprintf("distinct(%s)", selectPath)
 	}
-	if aggrFunc != "" {
+	if aggrFunc != aggregatefunc.Unset {
 		selectPath = fmt.Sprintf("%s(%s)", aggrFunc, selectPath)
-		dataType = aggrFuncToDataType[AggrFunc(aggrFunc)]
+		dataType = aggrFunc.DataType()
 	}
 	if dataType == "" {
 		dataType = field.DataType
@@ -1145,6 +1146,6 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 		SelectPath:   selectPath,
 		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.String()), "_"),
 		FieldType:    dataType,
-		DerivedField: aggrFunc != "",
+		DerivedField: aggrFunc != aggregatefunc.Unset,
 	}
 }
