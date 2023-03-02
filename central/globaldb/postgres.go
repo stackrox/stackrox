@@ -187,8 +187,8 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 		statsSlice = append(statsSlice, tableStat)
 	}
 
-	if rows.Err() != nil {
-		log.Errorf("error getting complete table statistic information: %v", rows.Err())
+	if err := rows.Err(); err != nil {
+		log.Errorf("error getting complete table statistic information: %v", err)
 	}
 
 	dbStats.Tables = statsSlice

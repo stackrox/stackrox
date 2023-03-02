@@ -339,7 +339,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 	}
 
 	log.Debugf("Read returned %d flows", len(flows))
-	return flows, nil
+	return flows, rows.Err()
 }
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
@@ -420,7 +420,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 
-	return flows, lastUpdateTS, rows.Err()
+	return flows, lastUpdateTS, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
@@ -456,7 +456,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 		return nil, nil, err
 	}
 
-	return flows, lastUpdateTS, rows.Err()
+	return flows, lastUpdateTS, nil
 }
 
 // GetFlowsForDeployment returns the flows matching the deployment ID
@@ -482,7 +482,7 @@ func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, depl
 		return nil, err
 	}
 
-	return flows, rows.Err()
+	return flows, nil
 }
 
 func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlowProperties) error {
@@ -550,24 +550,22 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 	}
 	defer release()
 
-	rows, err := conn.Query(ctx, walkStmt, s.clusterID)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
 	// TODO(ROX-9921) Look at refactoring how these predicates work as an overall refactor of flows.
 	// This operation matches if the either the dest or src deployment no longer exists AND then
 	// if the last seen time is outside a time window.  Since we do not yet know what deployments exist
 	// in Postgres we cannot fully do this work in SQL.  Additionally, there may be issues with the synchronization
 	// of when flow is created vs a deployment deleted that may also make that problematic.
 	if keyMatchFn != nil {
+		rows, err := conn.Query(ctx, walkStmt, s.clusterID)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
 		// keyMatchFn is passed in to the readRows method in order to filter down to rows referencing
 		// deleted deployments.
 		deleteFlows, err := s.readRows(rows, keyMatchFn)
-
 		if err != nil {
-			return nil
+			return err
 		}
 
 		for _, flow := range deleteFlows {
@@ -594,7 +592,7 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 		}
 	}
 
-	return rows.Err()
+	return nil
 }
 
 // RemoveStaleFlows - remove stale duplicate network flows
