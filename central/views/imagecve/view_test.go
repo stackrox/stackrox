@@ -255,7 +255,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "with select",
 			q: search.NewQueryBuilder().
-				AddSelectFields(&v1.QueryField{Field: search.CVE.String()}).
+				AddSelectFields(search.NewQuerySelect(search.CVE)).
 				AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
 			expectedErr: "Unexpected select clause in query",
 		},

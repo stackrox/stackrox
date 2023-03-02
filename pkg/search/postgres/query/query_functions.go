@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -14,7 +15,7 @@ type queryAndFieldContext struct {
 	qualifiedColumnName string
 	field               *pkgSearch.Field
 	derivedMetadata     *walker.DerivedSearchField
-	sqlDataType         walker.DataType
+	sqlDataType         postgres.DataType
 
 	value          string
 	highlight      bool
@@ -34,7 +35,7 @@ func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClau
 
 	if ctx.highlight {
 		var cast string
-		if ctx.sqlDataType == walker.UUID {
+		if ctx.sqlDataType == postgres.UUID {
 			cast = "::text"
 		}
 		qe.SelectedFields = []SelectQueryField{{
@@ -54,22 +55,22 @@ func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClau
 
 type queryFunction func(ctx *queryAndFieldContext) (*QueryEntry, error)
 
-var datatypeToQueryFunc = map[walker.DataType]queryFunction{
-	walker.String:      newStringQuery,
-	walker.Bool:        newBoolQuery,
-	walker.StringArray: queryOnArray(newStringQuery, getStringArrayPostTransformFunc),
-	walker.DateTime:    newTimeQuery,
-	walker.Enum:        newEnumQuery,
-	walker.Integer:     newNumericQuery,
-	walker.BigInteger:  newNumericQuery,
-	walker.Numeric:     newNumericQuery,
-	walker.EnumArray:   queryOnArray(newEnumQuery, getEnumArrayPostTransformFunc),
-	walker.IntArray:    queryOnArray(newNumericQuery, getIntArrayPostTransformFunc),
-	walker.UUID:        newUUIDQuery,
+var datatypeToQueryFunc = map[postgres.DataType]queryFunction{
+	postgres.String:      newStringQuery,
+	postgres.Bool:        newBoolQuery,
+	postgres.StringArray: queryOnArray(newStringQuery, getStringArrayPostTransformFunc),
+	postgres.DateTime:    newTimeQuery,
+	postgres.Enum:        newEnumQuery,
+	postgres.Integer:     newNumericQuery,
+	postgres.BigInteger:  newNumericQuery,
+	postgres.Numeric:     newNumericQuery,
+	postgres.EnumArray:   queryOnArray(newEnumQuery, getEnumArrayPostTransformFunc),
+	postgres.IntArray:    queryOnArray(newNumericQuery, getIntArrayPostTransformFunc),
+	postgres.UUID:        newUUIDQuery,
 	// Map is handled separately.
 }
 
-func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field *pkgSearch.Field, derivedMetadata *walker.DerivedSearchField, value string, highlight bool, now time.Time) (*QueryEntry, error) {
+func matchFieldQuery(qualifiedColName string, sqlDataType postgres.DataType, field *pkgSearch.Field, derivedMetadata *walker.DerivedSearchField, value string, highlight bool, now time.Time) (*QueryEntry, error) {
 	ctx := &queryAndFieldContext{
 		qualifiedColumnName: qualifiedColName,
 		field:               field,
@@ -80,7 +81,7 @@ func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field
 		sqlDataType:         sqlDataType,
 	}
 
-	if sqlDataType == walker.Map {
+	if sqlDataType == postgres.Map {
 		return newMapQuery(ctx)
 	}
 
