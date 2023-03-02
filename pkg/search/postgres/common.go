@@ -14,6 +14,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -34,6 +36,8 @@ var (
 	log = logging.LoggerForModule()
 
 	emptyQueryErr = errox.InvalidArgs.New("empty query")
+
+	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
 )
 
 // QueryType describe what type of query to execute
@@ -1074,11 +1078,14 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 
 	queryStr := query.AsSQL()
 
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating transaction")
 	}
 	closer = func() {
+		defer cancel()
 		if err := tx.Commit(ctx); err != nil {
 			log.Errorf("error committing cursor transaction: %v", err)
 		}
