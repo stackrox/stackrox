@@ -278,7 +278,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 		}
 		idToCVEMap[msg.GetId()] = msg
 	}
-	return idToCVEMap, nil
+	return idToCVEMap, rows.Err()
 }
 
 func getClusterCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, cveType storage.CVE_CVEType, clusterIDs []string) (set.StringSet, error) {
@@ -298,7 +298,7 @@ func getClusterCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, cveType storage.
 		}
 		ids = append(ids, id)
 	}
-	return set.NewStringSet(ids...), nil
+	return set.NewStringSet(ids...), rows.Err()
 }
 
 func removeOrphanedImageCVEEdges(ctx context.Context, tx *postgres.Tx, orphanedEdgeIDs []string) error {
