@@ -427,7 +427,7 @@ webhookserver-build: build-prep
 .PHONY: syslog-build
 syslog-build:build-prep
 	@echo "+ $@"
-	CGO_ENABLED=0 $(GOBUILD) qa-tests-backend/test-images/syslog
+	CGO_ENABLED=0 $(GOBUILD) syslog
 
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: build-prep
@@ -638,9 +638,9 @@ webhookserver-image: webhookserver-build
 		-f webhookserver/Dockerfile webhookserver
 
 syslog-image: syslog-build
-	-mkdir qa-tests-backend/test-images/syslog/bin
-	cp bin/linux_$(GOARCH)/syslog qa-tests-backend/test-images/syslog/bin/syslog
-	chmod +w qa-tests-backend/test-images/syslog/bin/syslog
+	-mkdir syslog/bin
+	cp bin/linux_$(GOARCH)/syslog syslog/bin/syslog
+	chmod +w syslog/bin/syslog
 	docker build \
 		-t stackrox/syslog:1.0 \
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
