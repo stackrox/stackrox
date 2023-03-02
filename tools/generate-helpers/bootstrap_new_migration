@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 SCRIPT="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE[0]}")"
+SRC_ROOT="$(python3 -c 'import os, sys; print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(sys.argv[1])))))' "${BASH_SOURCE[0]}")"
 
-echo "$(dirname "${SCRIPT}")"
-GENERATION_ROOT="$(dirname $(dirname $(dirname "$script")))"
-echo go run "$(dirname "${SCRIPT}")/bootstrap-migration" --root "$GENERATION_ROOT" --description "$@"
-go run "$(dirname "${SCRIPT}")/bootstrap-migration" --root "$GENERATION_ROOT" --description "$@"
+echo "$(dirname "${SCRIPT}") $SRC_ROOT"
+echo go run "$(dirname "${SCRIPT}")/bootstrap-migration" --root "$SRC_ROOT" --description "$@"
+go run "$(dirname "${SCRIPT}")/bootstrap-migration" --root "$SRC_ROOT" --description "$@"
