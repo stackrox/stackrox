@@ -19,66 +19,52 @@ const (
 	fieldManager = "StackRox"
 )
 
-// Suspend suspends the cron job
-func Suspend(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func makePatch(deploymentInfo *central.DeploymentEnforcement, apiVersion string) ([]byte, metav1.PatchOptions, error) {
 	forcePatch := true
 
-	if ok, apiErr := utils.HasAPI(client, batchV1, kubernetesPkg.CronJob); ok && apiErr == nil {
-		patch := map[string]interface{}{
-			"metadata": map[string]interface{}{
-				"name": deploymentInfo.GetDeploymentName(),
-			},
-			"kind":       deploymentInfo.GetDeploymentType(),
-			"apiVersion": batchV1,
-			"spec": map[string]interface{}{
-				"suspend": true,
-			},
-		}
-		patchBytes, err := json.Marshal(patch)
-		if err != nil {
-			return err
-		}
+	patch := map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"name": deploymentInfo.GetDeploymentName(),
+		},
+		"kind":       deploymentInfo.GetDeploymentType(),
+		"apiVersion": apiVersion,
+		"spec": map[string]interface{}{
+			"suspend": true,
+		},
+	}
+	patchBytes, err := json.Marshal(patch)
+	if err != nil {
+		return nil, metav1.PatchOptions{}, err
+	}
 
+	options := metav1.PatchOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       deploymentInfo.GetDeploymentType(),
+			APIVersion: apiVersion,
+		},
+		FieldManager: fieldManager,
+		Force:        &forcePatch,
+	}
+
+	return patchBytes, options, nil
+}
+
+// Suspend suspends the cron job
+func Suspend(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+	if ok, apiErr := utils.HasAPI(client, batchV1, kubernetesPkg.CronJob); ok && apiErr == nil {
+		patchBytes, patchOptions, err := makePatch(deploymentInfo, batchV1)
 		_, err = client.BatchV1().CronJobs(deploymentInfo.GetNamespace()).Patch(ctx, deploymentInfo.GetDeploymentName(),
 			types.ApplyPatchType,
 			patchBytes,
-			metav1.PatchOptions{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       deploymentInfo.GetDeploymentType(),
-					APIVersion: batchV1,
-				},
-				FieldManager: fieldManager,
-				Force:        &forcePatch,
-			})
+			patchOptions)
 		if err != nil {
 			return retry.MakeRetryable(err)
 		}
 	} else {
-		patch := map[string]interface{}{
-			"metadata": map[string]interface{}{
-				"name": deploymentInfo.GetDeploymentName(),
-			},
-			"kind":       deploymentInfo.GetDeploymentType(),
-			"apiVersion": batchV1beta1,
-			"spec": map[string]interface{}{
-				"suspend": true,
-			},
-		}
-		patchBytes, err := json.Marshal(patch)
-		if err != nil {
-			return err
-		}
-
+		patchBytes, patchOptions, err := makePatch(deploymentInfo, batchV1beta1)
 		_, err = client.BatchV1beta1().CronJobs(deploymentInfo.GetNamespace()).Patch(ctx, deploymentInfo.GetDeploymentName(), types.ApplyPatchType,
 			patchBytes,
-			metav1.PatchOptions{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       deploymentInfo.GetDeploymentType(),
-					APIVersion: batchV1beta1,
-				},
-				FieldManager: fieldManager,
-				Force:        &forcePatch,
-			})
+			patchOptions)
 		if err != nil {
 			return retry.MakeRetryable(err)
 		}
