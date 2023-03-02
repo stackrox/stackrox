@@ -10,6 +10,7 @@ import { actions as authActions } from 'reducers/auth';
 import { AuthProvider, AuthProviderInfo, getIsAuthProviderImmutable } from 'services/AuthService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 // TODO import from where?
 const unselectedRowStyle = {};
@@ -59,16 +60,17 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
             <TableComposable variant="compact">
                 <Thead>
                     <Tr>
-                        <Th width={20}>Name</Th>
+                        <Th width={15}>Name</Th>
+                        <Th width={15}>Origin</Th>
                         <Th width={15}>Type</Th>
                         <Th width={20}>Minimum access role</Th>
-                        <Th width={35}>Assigned rules</Th>
+                        <Th width={25}>Assigned rules</Th>
                         <Th width={10} aria-label="Row actions" />
                     </Tr>
                 </Thead>
                 <Tbody>
                     {authProviders.map((authProvider) => {
-                        const { id, name, type, defaultRole, groups = [] } = authProvider;
+                        const { id, name, type, defaultRole, traits, groups = [] } = authProvider;
                         const typeLabel = getAuthProviderTypeLabel(type, availableProviderTypes);
                         const isImmutable = getIsAuthProviderImmutable(authProvider);
 
@@ -83,6 +85,9 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                         entityId={id}
                                         entityName={name}
                                     />
+                                </Td>
+                                <Td dataLabel="Origin">
+                                    <TraitsOriginLabel traits={traits} />
                                 </Td>
                                 <Td dataLabel="Type">{typeLabel}</Td>
                                 <Td dataLabel="Minimum access role">
