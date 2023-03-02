@@ -31,6 +31,8 @@ function CveStatusTabNavigation() {
             onSelect={handleTabClick}
             component={TabsComponent.nav}
             className="pf-u-pl-lg pf-u-background-color-100"
+            mountOnEnter
+            unmountOnExit
         >
             <Tab
                 eventKey={0}
@@ -47,20 +49,10 @@ function CveStatusTabNavigation() {
                     </Card>
                 </PageSection>
             </Tab>
-            <Tab
-                eventKey={1}
-                title={<TabTitleText>Deferrals</TabTitleText>}
-                href={observedCvesPath}
-                isDisabled
-            >
+            <Tab eventKey={1} title={<TabTitleText>Deferrals</TabTitleText>} isDisabled>
                 deferrals tbd
             </Tab>
-            <Tab
-                eventKey={2}
-                title={<TabTitleText>False Positives</TabTitleText>}
-                href={observedCvesPath}
-                isDisabled
-            >
+            <Tab eventKey={2} title={<TabTitleText>False Positives</TabTitleText>} isDisabled>
                 False-positives tbd
             </Tab>
         </Tabs>
