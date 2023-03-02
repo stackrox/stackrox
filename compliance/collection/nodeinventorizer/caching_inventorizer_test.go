@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,6 +19,12 @@ type mockSleeper struct {
 func (ms *mockSleeper) mockWaitCallback(d time.Duration) {
 	ms.receivedDuration = d
 	ms.callCount++
+}
+
+type mockScanner struct{}
+
+func (m mockScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
+	return &storage.NodeInventory{NodeName: nodeName}, nil
 }
 
 type TestComplianceCachingSuite struct {
@@ -37,34 +44,30 @@ func TestComplianceCaching(t *testing.T) {
 //	)
 //}
 
-func (s *TestComplianceCachingSuite) TestValidateBackoff() {
-	initial, _ := time.ParseDuration("2s")
-	cache := initial
-	maxBackoff, _ := time.ParseDuration("10s")
-	cs := *NewCachingScanner("", cache, initial, maxBackoff, func(time.Duration) {})
+func (s *TestComplianceCachingSuite) TestMin() {
+	initial := 2 * time.Second
+	maxBackoff := 10 * time.Second
 
-	currentBackoff := cs.validateBackoff(initial)
+	actual := min(initial, maxBackoff)
 
 	// On successful test, the duration must not be overwritten
-	s.Equal(initial, currentBackoff)
+	s.Equal(initial, actual)
 }
 
-func (s *TestComplianceCachingSuite) TestValidateBackoffMaxOnBigValue() {
+func (s *TestComplianceCachingSuite) TestMinMaxBackoff() {
 	initial, _ := time.ParseDuration("100h")
-	cache := initial
 	maxBackoff, _ := time.ParseDuration("10s")
-	cs := *NewCachingScanner("", cache, initial, maxBackoff, func(time.Duration) {})
 
-	currentBackoff := cs.validateBackoff(initial)
+	actual := min(initial, maxBackoff)
 
-	s.Equal(maxBackoff, currentBackoff)
+	s.Equal(maxBackoff, actual)
 }
 
 func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
 	initial, _ := time.ParseDuration("2s")
 	cache := initial
 	maxBackoff, _ := time.ParseDuration("10s")
-	cs := NewCachingScanner("", cache, initial, maxBackoff, func(time.Duration) {})
+	cs := *NewCachingScanner(mockScanner{}, "", cache, initial, maxBackoff, func(time.Duration) {})
 	expectedBackoff := initial * backoffMultiplier
 
 	newBackoff := cs.calcNextBackoff(initial)
@@ -76,7 +79,7 @@ func (s *TestComplianceCachingSuite) TestCalcNextBackoffUpperBoundary() {
 	initial, _ := time.ParseDuration("8s")
 	cache := initial
 	maxBackoff, _ := time.ParseDuration("10s")
-	cs := *NewCachingScanner("", cache, initial, maxBackoff, func(time.Duration) {})
+	cs := *NewCachingScanner(mockScanner{}, "", cache, initial, maxBackoff, func(time.Duration) {})
 
 	newBackoff := cs.calcNextBackoff(initial)
 
@@ -87,7 +90,8 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryWithoutResultCache(
 	initial, _ := time.ParseDuration("8s")
 	cache := initial
 	maxBackoff, _ := time.ParseDuration("10s")
-	cs := *NewCachingScanner(fmt.Sprintf("%s/inventory-cache", s.T().TempDir()), cache, initial, maxBackoff, func(time.Duration) {})
+	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
+	cs := *NewCachingScanner(mockScanner{}, inventoryCachePath, cache, initial, maxBackoff, func(time.Duration) {})
 	nodeName := "testme"
 
 	actual, e := cs.Scan(nodeName)
@@ -103,7 +107,8 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
 	initial, _ := time.ParseDuration("2s") // must be lower than BackoffDuration in file
 	cache := initial
 	maxBackoff, _ := time.ParseDuration("10s")
-	cs := *NewCachingScanner(fmt.Sprintf("%s/inventory-cache", s.T().TempDir()), cache, initial, maxBackoff, sleeper.mockWaitCallback)
+	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
+	cs := *NewCachingScanner(mockScanner{}, inventoryCachePath, cache, initial, maxBackoff, sleeper.mockWaitCallback)
 
 	w := inventoryWrap{
 		CacheValidUntil:      time.Time{},

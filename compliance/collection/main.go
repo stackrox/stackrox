@@ -40,11 +40,6 @@ var (
 	once sync.Once
 )
 
-// nodeInventorizer is the interface that defines the interface a node scanner must implement
-type nodeInventorizer interface {
-	Scan(nodeName string) (*storage.NodeInventory, error)
-}
-
 func getNode() string {
 	once.Do(func() {
 		node = os.Getenv(string(orchestrators.NodeName))
@@ -291,7 +286,9 @@ func main() {
 			scanner = &nodeinventorizer.FakeNodeInventorizer{}
 		} else {
 			log.Infof("Using NodeInventoryCollector")
+			analyzer := &nodeinventorizer.NodeAnalyzer{}
 			scanner = nodeinventorizer.NewCachingScanner(
+				analyzer,
 				"/cache/inventory-cache",
 				env.NodeScanCacheDuration.DurationSetting(),
 				env.NodeScanInitialBackoff.DurationSetting(),
