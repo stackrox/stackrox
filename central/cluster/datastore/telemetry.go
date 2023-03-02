@@ -30,13 +30,12 @@ func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 
 		cfg.Telemeter().Track("Secured Cluster Registered", props, telemeter.WithUserID(userID), groups)
 
-		client := telemeter.WithClient(cluster.GetId(), securedClusterClient)
-
-		// Add the secured cluster 'user' to the Tenant group:
-		cfg.Telemeter().Group(nil, client, groups)
-
-		// Update the secured cluster identity from its name:
-		cfg.Telemeter().Identify(makeClusterProperties(cluster), client, groups)
+		// Update the secured cluster identity from its name and add the secured
+		// cluster 'user' to the Tenant group:
+		cfg.Telemeter().Track("Secured Cluster Static Properties", nil,
+			telemeter.WithTraits(makeClusterProperties(cluster)),
+			telemeter.WithClient(cluster.GetId(), securedClusterClient),
+			groups)
 	}
 }
 
@@ -111,8 +110,8 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		opts := []telemeter.Option{
 			telemeter.WithClient(cluster.GetId(), securedClusterClient),
 			telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
+			telemeter.WithTraits(props),
 		}
-		cfg.Telemeter().Identify(props, opts...)
 		cfg.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
 	}
 }

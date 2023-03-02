@@ -111,7 +111,7 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	return t.clientID
 }
 
-func (t *segmentTelemeter) makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
+func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Context {
 	var ctx *segment.Context
 
 	if len(o.Groups) > 0 {
@@ -142,6 +142,13 @@ func (t *segmentTelemeter) makeDeviceContext(o *telemeter.CallOptions) *segment.
 		}
 		ctx.Device.Type += " Server"
 	}
+
+	if o.Traits != nil {
+		if ctx == nil {
+			ctx = &segment.Context{}
+		}
+		ctx.Traits = o.Traits
+	}
 	return ctx
 }
 
@@ -158,7 +165,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      traits,
-		Context:     t.makeDeviceContext(options),
+		Context:     t.makeContext(options),
 	}
 
 	for k, v := range props {
@@ -175,12 +182,12 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 	}
 
 	options := telemeter.ApplyOptions(opts)
-
+	dctx := t.makeContext(options)
 	group := segment.Group{
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      props,
-		Context:     t.makeDeviceContext(options),
+		Context:     dctx,
 	}
 
 	for _, ids := range options.Groups {
@@ -194,6 +201,15 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 
 		if err := t.client.Enqueue(group); err != nil {
 			log.Error("Cannot enqueue Segment group event: ", err)
+		}
+		if len(props) > 0 {
+			// Track the group properties update with the same device ID
+			// to ensure following events get the properties attached. This is
+			// due to Amplitude partioning by device ID.
+			t.client.Enqueue(segment.Track{
+				Event:   "Group Properties Updated",
+				Context: dctx,
+			})
 		}
 	}
 }
@@ -210,7 +226,7 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 		AnonymousId: t.getAnonymousID(options),
 		Event:       event,
 		Properties:  props,
-		Context:     t.makeDeviceContext(options),
+		Context:     t.makeContext(options),
 	}
 
 	if err := t.client.Enqueue(track); err != nil {
