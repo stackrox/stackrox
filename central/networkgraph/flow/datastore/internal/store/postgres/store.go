@@ -452,6 +452,9 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, pred)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return flows, lastUpdateTS, rows.Err()
 }
