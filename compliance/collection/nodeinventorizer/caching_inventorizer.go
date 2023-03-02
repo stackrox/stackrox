@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/jsonutil"
 )
 
 const (
@@ -31,7 +32,7 @@ type CachingScanner struct {
 type inventoryWrap struct {
 	CacheValidUntil      time.Time     // CacheValidUntil indicates whether the cached inventory is fresh enough to use.
 	RetryBackoffDuration time.Duration // RetryBackoffDuration contains the duration a scan waits before its next iteration.
-	CachedInventory      *storage.NodeInventory
+	CachedInventory      string        // serialized form of the cached inventory
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
@@ -51,16 +52,17 @@ func NewCachingScanner(analyzer NodeInventorizer, inventoryCachePath string, cac
 // Otherwise, a new scan guarded by a backoff is run by the injected analyzer.
 func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	// check whether a cached inventory exists that has not exceeded its validity
-	cache := readInventoryWrap(c.inventoryCachePath)
-	if cache != nil && cache.CachedInventory != nil && cache.CacheValidUntil.After(time.Now()) {
-		log.Debugf("Using cached node scan (valid until %v)", cache.CacheValidUntil)
-		return cache.CachedInventory, nil
+	cachedInv, validUntil := readCachedInventory(c.inventoryCachePath)
+	if cachedInv != nil && !validUntil.IsZero() && validUntil.After(time.Now()) {
+		log.Debugf("Using cached node scan (valid until %v)", validUntil)
+		return cachedInv, nil
 	}
 
 	// check for existing backoff, wait for specified duration if needed, then persist the new backoff duration
 	backoffDuration := c.initialBackoff
-	if cache != nil {
-		backoffDuration = min(cache.RetryBackoffDuration, c.maxBackoff)
+	cachedBackoff := readBackoff(c.inventoryCachePath)
+	if cachedBackoff > 0 {
+		backoffDuration = min(cachedBackoff, c.maxBackoff)
 		if backoffDuration > 0 {
 			log.Warnf("Found existing node scan backoff - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
 			c.backoffWaitCallback(backoffDuration)
@@ -69,8 +71,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	}
 
 	// Write backoff duration to cache
-	backoffWrap := inventoryWrap{RetryBackoffDuration: backoffDuration}
-	if err := writeInventoryWrap(backoffWrap, c.inventoryCachePath); err != nil {
+	if err := writeBackoff(backoffDuration, c.inventoryCachePath); err != nil {
 		return nil, errors.Wrap(err, " writing node scan backoff file")
 	}
 
@@ -82,12 +83,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	}
 
 	// Write inventory to cache
-	cacheWrap := inventoryWrap{
-		CacheValidUntil:      time.Now().Add(c.cacheDuration),
-		RetryBackoffDuration: 0,
-		CachedInventory:      newInventory,
-	}
-	if err := writeInventoryWrap(cacheWrap, c.inventoryCachePath); err != nil {
+	if err := writeCachedInventory(newInventory, time.Now().Add(c.cacheDuration), c.inventoryCachePath); err != nil {
 		return nil, errors.Wrap(err, "persisting inventory to cache")
 	}
 
@@ -98,12 +94,56 @@ func (c *CachingScanner) calcNextBackoff(currentBackoff time.Duration) time.Dura
 	return min(currentBackoff*backoffMultiplier, c.maxBackoff)
 }
 
-// min returns the smaller of two given time.Durations.
 func min(d1 time.Duration, d2 time.Duration) time.Duration {
 	if d1 > d2 {
 		return d2
 	}
 	return d1
+}
+
+func readBackoff(path string) time.Duration {
+	wrap := readInventoryWrap(path)
+	if wrap != nil {
+		return wrap.RetryBackoffDuration
+	}
+	return 0
+}
+
+func writeBackoff(backoff time.Duration, path string) error {
+	wrap := inventoryWrap{
+		CacheValidUntil:      time.Time{},
+		RetryBackoffDuration: backoff,
+		CachedInventory:      "",
+	}
+	return writeInventoryWrap(wrap, path)
+}
+
+func readCachedInventory(path string) (inventory *storage.NodeInventory, validUntil time.Time) {
+	wrap := readInventoryWrap(path)
+	if wrap == nil || wrap.CachedInventory == "" {
+		return nil, time.Time{}
+	}
+
+	var cachedInv storage.NodeInventory
+	if err := jsonutil.JSONToProto(wrap.CachedInventory, &cachedInv); err != nil {
+		log.Warnf("error reading node scan from cache")
+		return nil, time.Time{}
+	}
+	return &cachedInv, wrap.CacheValidUntil
+}
+
+func writeCachedInventory(inventory *storage.NodeInventory, validUntil time.Time, path string) error {
+	strInv, err := jsonutil.ProtoToJSON(inventory, jsonutil.OptUnEscape)
+	if err != nil {
+		return err
+	}
+
+	wrap := inventoryWrap{
+		CacheValidUntil:      validUntil,
+		RetryBackoffDuration: 0,
+		CachedInventory:      strInv,
+	}
+	return writeInventoryWrap(wrap, path)
 }
 
 func readInventoryWrap(path string) *inventoryWrap {

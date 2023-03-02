@@ -113,7 +113,7 @@ func (s *TestComplianceCachingSuite) TestTriggerNodeInventoryHonorBackoff() {
 	w := inventoryWrap{
 		CacheValidUntil:      time.Time{},
 		RetryBackoffDuration: 4000000000, // 4 seconds
-		CachedInventory:      nil,
+		CachedInventory:      "",
 	}
 	jsonWrap, e := json.Marshal(&w)
 	s.NoError(e)
