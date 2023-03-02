@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/conv"
 	"github.com/stackrox/rox/pkg/generic"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -79,7 +80,44 @@ type fieldValue struct {
 
 // Select defines the select field to be used with the query.
 type Select struct {
-	s *v1.QueryField
+	qs *v1.QuerySelect
+}
+
+// NewQuerySelect creates a new query select.
+func NewQuerySelect(field FieldLabel) *Select {
+	return &Select{
+		qs: &v1.QuerySelect{
+			Field: &v1.QueryField{
+				Name: field.String(),
+			},
+		},
+	}
+}
+
+// AggrFunc sets aggregate function to be applied on the select field.
+func (s *Select) AggrFunc(aggr aggregatefunc.AggrFunc) *Select {
+	s.qs.Field.AggregateFunc = aggr.String()
+	return s
+}
+
+// Distinct sets query select to distinct.
+func (s *Select) Distinct() *Select {
+	s.qs.Field.Distinct = true
+	return s
+}
+
+// Filter sets filter on the select field.
+func (s *Select) Filter(name string, q *v1.Query) *Select {
+	s.qs.Filter = &v1.QuerySelectFilter{
+		Name:  name,
+		Query: q,
+	}
+	return s
+}
+
+// Proto returns the select clause as *v1.QuerySelect.
+func (s *Select) Proto() *v1.QuerySelect {
+	return s.qs
 }
 
 // NewGroupBy creates a new *GroupBy object.
@@ -182,22 +220,14 @@ func NewQueryBuilder() *QueryBuilder {
 }
 
 // WithSelectFields sets fields to select.
-func (qb *QueryBuilder) WithSelectFields(fields ...*v1.QueryField) *QueryBuilder {
-	qs := make([]*Select, 0, len(fields))
-	for _, f := range fields {
-		qs = append(qs, &Select{s: f})
-	}
-	qb.selectFields = qs
+func (qb *QueryBuilder) WithSelectFields(selects ...*Select) *QueryBuilder {
+	qb.selectFields = selects
 	return qb
 }
 
 // AddSelectFields adds fields to select.
-func (qb *QueryBuilder) AddSelectFields(fields ...*v1.QueryField) *QueryBuilder {
-	qs := make([]*Select, 0, len(fields))
-	for _, f := range fields {
-		qs = append(qs, &Select{s: f})
-	}
-	qb.selectFields = append(qb.selectFields, qs...)
+func (qb *QueryBuilder) AddSelectFields(selects ...*Select) *QueryBuilder {
+	qb.selectFields = append(qb.selectFields, selects...)
 	return qb
 }
 
@@ -404,9 +434,9 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	// Sort the queries by field value, to ensure consistency of output.
 	fields := qb.getSortedFields()
 
-	var qSelects []*v1.QueryField
+	var qSelects []*v1.QuerySelect
 	for _, sf := range qb.selectFields {
-		qSelects = append(qSelects, sf.s)
+		qSelects = append(qSelects, sf.qs)
 	}
 
 	for _, field := range fields {

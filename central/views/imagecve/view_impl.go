@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -63,22 +64,11 @@ func validateQuery(q *v1.Query) error {
 
 func withSelectQuery(q *v1.Query) *v1.Query {
 	cloned := q.Clone()
-	cloned.Selects = []*v1.QueryField{
-		{
-			Field: search.CVE.String(),
-		},
-		{
-			Field:         search.CVSS.String(),
-			AggregateFunc: pgSearch.MaxAggrFunc.String(),
-		},
-		{
-			Field:         search.ImageSHA.String(),
-			AggregateFunc: pgSearch.CountAggrFunc.String(),
-		},
-		{
-			Field:         search.CVECreatedTime.String(),
-			AggregateFunc: pgSearch.MinAggrFunc.String(),
-		},
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.ImageSHA).AggrFunc(aggregatefunc.Count).Proto(),
+		search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
@@ -88,12 +78,8 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 
 func withCountQuery(q *v1.Query) *v1.Query {
 	cloned := q.Clone()
-	cloned.Selects = []*v1.QueryField{
-		{
-			Field:         search.CVE.String(),
-			AggregateFunc: pgSearch.CountAggrFunc.String(),
-			Distinct:      true,
-		},
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.CVE).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 	return cloned
 }

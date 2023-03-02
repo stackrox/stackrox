@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -78,13 +79,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 	})
 
 	query = pkgSearch.NewQueryBuilder().
-		AddSelectFields(
-			&v1.QueryField{
-				Field:         pkgSearch.AlertID.String(),
-				AggregateFunc: postgres.CountAggrFunc.String(),
-				Distinct:      true,
-			},
-		).
+		AddSelectFields(pkgSearch.NewQuerySelect(pkgSearch.AlertID).AggrFunc(aggregatefunc.Count).Distinct()).
 		AddGroupBy(pkgSearch.Severity).ProtoQuery()
 	b.Run("selectQuery", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

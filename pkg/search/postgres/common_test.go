@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -241,21 +242,13 @@ func TestSelectQueries(t *testing.T) {
 		{
 			desc: "base schema; select",
 			q: search.NewQueryBuilder().
-				AddSelectFields(
-					&v1.QueryField{
-						Field: search.DeploymentName.String(),
-					},
-				).ProtoQuery(),
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).ProtoQuery(),
 			expectedQuery: "select deployments.Name as deployment from deployments",
 		},
 		{
 			desc: "base schema; select w/ where",
 			q: search.NewQueryBuilder().
-				AddSelectFields(
-					&v1.QueryField{
-						Field: search.DeploymentName.String(),
-					},
-				).
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			expectedQuery: "select deployments.Name as deployment from deployments where deployments.Name = $1",
 		},
@@ -263,12 +256,8 @@ func TestSelectQueries(t *testing.T) {
 			desc: "child schema; multiple select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QueryField{
-						Field: search.Privileged.String(),
-					},
-					&v1.QueryField{
-						Field: search.ImageName.String(),
-					},
+					search.NewQuerySelect(search.Privileged),
+					search.NewQuerySelect(search.ImageName),
 				).
 				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
 			expectedQuery: "select deployments_containers.SecurityContext_Privileged as privileged, " +
@@ -281,12 +270,8 @@ func TestSelectQueries(t *testing.T) {
 			desc: "child schema; multiple select w/ where & group by",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QueryField{
-						Field: search.Privileged.String(),
-					},
-					&v1.QueryField{
-						Field: search.ImageName.String(),
-					},
+					search.NewQuerySelect(search.Privileged),
+					search.NewQuerySelect(search.ImageName),
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddGroupBy(search.Cluster, search.Namespace).ProtoQuery(),
@@ -302,12 +287,8 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema and child schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QueryField{
-						Field: search.DeploymentName.String(),
-					},
-					&v1.QueryField{
-						Field: search.ImageName.String(),
-					},
+					search.NewQuerySelect(search.DeploymentName),
+					search.NewQuerySelect(search.ImageName),
 				).ProtoQuery(),
 			expectedQuery: "select deployments.Name as deployment, deployments_containers.Image_Name_FullName as image " +
 				"from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id",
@@ -316,12 +297,8 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema and child schema conjunction query; select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QueryField{
-						Field: search.DeploymentName.String(),
-					},
-					&v1.QueryField{
-						Field: search.ImageName.String(),
-					},
+					search.NewQuerySelect(search.DeploymentName),
+					search.NewQuerySelect(search.ImageName),
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
@@ -334,11 +311,7 @@ func TestSelectQueries(t *testing.T) {
 			desc: "derived field select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QueryField{
-						Field:         search.DeploymentName.String(),
-						AggregateFunc: CountAggrFunc.String(),
-						Distinct:      true,
-					},
+					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
 				).ProtoQuery(),
 			expectedQuery: "select count(distinct(deployments.Name)) as deployment_count from deployments",
 		},
@@ -346,11 +319,7 @@ func TestSelectQueries(t *testing.T) {
 			desc: "derived field select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
-					&v1.QueryField{
-						Field:         search.DeploymentName.String(),
-						AggregateFunc: CountAggrFunc.String(),
-						Distinct:      true,
-					},
+					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
