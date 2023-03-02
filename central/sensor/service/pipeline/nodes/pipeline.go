@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -88,6 +89,15 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
 		node.ClusterName = clusterName
+	}
+
+	if reprocessor.SupportsNodeScanning(node) {
+		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
+			err = errors.Wrapf(err, "upserting node %s:%s into datastore", node.GetClusterName(), node.GetName())
+			log.Error(err)
+			return err
+		}
+		return nil
 	}
 
 	err = p.enricher.EnrichNode(node)
