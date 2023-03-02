@@ -96,6 +96,10 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 		return
 	}
 
+	// Skip if not activated
+	if !env.APITokenExpirationNotificationEnabled.BooleanSetting() {
+		return
+	}
 	now := time.Now()
 	aboutToExpireDate := now.Add(env.APITokenExpirationExpirationWindow.DurationSetting())
 	staleNotificationDate := now.Add(-env.APITokenExpirationStaleNotificationAge.DurationSetting())
