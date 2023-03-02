@@ -148,6 +148,9 @@ class Helpers {
             if (proc.exitValue() != 0) {
                 log.warn "Failed to scan the image. Exit: ${proc.exitValue()}\nStderr: $serr"
             }
+
+            // closing the FileWriter will ensure internal buffer is flushed to file
+            sout.close()
         }
         catch (Exception e) {
             log.error("Could not collect image details", e)
