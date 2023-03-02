@@ -207,7 +207,7 @@ func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v
 	if err != nil {
 		return nil, err
 	}
-	
+
 	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
