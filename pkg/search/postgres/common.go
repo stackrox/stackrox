@@ -333,7 +333,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 
 		// SQL constraint
 		if field.GetAggregateFunc() == aggregatefunc.Unset.String() {
-			return errors.New("FILTER clause can be applied to aggregate functions")
+			return errors.New("FILTER clause can only be applied to aggregate functions")
 		}
 
 		filter := qs.GetFilter()
