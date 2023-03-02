@@ -463,13 +463,13 @@ func removeOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	return nil
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
+func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, error) {
 	oldNode, found, err := s.GetNodeMetadata(ctx, node.GetId())
 	if err != nil {
-		return false, false, err
+		return false, err
 	}
 	if !found {
-		return true, true, nil
+		return true, nil
 	}
 
 	scanUpdated := false
@@ -488,21 +488,19 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bo
 		node.SetFixable = oldNode.GetSetFixable()
 		node.SetTopCvss = oldNode.GetSetTopCvss()
 	}
-	return true, scanUpdated, nil
+
+	return scanUpdated, nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	iTime := protoTypes.TimestampNow()
 
-	if !s.noUpdateTimestamps {
+	if !s.noUpdateTimestamps && obj.GetLastUpdated() == nil {
 		obj.LastUpdated = iTime
 	}
-	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+	scanUpdated, err := s.isUpdated(ctx, obj)
 	if err != nil {
 		return err
-	}
-	if !metadataUpdated && !scanUpdated {
-		return nil
 	}
 
 	nodeParts := getPartsAsSlice(common.Split(obj, scanUpdated))

@@ -84,10 +84,23 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	node = node.Clone()
+	node.LastUpdated = nil
 	node.ClusterId = clusterID
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
 		node.ClusterName = clusterName
+	}
+
+	if enricher.SupportsNodeScanning(node) {
+		// Call upsert without any components, only Node metadata. Upsert will read any
+		// components from the database before writing. Safe because NodeInventory and
+		// Node pipelines never run concurrently by the Sensor Event worker queues.
+		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
+			err = errors.Wrapf(err, "upserting node %s:%s into datastore", node.GetClusterName(), node.GetName())
+			log.Error(err)
+			return err
+		}
+		return nil
 	}
 
 	err = p.enricher.EnrichNode(node)

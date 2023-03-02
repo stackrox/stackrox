@@ -3,6 +3,7 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -220,4 +221,17 @@ func FillScanStats(n *storage.Node) {
 			FixableCves: numFixableVulns,
 		}
 	}
+}
+
+// nodeScanningOSImagePrefixes lists OsImages prefixes that supports full-host node scanning.
+var nodeScanningOSImagePrefixes = []string{"Red Hat Enterprise Linux CoreOS"}
+
+// SupportsNodeScanning returns if the provided node object supports full host node scanning.
+func SupportsNodeScanning(node *storage.Node) bool {
+	for _, osPrefix := range nodeScanningOSImagePrefixes {
+		if strings.HasPrefix(node.GetOsImage(), osPrefix) {
+			return true
+		}
+	}
+	return false
 }

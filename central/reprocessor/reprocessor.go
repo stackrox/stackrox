@@ -433,22 +433,32 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 func (l *loopImpl) reprocessNode(id string) bool {
 	node, exists, err := l.nodes.GetNode(allAccessCtx, id)
 	if err != nil {
-		log.Errorf("error fetching node %q from the database: %v", id, err)
+		log.Errorf("fetching node id %q from the database: %v", id, err)
 		return false
 	}
 	if !exists {
-		log.Warnf("node %q does not exist in the database. Skipping...", id)
+		log.Warnf("fetching node id %q from the database: node does not exist", id)
+		return false
+	}
+
+	if nodeEnricher.SupportsNodeScanning(node) {
+		log.Infof("node %s:%s (id: %s) does not need reprocessing (non-legacy node)",
+			node.GetClusterName(), node.GetName(), id)
+		// False signals there was no writes to the database and no actual reprocessing.
 		return false
 	}
 
 	err = l.nodeEnricher.EnrichNode(node)
 	if err != nil {
-		log.Errorf("error enriching node %s: %v", node.GetName(), err)
+		log.Errorf("enriching node %s:%s (id: %s): %v",
+			node.GetClusterName(), node.GetName(), id, err)
 		return false
 	}
-
+	// Force a new last update to be generated.
+	node.LastUpdated = nil
 	if err := l.risk.CalculateRiskAndUpsertNode(node); err != nil {
-		log.Errorf("error upserting node %q into datastore: %v", node.GetName(), err)
+		log.Errorf("upserting node %s:%s (id: %s): %v",
+			node.GetClusterName(), node.GetName(), id, err)
 		return false
 	}
 
