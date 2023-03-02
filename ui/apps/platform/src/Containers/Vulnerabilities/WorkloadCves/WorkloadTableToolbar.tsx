@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import {
     Toolbar,
     ToolbarItem,
@@ -6,108 +6,110 @@ import {
     ToolbarToggleGroup,
     ToolbarGroup,
     ToolbarContent,
-    SearchInput,
-    Select,
-    SelectOption,
 } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
-import { FixableStatus, VulnerabilitySeverityLabel } from './types';
 
-type Resource = 'CVE' | 'Image' | 'Deployment' | 'Namespace' | 'Cluster';
-type TableFilters = {
-    resource: Resource;
-    cveSeverity: VulnerabilitySeverityLabel[];
-    cveStatus: FixableStatus[];
+import useURLSearch from 'hooks/useURLSearch';
+import { uniq } from 'lodash';
+import { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from './types';
+import FilterResourceDropdown, { Resource } from './FilterResourceDropdown';
+import FilterAutocompleteInput from './FilterAutocompleteInput';
+import CVESeverityDropdown from './CVESeverityDropdown';
+import CVEStatusDropdown from './CVEStatusDropdown';
+
+// type TableFilters = {
+//     resource: Resource;
+//     cveSeverity: VulnerabilitySeverityLabel[];
+//     cveStatus: FixableStatus[];
+// };
+
+type FilterType = 'resource' | 'Severity' | 'Fixable';
+
+type WorkloadTableToolbarProps = {
+    defaultFilters: DefaultFilters;
+    resourceContext?: Resource;
 };
-type FilterType = 'resource' | 'cveSeverity' | 'cveStatus';
 
-function WorkloadTableToolbar() {
-    const [resourceIsOpen, setResourceIsOpen] = useState(false);
-    const [inputValue, setInputValue] = useState('');
-    const [cveSeverityIsOpen, setCveSeverityIsOpen] = useState(false);
-    const [cveStatusIsOpen, setCveStatusIsOpen] = useState(false);
-    const [filters, setFilters] = useState<TableFilters>({
-        resource: 'CVE',
-        cveSeverity: [],
-        cveStatus: [],
-    });
-
-    function onResourceToggle(isOpen: boolean) {
-        setResourceIsOpen(isOpen);
-    }
-
-    function onInputChange(newValue: string) {
-        setInputValue(newValue);
-    }
-
-    function onCveSeverityToggle(isOpen: boolean) {
-        setCveSeverityIsOpen(isOpen);
-    }
-
-    function onCveStatusToggle(isOpen: boolean) {
-        setCveStatusIsOpen(isOpen);
-    }
+function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTableToolbarProps) {
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     function onSelect(type: FilterType, e, selection) {
         if (type === 'resource') {
-            setFilters((prevFilters) => {
-                return { ...prevFilters, resource: selection };
+            setSearchFilter({
+                ...searchFilter,
+                resource: selection,
             });
         } else {
             const { checked } = e.target as HTMLInputElement;
-            setFilters((prevFilters) => {
-                const prevSelections = prevFilters[type];
-                return {
-                    ...prevFilters,
+            if (searchFilter[type]?.length > 0) {
+                setSearchFilter({
+                    ...searchFilter,
                     [type]: checked
-                        ? [...prevSelections, selection]
-                        : prevSelections.filter((value) => value !== selection),
-                };
-            });
+                        ? [...searchFilter[type], selection]
+                        : searchFilter[type]?.filter((value) => value !== selection),
+                });
+            } else {
+                setSearchFilter({
+                    ...searchFilter,
+                    [type]: checked
+                        ? [selection]
+                        : searchFilter[type]?.filter((value) => value !== selection),
+                });
+            }
         }
     }
 
-    function onResourceSelect(e, selection) {
-        onSelect('resource', e, selection);
-    }
-
-    function onCveSeveritySelect(e, selection) {
-        onSelect('cveSeverity', e, selection);
-    }
-
-    function onCveStatusSelect(e, selection) {
-        onSelect('cveStatus', e, selection);
-    }
-
     function onDelete(type: FilterType, id: string) {
-        if (type === 'cveSeverity') {
-            setFilters((prevFilters) => ({
-                ...prevFilters,
-                cveSeverity: filters.cveSeverity.filter((fil: string) => fil !== id),
-            }));
-        } else if (type === 'cveStatus') {
-            setFilters((prevFilters) => ({
-                ...prevFilters,
-                cveStatus: filters.cveStatus.filter((fil: string) => fil !== id),
-            }));
+        if (type === 'Severity') {
+            setSearchFilter({
+                ...searchFilter,
+                Severity: searchFilter.Severity?.filter((fil: string) => fil !== id),
+            });
+        } else if (type === 'Fixable') {
+            setSearchFilter({
+                ...searchFilter,
+                Fixable: searchFilter.Fixable?.filter((fil: string) => fil !== id),
+            });
         }
     }
 
     function onDeleteGroup(type: FilterType) {
-        if (type === 'cveSeverity') {
-            setFilters((prevFilters) => ({ ...prevFilters, cveSeverity: [] }));
-        } else if (type === 'cveStatus') {
-            setFilters((prevFilters) => ({ ...prevFilters, cveStatus: [] }));
+        if (type === 'Severity') {
+            const { Severity, ...remainingSearchFilter } = searchFilter;
+            setSearchFilter({
+                ...remainingSearchFilter,
+            });
+        } else if (type === 'Fixable') {
+            const { Fixable, ...remainingSearchFilter } = searchFilter;
+            setSearchFilter({
+                ...remainingSearchFilter,
+            });
         }
     }
 
     function onDeleteAll() {
-        setFilters((prevFilters) => ({
-            ...prevFilters,
-            cveSeverity: [],
-            cveStatus: [],
-        }));
+        const { Severity, Fixable, ...remainingSearchFilter } = searchFilter;
+        setSearchFilter({
+            ...remainingSearchFilter,
+        });
     }
+
+    useEffect(() => {
+        const { Severity: searchSeverity, Fixable: searchFixable } = searchFilter;
+        const { Severity: defaultSeverity, Fixable: defaultFixable } = defaultFilters;
+        const severityFilter = searchSeverity
+            ? uniq([...defaultSeverity, ...searchSeverity])
+            : defaultSeverity;
+        const fixableFilter = searchFixable
+            ? uniq([...defaultFixable, ...searchFixable])
+            : defaultFixable;
+        setSearchFilter({
+            ...defaultFilters,
+            ...searchFilter,
+            Severity: severityFilter,
+            Fixable: fixableFilter,
+        });
+    }, [defaultFilters, setSearchFilter]);
 
     return (
         <Toolbar
@@ -116,82 +118,46 @@ function WorkloadTableToolbar() {
             clearAllFilters={onDeleteAll}
         >
             <ToolbarContent>
-                <ToolbarToggleGroup toggleIcon={<FilterIcon />} breakpoint="xl">
-                    <ToolbarGroup variant="filter-group">
+                <ToolbarToggleGroup
+                    toggleIcon={<FilterIcon />}
+                    breakpoint="xl"
+                    className="pf-u-w-100"
+                >
+                    <ToolbarGroup variant="filter-group" className="pf-u-w-100">
                         <ToolbarItem>
-                            <Select
-                                variant="single"
-                                aria-label="resource"
-                                onToggle={onResourceToggle}
-                                onSelect={onResourceSelect}
-                                selections={filters.resource}
-                                isOpen={resourceIsOpen}
-                            >
-                                <SelectOption key="CVE" value="CVE" />
-                                <SelectOption key="Image" value="Image" />
-                                <SelectOption key="Deployment" value="Deployment" />
-                                <SelectOption key="Namespace" value="Namespace" />
-                                <SelectOption key="Cluster" value="Cluster" />
-                            </Select>
+                            <FilterResourceDropdown
+                                onSelect={onSelect}
+                                searchFilter={searchFilter}
+                                resourceContext={resourceContext}
+                            />
                         </ToolbarItem>
-                        <ToolbarItem variant="search-filter">
-                            <SearchInput
-                                aria-label="filter by CVE ID"
-                                onChange={(e, value) => {
-                                    onInputChange(value);
-                                }}
-                                value={inputValue}
-                                onClear={() => {
-                                    onInputChange('');
-                                }}
-                                placeholder="Filter by CVE ID"
+                        <ToolbarItem variant="search-filter" className="pf-u-w-100">
+                            <FilterAutocompleteInput
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
                             />
                         </ToolbarItem>
                     </ToolbarGroup>
                     <ToolbarGroup>
                         <ToolbarFilter
-                            chips={filters.cveSeverity}
+                            chips={searchFilter.Severity as string[]}
                             deleteChip={(category, chip) =>
                                 onDelete(category as FilterType, chip as string)
                             }
                             deleteChipGroup={(category) => onDeleteGroup(category as FilterType)}
-                            categoryName="CVE severity"
+                            categoryName="Severity"
                         >
-                            <Select
-                                variant="checkbox"
-                                aria-label="cve-severity"
-                                onToggle={onCveSeverityToggle}
-                                onSelect={onCveSeveritySelect}
-                                selections={filters.cveSeverity}
-                                isOpen={cveSeverityIsOpen}
-                                placeholderText="CVE severity"
-                            >
-                                <SelectOption key="Critical" value="Critical" />
-                                <SelectOption key="Important" value="Important" />
-                                <SelectOption key="Moderate" value="Moderate" />
-                                <SelectOption key="Low" value="Low" />
-                            </Select>
+                            <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
                         </ToolbarFilter>
                         <ToolbarFilter
-                            chips={filters.cveStatus}
+                            chips={searchFilter.Fixable as string[]}
                             deleteChip={(category, chip) =>
                                 onDelete(category as FilterType, chip as string)
                             }
                             deleteChipGroup={(category) => onDeleteGroup(category as FilterType)}
-                            categoryName="CVE status"
+                            categoryName="Fixable"
                         >
-                            <Select
-                                variant="checkbox"
-                                aria-label="cve-status"
-                                onToggle={onCveStatusToggle}
-                                onSelect={onCveStatusSelect}
-                                selections={filters.cveStatus}
-                                isOpen={cveStatusIsOpen}
-                                placeholderText="CVE status"
-                            >
-                                <SelectOption key="Fixable" value="Fixable" />
-                                <SelectOption key="Important" value="Not fixable" />
-                            </Select>
+                            <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
                         </ToolbarFilter>
                     </ToolbarGroup>
                 </ToolbarToggleGroup>

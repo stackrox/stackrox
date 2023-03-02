@@ -14,11 +14,16 @@ import { getQueryString } from 'utils/queryStringUtils';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import EntityTypeToggleGroup from './EntityTypeToggleGroup';
 import { WorkloadCvesSearch } from './searchUtils';
+import { DefaultFilters } from './types';
 
 const observedCvesQueryString = getQueryString<WorkloadCvesSearch>({ cveStatusTab: 'Observed' });
 const observedCvesPath = `${vulnerabilitiesWorkloadCvesPath}${observedCvesQueryString}`;
 
-function CveStatusTabNavigation() {
+type CveStatusTabNavigationProps = {
+    defaultFilters: DefaultFilters;
+};
+
+function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps) {
     const [activeTabKey, setActiveTabKey] = useState(0);
 
     function handleTabClick(e, tabIndex) {
@@ -42,7 +47,7 @@ function CveStatusTabNavigation() {
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
-                            <WorkloadTableToolbar />
+                            <WorkloadTableToolbar defaultFilters={defaultFilters} />
                             <EntityTypeToggleGroup />
                             cve overview table here
                         </CardBody>
