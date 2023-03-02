@@ -114,6 +114,7 @@ func collectFields(q *v1.Query) set.StringSet {
 	}
 	for _, selectField := range q.GetSelects() {
 		collectedFields.Add(selectField.GetField().GetName())
+		collectedFields.AddAll(collectFields(selectField.GetFilter().GetQuery()).AsSlice()...)
 	}
 	for _, groupByField := range q.GetGroupBy().GetFields() {
 		collectedFields.Add(groupByField)

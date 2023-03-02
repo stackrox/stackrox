@@ -305,6 +305,17 @@ type DerivedStruct6 struct {
 	TestNestedString      string   `db:"test_nested_string"`
 }
 
+type DerivedStruct7 struct {
+	TestStringCountWithEnum1 int `db:"test_string_affected_by_enum1"`
+	TestStringCountWithEnum2 int `db:"test_string_affected_by_enum2"`
+}
+
+type DerivedStruct8 struct {
+	TestStringAffectedByEnum1 int  `db:"test_string_affected_by_enum1"`
+	TestStringAffectedByEnum2 int  `db:"test_string_affected_by_enum2"`
+	TestBool                  bool `db:"test_bool"`
+}
+
 func TestSelectDerivedFieldQuery(t *testing.T) {
 	t.Parallel()
 
@@ -544,6 +555,62 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			},
 		},
 		{
+			desc: "select derived w/ filter",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum1",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestMultiKeyStruct_ENUM1.String()).ProtoQuery(),
+						),
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum2",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestMultiKeyStruct_ENUM2.String()).ProtoQuery(),
+						),
+				).ProtoQuery(),
+			resultStruct: DerivedStruct7{},
+			expectedQuery: "select count(test_multi_key_structs.Key1) filter (where (test_multi_key_structs.Enum = $1)) as test_string_affected_by_enum1, " +
+				"count(test_multi_key_structs.Key1) filter (where (test_multi_key_structs.Enum = $2)) as test_string_affected_by_enum2 " +
+				"from test_multi_key_structs",
+			expectedResult: []*DerivedStruct7{
+				{2, 2},
+			},
+		},
+		{
+			desc: "select derived w/ filter and group by",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum1",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestMultiKeyStruct_ENUM1.String()).ProtoQuery(),
+						),
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum2",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestMultiKeyStruct_ENUM2.String()).ProtoQuery(),
+						),
+				).AddGroupBy(search.TestBool).ProtoQuery(),
+			resultStruct: DerivedStruct8{},
+			expectedQuery: "select count(test_multi_key_structs.Key1) filter (where (test_multi_key_structs.Enum = $1)) as test_string_affected_by_enum1, " +
+				"count(test_multi_key_structs.Key1) filter (where (test_multi_key_structs.Enum = $2)) as test_string_affected_by_enum2, " +
+				"test_multi_key_structs.Bool as test_bool from test_multi_key_structs " +
+				"group by test_multi_key_structs.Bool",
+			expectedResult: []*DerivedStruct8{
+				{1, 1, false},
+				{1, 1, true},
+			},
+		},
+		{
 			desc: "nil query",
 			q:    nil,
 		},
@@ -638,6 +705,10 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct5](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct6:
 		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct6](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
+	case DerivedStruct7:
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct7](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
+	case DerivedStruct8:
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct8](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
 	}
 	if tc.expectedError != "" {
 		assert.Error(t, err, tc.expectedError)
