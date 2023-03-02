@@ -75,14 +75,14 @@ func (d *DB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 // Query wraps pgxpool.Pool Query
 func (d *DB) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
-	defer cancel()
 
 	rows, err := d.Pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}
 	return &Rows{
-		Rows: rows,
+		cancelFunc: cancel,
+		Rows:       rows,
 	}, nil
 }
 
@@ -96,9 +96,6 @@ func (d *DB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 
 // Acquire wraps pgxpool.Acquire
 func (d *DB) Acquire(ctx context.Context) (*Conn, error) {
-	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
-	defer cancel()
-
 	conn, err := d.Pool.Acquire(ctx)
 	if err != nil {
 		return nil, err
