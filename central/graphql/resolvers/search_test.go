@@ -176,7 +176,7 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 		{
 			desc: "Autocomplete on unsupported option",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Deployment:d1"),
+				Query:      "Deployment:d1",
 				Categories: &[]string{"SUBJECTS"},
 			},
 			expected: []string{},
