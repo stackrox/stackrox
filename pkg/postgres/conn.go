@@ -37,11 +37,18 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (pgcon
 }
 
 // Query wraps pgxpool.Conn Query
-func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
-	defer cancel()
 
-	return c.Conn.Query(ctx, sql, args...)
+	rows, err := c.Conn.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Rows{
+		Rows:       rows,
+		cancelFunc: cancel,
+	}, nil
 }
 
 // QueryRow wraps pgxpool.Conn QueryRow
