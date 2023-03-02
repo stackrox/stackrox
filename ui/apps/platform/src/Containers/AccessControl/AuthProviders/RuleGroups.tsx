@@ -7,6 +7,7 @@ import { ArrowRightIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-ico
 import { Group } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
+import { isUserResource } from '../traits';
 
 export type RuleGroupErrors = {
     roleName?: string;
@@ -64,7 +65,8 @@ function RuleGroups({
                 'props' in group &&
                 'traits' in group.props &&
                 group?.props?.traits != null &&
-                group?.props?.traits?.mutabilityMode !== 'ALLOW_MUTATE')
+                (group?.props?.traits?.mutabilityMode !== 'ALLOW_MUTATE' ||
+                    !isUserResource(group?.props?.traits)))
         );
     }
 

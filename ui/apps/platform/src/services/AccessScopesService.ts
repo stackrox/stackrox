@@ -1,5 +1,6 @@
 import axios from './instance';
 import { Empty } from './types';
+import { Traits } from '../types/traits.proto';
 
 const accessScopessUrl = '/v1/simpleaccessscopes';
 
@@ -14,6 +15,8 @@ export const defaultAccessScopeIds = {
     DenyAllPostgres: 'ffffffff-ffff-fff4-f5ff-fffffffffffe',
 };
 
+// The only remaining usage of this function is in ResourceScopeSelection.tsx file,
+// which will be deleted when Collections supersede Access Scopes in Vulnerability Reporting.
 export function getIsDefaultAccessScopeId(id: string): boolean {
     return Object.values(defaultAccessScopeIds).includes(id);
 }
@@ -61,6 +64,7 @@ export type AccessScope = {
     name: string;
     description: string;
     rules: SimpleAccessScopeRules;
+    traits?: Traits;
 };
 
 export const accessScopeNew: AccessScope = {

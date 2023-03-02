@@ -13,7 +13,6 @@ import {
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
-import { getIsDefaultRoleName } from 'constants/accessControl';
 import {
     AccessScope,
     fetchAccessScopes,
@@ -43,6 +42,7 @@ import AccessControlHeading from '../AccessControlHeading';
 import usePermissions from '../../../hooks/usePermissions';
 import AccessControlNoPermission from '../AccessControlNoPermission';
 import useFeatureFlags from '../../../hooks/useFeatureFlags';
+import { isUserResource } from '../traits';
 
 const entityType = 'ROLE';
 
@@ -305,7 +305,7 @@ function Roles(): ReactElement {
                     />
                 ) : (
                     <RoleForm
-                        isActionable={!role || !getIsDefaultRoleName(role.name)}
+                        isActionable={!role || isUserResource(role.traits)}
                         action={action}
                         role={role ?? roleNew}
                         roles={roles}

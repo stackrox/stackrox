@@ -26,6 +26,7 @@ import PermissionSetsTable from './PermissionSetsTable';
 
 import './RoleForm.css';
 import usePermissions from '../../../hooks/usePermissions';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type RoleFormProps = {
     isActionable: boolean;
@@ -118,6 +119,11 @@ function RoleForm({
                             {action === 'create' ? 'Create role' : role.name}
                         </Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={role.traits} />
+                        </ToolbarItem>
+                    )}
                     {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>

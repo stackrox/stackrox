@@ -17,7 +17,6 @@ import {
     accessScopeNew,
     createAccessScope,
     deleteAccessScope,
-    getIsDefaultAccessScopeId,
     fetchAccessScopes,
     updateAccessScope,
 } from 'services/AccessScopesService';
@@ -36,6 +35,7 @@ import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlNoPermission from '../AccessControlNoPermission';
 import usePermissions from '../../../hooks/usePermissions';
+import { isUserResource } from '../traits';
 
 const entityType = 'ACCESS_SCOPE';
 
@@ -215,7 +215,7 @@ function AccessScopes(): ReactElement {
                     />
                 ) : (
                     <AccessScopeFormWrapper
-                        isActionable={!accessScope || !getIsDefaultAccessScopeId(entityId)}
+                        isActionable={!accessScope || isUserResource(accessScope.traits)}
                         action={action}
                         accessScope={accessScope ?? accessScopeNew}
                         accessScopes={accessScopes}
