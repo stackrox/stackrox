@@ -150,3 +150,5 @@ func (e *enforcer) Stop(_ error) {
 	e.stopper.Client().Stop()
 	_ = e.stopper.Client().Stopped().Wait()
 }
+
+func (e *enforcer) Notify(common.SensorComponentEvent) {}

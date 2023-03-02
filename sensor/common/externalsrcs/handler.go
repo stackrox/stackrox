@@ -61,6 +61,8 @@ func (h *handlerImpl) Stop(_ error) {
 	h.stopSig.Signal()
 }
 
+func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
+
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.NetworkGraphExternalSrcsCap}
 }

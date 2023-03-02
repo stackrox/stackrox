@@ -28,6 +28,8 @@ func (h *alertHandlerImpl) Stop(_ error) {
 	h.stopSig.Signal()
 }
 
+func (h *alertHandlerImpl) Notify(common.SensorComponentEvent) {}
+
 func (h *alertHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
