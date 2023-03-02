@@ -9,6 +9,7 @@ import (
 // Row wraps pgx.Row
 type Row struct {
 	pgx.Row
+	query      string
 	cancelFunc context.CancelFunc
 }
 
@@ -16,13 +17,18 @@ type Row struct {
 func (r *Row) Scan(dest ...interface{}) error {
 	defer r.cancelFunc()
 
-	return r.Row.Scan(dest...)
+	if err := r.Row.Scan(dest...); err != nil {
+		incQueryErrors(r.query, err)
+		return err
+	}
+	return nil
 }
 
 // Rows wraps pgx.Rows
 type Rows struct {
 	rowsScanned int
 	pgx.Rows
+	query      string
 	cancelFunc context.CancelFunc
 }
 
@@ -38,6 +44,7 @@ func (r *Rows) Close() {
 func (r *Rows) Scan(dest ...interface{}) error {
 	err := r.Rows.Scan(dest...)
 	if err != nil {
+		incQueryErrors(r.query, err)
 		return err
 	}
 	r.rowsScanned++

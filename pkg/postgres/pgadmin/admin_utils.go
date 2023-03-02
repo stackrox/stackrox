@@ -165,17 +165,23 @@ func GetDatabaseClones(postgresConfig *postgres.Config) []string {
 	if err != nil {
 		return nil
 	}
+	log.Info("After connect pool")
 	defer rows.Close()
 
 	var clones []string
+	log.Infof("waiting for next")
 	for rows.Next() {
+		log.Infof("inside next")
 		var cloneName string
+		log.Infof("Waiting for scan")
 		if err := rows.Scan(&cloneName); err != nil {
 			return nil
 		}
+		log.Infof("After scan")
 
 		clones = append(clones, cloneName)
 	}
+	log.Infof("After next")
 
 	log.Debugf("database clones => %s", clones)
 
