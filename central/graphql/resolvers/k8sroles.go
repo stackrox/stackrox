@@ -57,26 +57,16 @@ func (resolver *k8SRoleResolver) Cluster(ctx context.Context) (*clusterResolver,
 // K8sRoles return k8s roles based on a query
 func (resolver *Resolver) K8sRoles(ctx context.Context, arg PaginatedQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sRoles")
-
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
+
 	query, err := arg.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
 
-	k8sRoles, err := resolver.K8sRoleStore.SearchRawRoles(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	var k8SRoleResolvers []*k8SRoleResolver
-	for _, k8srole := range k8sRoles {
-		k8SRoleResolvers = append(k8SRoleResolvers, &k8SRoleResolver{root: resolver, data: k8srole})
-	}
-
-	return paginate(query.Pagination, k8SRoleResolvers, nil)
+	return resolver.wrapK8SRoles(resolver.K8sRoleStore.SearchRawRoles(ctx, query))
 }
 
 // K8sRoleCount returns count of all k8s roles across infrastructure
