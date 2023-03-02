@@ -111,7 +111,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	allowAllCtx := sac.WithAllAccess(context.Background())
 
 	// Upsert.
-	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, node))
+	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, node, false))
 
 	// Get node.
 	storedNode, exists, err := suite.datastore.GetNode(allowAllCtx, node.Id)
@@ -137,7 +137,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	// Upsert old scan should not change data (save for node.LastUpdated).
 	olderNode := node.Clone()
 	olderNode.GetScan().GetScanTime().Seconds = olderNode.GetScan().GetScanTime().GetSeconds() - 500
-	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, olderNode))
+	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, olderNode, false))
 	storedNode, exists, err = suite.datastore.GetNode(allowAllCtx, olderNode.Id)
 	suite.True(exists)
 	suite.NoError(err)
@@ -150,7 +150,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	newNode.Id = fixtureconsts.Node2
 
 	// Upsert new node.
-	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, newNode))
+	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, newNode, false))
 
 	// Exists test.
 	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node2)
@@ -200,7 +200,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 	suite.Empty(results)
 
 	// Upsert node.
-	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, node))
+	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, node, false))
 
 	// Basic unscoped search.
 	results, err = suite.datastore.Search(allowAllCtx, pkgSearch.EmptyQuery())
@@ -242,7 +242,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 			},
 		},
 	})
-	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, newNode))
+	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, newNode, false))
 
 	// Search multiple nodes.
 	nodes, err = suite.datastore.SearchRawNodes(allowAllCtx, pkgSearch.EmptyQuery())
@@ -385,7 +385,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSortByComponent() {
 			))
 	}
 
-	suite.NoError(suite.datastore.UpsertNode(ctx, node))
+	suite.NoError(suite.datastore.UpsertNode(ctx, node, false))
 
 	// Verify sort by Component search label is transformed to sort by Component+Version.
 	query := pkgSearch.EmptyQuery()
@@ -434,7 +434,7 @@ func (suite *NodePostgresDataStoreTestSuite) upsertTestNodes(ctx context.Context
 	node := getTestNodeForPostgres(fixtureconsts.Node1, "name1")
 
 	// Upsert node.
-	suite.NoError(suite.datastore.UpsertNode(ctx, node))
+	suite.NoError(suite.datastore.UpsertNode(ctx, node, false))
 
 	// Upsert new node.
 	newNode := getTestNodeForPostgres(fixtureconsts.Node2, "name2")
@@ -449,7 +449,7 @@ func (suite *NodePostgresDataStoreTestSuite) upsertTestNodes(ctx context.Context
 			},
 		},
 	})
-	suite.NoError(suite.datastore.UpsertNode(ctx, newNode))
+	suite.NoError(suite.datastore.UpsertNode(ctx, newNode, false))
 }
 
 func (suite *NodePostgresDataStoreTestSuite) deleteTestNodes(ctx context.Context) {
@@ -462,7 +462,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	ctx := sac.WithAllAccess(context.Background())
 	testNode := fixtures.GetNodeWithUniqueComponents(5, 5)
 	converter.MoveNodeVulnsToNewField(testNode)
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode, false))
 
 	storedNode, found, err := suite.datastore.GetNode(ctx, testNode.GetId())
 	suite.NoError(err)
@@ -484,7 +484,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 			cveIDsSet.Add(pkgCVE.ID(cve.GetCveBaseInfo().GetCve(), testNode.GetScan().GetOperatingSystem()))
 		}
 	}
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode, false))
 
 	// Verify node is built correctly.
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode.GetId())
@@ -505,7 +505,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 
 	testNode2 := testNode.Clone()
 	testNode2.Id = fixtureconsts.Node2
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2, false))
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
 	suite.NoError(err)
 	suite.True(found)
@@ -540,7 +540,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	}
 	testNode2.Scan.ScanTime = types.TimestampNow()
 
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2, false))
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
 	suite.NoError(err)
 	suite.True(found)
@@ -566,7 +566,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	// Verify that new scan with less components cleans up the old relations correctly.
 	testNode2.Scan.ScanTime = types.TimestampNow()
 	testNode2.Scan.Components = testNode2.Scan.Components[:len(testNode2.Scan.Components)-1]
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2, false))
 
 	// Verify node is built correctly.
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
@@ -588,7 +588,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	// Verify that new scan with no components and vulns cleans up the old relations correctly.
 	testNode2.Scan.ScanTime = types.TimestampNow()
 	testNode2.Scan.Components = nil
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2, false))
 
 	// Verify node is built correctly.
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
@@ -621,15 +621,15 @@ func (suite *NodePostgresDataStoreTestSuite) TestGetManyNodeMetadata() {
 	ctx := sac.WithAllAccess(context.Background())
 	testNode1 := fixtures.GetNodeWithUniqueComponents(5, 5)
 	converter.MoveNodeVulnsToNewField(testNode1)
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode1))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode1, false))
 
 	testNode2 := testNode1.Clone()
 	testNode2.Id = fixtureconsts.Node2
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2, false))
 
 	testNode3 := testNode1.Clone()
 	testNode3.Id = fixtureconsts.Node3
-	suite.NoError(suite.datastore.UpsertNode(ctx, testNode3))
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode3, false))
 
 	storedNodes, err := suite.datastore.GetManyNodeMetadata(ctx, []string{testNode1.Id, testNode2.Id, testNode3.Id})
 	suite.NoError(err)

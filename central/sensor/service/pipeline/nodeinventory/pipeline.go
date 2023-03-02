@@ -91,7 +91,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	// Here NodeInventory stops to matter. All data required for the DB and UI is in node.NodeScan already
 
-	if err := p.riskManager.CalculateRiskAndUpsertNode(node); err != nil {
+	if err := p.riskManager.CalculateRiskAndUpsertNode(node, false); err != nil {
 		err = errors.Wrapf(err, "upserting node %s:%s into datastore", node.GetClusterName(), node.GetName())
 		log.Error(err)
 		return err

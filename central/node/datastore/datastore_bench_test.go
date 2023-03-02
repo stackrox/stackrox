@@ -61,14 +61,14 @@ func BenchmarkNodes(b *testing.B) {
 		fakeNode.ClusterName = fmt.Sprintf("c-%d", i)
 		fakeNode.Name = fmt.Sprintf("node-%d", i)
 		nodes[i] = fakeNode
-		require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
+		require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode, false))
 	}
 
 	// Stored node is read because it contains new scan.
 	b.Run("upsertNodeWithOldScan", func(b *testing.B) {
 		fakeNode.Scan.ScanTime.Seconds = fakeNode.Scan.ScanTime.Seconds - 500
 		for i := 0; i < b.N; i++ {
-			err = nodeDS.UpsertNode(ctx, fakeNode)
+			err = nodeDS.UpsertNode(ctx, fakeNode, false)
 		}
 		require.NoError(b, err)
 	})
@@ -76,7 +76,7 @@ func BenchmarkNodes(b *testing.B) {
 	b.Run("upsertNodeWithNewScan", func(b *testing.B) {
 		fakeNode.Scan.ScanTime.Seconds = fakeNode.Scan.ScanTime.Seconds + 500
 		for i := 0; i < b.N; i++ {
-			err = nodeDS.UpsertNode(ctx, fakeNode)
+			err = nodeDS.UpsertNode(ctx, fakeNode, false)
 		}
 		require.NoError(b, err)
 	})

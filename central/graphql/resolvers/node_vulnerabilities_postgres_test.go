@@ -80,7 +80,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 		s.NoError(err)
 	}
 	for _, node := range testNodes {
-		err := s.nodeDatastore.UpsertNode(s.ctx, node)
+		err := s.nodeDatastore.UpsertNode(s.ctx, node, false)
 		s.NoError(err)
 	}
 }
@@ -472,7 +472,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerability() {
 			},
 		},
 	}
-	err = s.nodeDatastore.UpsertNode(ctx, testNode)
+	err = s.nodeDatastore.UpsertNode(ctx, testNode, false)
 	s.NoError(err)
 
 	node = getNodeResolver(ctx, s.T(), s.resolver, testNode.GetId())

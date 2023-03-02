@@ -12,13 +12,13 @@ import (
 const (
 	nodeOnlyQuery = `
  		query getNodes($query: String, $pagination: Pagination) {
- 			nodes(query: $query, pagination: $pagination) { 
+ 			nodes(query: $query, pagination: $pagination) {
  				id
  			}}`
 
 	nodeWithCountsQuery = `
  		query getNodes($query: String, $pagination: Pagination) {
- 			nodes(query: $query, pagination: $pagination) { 
+ 			nodes(query: $query, pagination: $pagination) {
  				id
  				nodeComponentCount
  				nodeVulnerabilityCount
@@ -26,7 +26,7 @@ const (
 
 	nodeWithScanLongQuery = `
  		query getNodes($query: String, $pagination: Pagination) {
- 			nodes(query: $query, pagination: $pagination) { 
+ 			nodes(query: $query, pagination: $pagination) {
  				id
  				scan {
  					nodeComponents {
@@ -42,7 +42,7 @@ const (
 
 	nodeWithoutScanLongQuery = `
  		query getNodes($query: String, $pagination: Pagination) {
- 			nodes(query: $query, pagination: $pagination) { 
+ 			nodes(query: $query, pagination: $pagination) {
  				id
  				nodeComponents {
  					name
@@ -80,7 +80,7 @@ func BenchmarkNodeResolver(b *testing.B) {
 
 	nodes := getTestNodes(100)
 	for _, node := range nodes {
-		require.NoError(b, nodeDS.UpsertNode(ctx, node))
+		require.NoError(b, nodeDS.UpsertNode(ctx, node, false))
 	}
 
 	b.Run("GetNodeComponentsInNodeScanResolver", func(b *testing.B) {

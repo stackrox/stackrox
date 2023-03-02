@@ -144,7 +144,7 @@ func (mr *MockStoreMockRecorder) GetNodeMetadata(ctx, id interface{}) *gomock.Ca
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, node *storage.Node) error {
+func (m *MockStore) Upsert(ctx context.Context, node *storage.Node, ignoreScan bool) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, node)
 	ret0, _ := ret[0].(error)

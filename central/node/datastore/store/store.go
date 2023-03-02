@@ -19,6 +19,6 @@ type Store interface {
 
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Upsert(ctx context.Context, node *storage.Node) error
+	Upsert(ctx context.Context, node *storage.Node, ignoreScan bool) error
 	Delete(ctx context.Context, id string) error
 }

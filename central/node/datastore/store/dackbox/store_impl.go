@@ -147,7 +147,7 @@ func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Node, [
 }
 
 // Upsert writes a node to the DB, overwriting previous data.
-func (b *storeImpl) Upsert(_ context.Context, node *storage.Node) error {
+func (b *storeImpl) Upsert(ctx context.Context, node *storage.Node, ignoreScan bool) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, typ)
 
 	iTime := protoTypes.TimestampNow()

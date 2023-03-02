@@ -65,7 +65,7 @@ func BenchmarkGetManyNodes(b *testing.B) {
 	}
 
 	for _, node := range nodes {
-		require.NoError(b, datastore.UpsertNode(ctx, node))
+		require.NoError(b, datastore.UpsertNode(ctx, node, false))
 	}
 
 	b.Run("GetNodesBatch", func(b *testing.B) {

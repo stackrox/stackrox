@@ -324,12 +324,12 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph(waitForIndexin
 	ctx := sac.WithAllAccess(context.Background())
 	testNode1 := fixtures.GetScopedNode1(uuid.NewV4().String(), testconsts.Cluster1)
 	testNode2 := fixtures.GetScopedNode2(uuid.NewV4().String(), testconsts.Cluster2)
-	err = s.nodeStore.UpsertNode(ctx, testNode1)
+	err = s.nodeStore.UpsertNode(ctx, testNode1, false)
 	if err != nil {
 		return err
 	}
 	s.storedNodes = append(s.storedNodes, testNode1.GetId())
-	err = s.nodeStore.UpsertNode(ctx, testNode2)
+	err = s.nodeStore.UpsertNode(ctx, testNode2, false)
 	if err != nil {
 		return err
 	}

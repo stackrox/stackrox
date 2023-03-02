@@ -39,7 +39,7 @@ type DataStore interface {
 	GetNodesBatch(ctx context.Context, ids []string) ([]*storage.Node, error)
 	GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, error)
 
-	UpsertNode(ctx context.Context, node *storage.Node) error
+	UpsertNode(ctx context.Context, node *storage.Node, ignoreScan bool) error
 
 	DeleteNodes(ctx context.Context, ids ...string) error
 	DeleteAllNodesForCluster(ctx context.Context, clusterID string) error

@@ -49,7 +49,7 @@ func (mr *MockManagerMockRecorder) CalculateRiskAndUpsertImage(image interface{}
 }
 
 // CalculateRiskAndUpsertNode mocks base method.
-func (m *MockManager) CalculateRiskAndUpsertNode(node *storage.Node) error {
+func (m *MockManager) CalculateRiskAndUpsertNode(node *storage.Node, ignoreScan bool) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CalculateRiskAndUpsertNode", node)
 	ret0, _ := ret[0].(error)

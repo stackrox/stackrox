@@ -70,7 +70,7 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 		s.NoError(err)
 	}
 	for _, node := range testNodes {
-		err := nodeDS.UpsertNode(s.ctx, node)
+		err := nodeDS.UpsertNode(s.ctx, node, false)
 		s.NoError(err)
 	}
 }

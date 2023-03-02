@@ -126,7 +126,7 @@ func (s *nodeDatastoreSACSuite) addTestNode(clusterID string) string {
 	node := fixtures.GetScopedNode(nodeID, clusterID)
 	node.Priority = 1
 
-	errUpsert := s.datastore.UpsertNode(s.testContexts[testutils.UnrestrictedReadWriteCtx], node)
+	errUpsert := s.datastore.UpsertNode(s.testContexts[testutils.UnrestrictedReadWriteCtx], node, false)
 	s.Require().NoError(errUpsert)
 	s.testNodeIDs[clusterID] = append(s.testNodeIDs[clusterID], nodeID)
 	s.testNodes[nodeID] = node
@@ -480,7 +480,7 @@ func (s *nodeDatastoreSACSuite) TestUpsertNode() {
 			node := fixtures.GetScopedNode(nodeID, clusterID)
 
 			ctx := s.testContexts[c.ScopeKey]
-			err := s.datastore.UpsertNode(ctx, node)
+			err := s.datastore.UpsertNode(ctx, node, false)
 
 			if c.ExpectError {
 				s.ErrorIs(err, c.ExpectedError)

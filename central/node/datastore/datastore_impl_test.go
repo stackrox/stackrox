@@ -101,7 +101,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Node),
 		))
-	suite.Error(suite.datastore.UpsertNode(readCtx, node), "permission denied")
+	suite.Error(suite.datastore.UpsertNode(readCtx, node, false), "permission denied")
 
 	// No permission to write nodes.
 	imgCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -109,7 +109,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Image),
 		))
-	suite.Error(suite.datastore.UpsertNode(imgCtx, node), "permission denied")
+	suite.Error(suite.datastore.UpsertNode(imgCtx, node, false), "permission denied")
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -117,7 +117,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	))
 
 	// Upsert node.
-	suite.NoError(suite.datastore.UpsertNode(ctx, node))
+	suite.NoError(suite.datastore.UpsertNode(ctx, node, false))
 
 	// Get node.
 	storedNode, exists, err := suite.datastore.GetNode(ctx, node.Id)
@@ -146,7 +146,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	olderNode := node.Clone()
 	olderNode.GetScan().GetScanTime().Seconds = olderNode.GetScan().GetScanTime().GetSeconds() - 500
 	olderNode.Scan = &storage.NodeScan{}
-	suite.NoError(suite.datastore.UpsertNode(ctx, olderNode))
+	suite.NoError(suite.datastore.UpsertNode(ctx, olderNode, false))
 	storedNode, exists, err = suite.datastore.GetNode(ctx, olderNode.Id)
 	suite.True(exists)
 	suite.NoError(err)
@@ -160,7 +160,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	newNode.Id = "id2"
 
 	// Upsert new node.
-	suite.NoError(suite.datastore.UpsertNode(ctx, newNode))
+	suite.NoError(suite.datastore.UpsertNode(ctx, newNode, false))
 
 	// Exists test.
 	exists, err = suite.datastore.Exists(ctx, "id2")
@@ -214,7 +214,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicSearch() {
 	suite.Empty(results)
 
 	// Upsert node.
-	suite.NoError(suite.datastore.UpsertNode(ctx, node))
+	suite.NoError(suite.datastore.UpsertNode(ctx, node, false))
 
 	// Ensure the CVEs are indexed.
 	indexingDone := concurrency.NewSignal()
@@ -263,7 +263,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicSearch() {
 			},
 		},
 	})
-	suite.NoError(suite.datastore.UpsertNode(ctx, newNode))
+	suite.NoError(suite.datastore.UpsertNode(ctx, newNode, false))
 
 	// Ensure the CVEs are indexed.
 	indexingDone = concurrency.NewSignal()
@@ -558,7 +558,7 @@ func (suite *NodeDataStoreTestSuite) upsertTestNodes(ctx context.Context) {
 	node := getTestNode("id1", "name1")
 
 	// Upsert node.
-	suite.NoError(suite.datastore.UpsertNode(ctx, node))
+	suite.NoError(suite.datastore.UpsertNode(ctx, node, false))
 
 	// Upsert new node.
 	newNode := getTestNode("id2", "name2")
@@ -572,7 +572,7 @@ func (suite *NodeDataStoreTestSuite) upsertTestNodes(ctx context.Context) {
 			},
 		},
 	})
-	suite.NoError(suite.datastore.UpsertNode(ctx, newNode))
+	suite.NoError(suite.datastore.UpsertNode(ctx, newNode, false))
 
 	// Ensure the CVEs are indexed.
 	indexingDone := concurrency.NewSignal()

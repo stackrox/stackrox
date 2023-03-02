@@ -186,7 +186,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchNode() {
 	suite.Empty(results)
 
 	// Upsert node.
-	suite.NoError(suite.nodeDataStore.UpsertNode(ctx, node))
+	suite.NoError(suite.nodeDataStore.UpsertNode(ctx, node, false))
 
 	// Ensure the CVEs are indexed.
 	indexingDone := concurrency.NewSignal()

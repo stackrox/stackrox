@@ -447,7 +447,7 @@ func (l *loopImpl) reprocessNode(id string) bool {
 		return false
 	}
 
-	if err := l.risk.CalculateRiskAndUpsertNode(node); err != nil {
+	if err := l.risk.CalculateRiskAndUpsertNode(node, false); err != nil {
 		log.Errorf("error upserting node %q into datastore: %v", node.GetName(), err)
 		return false
 	}

@@ -60,7 +60,7 @@ func (s *NodesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNode)
 
-	s.NoError(store.Upsert(ctx, node))
+	s.NoError(store.Upsert(ctx, node, false))
 	foundNode, exists, err = store.Get(ctx, node.GetId())
 	s.NoError(err)
 	s.True(exists)
@@ -80,7 +80,7 @@ func (s *NodesStoreSuite) TestStore() {
 	nodeExists, err := store.Exists(ctx, node.GetId())
 	s.NoError(err)
 	s.True(nodeExists)
-	s.NoError(store.Upsert(ctx, node))
+	s.NoError(store.Upsert(ctx, node, false))
 
 	foundNode, exists, err = store.Get(ctx, node.GetId())
 	s.NoError(err)

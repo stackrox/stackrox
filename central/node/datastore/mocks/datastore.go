@@ -207,7 +207,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawNodes(ctx, q interface{}) *gomock.
 }
 
 // UpsertNode mocks base method.
-func (m *MockDataStore) UpsertNode(ctx context.Context, node *storage.Node) error {
+func (m *MockDataStore) UpsertNode(ctx context.Context, node *storage.Node, ignoreScan bool) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertNode", ctx, node)
 	ret0, _ := ret[0].(error)

@@ -113,7 +113,7 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 
 	// Test Add
 	for _, d := range nodes {
-		suite.NoError(suite.store.Upsert(ctx, d))
+		suite.NoError(suite.store.Upsert(ctx, d, false))
 	}
 
 	for _, d := range nodes {
@@ -145,7 +145,7 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	}
 
 	for _, d := range nodes {
-		suite.NoError(suite.store.Upsert(ctx, d))
+		suite.NoError(suite.store.Upsert(ctx, d, false))
 	}
 
 	for _, d := range nodes {
@@ -166,7 +166,7 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	cloned.Name = "newname"
 	cloned.Scan.Components = nil
 	cloned.RiskScore = 100
-	suite.NoError(suite.store.Upsert(ctx, cloned))
+	suite.NoError(suite.store.Upsert(ctx, cloned, false))
 	got, exists, err := suite.store.Get(ctx, cloned.GetId())
 	suite.NoError(err)
 	suite.True(exists)
@@ -197,7 +197,7 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 		},
 	}
 
-	suite.NoError(suite.store.Upsert(ctx, nodes[1]))
+	suite.NoError(suite.store.Upsert(ctx, nodes[1], false))
 
 	got, exists, err = suite.store.Get(ctx, nodes[1].GetId())
 	suite.NoError(err)
@@ -214,7 +214,7 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		})
 
-	suite.NoError(suite.store.Upsert(ctx, nodes[0]))
+	suite.NoError(suite.store.Upsert(ctx, nodes[0], false))
 
 	got, exists, err = suite.store.Get(ctx, nodes[0].GetId())
 	suite.NoError(err)
@@ -294,7 +294,7 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 		RiskScore: 30,
 	}
 
-	suite.NoError(suite.store.Upsert(ctx, node))
+	suite.NoError(suite.store.Upsert(ctx, node, false))
 	storedNode, exists, err := suite.store.Get(ctx, node.GetId())
 	suite.NoError(err)
 	suite.True(exists)
@@ -309,7 +309,7 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 
 	expectedNode := newNode.Clone()
 
-	suite.NoError(suite.store.Upsert(ctx, newNode))
+	suite.NoError(suite.store.Upsert(ctx, newNode, false))
 	storedNode, exists, err = suite.store.Get(ctx, newNode.GetId())
 	suite.NoError(err)
 	suite.True(exists)
@@ -321,7 +321,7 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 	node.Scan.ScanTime = types.TimestampNow()
 	expectedNode.Scan.ScanTime = node.GetScan().GetScanTime()
 
-	suite.NoError(suite.store.Upsert(ctx, node))
+	suite.NoError(suite.store.Upsert(ctx, node, false))
 	storedNode, exists, err = suite.store.Get(ctx, node.GetId())
 	suite.NoError(err)
 	suite.True(exists)
