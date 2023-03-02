@@ -31,7 +31,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func restServer() {
-	log.Println("Listening on localhost:8080.")
+	log.Println("Listening on localhost:8080")
 	server := &http.Server{
 		ReadHeaderTimeout: 5 * time.Second,
 		Addr:              ":8080",
@@ -43,7 +43,7 @@ func restServer() {
 }
 
 func syslog_server() {
-	log.Println("Listening on localhost:514.")
+	log.Println("Listening on localhost:514")
 	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 	server := syslog.NewServer()
