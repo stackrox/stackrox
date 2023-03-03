@@ -790,7 +790,7 @@ func getImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
 	}
-	return componentIDToEdgeMap, nil
+	return componentIDToEdgeMap, rows.Err()
 }
 
 func getImageCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, imageID string) (set.StringSet, error) {
@@ -827,7 +827,7 @@ func getImageCVEEdges(ctx context.Context, tx *postgres.Tx, imageID string) (map
 		}
 		cveIDToEdgeMap[msg.GetImageCveId()] = msg
 	}
-	return cveIDToEdgeMap, nil
+	return cveIDToEdgeMap, rows.Err()
 }
 
 func getImageComponents(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string]*storage.ImageComponent, error) {
@@ -850,7 +850,7 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, componentIDs []str
 		}
 		idToComponentMap[msg.GetId()] = msg
 	}
-	return idToComponentMap, nil
+	return idToComponentMap, rows.Err()
 }
 
 func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.ComponentCVEEdge, error) {
@@ -873,7 +873,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = append(componentIDToEdgeMap[msg.GetImageComponentId()], msg)
 	}
-	return componentIDToEdgeMap, nil
+	return componentIDToEdgeMap, rows.Err()
 }
 
 func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.ImageCVE, error) {
@@ -896,7 +896,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 		}
 		idToCVEMap[msg.GetId()] = msg
 	}
-	return idToCVEMap, nil
+	return idToCVEMap, rows.Err()
 }
 
 // Delete removes the specified ID from the store.
@@ -1233,5 +1233,5 @@ func scanIDs(rows pgx.Rows) ([]string, error) {
 		}
 		ids = append(ids, id)
 	}
-	return ids, nil
+	return ids, rows.Err()
 }

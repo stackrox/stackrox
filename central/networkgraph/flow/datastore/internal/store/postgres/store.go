@@ -339,7 +339,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 	}
 
 	log.Debugf("Read returned %d flows", len(flows))
-	return flows, nil
+	return flows, rows.Err()
 }
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
@@ -452,8 +452,11 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, pred)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return flows, lastUpdateTS, err
+	return flows, lastUpdateTS, nil
 }
 
 // GetFlowsForDeployment returns the flows matching the deployment ID
@@ -469,15 +472,17 @@ func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, depl
 	var err error
 
 	rows, err = s.db.Query(ctx, getByDeploymentStmt, deploymentID, s.clusterID)
-
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, nil)
+	if err != nil {
+		return nil, err
+	}
 
-	return flows, err
+	return flows, nil
 }
 
 func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlowProperties) error {
@@ -556,13 +561,11 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 			return err
 		}
 		defer rows.Close()
-
 		// keyMatchFn is passed in to the readRows method in order to filter down to rows referencing
 		// deleted deployments.
 		deleteFlows, err := s.readRows(rows, keyMatchFn)
-
 		if err != nil {
-			return nil
+			return err
 		}
 
 		for _, flow := range deleteFlows {

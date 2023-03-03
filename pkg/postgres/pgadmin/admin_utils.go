@@ -322,6 +322,7 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 		}
 		return 0, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var info string
@@ -363,7 +364,7 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 		return 0, err
 	}
 
-	return availableCapacity, nil
+	return availableCapacity, rows.Err()
 }
 
 // GetRemainingCapacity - retrieves the amount of space left in Postgres

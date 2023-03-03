@@ -73,7 +73,12 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	}
 	defer rows.Close()
 
-	return s.readRows(rows)
+	results, err := s.readRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, rows.Err()
 }
 
 // Manual converting of raw data from SQL query to ProcessListeningOnPort (not

@@ -793,6 +793,10 @@ func (t *tracedRows) CommandTag() pgconn.CommandTag {
 	return t.Rows.CommandTag()
 }
 
+func (t *tracedRows) Err() error {
+	return t.Rows.Err()
+}
+
 func tracedQuery(ctx context.Context, pool *postgres.DB, sql string, args ...interface{}) (*tracedRows, error) {
 	t := time.Now()
 	rows, err := pool.Query(ctx, sql, args...)
@@ -893,7 +897,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 		}
 		searchResults[idx] = result
 	}
-	return searchResults, nil
+	return searchResults, rows.Err()
 }
 
 func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, query *query) ([]*T, error) {
@@ -913,7 +917,7 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *postgres
 	if err := pgxscan.ScanAll(&scannedRows, rows); err != nil {
 		return nil, err
 	}
-	return scannedRows, nil
+	return scannedRows, rows.Err()
 }
 
 // RunSearchRequestForSchema executes a request against the database for given schema
@@ -1043,7 +1047,12 @@ func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Con
 	}
 	defer rows.Close()
 
-	return scanRows[T, PT](rows)
+	results, err := scanRows[T, PT](rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, rows.Err()
 }
 
 // RunGetManyQueryForSchema executes a request for just the search against the database and unmarshal it to given type.
@@ -1102,7 +1111,12 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 		}
 		defer rows.Close()
 
-		return scanRows[T, PT](rows)
+		results, err := scanRows[T, PT](rows)
+		if err != nil {
+			return nil, err
+		}
+
+		return results, rows.Err()
 	}, closer, nil
 }
 
