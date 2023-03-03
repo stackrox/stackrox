@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -154,21 +155,59 @@ func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_Commun
 	}
 }
 
-func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scanner nodeinventorizer.NodeInventorizer) <-chan *sensor.MsgFromCompliance {
+// deviateDuration randomly deviates a duration by a given percentage. Example:
+// duration of 10s with 5% deviation means a random duration between 5s and 15s.
+func deviateDuration(d time.Duration, percentage float64) time.Duration {
+	min, max := 1.0-percentage, 1.0+percentage
+	dev := rand.Float64()*(max-min) + min
+	return multiplyDuration(d, dev)
+}
+
+// multiplyDuration multiplies a duration by a float64 and returns the resulting
+// duration.
+func multiplyDuration(d time.Duration, factor float64) time.Duration {
+	return time.Duration(float64(time.Second) * d.Seconds() * factor)
+}
+
+type nodeScanInterval struct {
+	base        time.Duration
+	deviation   float64
+	initialWait time.Duration
+}
+
+func newNodeScanIntervalFromEnv() nodeScanInterval {
+	i := nodeScanInterval{}
+	i.base = env.NodeScanningInterval.DurationSetting()
+	i.deviation = 0.0
+	if env.NodeScanningIntervalDeviation.IntegerSetting() > 0 {
+		i.deviation = float64(env.NodeScanningIntervalDeviation.IntegerSetting()) / 100.0
+	}
+	initialMax := env.NodeScanningMaxInitialWait.DurationSetting()
+	i.initialWait = multiplyDuration(initialMax, rand.Float64())
+	log.Infof("node scanning interval: base=%s deviation=%.2f initialMax=%s initialWait=%s",
+		i.base, i.deviation, initialMax, i.initialWait)
+	return i
+}
+
+// next calculates the next node scanning interval.
+func (i *nodeScanInterval) next() time.Duration {
+	interval := time.Duration(0)
+	if i.deviation > 0 {
+		min, max := 1.0-i.deviation, 1.0+i.deviation
+		factor := rand.Float64()*(max-min) + min
+		interval = multiplyDuration(i.base, factor)
+	}
+	cmetrics.ObserveRescanInterval(interval, getNode())
+	log.Infof("next node scanning loop in %s", interval)
+	return interval
+}
+
+func manageNodeScanLoop(ctx context.Context, i nodeScanInterval, scanner nodeinventorizer.NodeInventorizer) <-chan *sensor.MsgFromCompliance {
 	sensorC := make(chan *sensor.MsgFromCompliance)
 	nodeName := getNode()
 	go func() {
 		defer close(sensorC)
-		t := time.NewTicker(rescanInterval)
-
-		// first scan should happen on start
-		msg, err := scanNode(nodeName, scanner)
-		if err != nil {
-			log.Errorf("error running scanNode: %v", err)
-		} else {
-			sensorC <- msg
-		}
-
+		t := time.NewTicker(i.initialWait)
 		for {
 			select {
 			case <-ctx.Done():
@@ -180,6 +219,7 @@ func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scann
 				} else {
 					sensorC <- msg
 				}
+				t.Reset(i.next())
 			}
 		}
 	}()
@@ -260,6 +300,8 @@ func main() {
 		// Start the prometheus metrics server
 		metrics.NewDefaultHTTPServer().RunForever()
 		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
+		// Set the random seed based on the current time.
+		rand.Seed(time.Now().UnixNano())
 	}
 
 	clientconn.SetUserAgent(clientconn.Compliance)
@@ -287,10 +329,6 @@ func main() {
 	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		rescanInterval := env.NodeRescanInterval.DurationSetting()
-		cmetrics.ObserveRescanInterval(rescanInterval, getNode())
-		log.Infof("Node Rescan interval: %s", rescanInterval.String())
-
 		var scanner nodeinventorizer.NodeInventorizer
 		if features.UseFakeNodeInventory.Enabled() {
 			log.Infof("Using FakeNodeInventorizer")
@@ -299,7 +337,9 @@ func main() {
 			log.Infof("Using NodeInventoryCollector")
 			scanner = &nodeinventorizer.NodeInventoryCollector{}
 		}
-		nodeInventoriesC := manageNodeScanLoop(ctx, rescanInterval, scanner)
+
+		i := newNodeScanIntervalFromEnv()
+		nodeInventoriesC := manageNodeScanLoop(ctx, i, scanner)
 
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
 		go func() {
