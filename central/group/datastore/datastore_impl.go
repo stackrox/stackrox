@@ -291,7 +291,10 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 		return err
 	}
 	if err = verifyGroupOriginMatches(ctx, existingGroup); err != nil {
-		return err
+		return errors.Wrap(err, "origin didn't match for existing group")
+	}
+	if err = verifyGroupOriginMatches(ctx, group); err != nil {
+		return errors.Wrap(err, "origin didn't match for new group")
 	}
 
 	defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
