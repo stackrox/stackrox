@@ -11,17 +11,11 @@ import { FilterIcon } from '@patternfly/react-icons';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';
-import { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from './types';
+import { DefaultFilters } from './types';
 import FilterResourceDropdown, { Resource } from './FilterResourceDropdown';
 import FilterAutocompleteInput from './FilterAutocompleteInput';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
-
-// type TableFilters = {
-//     resource: Resource;
-//     cveSeverity: VulnerabilitySeverityLabel[];
-//     cveStatus: FixableStatus[];
-// };
 
 type FilterType = 'resource' | 'Severity' | 'Fixable';
 
@@ -41,7 +35,7 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
             });
         } else {
             const { checked } = e.target as HTMLInputElement;
-            if (searchFilter[type]?.length > 0) {
+            if (searchFilter[type]) {
                 setSearchFilter({
                     ...searchFilter,
                     [type]: checked
@@ -110,6 +104,12 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
             Fixable: fixableFilter,
         });
     }, [defaultFilters, setSearchFilter]);
+
+    useEffect(() => {
+        if (!searchFilter.resource) {
+            setSearchFilter({ ...searchFilter, resource: 'CVE' });
+        }
+    }, []);
 
     return (
         <Toolbar

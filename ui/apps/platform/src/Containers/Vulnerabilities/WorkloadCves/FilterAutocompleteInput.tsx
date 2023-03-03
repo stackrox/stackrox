@@ -16,9 +16,11 @@ function FilterAutocompleteInput({ searchFilter, setSearchFilter }: FilterAutoco
         });
     }
 
+    const { resource } = searchFilter;
+
     return (
         <SearchInput
-            aria-label="filter by CVE ID"
+            aria-label={`Filter by ${resource}`}
             onChange={(e, value) => {
                 onInputChange(value);
             }}
@@ -26,7 +28,7 @@ function FilterAutocompleteInput({ searchFilter, setSearchFilter }: FilterAutoco
             onClear={() => {
                 onInputChange('');
             }}
-            placeholder="Filter by CVE ID"
+            placeholder={`Filter by ${resource}`}
         />
     );
 }
