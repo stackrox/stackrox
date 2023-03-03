@@ -21,6 +21,12 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*storage.IntegrationHealth, error) {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, errors.Errorf("failed to retrieve health for registries and scanners: %v", err)
+	} else if !ok {
+		return nil, nil
+	}
+
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
@@ -28,31 +34,40 @@ func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*stora
 }
 
 func (ds *datastoreImpl) GetNotifierPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
-		return nil, err
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, errors.Errorf("failed to retrieve health for notifiers: %v", err)
+	} else if !ok {
+		return nil, nil
 	}
+
 	return ds.getIntegrationsOfType(ctx, storage.IntegrationHealth_NOTIFIER)
 }
 
 func (ds *datastoreImpl) GetBackupPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
-		return nil, err
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, errors.Errorf("failed to retrieve health for backup plugins: %v", err)
+	} else if !ok {
+		return nil, nil
 	}
 
 	return ds.getIntegrationsOfType(ctx, storage.IntegrationHealth_BACKUP)
 }
 
 func (ds *datastoreImpl) GetDeclarativeConfigs(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
-		return nil, err
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, errors.Errorf("failed to retrieve health for declarative configurations: %v", err)
+	} else if !ok {
+		return nil, nil
 	}
-
 	return ds.getIntegrationsOfType(ctx, storage.IntegrationHealth_DECLARATIVE_CONFIG)
 }
 
-func (ds *datastoreImpl) UpdateIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error {
-	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
-		return err
+func (ds *datastoreImpl) UpsertIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
+		return errors.Errorf("failed to update health for integration %s: %v",
+			integrationHealth.Id, err)
+	} else if !ok {
+		return nil
 	}
 
 	if err := validateIntegrationHealthType(integrationHealth.GetType()); err != nil {
@@ -63,10 +78,11 @@ func (ds *datastoreImpl) UpdateIntegrationHealth(ctx context.Context, integratio
 }
 
 func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string) error {
-	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
-		return err
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
+		return errors.Errorf("failed to remove health for integration %s: %v", id, err)
+	} else if !ok {
+		return nil
 	}
-
 	_, exists, err := ds.GetIntegrationHealth(ctx, id)
 	if err != nil {
 		return errors.Errorf("failed to retrieve integration health %q", id)
@@ -79,16 +95,12 @@ func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string)
 }
 
 func (ds *datastoreImpl) GetIntegrationHealth(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
-	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
-		return nil, false, err
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, false, errors.Errorf("Failed to get health for integration %s: %v", id, err)
+	} else if !ok {
+		return nil, false, nil
 	}
-
-	health, found, err := ds.store.Get(ctx, id)
-	if !found || err != nil {
-		return nil, false, err
-	}
-
-	return health, found, err
+	return ds.store.Get(ctx, id)
 }
 
 func (ds *datastoreImpl) getIntegrationsOfType(ctx context.Context, integrationType storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {

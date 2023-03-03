@@ -125,16 +125,16 @@ func (mr *MockDataStoreMockRecorder) RemoveIntegrationHealth(ctx, id interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveIntegrationHealth", reflect.TypeOf((*MockDataStore)(nil).RemoveIntegrationHealth), ctx, id)
 }
 
-// UpdateIntegrationHealth mocks base method.
-func (m *MockDataStore) UpdateIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error {
+// UpsertIntegrationHealth mocks base method.
+func (m *MockDataStore) UpsertIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateIntegrationHealth", ctx, integrationHealth)
+	ret := m.ctrl.Call(m, "UpsertIntegrationHealth", ctx, integrationHealth)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateIntegrationHealth indicates an expected call of UpdateIntegrationHealth.
-func (mr *MockDataStoreMockRecorder) UpdateIntegrationHealth(ctx, integrationHealth interface{}) *gomock.Call {
+// UpsertIntegrationHealth indicates an expected call of UpsertIntegrationHealth.
+func (mr *MockDataStoreMockRecorder) UpsertIntegrationHealth(ctx, integrationHealth interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateIntegrationHealth", reflect.TypeOf((*MockDataStore)(nil).UpdateIntegrationHealth), ctx, integrationHealth)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertIntegrationHealth", reflect.TypeOf((*MockDataStore)(nil).UpsertIntegrationHealth), ctx, integrationHealth)
 }

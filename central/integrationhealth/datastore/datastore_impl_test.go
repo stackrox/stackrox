@@ -76,12 +76,12 @@ func (s *integrationHealthDatastoreTestSuite) TearDownTest() {
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetRegistriesAndScanners() {
-	s.testGetIntegrationHealth(s.datastore.GetRegistriesAndScanners)
-
 	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_IMAGE_INTEGRATION)
 
-	err := s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	err := s.datastore.UpsertIntegrationHealth(s.hasWriteCtx, integrationHealth)
 	s.NoError(err)
+
+	s.testGetIntegrationHealth(s.datastore.GetRegistriesAndScanners)
 
 	receivedIntegrationHealths, err := s.datastore.GetRegistriesAndScanners(s.hasReadCtx)
 	s.NoError(err)
@@ -89,12 +89,12 @@ func (s *integrationHealthDatastoreTestSuite) TestGetRegistriesAndScanners() {
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetNotifierPlugins() {
-	s.testGetIntegrationHealth(s.datastore.GetNotifierPlugins)
-
 	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_NOTIFIER)
 
-	err := s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	err := s.datastore.UpsertIntegrationHealth(s.hasWriteCtx, integrationHealth)
 	s.NoError(err)
+
+	s.testGetIntegrationHealth(s.datastore.GetNotifierPlugins)
 
 	receivedIntegrationHealths, err := s.datastore.GetNotifierPlugins(s.hasReadCtx)
 	s.NoError(err)
@@ -102,12 +102,12 @@ func (s *integrationHealthDatastoreTestSuite) TestGetNotifierPlugins() {
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetBackupPlugins() {
-	s.testGetIntegrationHealth(s.datastore.GetBackupPlugins)
-
 	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_BACKUP)
 
-	err := s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	err := s.datastore.UpsertIntegrationHealth(s.hasWriteCtx, integrationHealth)
 	s.NoError(err)
+
+	s.testGetIntegrationHealth(s.datastore.GetBackupPlugins)
 
 	receivedIntegrationHealths, err := s.datastore.GetBackupPlugins(s.hasReadCtx)
 	s.NoError(err)
@@ -115,12 +115,12 @@ func (s *integrationHealthDatastoreTestSuite) TestGetBackupPlugins() {
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetDeclarativeConfigs() {
-	s.testGetIntegrationHealth(s.datastore.GetDeclarativeConfigs)
-
 	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_DECLARATIVE_CONFIG)
 
-	err := s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	err := s.datastore.UpsertIntegrationHealth(s.hasWriteCtx, integrationHealth)
 	s.NoError(err)
+
+	s.testGetIntegrationHealth(s.datastore.GetDeclarativeConfigs)
 
 	receivedIntegrationHealths, err := s.datastore.GetDeclarativeConfigs(s.hasReadCtx)
 	s.NoError(err)
@@ -130,16 +130,22 @@ func (s *integrationHealthDatastoreTestSuite) TestGetDeclarativeConfigs() {
 func (s *integrationHealthDatastoreTestSuite) TestUpdateIntegrationHealth() {
 	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_IMAGE_INTEGRATION)
 
-	// 1. With no access should return a sac.ErrResourceAccessDenied error.
-	err := s.datastore.UpdateIntegrationHealth(s.hasNoAccessCtx, integrationHealth)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	// 1. With no access should return no error but should not be added.
+	err := s.datastore.UpsertIntegrationHealth(s.hasNoAccessCtx, integrationHealth)
+	s.NoError(err)
+	_, exists, err := s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
+	s.NoError(err)
+	s.False(exists)
 
-	// 2. With READ access should return a sac.ErrResourceAccessDenied error.
-	err = s.datastore.UpdateIntegrationHealth(s.hasReadCtx, integrationHealth)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	// 2. With READ access should return no error but should not be added.
+	err = s.datastore.UpsertIntegrationHealth(s.hasReadCtx, integrationHealth)
+	s.NoError(err)
+	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
+	s.NoError(err)
+	s.False(exists)
 
 	// 3. With WRITE access should not return an error and the integration should be retrievable.
-	err = s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	err = s.datastore.UpsertIntegrationHealth(s.hasWriteCtx, integrationHealth)
 	s.NoError(err)
 	receivedIntegrationHealth, exists, err := s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
@@ -148,44 +154,60 @@ func (s *integrationHealthDatastoreTestSuite) TestUpdateIntegrationHealth() {
 
 	// 4. Updating an invalid integration health type should not be possible.
 	integrationHealth.Type = storage.IntegrationHealth_UNKNOWN
-	err = s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	err = s.datastore.UpsertIntegrationHealth(s.hasWriteCtx, integrationHealth)
 	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestRemoveIntegrationHealth() {
 	integrationHealth := newIntegrationHealth(storage.IntegrationHealth_IMAGE_INTEGRATION)
+	err := s.datastore.UpsertIntegrationHealth(s.hasWriteCtx, integrationHealth)
+	s.NoError(err)
+	_, exists, err := s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
+	s.NoError(err)
+	s.True(exists)
 
-	// 1. With no access should return a sac.ErrResourceAccessDenied error.
-	err := s.datastore.RemoveIntegrationHealth(s.hasNoAccessCtx, integrationHealth.GetId())
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	// 1. With no access should not return an error but integration should still exist.
+	err = s.datastore.RemoveIntegrationHealth(s.hasNoAccessCtx, integrationHealth.GetId())
+	s.NoError(err)
+	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
+	s.NoError(err)
+	s.True(exists)
 
-	// 2. With READ access should return a sac.ErrResourceAccessDenied error.
+	// 2. With READ access should not return an error but integration should still exist.
 	err = s.datastore.RemoveIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-
-	// 3. With WRITE access should return an error if integration health is not found.
-	err = s.datastore.RemoveIntegrationHealth(s.hasWriteCtx, integrationHealth.GetId())
-	s.ErrorIs(err, errox.NotFound)
-
-	// 4. With WRITE access and existing integration health remove should not return an error.
-	err = s.datastore.UpdateIntegrationHealth(s.hasWriteCtx, integrationHealth)
 	s.NoError(err)
+	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// 3. With WRITE access and existing integration health remove should not return an error.
+
 	err = s.datastore.RemoveIntegrationHealth(s.hasWriteCtx, integrationHealth.GetId())
 	s.NoError(err)
+	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
+	s.NoError(err)
+	s.False(exists)
+
+	// 4. With WRITE access should return an error if integration health is not found.
+	err = s.datastore.RemoveIntegrationHealth(s.hasWriteCtx, integrationHealth.GetId())
+	s.Error(err, errox.NotFound)
 }
 
 func (s *integrationHealthDatastoreTestSuite) testGetIntegrationHealth(getIntegrationHealth func(ctx context.Context) ([]*storage.IntegrationHealth, error)) {
-	// 1. With no access should return a sac.ErrResourceAccessDenied error.
-	_, err := getIntegrationHealth(s.hasNoAccessCtx)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-
-	// 2. With READ access should not return an error.
-	_, err = getIntegrationHealth(s.hasReadCtx)
+	// 1. With no access should not return an error and no integration.
+	integration, err := getIntegrationHealth(s.hasNoAccessCtx)
 	s.NoError(err)
+	s.Nil(integration)
 
-	// 3. With WRITE access should not return an error.
-	_, err = getIntegrationHealth(s.hasWriteCtx)
+	// 2. With READ access should return an integration.
+	integration, err = getIntegrationHealth(s.hasReadCtx)
 	s.NoError(err)
+	s.NotNil(integration)
+
+	// 3. With WRITE access should return an integration.
+	integration, err = getIntegrationHealth(s.hasWriteCtx)
+	s.NoError(err)
+	s.NotNil(integration)
 }
 
 func newIntegrationHealth(typ storage.IntegrationHealth_Type) *storage.IntegrationHealth {

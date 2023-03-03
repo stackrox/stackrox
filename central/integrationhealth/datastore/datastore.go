@@ -21,7 +21,7 @@ type DataStore interface {
 	GetBackupPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error)
 	GetDeclarativeConfigs(ctx context.Context) ([]*storage.IntegrationHealth, error)
 
-	UpdateIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error
+	UpsertIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error
 	RemoveIntegrationHealth(ctx context.Context, id string) error
 	GetIntegrationHealth(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error)
 }
