@@ -13,7 +13,7 @@ Reuse with:
   method [args...]"
 }
 
-LAST_INFO_LOG=$(mktemp -t last_info_log)
+LAST_INFO_LOG=$(mktemp -t last_info_log.XXXXXXXXXX)
 info() {
     echo "$*" > $LAST_INFO_LOG
     echo "INFO: $(date): $*"
