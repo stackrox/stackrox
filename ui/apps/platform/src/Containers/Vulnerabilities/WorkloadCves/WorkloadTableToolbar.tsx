@@ -121,17 +121,17 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
                 <ToolbarToggleGroup
                     toggleIcon={<FilterIcon />}
                     breakpoint="xl"
-                    className="pf-u-w-100"
+                    className="pf-u-flex-1"
                 >
-                    <ToolbarGroup variant="filter-group" className="pf-u-w-100">
-                        <ToolbarItem>
+                    <ToolbarGroup variant="filter-group" className="pf-u-flex-grow-1">
+                        <ToolbarItem className="pf-u-w-25">
                             <FilterResourceDropdown
                                 onSelect={onSelect}
                                 searchFilter={searchFilter}
                                 resourceContext={resourceContext}
                             />
                         </ToolbarItem>
-                        <ToolbarItem variant="search-filter" className="pf-u-w-100">
+                        <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
                             <FilterAutocompleteInput
                                 searchFilter={searchFilter}
                                 setSearchFilter={setSearchFilter}
