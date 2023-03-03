@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,4 +72,61 @@ func (s *IntervalsTestSuite) Test_Next() {
 			s.Assert().Equal(tt.want, got)
 		})
 	}
+}
+
+func TestNewNodeScanIntervalFromEnv(t *testing.T) {
+	tests := []struct {
+		name          string
+		envInterval   string
+		envDeviation  string
+		envMaxInitial string
+		want          NodeScanIntervals
+	}{
+		{
+			name:          "when interval, deviation and initial are set then interval is set",
+			envInterval:   "1h",
+			envDeviation:  "50",
+			envMaxInitial: "1m",
+			want: NodeScanIntervals{
+				base:       time.Hour,
+				deviation:  0.5,
+				initialMax: time.Minute,
+			},
+		},
+		{
+			name:         "when deviation greater than 100",
+			envDeviation: "200",
+			want: NodeScanIntervals{
+				base:       time.Hour * 4,
+				deviation:  1,
+				initialMax: time.Minute * 5,
+			},
+		},
+		{
+			name:         "when deviation lower than 0",
+			envDeviation: "-20",
+			want: NodeScanIntervals{
+				base:       time.Hour * 4,
+				deviation:  0,
+				initialMax: time.Minute * 5,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Setenv("ROX_NODE_SCANNING_INTERVAL", tt.envInterval)
+		t.Setenv("ROX_NODE_SCANNING_INTERVAL_DEVIATION", tt.envDeviation)
+		t.Setenv("ROX_NODE_SCANNING_MAX_INITIAL_WAIT", tt.envMaxInitial)
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewNodeScanIntervalFromEnv()
+			assert.Exactly(t, got, tt.want)
+		})
+	}
+}
+
+func (s *IntervalsTestSuite) TestNodeScanIntervals_Initial() {
+	i := &NodeScanIntervals{
+		initialMax: time.Minute,
+	}
+	randFloat64 = func() float64 { return 0.5 }
+	s.Equal(time.Second*30, i.Initial())
 }

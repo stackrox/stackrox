@@ -1,6 +1,7 @@
 package intervals
 
 import (
+	"math"
 	"math/rand"
 	"time"
 
@@ -43,7 +44,8 @@ func NewNodeScanIntervalFromEnv() NodeScanIntervals {
 	i.base = env.NodeScanningInterval.DurationSetting()
 	i.deviation = 0.0
 	if env.NodeScanningIntervalDeviation.IntegerSetting() > 0 {
-		i.deviation = float64(env.NodeScanningIntervalDeviation.IntegerSetting()) / 100.0
+		d := math.Min(float64(env.NodeScanningIntervalDeviation.IntegerSetting()), 100.0)
+		i.deviation = d / 100.0
 	}
 	i.initialMax = env.NodeScanningMaxInitialWait.DurationSetting()
 	log.Infof("scanning intervals: base=%s deviation=%.2f initialMax=%s",
