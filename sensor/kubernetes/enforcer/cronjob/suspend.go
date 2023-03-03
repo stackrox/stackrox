@@ -51,8 +51,16 @@ func makePatch(deploymentInfo *central.DeploymentEnforcement, apiVersion string)
 
 // Suspend suspends the cron job
 func Suspend(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
-	if ok, apiErr := utils.HasAPI(client, batchV1, kubernetesPkg.CronJob); ok && apiErr == nil {
+	ok, apiErr := utils.HasAPI(client, batchV1, kubernetesPkg.CronJob)
+	if apiErr != nil {
+		return retry.MakeRetryable(apiErr)
+	}
+
+	if ok {
 		patchBytes, patchOptions, err := makePatch(deploymentInfo, batchV1)
+		if err != nil {
+			return err
+		}
 		_, err = client.BatchV1().CronJobs(deploymentInfo.GetNamespace()).Patch(ctx, deploymentInfo.GetDeploymentName(),
 			types.ApplyPatchType,
 			patchBytes,
@@ -62,6 +70,9 @@ func Suspend(ctx context.Context, client kubernetes.Interface, deploymentInfo *c
 		}
 	} else {
 		patchBytes, patchOptions, err := makePatch(deploymentInfo, batchV1beta1)
+		if err != nil {
+			return err
+		}
 		_, err = client.BatchV1beta1().CronJobs(deploymentInfo.GetNamespace()).Patch(ctx, deploymentInfo.GetDeploymentName(), types.ApplyPatchType,
 			patchBytes,
 			patchOptions)
