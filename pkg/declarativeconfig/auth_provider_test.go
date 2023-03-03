@@ -14,8 +14,8 @@ requiredAttributes:
 - key: "groups"
   value: "stackrox"
 minimumRole: "None"
-uiEndpoint: "https://localhost:8000"
-extraUIEndpoints: ["https://localhost:8001"]
+uiEndpoint: "localhost:8000"
+extraUIEndpoints: ["localhost:8001"]
 groups:
 - key: "email"
   value: "admin@stackrox.com"
@@ -25,7 +25,7 @@ groups:
   role: "Analyst"
 oidc:
   issuer: "https://stackrox.com"
-  mode: "auto select"
+  mode: "auto"
   clientID: "some-client-id"
   clientSecret: "some-client-secret"
   disableOfflineAccessScope: true
@@ -36,10 +36,10 @@ oidc:
 	assert.NoError(t, err)
 	assert.Equal(t, "test-name", ap.Name)
 	assert.Equal(t, "None", ap.MinimumRoleName)
-	assert.Equal(t, "https://localhost:8000", ap.UIEndpoint)
+	assert.Equal(t, "localhost:8000", ap.UIEndpoint)
 
 	assert.Len(t, ap.ExtraUIEndpoints, 1)
-	assert.Equal(t, "https://localhost:8001", ap.ExtraUIEndpoints[0])
+	assert.Equal(t, "localhost:8001", ap.ExtraUIEndpoints[0])
 
 	assert.Len(t, ap.Groups, 2)
 	assert.Equal(t, "email", ap.Groups[0].AttributeKey)
@@ -60,7 +60,7 @@ oidc:
 	assert.NotNil(t, ap.OIDCConfig)
 	assert.Equal(t, "some-client-id", ap.OIDCConfig.ClientID)
 	assert.Equal(t, "some-client-secret", ap.OIDCConfig.ClientSecret)
-	assert.Equal(t, "auto select", ap.OIDCConfig.CallbackMode)
+	assert.Equal(t, "auto", ap.OIDCConfig.CallbackMode)
 	assert.Equal(t, "https://stackrox.com", ap.OIDCConfig.Issuer)
 	assert.True(t, ap.OIDCConfig.DisableOfflineAccessScope)
 }

@@ -69,8 +69,10 @@ type OpenshiftConfig struct {
 type AuthProvider struct {
 	Name string `yaml:"name,omitempty"`
 	// TODO: ROX-14148 if left empty, no default group should be created
-	MinimumRoleName    string              `yaml:"minimumRole,omitempty"`
-	UIEndpoint         string              `yaml:"uiEndpoint,omitempty"`
+	MinimumRoleName string `yaml:"minimumRole,omitempty"`
+	// The UIEndpoint should be given without scheme (http:// | https://) but including the port, e.g. localhost:443
+	UIEndpoint string `yaml:"uiEndpoint,omitempty"`
+	// The ExtraUIEndpoints should be given without scheme (http:// | https://) but including the port, e.g. localhost:443
 	ExtraUIEndpoints   []string            `yaml:"extraUIEndpoints,omitempty"`
 	Groups             []Group             `yaml:"groups,omitempty"`
 	RequiredAttributes []RequiredAttribute `yaml:"requiredAttributes,omitempty"`
