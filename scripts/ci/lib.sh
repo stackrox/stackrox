@@ -834,7 +834,7 @@ get_pr_details() {
         org="${GITHUB_REPOSITORY_OWNER}"
         repo="${GITHUB_REPOSITORY#*/}"
     else
-        echo "Expect Circle or OpenShift CI"
+        echo "Unsupported CI"
         exit 2
     fi
 

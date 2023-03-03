@@ -81,18 +81,6 @@ To run tests, from within `qa-tests-backend` directory:
 If you have deployed the cluster differently or need to use a custom configuration, set `CLUSTER`, `API_HOSTNAME`,
 `PORT`,`ROX_USERNAME`, `ROX_PASSWORD` and other relevant integration credential environment variables.
 
-## CircleCI
-### Labels
-Tests runs in CircleCI are controlled by CircleCI labels. Here are the labels relevant to QA tests:
-  - `ci-all-qa-tests` : run ALL QA tests, not just BAT
-  - `ci-no-qa-tests` : skip QA tests
-  - `ci-openshift-tests` : Run tests on Openshift. This label can be combined with the previous two labels
-
-### Spock Reports
-Test outputs are integrated with spock-reports plugin.
-All the reports are added under build/spock-reports folder.
-The report is generated with all the tests executed with asserts for the failed and the steps executed.
-
 # Adding Tests
 ## Annotations
 New tests are added with a `@Tag` annotation to indicate which to which

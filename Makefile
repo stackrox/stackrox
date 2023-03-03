@@ -166,12 +166,6 @@ update-shellcheck-skip:
 	$(SILENT)rm -f scripts/style/shellcheck_skip.txt
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh update_failing_list
 
-.PHONY: ci-config-validate
-ci-config-validate:
-	@echo "+ $@"
-	$(SILENT)circleci diagnostic > /dev/null 2>&1 || (echo "Must first set CIRCLECI_CLI_TOKEN or run circleci setup"; exit 1)
-	circleci config validate --org-slug gh/stackrox
-
 .PHONY: fast-central-build
 fast-central-build: central-build-nodeps
 

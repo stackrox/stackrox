@@ -22,7 +22,7 @@ store_artifacts() {
         exit 1
     fi
 
-    # Circle CI does a poor job with ~ expansion
+    # Some CI do a poor job with ~ expansion
     if [[ "$path" =~ ^~ ]]; then
         path="$HOME$(cut -c2- -<<< "$path")"
     fi
