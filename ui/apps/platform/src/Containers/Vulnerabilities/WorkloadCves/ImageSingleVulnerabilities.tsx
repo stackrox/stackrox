@@ -14,7 +14,6 @@ import {
     TabTitleText,
     Tabs,
     TabsComponent,
-    TabsProps,
     Text,
     Title,
 } from '@patternfly/react-core';
@@ -23,8 +22,8 @@ import { gql, useQuery } from '@apollo/client';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { FixableStatus, isValidCveStatusTab } from './types';
-import useCveStatusTabParameter from './hooks/useCveStatusTabParameter';
+import useURLStringUnion from 'hooks/useURLStringUnion';
+import { cveStatusTabValues, FixableStatus } from './types';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
@@ -103,13 +102,7 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
         variables: { id: imageId },
     });
 
-    const [activeTabKey, setActiveTabKey] = useCveStatusTabParameter();
-
-    const handleTabClick: TabsProps['onSelect'] = (e, tabKey) => {
-        if (isValidCveStatusTab(tabKey)) {
-            setActiveTabKey(tabKey);
-        }
-    };
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
     let mainContent: ReactNode | null = null;
 
@@ -171,7 +164,7 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
             >
                 <Tabs
                     activeKey={activeTabKey}
-                    onSelect={handleTabClick}
+                    onSelect={(e, key) => setActiveTabKey(key)}
                     component={TabsComponent.nav}
                     mountOnEnter
                     unmountOnExit
