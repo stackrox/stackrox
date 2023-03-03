@@ -7,10 +7,12 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
+	"github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -115,10 +117,13 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	if err := ds.validateAndPrepGroupForAddNoLock(ctx, group); err != nil {
+	unique, err := ds.validateAndPrepGroupForAddNoLock(ctx, group)
+	if err != nil {
 		return err
 	}
-
+	if !unique {
+		return nil
+	}
 	return ds.storage.Upsert(ctx, group)
 }
 
@@ -133,8 +138,12 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force); err != nil {
+	unique, err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force)
+	if err != nil {
 		return err
+	}
+	if !unique {
+		return nil
 	}
 	return ds.storage.Upsert(ctx, group)
 }
@@ -146,27 +155,42 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 		return sac.ErrResourceAccessDenied
 	}
 
+	// Dedupe groups to add / update to not contain the same tuple of role name, auth provider, key, value.
+	// This ensures we do not create duplicates.
+	add = dedupeGroupsByRoleAndProps(add)
+	update = dedupeGroupsByRoleAndProps(update)
+
 	// Lock to ensure that all mutations happen as one
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
+	groupsToAdd := make([]*storage.Group, 0, len(add))
 	for _, group := range add {
-		if err := ds.validateAndPrepGroupForAddNoLock(ctx, group); err != nil {
+		unique, err := ds.validateAndPrepGroupForAddNoLock(ctx, group)
+		if err != nil {
 			return err
 		}
+		if unique {
+			groupsToAdd = append(groupsToAdd, group)
+		}
 	}
-	if len(add) > 0 {
-		if err := ds.storage.UpsertMany(ctx, add); err != nil {
+	if len(groupsToAdd) > 0 {
+		if err := ds.storage.UpsertMany(ctx, groupsToAdd); err != nil {
 			return err
 		}
 	}
 
+	groupsToUpdate := make([]*storage.Group, 0, len(update))
 	for _, group := range update {
-		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force); err != nil {
+		unique, err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force)
+		if err != nil {
 			return err
 		}
+		if unique {
+			groupsToUpdate = append(groupsToUpdate, group)
+		}
 	}
-	if len(update) > 0 {
+	if len(groupsToUpdate) > 0 {
 		if err := ds.storage.UpsertMany(ctx, update); err != nil {
 			return err
 		}
@@ -183,7 +207,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 		}
 		idsToRemove = append(idsToRemove, groupID)
 	}
-	if len(remove) > 0 {
+	if len(idsToRemove) > 0 {
 		if err := ds.storage.DeleteMany(ctx, idsToRemove); err != nil {
 			return err
 		}
@@ -256,55 +280,57 @@ func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error
 
 // Validate if the group is allowed to be added and prep the group before it is added to the db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, group *storage.Group) error {
+func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, group *storage.Group) (bool, error) {
 	if err := ValidateGroup(group, false); err != nil {
-		return errox.InvalidArgs.CausedBy(err)
+		return false, errox.InvalidArgs.CausedBy(err)
 	}
 
 	if err := setGroupIDIfEmpty(group); err != nil {
-		return err
+		return false, err
 	}
 
 	defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
 	if defaultGroup != nil {
-		return errox.AlreadyExists.Newf("cannot add a default group of auth provider %q as a default group already exists",
+		return false, errox.AlreadyExists.Newf("cannot add a default group of auth provider %q as a default group already exists",
 			group.GetProps().GetAuthProviderId())
 	}
-	return nil
+
+	return ds.validateGroupIsUnique(ctx, group)
 }
 
 // Validate if the group is allowed to be updated and prep the group before it is updated in db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group,
-	force bool) error {
+	force bool) (bool, error) {
 	if err := ValidateGroup(group, true); err != nil {
-		return errox.InvalidArgs.CausedBy(err)
+		return false, errox.InvalidArgs.CausedBy(err)
 	}
 
 	existingGroup, err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), force)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if err = verifyGroupOriginMatches(ctx, existingGroup); err != nil {
-		return err
+		return false, err
 	}
 
 	defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Only disallow update of a default group if it does not update the existing default group, if there is any.
 	if defaultGroup != nil && defaultGroup.GetProps().GetId() != group.GetProps().Id {
-		return errox.AlreadyExists.Newf("cannot update group to default group of auth provider %q as a default group already exists",
+		return false, errox.AlreadyExists.Newf("cannot update group to default group of auth provider %q as a default group already exists",
 			group.GetProps().GetAuthProviderId())
 	}
-	return nil
+
+	return ds.validateGroupIsUnique(ctx, group)
 }
 
 // Validate the props, fetch the group and check if it is allowed to be deleted.
@@ -448,4 +474,31 @@ func (ds *dataStoreImpl) validateGroupExists(ctx context.Context, id string) (*s
 		return nil, errox.NotFound.Newf("group with id %q was not found", id)
 	}
 	return group, nil
+}
+
+func (ds *dataStoreImpl) validateGroupIsUnique(ctx context.Context, group *storage.Group) (bool, error) {
+	existingGroups, err := ds.GetFiltered(ctx, func(p *storage.GroupProperties) bool {
+		return propertiesMatch(p, group.GetProps())
+	})
+	if err != nil {
+		return false, err
+	}
+
+	for _, existingGroup := range existingGroups {
+		if existingGroup.GetRoleName() == group.GetRoleName() {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func dedupeGroupsByRoleAndProps(groups []*storage.Group) []*storage.Group {
+	uniqueGroupsByRoleAndProps := make(map[string]*storage.Group, len(groups))
+	for _, group := range groups {
+		key := group.GetRoleName() + string(serialize.PropsKey(group.GetProps()))
+		if _, exists := uniqueGroupsByRoleAndProps[key]; !exists {
+			uniqueGroupsByRoleAndProps[key] = group
+		}
+	}
+	return maputil.Values(uniqueGroupsByRoleAndProps)
 }

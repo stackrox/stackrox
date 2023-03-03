@@ -246,7 +246,10 @@ func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	gomock.InOrder(
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(walkMockFunc(nil)),
+		s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1),
+	)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		AuthProviderId: "123",
@@ -278,8 +281,11 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
-	s.expectGet(1, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	gomock.InOrder(
+		s.expectGet(1, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE)),
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(walkMockFunc(nil)),
+		s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1),
+	)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		Id:             "1",
@@ -315,7 +321,8 @@ func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsMutate() {
-	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(2) // two calls * two operations (add, update)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(walkMockFunc(nil)) // two calls * two operations (add, update)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(2)              // two calls * two operations (add, update)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE), true, nil).Times(2)
 
@@ -344,7 +351,9 @@ func (s *groupDataStoreTestSuite) TestMutate() {
 	}
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
 	gomock.InOrder(
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(walkMockFunc(nil)),
 		s.storage.EXPECT().UpsertMany(gomock.Any(), toAdd),
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(walkMockFunc(nil)),
 		s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{toUpdate}),
 		s.storage.EXPECT().DeleteMany(gomock.Any(), []string{toRemove.GetProps().GetId()}),
 	)
@@ -407,15 +416,11 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 
 			c.groupToAdd.GetProps().Id = "" // clear it out so that the data store doesn't error out
 
-			// If default group, then expect call to Walk (to find if there are other default groups)
-			if c.groupToAdd.GetProps().GetKey() == "" && c.groupToAdd.GetProps().GetValue() == "" {
-				s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(c.existingGroups)).Times(2)
-			} else {
-				// Otherwise, no call to Walk will be made
-				s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
-			}
-
 			if c.shouldError {
+				// In error case, we only expect two calls to Walk, since the uniqueness check is done after checking
+				// the default group.
+				s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(c.existingGroups)).Times(2)
+
 				// Validate Add returns an error if duplicate default group
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(0)
 				err := s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.Clone())
@@ -428,6 +433,13 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 				s.Error(err)
 				s.ErrorIs(err, errox.AlreadyExists)
 			} else {
+				// If default group, then expect two additional call to Walk (to find if there are other default groups).
+				// Otherwise, walk will be called twice to check for uniqueness of the group.
+				count := 2
+				if c.groupToAdd.GetProps().GetKey() == "" && c.groupToAdd.GetProps().GetValue() == "" {
+					count = 4
+				}
+				s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(c.existingGroups)).Times(count)
 				// Validate Add doesn't error if it's a new default
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 				s.NoError(s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.Clone()))
@@ -499,25 +511,32 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{initialGroup, defaultGroup})).AnyTimes()
 
 	// 1. Updating the default group's role should work.
-	defaultGroup.RoleName = "non-admin" // Using the same defaultGroup object so that the Walk closure is also updated correctly
+	updatedDefaultGroup := defaultGroup.Clone()
+	updatedDefaultGroup.RoleName = "non-admin" // Using the same defaultGroup object so that the Walk closure is also updated correctly
 
-	s.storage.EXPECT().Upsert(gomock.Any(), defaultGroup)
-	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{defaultGroup})
+	s.storage.EXPECT().Upsert(gomock.Any(), updatedDefaultGroup)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{updatedDefaultGroup})
 
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.NoError(s.dataStore.Update(s.hasWriteCtx, defaultGroup, false))
-	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{defaultGroup}, []*storage.Group{}, false))
+	s.NoError(s.dataStore.Update(s.hasWriteCtx, updatedDefaultGroup, false))
+	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{updatedDefaultGroup}, []*storage.Group{}, false))
+
+	defaultGroup.RoleName = "non-admin"
 
 	// 2. Update the default group to a non-default group.
-	defaultGroup.GetProps().Key = "email" // Update the properties to make it a non-default group.
-	defaultGroup.GetProps().Value = "test@example.com"
+	updatedDefaultGroup = defaultGroup.Clone()
+	updatedDefaultGroup.GetProps().Key = "email" // Update the properties to make it a non-default group.
+	updatedDefaultGroup.GetProps().Value = "test@example.com"
 
-	s.storage.EXPECT().Upsert(gomock.Any(), defaultGroup)
-	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{defaultGroup})
+	s.storage.EXPECT().Upsert(gomock.Any(), updatedDefaultGroup)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{updatedDefaultGroup})
 
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.NoError(s.dataStore.Update(s.hasWriteCtx, defaultGroup, false))
-	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{defaultGroup}, []*storage.Group{}, false))
+	s.NoError(s.dataStore.Update(s.hasWriteCtx, updatedDefaultGroup, false))
+	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{updatedDefaultGroup}, []*storage.Group{}, false))
+
+	defaultGroup.GetProps().Key = "email"
+	defaultGroup.GetProps().Value = "test@example.com"
 
 	// 3. Adding another default group back in should now work, as we have made the existing default group a non-default group.
 	newDefaultGroup := &storage.Group{
@@ -616,6 +635,7 @@ func (s *groupDataStoreTestSuite) TestUpdateMutableToImmutable() {
 			},
 		},
 	}, true, nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.Update(s.hasWriteCtx, &storage.Group{
@@ -650,6 +670,7 @@ func (s *groupDataStoreTestSuite) TestUpdateImmutableForce() {
 	expectedGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE_FORCED)
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	updatedGroup := expectedGroup.Clone()
@@ -704,6 +725,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupNoForce() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(mutableGroup, true, nil),
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(immutableGroup, true, nil),
 	)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{mutableGroup}).Return(nil)
 	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{immutableGroup}, []*storage.Group{mutableGroup}, nil, false)
 	s.Error(err)
@@ -728,6 +750,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(mutableGroup, true, nil),
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(immutableGroup, true, nil),
 	)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{mutableGroup}).Return(nil).Times(1)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{immutableGroup.GetProps().GetId()}).Return(nil).Times(1)
 	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{immutableGroup}, []*storage.Group{mutableGroup}, nil, true)
@@ -738,6 +761,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(immutableGroup, true, nil),
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(mutableGroup, true, nil),
 	)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{immutableGroup}).Return(nil).Times(1)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{mutableGroup.GetProps().GetId()}).Return(nil).Times(1)
 	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, true)
@@ -818,6 +842,7 @@ func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaConfig() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 
 	updatedGroup := expectedGroup.Clone()
 	updatedGroup.GetProps().Key = "something"
@@ -855,6 +880,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaAPI() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(imperativeGroup, true, nil),
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
 	)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{imperativeGroup}).Return(nil)
 	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, false)
 	s.Error(err)
@@ -887,6 +913,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(imperativeGroup, true, nil),
 	)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{declarativeGroup}).Return(nil).Times(1)
 	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, true)
 	s.Error(err)
@@ -896,6 +923,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 	gomock.InOrder(
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
 	)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)).Times(1)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{declarativeGroup}).Return(nil).Times(1)
 	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, nil, []*storage.Group{declarativeGroup}, nil, true)
 	s.NoError(err)
@@ -906,5 +934,57 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 	)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{declarativeGroup.GetProps().GetId()}).Return(nil).Times(1)
 	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, nil, nil, true)
+	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) TestAddDuplicateGroup() {
+	group := fixtures.GetGroup()
+	group.Props.Id = ""
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{group})).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), group).Times(0)
+	err := s.dataStore.Add(s.hasWriteCtx, group)
+	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) TestUpdateDuplicateGroup() {
+	group := fixtures.GetGroup()
+	s.expectGet(1, group)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{group})).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), group).Times(0)
+	err := s.dataStore.Update(s.hasWriteCtx, group, false)
+	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) TestMutateDuplicateGroups() {
+	// 1. Verify that duplicate groups with the same key value auth provider role name tuple get deduped.
+	groupToAdd := fixtures.GetGroup()
+	groupToAdd.Props.Id = ""
+
+	groupToUpdate := fixtures.GetGroup()
+
+	s.expectGet(1, groupToUpdate)
+	gomock.InOrder(
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)),
+		s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{groupToAdd}).Return(nil),
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(nil)),
+		s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{groupToUpdate}).Return(nil),
+	)
+	err := s.dataStore.Mutate(s.hasWriteCtx, nil, []*storage.Group{groupToUpdate, groupToUpdate.Clone()},
+		[]*storage.Group{groupToAdd, groupToAdd.Clone()}, false)
+	s.NoError(err)
+
+	// 2. Verify that groups that already exists will not be upserted.
+	groupToAdd = fixtures.GetGroup()
+	groupToAdd.Props.Id = ""
+
+	groupToUpdate = fixtures.GetGroup()
+
+	s.expectGet(1, groupToUpdate)
+	gomock.InOrder(
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{groupToAdd})),
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{groupToUpdate})),
+	)
+	err = s.dataStore.Mutate(s.hasWriteCtx, nil, []*storage.Group{groupToUpdate, groupToUpdate.Clone()},
+		[]*storage.Group{groupToAdd, groupToAdd.Clone()}, false)
 	s.NoError(err)
 }
