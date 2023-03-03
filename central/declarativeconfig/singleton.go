@@ -14,6 +14,7 @@ var (
 )
 
 // ReconciliationErrorReporter processes declarative resources reconciliation errors.
+//
 //go:generate mockgen-wrapper
 type ReconciliationErrorReporter interface {
 	ProcessError(protoValue proto.Message, err error)
