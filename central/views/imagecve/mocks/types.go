@@ -79,6 +79,20 @@ func (mr *MockCveCoreMockRecorder) GetFirstDiscoveredInSystem() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFirstDiscoveredInSystem", reflect.TypeOf((*MockCveCore)(nil).GetFirstDiscoveredInSystem))
 }
 
+// GetImagesBySeverity mocks base method.
+func (m *MockCveCore) GetImagesBySeverity() *imagecve.ResourceCountByCVESeverity {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImagesBySeverity")
+	ret0, _ := ret[0].(*imagecve.ResourceCountByCVESeverity)
+	return ret0
+}
+
+// GetImagesBySeverity indicates an expected call of GetImagesBySeverity.
+func (mr *MockCveCoreMockRecorder) GetImagesBySeverity() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBySeverity", reflect.TypeOf((*MockCveCore)(nil).GetImagesBySeverity))
+}
+
 // GetTopCVSS mocks base method.
 func (m *MockCveCore) GetTopCVSS() float32 {
 	m.ctrl.T.Helper()

@@ -302,6 +302,17 @@ func compileExpected(images []*storage.Image, filter *filterImpl) []*imageCVECor
 
 				if seenForImage.Add(val.CVE) {
 					val.AffectedImages++
+
+					switch vuln.GetSeverity() {
+					case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+						val.ImagesWithCriticalSeverity++
+					case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+						val.ImagesWithImportantSeverity++
+					case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+						val.ImagesWithModerateSeverity++
+					case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+						val.ImagesWithLowSeverity++
+					}
 				}
 			}
 		}
