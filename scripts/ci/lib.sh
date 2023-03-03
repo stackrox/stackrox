@@ -669,9 +669,7 @@ is_nightly_run() {
 }
 
 is_in_PR_context() {
-    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
-        return 0
-    elif is_GITHUB_ACTIONS && [[ -n "${GITHUB_BASE_REF:-}" ]]; then
+    if is_GITHUB_ACTIONS && [[ -n "${GITHUB_BASE_REF:-}" ]]; then
         return 0
     elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         return 0
@@ -686,10 +684,7 @@ is_in_PR_context() {
 }
 
 get_PR_number() {
-    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
-        echo "${CIRCLE_PULL_REQUEST}"
-        return 0
-    elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
+    if is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         echo "${PULL_NUMBER}"
         return 0
     elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
@@ -715,9 +710,7 @@ is_openshift_CI_rehearse_PR() {
 }
 
 get_base_ref() {
-    if is_CIRCLECI; then
-        echo "${CIRCLE_BRANCH}"
-    elif is_OPENSHIFT_CI; then
+    if is_OPENSHIFT_CI; then
         if [[ -n "${PULL_BASE_REF:-}" ]]; then
             # presubmit, postsubmit and batch runs
             # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
@@ -739,10 +732,7 @@ get_base_ref() {
 }
 
 get_repo_full_name() {
-    if is_CIRCLECI; then
-        # CIRCLE_REPOSITORY_URL=git@github.com:stackrox/stackrox.git
-        echo "${CIRCLE_REPOSITORY_URL:15:-4}"
-    elif is_GITHUB_ACTIONS; then
+    if is_GITHUB_ACTIONS; then
         [[ -n "${GITHUB_ACTION_REPOSITORY:-}" ]] || die "expect: GITHUB_ACTION_REPOSITORY"
         echo "${GITHUB_ACTION_REPOSITORY}"
     elif is_OPENSHIFT_CI; then
@@ -824,14 +814,7 @@ get_pr_details() {
         exit 1
     }
 
-    if is_CIRCLECI; then
-        [ -n "${CIRCLE_PULL_REQUEST:-}" ] || _not_a_PR
-        [ -n "${CIRCLE_PROJECT_USERNAME}" ] || { echo "CIRCLE_PROJECT_USERNAME not found" ; exit 2; }
-        [ -n "${CIRCLE_PROJECT_REPONAME}" ] || { echo "CIRCLE_PROJECT_REPONAME not found" ; exit 2; }
-        pull_request="${CIRCLE_PULL_REQUEST##*/}"
-        org="${CIRCLE_PROJECT_USERNAME}"
-        repo="${CIRCLE_PROJECT_REPONAME}"
-    elif is_OPENSHIFT_CI; then
+    if is_OPENSHIFT_CI; then
         if [[ -n "${JOB_SPEC:-}" ]]; then
             pull_request=$(jq -r <<<"$JOB_SPEC" '.refs.pulls[0].number')
             org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
@@ -928,11 +911,7 @@ gate_pr_job() {
 
     if [[ -n "${run_with_changed_path}" || -n "${changed_path_to_ignore}" ]]; then
         local diff_base
-        if is_CIRCLECI; then
-            diff_base="$(git merge-base HEAD origin/master)"
-            echo "Determined diff-base as ${diff_base}"
-            echo "Master SHA: $(git rev-parse origin/master)"
-        elif is_OPENSHIFT_CI; then
+        if is_OPENSHIFT_CI; then
             if [[ -n "${PULL_BASE_SHA:-}" ]]; then
                 diff_base="${PULL_BASE_SHA:-}"
             else
