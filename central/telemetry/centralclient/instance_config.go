@@ -161,6 +161,7 @@ func Disable() {
 	if !enabled || !cfg.Enabled() {
 		return
 	}
+	cfg.Telemeter().Track("Telemetry Disabled", nil)
 	cfg.Gatherer().Stop()
 	cfg.RemoveInterceptors()
 	enabled = false
@@ -192,5 +193,6 @@ func Enable() *phonehome.Config {
 	cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	enabled = true
 	log.Info("Telemetry collection has been enabled.")
+	cfg.Telemeter().Track("Telemetry Enabled", nil)
 	return cfg
 }
