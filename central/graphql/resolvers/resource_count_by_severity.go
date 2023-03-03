@@ -26,28 +26,31 @@ type resourceCountBySeverityResolver struct {
 }
 
 func (resolver *Resolver) wrapResourceCountByCVESeverityWithContext(ctx context.Context, value *imagecve.ResourceCountByCVESeverity, err error) (*resourceCountBySeverityResolver, error) {
-	if err != nil || value == nil {
+	if err != nil {
 		return nil, err
+	}
+	if value == nil {
+		value = &imagecve.ResourceCountByCVESeverity{}
 	}
 	return &resourceCountBySeverityResolver{ctx: ctx, root: resolver, data: value}, nil
 }
 
 // Critical returns the number of resource with low CVE impact.
-func (resolver *resourceCountBySeverityResolver) Critical(_ context.Context) int {
-	return resolver.data.CriticalSeverityCount
+func (resolver *resourceCountBySeverityResolver) Critical(_ context.Context) int32 {
+	return int32(resolver.data.CriticalSeverityCount)
 }
 
 // Important returns the number of resource with important CVE impact.
-func (resolver *resourceCountBySeverityResolver) Important(_ context.Context) int {
-	return resolver.data.ImportantSeverityCount
+func (resolver *resourceCountBySeverityResolver) Important(_ context.Context) int32 {
+	return int32(resolver.data.ImportantSeverityCount)
 }
 
 // Moderate returns the number of resource with moderate CVE impact.
-func (resolver *resourceCountBySeverityResolver) Moderate(_ context.Context) int {
-	return resolver.data.ModerateSeverityCount
+func (resolver *resourceCountBySeverityResolver) Moderate(_ context.Context) int32 {
+	return int32(resolver.data.ModerateSeverityCount)
 }
 
 // Low returns the number of resource with low CVE impact.
-func (resolver *resourceCountBySeverityResolver) Low(_ context.Context) int {
-	return resolver.data.LowSeverityCount
+func (resolver *resourceCountBySeverityResolver) Low(_ context.Context) int32 {
+	return int32(resolver.data.LowSeverityCount)
 }

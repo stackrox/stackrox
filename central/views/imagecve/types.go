@@ -29,6 +29,7 @@ type CveView interface {
 	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
 }
 
+// ResourceCountByCVESeverity is the count of resources affected by cve distributed over severity.
 type ResourceCountByCVESeverity struct {
 	CriticalSeverityCount  int
 	ImportantSeverityCount int
