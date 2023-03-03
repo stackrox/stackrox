@@ -60,12 +60,15 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 
 	// Currently, the data store does not support forcing updates.
 	// If we want to add a force flag to the respective API methods, we might need to revisit this.
-	ap, err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), false)
+	existingProvider, err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), false)
 	if err != nil {
 		return err
 	}
-	if err = verifyAuthProviderOriginMatches(ctx, ap); err != nil {
-		return err
+	if err = verifyAuthProviderOriginMatches(ctx, existingProvider); err != nil {
+		return errors.Wrap(err, "origin didn't match for existing auth provider")
+	}
+	if err = verifyAuthProviderOriginMatches(ctx, authProvider); err != nil {
+		return errors.Wrap(err, "origin didn't match for new auth provider")
 	}
 	return b.storage.Upsert(ctx, authProvider)
 }
