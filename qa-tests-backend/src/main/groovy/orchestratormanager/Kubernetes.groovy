@@ -135,7 +135,7 @@ class Kubernetes implements OrchestratorMain {
         // "any namespace" requests to be scoped to the default project.
         this.client.configuration.namespace = null
         this.client.configuration.setRollingTimeout(60 * 60 * 1000)
-        this.client.configuration.setRequestTimeout(20*1000)
+        this.client.configuration.setRequestTimeout(32*1000)
         this.client.configuration.setConnectionTimeout(20*1000)
         this.client.configuration.setWebsocketTimeout(20*1000)
         this.deployments = this.client.apps().deployments()
