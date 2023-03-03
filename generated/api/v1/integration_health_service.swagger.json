@@ -11,6 +11,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/integrationhealth/declarativeconfigs": {
+      "get": {
+        "operationId": "IntegrationHealthService_GetDeclarativeConfigs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetIntegrationHealthResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "IntegrationHealthService"
+        ]
+      }
+    },
     "/v1/integrationhealth/externalbackups": {
       "get": {
         "operationId": "IntegrationHealthService_GetBackupPlugins",
@@ -177,7 +199,8 @@
         "UNKNOWN",
         "IMAGE_INTEGRATION",
         "NOTIFIER",
-        "BACKUP"
+        "BACKUP",
+        "DECLARATIVE_CONFIG"
       ],
       "default": "UNKNOWN"
     },
