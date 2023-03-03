@@ -1,0 +1,118 @@
+//go:build sql_integration
+// +build sql_integration
+
+package datastore
+
+import (
+	"context"
+	"fmt"
+	"testing"
+
+	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/suite"
+)
+
+func TestGroupsWithPostgres(t *testing.T) {
+	suite.Run(t, new(groupsWithPostgresTestSuite))
+}
+
+type groupsWithPostgresTestSuite struct {
+	suite.Suite
+
+	ctx   context.Context
+	pool  *postgres.DB
+	store postgresGroupStore.Store
+
+	groupsDatastore DataStore
+}
+
+func (s *groupsWithPostgresTestSuite) SetupSuite() {
+	pgtest.SkipIfPostgresDisabled(s.T())
+
+	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Access)))
+
+	pgtestBase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestBase)
+	s.pool = pgtestBase.DB
+
+	store := postgresGroupStore.New(s.pool)
+	s.groupsDatastore = New(store)
+}
+
+func (s *groupsWithPostgresTestSuite) TearDownSuite() {
+	s.pool.Close()
+}
+
+func (s *groupsWithPostgresTestSuite) TearDownTest() {
+	sql := fmt.Sprintf("TRUNCATE %s CASCADE", postgresSchema.GroupsTableName)
+	_, err := s.pool.Exec(s.ctx, sql)
+	s.NoError(err)
+}
+
+func (s *groupsWithPostgresTestSuite) TestAddGroups() {
+	group := fixtures.GetGroup()
+
+	// 0. Ensure the group to be added has no ID set.
+	group.Props.Id = ""
+
+	// 1. Adding a group should work.
+	err := s.groupsDatastore.Add(s.ctx, group)
+	s.NoError(err)
+
+	// 2. Adding the _same_ group twice should fail, since (auth provider ID, key, value, role name) should be unique
+	group.Props.Id = ""
+	err = s.groupsDatastore.Add(s.ctx, group)
+	s.Error(err)
+	s.True(pgutils.IsUniqueConstraintError(err))
+
+	// 3. Adding a different group should work.
+	group.RoleName = "headmaster"
+	group.Props.Id = ""
+	err = s.groupsDatastore.Add(s.ctx, group)
+	s.NoError(err)
+}
+
+func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
+	group := fixtures.GetGroup()
+
+	// 0. Insert the group.
+	group.Props.Id = ""
+	err := s.groupsDatastore.Add(s.ctx, group)
+	s.NoError(err)
+
+	// 1. Updating the group to be the same shouldn't throw an error as its a no-op.
+	err = s.groupsDatastore.Update(s.ctx, group, false)
+	s.NoError(err)
+
+	// 2. Create another group. Updating this group to be equal to the previously added one should fail.
+	newGroup := &storage.Group{
+		Props: &storage.GroupProperties{
+			AuthProviderId: "some-authprovider-id",
+			Key:            "some-key",
+			Value:          "some-value",
+		},
+		RoleName: "some-role",
+	}
+	err = s.groupsDatastore.Add(s.ctx, newGroup)
+	s.NoError(err)
+
+	newGroup.Props.AuthProviderId = group.GetProps().GetAuthProviderId()
+	newGroup.Props.Key = group.GetProps().GetKey()
+	newGroup.Props.Value = group.GetProps().GetValue()
+	newGroup.RoleName = group.GetRoleName()
+
+	err = s.groupsDatastore.Update(s.ctx, newGroup, false)
+	s.Error(err)
+	s.True(pgutils.IsUniqueConstraintError(err))
+}
