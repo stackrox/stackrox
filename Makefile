@@ -762,7 +762,7 @@ ui-publish-packages:
 
 .PHONY: check-debugger
 check-debugger:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" TAG="$(TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" TAG="$(TAG)" ./scripts/check-debugger.sh
 ifeq ($(DEBUG_BUILD),yes)
 	$(warning Warning: DEBUG_BUILD is enabled. Don not use this for production builds)
 endif
