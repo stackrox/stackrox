@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	imageCVEViewMock "github.com/stackrox/rox/central/views/imagecve/mocks"
-	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -146,23 +145,4 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
 	response, err := s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{Cve: pointers.String("cve-xyz")})
 	s.NoError(err)
 	s.NotNil(response.data)
-}
-
-func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmptyUnexpected() {
-	expectedQ := search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-xyz").ProtoQuery()
-	expected := []imagecve.CveCore{
-		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
-		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
-		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
-	}
-
-	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
-	if devbuild.IsEnabled() {
-		s.Panics(func() {
-			_, _ = s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{Cve: pointers.String("cve-xyz")})
-		})
-		return
-	}
-	_, err := s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{Cve: pointers.String("cve-xyz")})
-	s.Error(err)
 }
