@@ -16,6 +16,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 - Deprecated `/v1/telemetry/configure` service.
 - The `expiration` field in the `Exclusion` proto has been deprecated and will be removed in a future release.
+
 ### Technical Changes
 
 ## [3.74.0]
