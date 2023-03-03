@@ -70,13 +70,15 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 			if !entry.IsDir() {
 				continue
 			}
+
+			dirToWatch := path.Join(declarativeConfigDir, entry.Name())
 			log.Infof("Start watch handler for declarative configuration for path %s",
-				path.Join(declarativeConfigDir, entry.Name()))
-			wh := newWatchHandler(entry.Name(), m)
+				dirToWatch)
+			wh := newWatchHandler(dirToWatch, m)
 			// Set Force to true, so we explicitly retry watching the files within the directory and not stop on the first
 			// error occurred.
 			watchOpts := k8scfgwatch.Options{Interval: m.watchIntervalDuration, Force: true}
-			_ = k8scfgwatch.WatchConfigMountDir(context.Background(), declarativeConfigDir,
+			_ = k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch,
 				k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
 			startedWatchHandler = true
 		}
