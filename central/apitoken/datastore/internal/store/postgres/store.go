@@ -99,7 +99,7 @@ func insertIntoApiTokens(ctx context.Context, batch *pgx.Batch, obj *storage.Tok
 	return nil
 }
 
-func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
+func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx *postgres.Tx, objs ...*storage.TokenMetadata) error {
 
 	inputRows := [][]interface{}{}
 

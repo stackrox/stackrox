@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
@@ -229,6 +230,8 @@ func (m *networkFlowManager) Stop(_ error) {
 func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
+
+func (m *networkFlowManager) Notify(common.SensorComponentEvent) {}
 
 func (m *networkFlowManager) ResponsesC() <-chan *central.MsgFromSensor {
 	return m.sensorUpdates

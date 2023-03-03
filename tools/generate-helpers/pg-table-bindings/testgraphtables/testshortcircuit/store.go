@@ -103,7 +103,7 @@ func insertIntoTestShortCircuits(ctx context.Context, batch *pgx.Batch, obj *sto
 	return nil
 }
 
-func (s *storeImpl) copyFromTestShortCircuits(ctx context.Context, tx pgx.Tx, objs ...*storage.TestShortCircuit) error {
+func (s *storeImpl) copyFromTestShortCircuits(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestShortCircuit) error {
 
 	inputRows := [][]interface{}{}
 

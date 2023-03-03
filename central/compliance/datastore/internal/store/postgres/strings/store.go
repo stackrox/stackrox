@@ -100,7 +100,7 @@ func insertIntoComplianceStrings(ctx context.Context, batch *pgx.Batch, obj *sto
 	return nil
 }
 
-func (s *storeImpl) copyFromComplianceStrings(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceStrings) error {
+func (s *storeImpl) copyFromComplianceStrings(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComplianceStrings) error {
 
 	inputRows := [][]interface{}{}
 

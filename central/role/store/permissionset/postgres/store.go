@@ -100,7 +100,7 @@ func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storag
 	return nil
 }
 
-func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs ...*storage.PermissionSet) error {
+func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx *postgres.Tx, objs ...*storage.PermissionSet) error {
 
 	inputRows := [][]interface{}{}
 

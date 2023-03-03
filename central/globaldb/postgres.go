@@ -146,16 +146,16 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 	metrics.PostgresConnected.Set(float64(1))
 	dbStats.DatabaseAvailable = true
 
-	row, err := db.Query(ctx, tableQuery)
+	rows, err := db.Query(ctx, tableQuery)
 	if err != nil {
 		log.Errorf("error fetching object counts: %v", err)
 		return dbStats
 	}
+	defer rows.Close()
 
 	statsSlice := make([]*stats.TableStats, 0)
 
-	defer row.Close()
-	for row.Next() {
+	for rows.Next() {
 		var (
 			tableName   string
 			rowEstimate int
@@ -164,7 +164,7 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 			toastSize   int
 			tableSize   int
 		)
-		if err := row.Scan(&tableName, &rowEstimate, &totalSize, &indexSize, &toastSize, &tableSize); err != nil {
+		if err := rows.Scan(&tableName, &rowEstimate, &totalSize, &indexSize, &toastSize, &tableSize); err != nil {
 			log.Errorf("error scanning row for table %s: %v", tableName, err)
 			return nil
 		}
@@ -185,6 +185,10 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 		}
 
 		statsSlice = append(statsSlice, tableStat)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Errorf("error getting complete table statistic information: %v", err)
 	}
 
 	dbStats.Tables = statsSlice

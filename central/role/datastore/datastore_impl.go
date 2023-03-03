@@ -119,7 +119,10 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 		return err
 	}
 	if err = verifyRoleOriginMatches(ctx, existingRole); err != nil {
-		return err
+		return errors.Wrap(err, "origin didn't match for existing role")
+	}
+	if err = verifyRoleOriginMatches(ctx, role); err != nil {
+		return errors.Wrap(err, "origin didn't match for new role")
 	}
 	if err = ds.verifyRoleReferencesExist(ctx, role); err != nil {
 		return err
@@ -236,7 +239,10 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 		return err
 	}
 	if err := verifyPermissionSetOriginMatches(ctx, existingPermissionSet); err != nil {
-		return err
+		return errors.Wrap(err, "origin didn't match for existing permission set")
+	}
+	if err := verifyPermissionSetOriginMatches(ctx, permissionSet); err != nil {
+		return errors.Wrap(err, "origin didn't match for new permission set")
 	}
 
 	// Constraints ok, write the object. We expect the underlying store to
@@ -365,14 +371,14 @@ func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.Simp
 	return nil
 }
 
-func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
+func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, newScope *storage.SimpleAccessScope) error {
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := rolePkg.ValidateSimpleAccessScope(scope); err != nil {
+	if err := rolePkg.ValidateSimpleAccessScope(newScope); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	if err := verifyNotDefaultAccessScope(scope); err != nil {
+	if err := verifyNotDefaultAccessScope(newScope); err != nil {
 		return err
 	}
 
@@ -380,17 +386,20 @@ func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, scope *storage.S
 	defer ds.lock.Unlock()
 
 	// Verify storage constraints.
-	as, err := ds.verifyAccessScopeIDExists(ctx, scope.GetId())
+	existingScope, err := ds.verifyAccessScopeIDExists(ctx, newScope.GetId())
 	if err != nil {
 		return err
 	}
-	if err := verifyAccessScopeOriginMatches(ctx, as); err != nil {
-		return err
+	if err := verifyAccessScopeOriginMatches(ctx, existingScope); err != nil {
+		return errors.Wrap(err, "origin didn't match for existing access scope")
+	}
+	if err := verifyAccessScopeOriginMatches(ctx, newScope); err != nil {
+		return errors.Wrap(err, "origin didn't match for new access scope")
 	}
 
 	// Constraints ok, write the object. We expect the underlying store to
 	// verify there is no access scope with the same name.
-	if err := ds.accessScopeStorage.Upsert(ctx, scope); err != nil {
+	if err := ds.accessScopeStorage.Upsert(ctx, newScope); err != nil {
 		return err
 	}
 

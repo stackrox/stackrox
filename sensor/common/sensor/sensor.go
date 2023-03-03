@@ -220,6 +220,9 @@ func (s *Sensor) Start() {
 		s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
 		return
 	case <-okSig.Done():
+		for _, component := range s.components {
+			component.Notify(common.SensorComponentEventCentralReachable)
+		}
 	case <-s.stoppedSig.Done():
 		return
 	}

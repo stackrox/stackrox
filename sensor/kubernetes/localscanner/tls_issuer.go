@@ -137,6 +137,8 @@ func (i *localScannerTLSIssuerImpl) Stop(_ error) {
 	log.Debug("local scanner TLS issuer stopped.")
 }
 
+func (i *localScannerTLSIssuerImpl) Notify(common.SensorComponentEvent) {}
+
 func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.LocalScannerCredentialsRefresh}
 }

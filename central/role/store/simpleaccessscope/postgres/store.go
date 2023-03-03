@@ -100,7 +100,7 @@ func insertIntoSimpleAccessScopes(ctx context.Context, batch *pgx.Batch, obj *st
 	return nil
 }
 
-func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx pgx.Tx, objs ...*storage.SimpleAccessScope) error {
+func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx *postgres.Tx, objs ...*storage.SimpleAccessScope) error {
 
 	inputRows := [][]interface{}{}
 

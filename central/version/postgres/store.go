@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -43,7 +42,7 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoVersions(ctx context.Context, tx pgx.Tx, obj *storage.Version) error {
+func insertIntoVersions(ctx context.Context, tx *postgres.Tx, obj *storage.Version) error {
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr

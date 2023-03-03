@@ -1,6 +1,9 @@
 package alert
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // IsDeployTimeAttemptedAlert indicates whether an alert is an attempted deploy-time alert.
 func IsDeployTimeAttemptedAlert(alert *storage.Alert) bool {
@@ -21,4 +24,9 @@ func AnyAttemptedAlert(alerts ...*storage.Alert) bool {
 		}
 	}
 	return false
+}
+
+// IsRuntimeAlertResult returns whether or not the passed results are from a runtime policy
+func IsRuntimeAlertResult(alert *central.AlertResults) bool {
+	return alert.GetStage() == storage.LifecycleStage_RUNTIME
 }

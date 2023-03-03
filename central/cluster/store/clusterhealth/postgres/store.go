@@ -107,7 +107,7 @@ func insertIntoClusterHealthStatuses(ctx context.Context, batch *pgx.Batch, obj 
 	return nil
 }
 
-func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx pgx.Tx, objs ...*storage.ClusterHealthStatus) error {
+func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx *postgres.Tx, objs ...*storage.ClusterHealthStatus) error {
 
 	inputRows := [][]interface{}{}
 

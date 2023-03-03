@@ -99,7 +99,7 @@ func insertIntoComplianceOperatorScanSettingBindings(ctx context.Context, batch 
 	return nil
 }
 
-func (s *storeImpl) copyFromComplianceOperatorScanSettingBindings(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceOperatorScanSettingBinding) error {
+func (s *storeImpl) copyFromComplianceOperatorScanSettingBindings(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanSettingBinding) error {
 
 	inputRows := [][]interface{}{}
 

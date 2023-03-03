@@ -1,15 +1,12 @@
 package deduper
 
 import (
-	"hash"
-	"hash/fnv"
 	"reflect"
 
-	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/sensor/common/messagestream"
 )
 
@@ -27,7 +24,8 @@ type key struct {
 type deduper struct {
 	stream   messagestream.SensorMessageStream
 	lastSent map[key]uint64
-	hasher   hash.Hash64
+
+	hasher *hash.Hasher
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
@@ -35,17 +33,13 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messages
 	return &deduper{
 		stream:   stream,
 		lastSent: make(map[key]uint64),
-		hasher:   fnv.New64a(),
+		hasher:   hash.NewHasher(),
 	}
-}
-
-func isRuntimeAlert(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetAlertResults().GetStage() == storage.LifecycleStage_RUNTIME
 }
 
 func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
-	if !ok || eventMsg.Event.GetProcessIndicator() != nil || isRuntimeAlert(msg) {
+	if !ok || eventMsg.Event.GetProcessIndicator() != nil || alert.IsRuntimeAlertResult(msg.GetEvent().GetAlertResults()) {
 		// We only dedupe event messages (excluding process indicators and runtime alerts which are always unique), other messages get forwarded directly.
 		return d.stream.Send(msg)
 	}
@@ -65,21 +59,21 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		return d.stream.Send(msg)
 	}
 
-	d.hasher.Reset()
-	hashValue, err := hashstructure.Hash(event.GetResource(), hashstructure.FormatV2, &hashstructure.HashOptions{
-		TagName: "sensorhash",
-		Hasher:  d.hasher,
-	})
-	utils.Should(err)
-
-	if d.lastSent[key] == hashValue {
-		return nil
+	hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
+	if ok {
+		// If the hash is valid, then check for deduping
+		if d.lastSent[key] == hashValue {
+			return nil
+		}
+		event.SensorHashOneof = &central.SensorEvent_SensorHash{
+			SensorHash: hashValue,
+		}
+		d.lastSent[key] = hashValue
 	}
 
 	if err := d.stream.Send(msg); err != nil {
 		return err
 	}
-	d.lastSent[key] = hashValue
 
 	return nil
 }

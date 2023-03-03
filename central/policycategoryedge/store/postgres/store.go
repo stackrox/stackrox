@@ -103,7 +103,7 @@ func insertIntoPolicyCategoryEdges(ctx context.Context, batch *pgx.Batch, obj *s
 	return nil
 }
 
-func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.PolicyCategoryEdge) error {
+func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.PolicyCategoryEdge) error {
 
 	inputRows := [][]interface{}{}
 

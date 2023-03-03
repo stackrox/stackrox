@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 )
 
 const (
@@ -47,6 +48,8 @@ func (a *auditLogCollectionManagerImpl) Start() error {
 func (a *auditLogCollectionManagerImpl) Stop(_ error) {
 	a.stopSig.Signal()
 }
+
+func (a *auditLogCollectionManagerImpl) Notify(common.SensorComponentEvent) {}
 
 func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}

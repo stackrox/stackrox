@@ -11,7 +11,6 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { getIsDefaultRoleName } from 'constants/accessControl';
 import { AccessScope } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';
 import { PermissionSet, Role } from 'services/RolesService';
@@ -19,6 +18,8 @@ import { PermissionSet, Role } from 'services/RolesService';
 import { AccessControlEntityLink } from '../AccessControlLinks';
 import { AccessControlQueryFilter } from '../accessControlPaths';
 import usePermissions from '../../../hooks/usePermissions';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
+import { isUserResource } from '../traits';
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.
@@ -105,16 +106,17 @@ function RolesList({
                 <TableComposable variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th width={20}>Name</Th>
-                            <Th width={30}>Description</Th>
-                            <Th width={20}>Permission set</Th>
+                            <Th width={15}>Name</Th>
+                            <Th width={15}>Origin</Th>
+                            <Th width={25}>Description</Th>
+                            <Th width={15}>Permission set</Th>
                             <Th width={20}>Access scope</Th>
                             <Th width={10} aria-label="Row actions" />
                         </Tr>
                     </Thead>
                     <Tbody>
                         {rolesFiltered.map(
-                            ({ name, description, permissionSetId, accessScopeId }) => (
+                            ({ name, description, permissionSetId, accessScopeId, traits }) => (
                                 <Tr key={name}>
                                     <Td dataLabel="Name">
                                         <AccessControlEntityLink
@@ -122,6 +124,9 @@ function RolesList({
                                             entityId={name}
                                             entityName={name}
                                         />
+                                    </Td>
+                                    <Td dataLabel="Origin">
+                                        <TraitsOriginLabel traits={traits} />
                                     </Td>
                                     <Td dataLabel="Description">{description}</Td>
                                     <Td dataLabel="Permission set">
@@ -143,7 +148,7 @@ function RolesList({
                                             disable:
                                                 !hasWriteAccessForPage ||
                                                 nameDeleting === name ||
-                                                getIsDefaultRoleName(name) ||
+                                                !isUserResource(traits) ||
                                                 getHasRoleName(groups, name),
                                             items: [
                                                 {

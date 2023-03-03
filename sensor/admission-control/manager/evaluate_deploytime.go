@@ -156,5 +156,6 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
 	}
 
+	log.Debugf("Violated policies: %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
 }

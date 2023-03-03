@@ -113,7 +113,7 @@ func insertIntoCollectionsEmbeddedCollections(ctx context.Context, batch *pgx.Ba
 	return nil
 }
 
-func (s *storeImpl) copyFromCollections(ctx context.Context, tx pgx.Tx, objs ...*storage.ResourceCollection) error {
+func (s *storeImpl) copyFromCollections(ctx context.Context, tx *postgres.Tx, objs ...*storage.ResourceCollection) error {
 
 	inputRows := [][]interface{}{}
 
@@ -196,7 +196,7 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx pgx.Tx, objs ...
 	return err
 }
 
-func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx pgx.Tx, collectionsID string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
+func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx *postgres.Tx, collectionsID string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
 
 	inputRows := [][]interface{}{}
 

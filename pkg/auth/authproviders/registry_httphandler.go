@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	userPkg "github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -307,6 +308,8 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+
+	userPkg.LogSuccessfulUserLogin(log, user)
 
 	if tokenInfo == nil {
 		// Assume the ProcessHTTPRequest already took care of writing a response.
