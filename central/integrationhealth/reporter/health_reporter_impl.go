@@ -103,7 +103,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 		case health := <-d.healthUpdates:
 			if health.Status == storage.IntegrationHealth_UNINITIALIZED {
 				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
-				if err := d.integrationDS.UpdateIntegrationHealth(allAccessCtx, health); err != nil {
+				if err := d.integrationDS.UpsertIntegrationHealth(allAccessCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
 			} else if health.LastTimestamp.Compare(d.latestDBTimestampMap[health.Id]) > 0 {
@@ -116,7 +116,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 					// ignore health update since integration has possibly been deleted
 					continue
 				}
-				if err := d.integrationDS.UpdateIntegrationHealth(allAccessCtx, health); err != nil {
+				if err := d.integrationDS.UpsertIntegrationHealth(allAccessCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
 			}

@@ -22,6 +22,7 @@ var (
 			"/v1.IntegrationHealthService/GetBackupPlugins",
 			"/v1.IntegrationHealthService/GetImageIntegrations",
 			"/v1.IntegrationHealthService/GetNotifiers",
+			"/v1.IntegrationHealthService/GetDeclarativeConfigs",
 		},
 		// TODO: ROX-12750 Replace ScannerDefinitions with Administration
 		user.With(permissions.View(resources.ScannerDefinitions)): {
@@ -83,6 +84,15 @@ func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v
 	return &v1.GetIntegrationHealthResponse{
 		IntegrationHealth: healthData,
 	}, nil
+}
+
+// GetDeclarativeConfigs returns the health status for all declarative configurations.
+func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, req *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+	healthData, err := s.datastore.GetDeclarativeConfigs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetIntegrationHealthResponse{IntegrationHealth: healthData}, nil
 }
 
 func (s *serviceImpl) GetVulnDefinitionsInfo(ctx context.Context, empty *v1.Empty) (*v1.VulnDefinitionsInfo, error) {
