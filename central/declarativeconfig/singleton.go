@@ -20,7 +20,9 @@ type ReconciliationErrorReporter interface {
 
 type noOpErrorReporter struct{}
 
-func (n noOpErrorReporter) ProcessError(_ proto.Message, _ error) {}
+func (n noOpErrorReporter) ProcessError(m proto.Message, err error) {
+	log.Warnf("Error: %v for message %v", err, m)
+}
 
 // ManagerSingleton provides the instance of Manager to use.
 func ManagerSingleton(registry authproviders.Registry) Manager {
