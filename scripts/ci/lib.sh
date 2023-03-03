@@ -982,7 +982,7 @@ openshift_ci_mods() {
         fi
     fi
 
-    # Provide Circle CI vars that are commonly used
+    # Target a tag if HEAD is tagged.
     TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
     export TAG
 
