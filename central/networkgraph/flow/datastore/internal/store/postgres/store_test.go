@@ -21,7 +21,7 @@ import (
 const (
 	clusterID = fixtureconsts.Cluster1
 
-	flowsCountStmt = "select count(*) from network_flows"
+	flowsCountStmt = "select count(*) from network_flows_v2"
 )
 
 type NetworkflowStoreSuite struct {
