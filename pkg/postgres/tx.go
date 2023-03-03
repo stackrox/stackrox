@@ -25,7 +25,8 @@ func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 		return nil, err
 	}
 	return &Rows{
-		Rows: rows,
+		cancelFunc: func() {},
+		Rows:       rows,
 	}, nil
 }
 
