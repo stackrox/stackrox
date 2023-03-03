@@ -13,8 +13,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-14336: product `BuildDate` attribute was removed. It won't be returned by
 `/debug/versions.json` endpoint and `roxctl version --json` command.
 
-### Deprecated Fatures
+### Deprecated Features
 - Deprecated `/v1/telemetry/configure` service.
+- The `expiration` field in the `Exclusion` proto will be deprecated in future releases. 
+If you have questions about this change, please contact the Red Hat support team at support@redhat.com.
 
 ### Technical Changes
 
