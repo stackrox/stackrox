@@ -52,11 +52,13 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 }
 
 // QueryRow wraps pgxpool.Conn QueryRow
-func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) *Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
-	defer cancel()
 
-	return c.Conn.QueryRow(ctx, sql, args...)
+	return &Row{
+		Row:        c.Conn.QueryRow(ctx, sql, args...),
+		cancelFunc: cancel,
+	}
 }
 
 // SendBatch wraps pgxpool.Conn SendBatch

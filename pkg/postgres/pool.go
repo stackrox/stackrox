@@ -89,9 +89,11 @@ func (d *DB) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 // QueryRow wraps pgxpool.Pool QueryRow
 func (d *DB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
-	defer cancel()
 
-	return d.Pool.QueryRow(ctx, sql, args...)
+	return &Row{
+		Row:        d.Pool.QueryRow(ctx, sql, args...),
+		cancelFunc: cancel,
+	}
 }
 
 // Acquire wraps pgxpool.Acquire
