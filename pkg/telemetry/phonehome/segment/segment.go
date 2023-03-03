@@ -202,14 +202,16 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 		if err := t.client.Enqueue(group); err != nil {
 			log.Error("Cannot enqueue Segment group event: ", err)
 		}
-		if len(props) > 0 {
-			// Track the group properties update with the same device ID
-			// to ensure following events get the properties attached. This is
-			// due to Amplitude partioning by device ID.
-			t.client.Enqueue(segment.Track{
-				Event:   "Group Properties Updated",
-				Context: dctx,
-			})
+	}
+	if len(props) > 0 {
+		// Track the group properties update with the same device ID
+		// to ensure following events get the properties attached. This is
+		// due to Amplitude partioning by device ID.
+		if err := t.client.Enqueue(segment.Track{
+			Event:   "Group Properties Updated",
+			Context: dctx,
+		}); err != nil {
+			log.Error("Cannot enqueue Segment track event: ", err)
 		}
 	}
 }
