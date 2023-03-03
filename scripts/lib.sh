@@ -13,9 +13,19 @@ Reuse with:
   method [args...]"
 }
 
+LAST_INFO_LOG=$(mktemp -t last_info_log)
 info() {
-    echo "INFO: $(date): $*" >> $GITHUB_STEP_SUMMARY
+    echo "$*" > $LAST_INFO_LOG
+    echo "INFO: $(date): $*"
 }
+exit_handler() {
+    exit_code=$?
+    if [ -s $LAST_INFO_LOG ]; then
+        echo "::error $(<$LAST_INFO_LOG)"
+    fi
+    exit "$exit_code"
+}
+trap exit_handler EXIT
 
 die() {
     echo >&2 "$@"
