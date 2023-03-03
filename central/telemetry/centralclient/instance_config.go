@@ -161,11 +161,11 @@ func Disable() {
 	if !enabled || !cfg.Enabled() {
 		return
 	}
-	cfg.Telemeter().Track("Telemetry Disabled", nil)
 	cfg.Gatherer().Stop()
 	cfg.RemoveInterceptors()
 	enabled = false
 	log.Info("Telemetry collection has been disabled.")
+	cfg.Telemeter().Track("Telemetry Disabled", nil)
 }
 
 // Enable enables and starts the telemetry collection.
