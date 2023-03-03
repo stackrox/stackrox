@@ -249,6 +249,10 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	declarativeRole.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
+	badDeclarativeRole := getInvalidRole("invalid declarative role")
+	badDeclarativeRole.Traits = &storage.Traits{
+		Origin: storage.Traits_DECLARATIVE,
+	}
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, secondExistingPermissionSet)
 	s.NoError(err, "failed to add second permission set needed for test")
@@ -315,6 +319,36 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 
 	err = s.dataStore.RemoveRole(s.hasWriteDeclarativeCtx, declarativeRole.GetName())
 	s.NoError(err, "attempting to delete declaratively declarative role is not an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteCtx, declarativeRole)
+	s.ErrorIs(err, errox.NotAuthorized, "upserting imperatively declarative role is an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteDeclarativeCtx, declarativeRole)
+	s.NoError(err, "attempting to upsert declaratively declarative role is not an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteDeclarativeCtx, declarativeRole)
+	s.NoError(err, "re-upserting declaratively declarative role is not an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteCtx, declarativeRole)
+	s.ErrorIs(err, errox.NotAuthorized, "re-upserting imperatively declarative role is an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteDeclarativeCtx, goodRole)
+	s.ErrorIs(err, errox.NotAuthorized, "upserting declaratively imperative role is an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteCtx, goodRole)
+	s.NoError(err, "attempting to upsert imperatively imperative role is not an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteCtx, goodRole)
+	s.NoError(err, "re-upserting imperatively imperative role is not an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteDeclarativeCtx, goodRole)
+	s.ErrorIs(err, errox.NotAuthorized, "re-upserting declaratively imperative role is an error")
+
+	err = s.dataStore.UpsertRole(s.hasWriteCtx, badRole)
+	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(imperative resource)")
+
+	err = s.dataStore.UpsertRole(s.hasWriteDeclarativeCtx, badDeclarativeRole)
+	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(declarative resource)")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -421,6 +455,10 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	declarativePermissionSet.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
+	badDeclarativePermissionSet := getInvalidPermissionSet("permissionset.declarative.invalid", "invalid declarative role")
+	badDeclarativePermissionSet.Traits = &storage.Traits{
+		Origin: storage.Traits_DECLARATIVE,
+	}
 	updatedAdminPermissionSet := getValidPermissionSet(role.EnsureValidAccessScopeID("admin"), role.Admin)
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, badPermissionSet)
@@ -505,6 +543,36 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	s.NoError(err, "attempting to delete declaratively declarative permission set is not an error")
 
 	s.Len(permissionSets, 1, "removed permission set should be absent in the subsequent Get*()")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteCtx, declarativePermissionSet)
+	s.ErrorIs(err, errox.NotAuthorized, "upserting imperatively declarative role is an error")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet)
+	s.NoError(err, "attempting to upsert declaratively declarative role is not an error")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet)
+	s.NoError(err, "re-upserting declaratively declarative role is not an error")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteCtx, declarativePermissionSet)
+	s.ErrorIs(err, errox.NotAuthorized, "re-upserting imperatively declarative role is an error")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteDeclarativeCtx, goodPermissionSet)
+	s.ErrorIs(err, errox.NotAuthorized, "upserting declaratively imperative role is an error")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteCtx, goodPermissionSet)
+	s.NoError(err, "attempting to upsert imperatively imperative role is not an error")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteCtx, goodPermissionSet)
+	s.NoError(err, "re-upserting imperatively imperative role is not an error")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteDeclarativeCtx, goodPermissionSet)
+	s.ErrorIs(err, errox.NotAuthorized, "re-upserting declaratively imperative role is an error")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteCtx, badPermissionSet)
+	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(imperative resource)")
+
+	err = s.dataStore.UpsertPermissionSet(s.hasWriteDeclarativeCtx, badDeclarativePermissionSet)
+	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(declarative resource)")
 }
 
 ////////////////////////////////////////////////////////////////////////////////

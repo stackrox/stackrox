@@ -2,6 +2,7 @@ package declarativeconfig
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"reflect"
@@ -41,6 +42,7 @@ type managerImpl struct {
 
 	reconciliationTicker *time.Ticker
 	shortCircuitSignal   concurrency.Signal
+	stopSignal           concurrency.Signal
 
 	reconciliationCtx           context.Context
 	reconciliationErrorReporter ReconciliationErrorReporter
@@ -165,6 +167,8 @@ func (m *managerImpl) reconciliationLoop() {
 			m.runReconciliation()
 		case <-m.reconciliationTicker.C:
 			m.runReconciliation()
+		case <-m.stopSignal.Done():
+			return
 		}
 	}
 }
@@ -192,7 +196,8 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 		}
 		typeUpdater, hasUpdater := m.updaters[protoType]
 		if !hasUpdater {
-			log.Fatalf("Manager does not have updater for type %v", protoType)
+			m.handleMissingTypeUpdater(protoType, messages)
+			return
 		}
 		for _, message := range messages {
 			if err := typeUpdater.Upsert(m.reconciliationCtx, message); err != nil {
@@ -203,4 +208,13 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 	// TODO(ROX-14694): Add deletion of resources.
 	log.Debugf("Deleting all proto messages that have traits.Origin==DECLARATIVE but are not contained"+
 		" within the current list of transformed messages: %+v", transformedMessagesByHandler)
+}
+
+func (m *managerImpl) handleMissingTypeUpdater(protoType reflect.Type, messages []proto.Message) {
+	err := fmt.Errorf("manager does not have updater for type %v", protoType)
+	for _, message := range messages {
+		m.reconciliationErrorReporter.ProcessError(message, err)
+	}
+	utils.Should(err)
+	m.stopSignal.Done()
 }

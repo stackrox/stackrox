@@ -56,14 +56,8 @@ func (ds *dataStoreImpl) UpsertRole(ctx context.Context, newRole *storage.Role) 
 		return err
 	}
 
-	permissionSet, accessScope, err := ds.verifyRoleReferencesExist(ctx, newRole)
+	_, _, err = ds.verifyRoleReferencesExist(ctx, newRole)
 	if err != nil {
-		return err
-	}
-	if err := verifyPermissionSetOrigin(ctx, permissionSet); err != nil {
-		return err
-	}
-	if err := verifyAccessScopeOrigin(ctx, accessScope); err != nil {
 		return err
 	}
 
