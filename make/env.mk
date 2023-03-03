@@ -35,16 +35,11 @@ ifeq ($(GOBIN),)
 GOBIN := $(GOPATH)/bin
 endif
 
-TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
-ifdef CI
-ifneq ($(CIRCLE_TAG),)
-GOTAGS := $(RELEASE_GOTAGS)
-TAG := $(CIRCLE_TAG)
-endif
-endif
 
-# Support `make tag` override for non CI testing
-ifneq ($(TAG_OVERRIDE),)
-TAG := $(TAG_OVERRIDE)
+# Use a release go -tag when CI is targetting a tag
+ifdef CI
+ifneq ($(TAG),)
+GOTAGS := $(RELEASE_GOTAGS)
+endif
 endif

@@ -665,7 +665,7 @@ is_tagged() {
 }
 
 is_nightly_run() {
-    [[ "${CIRCLE_TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
+    [[ "${TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
 }
 
 is_in_PR_context() {
@@ -1004,8 +1004,8 @@ openshift_ci_mods() {
     fi
 
     # Provide Circle CI vars that are commonly used
-    CIRCLE_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
-    export CIRCLE_TAG
+    TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
+    export TAG
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
@@ -1095,7 +1095,7 @@ handle_nightly_runs() {
     local nightly_tag_prefix
     nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
-        ci_export CIRCLE_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
+        ci_export TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
     fi
 }
 
@@ -1471,7 +1471,7 @@ handle_gha_tagged_build() {
     if [[ "${GITHUB_REF:-}" =~ ^refs/tags/ ]]; then
         tag="${GITHUB_REF#refs/tags/*}"
         echo "This is a tagged build: $tag"
-        echo "CIRCLE_TAG=$tag" >> "$GITHUB_ENV"
+        echo "TAG=$tag" >> "$GITHUB_ENV"
     else
         echo "This is not a tagged build"
     fi

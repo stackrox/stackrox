@@ -10,8 +10,8 @@ errecho() {
   echo >&2 -e "$@"
 }
 
-if [[ -n "${CIRCLE_TAG}" && "${DEBUG_BUILD}" == "yes" ]]; then
-  errecho "CIRCLE_TAG environment variable is set. DEBUG_BUILD-s are not supported with tagged, e.g. release or nightly, builds."
+if [[ -n "${TAG}" && "${DEBUG_BUILD}" == "yes" ]]; then
+  errecho "TAG environment variable is set. DEBUG_BUILD-s are not supported with tagged, e.g. release or nightly, builds."
   errecho "Failing the build. Please make sure DEBUG_BUILD variable is not manually overridden to \"yes\"."
   exit 2
 fi

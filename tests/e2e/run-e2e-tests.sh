@@ -80,7 +80,7 @@ handle_tag_requirements() {
     if [[ "$tag" =~ -dirty ]]; then
         info "WARN: Dropping -dirty from 'make tag': $tag"
         tag="${tag/-dirty/}"
-        export TAG_OVERRIDE="$tag"
+        export TAG="$tag"
     fi
 
     export ROXCTL_FOR_TEST="$ROOT/bin/linux/roxctl-$tag"
@@ -104,7 +104,7 @@ get_initial_options() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -t)
-                export TAG_OVERRIDE="$2"
+                export TAG="$2"
                 shift 2
                 ;;
             -h)
@@ -131,7 +131,7 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
       -v "${GOPATH}/pkg/mod/cache:/go/pkg/mod/cache:z" \
       -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
-      -e "TAG_OVERRIDE=${TAG_OVERRIDE:-}" \
+      -e "TAG=${TAG:-}" \
       -v "${ROXCTL_FOR_TEST}:/usr/local/bin/roxctl:z" \
       -e VAULT_TOKEN \
       --platform linux/amd64 \
