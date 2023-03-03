@@ -68,8 +68,7 @@ func initialize() {
 		context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-12750 Replace Config with Administration.
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Administration)))
 	config, err := d.GetConfig(ctx)
 	if err != nil {
 		panic(err)
