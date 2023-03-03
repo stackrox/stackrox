@@ -324,7 +324,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 	}
 
 	log.Debugf("Read returned %d flows", len(flows))
-	return flows, nil
+	return flows, rows.Err()
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
