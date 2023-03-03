@@ -395,9 +395,9 @@ spec:
                           in these section will not have any effect.
                         enum:
                         - EBPF
+                        - modern_bpf
                         - KernelModule
                         - NoCollection
-                        - modern_bpf
                         type: string
                       imageFlavor:
                         default: Regular
