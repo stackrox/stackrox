@@ -49,21 +49,21 @@ func getPostgresExtensions(ctx context.Context, dbPool *postgres.DB) []dbExtensi
 
 	ctx, cancel := context.WithTimeout(ctx, globaldb.PostgresQueryTimeout)
 	defer cancel()
-	row, err := dbPool.Query(ctx, extensionQuery)
+	rows, err := dbPool.Query(ctx, extensionQuery)
 	if err != nil {
 		log.Errorf("error fetching Postgres extensions: %v", err)
 		return nil
 	}
+	defer rows.Close()
 
 	extSlice := make([]dbExtension, 0)
 
-	defer row.Close()
-	for row.Next() {
+	for rows.Next() {
 		var (
 			extName    string
 			extVersion string
 		)
-		if err := row.Scan(&extName, &extVersion); err != nil {
+		if err := rows.Scan(&extName, &extVersion); err != nil {
 			log.Errorf("error extension row: %v", err)
 			return nil
 		}
@@ -74,6 +74,10 @@ func getPostgresExtensions(ctx context.Context, dbPool *postgres.DB) []dbExtensi
 		}
 
 		extSlice = append(extSlice, dbExt)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Errorf("error getting complete extension information: %v", err)
 	}
 
 	return extSlice

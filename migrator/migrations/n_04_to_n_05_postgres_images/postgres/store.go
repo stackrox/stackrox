@@ -720,7 +720,7 @@ func getImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
 	}
-	return componentIDToEdgeMap, nil
+	return componentIDToEdgeMap, rows.Err()
 }
 
 func getImageCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, imageID string) (set.StringSet, error) {
@@ -737,7 +737,7 @@ func getImageCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, imageID string) (s
 		}
 		ids.Add(id)
 	}
-	return ids, nil
+	return ids, rows.Err()
 }
 
 func getImageCVEEdges(ctx context.Context, tx *postgres.Tx, imageID string) (map[string]*storage.ImageCVEEdge, error) {
@@ -758,7 +758,7 @@ func getImageCVEEdges(ctx context.Context, tx *postgres.Tx, imageID string) (map
 		}
 		cveIDToEdgeMap[msg.GetImageCveId()] = msg
 	}
-	return cveIDToEdgeMap, nil
+	return cveIDToEdgeMap, rows.Err()
 }
 
 func getImageComponents(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string]*storage.ImageComponent, error) {
@@ -779,7 +779,7 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, componentIDs []str
 		}
 		idToComponentMap[msg.GetId()] = msg
 	}
-	return idToComponentMap, nil
+	return idToComponentMap, rows.Err()
 }
 
 func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.ComponentCVEEdge, error) {
@@ -800,7 +800,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = append(componentIDToEdgeMap[msg.GetImageComponentId()], msg)
 	}
-	return componentIDToEdgeMap, nil
+	return componentIDToEdgeMap, rows.Err()
 }
 
 func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.ImageCVE, error) {
@@ -821,7 +821,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 		}
 		idToCVEMap[msg.GetId()] = msg
 	}
-	return idToCVEMap, nil
+	return idToCVEMap, rows.Err()
 }
 
 // GetIDs returns all the IDs for the store
@@ -845,7 +845,7 @@ func (s *storeImpl) retryableGetIDs(ctx context.Context) ([]string, error) {
 		}
 		ids = append(ids, id)
 	}
-	return ids, nil
+	return ids, rows.Err()
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice

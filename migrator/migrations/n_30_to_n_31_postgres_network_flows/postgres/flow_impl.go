@@ -343,7 +343,7 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 			return err
 		}
 	}
-	return nil
+	return rows.Err()
 }
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
@@ -408,7 +408,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 
-	return flows, lastUpdateTS, nil
+	return flows, lastUpdateTS, rows.Err()
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
@@ -438,6 +438,9 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, pred)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return flows, lastUpdateTS, err
+	return flows, lastUpdateTS, rows.Err()
 }

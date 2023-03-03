@@ -663,7 +663,7 @@ func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) 
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
 	}
-	return componentIDToEdgeMap, nil
+	return componentIDToEdgeMap, rows.Err()
 }
 
 func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
@@ -684,7 +684,7 @@ func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []stri
 		}
 		idToComponentMap[msg.GetId()] = msg
 	}
-	return idToComponentMap, nil
+	return idToComponentMap, rows.Err()
 }
 
 func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
@@ -705,7 +705,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
 	}
-	return componentIDToEdgesMap, nil
+	return componentIDToEdgesMap, rows.Err()
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context) (*postgres.Conn, func(), error) {
@@ -755,5 +755,5 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 		}
 		idToCVEMap[msg.GetId()] = msg
 	}
-	return idToCVEMap, nil
+	return idToCVEMap, rows.Err()
 }
