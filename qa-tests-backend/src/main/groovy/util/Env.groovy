@@ -22,7 +22,7 @@ class Env {
 
     static final IN_CI = (System.getenv("CI") == "true")
     static final CI_JOB_NAME = System.getenv("CI_JOB_NAME")
-    static final TAG = System.getenv("TAG")
+    static final BUILD_TAG = System.getenv("BUILD_TAG")
     static final GATHER_QA_TEST_DEBUG_LOGS = (System.getenv("GATHER_QA_TEST_DEBUG_LOGS") == "true")
     static final QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
 

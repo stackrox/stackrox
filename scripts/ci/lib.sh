@@ -665,7 +665,7 @@ is_tagged() {
 }
 
 is_nightly_run() {
-    [[ "${TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
+    [[ "${BUILD_TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
 }
 
 is_in_PR_context() {
@@ -983,8 +983,8 @@ openshift_ci_mods() {
     fi
 
     # Target a tag if HEAD is tagged.
-    TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
-    export TAG
+    BUILD_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
+    export BUILD_TAG
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
@@ -1074,7 +1074,7 @@ handle_nightly_runs() {
     local nightly_tag_prefix
     nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
-        ci_export TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
+        ci_export BUILD_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
     fi
 }
 
@@ -1450,7 +1450,7 @@ handle_gha_tagged_build() {
     if [[ "${GITHUB_REF:-}" =~ ^refs/tags/ ]]; then
         tag="${GITHUB_REF#refs/tags/*}"
         echo "This is a tagged build: $tag"
-        echo "TAG=$tag" >> "$GITHUB_ENV"
+        echo "BUILD_TAG=$tag" >> "$GITHUB_ENV"
     else
         echo "This is not a tagged build"
     fi

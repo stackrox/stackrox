@@ -260,7 +260,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Tag("BAT")
     @Retry(count = 0)
-    @IgnoreIf({ Env.TAG == null || !Env.TAG.contains("nightly") })
+    @IgnoreIf({ Env.BUILD_TAG == null || !Env.BUILD_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
         when:
         "Verify policies are not violated within the stackrox namespace"
@@ -282,7 +282,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
 
         String slackPayload = ":rotating_light: " +
-                "Fixable Vulnerabilities found in StackRox Images (build tag: ${Env.TAG})! " +
+                "Fixable Vulnerabilities found in StackRox Images (build tag: ${Env.BUILD_TAG})! " +
                 ":rotating_light:"
 
         Map<String, Set<String>> deploymentPolicyMap = [:]
