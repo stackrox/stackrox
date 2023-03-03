@@ -397,6 +397,7 @@ spec:
                         - EBPF
                         - KernelModule
                         - NoCollection
+                        - modern_bpf
                         type: string
                       imageFlavor:
                         default: Regular
