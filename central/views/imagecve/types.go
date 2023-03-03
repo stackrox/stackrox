@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -26,7 +27,7 @@ type CveCore interface {
 //go:generate mockgen-wrapper
 type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
-	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
+	Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error)
 }
 
 // ResourceCountByCVESeverity is the count of resources affected by cve distributed over severity.
