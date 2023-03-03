@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
+	"gopkg.in/mcuadros/go-syslog.v2"
 )
 
 var (
