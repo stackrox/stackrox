@@ -89,7 +89,6 @@ func (s *storeImpl) insertIntoNodes(
 	ctx context.Context,
 	tx *postgres.Tx,
 	parts *nodePartsAsSlice,
-	scanUpdated bool,
 	iTime *protoTypes.Timestamp,
 ) error {
 	cloned := parts.node
@@ -102,48 +101,29 @@ func (s *storeImpl) insertIntoNodes(
 		return marshalErr
 	}
 
-	values := map[bool][]interface{}{
-		false: {
-			// parent primary keys start
-			pgutils.NilOrUUID(cloned.GetId()),
-			cloned.GetName(),
-			pgutils.NilOrUUID(cloned.GetClusterId()),
-			cloned.GetClusterName(),
-			cloned.GetLabels(),
-			cloned.GetAnnotations(),
-			pgutils.NilOrTime(cloned.GetJoinedAt()),
-			cloned.GetContainerRuntime().GetVersion(),
-			cloned.GetOsImage(),
-			pgutils.NilOrTime(cloned.GetLastUpdated()),
-			serialized, // TODO: when scan is ignored, we should update it only selectively!
-		},
-		true: {
-			// parent primary keys start
-			pgutils.NilOrUUID(cloned.GetId()),
-			cloned.GetName(),
-			pgutils.NilOrUUID(cloned.GetClusterId()),
-			cloned.GetClusterName(),
-			cloned.GetLabels(),
-			cloned.GetAnnotations(),
-			pgutils.NilOrTime(cloned.GetJoinedAt()),
-			cloned.GetContainerRuntime().GetVersion(),
-			cloned.GetOsImage(),
-			pgutils.NilOrTime(cloned.GetLastUpdated()),
-			pgutils.NilOrTime(cloned.GetScan().GetScanTime()),
-			cloned.GetComponents(),
-			cloned.GetCves(),
-			cloned.GetFixableCves(),
-			cloned.GetRiskScore(),
-			cloned.GetTopCvss(),
-			serialized,
-		},
-	}
-	finalStr := map[bool]string{
-		true:  "INSERT INTO nodes (Id, Name, ClusterId, ClusterName, Labels, Annotations, JoinedAt, ContainerRuntime_Version, OsImage, LastUpdated, Scan_ScanTime, Components, Cves, FixableCves, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, JoinedAt = EXCLUDED.JoinedAt, ContainerRuntime_Version = EXCLUDED.ContainerRuntime_Version, OsImage = EXCLUDED.OsImage, LastUpdated = EXCLUDED.LastUpdated, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized",
-		false: "INSERT INTO nodes (Id, Name, ClusterId, ClusterName, Labels, Annotations, JoinedAt, ContainerRuntime_Version, OsImage, LastUpdated, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, JoinedAt = EXCLUDED.JoinedAt, ContainerRuntime_Version = EXCLUDED.ContainerRuntime_Version, OsImage = EXCLUDED.OsImage, LastUpdated = EXCLUDED.LastUpdated, serialized = EXCLUDED.serialized",
+	values := []interface{}{
+		// parent primary keys start
+		pgutils.NilOrUUID(cloned.GetId()),
+		cloned.GetName(),
+		pgutils.NilOrUUID(cloned.GetClusterId()),
+		cloned.GetClusterName(),
+		cloned.GetLabels(),
+		cloned.GetAnnotations(),
+		pgutils.NilOrTime(cloned.GetJoinedAt()),
+		cloned.GetContainerRuntime().GetVersion(),
+		cloned.GetOsImage(),
+		pgutils.NilOrTime(cloned.GetLastUpdated()),
+		pgutils.NilOrTime(cloned.GetScan().GetScanTime()),
+		cloned.GetComponents(),
+		cloned.GetCves(),
+		cloned.GetFixableCves(),
+		cloned.GetRiskScore(),
+		cloned.GetTopCvss(),
+		serialized,
 	}
 
-	_, err := tx.Exec(ctx, finalStr[scanUpdated], values[scanUpdated]...)
+	finalStr := "INSERT INTO nodes (Id, Name, ClusterId, ClusterName, Labels, Annotations, JoinedAt, ContainerRuntime_Version, OsImage, LastUpdated, Scan_ScanTime, Components, Cves, FixableCves, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, JoinedAt = EXCLUDED.JoinedAt, ContainerRuntime_Version = EXCLUDED.ContainerRuntime_Version, OsImage = EXCLUDED.OsImage, LastUpdated = EXCLUDED.LastUpdated, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -161,10 +141,6 @@ func (s *storeImpl) insertIntoNodes(
 	if err != nil {
 		return err
 	}
-	if !scanUpdated {
-		return nil
-	}
-
 	// DO NOT CHANGE THE ORDER.
 	if err := copyFromNodeComponentEdges(ctx, tx, cloned.GetId(), parts.nodeComponentEdges...); err != nil {
 		return err
@@ -177,6 +153,58 @@ func (s *storeImpl) insertIntoNodes(
 		return err
 	}
 	return copyFromNodeCves(ctx, tx, iTime, parts.vulns...)
+}
+
+func (s *storeImpl) insertIntoNodesNoScan(
+	ctx context.Context,
+	tx *postgres.Tx,
+	parts *nodePartsAsSlice,
+) error {
+	cloned := parts.node
+	if cloned.GetScan().GetComponents() != nil {
+		cloned = parts.node.Clone()
+		cloned.Scan.Components = nil
+	}
+	log.Infof("insertIntoNodesNoScan about to serialize: %+v", cloned)
+	serialized, marshalErr := cloned.Marshal()
+	if marshalErr != nil {
+		return marshalErr
+	}
+
+	values := []interface{}{
+		// parent primary keys start
+		pgutils.NilOrUUID(cloned.GetId()),
+		cloned.GetName(),
+		pgutils.NilOrUUID(cloned.GetClusterId()),
+		cloned.GetClusterName(),
+		cloned.GetLabels(),
+		cloned.GetAnnotations(),
+		pgutils.NilOrTime(cloned.GetJoinedAt()),
+		cloned.GetContainerRuntime().GetVersion(),
+		cloned.GetOsImage(),
+		pgutils.NilOrTime(cloned.GetLastUpdated()),
+		serialized, // TODO: when scan is ignored, we should update it only selectively!
+	}
+	finalStr := "INSERT INTO nodes (Id, Name, ClusterId, ClusterName, Labels, Annotations, JoinedAt, ContainerRuntime_Version, OsImage, LastUpdated, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, JoinedAt = EXCLUDED.JoinedAt, ContainerRuntime_Version = EXCLUDED.ContainerRuntime_Version, OsImage = EXCLUDED.OsImage, LastUpdated = EXCLUDED.LastUpdated, serialized = EXCLUDED.serialized"
+
+	if _, err := tx.Exec(ctx, finalStr, values...); err != nil {
+		return err
+	}
+
+	var query string
+
+	for childIdx, child := range cloned.GetTaints() {
+		if err := insertIntoNodesTaints(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from nodes_taints where nodes_Id = $1 AND idx >= $2"
+	if _, err := tx.Exec(ctx, query, pgutils.NilOrUUID(cloned.GetId()), len(cloned.GetTaints())); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getPartsAsSlice(parts *common.NodeParts) *nodePartsAsSlice {
@@ -541,8 +569,14 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node, ignoreScan bo
 		if err != nil {
 			return err
 		}
-
-		if err := s.insertIntoNodes(ctx, tx, nodeParts, scanUpdated, iTime); err != nil {
+		if scanUpdated {
+			log.Info("upsert calls insertIntoNodes")
+			err = s.insertIntoNodes(ctx, tx, nodeParts, iTime)
+		} else {
+			log.Info("upsert calls insertIntoNodesNoScan")
+			err = s.insertIntoNodesNoScan(ctx, tx, nodeParts)
+		}
+		if err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}

@@ -179,7 +179,7 @@ func (e *managerImpl) calculateAndUpsertNodeRisk(node *storage.Node) error {
 
 func (e *managerImpl) CalculateRiskAndUpsertNode(node *storage.Node, ignoreScan bool) error {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Node")
-	
+
 	if !ignoreScan {
 		// Risk data comes from the scan, so there is no point in recalculating the risk if scan should be ignored
 		if err := e.calculateAndUpsertNodeRisk(node); err != nil {
