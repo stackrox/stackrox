@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var _ Transformer = (*authProviderTransform)(nil)
@@ -144,18 +145,21 @@ func getClaimMappings(claimMappingsConfig []declarativeconfig.ClaimMapping) map[
 }
 
 func getGroups(authProviderID string, authProviderConfig *declarativeconfig.AuthProvider) []proto.Message {
-	groups := make([]proto.Message, 0, len(authProviderConfig.Groups)+1)
+	hasMinimumRoleName := authProviderConfig.MinimumRoleName != ""
+	groups := make([]proto.Message, 0, len(authProviderConfig.Groups)+utils.IfThenElse(hasMinimumRoleName, 1, 0))
 
-	groups = append(groups, &storage.Group{
-		Props: &storage.GroupProperties{
-			Id:             declarativeconfig.NewDeclarativeGroupUUID(authProviderConfig.Name + "-default").String(),
-			Traits:         &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-			AuthProviderId: authProviderID,
-			Key:            "",
-			Value:          "",
-		},
-		RoleName: authProviderConfig.MinimumRoleName,
-	})
+	if hasMinimumRoleName {
+		groups = append(groups, &storage.Group{
+			Props: &storage.GroupProperties{
+				Id:             declarativeconfig.NewDeclarativeGroupUUID(authProviderConfig.Name + "-default").String(),
+				Traits:         &storage.Traits{Origin: storage.Traits_DECLARATIVE},
+				AuthProviderId: authProviderID,
+				Key:            "",
+				Value:          "",
+			},
+			RoleName: authProviderConfig.MinimumRoleName,
+		})
+	}
 
 	for idx, group := range authProviderConfig.Groups {
 		groups = append(groups, &storage.Group{
