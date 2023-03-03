@@ -440,11 +440,9 @@ func (m *PostAuthProviderRequest) Clone() *PostAuthProviderRequest {
 type UpdateAuthProviderRequest struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to NameOpt:
-	//
 	//	*UpdateAuthProviderRequest_Name
 	NameOpt isUpdateAuthProviderRequest_NameOpt `protobuf_oneof:"name_opt"`
 	// Types that are valid to be assigned to EnabledOpt:
-	//
 	//	*UpdateAuthProviderRequest_Enabled
 	EnabledOpt           isUpdateAuthProviderRequest_EnabledOpt `protobuf_oneof:"enabled_opt"`
 	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
