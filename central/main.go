@@ -254,7 +254,6 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	// TODO: ROX-12750 update with new list of replaced/deprecated resources
 	log.Warn("The following permission resources have been replaced:\n" +
 		"	Access replaces AuthProvider, Group, Licenses, and User\n" +
 		"	Administration replaces AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +

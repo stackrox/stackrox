@@ -73,9 +73,8 @@ func init() {
 		&storage.ReportConfiguration{}: resources.VulnerabilityReports,
 		&storage.Risk{}:                resources.DeploymentExtension,
 		// TODO: ROX-14398 Replace Role with Access
-		&storage.Role{}: resources.Role,
-		// TODO: ROX-12750 Replace SensorUpgradeConfig with Administration.
-		&storage.SensorUpgradeConfig{}:  resources.SensorUpgradeConfig,
+		&storage.Role{}:                 resources.Role,
+		&storage.SensorUpgradeConfig{}:  resources.Administration,
 		&storage.ServiceIdentity{}:      resources.Administration,
 		&storage.SignatureIntegration{}: resources.Integration,
 		// TODO: ROX-14398 Replace Role with Access
