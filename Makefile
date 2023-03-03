@@ -642,7 +642,7 @@ syslog-image: syslog-build
 	cp bin/linux_$(GOARCH)/syslog qa-tests-backend/test-images/syslog/bin/syslog
 	chmod +w qa-tests-backend/test-images/syslog/bin/syslog
 	docker build \
-		-t stackrox/syslog:1.0 \
+		-t stackrox/qa:syslog_server_1_0 \
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
 		-f syslog/Dockerfile syslog
 

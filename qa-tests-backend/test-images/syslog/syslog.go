@@ -17,17 +17,17 @@ var (
 
 func main() {
 	go restServer()
-	go syslog_server()
+	go syslogServer()
 	select {}
 }
 
-func getHandler(w http.ResponseWriter, r *http.Request) {
+func getHandler(w http.ResponseWriter, _ *http.Request) {
 	lock.Lock()
 	defer lock.Unlock()
 	if len(dataPosted) == 0 {
 		return
 	}
-	fmt.Fprintf(w, dataPosted[len(dataPosted)-1])
+	fmt.Fprint(w, dataPosted[len(dataPosted)-1])
 	dataPosted = dataPosted[:len(dataPosted)-1]
 }
 
@@ -43,20 +43,26 @@ func restServer() {
 	}
 }
 
-func syslog_server() {
+func syslogServer() {
 	log.Println("Listening on localhost:514")
 	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 	server := syslog.NewServer()
 	server.SetFormat(syslog.Automatic)
 	server.SetHandler(handler)
-	server.ListenUDP("0.0.0.0:514")
-	server.ListenTCP("0.0.0.0:514")
-	server.Boot()
+	if err := server.ListenUDP("0.0.0.0:514"); err != nil {
+		panic(err)
+	}
+	if err := server.ListenTCP("0.0.0.0:514"); err != nil {
+		panic(err)
+	}
+	if err := server.Boot(); err != nil {
+		panic(err)
+	}
 
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
-			fmt.Println(logParts)
+			log.Println(logParts)
 			lock.Lock()
 			dataPosted = append(dataPosted, fmt.Sprint(logParts))
 			lock.Unlock()
