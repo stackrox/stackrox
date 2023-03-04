@@ -46,6 +46,10 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NodesSchema
 	targetResource = resources.Node
+
+	// ErrConditionalCheck occurs when some condition in a statement was not
+	// satisfied during a transaction.
+	ErrConditionalCheck = errors.New("a conditional check failed")
 )
 
 type nodePartsAsSlice struct {
@@ -124,9 +128,14 @@ func (s *storeImpl) insertIntoNodes(
 	}
 
 	finalStr := "INSERT INTO nodes as n (Id, Name, ClusterId, ClusterName, Labels, Annotations, JoinedAt, ContainerRuntime_Version, OsImage, LastUpdated, Scan_ScanTime, Components, Cves, FixableCves, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, JoinedAt = EXCLUDED.JoinedAt, ContainerRuntime_Version = EXCLUDED.ContainerRuntime_Version, OsImage = EXCLUDED.OsImage, LastUpdated = EXCLUDED.LastUpdated, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized WHERE n.LastUpdated <= EXCLUDED.LastUpdated"
-	_, err := tx.Exec(ctx, finalStr, values...)
+	r, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
+	}
+	if r.RowsAffected() == 0 {
+		// The WHERE statement in the update did not match, the condition guarantees that
+		// the node LastUpdated in the DB is newer. Give up.
+		return errors.WithMessagef(ErrConditionalCheck, "inserting node %s: LastUpdated in the database is newer", cloned.GetId())
 	}
 
 	var query string

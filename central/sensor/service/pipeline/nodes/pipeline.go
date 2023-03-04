@@ -92,7 +92,9 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	if reprocessor.SupportsNodeScanning(node) {
+		node.LastUpdated = nil
 		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
+			// TODO If err is ErrConditionalCheck, keep a counter and re-inject the message into the queue.
 			err = errors.Wrapf(err, "upserting node %s:%s into datastore", node.GetClusterName(), node.GetName())
 			log.Error(err)
 			return err

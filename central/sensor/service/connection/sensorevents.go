@@ -17,7 +17,10 @@ import (
 
 const workerQueueSize = 16
 
-var deploymentQueueKey = reflectutils.Type((*central.SensorEvent_Deployment)(nil))
+var (
+	deploymentQueueKey = reflectutils.Type((*central.SensorEvent_Deployment)(nil))
+	nodeQueueKey       = reflectutils.Type((*central.SensorEvent_Node)(nil))
+)
 
 type sensorEventHandler struct {
 	typeToQueue map[string]*workerQueue
@@ -67,6 +70,10 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			return
 		case *central.SensorEvent_ReprocessDeployment:
 			typ = deploymentQueueKey
+		case *central.SensorEvent_NodeInventory:
+			// We serialize Node and NodeInventory to allow them to read before write in the
+			// storage without locks.
+			typ = nodeQueueKey
 		default:
 			typ = reflectutils.Type(evt.Event.Resource)
 			if !s.reconciliationMap.IsClosed() {
