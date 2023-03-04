@@ -1,3 +1,5 @@
+//go:build sql_integratio
+
 package datastore
 
 import (

@@ -42,33 +42,33 @@ func newDatastoreImpl(
 
 func convertPlopFromStorageToPlopFromSensor(plopStorage *storage.ProcessListeningOnPortStorage) *storage.ProcessListeningOnPortFromSensor {
 	return &storage.ProcessListeningOnPortFromSensor{
-		Port:		plopStorage.Port,
-		Protocol:	plopStorage.Protocol,
-		Process:	plopStorage.Process,
-		CloseTimestamp:	plopStorage.CloseTimestamp,
+		Port:           plopStorage.Port,
+		Protocol:       plopStorage.Protocol,
+		Process:        plopStorage.Process,
+		CloseTimestamp: plopStorage.CloseTimestamp,
 		// Storage does not have ClusterId which PlopFromSensor has, but this does not seem
 		// to be a problem. Might want to examine this more.
 		// ClusterId:	plopStorage.ClusterId,
 	}
 }
 
-func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) []*storage.ProcessListeningOnPortStorage {
-        plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-        ds.WalkAll(ctx,
-                func(plop *storage.ProcessListeningOnPortStorage) error {
+func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) ([]*storage.ProcessListeningOnPortStorage, error) {
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	err := ds.WalkAll(ctx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
 			if plop.ProcessIndicatorId == "" {
 				plopsFromDB = append(plopsFromDB, plop)
 			}
 			return nil
-                })
+		})
 
-        return plopsFromDB
+	return plopsFromDB, err
 }
 
-func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesses []*storage.ProcessListeningOnPortFromSensor) []*storage.ProcessListeningOnPortFromSensor {
+func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesses []*storage.ProcessListeningOnPortFromSensor) ([]*storage.ProcessListeningOnPortFromSensor, error) {
 
 	unmatchedIds := make([]string, 0)
-	unmatchedPLOPs := ds.getUnmatchedPlopsFromDB(ctx)
+	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
 
 	for _, val := range unmatchedPLOPs {
 		unmatchedIds = append(unmatchedIds, val.Id)
@@ -79,9 +79,9 @@ func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesse
 	// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
 	// Deleting unmatched plops is not the most efficient solution.
 	// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
-	ds.storage.DeleteMany(ctx, unmatchedIds)
+	err := ds.storage.DeleteMany(ctx, unmatchedIds)
 
-	return portProcesses
+	return portProcesses, err
 }
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
@@ -106,7 +106,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	newAndUnmatchedPortProcesses := ds.addUnmatchedProcesses(ctx, portProcesses)
+	newAndUnmatchedPortProcesses, _ := ds.addUnmatchedProcesses(ctx, portProcesses)
 	normalizedPLOPs, completedInBatch := normalizePLOPs(newAndUnmatchedPortProcesses)
 
 	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
