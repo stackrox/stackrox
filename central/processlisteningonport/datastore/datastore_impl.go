@@ -40,37 +40,6 @@ func newDatastoreImpl(
 	}
 }
 
-//type ProcessListeningOnPortStorage struct {
-//        // Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
-//        // bigint with a sequence. Unfortunately at the moment some bits of store
-//        // generator assume an id has to be a string.
-//        Id                 string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
-//        Port               uint32           `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty" search:"Port,store"`
-//        Protocol           L4Protocol       `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty" search:"Port Protocol,store"`
-//        CloseTimestamp     *types.Timestamp `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
-//        ProcessIndicatorId string           `protobuf:"bytes,5,opt,name=process_indicator_id,json=processIndicatorId,proto3" json:"process_indicator_id,omitempty" search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"`
-//        // XXX: Make it a partial index on only active, not closed, PLOP
-//        Closed bool `protobuf:"varint,6,opt,name=closed,proto3" json:"closed,omitempty" search:"Closed,store" sql:"index=btree"`
-//        // ProcessIndicator will be not empty only for those cases when we were not
-//        // able to find references process in the database
-//        Process              *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process,proto3" json:"process,omitempty"`
-//        XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
-//        XXX_unrecognized     []byte                     `json:"-"`
-//        XXX_sizecache        int32                      `json:"-"`
-//}
-
-//type ProcessListeningOnPortFromSensor struct {
-//        Port                 uint32                     `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
-//        Protocol             L4Protocol                 `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
-//        Process              *ProcessIndicatorUniqueKey `protobuf:"bytes,3,opt,name=process,proto3" json:"process,omitempty"`
-//        CloseTimestamp       *types.Timestamp           `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
-//        ClusterId            string                     `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-//        XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
-//        XXX_unrecognized     []byte                     `json:"-"`
-//        XXX_sizecache        int32                      `json:"-"`
-//}
-
-
 func convertPlopFromStorageToPlopFromSensor(plopStorage *storage.ProcessListeningOnPortStorage) *storage.ProcessListeningOnPortFromSensor {
 	return &storage.ProcessListeningOnPortFromSensor{
 		Port:		plopStorage.Port,
@@ -94,24 +63,20 @@ func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) []*storage
         return plopsFromDB
 }
 
-func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesses []*storage.ProcessListeningOnPortFromSensor) ([]*storage.ProcessListeningOnPortFromSensor, map[string]bool) {
+func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesses []*storage.ProcessListeningOnPortFromSensor) []*storage.ProcessListeningOnPortFromSensor {
 
 	unmatchedIds := make([]string, 0)
 	unmatchedPLOPs := ds.getUnmatchedPlopsFromDB(ctx)
-	keys := make(map[string]bool) // Very strangely golang does not have sets so using a map instead
 
 	for _, val := range unmatchedPLOPs {
 		unmatchedIds = append(unmatchedIds, val.Id)
 		plop := convertPlopFromStorageToPlopFromSensor(val)
-		log.Infof("In addUnmatchedProcesses. Retrying %+v", plop)
 		portProcesses = append(portProcesses, plop)
-		//key := getPlopWithoutIndicatorIdKey(val)
-		//keys[key] = true
 	}
 
 	ds.storage.DeleteMany(ctx, unmatchedIds)
 
-	return portProcesses, keys
+	return portProcesses
 }
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
@@ -124,7 +89,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		"AddProcessListeningOnPort",
 	)
 
-	log.Infof("In AddProcessListeningOnPort")
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
 		log.Warnf("Tried to add PLOP not on Postgres, ignore: %+v", portProcesses)
@@ -137,7 +101,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	newAndUnmatchedPortProcesses, _ := ds.addUnmatchedProcesses(ctx, portProcesses)
+	newAndUnmatchedPortProcesses := ds.addUnmatchedProcesses(ctx, portProcesses)
 	normalizedPLOPs, completedInBatch := normalizePLOPs(newAndUnmatchedPortProcesses)
 
 	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
@@ -160,14 +124,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 		key := getPlopProcessUniqueKey(val)
 
-		log.Debugf("AddProcessListeningOnPort val= %+v", val)
 		if indicator, ok := indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
-			log.Debugf("Got indicator key %s", key)
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
 			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-			log.Warnf("Found no matching indicators for key %s", key)
+			log.Warnf("Found no matching indicators for %s", key)
 			processInfo = val.Process
 		}
 
@@ -280,18 +242,6 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 	return processesListeningOnPorts, nil
 }
 
-func (ds *datastoreImpl) getProcessIndicatorsFromDB(ctx context.Context) []*storage.ProcessIndicator {
-        indicatorsFromDB := []*storage.ProcessIndicator{}
-        ds.indicatorDataStore.WalkAll(ctx,
-                func(processIndicator *storage.ProcessIndicator) error {
-                        indicatorsFromDB = append(indicatorsFromDB, processIndicator)
-                        return nil
-                })
-
-
-        return indicatorsFromDB
-}
-
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
 	if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
 		return err
@@ -402,28 +352,8 @@ func (ds *datastoreImpl) fetchIndicators(
 		return nil, nil, err
 	}
 
-
-	allIndicators := ds.getProcessIndicatorsFromDB(ctx)
-
-	log.Infof("")
-	log.Infof("")
-	log.Infof("")
-	log.Infof("")
-	for _, indicator := range allIndicators {
-		key := getProcessUniqueKey(indicator)
-		log.Infof("In fetchIndicator all key: %s", key)
-		log.Infof("In fetchIndicator all indicator: %+v:", indicator)
-	}
-	log.Infof("")
-	log.Infof("")
-	log.Infof("")
-	log.Infof("")
-
-
 	for _, val := range indicators {
 		key := getProcessUniqueKey(val)
-		log.Infof("In fetchIndicator key: %s", key)
-		log.Infof("In fetchIndicator indicator: %+v:", val)
 
 		// A bit of paranoia is always good
 		if old, ok := indicatorsMap[key]; ok {
@@ -434,10 +364,6 @@ func (ds *datastoreImpl) fetchIndicators(
 		indicatorsMap[key] = val
 		indicatorIds = append(indicatorIds, val.GetId())
 	}
-	log.Infof("")
-	log.Infof("")
-	log.Infof("")
-	log.Infof("")
 
 	return indicatorsMap, indicatorIds, nil
 }
@@ -486,7 +412,6 @@ func normalizePLOPs(
 	completedEvents = []*storage.ProcessListeningOnPortFromSensor{}
 
 	for _, val := range plops {
-		//key := getPlopWithoutIndicatorIdKey(val)
 		key := getPlopKeyFromParts(
 			val.GetProtocol(),
 			val.GetPort(),
@@ -589,14 +514,6 @@ func getPlopKeyFromParts(protocol storage.L4Protocol, port uint32, indicatorID s
 func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
 	return getPlopKeyFromParts(plop.GetProtocol(), plop.GetPort(), plop.GetProcessIndicatorId())
 }
-
-//func getPlopWithoutIndicatorIdKey(plop *storage.ProcessListeningOnPortStorage) string {
-//	return getPlopKeyFromParts(
-//		plop.GetProtocol(),
-//		plop.GetPort(),
-//		getPlopProcessUniqueKey(plop),
-//	)
-//}
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 	sort.Slice(values, func(i, j int) bool {
