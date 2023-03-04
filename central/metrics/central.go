@@ -214,16 +214,6 @@ func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
 }
 
-// IncPipelinePanics increments the counter tracking the panics in pipeline processing
-func IncPipelinePanics(msg *central.MsgFromSensor) {
-	resource := reflectutils.Type(msg.GetMsg())
-	if event := msg.GetEvent(); event != nil {
-		resource = reflectutils.Type(event.GetResource())
-	}
-	resource = stringutils.GetAfterLast(resource, "_")
-	pipelinePanicCounter.With(prometheus.Labels{"resource": resource}).Inc()
-}
-
 // SetBoltOperationDurationTime times how long a particular bolt operation took on a particular resource
 func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	boltOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
@@ -274,14 +264,19 @@ func SetIndexOperationDurationTime(start time.Time, op metrics.Op, t string) {
 		Observe(startTimeToMS(start))
 }
 
+// IncrementPipelinePanics increments the counter tracking the panics in pipeline processing
+func IncrementPipelinePanics(msg *central.MsgFromSensor) {
+	resource := reflectutils.Type(msg.GetMsg())
+	if event := msg.GetEvent(); event != nil {
+		resource = reflectutils.Type(event.GetResource())
+	}
+	resource = stringutils.GetAfterLast(resource, "_")
+	pipelinePanicCounter.With(prometheus.Labels{"resource": resource}).Inc()
+}
+
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
 func IncrementSensorEventQueueCounter(op metrics.Op, t string) {
 	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Inc()
-}
-
-// SetPolicyEvaluationDurationTime is the amount of time a specific policy took
-func SetPolicyEvaluationDurationTime(t time.Time, name string) {
-	policyEvaluationHistogram.With(prometheus.Labels{"Policy": name}).Observe(startTimeToMS(t))
 }
 
 // IncrementResourceProcessedCounter is a counter for how many times a resource has been processed in Central
@@ -303,11 +298,6 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 func ObserveRiskProcessingDuration(startTime time.Time, riskObjectType string) {
 	riskProcessingHistogramVec.With(prometheus.Labels{"Risk_Reprocessor": riskObjectType}).
 		Observe(startTimeToMS(startTime))
-}
-
-// IncrementDBCacheCounter is a counter for how many times a DB cache hits and misses
-func IncrementDBCacheCounter(op string, t string) {
-	totalCacheOperationsCounter.With(prometheus.Labels{"Operation": op, "Type": t}).Inc()
 }
 
 // SetDatastoreFunctionDuration is a histogram for datastore function timing

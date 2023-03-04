@@ -163,7 +163,7 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQu
 			}
 		})
 		if err != nil {
-			metrics.IncPipelinePanics(msg)
+			metrics.IncrementPipelinePanics(msg)
 			log.Errorf("panic in handle message: %v", err)
 		}
 	}
