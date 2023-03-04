@@ -7,14 +7,14 @@ import (
 )
 
 var (
-	// AuthProviderType ...
+	// AuthProviderType reflects the type of storage.AuthProvider.
 	AuthProviderType = reflect.TypeOf((*storage.AuthProvider)(nil))
-	// AccessScopeType ...
+	// AccessScopeType reflects the type of storage.SimpleAccessScope.
 	AccessScopeType = reflect.TypeOf((*storage.SimpleAccessScope)(nil))
-	// GroupType ...
+	// GroupType reflects the type of storage.Group.
 	GroupType = reflect.TypeOf((*storage.Group)(nil))
-	// PermissionSetType ...
+	// PermissionSetType reflects the type of storage.PermissionSet.
 	PermissionSetType = reflect.TypeOf((*storage.PermissionSet)(nil))
-	// RoleType ...
+	// RoleType reflects the type of storage.Role.
 	RoleType = reflect.TypeOf((*storage.Role)(nil))
 )
