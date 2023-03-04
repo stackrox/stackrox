@@ -57,7 +57,7 @@ func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) []*storage
 			if plop.ProcessIndicatorId == "" {
 				plopsFromDB = append(plopsFromDB, plop)
 			}
-                        return nil
+			return nil
                 })
 
         return plopsFromDB

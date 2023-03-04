@@ -297,10 +297,6 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 
 	m.enrichedProcessesLastSentState = currentProcesses
 
-	if len(updatedProcesses) == 0 {
-		return
-	}
-
 	processesToSend := &central.ProcessListeningOnPortsUpdate{
 		ProcessesListeningOnPorts: updatedProcesses,
 		Time:                      types.TimestampNow(),
