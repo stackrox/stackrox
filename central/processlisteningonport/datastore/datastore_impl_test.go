@@ -197,6 +197,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
+// TestPLOPAddNil: Make sure that adding nil is not a problem. This is needed for retrying old
+// plops even when new plops are not coming in.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddNil() {
 	testNamespace := "test_namespace"
 
@@ -249,9 +251,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNil() {
 
 	suite.Len(newPlops, 0)
 
-	// Verify that newly added PLOP object doesn't have Process field set in
-	// the serialized column (because all the info is stored in the referenced
-	// process indicator record)
+	// Verify that the table is empty
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 0)
 }
@@ -890,6 +890,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
+// TestPLOPAddRetry: Make sure that we can still match old plops to process indicators
+// when new plops come in.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetry() {
 	testNamespace := "test_namespace"
 
@@ -1053,18 +1055,16 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetry() {
 	newPlopsFromDB2 := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB2, 2)
 
+
+	plopsFromDBMap := make(map[uint32]*storage.ProcessListeningOnPortStorage)
+
+	for _, plop := range newPlopsFromDB2 {
+		plopsFromDBMap[plop.Port] = plop
+	}
+
 	expectedPlopStorage2 := []*storage.ProcessListeningOnPortStorage{
 		{
-			Id:                 newPlopsFromDB2[0].GetId(),
-			Port:               plopObjects2[0].GetPort(),
-			Protocol:           plopObjects2[0].GetProtocol(),
-			CloseTimestamp:     nil,
-			ProcessIndicatorId: indicators[1].GetId(),
-			Closed:             false,
-			Process:            nil,
-		},
-		{
-			Id:                 newPlopsFromDB2[1].GetId(),
+			Id:                 plopsFromDBMap[plopObjects[0].GetPort()].Id,
 			Port:               plopObjects[0].GetPort(),
 			Protocol:           plopObjects[0].GetProtocol(),
 			CloseTimestamp:     nil,
@@ -1072,12 +1072,22 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetry() {
 			Closed:             false,
 			Process:            nil,
 		},
+		{
+			Id:                 plopsFromDBMap[plopObjects2[0].GetPort()].Id,
+			Port:               plopObjects2[0].GetPort(),
+			Protocol:           plopObjects2[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: indicators[1].GetId(),
+			Closed:             false,
+			Process:            nil,
+		},
 	}
 
-	suite.Equal(expectedPlopStorage2[0], newPlopsFromDB2[0])
-	suite.Equal(expectedPlopStorage2[1], newPlopsFromDB2[1])
+	suite.Equal(expectedPlopStorage2[0], plopsFromDBMap[plopObjects[0].GetPort()])
+	suite.Equal(expectedPlopStorage2[1], plopsFromDBMap[plopObjects2[0].GetPort()])
 }
 
+// TestPLOPAddRetryNil: Make sure that retries work even when there are no new plops added.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetryNil() {
 	testNamespace := "test_namespace"
 

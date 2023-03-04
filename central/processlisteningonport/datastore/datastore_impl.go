@@ -46,7 +46,9 @@ func convertPlopFromStorageToPlopFromSensor(plopStorage *storage.ProcessListenin
 		Protocol:	plopStorage.Protocol,
 		Process:	plopStorage.Process,
 		CloseTimestamp:	plopStorage.CloseTimestamp,
-		//ClusterId:	plopStorage.ClusterId,
+		// Storage does not have ClusterId which PlopFromSensor has, but this does not seem
+		// to be a problem. Might want to examine this more.
+		// ClusterId:	plopStorage.ClusterId,
 	}
 }
 
@@ -74,6 +76,9 @@ func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesse
 		portProcesses = append(portProcesses, plop)
 	}
 
+	// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
+	// Deleting unmatched plops is not the most efficient solution.
+	// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
 	ds.storage.DeleteMany(ctx, unmatchedIds)
 
 	return portProcesses

@@ -13,7 +13,6 @@ import spock.lang.Stepwise
 import services.ProcessesListeningOnPortsService
 
 @Stepwise
-// TODO: Solve the flake and change back to @IgnoreIf({ !Env.get("ROX_POSTGRES_DATASTORE", null) })
 @IgnoreIf({ !Env.get("ROX_POSTGRES_DATASTORE", null) })
 class ProcessesListeningOnPortsTest extends BaseSpecification {
 
