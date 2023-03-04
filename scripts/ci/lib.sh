@@ -801,6 +801,45 @@ pr_has_label_in_body() {
     [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/label:[[:space:]]*$expected_label ]]
 }
 
+# pr_has_pragma() - returns true if a pragma exists. A pragma is a key with
+# value in the description body of a PR that influences how CI behaves.
+# e.g. /pragma gk_release_channel:rapid.
+pr_has_pragma() {
+    if [[ "$#" -ne 1 ]]; then
+        die "usage: pr_has_pragma <key>"
+    fi
+
+    local pr_details
+    if ! pr_details="$(get_pr_details)"; then
+        info "Warning: checking for a pragma in a non PR context"
+        return 0
+    fi
+
+    local key_to_check="$1"
+    [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/pragma:[[:space:]]*$key_to_check: ]]
+}
+
+# pr_get_pragma() - outputs the pragma key value if it exists.
+pr_get_pragma() {
+    if [[ "$#" -ne 1 ]]; then
+        die "usage: pr_get_pragma <key>"
+    fi
+
+    local pr_details
+    if ! pr_details="$(get_pr_details)"; then
+        echo ''
+        return 0
+    fi
+
+    local key_to_check="$1"
+    while IFS= read -r line; do
+        if [[ "$line" =~ \/pragma:[[:space:]]*$key_to_check:[[:space:]]*(.+) ]]; then
+            # shellcheck disable=SC2001
+            echo "${BASH_REMATCH[1]}" | sed -e 's/[[:space:]]*$//'
+        fi
+    done <<< "$(jq -r '.body' <<<"$pr_details")"
+}
+
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
 _PR_DETAILS=""
 _PR_DETAILS_CACHE_FILE="/tmp/PR_DETAILS_CACHE.json"
