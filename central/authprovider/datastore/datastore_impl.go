@@ -64,10 +64,10 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 	if err != nil {
 		return err
 	}
-	if err = verifyAuthProviderOriginMatches(ctx, existingProvider); err != nil {
+	if err = verifyAuthProviderOrigin(ctx, existingProvider); err != nil {
 		return errors.Wrap(err, "origin didn't match for existing auth provider")
 	}
-	if err = verifyAuthProviderOriginMatches(ctx, authProvider); err != nil {
+	if err = verifyAuthProviderOrigin(ctx, authProvider); err != nil {
 		return errors.Wrap(err, "origin didn't match for new auth provider")
 	}
 	return b.storage.Upsert(ctx, authProvider)
@@ -85,13 +85,13 @@ func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string, force
 	if err != nil {
 		return err
 	}
-	if err = verifyAuthProviderOriginMatches(ctx, ap); err != nil {
+	if err = verifyAuthProviderOrigin(ctx, ap); err != nil {
 		return err
 	}
 	return b.storage.Delete(ctx, id)
 }
 
-func verifyAuthProviderOriginMatches(ctx context.Context, ap *storage.AuthProvider) error {
+func verifyAuthProviderOrigin(ctx context.Context, ap *storage.AuthProvider) error {
 	if !declarativeconfig.CanModifyResource(ctx, ap) {
 		return errors.Wrapf(errox.NotAuthorized, "auth provider %q's origin is %s, cannot be modified or deleted with the current permission",
 			ap.GetName(), ap.GetTraits().GetOrigin())
