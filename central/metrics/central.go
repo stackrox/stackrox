@@ -6,6 +6,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -199,10 +201,27 @@ var (
 		Name:      "sensor_event_deduper",
 		Help:      "A counter that tracks objects that has passed the sensor event deduper in the connection stream",
 	}, []string{"status"})
+
+	pipelinePanicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "pipeline_panics",
+		Help:      "A counter that tracks the number of panics that have occurred in the processing pipelines",
+	}, []string{"resource"})
 )
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
+}
+
+// IncPipelinePanics increments the counter tracking the panics in pipeline processing
+func IncPipelinePanics(msg *central.MsgFromSensor) {
+	resource := reflectutils.Type(msg.GetMsg())
+	if event := msg.GetEvent(); event != nil {
+		resource = reflectutils.Type(event.GetResource())
+	}
+	resource = stringutils.GetAfterLast(resource, "_")
+	pipelinePanicCounter.With(prometheus.Labels{"resource": resource}).Inc()
 }
 
 // SetBoltOperationDurationTime times how long a particular bolt operation took on a particular resource
