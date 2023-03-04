@@ -22,6 +22,7 @@ func init() {
 	}
 
 	prometheus.MustRegister(
+		pipelinePanicCounter,
 		graphQLOperationHistogramVec,
 		graphQLQueryHistogramVec,
 		indexOperationHistogramVec,

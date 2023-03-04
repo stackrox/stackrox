@@ -59,6 +59,7 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 				errorList.AddError(fragment.Run(ctx, s.clusterID, msg, injector))
 			})
 			if err != nil {
+				metrics.IncrementPipelinePanics(msg)
 				log.Errorf("panic in pipeline execution: %v", err)
 			}
 		}

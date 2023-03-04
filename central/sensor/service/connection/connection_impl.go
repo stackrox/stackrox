@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/localscanner"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
@@ -162,6 +163,7 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQu
 			}
 		})
 		if err != nil {
+			metrics.IncrementPipelinePanics(msg)
 			log.Errorf("panic in handle message: %v", err)
 		}
 	}
