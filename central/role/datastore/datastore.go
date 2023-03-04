@@ -24,6 +24,7 @@ type DataStore interface {
 	CountPermissionSets(ctx context.Context) (int, error)
 	AddPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error
 	UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error
+	UpsertPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error
 	RemovePermissionSet(ctx context.Context, id string) error
 
 	GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
@@ -31,9 +32,11 @@ type DataStore interface {
 	CountAccessScopes(ctx context.Context) (int, error)
 	AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
 	UpdateAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
+	UpsertAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
 	RemoveAccessScope(ctx context.Context, id string) error
 
 	GetAndResolveRole(ctx context.Context, name string) (permissions.ResolvedRole, error)
+	UpsertRole(ctx context.Context, role *storage.Role) error
 }
 
 // New returns a new DataStore instance.

@@ -908,3 +908,73 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, nil, nil, true)
 	s.NoError(err)
 }
+
+func (s *groupDataStoreTestSuite) TestUpsertImperativeViaConfig() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
+
+	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, group)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestUpsertImperativeViaAPI() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.Upsert(s.hasWriteCtx, group)
+	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) TestUpsertDeclarativeViaAPI() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
+
+	err := s.dataStore.Upsert(s.hasWriteCtx, group)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestUpsertDeclarativeViaConfig() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, group)
+	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) TestUpsertChangeDeclarativeOrigin() {
+	existingGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(existingGroup, true, nil).Times(1)
+
+	updatedGroup := existingGroup.Clone()
+	updatedGroup.GetProps().Key = "something"
+	updatedGroup.GetProps().Value = "else"
+	updatedGroup.GetProps().Traits = &storage.Traits{
+		Origin: storage.Traits_IMPERATIVE,
+	}
+
+	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, updatedGroup)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestUpsertChangeImperativeOrigin() {
+	existingGroup := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(existingGroup, true, nil).Times(1)
+
+	updatedGroup := existingGroup.Clone()
+	updatedGroup.GetProps().Key = "something"
+	updatedGroup.GetProps().Value = "else"
+	updatedGroup.GetProps().Traits = &storage.Traits{
+		Origin: storage.Traits_DECLARATIVE,
+	}
+
+	err := s.dataStore.Upsert(s.hasWriteCtx, updatedGroup)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
