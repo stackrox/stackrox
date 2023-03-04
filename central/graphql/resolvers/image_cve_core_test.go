@@ -5,11 +5,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	imageCVEViewMock "github.com/stackrox/rox/central/views/imagecve/mocks"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -57,7 +59,7 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEsEmpty() {
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
 
-	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ).Return(nil, nil)
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(nil, nil)
 	response, err := s.resolver.ImageCVEs(s.ctx, *q)
 	s.NoError(err)
 	s.Len(response, 0)
@@ -74,7 +76,7 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEsNonEmpty() {
 		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
 	}
 
-	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ).Return(expected, nil)
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
 	response, err := s.resolver.ImageCVEs(s.ctx, *q)
 	s.NoError(err)
 	s.Len(response, 3)
@@ -93,7 +95,7 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEsQuery() {
 		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
 	}
 
-	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ).Return(expected, nil)
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
 	response, err := s.resolver.ImageCVEs(s.ctx, *q)
 	s.NoError(err)
 	s.Len(response, 3)
@@ -126,4 +128,21 @@ func (s *ImageCVECoreResolverTestSuite) TestCountImageCVEsWithQuery() {
 	response, err := s.resolver.ImageCVECount(s.ctx, *q)
 	s.NoError(err)
 	s.Equal(response, int32(3))
+}
+
+func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEMalformed() {
+	_, err := s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{})
+	s.Error(err)
+}
+
+func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
+	expectedQ := search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-xyz").ProtoQuery()
+	expected := []imagecve.CveCore{
+		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
+	}
+
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
+	response, err := s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{Cve: pointers.String("cve-xyz")})
+	s.NoError(err)
+	s.NotNil(response.data)
 }
