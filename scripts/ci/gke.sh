@@ -70,21 +70,19 @@ choose_release_channel() {
 }
 
 choose_cluster_version() {
-    if ! is_in_PR_context; then
-        if [[ "${GKE_CLUSTER_VERSION:-}" == "latest" ]]; then
-            GKE_CLUSTER_VERSION="$(gcloud container get-server-config --format json | jq -r ".validMasterVersions[0]")"
-        elif [[ "${GKE_CLUSTER_VERSION:-}" == "oldest" ]]; then
-            GKE_CLUSTER_VERSION="$(gcloud container get-server-config --format json | jq -r ".validMasterVersions[-1]")"
-        fi
-        if [[ "${GKE_CLUSTER_VERSION:-}" == "null" ]]; then
-            echo "WARNING: Unable to extract version from gcloud config."
-            echo "Valid versions are:"
-            gcloud container get-server-config --format json | jq .validMasterVersions
-            unset GKE_CLUSTER_VERSION
-        fi
-        return
-    elif pr_has_pragma gke_cluster_version; then
+    if is_in_PR_context && pr_has_pragma gke_cluster_version; then
         GKE_CLUSTER_VERSION="$(pr_get_pragma gke_cluster_version)"
+    fi
+    if [[ "${GKE_CLUSTER_VERSION:-}" == "latest" ]]; then
+        GKE_CLUSTER_VERSION="$(gcloud container get-server-config --format json | jq -r ".validMasterVersions[0]")"
+    elif [[ "${GKE_CLUSTER_VERSION:-}" == "oldest" ]]; then
+        GKE_CLUSTER_VERSION="$(gcloud container get-server-config --format json | jq -r ".validMasterVersions[-1]")"
+    fi
+    if [[ "${GKE_CLUSTER_VERSION:-}" == "null" ]]; then
+        echo "WARNING: Unable to extract version from gcloud config."
+        echo "Valid versions are:"
+        gcloud container get-server-config --format json | jq .validMasterVersions
+        unset GKE_CLUSTER_VERSION
     fi
 }
 
