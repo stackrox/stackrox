@@ -262,7 +262,7 @@ ensure_supported_cluster_version() {
     local match
     match=$(gcloud container get-server-config --format json | jq "[.validMasterVersions | .[] | select(.|test(\"^${GKE_CLUSTER_VERSION}\"))][0]")
     if [[ -z "${match}" || "${match}" == "null" ]]; then
-        echo "A supported version cannot be found that matches ${GKE_CLUSTER_VERSION}."
+        echo "ERROR: A supported version cannot be found that matches ${GKE_CLUSTER_VERSION}."
         echo "Valid master versions are:"
         gcloud container get-server-config --format json | jq .validMasterVersions
         exit 1
