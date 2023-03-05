@@ -74,14 +74,9 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 					log.Errorf("Error handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
 					continue
 				}
-				time.AfterFunc(time.Duration(msg.ProcessingAttempt)*handlerRetryInterval, func() {
-					select {
-					case <-stopSig.Done():
-						return
-					default:
-					}
+				concurrency.AfterFunc(time.Duration(msg.ProcessingAttempt)*handlerRetryInterval, func() {
 					w.injector.InjectMessageIntoQueue(msg)
-				})
+				}, stopSig)
 				continue
 			}
 			log.Errorf("Unretryable error found while handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
