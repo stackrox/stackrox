@@ -55,7 +55,6 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 // SearchRawRoleBindings returns the rolebindings that match the query.
 func (ds *searcherImpl) SearchRawRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		log.Infof("Rolebindings search: %+v", q)
 		return ds.storage.GetByQuery(ctx, q)
 	}
 	bindings, _, err := ds.searchRoleBindings(ctx, q)
