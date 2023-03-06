@@ -1,6 +1,7 @@
 package declarativeconfig
 
 import (
+	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -20,7 +21,10 @@ func ManagerSingleton(registry authproviders.Registry) Manager {
 			env.DeclarativeConfigReconcileInterval.DurationSetting(),
 			env.DeclarativeConfigWatchInterval.DurationSetting(),
 			updater.DefaultResourceUpdaters(registry),
-			reporter.Singleton())
+			reporter.Singleton(),
+			types.UniversalNameExtractor(),
+			types.UniversalIDExtractor(),
+		)
 	})
 	return instance
 }

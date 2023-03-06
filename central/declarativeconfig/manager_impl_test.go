@@ -91,42 +91,42 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 	gomock.InOrder(
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 			Id:           "id-access-scope",
-			Name:         "accessScope",
+			Name:         "accessScope in config map test-handler-1",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 			Id:           "id-perm-set-1",
-			Name:         "permission-set-1",
+			Name:         "permission-set-1 in config map test-handler-1",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 			Id:           "id-perm-set-2",
-			Name:         "permission-set-2",
+			Name:         "permission-set-2 in config map test-handler-1",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 			Id:           "role",
-			Name:         "role",
+			Name:         "role in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 			Id:           "id-auth-provider",
-			Name:         "authProvider",
+			Name:         "authProvider in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 			Id:           "group",
-			Name:         "group",
+			Name:         "group in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
@@ -142,6 +142,8 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			types.GroupType:         mockUpdater,
 		},
 		declarativeConfigErrorReporter: reporter,
+		nameExtractor:                  types.UniversalNameExtractor(),
+		idExtractor:                    types.UniversalIDExtractor(),
 	}
 	m.reconcileTransformedMessages(map[string]protoMessagesByType{
 		"test-handler-1": {
@@ -182,7 +184,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 
 	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 		Id:           "some-id",
-		Name:         "permission-set-1",
+		Name:         "permission-set-1 in config map test-handler-1",
 		Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 		Status:       storage.IntegrationHealth_UNHEALTHY,
 		ErrorMessage: "test error",
@@ -194,6 +196,8 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		},
 		declarativeConfigErrorReporter: reporter,
 		errorsPerDeclarativeConfig:     map[string]int32{},
+		nameExtractor:                  types.UniversalNameExtractor(),
+		idExtractor:                    types.UniversalIDExtractor(),
 	}
 
 	// We need to call this 5 times, only then the error will be propagated to the reporter.
@@ -221,7 +225,7 @@ func TestReconcileTransformedMessages_MissingUpdaterCausesPanic_DevBuild(t *test
 	}
 	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 		Id:           "some-id",
-		Name:         "permission-set-1",
+		Name:         "permission-set-1 in config map test-handler-1",
 		Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 		Status:       storage.IntegrationHealth_UNHEALTHY,
 		ErrorMessage: "manager does not have updater for type *storage.PermissionSet",
@@ -231,6 +235,8 @@ func TestReconcileTransformedMessages_MissingUpdaterCausesPanic_DevBuild(t *test
 		updaters:                       map[reflect.Type]updater.ResourceUpdater{},
 		declarativeConfigErrorReporter: reporter,
 		errorsPerDeclarativeConfig:     map[string]int32{},
+		nameExtractor:                  types.UniversalNameExtractor(),
+		idExtractor:                    types.UniversalIDExtractor(),
 	}
 	assert.Panics(t, func() {
 		m.reconcileTransformedMessages(map[string]protoMessagesByType{
@@ -256,7 +262,7 @@ func TestReconcileTransformedMessages_MissingUpdaterStopsManager_ReleaseBuild(t 
 	}
 	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 		Id:           "some-id",
-		Name:         "permission-set-1",
+		Name:         "permission-set-1 in config map test-handler-1",
 		Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 		Status:       storage.IntegrationHealth_UNHEALTHY,
 		ErrorMessage: "manager does not have updater for type *storage.PermissionSet",
@@ -266,6 +272,8 @@ func TestReconcileTransformedMessages_MissingUpdaterStopsManager_ReleaseBuild(t 
 		updaters:                       map[reflect.Type]updater.ResourceUpdater{},
 		declarativeConfigErrorReporter: reporter,
 		errorsPerDeclarativeConfig:     map[string]int32{},
+		nameExtractor:                  types.UniversalNameExtractor(),
+		idExtractor:                    types.UniversalIDExtractor(),
 	}
 	m.reconcileTransformedMessages(map[string]protoMessagesByType{
 		"test-handler-1": {
@@ -286,6 +294,8 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 		universalTransformer:           transformer,
 		declarativeConfigErrorReporter: reporter,
 		transformedMessagesByHandler:   map[string]protoMessagesByType{},
+		nameExtractor:                  types.UniversalNameExtractor(),
+		idExtractor:                    types.UniversalIDExtractor(),
 	}
 
 	transformer.EXPECT().Transform(&declarativeconfig.Role{
@@ -334,6 +344,8 @@ func TestUpdateDeclarativeConfigContents_Errors(t *testing.T) {
 		universalTransformer:           transformer,
 		declarativeConfigErrorReporter: reporter,
 		transformedMessagesByHandler:   map[string]protoMessagesByType{},
+		nameExtractor:                  types.UniversalNameExtractor(),
+		idExtractor:                    types.UniversalIDExtractor(),
 	}
 
 	// 1. Failure in unmarshalling the file.
