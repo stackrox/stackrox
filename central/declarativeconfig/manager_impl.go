@@ -168,7 +168,7 @@ func (m *managerImpl) reconciliationLoop() {
 	// While we currently do not have an exit in the form of "stopping" the reconciliation, still, ensure that
 	// the ticker is stopped when we stop running the reconciliation.
 	defer m.reconciliationTicker.Stop()
-	for !m.stopSignal.IsDone() {
+	for {
 		select {
 		case <-m.shortCircuitSignal.Done():
 			log.Debug("Received short circuit signal in reconciliation loop")
@@ -177,9 +177,11 @@ func (m *managerImpl) reconciliationLoop() {
 		case <-m.reconciliationTicker.C:
 			log.Debug("Received ticker signal in reconciliation loop")
 			m.runReconciliation()
+		case <-m.stopSignal.Done():
+			log.Debug("Received a stop signal, stopping the reconciliation loop")
+			return
 		}
 	}
-	log.Debug("Exiting reconciliation loop due to stop signal")
 }
 
 func (m *managerImpl) runReconciliation() {
