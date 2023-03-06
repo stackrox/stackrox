@@ -58,8 +58,6 @@ SELECT TABLE_NAME
 
 	versionQuery = `SHOW server_version;`
 
-	connectionQuery = `SELECT datname, COUNT(datid) FROM pg_stat_activity WHERE state <> 'idle' AND datname IS NOT NULL GROUP BY datname;`
-
 	totalConnectionQuery = `SELECT state, COUNT(datid) FROM pg_stat_activity WHERE state IS NOT NULL GROUP BY state;`
 
 	maxConnectionQuery = `SELECT current_setting('max_connections')::int;`
@@ -243,30 +241,11 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 
 // CollectPostgresConnectionStats -- collect connection stats for Postgres
 func CollectPostgresConnectionStats(ctx context.Context, db *postgres.DB) {
-	// Get the active connections by database
-	getActiveConnections(ctx, db)
-
 	// Get the total connections by database
 	getTotalConnections(ctx, db)
 
 	// Get the max connections for Postgres
 	getMaxConnections(ctx, db)
-}
-
-// getActiveConnections -- gets the active connections by database
-func getActiveConnections(ctx context.Context, db *postgres.DB) {
-	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
-	defer cancel()
-
-	rows, err := db.Query(ctx, connectionQuery)
-	if err != nil {
-		log.Errorf("error fetching active connection information: %v", err)
-		return
-	}
-
-	defer rows.Close()
-
-	processConnectionCountRow(metrics.PostgresActiveConnections, rows)
 }
 
 // getTotalConnections -- gets the total connections by database
@@ -312,7 +291,7 @@ func getMaxConnections(ctx context.Context, db *postgres.DB) {
 	metrics.PostgresMaximumConnections.Set(float64(connectionCount))
 }
 
-func processConnectionCountRow(metric *prometheus.GaugeVec, rows postgres.Rows) {
+func processConnectionCountRow(metric *prometheus.GaugeVec, rows *postgres.Rows) {
 	for rows.Next() {
 		var (
 			databaseName    string
