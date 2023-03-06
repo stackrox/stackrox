@@ -1,5 +1,9 @@
 package orchestratormanager
 
+import static util.Helpers.evaluateWithRetry
+import static util.Helpers.withK8sClientRetry
+import static util.Helpers.withRetry
+
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -105,13 +109,9 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
+import util.Env
 import util.Helpers
 import util.Timer
-import util.Env
-
-import static Helpers.evaluateWithRetry
-import static Helpers.withRetry
-import static Helpers.withK8sClientRetry
 
 @CompileStatic
 @Slf4j
@@ -1277,7 +1277,7 @@ class Kubernetes implements OrchestratorMain {
                         namespace: it.metadata.namespace,
                         labels: it.metadata.labels ? it.metadata.labels : [:],
                         annotations: annotations ?: [:],
-                        secrets: it.secrets*.name,
+                        secrets: it.secrets,
                         imagePullSecrets: it.imagePullSecrets*.name,
                         automountToken: it.automountServiceAccountToken == null
                                 ? true : it.automountServiceAccountToken,
@@ -1809,7 +1809,7 @@ class Kubernetes implements OrchestratorMain {
             final List<String> result = new ArrayList()
             result.add(it.getExecutable())
             result.addAll(it.getArguments())
-            return result.toArray()
+            return result as String[]
         }
         log.debug("Exec-ing the following command in pod {}: {}", name, cmd)
         try {

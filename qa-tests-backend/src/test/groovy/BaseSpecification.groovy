@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
@@ -34,8 +36,6 @@ import org.junit.rules.Timeout
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Specification
-
-import static Helpers.withRetry
 
 @Retry(condition = { Helpers.determineRetry(failure) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })

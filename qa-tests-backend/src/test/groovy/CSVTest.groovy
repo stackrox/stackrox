@@ -1,4 +1,5 @@
 import static io.restassured.RestAssured.given
+import static util.Helpers.withRetry
 
 import com.opencsv.CSVReader
 import groovy.transform.EqualsAndHashCode

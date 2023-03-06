@@ -14,6 +14,7 @@ import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
+import util.Env
 import util.NetworkGraphUtil
 import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
@@ -21,9 +22,8 @@ import util.Timer
 
 import org.junit.Rule
 import org.junit.rules.Timeout
-import spock.lang.Tag
 import spock.lang.IgnoreIf
-import util.Env
+import spock.lang.Tag
 
 // ROX-14228 skipping tests for 1st release on power & z
 @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })

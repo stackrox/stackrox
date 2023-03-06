@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.storage.NotifierOuterClass
 
 import common.Constants

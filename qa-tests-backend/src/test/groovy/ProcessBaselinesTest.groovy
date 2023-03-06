@@ -1,5 +1,6 @@
 import static Services.waitForSuspiciousProcessInRiskIndicators
 import static Services.waitForViolation
+import static util.Helpers.evaluateWithRetry
 
 import org.apache.commons.lang3.StringUtils
 
