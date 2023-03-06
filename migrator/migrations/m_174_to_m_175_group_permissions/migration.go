@@ -99,11 +99,13 @@ func migrateReplacedResourcesInPermissionSets(db *postgres.DB) error {
 		}
 		if changed {
 			migratedPermissionSets = append(migratedPermissionSets, newPermissionSet)
-			err := store.UpsertMany(ctx, migratedPermissionSets)
-			if err != nil {
-				return err
+			if len(migratedPermissionSets) >= batchSize {
+				err := store.UpsertMany(ctx, migratedPermissionSets)
+				if err != nil {
+					return err
+				}
+				migratedPermissionSets = migratedPermissionSets[:0]
 			}
-			migratedPermissionSets = migratedPermissionSets[:0]
 		}
 		return nil
 	})
