@@ -15,8 +15,9 @@ var (
 )
 
 type segmentTelemeter struct {
-	client   segment.Client
-	clientID string
+	client     segment.Client
+	clientID   string
+	clientType string
 }
 
 func getMessageType(msg segment.Message) string {
@@ -67,7 +68,7 @@ func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Dura
 		return nil
 	}
 
-	return &segmentTelemeter{client: client, clientID: clientID}
+	return &segmentTelemeter{client: client, clientID: clientID, clientType: clientType}
 }
 
 type logWrapper struct {
@@ -110,7 +111,7 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	return t.clientID
 }
 
-func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
+func (t *segmentTelemeter) makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
 	var ctx *segment.Context
 
 	if len(o.Groups) > 0 {
@@ -130,6 +131,17 @@ func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
 			Type: o.ClientType,
 		}
 	}
+
+	if o.UserID == "" {
+		// Add "Server" suffix to the platform of the backend initiated events:
+		if ctx == nil {
+			ctx = &segment.Context{}
+		}
+		if ctx.Device.Type == "" {
+			ctx.Device.Type = t.clientType
+		}
+		ctx.Device.Type += " Server"
+	}
 	return ctx
 }
 
@@ -146,7 +158,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      traits,
-		Context:     makeDeviceContext(options),
+		Context:     t.makeDeviceContext(options),
 	}
 
 	for k, v := range props {
@@ -168,7 +180,7 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      props,
-		Context:     makeDeviceContext(options),
+		Context:     t.makeDeviceContext(options),
 	}
 
 	for _, ids := range options.Groups {
@@ -198,7 +210,7 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 		AnonymousId: t.getAnonymousID(options),
 		Event:       event,
 		Properties:  props,
-		Context:     makeDeviceContext(options),
+		Context:     t.makeDeviceContext(options),
 	}
 
 	if err := t.client.Enqueue(track); err != nil {

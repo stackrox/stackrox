@@ -26,7 +26,9 @@ func Test_makeDeviceContext(t *testing.T) {
 		telemeter.WithGroups("groupB", "groupB_id"),
 	})
 
-	ctx := makeDeviceContext(opts)
+	s := segmentTelemeter{clientType: "test"}
+
+	ctx := s.makeDeviceContext(opts)
 	assert.Equal(t, "clientID", ctx.Device.Id)
 	assert.Equal(t, "clientType", ctx.Device.Type)
 
@@ -35,6 +37,13 @@ func Test_makeDeviceContext(t *testing.T) {
 	assert.Contains(t, ctx.Extra["groups"], "groupB")
 	groups := ctx.Extra["groups"].(map[string][]string)
 	assert.ElementsMatch(t, []string{"groupA_id1", "groupA_id2"}, groups["groupA"])
+
+	ctx = s.makeDeviceContext(telemeter.ApplyOptions([]telemeter.Option{}))
+	assert.Equal(t, "test Server", ctx.Device.Type)
+
+	ctx = s.makeDeviceContext(telemeter.ApplyOptions([]telemeter.Option{
+		telemeter.WithClient("clientID", "clientType")}))
+	assert.Equal(t, "clientType Server", ctx.Device.Type)
 }
 
 func Test_getIDs(t *testing.T) {
