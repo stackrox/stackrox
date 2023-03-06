@@ -74,7 +74,9 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 					log.Errorf("Error handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
 					continue
 				}
-				concurrency.AfterFunc(time.Duration(msg.ProcessingAttempt)*handlerRetryInterval, func() {
+				reprocessingDuration := time.Duration(msg.ProcessingAttempt) * handlerRetryInterval
+				log.Warnf("Reprocessing sensor message %T in %d minutes", msg.GetEvent().GetResource(), reprocessingDuration)
+				concurrency.AfterFunc(reprocessingDuration, func() {
 					w.injector.InjectMessageIntoQueue(msg)
 				}, stopSig)
 				continue
