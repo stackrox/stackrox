@@ -41,7 +41,7 @@ const workloadCveOverviewImagePath = getOverviewCvesPath({
 function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['image'] }) {
     const [hasSuccessfulCopy, setHasSuccessfulCopy] = useState(false);
 
-    const { deploymentCount, operatingSystem, metadata, scan } = imageData;
+    const { deploymentCount, operatingSystem, metadata, dataSource, scanTime } = imageData;
     const created = metadata?.v1?.created;
     const sha = metadata?.v1?.digest;
     const isActive = deploymentCount > 0;
@@ -68,10 +68,9 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
             {created && (
                 <Label isCompact>Age: {getDistanceStrictAsPhrase(created, new Date())}</Label>
             )}
-            {scan && (
+            {scanTime && (
                 <Label isCompact>
-                    Scan time: {getDateTime(scan.scanTime)} by{' '}
-                    {scan?.dataSource?.name ?? 'Unknown Scanner'}
+                    Scan time: {getDateTime(scanTime)} by {dataSource?.name ?? 'Unknown Scanner'}
                 </Label>
             )}
             {sha && (
@@ -108,11 +107,8 @@ export type ImageDetailsResponse = {
                 digest: string;
             } | null;
         } | null;
-
-        scan: {
-            dataSource: { name: string } | null;
-            scanTime: Date | null;
-        };
+        dataSource: { name: string } | null;
+        scanTime: Date | null;
     };
 };
 
@@ -131,12 +127,10 @@ export const imageDetailsQuery = gql`
                     digest
                 }
             }
-            scan {
-                dataSource {
-                    name
-                }
-                scanTime
+            dataSource {
+                name
             }
+            scanTime
         }
     }
 `;
