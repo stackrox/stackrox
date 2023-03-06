@@ -24,11 +24,6 @@ type NodeAnalyzer struct {
 
 // Scan scans the current node and returns the results as storage.NodeInventory struct.
 func (n *NodeAnalyzer) Scan(nodeName string) (*storage.NodeInventory, error) {
-	return collectInventory(nodeName)
-}
-
-// collectInventory scans the current node and returns the results as storage.NodeInventory object
-func collectInventory(nodeName string) (*storage.NodeInventory, error) {
 	metrics.ObserveScansTotal(nodeName)
 	startTime := time.Now()
 

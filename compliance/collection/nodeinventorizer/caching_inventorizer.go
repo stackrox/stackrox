@@ -72,12 +72,11 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 
 	// Write backoff duration to cache
 	if err := writeBackoff(backoffDuration, c.inventoryCachePath); err != nil {
-		return nil, errors.Wrap(err, " writing node scan backoff file")
+		return nil, errors.Wrap(err, "writing node scan backoff file")
 	}
 
 	// if no inventory exists, or it is too old, collect a fresh one
 	newInventory, err := c.analyzer.Scan(nodeName)
-	// newInventory, err := c.analyzer.Scan(nodeName)
 	if err != nil {
 		return nil, err
 	}
