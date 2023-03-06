@@ -139,9 +139,11 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		}
 	}
 
+	log.Debug("Locking transformed messages mutex")
 	m.transformedMessagesMutex.Lock()
 	m.transformedMessagesByHandler[handlerID] = transformedConfigurations
 	m.transformedMessagesMutex.Unlock()
+	log.Debug("Finished updating transformed configurations, triggering short circuit signal")
 	m.shortCircuitReconciliationLoop()
 }
 
@@ -155,32 +157,37 @@ func (m *managerImpl) shortCircuitReconciliationLoop() {
 }
 
 func (m *managerImpl) startReconciliationLoop() {
+	log.Debugf("Start timer with duration %s", m.reconciliationTickerDuration)
 	m.reconciliationTicker = time.NewTicker(m.reconciliationTickerDuration)
 
 	go m.reconciliationLoop()
 }
 
 func (m *managerImpl) reconciliationLoop() {
+	log.Debug("Starting reconciliation loop")
 	// While we currently do not have an exit in the form of "stopping" the reconciliation, still, ensure that
 	// the ticker is stopped when we stop running the reconciliation.
 	defer m.reconciliationTicker.Stop()
-	for {
+	for !m.stopSignal.IsDone() {
 		select {
 		case <-m.shortCircuitSignal.Done():
+			log.Debug("Received short circuit signal in reconciliation loop")
 			m.shortCircuitSignal.Reset()
 			m.runReconciliation()
 		case <-m.reconciliationTicker.C:
+			log.Debug("Received ticker signal in reconciliation loop")
 			m.runReconciliation()
-		case <-m.stopSignal.Done():
-			return
 		}
 	}
+	log.Debug("Exiting reconciliation loop due to stop signal")
 }
 
 func (m *managerImpl) runReconciliation() {
+	log.Debug("Running reconciliation")
 	m.transformedMessagesMutex.RLock()
 	transformedMessagesByHandler := maputil.ShallowClone(m.transformedMessagesByHandler)
 	m.transformedMessagesMutex.RUnlock()
+	log.Debug("Finished cloning map, triggering reconciliation of transformed messages")
 	m.reconcileTransformedMessages(transformedMessagesByHandler)
 }
 
@@ -215,10 +222,11 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 }
 
 func (m *managerImpl) handleMissingTypeUpdater(protoType reflect.Type, messages []proto.Message) {
+	log.Debug("Missing type updater found")
 	err := fmt.Errorf("manager does not have updater for type %v", protoType)
 	for _, message := range messages {
 		m.reconciliationErrorReporter.ProcessError(message, err)
 	}
 	utils.Should(err)
-	m.stopSignal.Done()
+	m.stopSignal.Signal()
 }
