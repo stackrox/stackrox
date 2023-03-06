@@ -96,6 +96,18 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props["Total Nodes"] = metrics.NodeCount
 		props["CPU Capacity"] = metrics.CpuCapacity
 
+		if pmd := cluster.GetStatus().GetProviderMetadata(); pmd.GetProvider() != nil {
+			props["Provider"] = pmd.GetProvider()
+			props["Provider Region"] = pmd.GetRegion()
+			props["Provider Zone"] = pmd.GetZone()
+		}
+
+		omd := cluster.GetStatus().GetOrchestratorMetadata()
+		if omd.GetIsOpenshift() != nil {
+			props["Openshift"] = omd.GetIsOpenshift()
+		}
+		props["Orchestrator Version"] = omd.GetVersion()
+
 		opts := []telemeter.Option{
 			telemeter.WithClient(cluster.GetId(), securedClusterClient),
 			telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
