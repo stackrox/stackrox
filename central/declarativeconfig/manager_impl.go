@@ -94,6 +94,8 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 		errorsPerDeclarativeConfig:     map[string]int32{},
 		idExtractor:                    idExtractor,
 		nameExtractor:                  nameExtractor,
+		shortCircuitSignal:             concurrency.NewSignal(),
+		stopSignal:                     concurrency.NewSignal(),
 	}
 }
 
@@ -201,11 +203,14 @@ func (m *managerImpl) reconciliationLoop() {
 	for {
 		select {
 		case <-m.shortCircuitSignal.Done():
+			log.Debug("Received a short circuit signal, running the reconciliation")
 			m.shortCircuitSignal.Reset()
 			m.runReconciliation()
 		case <-m.reconciliationTicker.C:
+			log.Debug("Received a ticker signal, running the reconciliation")
 			m.runReconciliation()
 		case <-m.stopSignal.Done():
+			log.Debug("Received a stop signal, stopping the reconciliation")
 			return
 		}
 	}

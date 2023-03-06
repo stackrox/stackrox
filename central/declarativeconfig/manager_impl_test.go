@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
@@ -17,7 +18,17 @@ import (
 	transformMocks "github.com/stackrox/rox/pkg/declarativeconfig/transform/mocks"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func newTestManager(t *testing.T) *managerImpl {
+	m := New(100*time.Millisecond, 100*time.Millisecond, map[reflect.Type]updater.ResourceUpdater{},
+		nil, types.UniversalNameExtractor(), types.UniversalIDExtractor())
+
+	mImpl, ok := m.(*managerImpl)
+	require.True(t, ok)
+	return mImpl
+}
 
 // Custom gomock.Matcher for storage.IntegrationHealth that ignores the timestamp field's value, but instead only checks
 // that its set.
@@ -133,18 +144,16 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		})),
 	)
 
-	m := managerImpl{
-		updaters: map[reflect.Type]updater.ResourceUpdater{
-			types.PermissionSetType: mockUpdater,
-			types.AccessScopeType:   mockUpdater,
-			types.RoleType:          mockUpdater,
-			types.AuthProviderType:  mockUpdater,
-			types.GroupType:         mockUpdater,
-		},
-		declarativeConfigErrorReporter: reporter,
-		nameExtractor:                  types.UniversalNameExtractor(),
-		idExtractor:                    types.UniversalIDExtractor(),
+	m := newTestManager(t)
+	m.updaters = map[reflect.Type]updater.ResourceUpdater{
+		types.PermissionSetType: mockUpdater,
+		types.AccessScopeType:   mockUpdater,
+		types.RoleType:          mockUpdater,
+		types.AuthProviderType:  mockUpdater,
+		types.GroupType:         mockUpdater,
 	}
+	m.declarativeConfigErrorReporter = reporter
+
 	m.reconcileTransformedMessages(map[string]protoMessagesByType{
 		"test-handler-1": {
 			types.PermissionSetType: []proto.Message{
@@ -190,15 +199,11 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		ErrorMessage: "test error",
 	}))
 
-	m := managerImpl{
-		updaters: map[reflect.Type]updater.ResourceUpdater{
-			types.PermissionSetType: permissionSetUpdater,
-		},
-		declarativeConfigErrorReporter: reporter,
-		errorsPerDeclarativeConfig:     map[string]int32{},
-		nameExtractor:                  types.UniversalNameExtractor(),
-		idExtractor:                    types.UniversalIDExtractor(),
+	m := newTestManager(t)
+	m.updaters = map[reflect.Type]updater.ResourceUpdater{
+		types.PermissionSetType: permissionSetUpdater,
 	}
+	m.declarativeConfigErrorReporter = reporter
 
 	// We need to call this 5 times, only then the error will be propagated to the reporter.
 	for i := 0; i < 5; i++ {
@@ -231,13 +236,9 @@ func TestReconcileTransformedMessages_MissingUpdaterCausesPanic_DevBuild(t *test
 		ErrorMessage: "manager does not have updater for type *storage.PermissionSet",
 	}))
 
-	m := managerImpl{
-		updaters:                       map[reflect.Type]updater.ResourceUpdater{},
-		declarativeConfigErrorReporter: reporter,
-		errorsPerDeclarativeConfig:     map[string]int32{},
-		nameExtractor:                  types.UniversalNameExtractor(),
-		idExtractor:                    types.UniversalIDExtractor(),
-	}
+	m := newTestManager(t)
+	m.declarativeConfigErrorReporter = reporter
+
 	assert.Panics(t, func() {
 		m.reconcileTransformedMessages(map[string]protoMessagesByType{
 			"test-handler-1": {
@@ -268,13 +269,9 @@ func TestReconcileTransformedMessages_MissingUpdaterStopsManager_ReleaseBuild(t 
 		ErrorMessage: "manager does not have updater for type *storage.PermissionSet",
 	}))
 
-	m := managerImpl{
-		updaters:                       map[reflect.Type]updater.ResourceUpdater{},
-		declarativeConfigErrorReporter: reporter,
-		errorsPerDeclarativeConfig:     map[string]int32{},
-		nameExtractor:                  types.UniversalNameExtractor(),
-		idExtractor:                    types.UniversalIDExtractor(),
-	}
+	m := newTestManager(t)
+	m.declarativeConfigErrorReporter = reporter
+
 	m.reconcileTransformedMessages(map[string]protoMessagesByType{
 		"test-handler-1": {
 			types.PermissionSetType: []proto.Message{
@@ -290,13 +287,9 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 	reporter := reporterMocks.NewMockReporter(controller)
 	transformer := transformMocks.NewMockTransformer(controller)
 
-	m := managerImpl{
-		universalTransformer:           transformer,
-		declarativeConfigErrorReporter: reporter,
-		transformedMessagesByHandler:   map[string]protoMessagesByType{},
-		nameExtractor:                  types.UniversalNameExtractor(),
-		idExtractor:                    types.UniversalIDExtractor(),
-	}
+	m := newTestManager(t)
+	m.universalTransformer = transformer
+	m.declarativeConfigErrorReporter = reporter
 
 	transformer.EXPECT().Transform(&declarativeconfig.Role{
 		Name:          "test-name",
@@ -340,13 +333,9 @@ func TestUpdateDeclarativeConfigContents_Errors(t *testing.T) {
 	reporter := reporterMocks.NewMockReporter(controller)
 	transformer := transformMocks.NewMockTransformer(controller)
 
-	m := managerImpl{
-		universalTransformer:           transformer,
-		declarativeConfigErrorReporter: reporter,
-		transformedMessagesByHandler:   map[string]protoMessagesByType{},
-		nameExtractor:                  types.UniversalNameExtractor(),
-		idExtractor:                    types.UniversalIDExtractor(),
-	}
+	m := newTestManager(t)
+	m.universalTransformer = transformer
+	m.declarativeConfigErrorReporter = reporter
 
 	// 1. Failure in unmarshalling the file.
 	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
