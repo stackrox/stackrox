@@ -9,7 +9,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-15102: new `public_config.telemetry` boolean property of the `/v1/config`
+  endpoint request that allows for querying the state, enabling or disabling the
+  configured telemetry collection.
+
 ### Removed Features
+
 - ROX-14336: product `BuildDate` attribute was removed. It won't be returned by
 `/debug/versions.json` endpoint and `roxctl version --json` command.
 

@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -118,6 +119,11 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	}
 	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
+	}
+	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
+		centralclient.Enable()
+	} else {
+		centralclient.Disable()
 	}
 	return req.GetConfig(), nil
 }

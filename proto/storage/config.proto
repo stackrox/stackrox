@@ -4,6 +4,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
+import "storage/telemetry.proto";
 
 package storage;
 
@@ -28,9 +29,10 @@ message BannerConfig {
 }
 
 message PublicConfig {
-    LoginNotice login_notice = 1;
-    BannerConfig header      = 2;
-    BannerConfig footer      = 3;
+    LoginNotice login_notice         = 1;
+    BannerConfig header              = 2;
+    BannerConfig footer              = 3;
+    TelemetryConfiguration telemetry = 4;
 }
 
 message AlertRetentionConfig {
