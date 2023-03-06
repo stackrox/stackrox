@@ -25,6 +25,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   to fetch vulnerability updates from Central. The flag will be removed as part of the 4.2.0 release.
 
 ### Technical Changes
+- ROX-12750: The Analyst permission set which used to have read access on all permissions except
+  the now deprecated `DebugLogs` permission now has read access to all permissions except `Administration`.
 
 ## [3.74.0]
 
