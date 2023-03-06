@@ -46,10 +46,12 @@ func (*logOnFailure) Failure(msg segment.Message, err error) {
 }
 
 // NewTelemeter creates and initializes a Segment telemeter instance.
-func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Duration) *segmentTelemeter {
+// Default interval is 5s, default batch size is 250.
+func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Duration, batchSize int) *segmentTelemeter {
 	segmentConfig := segment.Config{
 		Endpoint:  endpoint,
 		Interval:  interval,
+		BatchSize: batchSize,
 		Transport: proxy.RoundTripper(),
 		Logger:    &logWrapper{internal: log},
 		Callback:  &logOnFailure{},
