@@ -208,6 +208,8 @@ func (d *detectorImpl) Stop(err error) {
 	_ = d.serializerStopper.Client().Stopped().Wait()
 }
 
+func (d *detectorImpl) Notify(common.SensorComponentEvent) {}
+
 func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
 }

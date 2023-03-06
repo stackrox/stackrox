@@ -23,7 +23,7 @@ echo " Central Services Chart location: ${central_services_chart}"
 echo " Secured Cluster Services Chart location: ${secured_cluster_services_chart}"
 
 if is_release_test_stream "$version"; then
-	# send to #slack-test when testing the release process
+	# send to #acs-slack-integration-testing when testing the release process
 	webhook_url="${SLACK_MAIN_WEBHOOK}"
 else
 	# send to #eng-release

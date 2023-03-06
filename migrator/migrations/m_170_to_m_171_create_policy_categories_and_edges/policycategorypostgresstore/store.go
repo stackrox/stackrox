@@ -232,7 +232,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PolicyCategor
 	return nil
 }
 
-func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx pgx.Tx, objs ...*storage.PolicyCategory) error {
+func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx *postgres.Tx, objs ...*storage.PolicyCategory) error {
 
 	inputRows := [][]interface{}{}
 

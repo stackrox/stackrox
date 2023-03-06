@@ -159,7 +159,7 @@ func insertIntoSecretsFilesRegistries(ctx context.Context, batch *pgx.Batch, obj
 	return nil
 }
 
-func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*storage.Secret) error {
+func (s *storeImpl) copyFromSecrets(ctx context.Context, tx *postgres.Tx, objs ...*storage.Secret) error {
 
 	inputRows := [][]interface{}{}
 
@@ -250,7 +250,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDataFile) error {
+func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, secrets_Id string, objs ...*storage.SecretDataFile) error {
 
 	inputRows := [][]interface{}{}
 
@@ -311,7 +311,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, secrets_Id string, secrets_files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
+func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *postgres.Tx, secrets_Id string, secrets_files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
 
 	inputRows := [][]interface{}{}
 

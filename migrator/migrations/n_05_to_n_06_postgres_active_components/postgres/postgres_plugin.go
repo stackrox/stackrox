@@ -114,7 +114,7 @@ func insertIntoActiveComponentsActiveContextsSlices(ctx context.Context, batch *
 	return nil
 }
 
-func (s *storeImpl) copyFromActiveComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.ActiveComponent) error {
+func (s *storeImpl) copyFromActiveComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.ActiveComponent) error {
 
 	inputRows := [][]interface{}{}
 
@@ -191,7 +191,7 @@ func (s *storeImpl) copyFromActiveComponents(ctx context.Context, tx pgx.Tx, obj
 	return err
 }
 
-func (s *storeImpl) copyFromActiveComponentsActiveContextsSlices(ctx context.Context, tx pgx.Tx, active_components_Id string, objs ...*storage.ActiveComponent_ActiveContext) error {
+func (s *storeImpl) copyFromActiveComponentsActiveContextsSlices(ctx context.Context, tx *postgres.Tx, active_components_Id string, objs ...*storage.ActiveComponent_ActiveContext) error {
 
 	inputRows := [][]interface{}{}
 

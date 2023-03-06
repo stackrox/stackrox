@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
@@ -328,7 +327,7 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 	return nil
 }
 
-func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx pgx.Tx, srcClone, destClone string) error {
+func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx *postgres.Tx, srcClone, destClone string) error {
 	// Move the current to the previous clone
 	err := pgadmin.TerminateConnection(d.adminConfig, srcClone)
 	if err != nil {

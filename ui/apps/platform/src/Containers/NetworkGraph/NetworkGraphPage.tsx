@@ -111,13 +111,15 @@ function NetworkGraphPage() {
     const [prevEpochCount, setPrevEpochCount] = useState(0);
     const [currentEpochCount, setCurrentEpochCount] = useState(0);
 
+    const nodeUpdatesCount = currentEpochCount - prevEpochCount;
+
     // We will update the poll epoch after 30 seconds to update the node count for a cluster
     useInterval(() => {
         setPollEpoch(pollEpoch + 1);
     }, 30000);
 
     useEffect(() => {
-        if (selectedClusterId && namespacesFromUrl.length > 0) {
+        if (selectedClusterId && namespacesFromUrl.length > 0 && pollEpoch !== 0) {
             fetchNodeUpdates(selectedClusterId)
                 .then((result) => {
                     setCurrentEpochCount(result?.response?.epoch || 0);
@@ -137,7 +139,7 @@ function NetworkGraphPage() {
             clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
 
         if (isQueryFilterComplete && selectedClusterId && isClusterNamespaceSelected) {
-            if (currentEpochCount === 0) {
+            if (nodeUpdatesCount === 0) {
                 setIsLoading(true);
 
                 const queryToUse = queryService.objectToWhereClause(remainingQuery);
@@ -209,8 +211,7 @@ function NetworkGraphPage() {
         remainingQuery,
         timeWindow,
         deploymentCount,
-        prevEpochCount,
-        currentEpochCount,
+        nodeUpdatesCount,
     ]);
 
     function toggleCIDRBlockForm() {
@@ -218,10 +219,9 @@ function NetworkGraphPage() {
     }
 
     function updateNetworkNodes() {
+        setPrevEpochCount(0);
         setCurrentEpochCount(0);
     }
-
-    const nodeUpdatesCount = currentEpochCount - prevEpochCount;
 
     return (
         <>
@@ -264,58 +264,65 @@ function NetworkGraphPage() {
                 </Toolbar>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Toolbar data-testid="network-graph-toolbar">
-                    <ToolbarContent>
-                        <ToolbarGroup variant="filter-group">
-                            <ToolbarItem>
-                                <EdgeStateSelect
-                                    edgeState={edgeState}
-                                    setEdgeState={setEdgeState}
-                                    isDisabled={!hasClusterNamespaceSelected}
-                                />
-                            </ToolbarItem>
-                            <ToolbarItem>
-                                <TimeWindowSelector
-                                    activeTimeWindow={timeWindow}
-                                    setActiveTimeWindow={setTimeWindow}
-                                    isDisabled={isLoading || !hasClusterNamespaceSelected}
-                                />
-                            </ToolbarItem>
-                        </ToolbarGroup>
-                        <Divider orientation={{ default: 'vertical' }} />
-                        <ToolbarGroup className="pf-u-flex-grow-1">
-                            <ToolbarItem className="pf-u-flex-grow-1">
-                                <NetworkSearch
-                                    selectedCluster={clusterFromUrl}
-                                    selectedNamespaces={namespacesFromUrl}
-                                    selectedDeployments={deploymentsFromUrl}
-                                    isDisabled={!hasClusterNamespaceSelected}
-                                />
-                            </ToolbarItem>
-                            <ToolbarItem>
-                                <DisplayOptionsSelect
-                                    selectedOptions={displayOptions}
-                                    setSelectedOptions={setDisplayOptions}
-                                    isDisabled={!hasClusterNamespaceSelected}
-                                />
-                            </ToolbarItem>
-                        </ToolbarGroup>
-                        <ToolbarGroup alignment={{ default: 'alignRight' }}>
-                            <Divider component="div" orientation={{ default: 'vertical' }} />
-                            <ToolbarItem className="pf-u-color-200">
-                                <NodeUpdateSection
-                                    isLoading={isLoading}
-                                    lastUpdatedTime={lastUpdatedTime}
-                                    nodeUpdatesCount={nodeUpdatesCount}
-                                    updateNetworkNodes={updateNetworkNodes}
-                                />
-                            </ToolbarItem>
-                        </ToolbarGroup>
-                    </ToolbarContent>
-                </Toolbar>
-            </PageSection>
-            <Divider component="div" />
+            {hasClusterNamespaceSelected && (
+                <>
+                    <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                        <Toolbar data-testid="network-graph-toolbar">
+                            <ToolbarContent>
+                                <ToolbarGroup variant="filter-group">
+                                    <ToolbarItem>
+                                        <EdgeStateSelect
+                                            edgeState={edgeState}
+                                            setEdgeState={setEdgeState}
+                                            isDisabled={!hasClusterNamespaceSelected}
+                                        />
+                                    </ToolbarItem>
+                                    <ToolbarItem>
+                                        <TimeWindowSelector
+                                            activeTimeWindow={timeWindow}
+                                            setActiveTimeWindow={setTimeWindow}
+                                            isDisabled={isLoading || !hasClusterNamespaceSelected}
+                                        />
+                                    </ToolbarItem>
+                                </ToolbarGroup>
+                                <Divider orientation={{ default: 'vertical' }} />
+                                <ToolbarGroup className="pf-u-flex-grow-1">
+                                    <ToolbarItem className="pf-u-flex-grow-1">
+                                        <NetworkSearch
+                                            selectedCluster={clusterFromUrl}
+                                            selectedNamespaces={namespacesFromUrl}
+                                            selectedDeployments={deploymentsFromUrl}
+                                            isDisabled={!hasClusterNamespaceSelected}
+                                        />
+                                    </ToolbarItem>
+                                    <ToolbarItem>
+                                        <DisplayOptionsSelect
+                                            selectedOptions={displayOptions}
+                                            setSelectedOptions={setDisplayOptions}
+                                            isDisabled={!hasClusterNamespaceSelected}
+                                        />
+                                    </ToolbarItem>
+                                </ToolbarGroup>
+                                <ToolbarGroup alignment={{ default: 'alignRight' }}>
+                                    <Divider
+                                        component="div"
+                                        orientation={{ default: 'vertical' }}
+                                    />
+                                    <ToolbarItem className="pf-u-color-200">
+                                        <NodeUpdateSection
+                                            isLoading={isLoading}
+                                            lastUpdatedTime={lastUpdatedTime}
+                                            nodeUpdatesCount={nodeUpdatesCount}
+                                            updateNetworkNodes={updateNetworkNodes}
+                                        />
+                                    </ToolbarItem>
+                                </ToolbarGroup>
+                            </ToolbarContent>
+                        </Toolbar>
+                    </PageSection>
+                    <Divider component="div" />
+                </>
+            )}
             <PageSection
                 className="network-graph"
                 variant={hasClusterNamespaceSelected ? 'default' : 'light'}

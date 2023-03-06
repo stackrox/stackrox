@@ -107,7 +107,7 @@ func insertIntoNodeComponents(ctx context.Context, batch *pgx.Batch, obj *storag
 	return nil
 }
 
-func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponent) error {
+func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
 
 	inputRows := [][]interface{}{}
 

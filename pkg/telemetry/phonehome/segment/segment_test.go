@@ -17,7 +17,7 @@ func Test_getMessageType(t *testing.T) {
 	assert.Equal(t, "Track", getMessageType(track))
 }
 
-func Test_makeDeviceContext(t *testing.T) {
+func Test_makeContext(t *testing.T) {
 	opts := telemeter.ApplyOptions([]telemeter.Option{
 		telemeter.WithUserID("userID"),
 		telemeter.WithClient("clientID", "clientType"),
@@ -26,7 +26,9 @@ func Test_makeDeviceContext(t *testing.T) {
 		telemeter.WithGroups("groupB", "groupB_id"),
 	})
 
-	ctx := makeDeviceContext(opts)
+	s := segmentTelemeter{clientType: "test"}
+
+	ctx := s.makeContext(opts)
 	assert.Equal(t, "clientID", ctx.Device.Id)
 	assert.Equal(t, "clientType", ctx.Device.Type)
 
@@ -35,6 +37,13 @@ func Test_makeDeviceContext(t *testing.T) {
 	assert.Contains(t, ctx.Extra["groups"], "groupB")
 	groups := ctx.Extra["groups"].(map[string][]string)
 	assert.ElementsMatch(t, []string{"groupA_id1", "groupA_id2"}, groups["groupA"])
+
+	ctx = s.makeContext(telemeter.ApplyOptions([]telemeter.Option{}))
+	assert.Equal(t, "test Server", ctx.Device.Type)
+
+	ctx = s.makeContext(telemeter.ApplyOptions([]telemeter.Option{
+		telemeter.WithClient("clientID", "clientType")}))
+	assert.Equal(t, "clientType Server", ctx.Device.Type)
 }
 
 func Test_getIDs(t *testing.T) {

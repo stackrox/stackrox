@@ -24,6 +24,7 @@ import { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
 import usePermissions from '../../../hooks/usePermissions';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
@@ -124,6 +125,11 @@ function PermissionSetForm({
                             {action === 'create' ? 'Create permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={permissionSet.traits} />
+                        </ToolbarItem>
+                    )}
                     {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>

@@ -112,7 +112,7 @@ func insertIntoTestSingleKeyStructs(ctx context.Context, batch *pgx.Batch, obj *
 	return nil
 }
 
-func (s *storeImpl) copyFromTestSingleKeyStructs(ctx context.Context, tx pgx.Tx, objs ...*storage.TestSingleKeyStruct) error {
+func (s *storeImpl) copyFromTestSingleKeyStructs(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestSingleKeyStruct) error {
 
 	inputRows := [][]interface{}{}
 

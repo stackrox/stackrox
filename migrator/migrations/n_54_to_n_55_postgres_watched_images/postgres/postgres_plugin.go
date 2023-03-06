@@ -88,7 +88,7 @@ func insertIntoWatchedImages(ctx context.Context, batch *pgx.Batch, obj *storage
 	return nil
 }
 
-func (s *storeImpl) copyFromWatchedImages(ctx context.Context, tx pgx.Tx, objs ...*storage.WatchedImage) error {
+func (s *storeImpl) copyFromWatchedImages(ctx context.Context, tx *postgres.Tx, objs ...*storage.WatchedImage) error {
 
 	inputRows := [][]interface{}{}
 

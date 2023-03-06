@@ -279,6 +279,32 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByPodIDAgain() {
 	suite.verifyIndicatorsAre(indicators...)
 }
 
+func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalBatch() {
+	numIndicators := 70000
+	suite.setupDataStoreNoPruning()
+
+	indicators := suite.generateIndicatorsWithPods([]string{fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3}, []string{"c1", "c2", "c3"})
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
+	suite.verifyIndicatorsAre(indicators...)
+
+	ids := make([]string, 0, numIndicators)
+	for i, indicator := range indicators {
+		// Skip the first one so we don't just delete them all
+		if i == 0 {
+			continue
+		}
+		ids = append(ids, indicator.Id)
+	}
+
+	for i := len(ids); i < numIndicators; i++ {
+		ids = append(ids, uuid.NewV4().String())
+	}
+
+	// Try to remove where pod id does not exist in indicators
+	suite.NoError(suite.datastore.RemoveProcessIndicators(suite.hasWriteCtx, ids))
+	suite.verifyIndicatorsAre(indicators[0])
+}
+
 func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 	const prunePeriod = 100 * time.Millisecond
 	mockPrunerFactory := prunerMocks.NewMockFactory(suite.mockCtrl)

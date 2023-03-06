@@ -314,3 +314,45 @@ func (mr *MockDataStoreMockRecorder) UpdateRole(ctx, role interface{}) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRole", reflect.TypeOf((*MockDataStore)(nil).UpdateRole), ctx, role)
 }
+
+// UpsertAccessScope mocks base method.
+func (m *MockDataStore) UpsertAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertAccessScope", ctx, scope)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertAccessScope indicates an expected call of UpsertAccessScope.
+func (mr *MockDataStoreMockRecorder) UpsertAccessScope(ctx, scope interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAccessScope", reflect.TypeOf((*MockDataStore)(nil).UpsertAccessScope), ctx, scope)
+}
+
+// UpsertPermissionSet mocks base method.
+func (m *MockDataStore) UpsertPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertPermissionSet", ctx, permissionSet)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertPermissionSet indicates an expected call of UpsertPermissionSet.
+func (mr *MockDataStoreMockRecorder) UpsertPermissionSet(ctx, permissionSet interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPermissionSet", reflect.TypeOf((*MockDataStore)(nil).UpsertPermissionSet), ctx, permissionSet)
+}
+
+// UpsertRole mocks base method.
+func (m *MockDataStore) UpsertRole(ctx context.Context, role *storage.Role) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertRole", ctx, role)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertRole indicates an expected call of UpsertRole.
+func (mr *MockDataStoreMockRecorder) UpsertRole(ctx, role interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRole", reflect.TypeOf((*MockDataStore)(nil).UpsertRole), ctx, role)
+}

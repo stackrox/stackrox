@@ -52,12 +52,15 @@ message Timing {
     int64  nanos      = 3;
 }
 
-// Next tag: 26.
+// Next tag: 27.
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
-    string         id                           = 1;
-    ResourceAction action                       = 2;
-    Timing         timing                       = 3;
+    string          id                           = 1;
+    ResourceAction  action                       = 2;
+    Timing          timing                       = 3;
+    oneof sensor_hash_oneof {
+        uint64 sensor_hash                       = 26;
+    }
 
     message ResourcesSynced {}
 

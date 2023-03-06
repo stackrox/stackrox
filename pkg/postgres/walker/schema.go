@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -40,7 +41,7 @@ func getIdxField(s *Schema) Field {
 		},
 		Type:       reflect.TypeOf(0).String(),
 		ColumnName: "idx",
-		DataType:   Integer,
+		DataType:   postgres.Integer,
 		SQLType:    "integer",
 		ModelType:  reflect.TypeOf(0).String(),
 		Options: PostgresOptions{
@@ -153,7 +154,7 @@ func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 }
 
 // AddFieldWithType adds a field to the schema with the specified data type
-func (s *Schema) AddFieldWithType(field Field, dt DataType, opts PostgresOptions) {
+func (s *Schema) AddFieldWithType(field Field, dt postgres.DataType, opts PostgresOptions) {
 	if !field.Include() {
 		return
 	}
@@ -162,10 +163,10 @@ func (s *Schema) AddFieldWithType(field Field, dt DataType, opts PostgresOptions
 	if opts.ColumnType != "" {
 		field.SQLType = opts.ColumnType
 	} else {
-		field.SQLType = DataTypeToSQLType(dt)
+		field.SQLType = postgres.DataTypeToSQLType(dt)
 	}
 
-	field.ModelType = GetToGormModelType(field.Type, field.DataType)
+	field.ModelType = postgres.GetToGormModelType(field.Type, field.DataType)
 	s.Fields = append(s.Fields, field)
 }
 
@@ -474,7 +475,7 @@ type Field struct {
 	Type string
 
 	// DataType is the internal type
-	DataType  DataType
+	DataType  postgres.DataType
 	SQLType   string
 	ModelType string
 	Options   PostgresOptions

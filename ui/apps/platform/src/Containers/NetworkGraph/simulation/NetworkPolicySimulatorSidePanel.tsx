@@ -22,7 +22,6 @@ import {
 import useTabs from 'hooks/patternfly/useTabs';
 import ViewActiveYAMLs from './ViewActiveYAMLs';
 import {
-    ApplyNetworkPolicyModification,
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from '../hooks/useNetworkPolicySimulator';
@@ -36,7 +35,6 @@ type NetworkPolicySimulatorSidePanelProps = {
     selectedClusterId: string;
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
-    applyNetworkPolicyModification: ApplyNetworkPolicyModification;
 };
 
 const tabs = {
@@ -48,9 +46,8 @@ function NetworkPolicySimulatorSidePanel({
     selectedClusterId,
     simulator,
     setNetworkPolicyModification,
-    applyNetworkPolicyModification,
 }: NetworkPolicySimulatorSidePanelProps) {
-    const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
+    const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
     });
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
@@ -118,11 +115,6 @@ function NetworkPolicySimulatorSidePanel({
         });
     }
 
-    function applyNetworkPolicies() {
-        applyNetworkPolicyModification();
-        setActiveKeyTab(tabs.VIEW_ACTIVE_YAMLS);
-    }
-
     function openNotifyYAMLModal() {
         setIsNotifyModalOpen(true);
     }
@@ -174,7 +166,6 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
-                            applyNetworkPolicies={applyNetworkPolicies}
                             openNotifyYAMLModal={openNotifyYAMLModal}
                         />
                     </StackItem>
@@ -229,7 +220,6 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
-                            applyNetworkPolicies={applyNetworkPolicies}
                             openNotifyYAMLModal={openNotifyYAMLModal}
                         />
                     </StackItem>
@@ -281,7 +271,6 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
-                            applyNetworkPolicies={applyNetworkPolicies}
                             openNotifyYAMLModal={openNotifyYAMLModal}
                         />
                     </StackItem>

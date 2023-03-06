@@ -87,7 +87,7 @@ func New(db *postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence
 
 func (s *storeImpl) insertIntoNodes(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx *postgres.Tx,
 	parts *nodePartsAsSlice,
 	scanUpdated bool,
 	iTime *protoTypes.Timestamp,
@@ -186,7 +186,7 @@ func getPartsAsSlice(parts *common.NodeParts) *nodePartsAsSlice {
 	}
 }
 
-func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, nodeID string, idx int) error {
+func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Taint, nodeID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -206,7 +206,7 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 	return nil
 }
 
-func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponent) error {
+func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
 	inputRows := [][]interface{}{}
 	var err error
 	var deletes []string
@@ -264,7 +264,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 	return removeOrphanedNodeComponent(ctx, tx)
 }
 
-func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
+func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -307,7 +307,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, o
 	return nil
 }
 
-func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
+func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -392,7 +392,7 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 	return removeOrphanedNodeCVEs(ctx, tx)
 }
 
-func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentCVEEdge) error {
+func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	deletes := set.NewStringSet()
@@ -447,7 +447,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return nil
 }
 
-func removeOrphanedNodeComponent(ctx context.Context, tx pgx.Tx) error {
+func removeOrphanedNodeComponent(ctx context.Context, tx *postgres.Tx) error {
 	_, err := tx.Exec(ctx, "DELETE FROM "+nodeComponentsTable+" WHERE not exists (select "+nodeComponentEdgesTable+".nodecomponentid from "+nodeComponentEdgesTable+" where "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)")
 	if err != nil {
 		return err
@@ -455,7 +455,7 @@ func removeOrphanedNodeComponent(ctx context.Context, tx pgx.Tx) error {
 	return nil
 }
 
-func removeOrphanedNodeCVEs(ctx context.Context, tx pgx.Tx) error {
+func removeOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	_, err := tx.Exec(ctx, "DELETE FROM "+nodeCVEsTable+" WHERE not exists (select "+componentCVEEdgesTable+".nodecveid from "+componentCVEEdgesTable+" where "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)")
 	if err != nil {
 		return err
@@ -539,7 +539,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	})
 }
 
-func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.Taint) error {
+func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.Taint) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -658,7 +658,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	return s.getFullNode(ctx, tx, id)
 }
 
-func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (*storage.Node, bool, error) {
+func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
 	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -727,7 +727,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	return common.Merge(nodeParts), true, nil
 }
 
-func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
+func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentEdge")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
@@ -747,10 +747,10 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
 	}
-	return componentIDToEdgeMap, nil
+	return componentIDToEdgeMap, rows.Err()
 }
 
-func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
+func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponent")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
@@ -770,10 +770,10 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 		}
 		idToComponentMap[msg.GetId()] = msg
 	}
-	return idToComponentMap, nil
+	return idToComponentMap, rows.Err()
 }
 
-func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
+func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVERelations")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDs)
@@ -793,7 +793,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
 	}
-	return componentIDToEdgesMap, nil
+	return componentIDToEdgesMap, rows.Err()
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
@@ -828,7 +828,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	return s.deleteNodeTree(ctx, tx, id)
 }
 
-func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string) error {
+func (s *storeImpl) deleteNodeTree(ctx context.Context, tx *postgres.Tx, nodeID string) error {
 	// Delete from node table.
 	if _, err := tx.Exec(ctx, "delete from "+nodesTable+" where Id = $1", pgutils.NilOrUUID(nodeID)); err != nil {
 		return err
@@ -1029,7 +1029,7 @@ func Destroy(ctx context.Context, db *postgres.DB) {
 	dropTableNodes(ctx, db)
 }
 
-func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
+func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeCVEsTable+" WHERE id = ANY($1::text[])", cveIDs)
@@ -1049,7 +1049,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		}
 		idToCVEMap[msg.GetId()] = msg
 	}
-	return idToCVEMap, nil
+	return idToCVEMap, rows.Err()
 }
 
 func gatherKeys(parts *nodePartsAsSlice) [][]byte {

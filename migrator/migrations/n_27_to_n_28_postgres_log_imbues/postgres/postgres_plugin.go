@@ -87,7 +87,7 @@ func insertIntoLogImbues(ctx context.Context, batch *pgx.Batch, obj *storage.Log
 	return nil
 }
 
-func (s *storeImpl) copyFromLogImbues(ctx context.Context, tx pgx.Tx, objs ...*storage.LogImbue) error {
+func (s *storeImpl) copyFromLogImbues(ctx context.Context, tx *postgres.Tx, objs ...*storage.LogImbue) error {
 
 	inputRows := [][]interface{}{}
 

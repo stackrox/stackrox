@@ -108,7 +108,7 @@ func insertIntoImageComponents(ctx context.Context, batch *pgx.Batch, obj *stora
 	return nil
 }
 
-func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageComponent) error {
+func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.ImageComponent) error {
 
 	inputRows := [][]interface{}{}
 

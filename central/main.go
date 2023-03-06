@@ -182,7 +182,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
@@ -319,10 +318,6 @@ func startServices() {
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
-	}
-
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
@@ -426,13 +421,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		gs := cfg.Gatherer()
-		gs.AddGatherer(authProviderDS.Gather)
-		gs.AddGatherer(signatureIntegrationDS.Gather)
-		gs.AddGatherer(roleDataStore.Gather)
-		gs.AddGatherer(clusterDataStore.Gather)
-	}
 	return servicesToRegister
 }
 
@@ -486,7 +474,7 @@ func startGRPCServer() {
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
 	if features.DeclarativeConfiguration.Enabled() {
-		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
+		declarativeconfig.ManagerSingleton(registry).ReconcileDeclarativeConfigurations()
 	}
 
 	clusterInitBackend := backend.Singleton()
@@ -541,12 +529,29 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
-
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
+
+	telemetryCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-12750 Replace Config with Administration.
+			sac.ResourceScopeKeys(resources.Config)))
+
+	if cds, err := configDS.Singleton().GetConfig(telemetryCtx); err == nil || cds == nil {
+		if t := cds.GetPublicConfig().GetTelemetry(); t == nil || t.GetEnabled() {
+			if cfg := centralclient.Enable(); cfg.Enabled() {
+				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
+				gs := cfg.Gatherer()
+				gs.AddGatherer(authProviderDS.Gather)
+				gs.AddGatherer(signatureIntegrationDS.Gather)
+				gs.AddGatherer(roleDataStore.Gather)
+				gs.AddGatherer(clusterDataStore.Gather)
+			}
+		}
+	}
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister(registry, authzTraceSink)...)

@@ -1,3 +1,4 @@
+import { Traits } from 'types/traits.proto';
 import axios from './instance';
 import { Empty } from './types';
 
@@ -25,6 +26,7 @@ export type Role = {
     description: string;
     permissionSetId: string;
     accessScopeId: string;
+    traits?: Traits;
 };
 
 /**
@@ -84,6 +86,7 @@ export type PermissionSet = {
     name: string;
     description: string;
     resourceToAccess: PermissionsMap;
+    traits?: Traits;
 };
 
 /*

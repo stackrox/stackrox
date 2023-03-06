@@ -1498,15 +1498,15 @@ slack_prow_notice() {
         release="$(get_release_stream "$tag")"
         build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-$release*"
         if is_release_test_stream "$tag"; then
-            # send to #slack-test when testing the release process
+            # send to #acs-slack-integration-testing when testing the release process
             webhook_url="${SLACK_MAIN_WEBHOOK}"
         else
-            # send to #eng-release
+            # send to #forum-acs-eng-release
             webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
         fi
     elif is_nightly_run; then
         build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*night*"
-        # send to #nightly-ci-runs
+        # send to #acs-nightly-ci-runs
         webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
     else
         die "unexpected"

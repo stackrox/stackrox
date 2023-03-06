@@ -101,7 +101,7 @@ func insertIntoAuthProviders(ctx context.Context, batch *pgx.Batch, obj *storage
 	return nil
 }
 
-func (s *storeImpl) copyFromAuthProviders(ctx context.Context, tx pgx.Tx, objs ...*storage.AuthProvider) error {
+func (s *storeImpl) copyFromAuthProviders(ctx context.Context, tx *postgres.Tx, objs ...*storage.AuthProvider) error {
 
 	inputRows := [][]interface{}{}
 

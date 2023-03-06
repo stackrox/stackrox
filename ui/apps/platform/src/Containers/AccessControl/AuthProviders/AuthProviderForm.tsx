@@ -39,6 +39,7 @@ import {
     getDefaultRoleByAuthProviderId,
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
@@ -262,6 +263,11 @@ function AuthProviderForm({
                     <ToolbarItem>
                         <Title headingLevel="h2">{formTitle}</Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={selectedAuthProvider.traits} />
+                        </ToolbarItem>
+                    )}
                     {isActionable && (
                         <ToolbarGroup
                             alignment={{ default: 'alignRight' }}

@@ -30,13 +30,12 @@ func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 
 		cfg.Telemeter().Track("Secured Cluster Registered", props, telemeter.WithUserID(userID), groups)
 
-		client := telemeter.WithClient(cluster.GetId(), securedClusterClient)
-
-		// Add the secured cluster 'user' to the Tenant group:
-		cfg.Telemeter().Group(nil, client, groups)
-
-		// Update the secured cluster identity from its name:
-		cfg.Telemeter().Identify(makeClusterProperties(cluster), client, groups)
+		// Update the secured cluster identity from its name and add the secured
+		// cluster 'user' to the Tenant group:
+		cfg.Telemeter().Track("Secured Cluster Static Properties", nil,
+			telemeter.WithTraits(makeClusterProperties(cluster)),
+			telemeter.WithClient(cluster.GetId(), securedClusterClient),
+			groups)
 	}
 }
 
@@ -96,11 +95,23 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props["Total Nodes"] = metrics.NodeCount
 		props["CPU Capacity"] = metrics.CpuCapacity
 
+		if pmd := cluster.GetStatus().GetProviderMetadata(); pmd.GetProvider() != nil {
+			props["Provider"] = pmd.GetProvider()
+			props["Provider Region"] = pmd.GetRegion()
+			props["Provider Zone"] = pmd.GetZone()
+		}
+
+		omd := cluster.GetStatus().GetOrchestratorMetadata()
+		if omd.GetIsOpenshift() != nil {
+			props["Openshift"] = omd.GetIsOpenshift()
+		}
+		props["Orchestrator Version"] = omd.GetVersion()
+
 		opts := []telemeter.Option{
 			telemeter.WithClient(cluster.GetId(), securedClusterClient),
 			telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
+			telemeter.WithTraits(props),
 		}
-		cfg.Telemeter().Identify(props, opts...)
 		cfg.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
 	}
 }

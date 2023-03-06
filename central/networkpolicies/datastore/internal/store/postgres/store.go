@@ -104,7 +104,7 @@ func insertIntoNetworkpolicies(ctx context.Context, batch *pgx.Batch, obj *stora
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkpolicies(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkPolicy) error {
+func (s *storeImpl) copyFromNetworkpolicies(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkPolicy) error {
 
 	inputRows := [][]interface{}{}
 

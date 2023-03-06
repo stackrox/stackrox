@@ -60,6 +60,8 @@ func (p *configMapPersister) Stop(err error) {
 	p.stopSig.SignalWithError(err)
 }
 
+func (p *configMapPersister) Notify(common.SensorComponentEvent) {}
+
 func (p *configMapPersister) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }

@@ -108,6 +108,10 @@ func parsePair(pair string, allowEmpty bool) (key string, values string, valid b
 }
 
 func queryFromFieldValues(field string, values []string, highlight bool) *v1.Query {
+	// A SQL query can have no more than 65535 parameters.
+	if len(values) > MaxQueryParameters {
+		log.Errorf("UNEXPECTED: too many parameters %d for a query.  No more than %d parameters allowed in single query", len(values), MaxQueryParameters)
+	}
 	queries := make([]*v1.Query, 0, len(values))
 	for _, value := range values {
 		queries = append(queries, MatchFieldQuery(field, value, highlight))

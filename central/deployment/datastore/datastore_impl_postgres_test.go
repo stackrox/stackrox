@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -377,12 +378,7 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 	}
 
 	q := pkgSearch.NewQueryBuilder().
-		AddSelectFields(
-			&v1.QueryField{
-				Field:         pkgSearch.DeploymentID.String(),
-				AggregateFunc: postgres.CountAggrFunc.String(),
-			},
-		).
+		AddSelectFields(pkgSearch.NewQuerySelect(pkgSearch.DeploymentID).AggrFunc(aggregatefunc.Count)).
 		AddGroupBy(pkgSearch.DeploymentType).ProtoQuery()
 
 	type deploymentCountByType struct {

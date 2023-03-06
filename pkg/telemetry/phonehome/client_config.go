@@ -41,6 +41,7 @@ type Config struct {
 	StorageKey   string
 	Endpoint     string
 	PushInterval time.Duration
+	BatchSize    int
 
 	// The period of identity gathering. Default is 1 hour.
 	GatherPeriod time.Duration
@@ -93,7 +94,8 @@ func (cfg *Config) Telemeter() telemeter.Telemeter {
 				cfg.Endpoint,
 				cfg.ClientID,
 				cfg.ClientName,
-				cfg.PushInterval)
+				cfg.PushInterval,
+				cfg.BatchSize)
 		} else {
 			cfg.telemeter = &nilTelemeter{}
 		}
@@ -110,6 +112,13 @@ func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
 		cfg.interceptors = make(map[string][]Interceptor, 1)
 	}
 	cfg.interceptors[event] = append(cfg.interceptors[event], f)
+}
+
+// RemoveInterceptors cleans up the list of telemetry interceptors.
+func (cfg *Config) RemoveInterceptors() {
+	cfg.interceptorsLock.Lock()
+	defer cfg.interceptorsLock.Unlock()
+	cfg.interceptors = nil
 }
 
 // GetGRPCInterceptor returns an API interceptor function for GRPC requests.

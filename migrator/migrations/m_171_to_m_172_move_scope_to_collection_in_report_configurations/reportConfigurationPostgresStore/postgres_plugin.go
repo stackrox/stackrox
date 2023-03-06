@@ -86,7 +86,7 @@ func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *
 	return nil
 }
 
-func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
+func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx *postgres.Tx, objs ...*storage.ReportConfiguration) error {
 
 	inputRows := [][]interface{}{}
 

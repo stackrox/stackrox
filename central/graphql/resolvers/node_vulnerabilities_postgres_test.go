@@ -64,6 +64,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 	s.db, s.gormDB = SetupTestPostgresConn(s.T())
 
 	s.nodeDatastore = CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+
 	resolver, _ := SetupTestResolver(s.T(),
 		CreateTestNodeCVEDatastore(s.T(), s.db, s.gormDB),
 		CreateTestNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),

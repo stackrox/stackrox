@@ -76,9 +76,8 @@ func (g *gatherer) identify() {
 	defer g.gathering.Unlock()
 	data := g.gather()
 	if !reflect.DeepEqual(g.lastData, data) {
-		g.telemeter.Identify(data, g.opts...)
 		// Issue an event so that the new data become visible on analytics:
-		g.telemeter.Track("Updated "+g.clientType+" Identity", nil, g.opts...)
+		g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts, telemeter.WithTraits(data))...)
 	}
 	g.lastData = data
 }

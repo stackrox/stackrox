@@ -10,6 +10,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
+	views "github.com/stackrox/rox/central/views"
 	imagecve "github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
@@ -79,6 +80,20 @@ func (mr *MockCveCoreMockRecorder) GetFirstDiscoveredInSystem() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFirstDiscoveredInSystem", reflect.TypeOf((*MockCveCore)(nil).GetFirstDiscoveredInSystem))
 }
 
+// GetImagesBySeverity mocks base method.
+func (m *MockCveCore) GetImagesBySeverity() *imagecve.ResourceCountByCVESeverity {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImagesBySeverity")
+	ret0, _ := ret[0].(*imagecve.ResourceCountByCVESeverity)
+	return ret0
+}
+
+// GetImagesBySeverity indicates an expected call of GetImagesBySeverity.
+func (mr *MockCveCoreMockRecorder) GetImagesBySeverity() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBySeverity", reflect.TypeOf((*MockCveCore)(nil).GetImagesBySeverity))
+}
+
 // GetTopCVSS mocks base method.
 func (m *MockCveCore) GetTopCVSS() float32 {
 	m.ctrl.T.Helper()
@@ -116,17 +131,32 @@ func (m *MockCveView) EXPECT() *MockCveViewMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method.
-func (m *MockCveView) Get(ctx context.Context, q *v1.Query) ([]imagecve.CveCore, error) {
+// Count mocks base method.
+func (m *MockCveView) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, q)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count.
+func (mr *MockCveViewMockRecorder) Count(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockCveView)(nil).Count), ctx, q)
+}
+
+// Get mocks base method.
+func (m *MockCveView) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]imagecve.CveCore, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, q, options)
 	ret0, _ := ret[0].([]imagecve.CveCore)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockCveViewMockRecorder) Get(ctx, q interface{}) *gomock.Call {
+func (mr *MockCveViewMockRecorder) Get(ctx, q, options interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCveView)(nil).Get), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCveView)(nil).Get), ctx, q, options)
 }

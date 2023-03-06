@@ -24,6 +24,7 @@ import {
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
 import usePermissions from '../../../hooks/usePermissions';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type AccessScopeFormWrapperProps = {
     isActionable: boolean;
@@ -123,6 +124,11 @@ function AccessScopeFormWrapper({
                             {action === 'create' ? 'Create access scope' : accessScope.name}
                         </Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={accessScope.traits} />
+                        </ToolbarItem>
+                    )}
                     {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>

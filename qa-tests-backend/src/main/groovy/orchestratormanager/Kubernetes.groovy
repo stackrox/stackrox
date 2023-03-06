@@ -135,7 +135,7 @@ class Kubernetes implements OrchestratorMain {
         // "any namespace" requests to be scoped to the default project.
         this.client.configuration.namespace = null
         this.client.configuration.setRollingTimeout(60 * 60 * 1000)
-        this.client.configuration.setRequestTimeout(20*1000)
+        this.client.configuration.setRequestTimeout(32*1000)
         this.client.configuration.setConnectionTimeout(20*1000)
         this.client.configuration.setWebsocketTimeout(20*1000)
         this.deployments = this.client.apps().deployments()
@@ -1974,7 +1974,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def waitForDeploymentStart(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
-        Timer t = new Timer(30, 3)
+        Timer t = new Timer(60, 3)
         while (t.IsValid()) {
             log.debug "Waiting for ${deploymentName} to start"
             K8sDeployment d = null

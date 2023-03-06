@@ -89,7 +89,7 @@ func insertIntoComplianceDomains(ctx context.Context, batch *pgx.Batch, obj *sto
 	return nil
 }
 
-func (s *storeImpl) copyFromComplianceDomains(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceDomain) error {
+func (s *storeImpl) copyFromComplianceDomains(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComplianceDomain) error {
 
 	inputRows := [][]interface{}{}
 

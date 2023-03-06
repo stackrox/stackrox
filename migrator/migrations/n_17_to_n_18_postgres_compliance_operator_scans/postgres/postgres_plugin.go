@@ -88,7 +88,7 @@ func insertIntoComplianceOperatorScans(ctx context.Context, batch *pgx.Batch, ob
 	return nil
 }
 
-func (s *storeImpl) copyFromComplianceOperatorScans(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceOperatorScan) error {
+func (s *storeImpl) copyFromComplianceOperatorScans(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScan) error {
 
 	inputRows := [][]interface{}{}
 

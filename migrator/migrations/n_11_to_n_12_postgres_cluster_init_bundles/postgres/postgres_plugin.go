@@ -88,7 +88,7 @@ func insertIntoClusterInitBundles(ctx context.Context, batch *pgx.Batch, obj *st
 	return nil
 }
 
-func (s *storeImpl) copyFromClusterInitBundles(ctx context.Context, tx pgx.Tx, objs ...*storage.InitBundleMeta) error {
+func (s *storeImpl) copyFromClusterInitBundles(ctx context.Context, tx *postgres.Tx, objs ...*storage.InitBundleMeta) error {
 
 	inputRows := [][]interface{}{}
 

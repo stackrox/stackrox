@@ -6,11 +6,20 @@ import (
 	"google.golang.org/grpc"
 )
 
+// SensorComponentEvent represents events about which sensor components can be notified
+type SensorComponentEvent string
+
+const (
+	// SensorComponentEventCentralReachable denotes that Sensor-Central connection is up
+	SensorComponentEventCentralReachable SensorComponentEvent = "central-reachable"
+)
+
 // SensorComponent is one of the components that constitute sensor. It supports for receiving messages from central,
 // as well as sending messages back to central.
 type SensorComponent interface {
 	Start() error
 	Stop(err error) // TODO: get rid of err argument as it always seems to be effectively nil.
+	Notify(e SensorComponentEvent)
 	Capabilities() []centralsensor.SensorCapability
 
 	ProcessMessage(msg *central.MsgToSensor) error

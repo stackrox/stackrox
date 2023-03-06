@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -21,6 +22,7 @@ var deploymentQueueKey = reflectutils.Type((*central.SensorEvent_Deployment)(nil
 type sensorEventHandler struct {
 	typeToQueue map[string]*workerQueue
 
+	deduper  *deduper
 	pipeline pipeline.ClusterPipeline
 	injector common.MessageInjector
 	stopSig  *concurrency.ErrorSignal
@@ -28,11 +30,12 @@ type sensorEventHandler struct {
 	reconciliationMap *reconciliation.StoreMap
 }
 
-func newSensorEventHandler(pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal) *sensorEventHandler {
+func newSensorEventHandler(pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper *deduper) *sensorEventHandler {
 	return &sensorEventHandler{
 		typeToQueue:       make(map[string]*workerQueue),
 		reconciliationMap: reconciliation.NewStoreMap(),
 
+		deduper:  deduper,
 		pipeline: pipeline,
 		injector: injector,
 		stopSig:  stopSig,
@@ -73,6 +76,13 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	default:
 		utils.Should(errors.New("handler only supports events"))
 	}
+
+	if s.deduper.dedupe(msg) {
+		metrics.IncSensorEventsDeduper(true)
+		return
+	}
+	metrics.IncSensorEventsDeduper(false)
+
 	queue := s.typeToQueue[typ]
 	// Lazily create the queue for a type if necessary
 	if queue == nil {

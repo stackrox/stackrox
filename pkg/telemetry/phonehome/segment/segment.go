@@ -15,8 +15,9 @@ var (
 )
 
 type segmentTelemeter struct {
-	client   segment.Client
-	clientID string
+	client     segment.Client
+	clientID   string
+	clientType string
 }
 
 func getMessageType(msg segment.Message) string {
@@ -46,10 +47,12 @@ func (*logOnFailure) Failure(msg segment.Message, err error) {
 }
 
 // NewTelemeter creates and initializes a Segment telemeter instance.
-func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Duration) *segmentTelemeter {
+// Default interval is 5s, default batch size is 250.
+func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Duration, batchSize int) *segmentTelemeter {
 	segmentConfig := segment.Config{
 		Endpoint:  endpoint,
 		Interval:  interval,
+		BatchSize: batchSize,
 		Transport: proxy.RoundTripper(),
 		Logger:    &logWrapper{internal: log},
 		Callback:  &logOnFailure{},
@@ -67,7 +70,7 @@ func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Dura
 		return nil
 	}
 
-	return &segmentTelemeter{client: client, clientID: clientID}
+	return &segmentTelemeter{client: client, clientID: clientID, clientType: clientType}
 }
 
 type logWrapper struct {
@@ -110,7 +113,7 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	return t.clientID
 }
 
-func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
+func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Context {
 	var ctx *segment.Context
 
 	if len(o.Groups) > 0 {
@@ -130,6 +133,24 @@ func makeDeviceContext(o *telemeter.CallOptions) *segment.Context {
 			Type: o.ClientType,
 		}
 	}
+
+	if o.UserID == "" {
+		// Add "Server" suffix to the platform of the backend initiated events:
+		if ctx == nil {
+			ctx = &segment.Context{}
+		}
+		if ctx.Device.Type == "" {
+			ctx.Device.Type = t.clientType
+		}
+		ctx.Device.Type += " Server"
+	}
+
+	if o.Traits != nil {
+		if ctx == nil {
+			ctx = &segment.Context{}
+		}
+		ctx.Traits = o.Traits
+	}
 	return ctx
 }
 
@@ -146,7 +167,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      traits,
-		Context:     makeDeviceContext(options),
+		Context:     t.makeContext(options),
 	}
 
 	for k, v := range props {
@@ -163,12 +184,12 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 	}
 
 	options := telemeter.ApplyOptions(opts)
-
+	dctx := t.makeContext(options)
 	group := segment.Group{
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      props,
-		Context:     makeDeviceContext(options),
+		Context:     dctx,
 	}
 
 	for _, ids := range options.Groups {
@@ -182,6 +203,17 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 
 		if err := t.client.Enqueue(group); err != nil {
 			log.Error("Cannot enqueue Segment group event: ", err)
+		}
+	}
+	if len(props) > 0 {
+		// Track the group properties update with the same device ID
+		// to ensure following events get the properties attached. This is
+		// due to Amplitude partioning by device ID.
+		if err := t.client.Enqueue(segment.Track{
+			Event:   "Group Properties Updated",
+			Context: dctx,
+		}); err != nil {
+			log.Error("Cannot enqueue Segment track event: ", err)
 		}
 	}
 }
@@ -198,7 +230,7 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 		AnonymousId: t.getAnonymousID(options),
 		Event:       event,
 		Properties:  props,
-		Context:     makeDeviceContext(options),
+		Context:     t.makeContext(options),
 	}
 
 	if err := t.client.Enqueue(track); err != nil {

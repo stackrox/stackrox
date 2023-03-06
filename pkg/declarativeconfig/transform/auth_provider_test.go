@@ -300,3 +300,28 @@ func TestTransformAuthProvider(t *testing.T) {
 		assert.Equal(t, authProvider.Groups[id].AttributeValue, group.GetProps().GetValue())
 	}
 }
+
+func TestTransformAuthProvider_NoMinimumRoleName(t *testing.T) {
+	authProvider := &declarativeconfig.AuthProvider{
+		Name:       "test-auth-provider",
+		UIEndpoint: "localhost:8000",
+		OIDCConfig: &declarativeconfig.OIDCConfig{
+			Issuer:       "http://some-issuer",
+			CallbackMode: "auto",
+			ClientID:     "some-client-id",
+			ClientSecret: "some-client-secret",
+		},
+	}
+
+	transformer := newAuthProviderTransformer()
+	protos, err := transformer.Transform(authProvider)
+	assert.NoError(t, err)
+
+	require.Contains(t, protos, authProviderType)
+	require.Len(t, protos[authProviderType], 1)
+	_, ok := protos[authProviderType][0].(*storage.AuthProvider)
+	require.True(t, ok)
+
+	require.Contains(t, protos, groupType)
+	require.Len(t, protos[groupType], 0)
+}

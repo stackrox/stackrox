@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
@@ -284,10 +285,10 @@ func getSearchOptions(ctx context, searchTag string) (SearchField, []DerivedSear
 	}, derivedSearchFields
 }
 
-var simpleFieldsMap = map[reflect.Kind]DataType{
-	reflect.Map:    Map,
-	reflect.String: String,
-	reflect.Bool:   Bool,
+var simpleFieldsMap = map[reflect.Kind]postgres.DataType{
+	reflect.Map:    postgres.Map,
+	reflect.String: postgres.String,
+	reflect.Bool:   postgres.Bool,
 }
 
 func tableName(parent, child string) string {
@@ -345,7 +346,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		switch structField.Type.Kind() {
 		case reflect.Ptr:
 			if structField.Type == timestampType {
-				schema.AddFieldWithType(field, DateTime, opts)
+				schema.AddFieldWithType(field, postgres.DateTime, opts)
 				continue
 			}
 
@@ -355,16 +356,16 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 
 			switch elemType.Kind() {
 			case reflect.String:
-				schema.AddFieldWithType(field, StringArray, opts)
+				schema.AddFieldWithType(field, postgres.StringArray, opts)
 				continue
 			case reflect.Uint8:
-				schema.AddFieldWithType(field, Bytes, opts)
+				schema.AddFieldWithType(field, postgres.Bytes, opts)
 				continue
 			case reflect.Int32:
 				if typeIsEnum(elemType) {
-					schema.AddFieldWithType(field, EnumArray, opts)
+					schema.AddFieldWithType(field, postgres.EnumArray, opts)
 				} else {
-					schema.AddFieldWithType(field, IntArray, opts)
+					schema.AddFieldWithType(field, postgres.IntArray, opts)
 				}
 				continue
 			}
@@ -384,21 +385,21 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)
 		case reflect.Uint8:
-			schema.AddFieldWithType(field, Bytes, opts)
+			schema.AddFieldWithType(field, postgres.Bytes, opts)
 		case reflect.Int32:
 			if typeIsEnum(structField.Type) {
-				schema.AddFieldWithType(field, Enum, opts)
+				schema.AddFieldWithType(field, postgres.Enum, opts)
 			} else {
-				schema.AddFieldWithType(field, Integer, opts)
+				schema.AddFieldWithType(field, postgres.Integer, opts)
 			}
 		case reflect.Uint32, reflect.Uint64, reflect.Int64:
 			// For Uint64, there may be a need to convert to/from int64 because a
 			// BigInteger may not hold a Uint64.  We could switch this type to a numeric but that comes at a
 			// high performance cost.  As of 3.73 we are not using Uint64 except in test something to be mindful of
 			// if we begin to use this type in the future.
-			schema.AddFieldWithType(field, BigInteger, opts)
+			schema.AddFieldWithType(field, postgres.BigInteger, opts)
 		case reflect.Float32, reflect.Float64:
-			schema.AddFieldWithType(field, Numeric, opts)
+			schema.AddFieldWithType(field, postgres.Numeric, opts)
 		case reflect.Interface:
 			// If it is a oneof then call XXX_OneofWrappers to get the types.
 			// The return values is a slice of interfaces that are nil type pointers

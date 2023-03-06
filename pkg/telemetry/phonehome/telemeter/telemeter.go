@@ -9,6 +9,8 @@ type CallOptions struct {
 
 	// [group type: [group id]]
 	Groups map[string][]string
+	// User properties to be updated:
+	Traits map[string]any
 }
 
 // Option modifies the provided CallOptions structure.
@@ -49,6 +51,13 @@ func WithGroups(groupType string, groupID string) Option {
 			o.Groups = make(map[string][]string, 1)
 		}
 		o.Groups[groupType] = append(o.Groups[groupType], groupID)
+	}
+}
+
+// WithTraits sets the user properties to be updated with the call.
+func WithTraits(traits map[string]any) Option {
+	return func(o *CallOptions) {
+		o.Traits = traits
 	}
 }
 
