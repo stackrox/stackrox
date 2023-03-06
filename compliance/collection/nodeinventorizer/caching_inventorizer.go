@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	backoffMultiplier = 2
+	backoffMultiplier = 1.5
 )
 
 // CachingScanner is an implementation of NodeInventorizer that keeps a local cache of results.
@@ -88,7 +88,8 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 }
 
 func (c *CachingScanner) calcNextBackoff(currentBackoff time.Duration) time.Duration {
-	return min(currentBackoff*backoffMultiplier, c.maxBackoff)
+	nextBackoff := time.Duration(int64(float64(int64(currentBackoff)) * backoffMultiplier))
+	return min(nextBackoff, c.maxBackoff)
 }
 
 func min(d1 time.Duration, d2 time.Duration) time.Duration {

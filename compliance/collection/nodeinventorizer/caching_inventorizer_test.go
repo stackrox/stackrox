@@ -94,11 +94,11 @@ func (s *TestComplianceCachingSuite) TestMin() {
 }
 
 func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
-	initial := 2 * time.Second
+	initial := 10 * time.Second
 	cache := initial
-	maxBackoff := 10 * time.Second
+	maxBackoff := 30 * time.Second
 	cs := *NewCachingScanner(mockScanner{}, "", cache, initial, maxBackoff, func(time.Duration) {})
-	expectedBackoff := (2 * time.Second) * 2
+	expectedBackoff := 15 * time.Second // expected is backoffMultiplier * initial
 
 	newBackoff := cs.calcNextBackoff(initial)
 
@@ -151,9 +151,9 @@ func (s *TestComplianceCachingSuite) TestScanWithoutResultCache() {
 	cs := *NewCachingScanner(mockScanner{}, inventoryCachePath, cache, initial, maxBackoff, func(time.Duration) {})
 	nodeName := "testme"
 
-	actual, e := cs.Scan(nodeName)
+	actual, err := cs.Scan(nodeName)
 
-	s.NoError(e)
+	s.NoError(err)
 	s.Equal(nodeName, actual.GetNodeName())
 }
 
