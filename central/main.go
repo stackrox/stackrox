@@ -534,13 +534,23 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	if cfg := centralclient.Enable(); cfg.Enabled() {
-		centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
-		gs := cfg.Gatherer()
-		gs.AddGatherer(authProviderDS.Gather)
-		gs.AddGatherer(signatureIntegrationDS.Gather)
-		gs.AddGatherer(roleDataStore.Gather)
-		gs.AddGatherer(clusterDataStore.Gather)
+	telemetryCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-12750 Replace Config with Administration.
+			sac.ResourceScopeKeys(resources.Config)))
+
+	if cds, err := configDS.Singleton().GetConfig(telemetryCtx); err == nil || cds == nil {
+		if t := cds.GetPublicConfig().GetTelemetry(); t == nil || t.GetEnabled() {
+			if cfg := centralclient.Enable(); cfg.Enabled() {
+				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
+				gs := cfg.Gatherer()
+				gs.AddGatherer(authProviderDS.Gather)
+				gs.AddGatherer(signatureIntegrationDS.Gather)
+				gs.AddGatherer(roleDataStore.Gather)
+				gs.AddGatherer(clusterDataStore.Gather)
+			}
+		}
 	}
 
 	server := pkgGRPC.NewAPI(config)

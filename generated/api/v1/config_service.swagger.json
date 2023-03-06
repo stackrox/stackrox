@@ -285,6 +285,21 @@
         },
         "footer": {
           "$ref": "#/definitions/storageBannerConfig"
+        },
+        "telemetry": {
+          "$ref": "#/definitions/storageTelemetryConfiguration"
+        }
+      }
+    },
+    "storageTelemetryConfiguration": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "lastSetTime": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
