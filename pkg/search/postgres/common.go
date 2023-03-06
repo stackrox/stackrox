@@ -1047,12 +1047,7 @@ func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Con
 	}
 	defer rows.Close()
 
-	results, err := scanRows[T, PT](rows)
-	if err != nil {
-		return nil, err
-	}
-
-	return results, rows.Err()
+	return scanRows[T, PT](rows)
 }
 
 // RunGetManyQueryForSchema executes a request for just the search against the database and unmarshal it to given type.
@@ -1111,12 +1106,7 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 		}
 		defer rows.Close()
 
-		results, err := scanRows[T, PT](rows)
-		if err != nil {
-			return nil, err
-		}
-
-		return results, rows.Err()
+		return scanRows[T, PT](rows)
 	}, closer, nil
 }
 
@@ -1149,7 +1139,7 @@ func scanRows[T any, PT unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
 		}
 		results = append(results, msg)
 	}
-	return results, nil
+	return results, rows.Err()
 }
 
 func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
