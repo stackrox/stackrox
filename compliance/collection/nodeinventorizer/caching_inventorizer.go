@@ -32,7 +32,7 @@ type CachingScanner struct {
 type inventoryWrap struct {
 	CacheValidUntil      time.Time     // CacheValidUntil indicates whether the cached inventory is fresh enough to use.
 	RetryBackoffDuration time.Duration // RetryBackoffDuration contains the duration a scan waits before its next iteration.
-	CachedInventory      string        // serialized form of the cached inventory
+	CachedInventory      string        // Serialized form of the cached inventory
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
@@ -63,11 +63,9 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	cachedBackoff := readBackoff(c.inventoryCachePath)
 	if cachedBackoff > 0 {
 		backoffDuration = min(cachedBackoff, c.maxBackoff)
-		if backoffDuration > 0 {
-			log.Warnf("Found existing node scan backoff - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
-			c.backoffWaitCallback(backoffDuration)
-			backoffDuration = c.calcNextBackoff(backoffDuration) // Set the next backoff duration to persist.
-		}
+		log.Warnf("Found existing node scan backoff - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
+		c.backoffWaitCallback(backoffDuration)
+		backoffDuration = c.calcNextBackoff(backoffDuration) // Set the next backoff duration to persist.
 	}
 
 	// Write backoff duration to cache

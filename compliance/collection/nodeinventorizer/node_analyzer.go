@@ -56,7 +56,7 @@ func (n *NodeAnalyzer) Scan(nodeName string) (*storage.NodeInventory, error) {
 	// which only exists in certified versions. Therefore, no specific notes needed
 	// if uncertifiedRHEL can be true in the future, we can add Note_CERTIFIED_RHEL_SCAN_UNAVAILABLE
 	m := &storage.NodeInventory{
-		NodeId:     uuid.Nil.String(), // The NodeID is not available in compliance, but only on Sensor and later on
+		NodeId:     uuid.Nil.String(), // The NodeID is not available in compliance, but only in Sensor and later on
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
 		Components: protoComponents,
