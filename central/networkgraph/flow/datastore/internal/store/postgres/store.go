@@ -282,6 +282,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
+	log.Infof("upserting %d flows for cluster %q", len(flows), s.clusterID.String())
 
 	return pgutils.Retry(func() error {
 		return s.retryableUpsertFlows(ctx, flows, lastUpdateTS)
