@@ -41,6 +41,7 @@ type Config struct {
 	StorageKey   string
 	Endpoint     string
 	PushInterval time.Duration
+	BatchSize    int
 
 	// The period of identity gathering. Default is 1 hour.
 	GatherPeriod time.Duration
@@ -93,7 +94,8 @@ func (cfg *Config) Telemeter() telemeter.Telemeter {
 				cfg.Endpoint,
 				cfg.ClientID,
 				cfg.ClientName,
-				cfg.PushInterval)
+				cfg.PushInterval,
+				cfg.BatchSize)
 		} else {
 			cfg.telemeter = &nilTelemeter{}
 		}
