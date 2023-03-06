@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter/mocks"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,11 +31,8 @@ func (s *gathererTestSuite) TestNilGatherer() {
 func (s *gathererTestSuite) TestGatherer() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
 
-	// Identify and Track should be called once as there's no change in the
-	// identity:
-	t.EXPECT().Identify(gomock.Eq(map[string]any{"key": "value"})).Times(1)
-
-	t.EXPECT().Track("Updated Test Identity", nil).Times(1)
+	t.EXPECT().Track("Updated Test Identity", nil,
+		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).Times(1)
 
 	props := make(map[string]any)
 	var i int64
