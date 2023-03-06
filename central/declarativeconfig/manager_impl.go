@@ -126,6 +126,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		log.Errorf("Error during unmarshalling of declarative configuration files: %+v", err)
 		return
 	}
+	log.Debugf("Received updates from handler %s: %+v", handlerID, configurations)
 	transformedConfigurations := make(map[reflect.Type][]proto.Message, len(configurations))
 	for _, configuration := range configurations {
 		transformedConfig, err := m.universalTransformer.Transform(configuration)
@@ -148,6 +149,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 // Note that the reconciliation loop will not be run if:
 //   - the short circuit loop signal has not been reset yet and is de-duped.
 func (m *managerImpl) shortCircuitReconciliationLoop() {
+	log.Debug("Short circuit reconciliation loop")
 	// In case the signal is already triggered, the current call (and the Signal() call) will be effectively de-duped.
 	m.shortCircuitSignal.Signal()
 }
