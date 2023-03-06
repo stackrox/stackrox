@@ -125,14 +125,14 @@ func readCachedInventory(path string) (inventory *storage.NodeInventory, validUn
 
 	var cachedInv storage.NodeInventory
 	if err := jsonutil.JSONToProto(wrap.CachedInventory, &cachedInv); err != nil {
-		log.Warnf("error reading node scan from cache")
+		log.Warnf("error unmarshalling node scan from cache: %v", err)
 		return nil, time.Time{}
 	}
 	return &cachedInv, wrap.CacheValidUntil
 }
 
 func writeCachedInventory(inventory *storage.NodeInventory, validUntil time.Time, path string) error {
-	strInv, err := jsonutil.ProtoToJSON(inventory, jsonutil.OptUnEscape)
+	strInv, err := jsonutil.ProtoToJSON(inventory)
 	if err != nil {
 		return err
 	}
