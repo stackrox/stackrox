@@ -11,6 +11,7 @@ import (
 	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -75,6 +76,7 @@ func (s *groupsWithPostgresTestSuite) TestAddGroups() {
 	err = s.groupsDatastore.Add(s.ctx, group)
 	s.Error(err)
 	s.True(pgutils.IsUniqueConstraintError(err))
+	s.ErrorIs(err, errox.AlreadyExists)
 
 	// 3. Adding a different group should work.
 	group.RoleName = "headmaster"
@@ -115,4 +117,40 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 	err = s.groupsDatastore.Update(s.ctx, newGroup, false)
 	s.Error(err)
 	s.True(pgutils.IsUniqueConstraintError(err))
+	s.ErrorIs(err, errox.AlreadyExists)
+}
+
+func (s *groupsWithPostgresTestSuite) TestMutateGroups() {
+	group := fixtures.GetGroup()
+
+	// 1. Adding new groups to the store with mutate should work.
+	group.Props.Id = ""
+	err := s.groupsDatastore.Mutate(s.ctx, nil, nil, []*storage.Group{group}, false)
+	s.NoError(err)
+
+	// 2. Adding the same group twice should not work.
+	group.Props.Id = ""
+	err = s.groupsDatastore.Mutate(s.ctx, nil, nil, []*storage.Group{group}, false)
+	s.Error(err)
+	s.True(pgutils.IsUniqueConstraintError(err))
+	s.ErrorIs(err, errox.AlreadyExists)
+
+	// 3. Adding another group and updating the existing group to the same values should not work.
+	newGroup := &storage.Group{
+		Props: &storage.GroupProperties{
+			AuthProviderId: "some-authprovider-id",
+			Key:            "some-key",
+			Value:          "some-value",
+		},
+		RoleName: "some-role",
+	}
+	group.RoleName = newGroup.GetRoleName()
+	group.Props.AuthProviderId = newGroup.GetProps().GetAuthProviderId()
+	group.Props.Key = newGroup.GetProps().GetKey()
+	group.Props.Value = newGroup.GetProps().GetValue()
+
+	err = s.groupsDatastore.Mutate(s.ctx, nil, []*storage.Group{group}, []*storage.Group{newGroup}, false)
+	s.Error(err)
+	s.True(pgutils.IsUniqueConstraintError(err))
+	s.ErrorIs(err, errox.AlreadyExists)
 }

@@ -1,3 +1,6 @@
+// Code originally by pg-bindings generator.
+// TODO(ROX-13790): Get this back to being generated.
+
 //go:build sql_integration
 
 package postgres
