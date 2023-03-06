@@ -112,6 +112,13 @@ func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
 	cfg.interceptors[event] = append(cfg.interceptors[event], f)
 }
 
+// RemoveInterceptors cleans up the list of telemetry interceptors.
+func (cfg *Config) RemoveInterceptors() {
+	cfg.interceptorsLock.Lock()
+	defer cfg.interceptorsLock.Unlock()
+	cfg.interceptors = nil
+}
+
 // GetGRPCInterceptor returns an API interceptor function for GRPC requests.
 func (cfg *Config) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {

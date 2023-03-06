@@ -28,6 +28,9 @@ var (
 	config *phonehome.Config
 	once   sync.Once
 	log    = logging.LoggerForModule()
+
+	startMux sync.RWMutex
+	enabled  bool
 )
 
 func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
@@ -108,43 +111,86 @@ func InstanceConfig() *phonehome.Config {
 		log.Info("Tenant ID: ", config.GroupID)
 		log.Info("API path telemetry enabled for: ", trackedPaths)
 
-		for event, funcs := range interceptors {
-			for _, f := range funcs {
-				config.AddInterceptorFunc(event, f)
-			}
-		}
-
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 			return props, nil
 		})
 	})
+	startMux.RLock()
+	defer startMux.RUnlock()
+	if !enabled {
+		// This will make InstanceConfig().Enabled() to return false, while
+		// keeping the config configured for eventual Start().
+		return nil
+	}
 	return config
 }
 
 // RegisterCentralClient adds call interceptors, adds central and admin user
 // to the tenant group.
-func RegisterCentralClient(config *grpc.Config, basicAuthProviderID string) {
-	cfg := InstanceConfig()
+func RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
+	cfg := config
 	if !cfg.Enabled() {
 		return
 	}
-	registerInterceptors(config)
+	registerInterceptors(gc)
 	// Central adds itself to the tenant group, with no group properties:
 	cfg.Telemeter().Group(nil, telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	registerAdminUser(basicAuthProviderID)
 }
 
-func registerInterceptors(config *grpc.Config) {
-	cfg := InstanceConfig()
-	config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
-	config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
+func registerInterceptors(gc *grpc.Config) {
+	cfg := config
+	gc.HTTPInterceptors = append(gc.HTTPInterceptors, cfg.GetHTTPInterceptor())
+	gc.UnaryInterceptors = append(gc.UnaryInterceptors, cfg.GetGRPCInterceptor())
 }
 
 // registerAdminUser adds the local admin user to the tenant group.
 // This user is not added to the datastore like other users, so we need to add
 // it to the tenant group specifically.
 func registerAdminUser(basicAuthProviderID string) {
-	cfg := InstanceConfig()
+	cfg := config
 	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
 	cfg.Telemeter().Group(nil, telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+}
+
+// Disable stops and disables the telemetry collection.
+func Disable() {
+	startMux.Lock()
+	defer startMux.Unlock()
+	cfg := config
+	if !enabled || !cfg.Enabled() {
+		return
+	}
+	cfg.Gatherer().Stop()
+	cfg.RemoveInterceptors()
+	enabled = false
+	log.Info("Telemetry collection has been disabled.")
+}
+
+// Enable enables and starts the telemetry collection.
+func Enable() *phonehome.Config {
+	// Prepare the configuration.
+	InstanceConfig()
+
+	startMux.Lock()
+	defer startMux.Unlock()
+	// Use config as InstanceConfig may return nil for not yet enabled instance.
+	cfg := config
+	if !cfg.Enabled() {
+		// Cannot enable without proper configuration.
+		return nil
+	}
+	if enabled {
+		return cfg
+	}
+	cfg.RemoveInterceptors()
+	for event, funcs := range interceptors {
+		for _, f := range funcs {
+			cfg.AddInterceptorFunc(event, f)
+		}
+	}
+	cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	enabled = true
+	log.Info("Telemetry collection has been enabled.")
+	return cfg
 }
