@@ -56,6 +56,9 @@ func init() {
 		PostgresDBSize,
 		PostgresTotalSize,
 		PostgresConnected,
+		PostgresActiveConnections,
+		PostgresTotalConnections,
+		PostgresMaximumConnections,
 	)
 }
 
@@ -204,6 +207,27 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_connected",
 		Help:      "flag indicating if central is connected to the Postgres Database. 0 NOT connected, 1 connected",
+	})
+
+	PostgresActiveConnections = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_active_db_connections",
+		Help:      "number of active connections to Postgres by database name",
+	}, []string{"database"})
+
+	PostgresTotalConnections = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_total_connections",
+		Help:      "number of total connections to Postgres by state",
+	}, []string{"state"})
+
+	PostgresMaximumConnections = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_maximum_db_connections",
+		Help:      "number of total connections allowed to the Postgres database server",
 	})
 )
 
