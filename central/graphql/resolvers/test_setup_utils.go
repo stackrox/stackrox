@@ -50,6 +50,7 @@ import (
 	nodeComponentCVEEdgeSearch "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
 	nodeComponentCVEEdgePostgres "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
+	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/central/views/imagecve"
@@ -116,6 +117,8 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 			resolver.ComponentCVEEdgeDataStore = ds
 		case nodeComponentCVEEdgeDataStore.DataStore:
 			resolver.NodeComponentCVEEdgeDataStore = ds
+		case k8srolebindingStore.DataStore:
+			resolver.K8sRoleBindingStore = ds
 
 		case imagecve.CveView:
 			resolver.ImageCVEView = ds
