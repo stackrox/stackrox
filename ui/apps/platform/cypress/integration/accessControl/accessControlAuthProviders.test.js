@@ -52,6 +52,7 @@ describe('Access Control Auth providers', () => {
         visitAccessControlEntities(entitiesKey, staticResponseMap);
 
         cy.get('th:contains("Name")');
+        cy.get('th:contains("Origin")');
         cy.get('th:contains("Type")');
         cy.get('th:contains("Minimum access role")');
         cy.get('th:contains("Assigned rules")');
