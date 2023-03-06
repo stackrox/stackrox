@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -75,7 +74,6 @@ func (s *groupsWithPostgresTestSuite) TestAddGroups() {
 	group.Props.Id = ""
 	err = s.groupsDatastore.Add(s.ctx, group)
 	s.Error(err)
-	s.True(pgutils.IsUniqueConstraintError(err))
 	s.ErrorIs(err, errox.AlreadyExists)
 
 	// 3. Adding a different group should work.
@@ -116,7 +114,6 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 
 	err = s.groupsDatastore.Update(s.ctx, newGroup, false)
 	s.Error(err)
-	s.True(pgutils.IsUniqueConstraintError(err))
 	s.ErrorIs(err, errox.AlreadyExists)
 }
 
@@ -128,11 +125,12 @@ func (s *groupsWithPostgresTestSuite) TestMutateGroups() {
 	err := s.groupsDatastore.Mutate(s.ctx, nil, nil, []*storage.Group{group}, false)
 	s.NoError(err)
 
+	existingGroupID := group.GetProps().GetId()
+
 	// 2. Adding the same group twice should not work.
 	group.Props.Id = ""
 	err = s.groupsDatastore.Mutate(s.ctx, nil, nil, []*storage.Group{group}, false)
 	s.Error(err)
-	s.True(pgutils.IsUniqueConstraintError(err))
 	s.ErrorIs(err, errox.AlreadyExists)
 
 	// 3. Adding another group and updating the existing group to the same values should not work.
@@ -148,9 +146,9 @@ func (s *groupsWithPostgresTestSuite) TestMutateGroups() {
 	group.Props.AuthProviderId = newGroup.GetProps().GetAuthProviderId()
 	group.Props.Key = newGroup.GetProps().GetKey()
 	group.Props.Value = newGroup.GetProps().GetValue()
+	group.Props.Id = existingGroupID
 
 	err = s.groupsDatastore.Mutate(s.ctx, nil, []*storage.Group{group}, []*storage.Group{newGroup}, false)
 	s.Error(err)
-	s.True(pgutils.IsUniqueConstraintError(err))
 	s.ErrorIs(err, errox.AlreadyExists)
 }
