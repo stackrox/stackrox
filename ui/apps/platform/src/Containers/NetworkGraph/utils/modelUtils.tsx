@@ -99,6 +99,7 @@ function getDeploymentNodeModel(
             showPolicyState: true,
             isExternallyConnected,
             showExternalState: true,
+            isFadedOut: false,
         },
     };
 }
@@ -114,14 +115,14 @@ function getExternalNodeModel(
                 ...baseNode,
                 shape: NodeShape.rect,
                 label: 'External Entities',
-                data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges },
+                data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges, isFadedOut: false },
             };
         case 'EXTERNAL_SOURCE':
             return {
                 ...baseNode,
                 shape: NodeShape.rect,
                 label: entity.externalSource.name,
-                data: { ...entity, type: 'CIDR_BLOCK', outEdges },
+                data: { ...entity, type: 'CIDR_BLOCK', outEdges, isFadedOut: false },
             };
         default:
             return ensureExhaustive(entity);
@@ -604,4 +605,25 @@ export function createExtraneousEdges(selectedNodeId: string): {
         },
     };
     return { extraneousEgressEdge, extraneousIngressEdge };
+}
+
+// This function returns the ids of nodes that are connected to the selected node
+export function getConnectedNodeIds(
+    nodes: CustomNodeModel[],
+    edges: CustomEdgeModel[],
+    selectedNodeId: string | undefined
+) {
+    if (!selectedNodeId) {
+        return [];
+    }
+    const connectedNodeIds = edges.reduce((acc, curr) => {
+        if (curr.source === selectedNodeId) {
+            return [...acc, curr.target];
+        }
+        if (curr.target === selectedNodeId) {
+            return [...acc, curr.source];
+        }
+        return acc;
+    }, [] as string[]);
+    return connectedNodeIds;
 }
