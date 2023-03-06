@@ -19,7 +19,6 @@ var (
 	CreateTableNetworkFlowsStmt = &postgres.CreateStmts{
 		GormModel: nil,
 		PartitionCreate: `CREATE TABLE IF NOT EXISTS network_flows_v2 (
-					Flow_id bigserial,
 					Props_SrcEntity_Type integer,
 					Props_SrcEntity_Id varchar,
 					Props_DstEntity_Type integer,
@@ -28,7 +27,7 @@ var (
 					Props_L4Protocol integer,
 					LastSeenTimestamp timestamp,
 					ClusterId varchar,
-					PRIMARY KEY(ClusterId, Flow_id)
+					PRIMARY KEY(ClusterId, Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol)
 			) PARTITION BY LIST (ClusterId)`,
 		Partition: true,
 		PostStmts: []string{

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,53 +39,63 @@ const (
 	// the largest Flow_id.  The Flow_id is not included in the object and is purely handled by postgres.  Since flows
 	// have been flattened, the entire record except for the time is what makes it distinct, so we have to hit all
 	// the fields in the join.
-	joinStmt = ` INNER JOIN 
-	(SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, 
-	Props_L4Protocol, ClusterId, MAX(Flow_Id) AS MaxFlow 
-	FROM %s 
-	GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) tmpflow 
-	on nf.Props_SrcEntity_Type = tmpflow.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = tmpflow.Props_SrcEntity_Id AND 
-	nf.Props_DstEntity_Type = tmpflow.Props_DstEntity_Type AND nf.Props_DstEntity_Id = tmpflow.Props_DstEntity_Id AND 
-	nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND 
-	nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow `
+	//joinStmt = ` INNER JOIN
+	//(SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort,
+	//Props_L4Protocol, ClusterId, MAX(Flow_Id) AS MaxFlow
+	//FROM %s
+	//GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) tmpflow
+	//on nf.Props_SrcEntity_Type = tmpflow.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = tmpflow.Props_SrcEntity_Id AND
+	//nf.Props_DstEntity_Type = tmpflow.Props_DstEntity_Type AND nf.Props_DstEntity_Id = tmpflow.Props_DstEntity_Id AND
+	//nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND
+	//nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow `
 
 	deleteStmt         = "DELETE FROM network_flows_v2 WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
 	deleteStmtWithTime = "DELETE FROM network_flows_v2 WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
-	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM %s nf " + joinStmt + " WHERE nf.ClusterId = $1"
+	//walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM %s nf " + joinStmt + " WHERE nf.ClusterId = $1"
+	walkStmt = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM %s"
 
 	// These mimic how the RocksDB version of the flow store work
-	getSinceStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
-	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text 
-	FROM %s nf ` + joinStmt +
-		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
+	//getSinceStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
+	//nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	//FROM %s nf ` + joinStmt +
+	//	` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
+	getSinceStmt            = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM %s WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
 	deleteSrcDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
 	deleteDstDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
 
+	//getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
+	//nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	//FROM network_flows_v2 nf ` + joinStmt +
+	//	`WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1 AND nf.ClusterId = $2
+	//UNION ALL
+	//SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	//FROM network_flows_v2 nf ` + joinStmt +
+	//	`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.ClusterId = $2`
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
-	FROM network_flows_v2 nf ` + joinStmt +
-		`WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1 AND nf.ClusterId = $2
+	FROM %s nf 
+		WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1
 	UNION ALL
 	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
-	FROM network_flows_v2 nf ` + joinStmt +
-		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.ClusterId = $2`
+	FROM %s nf 
+		WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1`
 
-	pruneStaleNetworkFlowsStmt = `DELETE FROM %s a USING (
-      SELECT MAX(flow_id) as Max_Flow, Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
-        FROM %s
-		WHERE ClusterId = $1
-        GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
-		HAVING COUNT(*) > 1
-      ) b
-      WHERE a.Props_SrcEntity_Type = b.Props_SrcEntity_Type
- 	AND a.Props_SrcEntity_Id = b.Props_SrcEntity_Id
- 	AND a.Props_DstEntity_Type = b.Props_DstEntity_Type
- 	AND a.Props_DstEntity_Id = b.Props_DstEntity_Id
-	AND a.Props_DstPort = b.Props_DstPort
-	AND a.Props_L4Protocol = b.Props_L4Protocol
-	AND a.ClusterId = b.ClusterId
-      AND a.Flow_Id <> b.Max_Flow;
-	`
+	//pruneStaleNetworkFlowsStmt = `DELETE FROM %s a USING (
+	//  SELECT MAX(flow_id) as Max_Flow, Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
+	//    FROM %s
+	//	WHERE ClusterId = $1
+	//    GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
+	//	HAVING COUNT(*) > 1
+	//  ) b
+	//  WHERE a.Props_SrcEntity_Type = b.Props_SrcEntity_Type
+	//AND a.Props_SrcEntity_Id = b.Props_SrcEntity_Id
+	//AND a.Props_DstEntity_Type = b.Props_DstEntity_Type
+	//AND a.Props_DstEntity_Id = b.Props_DstEntity_Id
+	//AND a.Props_DstPort = b.Props_DstPort
+	//AND a.Props_L4Protocol = b.Props_L4Protocol
+	//AND a.ClusterId = b.ClusterId
+	//  AND a.Flow_Id <> b.Max_Flow;
+	//`
 )
 
 var (
@@ -128,12 +139,12 @@ type FlowStore interface {
 
 type flowStoreImpl struct {
 	db            *postgres.DB
-	mutex         sync.Mutex
+	mutex         sync.RWMutex
 	clusterID     uuid.UUID
 	partitionName string
 }
 
-func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
+func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, batch *pgx.Batch, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -147,11 +158,19 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 		clusterID,
 	}
 
-	finalStr := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8)", s.partitionName)
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	//finalStr := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8)", s.partitionName)
+	//_, err := tx.Exec(ctx, finalStr, values...)
+	//if err != nil {
+	//	return err
+	//}
+	finalStr := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) DO UPDATE SET Props_SrcEntity_Type = EXCLUDED.Props_SrcEntity_Type, Props_SrcEntity_Id = EXCLUDED.Props_SrcEntity_Id, Props_DstEntity_Type = EXCLUDED.Props_DstEntity_Type, Props_DstEntity_Id = EXCLUDED.Props_DstEntity_Id, Props_DstPort = EXCLUDED.Props_DstPort, Props_L4Protocol = EXCLUDED.Props_L4Protocol, LastSeenTimestamp = EXCLUDED.LastSeenTimestamp, ClusterId = EXCLUDED.ClusterId", s.partitionName)
+
+	//finalStr := "INSERT INTO network_flows (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
+	//_, err := tx.Exec(ctx, finalStr, values...)
+	//if err != nil {
+	//	return err
+	//}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -183,6 +202,11 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 			s.clusterID,
 		})
+
+		_, err = tx.Exec(ctx, deleteStmt, obj.GetProps().GetSrcEntity().GetType(), obj.GetProps().GetSrcEntity().GetId(), obj.GetProps().GetDstEntity().GetType(), obj.GetProps().GetDstEntity().GetId(), obj.GetProps().GetDstPort(), obj.GetProps().GetL4Protocol(), s.clusterID)
+		if err != nil {
+			return err
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -260,23 +284,39 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
+	//tx, err := conn.Begin(ctx)
+	//if err != nil {
+	//	return err
+	//}
 	for _, obj := range objs {
-
-		if err := s.insertIntoNetworkflow(ctx, tx, s.clusterID, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batch := &pgx.Batch{}
+		if err := s.insertIntoNetworkflow(ctx, batch, s.clusterID, obj); err != nil {
 			return err
 		}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
+		if err := result.ErrorOrNil(); err != nil {
+			return err
+		}
+
+		//if err := s.insertIntoNetworkflow(ctx, tx, s.clusterID, obj); err != nil {
+		//	if err := tx.Rollback(ctx); err != nil {
+		//		return err
+		//	}
+		//	return err
+		//}
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
+	//if err := tx.Commit(ctx); err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -292,6 +332,9 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	if len(flows) < batchAfter {
 		return s.upsert(ctx, flows...)
 	}
@@ -421,10 +464,10 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
-		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionWalkStmt, s.clusterID)
+		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName)
+		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
-		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
+		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName)
 		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
 	if err != nil {
@@ -458,10 +501,10 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
-		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionWalkStmt, s.clusterID)
+		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName)
+		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
-		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
+		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName)
 		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
 
@@ -491,7 +534,7 @@ func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, depl
 	var err error
 
 	partitionDeploymentDeleteStmt := fmt.Sprintf(getByDeploymentStmt, s.partitionName, s.partitionName)
-	rows, err = s.db.Query(ctx, partitionDeploymentDeleteStmt, deploymentID, s.clusterID)
+	rows, err = s.db.Query(ctx, partitionDeploymentDeleteStmt, deploymentID)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -576,8 +619,8 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 	// in Postgres we cannot fully do this work in SQL.  Additionally, there may be issues with the synchronization
 	// of when flow is created vs a deployment deleted that may also make that problematic.
 	if keyMatchFn != nil {
-		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
-		rows, err := conn.Query(ctx, partitionWalkStmt, s.clusterID)
+		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName)
+		rows, err := conn.Query(ctx, partitionWalkStmt)
 		if err != nil {
 			return err
 		}
@@ -618,23 +661,24 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 
 // RemoveStaleFlows - remove stale duplicate network flows
 func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
-
-	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	// This is purposefully not retried as this is an optimization and not a requirement
-	// It is also currently prone to statement timeouts
-	prune := fmt.Sprintf(pruneStaleNetworkFlowsStmt, s.partitionName, s.partitionName)
-	_, err = conn.Exec(ctx, prune, s.clusterID)
-	return err
+	return nil
+	//defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+	//
+	//// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	//s.mutex.Lock()
+	//defer s.mutex.Unlock()
+	//
+	//conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	//if err != nil {
+	//	return err
+	//}
+	//defer release()
+	//
+	//// This is purposefully not retried as this is an optimization and not a requirement
+	//// It is also currently prone to statement timeouts
+	//prune := fmt.Sprintf(pruneStaleNetworkFlowsStmt, s.partitionName, s.partitionName)
+	//_, err = conn.Exec(ctx, prune, s.clusterID)
+	//return err
 }
 
 //// Used for testing
