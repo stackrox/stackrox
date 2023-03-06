@@ -21,8 +21,8 @@ func init() {
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ImageCVECore",
 			[]string{
-				"affectedImages: Int!",
-				"affectedImagesBySeverity: ResourceCountByCVESeverity",
+				"affectedImageCount: Int!",
+				"affectedImageCountBySeverity: ResourceCountByCVESeverity!",
 				"cve: String!",
 				"firstDiscoveredInSystem: Time",
 				"topCVSS: Float!",
@@ -100,11 +100,11 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 	return resolver.wrapImageCVECoresWithContext(ctx, cves, err)
 }
 
-func (resolver *imageCVECoreResolver) AffectedImages(_ context.Context) int32 {
+func (resolver *imageCVECoreResolver) AffectedImageCount(_ context.Context) int32 {
 	return int32(resolver.data.GetAffectedImages())
 }
 
-func (resolver *imageCVECoreResolver) AffectedImagesBySeverity(ctx context.Context) (*resourceCountBySeverityResolver, error) {
+func (resolver *imageCVECoreResolver) AffectedImageCountBySeverity(ctx context.Context) (*resourceCountBySeverityResolver, error) {
 	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, resolver.data.GetImagesBySeverity(), nil)
 }
 

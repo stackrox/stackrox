@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -600,6 +601,23 @@ func (resolver *deploymentResolver) ImageVulnerabilityCount(ctx context.Context,
 func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCounter")
 	return resolver.root.ImageVulnerabilityCounter(resolver.deploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCVECountBySeverity")
+
+	if !features.VulnMgmtWorkloadCVEs.Enabled() {
+		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
+	}
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	val, err := resolver.root.ImageCVEView.CountBySeverity(ctx, query)
+	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, val, err)
 }
 
 func (resolver *deploymentResolver) deploymentScopeContext(ctx context.Context) context.Context {
