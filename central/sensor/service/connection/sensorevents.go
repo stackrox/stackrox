@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/central/metrics"
@@ -73,9 +74,10 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			eventType = deploymentEventType
 		case *central.SensorEvent_NodeInventory:
 			// This will put both NodeInventory and Node events in the same worker queue,
-			// preventing events for the same Node ID to run concurrently, since both use
-			// Node ID as the event ID.
+			// preventing events for the same Node ID to run concurrently. We need a new
+			// dedupe key since the default (the event ID) would dedupe on Node events.
 			eventType = nodeEventType
+			msg.DedupeKey = fmt.Sprintf("%s:%s", "NodeIventory", msg.GetDedupeKey())
 		default:
 			eventType = reflectutils.Type(evt.Event.Resource)
 			if !s.reconciliationMap.IsClosed() {
