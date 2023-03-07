@@ -1407,7 +1407,7 @@ class Kubernetes implements OrchestratorMain {
                         clusterRole: false,
                         labels: it.metadata.labels ? it.metadata.labels : [:],
                         annotations: it.metadata.annotations ? it.metadata.annotations : [:],
-                        rules: it.rules.collect {
+                        rules: it.rules ? it.rules.collect {
                             new K8sPolicyRule(
                                     verbs: it.verbs,
                                     apiGroups: it.apiGroups,
@@ -1415,7 +1415,7 @@ class Kubernetes implements OrchestratorMain {
                                     nonResourceUrls: it.nonResourceURLs,
                                     resourceNames: it.resourceNames
                             )
-                        }
+                        } : [],
                 ))
             }
             return roles
