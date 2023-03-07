@@ -86,10 +86,7 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 			q:               PaginatedQuery{Query: pointers.String("Image:reg1/img1")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
-				if strings.HasPrefix(img.GetName().GetFullName(), "reg1/img1") {
-					return true
-				}
-				return false
+				return strings.HasPrefix(img.GetName().GetFullName(), "reg1/img1")
 			},
 		},
 		{
@@ -203,7 +200,7 @@ func compileExpected(deployments []*storage.Deployment, images []*storage.Image,
 
 		var imageFilterPassed bool
 		for _, container := range deployment.GetContainers() {
-			image, _ := imageMap[container.GetImage().GetName().GetFullName()]
+			image := imageMap[container.GetImage().GetName().GetFullName()]
 			if image == nil {
 				continue
 			}
