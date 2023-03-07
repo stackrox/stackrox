@@ -98,7 +98,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
-	complianceMultiplexer := compliance.NewComplianceCommunicator()
+	complianceMultiplexer := compliance.NewComplianceCommunicator[compliance.MessageToComplianceWithAddress]()
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.GetCommandsC())
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)

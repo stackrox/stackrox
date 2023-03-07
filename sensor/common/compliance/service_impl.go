@@ -31,7 +31,7 @@ type serviceImpl struct {
 
 	orchestrator orchestrator.Orchestrator
 
-	multiplexer       *Multiplexer
+	multiplexer       *Multiplexer[MessageToComplianceWithAddress]
 	connectionManager *connectionManager
 }
 

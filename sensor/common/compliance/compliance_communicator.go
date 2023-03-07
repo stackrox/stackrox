@@ -17,9 +17,9 @@ type MessageToComplianceWithAddress struct {
 	broadcast bool
 }
 
-type Multiplexer struct {
-	inputChannels  []<-chan *MessageToComplianceWithAddress
-	outputCommands chan *MessageToComplianceWithAddress
+type Multiplexer[T any] struct {
+	inputChannels  []<-chan *T
+	outputCommands chan *T
 	//connectionMap  map[string]sensor.ComplianceService_CommunicateServer
 	//manager connectionManager
 
@@ -27,36 +27,35 @@ type Multiplexer struct {
 	started concurrency.Signal
 }
 
-func (c *Multiplexer) Notify(e common.SensorComponentEvent) {
+func (c *Multiplexer[T]) Notify(e common.SensorComponentEvent) {
 	return
 }
 
-func (c *Multiplexer) Start() error {
+func (c *Multiplexer[T]) Start() error {
 	// TODO maybe error if this fails(?)
 	c.run()
 	return nil
 }
 
-func (c *Multiplexer) Stop(err error) {
+func (c *Multiplexer[T]) Stop(err error) {
 }
 
-func (c *Multiplexer) Capabilities() []centralsensor.SensorCapability {
+func (c *Multiplexer[T]) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (c *Multiplexer) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *Multiplexer[T]) ProcessMessage(msg *central.MsgToSensor) error {
 	return nil
 }
 
-func (c *Multiplexer) ResponsesC() <-chan *central.MsgFromSensor {
+func (c *Multiplexer[T]) ResponsesC() <-chan *central.MsgFromSensor {
 	return nil
 }
 
-func NewComplianceCommunicator() *Multiplexer {
-	communicator := Multiplexer{
-		inputChannels:  make([]<-chan *MessageToComplianceWithAddress, 0),
-		outputCommands: make(chan *MessageToComplianceWithAddress),
-		wg:             sync.WaitGroup{},
+func NewComplianceCommunicator[T any]() *Multiplexer[T] {
+	communicator := Multiplexer[T]{
+		inputChannels:  make([]<-chan *T, 0),
+		outputCommands: make(chan *T),
 		started:        concurrency.Signal{}}
 
 	return &communicator
@@ -64,28 +63,31 @@ func NewComplianceCommunicator() *Multiplexer {
 
 // AddChannel Adds a channel to ComplianceCommunicator, AddChannel must be called
 // for ALL channels before calling Run()
-func (c *Multiplexer) AddChannel(channel <-chan *MessageToComplianceWithAddress) {
+func (c *Multiplexer[T]) AddChannel(channel <-chan *T) {
 	if c.started.IsDone() {
 		panic("Cannot AddChannel after component is started")
 	}
 	c.inputChannels = append(c.inputChannels, channel)
 }
 
-func (c *Multiplexer) run() {
+func (c *Multiplexer[T]) run() {
 	c.started.Signal()
 	ctx := context.Background()
 
-	output := c.fanIn(ctx, c.inputChannels...)
+	output := FanIn[T](ctx, c.inputChannels...)
 	for o := range output {
 		c.outputCommands <- o
 	}
 }
 
-func (c *Multiplexer) fanIn(ctx context.Context, channels ...<-chan *MessageToComplianceWithAddress) <-chan *MessageToComplianceWithAddress {
-	multiplexedStream := make(chan *MessageToComplianceWithAddress)
+// FanIn multiplexes multiple input channels into one output channel and
+// finishes when all input channels are closed
+func FanIn[T any](ctx context.Context, channels ...<-chan *T) <-chan *T {
+	multiplexedStream := make(chan *T)
+	wg := sync.WaitGroup{}
 
-	multiplex := func(ch <-chan *MessageToComplianceWithAddress) {
-		defer c.wg.Done()
+	multiplex := func(ch <-chan *T) {
+		defer wg.Done()
 		for i := range ch {
 			select {
 			case <-ctx.Done():
@@ -96,20 +98,20 @@ func (c *Multiplexer) fanIn(ctx context.Context, channels ...<-chan *MessageToCo
 	}
 
 	// Select from all the channels
-	c.wg.Add(len(channels))
+	wg.Add(len(channels))
 	for _, c := range channels {
 		go multiplex(c)
 	}
 
 	// Wait for all the reads to complete
 	go func() {
-		c.wg.Wait()
+		wg.Wait()
 		close(multiplexedStream)
 	}()
 
 	return multiplexedStream
 }
 
-func (c *Multiplexer) GetCommandsC() <-chan *MessageToComplianceWithAddress {
+func (c *Multiplexer[T]) GetCommandsC() <-chan *T {
 	return c.outputCommands
 }
