@@ -3,8 +3,8 @@
 ## Structure
 
 All kuttl tests are in the [tests](.) directory. It contains three suites, each containing a single test:
-- [central/basic](central/basic) - various `Central` resource configurations and switching between them. In
-  theory, on a large enough cluster this could be split into multiple parallel tests.
+- [central/basic-central](central/basic-central) - various `Central` resource configurations and switching between them.
+  In theory, on a large enough cluster this could be split into multiple parallel tests.
 - [securedcluster/basic-sc](securedcluster/basic-sc) - various `SecuredCluster` resource configurations
   and switching between them. Separate, because we only support deploying a single `SecuredCluster` instance
   per cluster at a time.
@@ -33,7 +33,7 @@ We use this functionality (see `collectors` field in `TestAssert` pseudo-resourc
 
 ## How `kuttl` works
 
-Each **test** (for example `tests/central/basic`) consists of a series of **steps**.
+Each **test** (for example `tests/central/basic-central`) consists of a series of **steps**.
 A step consists of a non-empty set of files prefixed with the same number and a dash.
 
 What `kuttl` does to execute a test is:
@@ -70,7 +70,7 @@ Luckily, the framework separates outputs from different tests with messages such
 ```
 === CONT  kuttl/harness/basic-sc
 [...]
-=== CONT  kuttl/harness/basic
+=== CONT  kuttl/harness/basic-central
 ```
 
 The examples below are limited to a single test, and I omit the `=== CONT` lines for brevity.
@@ -106,10 +106,10 @@ This is important, as it shows which namespace a given test will run in.
 ### Successful test step
 
 ```
-    logger.go:42: 17:30:56 | basic/75-enable-central-db-external | starting test step 75-enable-central-db-external
-    logger.go:42: 17:30:59 | basic/75-enable-central-db-external | Secret:kuttl-test-wealthy-cockatoo/my-central-db-password created
-    logger.go:42: 17:30:59 | basic/75-enable-central-db-external | Central:kuttl-test-wealthy-cockatoo/stackrox-central-services updated
-    logger.go:42: 17:31:01 | basic/75-enable-central-db-external | test step completed 75-enable-central-db-external
+    logger.go:42: 17:30:56 | basic-central/75-enable-central-db-external | starting test step 75-enable-central-db-external
+    logger.go:42: 17:30:59 | basic-central/75-enable-central-db-external | Secret:kuttl-test-wealthy-cockatoo/my-central-db-password created
+    logger.go:42: 17:30:59 | basic-central/75-enable-central-db-external | Central:kuttl-test-wealthy-cockatoo/stackrox-central-services updated
+    logger.go:42: 17:31:01 | basic-central/75-enable-central-db-external | test step completed 75-enable-central-db-external
 ```
 
 A successful test step always starts with `starting test` and ends with `test step completed`.
@@ -128,9 +128,9 @@ I0126 17:32:00.275793    3247 request.go:682] Waited for 1.003842813s due to cli
 It begins similar to a successful step:
 
 ``` 
-    logger.go:42: 02:12:54 | basic/10-central-cr | starting test step 10-central-cr
-    logger.go:42: 02:13:00 | basic/10-central-cr | Central:kuttl-test-steady-fowl/stackrox-central-services created
-    logger.go:42: 02:13:00 | basic/10-central-cr | Secret:kuttl-test-steady-fowl/admin-pass created
+    logger.go:42: 02:12:54 | basic-central/10-central-cr | starting test step 10-central-cr
+    logger.go:42: 02:13:00 | basic-central/10-central-cr | Central:kuttl-test-steady-fowl/stackrox-central-services created
+    logger.go:42: 02:13:00 | basic-central/10-central-cr | Secret:kuttl-test-steady-fowl/admin-pass created
 ```
 
 The ending is different, and there are a few important parts, which tell us the direct reason for failure.
@@ -140,7 +140,7 @@ The ending is different, and there are a few important parts, which tell us the 
 First, just a message that tells us which step failed.
 
 ```
-    logger.go:42: 02:23:01 | basic/10-central-cr | test step failed 10-central-cr
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | test step failed 10-central-cr
 ```
 
 Note that at this point we still do not know **why** this step failed, this will be revealed a bit later.
@@ -155,17 +155,17 @@ We typically request fetching logs of all the pods that comprise deployments on 
 Here is an example snippet that shows `central` and beginning of `scanner` logs:
 
 ```
-    logger.go:42: 02:23:01 | basic/10-central-cr | collecting log output for [type==pod,label: app=central]
-    logger.go:42: 02:23:01 | basic/10-central-cr | running command: [kubectl logs --prefix -l app=central -n kuttl-test-steady-fowl --all-containers --tail=-1]
-    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] '/usr/local/share/ca-certificates/00-foo.pem.crt' -> '/etc/pki/ca-trust/source/anchors/00-foo.pem.crt'
-    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] '/etc/pki/injected-ca-trust/tls-ca-bundle.pem' -> '/etc/pki/ca-trust/source/anchors/tls-ca-bundle.pem'
-    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219239 log.go:18: Info: Run migrator.run() with version: 3.74.x-21-ge2ac78b3b8, DB sequence: 172
-    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219527 log.go:18: Info: conf.Maintenance.ForceRollbackVersion: none
-    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219609 log.go:18: Info: Migrator failed: unable to get Postgres DB config: pgsql: could not load password file "/run/secrets/stackrox.io/db-password/password": open /run/secrets/stackrox.io/db-password/password: no such file or directory
-    logger.go:42: 02:23:01 | basic/10-central-cr | collecting log output for [type==pod,label: app=scanner]
-    logger.go:42: 02:23:01 | basic/10-central-cr | running command: [kubectl logs --prefix -l app=scanner -n kuttl-test-steady-fowl --all-containers --tail=-1]
-    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/scanner-689bb74f5f-kt6xx/scanner] '/usr/local/share/ca-certificates/00-foo.pem.crt' -> '/etc/pki/ca-trust/source/anchors/00-foo.pem.crt'
-    logger.go:42: 02:23:01 | basic/10-central-cr | [pod/scanner-689bb74f5f-kt6xx/scanner] '/etc/pki/injected-ca-trust/tls-ca-bundle.pem' -> '/etc/pki/ca-trust/source/anchors/tls-ca-bundle.pem'
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | collecting log output for [type==pod,label: app=central]
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | running command: [kubectl logs --prefix -l app=central -n kuttl-test-steady-fowl --all-containers --tail=-1]
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] '/usr/local/share/ca-certificates/00-foo.pem.crt' -> '/etc/pki/ca-trust/source/anchors/00-foo.pem.crt'
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] '/etc/pki/injected-ca-trust/tls-ca-bundle.pem' -> '/etc/pki/ca-trust/source/anchors/tls-ca-bundle.pem'
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219239 log.go:18: Info: Run migrator.run() with version: 3.74.x-21-ge2ac78b3b8, DB sequence: 172
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219527 log.go:18: Info: conf.Maintenance.ForceRollbackVersion: none
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | [pod/central-f959bb7c5-rlz2c/central] Migrator: 2023/02/07 02:19:34.219609 log.go:18: Info: Migrator failed: unable to get Postgres DB config: pgsql: could not load password file "/run/secrets/stackrox.io/db-password/password": open /run/secrets/stackrox.io/db-password/password: no such file or directory
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | collecting log output for [type==pod,label: app=scanner]
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | running command: [kubectl logs --prefix -l app=scanner -n kuttl-test-steady-fowl --all-containers --tail=-1]
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | [pod/scanner-689bb74f5f-kt6xx/scanner] '/usr/local/share/ca-certificates/00-foo.pem.crt' -> '/etc/pki/ca-trust/source/anchors/00-foo.pem.crt'
+    logger.go:42: 02:23:01 | basic-central/10-central-cr | [pod/scanner-689bb74f5f-kt6xx/scanner] '/etc/pki/injected-ca-trust/tls-ca-bundle.pem' -> '/etc/pki/ca-trust/source/anchors/tls-ca-bundle.pem'
     [...]
 ```
 
@@ -221,13 +221,13 @@ Finally, a dump of all events from the test namespace.
 This also can get quite long but sometimes contains important information.
 
 ```
-    logger.go:42: 02:23:02 | basic | basic events from ns kuttl-test-steady-fowl:
-    logger.go:42: 02:23:02 | basic | 2023-02-07 02:13:15 +0000 UTC	Normal	PersistentVolumeClaim central-db		WaitForFirstConsumer	waiting for first consumer to be created before binding		
-    logger.go:42: 02:23:02 | basic | 2023-02-07 02:13:15 +0000 UTC	Normal	PersistentVolumeClaim stackrox-db		WaitForFirstConsumer	waiting for first consumer to be created before binding		
-    logger.go:42: 02:23:02 | basic | 2023-02-07 02:13:19 +0000 UTC	Normal	ReplicaSet.apps central-f959bb7c5		SuccessfulCreate	Created pod: central-f959bb7c5-rlz2c		
+    logger.go:42: 02:23:02 | basic-central | basic-central events from ns kuttl-test-steady-fowl:
+    logger.go:42: 02:23:02 | basic-central | 2023-02-07 02:13:15 +0000 UTC	Normal	PersistentVolumeClaim central-db		WaitForFirstConsumer	waiting for first consumer to be created before binding
+    logger.go:42: 02:23:02 | basic-central | 2023-02-07 02:13:15 +0000 UTC	Normal	PersistentVolumeClaim stackrox-db		WaitForFirstConsumer	waiting for first consumer to be created before binding
+    logger.go:42: 02:23:02 | basic-central | 2023-02-07 02:13:19 +0000 UTC	Normal	ReplicaSet.apps central-f959bb7c5		SuccessfulCreate	Created pod: central-f959bb7c5-rlz2c
     [...]
-    logger.go:42: 02:23:02 | basic | 2023-02-07 02:15:23 +0000 UTC	Normal	Pod scanner-db-bb9f74864-gmr2m.spec.containers{db}		Created	Created container db		
-    logger.go:42: 02:23:02 | basic | 2023-02-07 02:15:23 +0000 UTC	Normal	Pod scanner-db-bb9f74864-gmr2m.spec.containers{db}		Started	Started container db		
+    logger.go:42: 02:23:02 | basic-central | 2023-02-07 02:15:23 +0000 UTC	Normal	Pod scanner-db-bb9f74864-gmr2m.spec.containers{db}		Created	Created container db
+    logger.go:42: 02:23:02 | basic-central | 2023-02-07 02:15:23 +0000 UTC	Normal	Pod scanner-db-bb9f74864-gmr2m.spec.containers{db}		Started	Started container db
 ```
 
 ### Test cleanup
@@ -235,7 +235,7 @@ This also can get quite long but sometimes contains important information.
 Finally, a notice about cleanup:
 
 ```
-    logger.go:42: 02:23:02 | basic | Deleting namespace: kuttl-test-steady-fowl
+    logger.go:42: 02:23:02 | basic-central | Deleting namespace: kuttl-test-steady-fowl
 ```
 
 ### Test harness teardown
@@ -249,7 +249,7 @@ And then the whole harness teardown:
 --- FAIL: kuttl (633.12s)
     --- FAIL: kuttl/harness (0.00s)
         --- PASS: kuttl/harness/basic-sc (419.53s)
-        --- FAIL: kuttl/harness/basic (625.20s)
+        --- FAIL: kuttl/harness/basic-central (625.20s)
 FAIL
 make: *** [Makefile:281: test-e2e-deployed] Error 1
 make: Leaving directory '/go/src/github.com/stackrox/stackrox/operator'
@@ -262,11 +262,11 @@ make: Leaving directory '/go/src/github.com/stackrox/stackrox/operator'
 Look for the harness teardown message near the bottom that contains the names of failing and passing tests.
 
 In the example above we see that the `basic-sc` test (from `operator/tests/securedcluster/`) test **passed**,
-and only the `basic` test (from `operator/tests/central/`) **failed**.
+and only the `basic-central` test (from `operator/tests/central/`) **failed**.
 
 ### Identify **which test step** failed
 
-Keeping in mind the name of the failing test (`basic` in this example) and ignoring the irrelevant (i.e. successful)
+Keeping in mind the name of the failing test (`basic-central` in this example) and ignoring the irrelevant (i.e. successful)
 test (`basic-sc` in this example), scroll up from the final `FAIL: kuttl` until you find the message about
 the condition that caused the step to fail.
 
