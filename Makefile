@@ -541,8 +541,8 @@ $(CURDIR)/image/rhel/bundle.tar.gz:
 .PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
 $(CURDIR)/image/rhel/Dockerfile.gen:
 	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-	LABEL_VERSION=$(BUILD_TAG) \
-	LABEL_RELEASE=$(BUILD_TAG) \
+	LABEL_VERSION=$(TAG) \
+	LABEL_RELEASE=$(TAG) \
 	QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
 	envsubst '$${ROX_IMAGE_FLAVOR} $${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
 	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
