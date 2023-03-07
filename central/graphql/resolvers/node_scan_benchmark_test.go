@@ -5,7 +5,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -64,17 +63,15 @@ func BenchmarkNodeResolver(b *testing.B) {
 	}
 
 	mockCtrl := gomock.NewController(b)
-	defer mockCtrl.Finish()
-	db, gormDB := SetupTestPostgresConn(b)
-	defer pgtest.CloseGormDB(b, gormDB)
-	defer db.Close()
+	testDB := SetupTestPostgresConn(b)
+	defer testDB.Teardown(b)
 
-	nodeDS := CreateTestNodeDatastore(b, db, gormDB, mockCtrl)
+	nodeDS := CreateTestNodeDatastore(b, testDB, mockCtrl)
 	_, schema := SetupTestResolver(b,
 		nodeDS,
-		CreateTestNodeComponentDatastore(b, db, gormDB, mockCtrl),
-		CreateTestNodeCVEDatastore(b, db, gormDB),
-		CreateTestNodeComponentCveEdgeDatastore(b, db, gormDB))
+		CreateTestNodeComponentDatastore(b, testDB, mockCtrl),
+		CreateTestNodeCVEDatastore(b, testDB),
+		CreateTestNodeComponentCveEdgeDatastore(b, testDB))
 
 	ctx := contextWithNodePerm(b, mockCtrl)
 

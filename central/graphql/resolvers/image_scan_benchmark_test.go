@@ -5,7 +5,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -80,16 +79,14 @@ func BenchmarkImageResolver(b *testing.B) {
 	}
 
 	mockCtrl := gomock.NewController(b)
-	defer mockCtrl.Finish()
-	db, gormDB := SetupTestPostgresConn(b)
-	defer pgtest.CloseGormDB(b, gormDB)
-	defer db.Close()
+	testDB := SetupTestPostgresConn(b)
+	defer testDB.Teardown(b)
 
 	resolver, schema := SetupTestResolver(b,
-		CreateTestImageDatastore(b, db, gormDB, mockCtrl),
-		CreateTestImageComponentDatastore(b, db, gormDB, mockCtrl),
-		CreateTestImageCVEDatastore(b, db, gormDB),
-		CreateTestImageComponentCVEEdgeDatastore(b, db, gormDB),
+		CreateTestImageDatastore(b, testDB, mockCtrl),
+		CreateTestImageComponentDatastore(b, testDB, mockCtrl),
+		CreateTestImageCVEDatastore(b, testDB),
+		CreateTestImageComponentCVEEdgeDatastore(b, testDB),
 	)
 	ctx := contextWithImagePerm(b, mockCtrl)
 
