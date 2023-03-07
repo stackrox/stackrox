@@ -112,7 +112,10 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
                     hidden={activeKeyTab !== 'Network policies'}
                     className="pf-u-h-100"
                 >
-                    <NetworkPolicies policyIds={uniqueNamespacePolicyIds} />
+                    <NetworkPolicies
+                        entityName={namespaceNode?.label || ''}
+                        policyIds={uniqueNamespacePolicyIds}
+                    />
                 </TabContent>
             </StackItem>
         </Stack>

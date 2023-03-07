@@ -216,7 +216,10 @@ function DeploymentSideBar({
                             id={deploymentTabs.NETWORK_POLICIES}
                             hidden={activeKeyTab !== deploymentTabs.NETWORK_POLICIES}
                         >
-                            <NetworkPolicies policyIds={deploymentPolicyIds} />
+                            <NetworkPolicies
+                                entityName={deployment.name}
+                                policyIds={deploymentPolicyIds}
+                            />
                         </TabContent>
                     </StackItem>
                 </>
