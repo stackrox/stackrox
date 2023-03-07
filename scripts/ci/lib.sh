@@ -1166,12 +1166,10 @@ store_test_results() {
     local to="$2"
 
     if ! is_in_PR_context; then
-    {
         info "Creating JIRA task for failures found in $from"
         curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.4/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira -junit-reports-dir "$from" -threshold 5
-    } || true
     fi
 
     info "Copying test results from $from to $to"
