@@ -86,8 +86,12 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 	}
 	group := &storage.Group{
 		Props: &storage.GroupProperties{
-			Id: "group",
+			Id:             "group",
+			AuthProviderId: "some-auth-provider",
+			Key:            "email",
+			Value:          "some@example.com",
 		},
+		RoleName: "Admin",
 	}
 
 	gomock.InOrder(
@@ -137,7 +141,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 			Id:           "group",
-			Name:         "group in config map test-handler-2",
+			Name:         "group Admin:some-auth-provider:email:some@example.com in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
@@ -206,7 +210,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 	m.declarativeConfigErrorReporter = reporter
 
 	// We need to call this 5 times, only then the error will be propagated to the reporter.
-	for i := 0; i < 5; i++ {
+	for i := 0; i < consecutiveReconciliationErrorThreshold; i++ {
 		m.reconcileTransformedMessages(map[string]protoMessagesByType{
 			"test-handler-1": {
 				types.PermissionSetType: []proto.Message{

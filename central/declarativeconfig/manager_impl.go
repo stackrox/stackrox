@@ -59,7 +59,6 @@ type managerImpl struct {
 
 	declarativeConfigErrorReporter integrationhealth.Reporter
 	errorsPerDeclarativeConfig     map[string]int32
-	declarativeConfigErrorsLock    sync.RWMutex
 
 	updaters map[reflect.Type]updater.ResourceUpdater
 }
@@ -266,11 +265,8 @@ func (m *managerImpl) updateHealthForMessage(handler string, message proto.Messa
 	messageName := m.messageNameForIntegrationHealth(handler, message)
 
 	if err != nil {
-		var currentDeclarativeConfigErrors int32
-		concurrency.WithLock(&m.declarativeConfigErrorsLock, func() {
-			currentDeclarativeConfigErrors = m.errorsPerDeclarativeConfig[messageID] + 1
-			m.errorsPerDeclarativeConfig[messageID] = currentDeclarativeConfigErrors
-		})
+		currentDeclarativeConfigErrors := m.errorsPerDeclarativeConfig[messageID] + 1
+		m.errorsPerDeclarativeConfig[messageID] = currentDeclarativeConfigErrors
 
 		if currentDeclarativeConfigErrors >= threshold {
 			m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
@@ -284,18 +280,9 @@ func (m *managerImpl) updateHealthForMessage(handler string, message proto.Messa
 		}
 		log.Debugf("Error within reconciliation for %+v: %v", message, err)
 	} else {
-		var currentDeclarativeConfigErrors int32
-		concurrency.WithRLock(&m.declarativeConfigErrorsLock, func() {
-			currentDeclarativeConfigErrors = m.errorsPerDeclarativeConfig[messageID]
-		})
-
+		currentDeclarativeConfigErrors := m.errorsPerDeclarativeConfig[messageID]
 		if currentDeclarativeConfigErrors > 0 {
-			concurrency.WithLock(&m.declarativeConfigErrorsLock, func() {
-				// Ensure the error count hasn't updated in the meantime.
-				if m.errorsPerDeclarativeConfig[messageID] == currentDeclarativeConfigErrors {
-					m.errorsPerDeclarativeConfig[messageID] = 0
-				}
-			})
+			m.errorsPerDeclarativeConfig[messageID] = 0
 		}
 		m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
 			Id:            messageID,

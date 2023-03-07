@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -47,6 +49,16 @@ func extractIDFromProtoMessage(message proto.Message) string {
 }
 
 func extractNameFromProtoMessage(message proto.Message) string {
+	// Special case, as the group specifies no name we will use a combination of multiple values to identify it.
+	if group, ok := message.(*storage.Group); ok {
+		groupName := fmt.Sprintf("group %s:%s", group.GetRoleName(), group.GetProps().GetAuthProviderId())
+		// If the key is non-empty, the value should be non-empty as well.
+		if group.GetProps().GetKey() != "" {
+			groupName += fmt.Sprintf("%s:%s", group.GetProps().GetKey(), group.GetProps().GetValue())
+		}
+		return groupName
+	}
+
 	messageWithName, ok := message.(interface {
 		GetName() string
 	})
