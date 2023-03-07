@@ -101,7 +101,10 @@ const TopologyComponent = ({
             const queryString = clearSimulationQuery(history.location.search);
             // if found, and it's not the logical grouping of all external sources, then trigger URL update
             if (newDetailId !== 'EXTERNAL') {
-                history.push(`${networkBasePathPF}/${newDetailType}/${newDetailId}${queryString}`);
+                const newURL = `${networkBasePathPF}/${newDetailType}/${encodeURIComponent(
+                    newDetailId
+                )}${queryString}`;
+                history.push(newURL);
             } else {
                 // otherwise, return to the graph-only state
                 history.push(`${networkBasePathPF}${queryString}`);

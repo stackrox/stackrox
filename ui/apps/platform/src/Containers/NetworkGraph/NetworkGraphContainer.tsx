@@ -184,7 +184,8 @@ function NetworkGraphContainer({
 
     // 2. selectedNode/edgeState data model filtering ------------------------------------
     // selected node state is stored in the URL
-    const { detailId } = useParams();
+    const { detailId: encodedDetailId } = useParams();
+    const detailId = decodeURIComponent(encodedDetailId);
     const selectedNode = getNodeById(baseModel?.nodes, detailId);
     // extraneous catch-all in/egress flows nodes to add/remove from extraneous nodes model
     const extraneousNodes = createExtraneousNodes(clusterDeploymentCount);
