@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
-	"gorm.io/gorm"
 )
 
 // This Flow is custom to match the existing interface and how the functionality works through the system.
@@ -48,8 +47,8 @@ const (
 	nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND 
 	nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow `
 
-	deleteStmt         = "DELETE FROM network_flows_v2 WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
-	deleteStmtWithTime = "DELETE FROM network_flows_v2 WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
+	deleteStmt         = "DELETE FROM %s WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
+	deleteStmtWithTime = "DELETE FROM %s WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
 	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM %s nf " + joinStmt + " WHERE nf.ClusterId = $1"
 
 	// These mimic how the RocksDB version of the flow store work
@@ -57,16 +56,16 @@ const (
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text 
 	FROM %s nf ` + joinStmt +
 		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
-	deleteSrcDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
-	deleteDstDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
+	deleteSrcDeploymentStmt = "DELETE FROM %s WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
+	deleteDstDeploymentStmt = "DELETE FROM %s WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
 
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
-	FROM network_flows_v2 nf ` + joinStmt +
+	FROM %s nf ` + joinStmt +
 		`WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1 AND nf.ClusterId = $2
 	UNION ALL
 	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
-	FROM network_flows_v2 nf ` + joinStmt +
+	FROM %s nf ` + joinStmt +
 		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.ClusterId = $2`
 
 	pruneStaleNetworkFlowsStmt = `DELETE FROM %s a USING (
@@ -212,13 +211,41 @@ func New(db *postgres.DB, clusterID string) FlowStore {
 	}
 
 	partitionName := fmt.Sprintf("network_flows_v2_%s", strings.ReplaceAll(clusterID, "-", "_"))
-	partitionCreate := `create table if not exists %s partition of network_flows_v2 
-		for values in ('%s')`
+	//partitionCreate := `create table if not exists %s partition of network_flows_v2
+	//	for values in ('%s')`
+	partitionCreate := `CREATE TABLE IF NOT EXISTS %s (
+					Flow_id bigserial,
+					Props_SrcEntity_Type integer,
+					Props_SrcEntity_Id varchar,
+					Props_DstEntity_Type integer,
+					Props_DstEntity_Id varchar,
+					Props_DstPort integer,
+					Props_L4Protocol integer,
+					LastSeenTimestamp timestamp,
+					ClusterId varchar,
+					PRIMARY KEY(Flow_id)
+			)`
 
-	_, err = db.Exec(context.Background(), fmt.Sprintf(partitionCreate, partitionName, clusterID))
+	_, err = db.Exec(context.Background(), fmt.Sprintf(partitionCreate, partitionName))
 	if err != nil {
 		log.Info(err)
 		panic("error creating table: " + partitionCreate)
+	}
+
+	postStmts := []string{
+		"CREATE INDEX IF NOT EXISTS %s_src ON %s USING hash(props_srcentity_Id)",
+		"CREATE INDEX IF NOT EXISTS %s_dst ON %s USING hash(props_dstentity_Id)",
+		"CREATE INDEX IF NOT EXISTS %s_cluster ON %s USING hash(clusterid)",
+		"CREATE INDEX IF NOT EXISTS %s_lastseentimestamp ON %s USING brin (lastseentimestamp)",
+	}
+
+	for _, stmt := range postStmts {
+		indexStmt := fmt.Sprintf(stmt, partitionName, partitionName)
+		_, err = db.Exec(context.Background(), indexStmt)
+		if err != nil {
+			log.Info(err)
+			panic("error creating index: " + indexStmt)
+		}
 	}
 
 	return &flowStoreImpl{
@@ -383,14 +410,14 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 	}
 
 	// To avoid a full scan with an OR delete source and destination flows separately
-	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, s.clusterID, id); err != nil {
+	if _, err := tx.Exec(ctx, fmt.Sprintf(deleteSrcDeploymentStmt, s.partitionName), s.clusterID, id); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, s.clusterID, id); err != nil {
+	if _, err := tx.Exec(ctx, fmt.Sprintf(deleteDstDeploymentStmt, s.partitionName), s.clusterID, id); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -490,7 +517,7 @@ func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, depl
 	var rows pgx.Rows
 	var err error
 
-	partitionDeploymentDeleteStmt := fmt.Sprintf(getByDeploymentStmt, s.partitionName, s.partitionName)
+	partitionDeploymentDeleteStmt := fmt.Sprintf(getByDeploymentStmt, s.partitionName, s.partitionName, s.partitionName, s.partitionName)
 	rows, err = s.db.Query(ctx, partitionDeploymentDeleteStmt, deploymentID, s.clusterID)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
@@ -522,7 +549,7 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 		return err
 	}
 	for _, obj := range objs {
-		_, err := tx.Exec(ctx, deleteStmt, obj.GetSrcEntity().GetType(), obj.GetSrcEntity().GetId(), obj.GetDstEntity().GetType(), obj.GetDstEntity().GetId(), obj.GetDstPort(), obj.GetL4Protocol(), s.clusterID)
+		_, err := tx.Exec(ctx, fmt.Sprintf(deleteStmt, s.partitionName), obj.GetSrcEntity().GetType(), obj.GetSrcEntity().GetId(), obj.GetDstEntity().GetType(), obj.GetDstEntity().GetId(), obj.GetDstPort(), obj.GetL4Protocol(), s.clusterID)
 
 		if err != nil {
 			if err := tx.Rollback(ctx); err != nil {
@@ -598,7 +625,7 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 			if err != nil {
 				return err
 			}
-			_, err = tx.Exec(ctx, deleteStmtWithTime, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID, pgutils.NilOrTime(flow.GetLastSeenTimestamp()))
+			_, err = tx.Exec(ctx, fmt.Sprintf(deleteStmtWithTime, s.partitionName), flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID, pgutils.NilOrTime(flow.GetLastSeenTimestamp()))
 
 			if err != nil {
 				if err := tx.Rollback(ctx); err != nil {
@@ -639,17 +666,17 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 
 //// Used for testing
 
-func dropTableNetworkflow(ctx context.Context, db *postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows_v2 CASCADE")
-}
-
-// Destroy destroys the tables
-func Destroy(ctx context.Context, db *postgres.DB) {
-	dropTableNetworkflow(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB, clusterID string) FlowStore {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
-	return New(db, clusterID)
-}
+//func dropTableNetworkflow(ctx context.Context, db *postgres.DB) {
+//	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS %s CASCADE")
+//}
+//
+//// Destroy destroys the tables
+//func Destroy(ctx context.Context, db *postgres.DB) {
+//	dropTableNetworkflow(ctx, db)
+//}
+//
+//// CreateTableAndNewStore returns a new Store instance for testing
+//func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB, clusterID string) FlowStore {
+//	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
+//	return New(db, clusterID)
+//}
