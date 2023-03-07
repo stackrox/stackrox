@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
@@ -141,6 +142,9 @@ func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, fmt.Errorf("API Token search is only available in postgres mode")
+	}
 	return b.searcher.Search(ctx, q)
 }
 
@@ -148,22 +152,9 @@ func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*st
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return b.storage.GetByQuery(ctx, q)
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, fmt.Errorf("API Token search is only available in postgres mode")
 	}
-	results, err := b.searcher.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	objects := make([]*storage.TokenMetadata, 0, len(results))
-	for _, r := range results {
-		token, found, err := b.storage.Get(ctx, r.ID)
-		if err != nil {
-			return nil, err
-		}
-		if found {
-			objects = append(objects, token)
-		}
-	}
-	return objects, nil
+	return b.storage.GetByQuery(ctx, q)
+
 }
