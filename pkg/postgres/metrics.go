@@ -38,6 +38,7 @@ func setQueryDuration(t time.Time, scope, query string) {
 	if strings.HasPrefix(query, "FETCH") {
 		query = stringutils.GetUpTo(query, "_")
 	}
+	query = strings.ReplaceAll(query, "\n", " ")
 	queryDuration.With(prometheus.Labels{"scope": scope, "query": query}).Observe(float64(time.Since(t).Milliseconds()))
 }
 
