@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/ternary"
@@ -546,11 +547,17 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 	return parsedQuery, nil
 }
 
-func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
+func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
 	nowForQuery := time.Now()
+
+	var err error
+	q, err = scopeContextToQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
 	standardizeFieldNamesInQuery(q)
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
-
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
 	}
@@ -565,8 +572,7 @@ func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, q
 		InnerJoins: innerJoins,
 	}
 
-	err := populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery)
-	if err != nil {
+	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
 		return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 	}
 
@@ -596,6 +602,30 @@ func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, q
 		return nil, err
 	}
 	return parsedQuery, nil
+}
+
+func scopeContextToQuery(ctx context.Context, q *v1.Query) (*v1.Query, error) {
+	scopeQ, err := scoped.GetQueryForAllScopes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if scopeQ == nil {
+		return q, nil
+	}
+	cloned := q.Clone()
+	selects := cloned.GetSelects()
+	groupBy := cloned.GetGroupBy()
+	pagination := cloned.GetPagination()
+
+	cloned.Selects = nil
+	cloned.GroupBy = nil
+	cloned.Pagination = nil
+
+	cloned = searchPkg.ConjunctionQuery(cloned, scopeQ)
+	cloned.Selects = selects
+	cloned.GroupBy = groupBy
+	cloned.Pagination = pagination
+	return cloned, nil
 }
 
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
@@ -979,7 +1009,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, sche
 		}
 	}()
 
-	query, err = standardizeSelectQueryAndPopulatePath(q, schema, SELECT)
+	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
 	if err != nil {
 		return nil, err
 	}
