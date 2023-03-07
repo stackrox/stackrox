@@ -166,7 +166,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		for protoType, protoMessages := range transformedConfig {
 			transformedConfigurations[protoType] = append(transformedConfigurations[protoType], protoMessages...)
 			// Register health status for all new messages. Existing messages will not be re-registered.
-			m.registerHealthForMessage(protoMessages...)
+			m.registerHealthForMessage(handlerID, protoMessages...)
 		}
 	}
 
@@ -263,8 +263,7 @@ func (m *managerImpl) handleMissingTypeUpdater(handler string, protoType reflect
 // status will be set to unhealthy.
 func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int32) {
 	messageID := m.idExtractor(message)
-	messageName := fmt.Sprintf("%s in config map %s",
-		stringutils.FirstNonEmpty(m.nameExtractor(message), messageID), path.Base(handler))
+	messageName := m.messageNameForIntegrationHealth(handler, message)
 
 	if err != nil {
 		var currentDeclarativeConfigErrors int32
@@ -283,6 +282,7 @@ func (m *managerImpl) updateHealthForMessage(handler string, message proto.Messa
 				LastTimestamp: timestamp.TimestampNow(),
 			})
 		}
+		log.Debugf("Error within reconciliation for %+v: %v", message, err)
 	} else {
 		var currentDeclarativeConfigErrors int32
 		concurrency.WithRLock(&m.declarativeConfigErrorsLock, func() {
@@ -305,10 +305,8 @@ func (m *managerImpl) updateHealthForMessage(handler string, message proto.Messa
 			ErrorMessage:  "",
 			LastTimestamp: timestamp.TimestampNow(),
 		})
-
-		log.Debugf("Error within reconciliation for %+v: %v", message, err)
+		log.Debugf("Message %+v marked as healthy", message)
 	}
-
 }
 
 // updateHandlerHealth will update the health status of a handler using the integrationhealth.Reporter.
@@ -328,16 +326,21 @@ func (m *managerImpl) updateHandlerHealth(handlerID string, err error) {
 	})
 }
 
-func (m *managerImpl) registerHealthForMessage(messages ...proto.Message) {
+func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto.Message) {
 	for _, message := range messages {
 		messageID := m.idExtractor(message)
-		messageName := m.nameExtractor(message)
+		messageName := m.messageNameForIntegrationHealth(handler, message)
 
-		if err := m.declarativeConfigErrorReporter.Register(messageID, stringutils.FirstNonEmpty(messageName, messageID),
+		if err := m.declarativeConfigErrorReporter.Register(messageID, messageName,
 			storage.IntegrationHealth_DECLARATIVE_CONFIG); err != nil {
 			log.Errorf("Error registering health status for declarative config %+v: %v", message, err)
 		}
 	}
+}
+
+func (m *managerImpl) messageNameForIntegrationHealth(handler string, message proto.Message) string {
+	return fmt.Sprintf("%s in config map %s",
+		stringutils.FirstNonEmpty(m.nameExtractor(message), m.idExtractor(message)), path.Base(handler))
 }
 
 func handlerNameForIntegrationHealth(handlerID string) string {

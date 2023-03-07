@@ -307,7 +307,7 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 		},
 	}, nil)
 
-	reporter.EXPECT().Register("test-name", "test-name", storage.IntegrationHealth_DECLARATIVE_CONFIG)
+	reporter.EXPECT().Register("test-name", "test-name in config map my-cool-config-map", storage.IntegrationHealth_DECLARATIVE_CONFIG)
 
 	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 		Id:           "/some/config/dir/to/my-cool-config-map",
