@@ -14,7 +14,7 @@ import { Globe } from 'react-feather';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';
-import { DefaultFilters } from './types';
+import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from './types';
 import FilterResourceDropdown, { Resource } from './FilterResourceDropdown';
 import FilterAutocompleteSelect from './FilterAutocompleteSelect';
 import CVESeverityDropdown from './CVESeverityDropdown';
@@ -40,19 +40,20 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
             });
         } else {
             const { checked } = e.target as HTMLInputElement;
+            const selectedSearchFilter = searchFilter[type] as string[];
             if (searchFilter[type]) {
                 setSearchFilter({
                     ...searchFilter,
                     [type]: checked
-                        ? [...searchFilter[type], selection]
-                        : searchFilter[type]?.filter((value) => value !== selection),
+                        ? [...selectedSearchFilter, selection]
+                        : selectedSearchFilter.filter((value) => value !== selection),
                 });
             } else {
                 setSearchFilter({
                     ...searchFilter,
                     [type]: checked
                         ? [selection]
-                        : searchFilter[type]?.filter((value) => value !== selection),
+                        : selectedSearchFilter.filter((value) => value !== selection),
                 });
             }
         }
@@ -60,14 +61,16 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
 
     function onDelete(type: FilterType, id: string) {
         if (type === 'Severity') {
+            const severitySearchFilter = searchFilter.Severity as string[];
             setSearchFilter({
                 ...searchFilter,
-                Severity: searchFilter.Severity?.filter((fil: string) => fil !== id),
+                Severity: severitySearchFilter.filter((fil: string) => fil !== id),
             });
         } else if (type === 'Fixable') {
+            const fixableSearchFilter = searchFilter.Fixable as string[];
             setSearchFilter({
                 ...searchFilter,
-                Fixable: searchFilter.Fixable?.filter((fil: string) => fil !== id),
+                Fixable: fixableSearchFilter.filter((fil: string) => fil !== id),
             });
         }
     }
@@ -94,21 +97,27 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
     }
 
     useEffect(() => {
-        const { Severity: searchSeverity, Fixable: searchFixable } = searchFilter;
-        const { Severity: defaultSeverity, Fixable: defaultFixable } = defaultFilters;
-        const severityFilter = searchSeverity
-            ? uniq([...defaultSeverity, ...searchSeverity])
-            : defaultSeverity;
-        const fixableFilter = searchFixable
-            ? uniq([...defaultFixable, ...searchFixable])
-            : defaultFixable;
-        setSearchFilter({
-            ...defaultFilters,
-            ...searchFilter,
-            Severity: severityFilter,
-            Fixable: fixableFilter,
-        });
-    }, [defaultFilters, setSearchFilter]);
+        if (
+            searchFilter.Severity !== defaultFilters.Severity ||
+            searchFilter.Fixable !== defaultFilters.Fixable
+        ) {
+            const searchSeverity = searchFilter.Severity as VulnerabilitySeverityLabel[];
+            const searchFixable = searchFilter.Fixable as FixableStatus[];
+            const { Severity: defaultSeverity, Fixable: defaultFixable } = defaultFilters;
+            const severityFilter = searchSeverity
+                ? uniq([...defaultSeverity, ...searchSeverity])
+                : defaultSeverity;
+            const fixableFilter = searchFixable
+                ? uniq([...defaultFixable, ...searchFixable])
+                : defaultFixable;
+            setSearchFilter({
+                ...defaultFilters,
+                ...searchFilter,
+                Severity: severityFilter,
+                Fixable: fixableFilter,
+            });
+        }
+    }, [defaultFilters, searchFilter, setSearchFilter]);
 
     useEffect(() => {
         if (!searchFilter.resource) {
@@ -116,7 +125,8 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
         }
     }, []);
 
-    searchFilter.Severity?.forEach((sev) => {
+    const severitySearchFilter = searchFilter.Severity as VulnerabilitySeverityLabel[];
+    severitySearchFilter?.forEach((sev) => {
         if (defaultFilters.Severity?.includes(sev)) {
             severityFilterChips.push({
                 key: sev,
@@ -135,7 +145,8 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
         }
     });
 
-    searchFilter.Fixable?.forEach((status) => {
+    const fixableSearchFilter = searchFilter.Fixable as FixableStatus[];
+    fixableSearchFilter?.forEach((status) => {
         if (defaultFilters.Fixable?.includes(status)) {
             fixableFilterChips.push({
                 key: status,
