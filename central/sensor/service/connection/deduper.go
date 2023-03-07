@@ -43,9 +43,20 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	return false
 }
 
-func (d *deduper) dedupe(msg *central.MsgFromSensor) bool {
-	if skipDedupe(msg) {
+func (d *deduper) shouldReprocess(hashKey key, hash uint64) bool {
+	prevValue, ok := d.lastReceived[hashKey]
+	if !ok {
+		// This implies that a REMOVE event has been processed before this event
+		// Note: we may want to handle alerts specifically because we should insert them as already resolved for completeness
 		return false
+	}
+	// This implies that no new event was processed after the initial processing of the current message
+	return prevValue == hash
+}
+
+func (d *deduper) shouldProcess(msg *central.MsgFromSensor) bool {
+	if skipDedupe(msg) {
+		return true
 	}
 	event := msg.GetEvent()
 	key := key{
@@ -54,22 +65,27 @@ func (d *deduper) dedupe(msg *central.MsgFromSensor) bool {
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.lastReceived, key)
-		return false
+		return true
 	}
-	receivedHash := event.GetSensorHash()
 	// Backwards compatibility with a previous Sensor
 	if event.GetSensorHashOneof() == nil {
 		// Compute the sensor hash
 		hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
 		if !ok {
-			return false
+			return true
 		}
-		receivedHash = hashValue
+		event.SensorHashOneof = &central.SensorEvent_SensorHash{
+			SensorHash: hashValue,
+		}
+	}
+	// In the reprocessing case, the above will never evaluate to not nil, but it makes testing easier
+	if msg.GetProcessingAttempt() > 0 {
+		return d.shouldReprocess(key, event.GetSensorHash())
 	}
 	prevValue, ok := d.lastReceived[key]
-	if ok && prevValue == receivedHash {
-		return true
+	if ok && prevValue == event.GetSensorHash() {
+		return false
 	}
-	d.lastReceived[key] = receivedHash
-	return false
+	d.lastReceived[key] = event.GetSensorHash()
+	return true
 }

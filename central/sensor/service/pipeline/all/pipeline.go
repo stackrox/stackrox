@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -50,24 +51,27 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg), msg.GetEvent().GetAction().String())
 
 	var matchCount int
-	errorList := errorhelpers.NewErrorList("error processing message from sensor")
 	for _, fragment := range s.fragments {
 		if fragment.Match(msg) {
 			matchCount++
 
-			err := safe.Run(func() {
-				errorList.AddError(fragment.Run(ctx, s.clusterID, msg, injector))
+			var err error
+			panicErr := safe.Run(func() {
+				err = fragment.Run(ctx, s.clusterID, msg, injector)
 			})
 			if err != nil {
+				return errors.Wrap(err, "processing message from sensor")
+			}
+			if panicErr != nil {
 				metrics.IncrementPipelinePanics(msg)
-				log.Errorf("panic in pipeline execution: %v", err)
+				return errors.Wrap(panicErr, "panic in pipeline execution")
 			}
 		}
 	}
 	if matchCount == 0 {
 		return fmt.Errorf("no pipeline present to process message: %s", proto.MarshalTextString(msg))
 	}
-	return errorList.ToError()
+	return nil
 }
 
 func (s *pipelineImpl) OnFinish(clusterID string) {

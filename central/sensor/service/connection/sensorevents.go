@@ -77,7 +77,10 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		utils.Should(errors.New("handler only supports events"))
 	}
 
-	if s.deduper.dedupe(msg) {
+	// If this is our first attempt at processing, then dedupe if we already processed this
+	// If it is not our first attempt processing, then we need to check if a new version already
+	// was processed
+	if !s.deduper.shouldProcess(msg) {
 		metrics.IncSensorEventsDeduper(true)
 		return
 	}
@@ -86,7 +89,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	queue := s.typeToQueue[typ]
 	// Lazily create the queue for a type if necessary
 	if queue == nil {
-		queue = newWorkerQueue(workerQueueSize, stripTypePrefix(typ))
+		queue = newWorkerQueue(workerQueueSize, stripTypePrefix(typ), s.injector)
 		s.typeToQueue[typ] = queue
 		go queue.run(ctx, s.stopSig, s.handleMessages)
 	}

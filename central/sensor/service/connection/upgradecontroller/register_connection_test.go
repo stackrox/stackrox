@@ -82,6 +82,10 @@ func (f fakeConnection) InjectMessage(_ concurrency.Waitable, _ *central.MsgToSe
 	panic("not implemented")
 }
 
+func (f fakeConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
+	panic("not implemented")
+}
+
 func (f fakeConnection) CheckAutoUpgradeSupport() error {
 	if f.autoUpgradeSupported {
 		return nil
