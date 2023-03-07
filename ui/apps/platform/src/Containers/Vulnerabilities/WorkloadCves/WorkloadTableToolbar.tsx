@@ -6,14 +6,17 @@ import {
     ToolbarToggleGroup,
     ToolbarGroup,
     ToolbarContent,
+    ToolbarChip,
+    Flex,
 } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
+import { Globe } from 'react-feather';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';
 import { DefaultFilters } from './types';
 import FilterResourceDropdown, { Resource } from './FilterResourceDropdown';
-import FilterAutocompleteInput from './FilterAutocompleteInput';
+import FilterAutocompleteSelect from './FilterAutocompleteSelect';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
@@ -26,6 +29,8 @@ type WorkloadTableToolbarProps = {
 
 function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTableToolbarProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const severityFilterChips: ToolbarChip[] = [];
+    const fixableFilterChips: ToolbarChip[] = [];
 
     function onSelect(type: FilterType, e, selection) {
         if (type === 'resource') {
@@ -111,6 +116,44 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
         }
     }, []);
 
+    searchFilter.Severity?.forEach((sev) => {
+        if (defaultFilters.Severity?.includes(sev)) {
+            severityFilterChips.push({
+                key: sev,
+                node: (
+                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                        <Globe height="15px" />
+                        {sev}
+                    </Flex>
+                ),
+            });
+        } else {
+            severityFilterChips.push({
+                key: sev,
+                node: <Flex>{sev}</Flex>,
+            });
+        }
+    });
+
+    searchFilter.Fixable?.forEach((status) => {
+        if (defaultFilters.Fixable?.includes(status)) {
+            fixableFilterChips.push({
+                key: status,
+                node: (
+                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                        <Globe height="15px" />
+                        {status}
+                    </Flex>
+                ),
+            });
+        } else {
+            fixableFilterChips.push({
+                key: status,
+                node: <Flex>{status}</Flex>,
+            });
+        }
+    });
+
     return (
         <Toolbar
             id="workload-cves-table-toolbar"
@@ -132,7 +175,7 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
                             />
                         </ToolbarItem>
                         <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
-                            <FilterAutocompleteInput
+                            <FilterAutocompleteSelect
                                 searchFilter={searchFilter}
                                 setSearchFilter={setSearchFilter}
                             />
@@ -140,7 +183,7 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
                     </ToolbarGroup>
                     <ToolbarGroup>
                         <ToolbarFilter
-                            chips={searchFilter.Severity as string[]}
+                            chips={severityFilterChips}
                             deleteChip={(category, chip) =>
                                 onDelete(category as FilterType, chip as string)
                             }
@@ -150,7 +193,7 @@ function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTable
                             <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
                         </ToolbarFilter>
                         <ToolbarFilter
-                            chips={searchFilter.Fixable as string[]}
+                            chips={fixableFilterChips}
                             deleteChip={(category, chip) =>
                                 onDelete(category as FilterType, chip as string)
                             }
