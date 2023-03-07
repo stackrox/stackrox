@@ -20,6 +20,8 @@ import FilterAutocompleteSelect from './FilterAutocompleteSelect';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
+import './WorkloadTableToolbar.css';
+
 type FilterType = 'resource' | 'Severity' | 'Fixable';
 
 type WorkloadTableToolbarProps = {
