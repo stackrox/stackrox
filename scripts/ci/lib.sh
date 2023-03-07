@@ -651,11 +651,10 @@ mark_collector_release() {
         echo "Update RELEASED_VERSIONS file ..." >> "${GITHUB_STEP_SUMMARY}"
         echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
             >>RELEASED_VERSIONS
+        gitbot add RELEASED_VERSIONS
+        gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
+        gitbot push origin "${branch_name}"
     fi
-
-    gitbot add RELEASED_VERSIONS
-    gitbot commit --allow-empty -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
-    gitbot push origin "${branch_name}"
 
     PRs=$(gh pr list -s open \
     --head "${branch_name}" \
