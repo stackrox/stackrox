@@ -297,13 +297,17 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 	if resp != nil {
 		defer utils.IgnoreError(resp.Body.Close)
 	}
-	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
-		return
-	}
 	if !c.expectHTTPSuccess {
 		// If we're in this branch, that means we're speaking to a gRPC-only server, which cannot handle normal HTTP
 		// requests.
-		assert.Equal(t, http.StatusUnsupportedMediaType, resp.StatusCode, "expected HTTP request to fail")
+		if resp == nil {
+			assert.Error(t, err, "expected HTTP request to fail at the transport level")
+		} else {
+			assert.Equal(t, http.StatusUnsupportedMediaType, resp.StatusCode, "expected HTTP request to fail")
+		}
+		return
+	}
+	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
 		return
 	}
 
