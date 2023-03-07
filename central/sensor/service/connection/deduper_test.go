@@ -160,8 +160,8 @@ func TestDeduper(t *testing.T) {
 					result: true,
 				},
 				{
-					event:  getDeploymentEvent(central.ResourceAction_REMOVE_RESOURCE, "1", "dep1", 2),
-					result: true,
+					event:  getDeploymentEvent(central.ResourceAction_UPDATE_RESOURCE, "1", "dep2", 1),
+					result: false,
 				},
 			},
 		},

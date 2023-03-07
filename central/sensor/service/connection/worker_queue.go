@@ -75,7 +75,7 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 					continue
 				}
 				reprocessingDuration := time.Duration(msg.ProcessingAttempt) * handlerRetryInterval
-				log.Warnf("Reprocessing sensor message %T in %d minutes", msg.GetEvent().GetResource(), int(reprocessingDuration.Minutes()))
+				log.Warnf("Reprocessing sensor message %T in %d minutes: %v", msg.GetEvent().GetResource(), int(reprocessingDuration.Minutes()), err)
 				concurrency.AfterFunc(reprocessingDuration, func() {
 					w.injector.InjectMessageIntoQueue(msg)
 				}, stopSig)
