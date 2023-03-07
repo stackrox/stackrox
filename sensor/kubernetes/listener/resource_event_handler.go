@@ -306,11 +306,11 @@ func handle(
 		seenIDs:                    make(map[types.UID]struct{}),
 		missingInitialIDs:          nil,
 	}
-	informer.AddEventHandler(handlerImpl)
+	_, err := informer.AddEventHandler(handlerImpl)
+	utils.Should(err)
 	if !informer.HasSynced() {
-		if err := informer.SetTransform(managedFieldsTransformer); err != nil {
-			utils.Should(err)
-		}
+		err := informer.SetTransform(managedFieldsTransformer)
+		utils.Should(err)
 	}
 	wg.Add(1)
 	go func() {
