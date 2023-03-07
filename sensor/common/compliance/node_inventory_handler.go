@@ -11,6 +11,8 @@ import (
 type nodeInventoryHandler interface {
 	common.SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal
+
+	ComplianceC() <-chan *MessageToComplianceWithAddress
 }
 
 var _ nodeInventoryHandler = (*nodeInventoryHandlerImpl)(nil)

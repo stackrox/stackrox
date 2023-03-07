@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 )
 
 type MessageToComplianceWithAddress struct {
@@ -24,6 +25,10 @@ type Multiplexer struct {
 
 	wg      sync.WaitGroup
 	started concurrency.Signal
+}
+
+func (c *Multiplexer) Notify(e common.SensorComponentEvent) {
+	return
 }
 
 func (c *Multiplexer) Start() error {
