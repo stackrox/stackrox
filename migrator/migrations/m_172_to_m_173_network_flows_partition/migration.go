@@ -111,6 +111,9 @@ func getPreviousCount(parentCtx context.Context, store previous.FlowStore) (int,
 	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
 	defer cancel()
 
+	deadline, _ := ctx.Deadline()
+	log.WriteToStderrf("SHREWS -- context deadline %t", deadline)
+
 	return store.Count(ctx)
 }
 
