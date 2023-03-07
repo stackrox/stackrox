@@ -1231,7 +1231,11 @@ class Kubernetes implements OrchestratorMain {
                         uid: it.metadata.uid,
                         name: it.metadata.name,
                         labels: it.metadata.labels,
-                        deploymentCount: getAllDeploymentTypesCount(it.metadata.name),
+                        deploymentCount: getDeploymentCount(it.metadata.name) +
+                                getDaemonSetCount(it.metadata.name) +
+                                getStaticPodCount(it.metadata.name) +
+                                getStatefulSetCount(it.metadata.name) +
+                                getJobCount(it.metadata.name),
                         secretsCount: getSecretCount(it.metadata.name),
                         networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
                 )
