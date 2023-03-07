@@ -15,14 +15,14 @@ class YamlGenerator {
         def options = new DumperOptions()
         options.setExplicitStart(true)
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
-        def yaml = new Yaml(new PolicyRepresenter(options))
+        def yaml = new Yaml(new PolicyRepresenter(), options)
         return yaml.dumpAs(object, Tag.MAP, null)
     }
 
     static class PolicyRepresenter extends Representer {
 
-        PolicyRepresenter(DumperOptions options) {
-            super(options)
+        PolicyRepresenter() {
+            super(new DumperOptions())
         }
 
         @Override
