@@ -21,6 +21,7 @@ func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (command
 	ct, err := t.Tx.Exec(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
+		return nil, err
 	}
 	return ct, err
 }
@@ -36,6 +37,7 @@ func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 	}
 	return &Rows{
 		cancelFunc: func() {},
+		query:      sql,
 		Rows:       rows,
 	}, nil
 }
@@ -50,7 +52,6 @@ func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 // Commit wraps pgx.Tx Commit
 func (t *Tx) Commit(ctx context.Context) error {
 	defer t.cancelFunc()
-	defer setQueryDuration(time.Now(), "tx", "commit")
 
 	if err := t.Tx.Commit(ctx); err != nil {
 		incQueryErrors("commit", err)
@@ -62,7 +63,6 @@ func (t *Tx) Commit(ctx context.Context) error {
 // Rollback wraps pgx.Tx Rollback
 func (t *Tx) Rollback(ctx context.Context) error {
 	defer t.cancelFunc()
-	defer setQueryDuration(time.Now(), "tx", "rollback")
 
 	if err := t.Tx.Rollback(ctx); err != nil {
 		incQueryErrors("rollback", err)

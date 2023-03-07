@@ -28,6 +28,7 @@ func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
 
 	tx, err := c.Conn.Begin(ctx)
 	if err != nil {
+		incQueryErrors("begin", err)
 		return nil, err
 	}
 	return &Tx{
@@ -42,7 +43,12 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (pgcon
 	defer cancel()
 
 	defer setQueryDuration(time.Now(), "conn", sql)
-	return c.Conn.Exec(ctx, sql, args...)
+	ct, err := c.Conn.Exec(ctx, sql, args...)
+	if err != nil {
+		incQueryErrors(sql, err)
+		return nil, err
+	}
+	return ct, err
 }
 
 // Query wraps pgxpool.Conn Query
@@ -52,11 +58,13 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 	defer setQueryDuration(time.Now(), "conn", sql)
 	rows, err := c.Conn.Query(ctx, sql, args...)
 	if err != nil {
+		incQueryErrors(sql, err)
 		return nil, err
 	}
 
 	return &Rows{
 		Rows:       rows,
+		query:      sql,
 		cancelFunc: cancel,
 	}, nil
 }
@@ -68,6 +76,7 @@ func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) *R
 	defer setQueryDuration(time.Now(), "conn", sql)
 	return &Row{
 		Row:        c.Conn.QueryRow(ctx, sql, args...),
+		query:      sql,
 		cancelFunc: cancel,
 	}
 }
@@ -76,7 +85,6 @@ func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) *R
 func (c *Conn) SendBatch(ctx context.Context, b *pgx.Batch) *BatchResults {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	defer setQueryDuration(time.Now(), "conn", "batch")
 	return &BatchResults{
 		BatchResults: c.Conn.SendBatch(ctx, b),
 		cancel:       cancel,

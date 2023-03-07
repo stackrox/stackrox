@@ -1,10 +1,13 @@
 package postgres
 
 import (
+	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 func init() {
@@ -28,13 +31,19 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_query_errors",
 		Help:      "Counter of errors occurring Postgres",
-	}, []string{"scope", "query", "error"})
+	}, []string{"query", "error"})
 )
 
 func setQueryDuration(t time.Time, scope, query string) {
+	if strings.HasPrefix(query, "FETCH") {
+		query = stringutils.GetUpTo(query, "_")
+	}
 	queryDuration.With(prometheus.Labels{"scope": scope, "query": query}).Observe(float64(time.Since(t).Milliseconds()))
 }
 
 func incQueryErrors(query string, err error) {
+	if err == pgx.ErrNoRows {
+		return
+	}
 	queryErrors.With(prometheus.Labels{"query": query, "error": err.Error()}).Inc()
 }

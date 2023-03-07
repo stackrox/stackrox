@@ -17,6 +17,7 @@ func New(ctx context.Context, config *Config) (*DB, error) {
 
 	pool, err := pgxpool.ConnectConfig(ctx, config.Config)
 	if err != nil {
+		incQueryErrors("connect", err)
 		return nil, err
 	}
 	return &DB{
@@ -40,6 +41,7 @@ func Connect(ctx context.Context, sourceWithDatabase string) (*DB, error) {
 
 	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
 	if err != nil {
+		incQueryErrors("connect", err)
 		return nil, err
 	}
 	return &DB{Pool: pool}, nil
@@ -54,9 +56,9 @@ type DB struct {
 func (d *DB) Begin(ctx context.Context) (*Tx, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	defer setQueryDuration(time.Now(), "pool", "begin")
 	tx, err := d.Pool.Begin(ctx)
 	if err != nil {
+		incQueryErrors("begin", err)
 		return nil, err
 	}
 	return &Tx{
@@ -71,7 +73,12 @@ func (d *DB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 	defer cancel()
 
 	defer setQueryDuration(time.Now(), "pool", sql)
-	return d.Pool.Exec(ctx, sql, args...)
+	ct, err := d.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		incQueryErrors(sql, err)
+		return nil, err
+	}
+	return ct, nil
 }
 
 // Query wraps pgxpool.Pool Query
@@ -81,11 +88,13 @@ func (d *DB) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 	defer setQueryDuration(time.Now(), "pool", sql)
 	rows, err := d.Pool.Query(ctx, sql, args...)
 	if err != nil {
+		incQueryErrors(sql, err)
 		return nil, err
 	}
 	return &Rows{
-		cancelFunc: cancel,
 		Rows:       rows,
+		query:      sql,
+		cancelFunc: cancel,
 	}, nil
 }
 
@@ -96,6 +105,7 @@ func (d *DB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 	defer setQueryDuration(time.Now(), "pool", sql)
 	return &Row{
 		Row:        d.Pool.QueryRow(ctx, sql, args...),
+		query:      sql,
 		cancelFunc: cancel,
 	}
 }
@@ -104,6 +114,7 @@ func (d *DB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 func (d *DB) Acquire(ctx context.Context) (*Conn, error) {
 	conn, err := d.Pool.Acquire(ctx)
 	if err != nil {
+		incQueryErrors("acquire", err)
 		return nil, err
 	}
 	return &Conn{Conn: conn}, nil
