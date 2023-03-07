@@ -39,8 +39,8 @@ func init() {
 func migrateAPITokens(postgresDB *postgres.DB, gormDB *gorm.DB) error {
 	ctx := context.Background()
 	oldStore := oldAPITokenStore.New(postgresDB)
-	newStore := newAPITokenStore.New(postgresDB)
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableAPITokensStmt)
+	newStore := newAPITokenStore.New(postgresDB)
 
 	tokensToUpsert := make([]*storage.TokenMetadata, 0, batchSize)
 	err := oldStore.Walk(ctx, func(obj *storage.TokenMetadata) error {

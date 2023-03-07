@@ -18,6 +18,11 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// This file is a partial copy of central/apitoken/datastore/internal/store/postgres/store.go
+// in the state it had when the migration was written, before changing the proto object format.
+// Only the relevant functions (Walk, DeleteMany and UpsertMany) are kept.
+// The kept functions are stripped from the scoped access control checks.
+
 const (
 	baseTable = "api_tokens"
 
