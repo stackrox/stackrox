@@ -63,11 +63,8 @@ func (ds *datastoreImpl) GetDeclarativeConfigs(ctx context.Context) ([]*storage.
 }
 
 func (ds *datastoreImpl) UpsertIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error {
-	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
-		return errors.Errorf("failed to update health for integration %s: %v",
-			integrationHealth.Id, err)
-	} else if !ok {
-		return nil
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
+		return errors.Wrapf(err, "failed to update health for integration %s", integrationHealth.GetId())
 	}
 
 	if err := validateIntegrationHealthType(integrationHealth.GetType()); err != nil {
@@ -78,10 +75,8 @@ func (ds *datastoreImpl) UpsertIntegrationHealth(ctx context.Context, integratio
 }
 
 func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string) error {
-	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
-		return errors.Errorf("failed to remove health for integration %s: %v", id, err)
-	} else if !ok {
-		return nil
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
+		return errors.Wrapf(err, "failed to remove health for integration %s", id)
 	}
 	_, exists, err := ds.GetIntegrationHealth(ctx, id)
 	if err != nil {
