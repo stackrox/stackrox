@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -19,9 +20,12 @@ var (
 )
 
 var (
-	allAccessCtx = sac.WithAllAccess(context.Background())
-	once         sync.Once
-	reporter     integrationhealth.Reporter
+	integrationWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Integration)))
+	once     sync.Once
+	reporter integrationhealth.Reporter
 )
 
 // DatastoreBasedIntegrationHealthReporter updates the integration health in the central database
@@ -49,7 +53,7 @@ func New(datastore datastore.DataStore) *DatastoreBasedIntegrationHealthReporter
 
 // Register registers the integration health for an integration, if it doesn't exist
 func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ storage.IntegrationHealth_Type) error {
-	_, exists, err := d.integrationDS.GetIntegrationHealth(allAccessCtx, id)
+	_, exists, err := d.integrationDS.GetIntegrationHealth(integrationWriteCtx, id)
 	if err != nil {
 		log.Errorf("Error getting health for integration %s (%s): %v", name, id, err)
 		return err
@@ -61,7 +65,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ 
 	}
 
 	now := types.TimestampNow()
-	// integration health for said integration does not exists, initialize it
+	// Integration health does not exist yet, initialize it.
 	d.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
 		Id:            id,
 		Name:          name,
@@ -76,7 +80,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ 
 
 // RemoveIntegrationHealth removes the health entry corresponding to the integration
 func (d *DatastoreBasedIntegrationHealthReporter) RemoveIntegrationHealth(id string) error {
-	if err := d.integrationDS.RemoveIntegrationHealth(allAccessCtx, id); err != nil {
+	if err := d.integrationDS.RemoveIntegrationHealth(integrationWriteCtx, id); err != nil {
 		return errors.Wrapf(err, "Error removing health for integration %s", id)
 	}
 	select {
@@ -103,20 +107,20 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 		case health := <-d.healthUpdates:
 			if health.Status == storage.IntegrationHealth_UNINITIALIZED {
 				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
-				if err := d.integrationDS.UpsertIntegrationHealth(allAccessCtx, health); err != nil {
+				if err := d.integrationDS.UpsertIntegrationHealth(integrationWriteCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
 			} else if health.LastTimestamp.Compare(d.latestDBTimestampMap[health.Id]) > 0 {
 				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
-				_, exists, err := d.integrationDS.GetIntegrationHealth(allAccessCtx, health.Id)
+				_, exists, err := d.integrationDS.GetIntegrationHealth(integrationWriteCtx, health.Id)
 				if err != nil {
 					log.Errorf("Error reading health for integration %s (%s): %v", health.Name, health.Id, err)
 					continue
 				} else if !exists {
-					// ignore health update since integration has possibly been deleted
+					// Ignore health update since integration has possibly been deleted.
 					continue
 				}
-				if err := d.integrationDS.UpsertIntegrationHealth(allAccessCtx, health); err != nil {
+				if err := d.integrationDS.UpsertIntegrationHealth(integrationWriteCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
 			}
