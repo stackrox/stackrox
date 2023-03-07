@@ -1,4 +1,4 @@
-package groupspostgresstore
+package previous
 
 import (
 	"context"

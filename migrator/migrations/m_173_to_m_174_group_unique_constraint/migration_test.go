@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package m173tom174
 
 import (
@@ -6,7 +8,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	frozenSchemav73 "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	"github.com/stackrox/rox/migrator/migrations/m_173_to_m_174_group_unique_constraint/groupspostgresstore"
+	"github.com/stackrox/rox/migrator/migrations/m_173_to_m_174_group_unique_constraint/stores/previous"
+	"github.com/stackrox/rox/migrator/migrations/m_173_to_m_174_group_unique_constraint/stores/updated"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -125,9 +128,10 @@ func (s *groupUniqueConstraintMigrationTestSuite) TearDownSuite() {
 }
 
 func (s *groupUniqueConstraintMigrationTestSuite) TestMigration() {
-	store := groupspostgresstore.New(s.db.DB)
+	previousStore := previous.New(s.db.DB)
+	updatedStore := updated.New(s.db.DB)
 
-	s.Require().NoError(store.UpsertMany(ctx, groupsPreMigration))
+	s.Require().NoError(previousStore.UpsertMany(ctx, groupsPreMigration))
 
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
@@ -138,7 +142,7 @@ func (s *groupUniqueConstraintMigrationTestSuite) TestMigration() {
 
 	groupsAfterMigration := make([]*storage.Group, 0, len(groupsPreMigration))
 
-	s.NoError(store.Walk(ctx, func(group *storage.Group) error {
+	s.NoError(updatedStore.Walk(ctx, func(group *storage.Group) error {
 		groupsAfterMigration = append(groupsAfterMigration, group)
 		return nil
 	}))
