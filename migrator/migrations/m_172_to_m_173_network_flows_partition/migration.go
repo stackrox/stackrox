@@ -105,7 +105,7 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 
 func getClusters(db *postgres.DB) ([]string, error) {
 	var clusters []string
-	getClustersStmt := "select distinct clusterid from network_flows;"
+	getClustersStmt := "select distinct id from clusters;"
 
 	rows, err := db.Query(context.Background(), getClustersStmt)
 	if err != nil {
@@ -126,14 +126,14 @@ func getClusters(db *postgres.DB) ([]string, error) {
 }
 
 func migrateData(db *postgres.DB, cluster string) error {
-	partitionPostFix := strings.ReplaceAll(cluster, "-", "_")
-	// Skip the serial ID
-	moveDataStmt := fmt.Sprintf("INSERT INTO network_flows_v2_%s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM network_flows WHERE ClusterId = $1", partitionPostFix)
-
 	clusterUUID, err := uuid.FromString(cluster)
 	if err != nil {
 		return err
 	}
+
+	partitionPostFix := strings.ReplaceAll(cluster, "-", "_")
+	// Skip the serial ID
+	moveDataStmt := fmt.Sprintf("INSERT INTO network_flows_v2_%s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM network_flows WHERE ClusterId = $1", partitionPostFix)
 
 	_, err = db.Exec(context.Background(), moveDataStmt, clusterUUID)
 	if err != nil {

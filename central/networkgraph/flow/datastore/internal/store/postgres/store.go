@@ -215,10 +215,13 @@ func New(db *postgres.DB, clusterID string) FlowStore {
 	partitionCreate := `create table if not exists %s partition of network_flows_v2 
 		for values in ('%s')`
 
-	_, err = db.Exec(context.Background(), fmt.Sprintf(partitionCreate, partitionName, clusterID))
+	err = pgutils.Retry(func() error {
+		_, err := db.Exec(context.Background(), fmt.Sprintf(partitionCreate, partitionName, clusterID))
+		return err
+	})
 	if err != nil {
-		log.Info(err)
-		panic("error creating table: " + partitionCreate)
+		log.Errorf("unable to create partition %q.  %v", partitionName, err)
+		return nil
 	}
 
 	return &flowStoreImpl{
@@ -282,7 +285,6 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
-	log.Infof("upserting %d flows for cluster %q", len(flows), s.clusterID.String())
 
 	return pgutils.Retry(func() error {
 		return s.retryableUpsertFlows(ctx, flows, lastUpdateTS)

@@ -37,10 +37,7 @@ func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
 
 // CreateFlowStore returns the FlowStore for the cluster ID, or creates one if none exists.
 func (s *clusterStoreImpl) CreateFlowStore(_ context.Context, clusterID string) (store.FlowStore, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	flowStore := s.GetFlowStore(clusterID)
 
-	flowStore := New(s.db, clusterID)
-	s.flowStore[clusterID] = flowStore
 	return flowStore, nil
 }
