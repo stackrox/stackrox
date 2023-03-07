@@ -31,6 +31,8 @@ type NetworkPolicyYAML = {
     yaml: string;
 };
 
+const allNetworkPoliciesId = 'network-policy-combined-yaml-pf-key';
+
 function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
     const { networkPolicies, isLoading, error } = useFetchNetworkPolicies(policyIds);
     const { isDarkMode } = useTheme();
@@ -38,7 +40,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
 
     const allNetworkPoliciesYAML = useMemo(
         () => ({
-            name: 'all',
+            name: allNetworkPoliciesId,
             yaml: networkPolicies.map((networkPolicy) => networkPolicy.yaml).join('---\n'),
         }),
         [networkPolicies]
@@ -57,7 +59,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     }
 
     function handleSelectedNetworkPolicy(_, value: string) {
-        if (value !== 'all') {
+        if (value !== allNetworkPoliciesId) {
             const newlySelectedNetworkPolicy = networkPolicies.find(
                 (networkPolicy) => networkPolicy.name === value
             );
@@ -70,7 +72,9 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     function exportYAMLHandler() {
         if (selectedNetworkPolicy) {
             const fileName =
-                selectedNetworkPolicy.name === 'all' ? entityName : selectedNetworkPolicy.name;
+                selectedNetworkPolicy.name === allNetworkPoliciesId
+                    ? entityName
+                    : selectedNetworkPolicy.name;
             const fileContent = selectedNetworkPolicy.yaml;
             download(`${fileName}.yml`, fileContent, 'yml');
         }
