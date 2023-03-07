@@ -92,6 +92,8 @@ func (r *recordingConn) InjectMessage(ctx concurrency.Waitable, msg *central.Msg
 	return nil
 }
 
+func (r *recordingConn) InjectMessageIntoQueue(msg *central.MsgFromSensor) {}
+
 func (r *recordingConn) getSentTriggers() []*central.SensorUpgradeTrigger {
 	r.lock.Lock()
 	defer r.lock.Unlock()
