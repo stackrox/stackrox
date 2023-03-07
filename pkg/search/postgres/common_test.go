@@ -4,6 +4,7 @@
 package postgres
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -229,6 +231,7 @@ func TestSelectQueries(t *testing.T) {
 
 	for _, c := range []struct {
 		desc          string
+		ctx           context.Context
 		q             *v1.Query
 		expectedError string
 		expectedQuery string
@@ -332,13 +335,64 @@ func TestSelectQueries(t *testing.T) {
 			desc: "nil query",
 			q:    nil,
 		},
+		{
+			desc: "base schema; select w/ conjunction",
+			q: func() *v1.Query {
+				q := search.ConjunctionQuery(
+					search.NewQueryBuilder().
+						AddExactMatches(search.DeploymentName, "dep").ProtoQuery(),
+					search.NewQueryBuilder().
+						AddExactMatches(search.Namespace, "ns").ProtoQuery(),
+				)
+				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+				return q
+			}(),
+			expectedQuery: "select deployments.Name as deployment from deployments where (deployments.Name = $1 and deployments.Namespace = $2)",
+		},
+		{
+			desc: "base schema; select w/ where; image scope",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    "fake-image",
+				Level: v1.SearchCategory_IMAGES,
+			}),
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select deployments.Name as deployment from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Id = $2)",
+		},
+		{
+			desc: "base schema; select w/ multiple scopes",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    uuid.NewV4().String(),
+				Level: v1.SearchCategory_NAMESPACES,
+				Parent: &scoped.Scope{
+					ID:    uuid.NewV4().String(),
+					Level: v1.SearchCategory_CLUSTERS,
+				},
+			}),
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select deployments.Name as deployment from deployments " +
+				"where (deployments.Name = $1 and (deployments.NamespaceId = $2 and deployments.ClusterId = $3))",
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			actualQ, err := standardizeSelectQueryAndPopulatePath(c.q, schema.DeploymentsSchema, SELECT)
+			ctx := c.ctx
+			if c.ctx == nil {
+				ctx = context.Background()
+			}
+
+			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, schema.DeploymentsSchema, SELECT)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 				return
 			}
+
+			assert.NoError(t, err)
+
 			if c.q == nil {
 				assert.Nil(t, actualQ)
 				return
