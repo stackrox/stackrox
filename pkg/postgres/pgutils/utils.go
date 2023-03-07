@@ -77,11 +77,18 @@ func NilOrUUID(value string) *uuid.UUID {
 
 // CreateTableFromModel executes input create statement using the input connection.
 func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres.CreateStmts) {
-	err := Retry(func() error {
-		return db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
-	})
-	err = errors.Wrapf(err, "Error creating table for %q: %v", reflect.TypeOf(createStmt.GormModel), err)
-	utils.Must(err)
+	// Partitioned tables are not supported by Gorm migration or models
+	// For partitioned tables the necessary DDL will be contained in PartitionCreate.
+	if !createStmt.Partition {
+		err := Retry(func() error {
+			return db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
+		})
+		err = errors.Wrapf(err, "Error creating table for %q: %v", reflect.TypeOf(createStmt.GormModel), err)
+		utils.Must(err)
+	} else {
+		rdb := db.WithContext(ctx).Exec(createStmt.PartitionCreate)
+		utils.Must(rdb.Error)
+	}
 
 	for _, child := range createStmt.Children {
 		CreateTableFromModel(ctx, db, child)
