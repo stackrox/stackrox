@@ -18,9 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// This file is a partial copy of central/role/store/simpleaccessscope/postgres/store.go
+// This file is a partial copy of central/group/datastore/internal/store/postgres/store.go
 // in the state it had when the migration was written.
-// Only the relevant functions (UpsertMany) are kept.
+// Only the relevant functions (UpsertMany, Walk) are kept.
 // The kept functions are stripped from the scoped access control checks.
 
 const (
@@ -43,7 +43,6 @@ var (
 // Store is the interface to interact with the storage for storage.Group
 type Store interface {
 	UpsertMany(ctx context.Context, objs []*storage.Group) error
-	DeleteMany(ctx context.Context, identifiers []string) error
 	Walk(ctx context.Context, fn func(obj *storage.Group) error) error
 }
 

@@ -18,9 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// This file is a partial copy of central/role/store/simpleaccessscope/postgres/store.go
-// in the state it had when the migration was written.
-// Only the relevant functions (Walk, DeleteMany) are kept.
+// This file is a partial copy of central/group/datastore/internal/store/postgres/store.go
+// in the state it had before the schema in this migration was changed (i.e. with the 3.74.0 release).
+// Only the relevant functions (UpsertMany, Walk, DeleteMany) are kept.
 // The kept functions are stripped from the scoped access control checks.
 
 const (
