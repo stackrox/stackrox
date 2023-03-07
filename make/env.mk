@@ -35,6 +35,7 @@ ifeq ($(GOBIN),)
 GOBIN := $(GOPATH)/bin
 endif
 
+TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
 
 # Use a release go -tag when CI is targetting a tag
@@ -42,4 +43,8 @@ ifdef CI
 ifneq ($(BUILD_TAG),)
 GOTAGS := $(RELEASE_GOTAGS)
 endif
+endif
+
+ifneq ($(BUILD_TAG),)
+TAG := $(BUILD_TAG)
 endif

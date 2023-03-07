@@ -18,12 +18,12 @@ SILENT ?= @
 #  usage: "path/to/ignored|another/path"
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests"
 
-ifeq ($(BUILD_TAG),)
-BUILD_TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+ifeq ($(TAG),)
+TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
 # Set expiration on Quay.io for non-release tags.
-ifeq ($(findstring x,$(BUILD_TAG)),x)
+ifeq ($(findstring x,$(TAG)),x)
 QUAY_TAG_EXPIRATION=13w
 else
 QUAY_TAG_EXPIRATION=never
@@ -536,7 +536,7 @@ main-image: all-builds
 	make docker-build-main-image
 
 $(CURDIR)/image/rhel/bundle.tar.gz:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(BUILD_TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
 $(CURDIR)/image/rhel/Dockerfile.gen:
@@ -551,18 +551,18 @@ $(CURDIR)/image/rhel/Dockerfile.gen:
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
                          $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/rhel/Dockerfile.gen
 	docker build \
-		-t stackrox/main:$(BUILD_TAG) \
-		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(BUILD_TAG) \
+		-t stackrox/main:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
 		--file image/rhel/Dockerfile.gen \
 		image/rhel
-	@echo "Built main image for RHEL with tag: $(BUILD_TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
-	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(BUILD_TAG)"
+	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
+	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
 .PHONY: docker-build-data-image
 docker-build-data-image:
-	docker build -t stackrox-data:$(BUILD_TAG) \
+	docker build -t stackrox-data:$(TAG) \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
@@ -571,8 +571,8 @@ docker-build-data-image:
 docker-build-roxctl-image:
 	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl-linux
 	docker build \
-		-t stackrox/roxctl:$(BUILD_TAG) \
-		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(BUILD_TAG) \
+		-t stackrox/roxctl:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
 		-f image/roxctl/Dockerfile \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/roxctl
@@ -619,8 +619,8 @@ scale-image: scale-build clean-image
 	cp bin/linux_$(GOARCH)/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*
 	docker build \
-		-t stackrox/scale:$(BUILD_TAG) \
-		-t quay.io/rhacs-eng/scale:$(BUILD_TAG) \
+		-t stackrox/scale:$(TAG) \
+		-t quay.io/rhacs-eng/scale:$(TAG) \
 		-f scale/image/Dockerfile scale
 
 webhookserver-image: webhookserver-build
@@ -636,8 +636,8 @@ webhookserver-image: webhookserver-build
 mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux_$(GOARCH)/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build \
-		-t stackrox/grpc-server:$(BUILD_TAG) \
-		-t quay.io/rhacs-eng/grpc-server:$(BUILD_TAG) \
+		-t stackrox/grpc-server:$(TAG) \
+		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
 		integration-tests/mock-grpc-server/image
 
 $(CURDIR)/image/postgres/bundle.tar.gz:
@@ -652,12 +652,12 @@ $(CURDIR)/image/postgres/Dockerfile.gen:
 .PHONY: central-db-image
 central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz $(CURDIR)/image/postgres/Dockerfile.gen
 	docker build \
-		-t stackrox/central-db:$(BUILD_TAG) \
-		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(BUILD_TAG) \
+		-t stackrox/central-db:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--file image/postgres/Dockerfile.gen \
 		image/postgres
-	@echo "Built central-db image with tag $(BUILD_TAG)"
+	@echo "Built central-db image with tag $(TAG)"
 
 ###########
 ## Clean ##
@@ -677,7 +677,7 @@ clean-image:
 
 .PHONY: tag
 tag:
-	@echo $(BUILD_TAG)
+	@echo $(TAG)
 
 .PHONY: shortcommit
 shortcommit:
@@ -756,7 +756,7 @@ ui-publish-packages:
 
 .PHONY: check-debugger
 check-debugger:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" ./scripts/check-debugger.sh
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
 ifeq ($(DEBUG_BUILD),yes)
 	$(warning Warning: DEBUG_BUILD is enabled. Don not use this for production builds)
 endif
