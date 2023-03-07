@@ -96,7 +96,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.7
 	go.uber.org/atomic v1.10.0
-	go.uber.org/goleak v1.2.0
+	go.uber.org/goleak v1.2.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.6.0
 	golang.org/x/exp v0.0.0-20220823124025-807a23277127
