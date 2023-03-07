@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
+	processlisteningonportDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -66,7 +67,7 @@ func Singleton() Loop {
 		}
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
-			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackboxIndexQueue)
+			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), processlisteningonportDatastore.Singleton(), dackboxIndexQueue)
 	})
 	return loop
 }
@@ -86,10 +87,10 @@ type Loop interface {
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater, indexQueue queue.WaitableQueue) Loop {
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater, plops processlisteningonportDatastore.DataStore, indexQueue queue.WaitableQueue) Loop {
 	return newLoopWithDuration(
 		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk, watchedImages,
-		env.ReprocessInterval.DurationSetting(), 15*time.Second, env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater, indexQueue)
+		env.ReprocessInterval.DurationSetting(), 15*time.Second, env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater, plops, indexQueue)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
@@ -98,10 +99,11 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
 	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration,
-	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater, indexQueue queue.WaitableQueue) *loopImpl {
+	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater, plops processlisteningonportDatastore.DataStore, indexQueue queue.WaitableQueue) *loopImpl {
 	return &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
 		deploymentRiskTickerDuration:  deploymentRiskDuration,
+		processListeningOnPortTickerDuration: 30.0 * time.Second,
 
 		imageEnricher: imageEnricher,
 		images:        images,
@@ -119,10 +121,13 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		nodeEnricher: nodeEnricher,
 		nodes:        nodes,
 
+		plops:		plops,
+
 		shortCircuitSig:   concurrency.NewSignal(),
 		stopSig:           concurrency.NewSignal(),
 		enrichmentStopped: concurrency.NewSignal(),
 		riskStopped:       concurrency.NewSignal(),
+
 
 		signatureVerificationSig: concurrency.NewSignal(),
 
@@ -146,11 +151,13 @@ type loopImpl struct {
 
 	watchedImages watchedImageDataStore.DataStore
 
-	deployments                  deploymentDatastore.DataStore
-	deploymentRiskSet            set.StringSet
-	deploymentRiskLock           sync.Mutex
-	deploymentRiskTicker         *time.Ticker
-	deploymentRiskTickerDuration time.Duration
+	deployments					deploymentDatastore.DataStore
+	deploymentRiskSet				set.StringSet
+	deploymentRiskLock				sync.Mutex
+	deploymentRiskTicker				*time.Ticker
+	deploymentRiskTickerDuration			time.Duration
+	processListeningOnPortTicker			*time.Ticker
+	processListeningOnPortTickerDuration		time.Duration
 
 	activeComponentStopped        concurrency.Signal
 	activeComponentTicker         *time.Ticker
@@ -160,10 +167,14 @@ type loopImpl struct {
 	nodes        nodeDatastore.DataStore
 	nodeEnricher nodeEnricher.NodeEnricher
 
-	shortCircuitSig   concurrency.Signal
-	stopSig           concurrency.Signal
-	riskStopped       concurrency.Signal
-	enrichmentStopped concurrency.Signal
+	plops			processlisteningonportDatastore.DataStore
+
+	shortCircuitSig		concurrency.Signal
+	stopSig			concurrency.Signal
+	riskStopped		concurrency.Signal
+	processListeningOnPorts	concurrency.Signal
+	processListeningOnPortsStopped	concurrency.Signal
+	enrichmentStopped	concurrency.Signal
 
 	signatureVerificationSig concurrency.Signal
 
@@ -183,9 +194,11 @@ func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
 func (l *loopImpl) Start() {
 	l.enrichAndDetectTicker = time.NewTicker(l.enrichAndDetectTickerDuration)
 	l.deploymentRiskTicker = time.NewTicker(l.deploymentRiskTickerDuration)
+	l.processListeningOnPortTicker = time.NewTicker(l.processListeningOnPortTickerDuration)
 
 	go l.riskLoop()
 	go l.enrichLoop()
+	go l.processListeningOnPortLoop()
 
 	l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
 	go l.activeComponentLoop()
@@ -195,6 +208,7 @@ func (l *loopImpl) Start() {
 func (l *loopImpl) Stop() {
 	l.stopSig.Signal()
 	l.riskStopped.Wait()
+	l.processListeningOnPorts.Wait()
 	l.enrichmentStopped.Wait()
 	l.activeComponentStopped.Wait()
 }
@@ -455,6 +469,42 @@ func (l *loopImpl) reprocessNode(id string) bool {
 	return true
 }
 
+func (l *loopImpl) getUnmatchedPlopsFromDB() []*storage.ProcessListeningOnPortStorage {
+        plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	l.plops.WalkAll(allAccessCtx,
+                func(plop *storage.ProcessListeningOnPortStorage) error {
+			if plop.ProcessIndicatorId == "" {
+			        plopsFromDB = append(plopsFromDB, plop)
+			}
+                        return nil
+                })
+
+
+        return plopsFromDB
+}
+
+func (l *loopImpl) getPlopsFromDB() []*storage.ProcessListeningOnPortStorage {
+        plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	l.plops.WalkAll(allAccessCtx,
+                func(plop *storage.ProcessListeningOnPortStorage) error {
+			plopsFromDB = append(plopsFromDB, plop)
+                        return nil
+                })
+
+
+        return plopsFromDB
+}
+
+func (l *loopImpl) runProcessListeningOnPortReprocessing() {
+	log.Infof("This is were retry goes")
+	log.Infof("l.plops= %+v", l.plops)
+
+	plopsFromDB := l.getUnmatchedPlopsFromDB()
+	//plopsFromDB := l.plops.GetPlopsFromDB(allAccessCtx)
+
+	log.Infof("len(plops)= %i", len(plopsFromDB))
+}
+
 func (l *loopImpl) reprocessNodes() {
 	l.runReprocessingForObjects("node", func() ([]string, error) {
 		results, err := l.nodes.Search(allAccessCtx, search.EmptyQuery())
@@ -568,6 +618,20 @@ func (l *loopImpl) riskLoop() {
 				l.deploymentRiskSet.Clear()
 			}
 			l.deploymentRiskLock.Unlock()
+		}
+	}
+}
+
+func (l *loopImpl) processListeningOnPortLoop() {
+	defer l.processListeningOnPortsStopped.Signal()
+	defer l.processListeningOnPortTicker.Stop()
+
+	for !l.stopSig.IsDone() {
+		select {
+		case <-l.stopSig.Done():
+			return
+		case <-l.processListeningOnPortTicker.C:
+			l.runProcessListeningOnPortReprocessing()
 		}
 	}
 }

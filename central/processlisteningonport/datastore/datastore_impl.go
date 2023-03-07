@@ -40,6 +40,44 @@ func newDatastoreImpl(
 	}
 }
 
+func (ds *datastoreImpl) GetPlopsFromDB(ctx context.Context) []*storage.ProcessListeningOnPortStorage {
+        plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+        ds.WalkAll(ctx,
+                func(plop *storage.ProcessListeningOnPortStorage) error {
+                        plopsFromDB = append(plopsFromDB, plop)
+                        return nil
+                })
+
+
+        return plopsFromDB
+}
+
+//func (ds *datastoreImpl) GetMatchedAndUnmatchedPlopMap(ctx context.Context) (unmatchedPlopMap map map[[]*storage.ProcessListeningOnPortStorage]string, matchedPlopMap map[[]*storage.ProcessListeningOnPortStorage]string) {
+//        //plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+//        ds.WalkAll(ctx,
+//                func(plop *storage.ProcessListeningOnPortStorage) error {
+//                        //plopsFromDB = append(plopsFromDB, plop)
+//			key := getPlopWithoutIndicatorIdKey(plop)
+//			if plop.ProcessIndicatorId == "" {
+//				unmatchedPlopMap = append(unmatchedPlopMap[key], plop)
+//			} else {
+//				matchedPlopMap = append(matchedPlopMap[key], plop)
+//			}
+//                        return nil
+//                })
+//
+//
+//        return unmatchedPlopMap, matchedPlopMap
+//
+//}
+
+//func (ds *datastoreImpl) RetryPlop(ctx context.Context) error {
+
+	//unmatchedPlopMap, matchedPlopMap := GetMatchedAndUnmatchedPlopMap(ctx)
+
+	//for key, val in 
+
+
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
@@ -474,6 +512,14 @@ func getPlopKeyFromParts(protocol storage.L4Protocol, port uint32, indicatorID s
 func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
 	return getPlopKeyFromParts(plop.GetProtocol(), plop.GetPort(), plop.GetProcessIndicatorId())
 }
+
+//func getPlopWithoutIndicatorIdKey(plop *storage.ProcessListeningOnPortStorage) string {
+//	return getPlopKeyFromParts(
+//		plop.GetProtocol(),
+//		plop.GetPort(),
+//		getPlopProcessUniqueKey(plop),
+//	}
+//}
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 	sort.Slice(values, func(i, j int) bool {

@@ -1,4 +1,4 @@
-//go:build sql_integration
+// //go:build sql_integration
 
 package reprocessor
 
@@ -22,6 +22,11 @@ import (
 	imageComponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeDackbox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
 	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
+	processlisteningonportDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
+	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
+	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+        processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
+        processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -35,7 +40,11 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetActiveImageIDs(t *testing.T) {
@@ -88,7 +97,7 @@ func TestGetActiveImageIDs(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	loop := NewLoop(nil, nil, nil, deploymentsDS, imageDS, nil, nil, nil, nil, queue.NewWaitableQueue()).(*loopImpl)
+	loop := NewLoop(nil, nil, nil, deploymentsDS, imageDS, nil, nil, nil, nil, nil, queue.NewWaitableQueue()).(*loopImpl)
 
 	ids, err := loop.getActiveImageIDs()
 	require.NoError(t, err)
@@ -113,4 +122,125 @@ func TestGetActiveImageIDs(t *testing.T) {
 	ids, err = loop.getActiveImageIDs()
 	require.NoError(t, err)
 	require.ElementsMatch(t, imageIDs, ids)
+}
+
+func TestProcessListeningOnPortReprocess(t *testing.T) {
+	t.Parallel()
+
+	testCtx := sac.WithAllAccess(context.Background())
+	testNamespace := "test_namespace"
+
+	var (
+		pool          *postgres.DB
+		plops		processlisteningonportDatastore.DataStore
+	)
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testingDB := pgtest.ForT(t)
+		pool = testingDB.DB
+		defer pool.Close()
+
+		//imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, dackboxConcurrency.NewKeyFence()), imagePG.NewIndexer(pool), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+		//deploymentsDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), pool, nil, nil, nil, nil, nil, nil,
+		//	nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+		//require.NoError(t, err)
+
+		//plops = processlisteningonportDatastore.Singleton()
+	}
+
+	//suite.postgres = pgtest.ForT(suite.T())
+        //suite.store = postgresStore.NewFullStore(suite.postgres.DB)
+
+
+	store := postgresStore.NewFullStore(pool)
+
+        indicatorStorage := processIndicatorStorage.New(pool)
+        indicatorIndexer := processIndicatorStorage.NewIndexer(pool)
+        indicatorSearcher := processIndicatorSearch.New(indicatorStorage, indicatorIndexer)
+
+	indicatorDataStore, _ := processIndicatorDataStore.New(
+                indicatorStorage, store, indicatorIndexer, indicatorSearcher, nil)
+
+	plops = processlisteningonportDatastore.New(store, indicatorDataStore)
+
+	loop := NewLoop(nil, nil, nil, nil, nil, nil, nil, nil, nil, plops, queue.NewWaitableQueue()).(*loopImpl)
+
+
+        plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+                {
+                        Port:           1234,
+                        Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+                        CloseTimestamp: nil,
+                        Process: &storage.ProcessIndicatorUniqueKey{
+                                PodId:               fixtureconsts.PodUID1,
+                                ContainerName:       "test_container1",
+                                ProcessName:         "test_process1",
+                                ProcessArgs:         "test_arguments1",
+                                ProcessExecFilePath: "test_path1",
+                        },
+                },
+        }
+
+        // Verify that the table is empty before the test
+        plopsFromDB := loop.getPlopsFromDB()
+        assert.Equal(t, len(plopsFromDB), 0)
+
+	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+
+	indicators := []*storage.ProcessIndicator{
+	       {
+	               Id:            fixtureconsts.ProcessIndicatorID1,
+	               DeploymentId:  fixtureconsts.Deployment1,
+	               PodId:         fixtureconsts.PodUID1,
+	               ClusterId:     fixtureconsts.Cluster1,
+	               ContainerName: "test_container1",
+	               Namespace:     testNamespace,
+
+	               Signal: &storage.ProcessSignal{
+	                       Name:         "test_process1",
+	                       Args:         "test_arguments1",
+	                       ExecFilePath: "test_path1",
+	               },
+	       },
+       }
+
+       indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+
+        plopsFromDB = loop.getPlopsFromDB()
+        assert.Equal(t, len(plopsFromDB), 1)
+
+	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:                 plopsFromDB[0].GetId(),
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: "",
+			Closed:             false,
+			Process:            plopObjects[0].Process,
+		},
+        }
+
+
+        assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
+
+	loop.runProcessListeningOnPortReprocessing()
+
+        plopsFromDB = loop.getPlopsFromDB()
+        assert.Equal(t, len(plopsFromDB), 1)
+
+	expectedPlopStorage = []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:                 plopsFromDB[0].GetId(),
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: indicators[0].Id,
+			Closed:             false,
+			Process:            plopObjects[0].Process,
+		},
+        }
+
+
+        assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
 }
