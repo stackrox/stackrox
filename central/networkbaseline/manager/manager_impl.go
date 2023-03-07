@@ -352,7 +352,7 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 
 	err := m.ds.DeleteNetworkBaseline(managerCtx, deploymentID)
 	if err != nil {
-		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.DeploymentName)
+		return errors.Wrapf(err, "deleting baseline of deployment %q", deploymentID)
 	}
 
 	// Clean up cache
