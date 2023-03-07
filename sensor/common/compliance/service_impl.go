@@ -25,45 +25,14 @@ type serviceImpl struct {
 	auditEvents     chan *sensor.AuditEvents
 	nodeInventories chan *storage.NodeInventory
 
+	complianceC <-chan *MessageToComplianceWithAddress
+
 	auditLogCollectionManager AuditLogCollectionManager
 
 	orchestrator orchestrator.Orchestrator
 
+	multiplexer       *Multiplexer
 	connectionManager *connectionManager
-}
-
-type connectionManager struct {
-	connectionLock sync.RWMutex
-	connectionMap  map[string]sensor.ComplianceService_CommunicateServer
-}
-
-func newConnectionManager() *connectionManager {
-	return &connectionManager{
-		connectionMap: make(map[string]sensor.ComplianceService_CommunicateServer),
-	}
-}
-
-func (c *connectionManager) add(node string, connection sensor.ComplianceService_CommunicateServer) {
-	c.connectionLock.Lock()
-	defer c.connectionLock.Unlock()
-
-	c.connectionMap[node] = connection
-}
-
-func (c *connectionManager) remove(node string) {
-	c.connectionLock.Lock()
-	defer c.connectionLock.Unlock()
-
-	delete(c.connectionMap, node)
-}
-
-func (c *connectionManager) forEach(fn func(node string, server sensor.ComplianceService_CommunicateServer)) {
-	c.connectionLock.RLock()
-	defer c.connectionLock.RUnlock()
-
-	for node, server := range c.connectionMap {
-		fn(node, server)
-	}
 }
 
 // GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
@@ -79,6 +48,27 @@ func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sens
 		ContainerRuntime: rt,
 		IsMasterNode:     nodeScrapeConfig.IsMasterNode,
 	}, nil
+}
+
+func (s *serviceImpl) startSendingLoop() {
+	for msg := range s.complianceC {
+		if msg.broadcast {
+			s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
+				err := server.Send(msg.msg)
+				if err != nil {
+					log.Errorf("error sending broadcast MessageToComplianceWithAddress to node %q: %v", node, err)
+					return
+				}
+			})
+		} else {
+			con := s.connectionManager.connectionMap[msg.hostname]
+			err := con.Send(msg.msg)
+			if err != nil {
+				log.Errorf("error sending MessageToComplianceWithAddress to node %q: %v", msg.hostname, err)
+				return
+			}
+		}
+	}
 }
 
 func (s *serviceImpl) RunScrape(msg *sensor.MsgToCompliance) int {
@@ -131,6 +121,8 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		defer s.auditLogCollectionManager.RemoveEligibleComplianceNode(hostname)
 	}
 
+	go s.startSendingLoop()
+
 	for {
 		msg, err := server.Recv()
 		if err != nil {
@@ -177,4 +169,38 @@ func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 
 func (s *serviceImpl) NodeInventories() <-chan *storage.NodeInventory {
 	return s.nodeInventories
+}
+
+type connectionManager struct {
+	connectionLock sync.RWMutex
+	connectionMap  map[string]sensor.ComplianceService_CommunicateServer
+}
+
+func newConnectionManager() *connectionManager {
+	return &connectionManager{
+		connectionMap: make(map[string]sensor.ComplianceService_CommunicateServer),
+	}
+}
+
+func (c *connectionManager) add(node string, connection sensor.ComplianceService_CommunicateServer) {
+	c.connectionLock.Lock()
+	defer c.connectionLock.Unlock()
+
+	c.connectionMap[node] = connection
+}
+
+func (c *connectionManager) remove(node string) {
+	c.connectionLock.Lock()
+	defer c.connectionLock.Unlock()
+
+	delete(c.connectionMap, node)
+}
+
+func (c *connectionManager) forEach(fn func(node string, server sensor.ComplianceService_CommunicateServer)) {
+	c.connectionLock.RLock()
+	defer c.connectionLock.RUnlock()
+
+	for node, server := range c.connectionMap {
+		fn(node, server)
+	}
 }

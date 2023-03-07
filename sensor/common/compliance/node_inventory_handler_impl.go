@@ -21,7 +21,7 @@ type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
 	toCentral    <-chan *central.MsgFromSensor
 	centralReady concurrency.Signal
-	toCompliance <-chan *sensor.MsgToCompliance
+	toCompliance <-chan *MessageToComplianceWithAddress
 	nodeMatcher  NodeIDMatcher
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
@@ -47,7 +47,7 @@ func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 // ComplianceC returns a channel with messages to Compliance
-func (c *nodeInventoryHandlerImpl) ComplianceC() <-chan *sensor.MsgToCompliance {
+func (c *nodeInventoryHandlerImpl) ComplianceC() <-chan *MessageToComplianceWithAddress {
 	return c.toCompliance
 }
 
@@ -80,12 +80,13 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error 
 
 // run handles the messages from Compliance and forwards them to Central
 // This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
-func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan *sensor.MsgToCompliance) {
+func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan *MessageToComplianceWithAddress) {
 	toCentral := make(chan *central.MsgFromSensor)
-	toCompliance := make(chan *sensor.MsgToCompliance)
+	toCompliance := make(chan *MessageToComplianceWithAddress)
 	go func() {
 		defer c.stopper.Flow().ReportStopped()
 		defer close(toCentral)
+		defer close(toCompliance)
 		for {
 			select {
 			case <-c.stopper.Flow().StopRequested():
@@ -119,16 +120,20 @@ func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan 
 	return toCentral, toCompliance
 }
 
-func (c *nodeInventoryHandlerImpl) sendNackToCompliance(toC chan<- *sensor.MsgToCompliance, inventory *storage.NodeInventory) {
+func (c *nodeInventoryHandlerImpl) sendNackToCompliance(complianceC chan<- *MessageToComplianceWithAddress, inventory *storage.NodeInventory) {
 	if inventory == nil {
 		return
 	}
-	toC <- &sensor.MsgToCompliance{
-		Msg: &sensor.MsgToCompliance_Nack{
-			Nack: &sensor.MsgToCompliance_NodeInventoryNack{
-				NodeId: inventory.GetNodeId(),
+	complianceC <- &MessageToComplianceWithAddress{
+		msg: &sensor.MsgToCompliance{
+			Msg: &sensor.MsgToCompliance_Nack{
+				Nack: &sensor.MsgToCompliance_NodeInventoryNack{
+					NodeId: inventory.GetNodeId(),
+				},
 			},
 		},
+		hostname:  inventory.GetNodeName(),
+		broadcast: false,
 	}
 }
 

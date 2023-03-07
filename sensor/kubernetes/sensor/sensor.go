@@ -98,7 +98,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
-	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager)
+	complianceMultiplexer := compliance.NewComplianceCommunicator()
+	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.GetCommandsC())
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(cfg.k8sClient)
@@ -139,7 +140,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 	if env.RHCOSNodeScanning.BooleanSetting() {
 		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher))
+		nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
+		complianceMultiplexer.AddChannel(nodeInventoryHandler.ComplianceC())
+		components = append(components, nodeInventoryHandler, complianceMultiplexer)
 	}
 
 	if !cfg.localSensor {

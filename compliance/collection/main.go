@@ -49,7 +49,7 @@ func getNode() string {
 	return node
 }
 
-func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
+func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig, sensorC chan *sensor.MsgFromCompliance) error {
 	var auditReader auditlog.Reader
 	defer func() {
 		if auditReader != nil {
@@ -99,11 +99,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 			if err != nil {
 				log.Errorf("error running scanNode: %v", err)
 			} else {
-				sensorC := make(chan *sensor.MsgFromCompliance)
-				go func() {
-					defer close(sensorC)
-					sensorC <- msg
-				}()
+				sensorC <- msg
 			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
@@ -131,7 +127,7 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, sensorC <-chan *sensor.MsgFromCompliance) {
+func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, sensorC chan *sensor.MsgFromCompliance) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -155,7 +151,7 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 			if sensorC != nil {
 				go manageSendToSensor(ctx2, client, sensorC)
 			}
-			if err := runRecv(ctx, client, config); err != nil {
+			if err := runRecv(ctx, client, config, sensorC); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
 			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next  call to initializeStream

@@ -16,7 +16,7 @@ type nodeInventoryHandler interface {
 var _ nodeInventoryHandler = (*nodeInventoryHandlerImpl)(nil)
 
 // NewNodeInventoryHandler returns a new instance of a NodeInventoryHandler
-func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMatcher) *nodeInventoryHandlerImpl {
+func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMatcher) nodeInventoryHandler {
 	return &nodeInventoryHandlerImpl{
 		inventories:  ch,
 		toCentral:    nil,

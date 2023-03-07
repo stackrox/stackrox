@@ -27,13 +27,14 @@ type Service interface {
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
 // to the input channel.
-func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager) Service {
+func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager, complianceC <-chan *MessageToComplianceWithAddress) Service {
 	return &serviceImpl{
 		output:                    make(chan *compliance.ComplianceReturn),
 		nodeInventories:           make(chan *storage.NodeInventory),
-		connectionManager:         newConnectionManager(),
+		complianceC:               complianceC,
 		orchestrator:              orchestrator,
 		auditEvents:               auditEventsInput,
 		auditLogCollectionManager: auditLogCollectionManager,
+		connectionManager:         newConnectionManager(),
 	}
 }
