@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -37,10 +38,9 @@ func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
 
 // CreateFlowStore returns the FlowStore for the cluster ID, or creates one if none exists.
 func (s *clusterStoreImpl) CreateFlowStore(_ context.Context, clusterID string) (store.FlowStore, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	flowStore := New(s.db, clusterID)
-	s.flowStore[clusterID] = flowStore
+	flowStore := s.GetFlowStore(clusterID)
+	if flowStore == nil {
+		return nil, errors.Errorf("unable to create store for cluster %s", clusterID)
+	}
 	return flowStore, nil
 }
