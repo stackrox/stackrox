@@ -41,6 +41,7 @@ func init() {
 			"imageComponentCount(query: String): Int!",
 			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 			"imageCount(query: String): Int!",
+			"imageCVECountBySeverity(query: String): ResourceCountByCVESeverity!",
 			"images(query: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String): Int!",
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
