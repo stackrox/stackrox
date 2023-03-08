@@ -313,7 +313,7 @@ func (p *parsedPaginationQuery) AsSQL() string {
 
 func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) error {
 	if len(querySelects) == 0 {
-		return nil
+		return errors.New("select portion of the query cannot be empty")
 	}
 
 	for idx, qs := range querySelects {
@@ -560,9 +560,6 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
-	}
-	if len(q.GetSelects()) == 0 {
-		return nil, errors.New("select portion of the query cannot be empty")
 	}
 
 	parsedQuery := &query{

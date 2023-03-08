@@ -291,8 +291,8 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
 				critical:  &VulnerabilityFixableCounterResolver{0, 0},
 				important: &VulnerabilityFixableCounterResolver{0, 0},
-				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
-				low:       &VulnerabilityFixableCounterResolver{2, 0},
+				moderate:  &VulnerabilityFixableCounterResolver{1, 0},
+				low:       &VulnerabilityFixableCounterResolver{1, 0},
 			},
 		},
 		{
