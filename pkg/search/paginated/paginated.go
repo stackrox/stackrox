@@ -2,6 +2,7 @@ package paginated
 
 import (
 	"context"
+	"runtime/debug"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -25,6 +26,7 @@ func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.Query
 func Paginated(searcher search.Searcher) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+			debug.PrintStack()
 			// If pagination not set, just skip.
 			if q.GetPagination() == nil {
 				return searcher.Search(ctx, q)
