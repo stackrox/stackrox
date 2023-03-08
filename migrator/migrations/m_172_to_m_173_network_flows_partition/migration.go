@@ -121,7 +121,7 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 				namePart = clusters[idx][:64+difference]
 			}
 
-			officialName := fmt.Sprintf(index.IndexName, namePart)
+			officialName := fmt.Sprintf(index.IndexName, strings.ReplaceAll(namePart, "-", "_"))
 			createIndex := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING %s(%s)", officialName, partition, index.IndexType, index.IndexField)
 			log.WriteToStderrf("SHREWS -- %q", createIndex)
 			if err := executeStatementWithContext(parentCtx, db, createIndex); err != nil {
