@@ -8,11 +8,11 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/m_173_to_m_174_group_unique_constraint/frozenschema"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -37,7 +37,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.GroupsSchema
+	schema = frozenschema.GroupsSchema
 )
 
 // Store is the interface to interact with the storage for storage.Group

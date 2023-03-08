@@ -68,8 +68,8 @@ var (
 		},
 	}
 
-	groupsPostMigration = []*storage.Group{
-		{
+	groupsPostMigration = map[string]*storage.Group{
+		"group-id-1": {
 			Props: &storage.GroupProperties{
 				Id:             "group-id-1",
 				AuthProviderId: "auth-provider-1",
@@ -78,7 +78,7 @@ var (
 			},
 			RoleName: "Admin",
 		},
-		{
+		"group-id-2": {
 			Props: &storage.GroupProperties{
 				Id:             "group-id-2",
 				AuthProviderId: "auth-provider-1",
@@ -87,16 +87,7 @@ var (
 			},
 			RoleName: "Analyst",
 		},
-		{
-			Props: &storage.GroupProperties{
-				Id:             "group-id-3",
-				AuthProviderId: "auth-provider-1",
-				Key:            "email",
-				Value:          "someone@example.com",
-			},
-			RoleName: "Admin",
-		},
-		{
+		"group-id-5": {
 			Props: &storage.GroupProperties{
 				Id:             "group-id-5",
 				AuthProviderId: "auth-provider-2",
@@ -105,6 +96,15 @@ var (
 			},
 			RoleName: "Admin",
 		},
+	}
+
+	prunedGroupPostMigration = &storage.Group{
+		Props: &storage.GroupProperties{
+			AuthProviderId: "auth-provider-1",
+			Key:            "email",
+			Value:          "someone@example.com",
+		},
+		RoleName: "Admin",
 	}
 )
 
@@ -147,5 +147,19 @@ func (s *groupUniqueConstraintMigrationTestSuite) TestMigration() {
 		return nil
 	}))
 
-	s.ElementsMatch(groupsPostMigration, groupsAfterMigration)
+	s.Len(groupsAfterMigration, len(groupsPostMigration)+1)
+
+	var prunedGroupFound bool
+	for _, group := range groupsAfterMigration {
+		if expectedGroup, exists := groupsPostMigration[group.GetProps().GetId()]; exists {
+			s.Equal(expectedGroup, group)
+		} else {
+			s.False(prunedGroupFound, "found the pruned group twice")
+			prunedGroupFound = true
+			s.Equal(prunedGroupPostMigration.GetRoleName(), group.GetRoleName())
+			s.Equal(prunedGroupPostMigration.GetProps().GetAuthProviderId(), group.GetProps().GetAuthProviderId())
+			s.Equal(prunedGroupPostMigration.GetProps().GetKey(), group.GetProps().GetKey())
+			s.Equal(prunedGroupPostMigration.GetProps().GetValue(), group.GetProps().GetValue())
+		}
+	}
 }

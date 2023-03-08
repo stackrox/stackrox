@@ -72,7 +72,9 @@ func ensureUniqueGroups(postgresDB *postgres.DB) error {
 		return err
 	}
 	if len(groupsToDelete) > 0 {
-		return previousStore.DeleteMany(ctx, groupsToDelete)
+		if err := previousStore.DeleteMany(ctx, groupsToDelete); err != nil {
+			return errors.Wrap(err, "deleting groups")
+		}
 	}
 	return nil
 }
@@ -102,7 +104,9 @@ func reUpsertGroupEntries(postgresDB *postgres.DB) error {
 		return err
 	}
 	if len(groupsToUpsert) > 0 {
-		return updatedStore.UpsertMany(ctx, groupsToUpsert)
+		if err := updatedStore.UpsertMany(ctx, groupsToUpsert); err != nil {
+			return errors.Wrap(err, "upserting groups")
+		}
 	}
 	return nil
 }
