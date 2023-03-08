@@ -651,6 +651,48 @@ func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 
 }
 
+// TestProcessListeningOnPortReprocesskRetryEmpty test does the following things
+// 1. Retries the plops that were not matched to processes
+func TestProcessListeningOnPortReprocesskRetryEmpty(t *testing.T) {
+
+
+	testCtx := sac.WithAllAccess(context.Background())
+
+	var (
+		pool          *postgres.DB
+		plops		processlisteningonportDatastore.DataStore
+	)
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testingDB := pgtest.ForT(t)
+		pool = testingDB.DB
+		defer pool.Close()
+	}
+
+	store := postgresStore.NewFullStore(pool)
+
+        indicatorStorage := processIndicatorStorage.New(pool)
+        indicatorIndexer := processIndicatorStorage.NewIndexer(pool)
+        indicatorSearcher := processIndicatorSearch.New(indicatorStorage, indicatorIndexer)
+
+	indicatorDataStore, _ := processIndicatorDataStore.New(
+                indicatorStorage, store, indicatorIndexer, indicatorSearcher, nil)
+
+	plops = processlisteningonportDatastore.New(store, indicatorDataStore)
+
+	loop := NewLoop(nil, nil, nil, nil, nil, nil, nil, nil, nil, plops, queue.NewWaitableQueue()).(*loopImpl)
+
+
+        // Verify that the table is empty before the test
+        plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+        assert.Equal(t, 0, len(plopsFromDB))
+
+	loop.plops.RetryAddProcessListeningOnPort(testCtx)
+
+        plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+        assert.Equal(t, 0, len(plopsFromDB))
+}
+
 // TestProcessListeningOnPortReprocessBatchRetrying does the following
 // 1. Adds an open and close event for a plop with no indicator
 // This test probably belongs elsewhere as it does not try to retry the plops

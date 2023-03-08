@@ -285,7 +285,12 @@ func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
 	plopInfo *PlopInfo,
 ) ([]*storage.ProcessListeningOnPortStorage, error) {
 
+	if plopInfo == nil || plopInfo.normalizedPLOPs == nil {
+		return nil, nil
+	}
+
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
+	log.Infof("plopInfo.normalizedPLOPs= %+v", plopInfo.normalizedPLOPs)
 	for _, val := range plopInfo.normalizedPLOPs {
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
