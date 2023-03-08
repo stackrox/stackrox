@@ -189,10 +189,15 @@ const StyleNode: React.FunctionComponent<StyleNodeProps> = ({
     }, [detailsLevel, onHideCreateConnector]);
 
     const LabelIcon = passedData.labelIcon;
+
+    // @TODO: If multiple classes need to be stringed together, then we need a more systematic way to generate those here
+    const className = `${passedData?.isFadedOut ? 'pf-topology-node-faded' : ''}`;
+
     return (
         <Layer id={hover ? TOP_LAYER : DEFAULT_LAYER}>
             <g ref={hoverRef as React.LegacyRef<SVGGElement>}>
                 <DefaultNode
+                    className={className}
                     element={element}
                     scaleLabel={detailsLevel !== ScaleDetailsLevel.high}
                     scaleNode={hover && detailsLevel === ScaleDetailsLevel.low}
