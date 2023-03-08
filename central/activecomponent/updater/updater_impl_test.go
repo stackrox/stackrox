@@ -147,6 +147,7 @@ var (
 )
 
 func TestActiveComponentUpdater(t *testing.T) {
+	t.Setenv(env.ActiveVulnMgmt.EnvVar(), "true")
 	suite.Run(t, new(acUpdaterTestSuite))
 }
 
