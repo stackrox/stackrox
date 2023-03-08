@@ -47,7 +47,7 @@ type sensorConnection struct {
 	sensorEventHandler *sensorEventHandler
 
 	queues      map[string]*dedupingQueue
-	queuesMutex sync.RWMutex
+	queuesMutex sync.Mutex
 
 	eventPipeline pipeline.ClusterPipeline
 
@@ -126,10 +126,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	}
 
 	typ := reflectutils.Type(msg.Msg)
-	var queue *dedupingQueue
-	concurrency.WithRLock(&c.queuesMutex, func() {
-		queue = queues[typ]
-	})
+	queue := queues[typ]
 	if queue == nil {
 		concurrency.WithLock(&c.queuesMutex, func() {
 			queue = c.queues[typ]
@@ -139,6 +136,9 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 				c.queues[typ] = queue
 			}
 		})
+		if queues != nil {
+			queues[typ] = queue
+		}
 	}
 	queue.push(msg)
 }
