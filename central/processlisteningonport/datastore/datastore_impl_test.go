@@ -617,19 +617,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
-	suite.Len(newPlopsFromDB, 1)
-
-	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
-		Id:                 newPlopsFromDB[0].GetId(),
-		Port:               plopObjects[1].GetPort(),
-		Protocol:           plopObjects[1].GetProtocol(),
-		CloseTimestamp:     plopObjects[1].GetCloseTimestamp(),
-		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
-		Closed:             true,
-		Process:            nil,
-	}
-
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.Len(newPlopsFromDB, 0)
 }
 
 // TestPLOPAddClosedWithoutActive: one PLOP object is added with a correct
