@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -43,15 +44,20 @@ func (s *TestComplianceCachingSuite) writeWrap(wrap *inventoryWrap, path string)
 	s.NoError(err)
 }
 
-// func (s *TestComplianceCachingSuite) readWrap(path string) *inventoryWrap {
-//	cacheContents, err := os.ReadFile(path)
-//	s.NoError(err)
-//
-//	var wrap inventoryWrap
-//	err = json.Unmarshal(cacheContents, &wrap)
-//	s.NoError(err)
-//	return &wrap
-//}
+func (s *TestComplianceCachingSuite) readWrapToInventory(path string) *storage.NodeInventory {
+	cacheContents, err := os.ReadFile(path)
+	s.NoError(err)
+
+	var wrap inventoryWrap
+	err = json.Unmarshal(cacheContents, &wrap)
+	s.NoError(err)
+
+	var testInv storage.NodeInventory
+	err = jsonutil.JSONToProto(wrap.CachedInventory, &testInv)
+	s.NoError(err)
+
+	return &testInv
+}
 
 func (s *TestComplianceCachingSuite) TestMin() {
 	cases := map[string]struct {
@@ -74,15 +80,25 @@ func (s *TestComplianceCachingSuite) TestMin() {
 			b:    time.Second,
 			want: 0,
 		},
-		"concrete values - a smaller": {
+		"same unit - a smaller": {
 			a:    2 * time.Second,
 			b:    10 * time.Second,
 			want: 2 * time.Second,
 		},
-		"concrete values - b smaller": {
+		"same unit - b smaller": {
 			a:    10 * time.Second,
 			b:    2 * time.Second,
 			want: 2 * time.Second,
+		},
+		"different unit - a smaller": {
+			a:    2 * time.Second,
+			b:    7 * time.Hour,
+			want: 2 * time.Second,
+		},
+		"different unit - b smaller": {
+			a:    2 * time.Second,
+			b:    100 * time.Millisecond,
+			want: 100 * time.Millisecond,
 		},
 	}
 	for k, v := range cases {
@@ -93,27 +109,29 @@ func (s *TestComplianceCachingSuite) TestMin() {
 	}
 }
 
-func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
-	initial := 10 * time.Second
-	cache := initial
-	maxBackoff := 30 * time.Second
-	cs := *NewCachingScanner(mockScanner{}, "", cache, initial, maxBackoff, func(time.Duration) {})
-	expectedBackoff := 15 * time.Second // expected is backoffMultiplier * initial
-
-	newBackoff := cs.calcNextBackoff(initial)
-
-	s.Equal(expectedBackoff, newBackoff)
-}
-
-func (s *TestComplianceCachingSuite) TestCalcNextBackoffUpperBoundary() {
-	initial := 8 * time.Second
-	cache := initial
-	maxBackoff := 10 * time.Second
-	cs := *NewCachingScanner(mockScanner{}, "", cache, initial, maxBackoff, func(time.Duration) {})
-
-	newBackoff := cs.calcNextBackoff(initial)
-
-	s.Equal(maxBackoff, newBackoff)
+func (s *TestComplianceCachingSuite) TestCalcNextBackoffTable() {
+	cases := map[string]struct {
+		initial         time.Duration
+		maxBackoff      time.Duration
+		expectedBackoff time.Duration
+	}{
+		"next backoff should not hit the limit of 30s": {
+			initial:         10 * time.Second,
+			maxBackoff:      30 * time.Second,
+			expectedBackoff: 15 * time.Second,
+		},
+		"next backoff should not be higher than the limit of 10s": {
+			initial:         8 * time.Second,
+			maxBackoff:      10 * time.Second,
+			expectedBackoff: 10 * time.Second,
+		},
+	}
+	for name, c := range cases {
+		s.Run(name, func() {
+			cs := NewCachingScanner(mockScanner{}, "", c.initial, c.initial, c.maxBackoff, func(time.Duration) {})
+			s.Equal(c.expectedBackoff, cs.calcNextBackoff(c.initial))
+		})
+	}
 }
 
 func (s *TestComplianceCachingSuite) TestReadInventoryWrapFaultyUnmarshal() {
@@ -143,7 +161,7 @@ func (s *TestComplianceCachingSuite) TestScanReadFaultyCachedInventory() {
 	s.Equal(time.Time{}, actualValidity)
 }
 
-func (s *TestComplianceCachingSuite) TestScanWithoutResultCache() {
+func (s *TestComplianceCachingSuite) TestScanWithoutExistingCacheWritesCache() {
 	initial := 8 * time.Second
 	cache := initial
 	maxBackoff := 10 * time.Second
@@ -152,9 +170,11 @@ func (s *TestComplianceCachingSuite) TestScanWithoutResultCache() {
 	nodeName := "testme"
 
 	actual, err := cs.Scan(nodeName)
-
+	ci := s.readWrapToInventory(inventoryCachePath)
 	s.NoError(err)
-	s.Equal(nodeName, actual.GetNodeName())
+
+	s.Equal(nodeName, actual.GetNodeName()) // Check that the directly returned result is correct
+	s.Equal(nodeName, ci.GetNodeName())     // Check that the scan is written to cache
 }
 
 func (s *TestComplianceCachingSuite) TestScanHonorBackoff() {
