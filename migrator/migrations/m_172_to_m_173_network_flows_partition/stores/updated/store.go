@@ -91,6 +91,9 @@ type FlowStore interface {
 
 	// RemoveStaleFlows - remove stale duplicate network flows
 	RemoveStaleFlows(ctx context.Context) error
+
+	// GetPartitionName - returns the partition name
+	GetPartitionName() string
 }
 
 type flowStoreImpl struct {
@@ -302,6 +305,11 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	prune := fmt.Sprintf(pruneStaleNetworkFlowsStmt, s.partitionName, s.partitionName)
 	_, err = conn.Exec(ctx, prune, s.clusterID)
 	return err
+}
+
+// GetPartitionName - returns the partition name
+func (s *flowStoreImpl) GetPartitionName() string {
+	return s.partitionName
 }
 
 //// Used for testing

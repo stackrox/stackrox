@@ -98,6 +98,29 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 			return err
 		}
 		log.WriteToStderrf("Trimmed network flows to length of %d from %d.", migratedCount, previousCount)
+
+		// Add the index for the cluster
+		for _, index := range updatedSchema.PartitionIndexes {
+			namePart := cluster
+			difference := 64 - len(index.IndexName) - 2 + len(cluster)
+
+			if difference < 0 {
+				namePart = cluster[:64+difference]
+			}
+
+			officialName := fmt.Sprintf(index.IndexName, namePart)
+			createIndex := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING %s(%s)", officialName, destinationStore.GetPartitionName(), index.IndexType, index.IndexField)
+			log.WriteToStderrf("SHREWS -- %q", createIndex)
+			if err := executeStatementWithContext(parentCtx, db, createIndex); err != nil {
+				return err
+			}
+
+			attachIndex := fmt.Sprintf("alter index %s ATTACH PARTITION %s", index.ParentName, officialName)
+			log.WriteToStderrf("SHREWS -- %q", attachIndex)
+			if err := executeStatementWithContext(parentCtx, db, attachIndex); err != nil {
+				return err
+			}
+		}
 	}
 
 	// Drop the old table
@@ -145,6 +168,14 @@ func analyzeOldTable(parentCtx context.Context, db *postgres.DB) error {
 	defer cancel()
 
 	_, err := db.Exec(ctx, "ANALYZE network_flows;")
+	return err
+}
+
+func executeStatementWithContext(parentCtx context.Context, db *postgres.DB, statement string) error {
+	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
+	defer cancel()
+
+	_, err := db.Exec(ctx, statement)
 	return err
 }
 

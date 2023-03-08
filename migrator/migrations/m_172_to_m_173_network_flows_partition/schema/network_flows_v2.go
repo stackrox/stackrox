@@ -30,10 +30,39 @@ var (
 			) PARTITION BY LIST (ClusterId)`,
 		Partition: true,
 		PostStmts: []string{
-			//"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON network_flows_v2 USING hash(props_srcentity_Id)",
-			//"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON network_flows_v2 USING hash(props_dstentity_Id)",
-			//"CREATE INDEX IF NOT EXISTS network_flows_cluster_v2 ON network_flows_v2 USING hash(clusterid)",
-			//"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp_v2 ON network_flows_v2 USING brin (lastseentimestamp)",
+			// Using ON ONLY for migrations so that child indexes won't impact moving data.  Will add them as part
+			// of the migration
+			"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON ONLY network_flows_v2 USING hash(props_srcentity_Id)",
+			"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON ONLY network_flows_v2 USING hash(props_dstentity_Id)",
+			"CREATE INDEX IF NOT EXISTS network_flows_cluster_v2 ON ONLY network_flows_v2 USING hash(clusterid)",
+			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp_v2 ON ONLY network_flows_v2 USING brin (lastseentimestamp)",
+		},
+	}
+
+	PartitionIndexes = []PartitionIndex{
+		{
+			IndexField: "props_srcentity_Id",
+			IndexType:  "hash",
+			IndexName:  "network_flows_v2_%s_props_srcentity_id_idx",
+			ParentName: "network_flows_src_v2",
+		},
+		{
+			IndexField: "props_dstentity_Id",
+			IndexType:  "hash",
+			IndexName:  "network_flows_v2_%s_props_dstentity_id_idx",
+			ParentName: "network_flows_dst_v2",
+		},
+		{
+			IndexField: "clusterid",
+			IndexType:  "hash",
+			IndexName:  "network_flows_v2_%s_clusterid_idx",
+			ParentName: "network_flows_cluster_v2",
+		},
+		{
+			IndexField: "lastseentimestamp",
+			IndexType:  "brin",
+			IndexName:  "network_flows_v2_%s_lastseentimestamp_idx",
+			ParentName: "network_flows_lastseentimestamp_v2",
 		},
 	}
 )
@@ -42,3 +71,10 @@ const (
 	// NetworkFlowsTableName holds the database table name
 	NetworkFlowsTableName = "network_flows_v2"
 )
+
+type PartitionIndex struct {
+	IndexField string
+	IndexType  string
+	IndexName  string
+	ParentName string
+}
