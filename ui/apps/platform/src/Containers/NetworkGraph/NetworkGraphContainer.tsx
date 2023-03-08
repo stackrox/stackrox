@@ -160,10 +160,14 @@ function fadeOutUnconnectedNodes(
     nodes: CustomNodeModel[],
     edges: CustomEdgeModel[],
     selectedNodeId: string | undefined
-) {
-    const connectedNodeIds = getConnectedNodeIds(nodes, edges, selectedNodeId);
+): CustomNodeModel[] {
+    if (!selectedNodeId) {
+        return nodes;
+    }
+    const connectedNodeIds = getConnectedNodeIds(edges, selectedNodeId);
     const modifiedNodes: CustomNodeModel[] = nodes.map((node) => {
         const { data } = node;
+        // We only want to fade out nodes (not groups), so we target node types specifically
         if (
             data.type === 'DEPLOYMENT' ||
             data.type === 'CIDR_BLOCK' ||
@@ -171,10 +175,7 @@ function fadeOutUnconnectedNodes(
         ) {
             const isConnectedToSelectedNode = connectedNodeIds.includes(node.id);
             const isSelectedNode = node.id === selectedNodeId;
-            const isNodeSelected = !!selectedNodeId;
-            const isFadedOut = isNodeSelected
-                ? !isConnectedToSelectedNode && !isSelectedNode
-                : false;
+            const isFadedOut = !isConnectedToSelectedNode && !isSelectedNode;
             return {
                 ...node,
                 data: {

@@ -608,14 +608,7 @@ export function createExtraneousEdges(selectedNodeId: string): {
 }
 
 // This function returns the ids of nodes that are connected to the selected node
-export function getConnectedNodeIds(
-    nodes: CustomNodeModel[],
-    edges: CustomEdgeModel[],
-    selectedNodeId: string | undefined
-) {
-    if (!selectedNodeId) {
-        return [];
-    }
+export function getConnectedNodeIds(edges: CustomEdgeModel[], selectedNodeId: string) {
     const connectedNodeIds = edges.reduce((acc, curr) => {
         if (curr.source === selectedNodeId) {
             return [...acc, curr.target];
