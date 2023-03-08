@@ -54,7 +54,7 @@ func extractNameFromProtoMessage(message proto.Message) string {
 		groupName := fmt.Sprintf("group %s:%s", group.GetRoleName(), group.GetProps().GetAuthProviderId())
 		// If the key is non-empty, the value should be non-empty as well.
 		if group.GetProps().GetKey() != "" {
-			groupName += fmt.Sprintf("%s:%s", group.GetProps().GetKey(), group.GetProps().GetValue())
+			groupName += fmt.Sprintf(":%s:%s", group.GetProps().GetKey(), group.GetProps().GetValue())
 		}
 		return groupName
 	}
