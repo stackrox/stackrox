@@ -16,7 +16,6 @@ import (
 
 type ProcessBaselinesCacheSuite struct {
 	suite.Suite
-	store  Store
 	testDB *pgtest.TestPostgres
 }
 
@@ -26,17 +25,7 @@ func TestProcessBaselinesCacheStore(t *testing.T) {
 
 func (s *ProcessBaselinesCacheSuite) SetupSuite() {
 	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
-	store := New(s.testDB.DB)
-	var err error
-	s.store, err = NewWithCache(store)
-	s.NoError(err)
 }
 
 func (s *ProcessBaselinesCacheSuite) SetupTest() {
@@ -50,10 +39,12 @@ func (s *ProcessBaselinesCacheSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ProcessBaselinesCacheSuite) TesCachetStore() {
-	ctx := sac.WithAllAccess(context.Background())
+func (s *ProcessBaselinesCacheSuite) TestCacheStore() {
+	dbStore := New(s.testDB.DB)
 
-	store := s.store
+	store, err := NewWithCache(dbStore)
+	s.NoError(err)
+	ctx := sac.WithAllAccess(context.Background())
 
 	processBaseline := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(processBaseline, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
