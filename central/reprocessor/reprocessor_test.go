@@ -216,7 +216,7 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
 
         assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
 
-	loop.runProcessListeningOnPortReprocessing()
+	loop.plops.RetryAddProcessListeningOnPort(testCtx)
 
         plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
         assert.Equal(t, len(plopsFromDB), 1)
@@ -366,7 +366,7 @@ func TestProcessListeningOnPortReprocessCloseBeforeRetrying(t *testing.T) {
 
 	loop.plops.AddProcessListeningOnPort(testCtx, closedPlopObjects...)
 
-	loop.runProcessListeningOnPortReprocessing()
+	loop.plops.RetryAddProcessListeningOnPort(testCtx)
 
         plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
         assert.Equal(t, len(plopsFromDB), 1)
@@ -396,13 +396,6 @@ func TestProcessListeningOnPortReprocessCloseBeforeRetrying(t *testing.T) {
 // 2. Adds the indicator for the plop 
 // 3. Adds a batch where the plop is closed and then opened
 // 4. Retries the plops that were not matched to processes
-//
-// Currently the result is that the plop is recorded as being closed which is incorrect
-// The reason for this is that when the batch with the open and close plop is added
-// it does not know about the open plop that was not matched to a process and it does
-// not know about the order of the plops in the batch so it thinks the plop was opened and then closed
-// Then when it goes to do the retry it ignores the first unmatched plop, because the plop is already
-// in the table.
 func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 
 
@@ -509,7 +502,7 @@ func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 
 	loop.plops.AddProcessListeningOnPort(testCtx, batchPlopObjects...)
 
-	loop.runProcessListeningOnPortReprocessing()
+	loop.plops.RetryAddProcessListeningOnPort(testCtx)
 
         plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
         assert.Equal(t, 1, len(plopsFromDB))

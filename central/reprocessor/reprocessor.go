@@ -469,10 +469,6 @@ func (l *loopImpl) reprocessNode(id string) bool {
 	return true
 }
 
-func (l *loopImpl) runProcessListeningOnPortReprocessing() {
-	l.plops.RetryAddProcessListeningOnPort(allAccessCtx)
-}
-
 func (l *loopImpl) reprocessNodes() {
 	l.runReprocessingForObjects("node", func() ([]string, error) {
 		results, err := l.nodes.Search(allAccessCtx, search.EmptyQuery())
@@ -599,7 +595,7 @@ func (l *loopImpl) processListeningOnPortLoop() {
 		case <-l.stopSig.Done():
 			return
 		case <-l.processListeningOnPortTicker.C:
-			l.runProcessListeningOnPortReprocessing()
+			l.plops.RetryAddProcessListeningOnPort(allAccessCtx)
 		}
 	}
 }
