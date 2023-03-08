@@ -39,6 +39,7 @@ var (
 
 // MigrateToPartitions updates the btree network flow indexes to be hash
 func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
+	partitionNames := []string{}
 	parentCtx := context.Background()
 
 	err := analyzeOldTable(parentCtx, db)
@@ -69,6 +70,7 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 
 		// Create the updated store which will create the partiion
 		destinationStore := updated.New(db, cluster)
+		partitionNames = append(partitionNames, destinationStore.GetPartitionName())
 
 		err = migrateData(parentCtx, db, cluster)
 		if err != nil {
@@ -98,18 +100,29 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 			return err
 		}
 		log.WriteToStderrf("Trimmed network flows to length of %d from %d.", migratedCount, previousCount)
+	}
 
+	// Now deal with all the indexes
+	// First the parent indexes
+	for _, statement := range updatedSchema.ParentIndexStmts {
+		if err := executeStatementWithContext(parentCtx, db, statement); err != nil {
+			return err
+		}
+	}
+
+	// Now the children
+	for idx, partition := range partitionNames {
 		// Add the index for the cluster
 		for _, index := range updatedSchema.PartitionIndexes {
-			namePart := cluster
-			difference := 64 - len(index.IndexName) - 2 + len(cluster)
+			namePart := clusters[idx]
+			difference := 64 - len(index.IndexName) - 2 + len(clusters[idx])
 
 			if difference < 0 {
-				namePart = cluster[:64+difference]
+				namePart = clusters[idx][:64+difference]
 			}
 
 			officialName := fmt.Sprintf(index.IndexName, namePart)
-			createIndex := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING %s(%s)", officialName, destinationStore.GetPartitionName(), index.IndexType, index.IndexField)
+			createIndex := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING %s(%s)", officialName, partition, index.IndexType, index.IndexField)
 			log.WriteToStderrf("SHREWS -- %q", createIndex)
 			if err := executeStatementWithContext(parentCtx, db, createIndex); err != nil {
 				return err

@@ -29,14 +29,16 @@ var (
 					PRIMARY KEY(ClusterId, Flow_id)
 			) PARTITION BY LIST (ClusterId)`,
 		Partition: true,
-		PostStmts: []string{
-			// Using ON ONLY for migrations so that child indexes won't impact moving data.  Will add them as part
-			// of the migration
-			"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON ONLY network_flows_v2 USING hash(props_srcentity_Id)",
-			"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON ONLY network_flows_v2 USING hash(props_dstentity_Id)",
-			"CREATE INDEX IF NOT EXISTS network_flows_cluster_v2 ON ONLY network_flows_v2 USING hash(clusterid)",
-			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp_v2 ON ONLY network_flows_v2 USING brin (lastseentimestamp)",
-		},
+		PostStmts: []string{},
+	}
+
+	ParentIndexStmts = []string{
+		// Using ON ONLY for migrations so that child indexes won't impact moving data.  Will add them as part
+		// of the migration
+		"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON ONLY network_flows_v2 USING hash(props_srcentity_Id)",
+		"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON ONLY network_flows_v2 USING hash(props_dstentity_Id)",
+		"CREATE INDEX IF NOT EXISTS network_flows_cluster_v2 ON ONLY network_flows_v2 USING hash(clusterid)",
+		"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp_v2 ON ONLY network_flows_v2 USING brin (lastseentimestamp)",
 	}
 
 	PartitionIndexes = []PartitionIndex{
