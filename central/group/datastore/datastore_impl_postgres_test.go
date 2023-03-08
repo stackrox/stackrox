@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -27,9 +26,9 @@ func TestGroupsWithPostgres(t *testing.T) {
 type groupsWithPostgresTestSuite struct {
 	suite.Suite
 
-	ctx   context.Context
-	pool  *postgres.DB
-	store postgresGroupStore.Store
+	ctx          context.Context
+	testPostgres *pgtest.TestPostgres
+	store        postgresGroupStore.Store
 
 	groupsDatastore DataStore
 }
@@ -42,21 +41,20 @@ func (s *groupsWithPostgresTestSuite) SetupSuite() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
-	pgtestBase := pgtest.ForT(s.T())
-	s.Require().NotNil(pgtestBase)
-	s.pool = pgtestBase.DB
+	s.testPostgres = pgtest.ForT(s.T())
+	s.Require().NotNil(s.testPostgres)
 
-	store := postgresGroupStore.New(s.pool)
+	store := postgresGroupStore.New(s.testPostgres.DB)
 	s.groupsDatastore = New(store)
 }
 
 func (s *groupsWithPostgresTestSuite) TearDownSuite() {
-	s.pool.Close()
+	s.testPostgres.Teardown(s.T())
 }
 
 func (s *groupsWithPostgresTestSuite) TearDownTest() {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", postgresSchema.GroupsTableName)
-	_, err := s.pool.Exec(s.ctx, sql)
+	_, err := s.testPostgres.Exec(s.ctx, sql)
 	s.NoError(err)
 }
 
@@ -91,7 +89,7 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 	err := s.groupsDatastore.Add(s.ctx, group)
 	s.NoError(err)
 
-	// 1. Updating the group to be the same shouldn't throw an error as its a no-op.
+	// 1. Updating the group to be the same shouldn't throw an error as it's a no-op.
 	err = s.groupsDatastore.Update(s.ctx, group, false)
 	s.NoError(err)
 
@@ -113,6 +111,25 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 	newGroup.RoleName = group.GetRoleName()
 
 	err = s.groupsDatastore.Update(s.ctx, newGroup, false)
+	s.Error(err)
+	s.ErrorIs(err, errox.AlreadyExists)
+}
+
+func (s *groupsWithPostgresTestSuite) TestUpsertGroups() {
+	group := fixtures.GetGroup()
+
+	// 0. Insert the group.
+	group.Props.Id = ""
+	err := s.groupsDatastore.Add(s.ctx, group)
+	s.NoError(err)
+
+	// 1. Upserting the same group shouldn't throw an error as it's a no-op.
+	err = s.groupsDatastore.Upsert(s.ctx, group)
+	s.NoError(err)
+
+	// 2. Upsert another group equal to the previously added one should fail.
+	group.Props.Id = ""
+	err = s.groupsDatastore.Upsert(s.ctx, group)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 }
