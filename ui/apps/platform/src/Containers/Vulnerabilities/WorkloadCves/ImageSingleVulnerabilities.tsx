@@ -29,6 +29,19 @@ import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 
+export type ImageVulnerabilitiesVariables = {
+    id: string;
+};
+
+export type ImageVulnerabilitiesResponse = {
+    image: {
+        imageVulnerabilities: {
+            severity: string;
+            isFixable: boolean;
+        }[];
+    };
+};
+
 function severityCountsFromImageVulnerabilities(
     imageVulnerabilities: ImageVulnerabilitiesResponse['image']['imageVulnerabilities']
 ): Record<VulnerabilitySeverity, number> {
@@ -64,19 +77,6 @@ function statusCountsFromImageVulnerabilities(
 
     return statusCounts;
 }
-
-export type ImageVulnerabilitiesVariables = {
-    id: string;
-};
-
-export type ImageVulnerabilitiesResponse = {
-    image: {
-        imageVulnerabilities: {
-            severity: string;
-            isFixable: boolean;
-        }[];
-    };
-};
 
 export const imageVulnerabilitiesQuery = gql`
     query getImageVulnerabilities($id: ID!) {
@@ -137,27 +137,25 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
         const severityCounts = severityCountsFromImageVulnerabilities(vulnerabilities);
         const cveStatusCounts = statusCountsFromImageVulnerabilities(vulnerabilities);
         // TODO Integrate these with page search filters
-        const hiddenSeverities = new Set<VulnerabilitySeverity>(['LOW_VULNERABILITY_SEVERITY']);
+        const hiddenSeverities = new Set<VulnerabilitySeverity>([]);
         const hiddenStatuses = new Set<FixableStatus>([]);
 
         mainContent = (
-            <>
-                <Grid hasGutter>
-                    <GridItem sm={12} md={6} xl2={4}>
-                        <BySeveritySummaryCard
-                            title="CVEs by severity"
-                            severityCounts={severityCounts}
-                            hiddenSeverities={hiddenSeverities}
-                        />
-                    </GridItem>
-                    <GridItem sm={12} md={6} xl2={4}>
-                        <CvesByStatusSummaryCard
-                            cveStatusCounts={cveStatusCounts}
-                            hiddenStatuses={hiddenStatuses}
-                        />
-                    </GridItem>
-                </Grid>
-            </>
+            <Grid hasGutter>
+                <GridItem sm={12} md={6} xl2={4}>
+                    <BySeveritySummaryCard
+                        title="CVEs by severity"
+                        severityCounts={severityCounts}
+                        hiddenSeverities={hiddenSeverities}
+                    />
+                </GridItem>
+                <GridItem sm={12} md={6} xl2={4}>
+                    <CvesByStatusSummaryCard
+                        cveStatusCounts={cveStatusCounts}
+                        hiddenStatuses={hiddenStatuses}
+                    />
+                </GridItem>
+            </Grid>
         );
     }
 
