@@ -41,7 +41,7 @@ const workloadCveOverviewImagePath = getOverviewCvesPath({
 function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['image'] }) {
     const [hasSuccessfulCopy, setHasSuccessfulCopy] = useState(false);
 
-    const { deploymentCount, operatingSystem, metadata, scan } = imageData;
+    const { deploymentCount, operatingSystem, metadata, dataSource, scanTime } = imageData;
     const created = metadata?.v1?.created;
     const sha = metadata?.v1?.digest;
     const isActive = deploymentCount > 0;
@@ -68,9 +68,9 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
             {created && (
                 <Label isCompact>Age: {getDistanceStrictAsPhrase(created, new Date())}</Label>
             )}
-            {scan && (
+            {scanTime && (
                 <Label isCompact>
-                    Scan time: {getDateTime(scan.scanTime)} by {scan.dataSource.name}
+                    Scan time: {getDateTime(scanTime)} by {dataSource?.name ?? 'Unknown Scanner'}
                 </Label>
             )}
             {sha && (
@@ -107,17 +107,15 @@ export type ImageDetailsResponse = {
                 digest: string;
             } | null;
         } | null;
-
-        scan: {
-            dataSource: { name: string };
-            scanTime: Date | null;
-        };
+        dataSource: { name: string } | null;
+        scanTime: Date | null;
     };
 };
 
 export const imageDetailsQuery = gql`
     query getImageDetails($id: ID!) {
         image(id: $id) {
+            id
             deploymentCount
             name {
                 fullName
@@ -129,12 +127,10 @@ export const imageDetailsQuery = gql`
                     digest
                 }
             }
-            scan {
-                dataSource {
-                    name
-                }
-                scanTime
+            dataSource {
+                name
             }
+            scanTime
         }
     }
 `;
@@ -197,22 +193,27 @@ function WorkloadCvesImageSinglePage() {
                         </Flex>
                     )}
                 </PageSection>
-                <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                <PageSection
+                    className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                    padding={{ default: 'noPadding' }}
+                >
                     <Tabs
                         activeKey={activeTabKey}
                         onSelect={handleTabClick}
                         component={TabsComponent.nav}
-                        className="pf-u-pl-md"
+                        className="pf-u-pl-md pf-u-background-color-100"
                         mountOnEnter
                         unmountOnExit
                     >
                         <Tab
+                            className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
-                            <ImageSingleVulnerabilities />
+                            <ImageSingleVulnerabilities imageId={imageId} />
                         </Tab>
                         <Tab
+                            className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                             eventKey="Resources"
                             title={<TabTitleText>Resources</TabTitleText>}
                             isDisabled
