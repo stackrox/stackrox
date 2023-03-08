@@ -167,6 +167,7 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 			case <-ctx.Done():
 				return
 			case <-t.C:
+				log.Infof("starting a node scan for node %q", nodeName)
 				msg, err := scanNode(nodeName, scanner)
 				if err != nil {
 					log.Errorf("error running scanNode: %v", err)

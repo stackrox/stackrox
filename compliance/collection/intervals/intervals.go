@@ -1,7 +1,6 @@
 package intervals
 
 import (
-	"math"
 	"math/rand"
 	"time"
 
@@ -24,7 +23,7 @@ type NodeScanIntervals struct {
 }
 
 // deviateDuration randomly deviates a duration by a given percentage. Example:
-// duration of 10s with 5% deviation means a random duration between 5s and 15s.
+// duration of 10s with 0.5 deviation means a random duration between 5s and 15s.
 func deviateDuration(d time.Duration, percentage float64) time.Duration {
 	min, max := 1.0-percentage, 1.0+percentage
 	dev := randFloat64()*(max-min) + min
@@ -43,13 +42,16 @@ func NewNodeScanIntervalFromEnv() NodeScanIntervals {
 	i := NodeScanIntervals{}
 	i.base = env.NodeScanningInterval.DurationSetting()
 	i.deviation = 0.0
-	if env.NodeScanningIntervalDeviation.IntegerSetting() > 0 {
-		d := math.Min(float64(env.NodeScanningIntervalDeviation.IntegerSetting()), 100.0)
-		i.deviation = d / 100.0
+	if d := env.NodeScanningIntervalDeviation.DurationSetting(); d > 0 {
+		if d >= i.base {
+			i.deviation = 1
+		} else {
+			i.deviation = d.Seconds() / i.base.Seconds()
+		}
 	}
 	i.initialMax = env.NodeScanningMaxInitialWait.DurationSetting()
-	log.Infof("scanning intervals: base=%s deviation=%.2f initialMax=%s",
-		i.base, i.deviation, i.initialMax)
+	log.Infof("Scanning intervals: base interval: %s, maximum absolute deviation from base: %.2f%%, maximum first scan interval: %s",
+		i.base, i.deviation*100.0, i.initialMax)
 	return i
 }
 

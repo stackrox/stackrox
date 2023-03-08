@@ -85,7 +85,7 @@ func TestNewNodeScanIntervalFromEnv(t *testing.T) {
 		{
 			name:          "when interval, deviation and initial are set then interval is set",
 			envInterval:   "1h",
-			envDeviation:  "50",
+			envDeviation:  "30m",
 			envMaxInitial: "1m",
 			want: NodeScanIntervals{
 				base:       time.Hour,
@@ -94,20 +94,12 @@ func TestNewNodeScanIntervalFromEnv(t *testing.T) {
 			},
 		},
 		{
-			name:         "when deviation greater than 100",
-			envDeviation: "200",
+			name:         "when deviation greater or equal to interval",
+			envInterval:  "4h",
+			envDeviation: "4h",
 			want: NodeScanIntervals{
 				base:       time.Hour * 4,
 				deviation:  1,
-				initialMax: time.Minute * 5,
-			},
-		},
-		{
-			name:         "when deviation lower than 0",
-			envDeviation: "-20",
-			want: NodeScanIntervals{
-				base:       time.Hour * 4,
-				deviation:  0,
 				initialMax: time.Minute * 5,
 			},
 		},
