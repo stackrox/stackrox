@@ -1,4 +1,4 @@
-package m173tom174
+package m175tom176
 
 import (
 	"context"
@@ -13,12 +13,11 @@ import (
 )
 
 var (
-	startSeqNum = 173
+	startSeqNum = 175
 	migration   = types.Migration{
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
 		Run: func(database *types.Databases) error {
-			// Migration code comes here
 			return createNotificationScheduleTable(database.PostgresDB, database.GormDB)
 		},
 	}
@@ -27,8 +26,6 @@ var (
 func init() {
 	migrations.MustRegisterMigration(migration)
 }
-
-// Additional code to support the migration
 
 func createNotificationScheduleTable(_ *postgres.DB, gormDB *gorm.DB) error {
 	ctx := context.Background()

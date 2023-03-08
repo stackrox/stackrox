@@ -1,12 +1,12 @@
 //go:build sql_integration
 
-package m173tom174
+package m175tom176
 
 import (
 	"context"
 	"testing"
 
-	notificationschedulestore "github.com/stackrox/rox/migrator/migrations/m_173_to_m_174_create_notification_schedule_table/notificationschedulestore"
+	notificationschedulestore "github.com/stackrox/rox/migrator/migrations/m_175_to_m_176_create_notification_schedule_table/notificationschedulestore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
