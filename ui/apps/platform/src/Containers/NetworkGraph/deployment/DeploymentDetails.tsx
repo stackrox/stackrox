@@ -34,6 +34,7 @@ import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-pol
 import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
 import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
+import SecurityContext from './SecurityContext';
 import { deploymentTabs } from '../utils/deploymentUtils';
 
 type DeploymentDetailsProps = {
@@ -369,6 +370,11 @@ function DeploymentDetails({
                                 </Title>
                             </EmptyState>
                         )}
+                    </DetailSection>
+                </li>
+                <li>
+                    <DetailSection title="Pod security context">
+                        <SecurityContext deployment={deployment} />
                     </DetailSection>
                 </li>
             </ul>
