@@ -41,6 +41,11 @@ var (
 func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 	parentCtx := context.Background()
 
+	err := analyzeOldTable(parentCtx, db)
+	if err != nil {
+		log.WriteToStderrf("unable to analyze network_flows.  Will continue processing though it may be slow. %v", err)
+	}
+
 	// First get the distinct clusters in the network_flows table
 	clusters, err := getClusters(parentCtx, db)
 	if err != nil {
@@ -133,6 +138,14 @@ func cleanupDestinationPartition(parentCtx context.Context, store updated.FlowSt
 	defer cancel()
 
 	return store.RemoveStaleFlows(ctx)
+}
+
+func analyzeOldTable(parentCtx context.Context, db *postgres.DB) error {
+	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
+	defer cancel()
+
+	_, err := db.Exec(ctx, "ANALYZE network_flows;")
+	return err
 }
 
 func getClusters(parentCtx context.Context, db *postgres.DB) ([]string, error) {
