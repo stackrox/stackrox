@@ -67,8 +67,8 @@ func (s *serviceImpl) ConfigureTelemetry(ctx context.Context, config *v1.Configu
 }
 
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.TelemetryConfig, error) {
-	cfg := centralclient.InstanceConfig()
-	if !cfg.Enabled() {
+	cfg := centralclient.GetConfig()
+	if cfg == nil {
 		return nil, errox.NotFound.New("telemetry collection is disabled")
 	}
 	id, err := authn.IdentityFromContext(ctx)
