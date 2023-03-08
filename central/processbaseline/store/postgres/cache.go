@@ -19,7 +19,8 @@ var (
 )
 
 // NewWithCache takes a postgres db and generates a store with in memory cache
-// Note: This cache bypasses the SAC check and relies on the SAC check on
+// Note: This cache bypasses the SAC check and relies on the SAC check on datastore.
+// If it is not true, the cache may not functional correctly.
 func NewWithCache(dbStore Store) (Store, error) {
 	impl := &cacheImpl{
 		dbStore: dbStore,
