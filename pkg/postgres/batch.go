@@ -16,5 +16,9 @@ type BatchResults struct {
 func (b *BatchResults) Close() error {
 	defer b.cancel()
 
-	return b.BatchResults.Close()
+	if err := b.BatchResults.Close(); err != nil {
+		incQueryErrors("batch", err)
+		return err
+	}
+	return nil
 }

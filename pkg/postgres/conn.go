@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
@@ -14,12 +15,20 @@ type Conn struct {
 	*pgxpool.Conn
 }
 
+// Release wraps pgxpool.Conn Release
+func (c *Conn) Release() {
+	if c != nil {
+		c.Conn.Release()
+	}
+}
+
 // Begin wraps pgxpool.Conn Begin
 func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
 	tx, err := c.Conn.Begin(ctx)
 	if err != nil {
+		incQueryErrors("begin", err)
 		return nil, err
 	}
 	return &Tx{
@@ -33,20 +42,29 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (pgcon
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
-	return c.Conn.Exec(ctx, sql, args...)
+	defer setQueryDuration(time.Now(), "conn", sql)
+	ct, err := c.Conn.Exec(ctx, sql, args...)
+	if err != nil {
+		incQueryErrors(sql, err)
+		return nil, err
+	}
+	return ct, err
 }
 
 // Query wraps pgxpool.Conn Query
 func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
+	defer setQueryDuration(time.Now(), "conn", sql)
 	rows, err := c.Conn.Query(ctx, sql, args...)
 	if err != nil {
+		incQueryErrors(sql, err)
 		return nil, err
 	}
 
 	return &Rows{
 		Rows:       rows,
+		query:      sql,
 		cancelFunc: cancel,
 	}, nil
 }
@@ -55,8 +73,10 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) *Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
+	defer setQueryDuration(time.Now(), "conn", sql)
 	return &Row{
 		Row:        c.Conn.QueryRow(ctx, sql, args...),
+		query:      sql,
 		cancelFunc: cancel,
 	}
 }
