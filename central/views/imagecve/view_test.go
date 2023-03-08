@@ -13,12 +13,14 @@ import (
 	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -26,6 +28,7 @@ import (
 
 type testCase struct {
 	desc        string
+	ctx         context.Context
 	q           *v1.Query
 	matchFilter *filterImpl
 	readOptions views.ReadOptions
@@ -76,7 +79,6 @@ func TestImageCVEView(t *testing.T) {
 type ImageCVEViewTestSuite struct {
 	suite.Suite
 
-	ctx     context.Context
 	testDB  *pgtest.TestPostgres
 	cveView CveView
 
@@ -91,7 +93,7 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	s.ctx = sac.WithAllAccess(context.Background())
+	ctx := sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
 	// Initialize the datastore.
@@ -102,12 +104,12 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	images, err := imageSamples.GetTestImages(s.T())
 	s.Require().NoError(err)
 	for _, image := range images {
-		s.Require().NoError(store.UpsertImage(s.ctx, image))
+		s.Require().NoError(store.UpsertImage(ctx, image))
 	}
 
 	// Ensure that the image is stored and constructed as expected.
 	for idx, image := range images {
-		actual, found, err := store.GetImage(s.ctx, image.GetId())
+		actual, found, err := store.GetImage(ctx, image.GetId())
 		s.Require().NoError(err)
 		s.Require().True(found)
 
@@ -132,7 +134,7 @@ func (s *ImageCVEViewTestSuite) TearDownSuite() {
 func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			actual, err := s.cveView.Get(s.ctx, tc.q, tc.readOptions)
+			actual, err := s.cveView.Get(tc.ctx, tc.q, tc.readOptions)
 			if tc.expectedErr != "" {
 				s.ErrorContains(err, tc.expectedErr)
 				return
@@ -149,7 +151,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			actual, err := s.cveView.Count(s.ctx, tc.q)
+			actual, err := s.cveView.Count(tc.ctx, tc.q)
 			if tc.expectedErr != "" {
 				s.ErrorContains(err, tc.expectedErr)
 				return
@@ -165,7 +167,7 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 func (s *ImageCVEViewTestSuite) TestCountBySeverity() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			actual, err := s.cveView.CountBySeverity(s.ctx, tc.q)
+			actual, err := s.cveView.CountBySeverity(tc.ctx, tc.q)
 			if tc.expectedErr != "" {
 				s.ErrorContains(err, tc.expectedErr)
 				return
@@ -182,11 +184,13 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 	return []testCase{
 		{
 			desc:        "search all",
+			ctx:         context.Background(),
 			q:           search.EmptyQuery(),
 			matchFilter: matchAllFilter(),
 		},
 		{
 			desc: "search one cve",
+			ctx:  context.Background(),
 			q:    search.NewQueryBuilder().AddExactMatches(search.CVE, "CVE-2022-1552").ProtoQuery(),
 			matchFilter: matchAllFilter().withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
 				return vuln.GetCve() == "CVE-2022-1552"
@@ -194,6 +198,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc: "search one image",
+			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:latest").ProtoQuery(),
 			matchFilter: matchAllFilter().withImageFiler(func(image *storage.Image) bool {
@@ -202,6 +207,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc: "search one cve + one image",
+			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.CVE, "CVE-2022-1552").
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
@@ -216,6 +222,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc: "search critical severity",
+			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
 				ProtoQuery(),
@@ -226,6 +233,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc: "search multiple severities",
+			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.Severity,
 					storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
@@ -240,6 +248,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc: "search critical severity + one image",
+			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
@@ -254,6 +263,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc: "search one operating system",
+			ctx:  context.Background(),
 			q:    search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "debian:8").ProtoQuery(),
 			matchFilter: matchAllFilter().withImageFiler(func(image *storage.Image) bool {
 				return image.GetScan().GetOperatingSystem() == "debian:8"
@@ -261,11 +271,13 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc:        "no match",
+			ctx:         context.Background(),
 			q:           search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
 			matchFilter: matchNoneFilter(),
 		},
 		{
 			desc: "with select",
+			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.CVE)).
 				AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
@@ -273,6 +285,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc: "with group by",
+			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.OperatingSystem, "").
 				AddGroupBy(search.CVE).ProtoQuery(),
@@ -280,12 +293,54 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		},
 		{
 			desc:        "search all; skip top cvss; skip images by severity",
+			ctx:         context.Background(),
 			q:           search.NewQueryBuilder().ProtoQuery(),
 			matchFilter: matchAllFilter(),
 			readOptions: views.ReadOptions{
 				SkipGetImagesBySeverity: true,
 				SkipGetTopCVSS:          true,
 			},
+		},
+		{
+			desc: "search one cve w/ image scope",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
+				Level: v1.SearchCategory_IMAGES,
+			}),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.CVE, "CVE-2022-1552").
+				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withImageFiler(func(image *storage.Image) bool {
+					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
+				}).
+				withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.GetCve() == "CVE-2022-1552"
+				}),
+		},
+		{
+			desc: "search critical severity w/ cve & image scope",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
+				Level: v1.SearchCategory_IMAGES,
+				Parent: &scoped.Scope{
+					ID:    cve.ID("CVE-2022-1552", "debian:8"),
+					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+				},
+			}),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withImageFiler(func(image *storage.Image) bool {
+					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian" &&
+						image.GetScan().GetOperatingSystem() == "debian:8"
+				}).
+				withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.GetCve() == "CVE-2022-1552" &&
+						vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+				}),
 		},
 	}
 }

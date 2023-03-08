@@ -128,12 +128,14 @@ func testImages() []*storage.Image {
 						Version: "1.0",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:  "cve-2019-1",
-								Cvss: 4,
+								Cve:      "cve-2019-1",
+								Cvss:     4,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 							{
-								Cve:  "cve-2019-2",
-								Cvss: 3,
+								Cve:      "cve-2019-2",
+								Cvss:     3,
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
