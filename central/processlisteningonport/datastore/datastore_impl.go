@@ -98,7 +98,7 @@ func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*st
 	return portProcesses, err
 }
 
-type InfoFromDB struct {
+type PlopInfo struct {
 	normalizedPLOPs		[]*storage.ProcessListeningOnPortFromSensor
 	completedInBatch	[]*storage.ProcessListeningOnPortFromSensor
 	indicatorsMap		map[string]*storage.ProcessIndicator
@@ -106,10 +106,10 @@ type InfoFromDB struct {
 
 }
 
-func (ds *datastoreImpl) getInfoFromDB(
+func (ds *datastoreImpl) getPlopInfo(
 	ctx context.Context,
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
-) (*InfoFromDB, error) {
+) (*PlopInfo, error) {
 
 	indicatorIds := make([]string, 0)
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -128,49 +128,48 @@ func (ds *datastoreImpl) getInfoFromDB(
 		return nil, nil
 	}
 
-	//infoFromDB.normalizedPLOPs, infoFromDB.completedInBatch = normalizePLOPs(portProcesses)
+	//plopInfo.normalizedPLOPs, plopInfo.completedInBatch = normalizePLOPs(portProcesses)
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 
 	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
 	// be done in a single join query fetching both ProcessIndicator and needed
 	// bits from PLOP.
 	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, normalizedPLOPs...)
-	//infoFromDB.indicatorsMap, indicatorIds, err = ds.fetchIndicators(ctx, infoFromDB.normalizedPLOPs...)
+	//plopInfo.indicatorsMap, indicatorIds, err = ds.fetchIndicators(ctx, plopInfo.normalizedPLOPs...)
 	if err != nil {
 		return nil, err
 	}
 
 	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
-	//infoFromDB.existingPLOPMap, err = ds.fetchExistingPLOPs(ctx, indicatorIds)
+	//plopInfo.existingPLOPMap, err = ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
 		return nil, err
 	}
 
-	infoFromDB := &InfoFromDB{
+	plopInfo := &PlopInfo{
 		normalizedPLOPs:	normalizedPLOPs,
 		completedInBatch:	completedInBatch,
 		indicatorsMap:		indicatorsMap,
 		existingPLOPMap:	existingPLOPMap,
 	}
 
-	return infoFromDB, nil
+	return plopInfo, nil
 }
 
 func (ds *datastoreImpl) getPlopObjectsToUpsert(
 	ctx context.Context,
-	infoFromDB *InfoFromDB,
-	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
+	plopInfo *PlopInfo,
 ) ([]*storage.ProcessListeningOnPortStorage, error) {
 
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
-	for _, val := range infoFromDB.normalizedPLOPs {
+	for _, val := range plopInfo.normalizedPLOPs {
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		key := getPlopProcessUniqueKey(val)
 
-		if indicator, ok := infoFromDB.indicatorsMap[key]; ok {
+		if indicator, ok := plopInfo.indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
@@ -181,7 +180,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
-		existingPLOP, prevExists := infoFromDB.existingPLOPMap[plopKey]
+		existingPLOP, prevExists := plopInfo.existingPLOPMap[plopKey]
 
 		// There are three options:
 		// * We found an existing PLOP object with different close timestamp.
@@ -215,13 +214,13 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 	// * If an existing closed PLOP is present in the db, they will update the
 	// timestamp
 	// * If no existing PLOP is present, they will create a new closed PLOP
-	for _, val := range infoFromDB.completedInBatch {
+	for _, val := range plopInfo.completedInBatch {
 		indicatorID := ""
 		//var processInfo *storage.ProcessIndicatorUniqueKey
 
 		key := getPlopProcessUniqueKey(val)
 
-		if indicator, ok := infoFromDB.indicatorsMap[key]; ok {
+		if indicator, ok := plopInfo.indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
@@ -232,7 +231,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
-		existingPLOP, prevExists := infoFromDB.existingPLOPMap[plopKey]
+		existingPLOP, prevExists := plopInfo.existingPLOPMap[plopKey]
 
 		if prevExists {
 			log.Debugf("Got existing PLOP to update timestamp: %+v", existingPLOP)
@@ -283,18 +282,17 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 // That or there will be some other refactoring
 func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
 	ctx context.Context,
-	infoFromDB *InfoFromDB,
-	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
+	plopInfo *PlopInfo,
 ) ([]*storage.ProcessListeningOnPortStorage, error) {
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
-	for _, val := range infoFromDB.normalizedPLOPs {
+	for _, val := range plopInfo.normalizedPLOPs {
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		key := getPlopProcessUniqueKey(val)
 
-		if indicator, ok := infoFromDB.indicatorsMap[key]; ok {
+		if indicator, ok := plopInfo.indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
@@ -305,7 +303,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
 
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
-		existingPLOP, prevExists := infoFromDB.existingPLOPMap[plopKey]
+		existingPLOP, prevExists := plopInfo.existingPLOPMap[plopKey]
 
 		// There are three options:
 		// * We found an existing PLOP object with different close timestamp.
@@ -352,13 +350,13 @@ func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
 	// * If an existing closed PLOP is present in the db, they will update the
 	// timestamp
 	// * If no existing PLOP is present, they will create a new closed PLOP
-	for _, val := range infoFromDB.completedInBatch {
+	for _, val := range plopInfo.completedInBatch {
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		key := getPlopProcessUniqueKey(val)
 
-		if indicator, ok := infoFromDB.indicatorsMap[key]; ok {
+		if indicator, ok := plopInfo.indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
@@ -369,7 +367,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
 
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
-		existingPLOP, prevExists := infoFromDB.existingPLOPMap[plopKey]
+		existingPLOP, prevExists := plopInfo.existingPLOPMap[plopKey]
 
 		if prevExists {
 			log.Debugf("Got existing PLOP to update timestamp: %+v", existingPLOP)
@@ -414,8 +412,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// data from postgres. It enables unit tests without postgres
 	// and greater flexibility and reusability.
 
-	infoFromDB, err := ds.getInfoFromDB(ctx, portProcesses...)
-	plopObjects, err := ds.getPlopObjectsToUpsert(ctx, infoFromDB, portProcesses...)
+	plopInfo, err := ds.getPlopInfo(ctx, portProcesses...)
+	plopObjects, err := ds.getPlopObjectsToUpsert(ctx, plopInfo)
 
 	if err != nil {
 		return err
@@ -434,8 +432,8 @@ func (ds *datastoreImpl) RetryAddProcessListeningOnPort(ctx context.Context) err
 	)
 
 	portProcesses, _ := ds.getUnmatchedPlopsAndConvert(ctx)
-	infoFromDB, err := ds.getInfoFromDB(ctx, portProcesses...)
-	plopObjects, err := ds.getPlopObjectsToUpsertForRetry(ctx, infoFromDB, portProcesses...)
+	plopInfo, err := ds.getPlopInfo(ctx, portProcesses...)
+	plopObjects, err := ds.getPlopObjectsToUpsertForRetry(ctx, plopInfo)
 
 	if err != nil {
 		return err
