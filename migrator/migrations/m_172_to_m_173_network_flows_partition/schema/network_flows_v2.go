@@ -37,7 +37,7 @@ var (
 		// of the migration
 		"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON ONLY network_flows_v2 USING hash(props_srcentity_Id)",
 		"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON ONLY network_flows_v2 USING hash(props_dstentity_Id)",
-		"CREATE INDEX IF NOT EXISTS network_flows_cluster_v2 ON ONLY network_flows_v2 USING hash(clusterid)",
+		//"CREATE INDEX IF NOT EXISTS network_flows_cluster_v2 ON ONLY network_flows_v2 USING hash(clusterid)",
 		"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp_v2 ON ONLY network_flows_v2 USING brin (lastseentimestamp)",
 	}
 
@@ -54,12 +54,12 @@ var (
 			IndexName:  "network_flows_v2_%s_props_dstentity_id_idx",
 			ParentName: "network_flows_dst_v2",
 		},
-		{
-			IndexField: "clusterid",
-			IndexType:  "hash",
-			IndexName:  "network_flows_v2_%s_clusterid_idx",
-			ParentName: "network_flows_cluster_v2",
-		},
+		//{
+		//	IndexField: "clusterid",
+		//	IndexType:  "hash",
+		//	IndexName:  "network_flows_v2_%s_clusterid_idx",
+		//	ParentName: "network_flows_cluster_v2",
+		//},
 		{
 			IndexField: "lastseentimestamp",
 			IndexType:  "brin",
