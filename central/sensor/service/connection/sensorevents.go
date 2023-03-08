@@ -27,7 +27,7 @@ var (
 type sensorEventHandler struct {
 	// workerQueues are keyed by central.SensorEvent type names.
 	workerQueues      map[string]*workerQueue
-	workerQueuesMutex sync.Mutex
+	workerQueuesMutex sync.RWMutex
 
 	deduper  *deduper
 	pipeline pipeline.ClusterPipeline
@@ -61,7 +61,7 @@ func stripTypePrefix(s string) string {
 }
 
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
-	var eventType string
+	var workerType string
 	switch evt := msg.Msg.(type) {
 	case *central.MsgFromSensor_Event:
 		switch evt.Event.Resource.(type) {
@@ -73,16 +73,17 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			s.reconciliationMap.Close()
 			return
 		case *central.SensorEvent_ReprocessDeployment:
-			eventType = deploymentEventType
+			workerType = deploymentEventType
 		case *central.SensorEvent_NodeInventory:
 			// This will put both NodeInventory and Node events in the same worker queue,
 			// preventing events for the same Node ID to run concurrently.
-			eventType = nodeEventType
+			workerType = nodeEventType
 			// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
 			// NodeInventory because the two should not dedupe between themselves.
 			msg.DedupeKey = fmt.Sprintf("%s:%s", "NodeInventory", msg.GetDedupeKey())
 		default:
-			eventType = reflectutils.Type(evt.Event.Resource)
+			// Default worker type is the event type.
+			workerType = reflectutils.Type(evt.Event.Resource)
 			if !s.reconciliationMap.IsClosed() {
 				s.reconciliationMap.Add(evt.Event.Resource, evt.Event.Id)
 			}
@@ -101,13 +102,16 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	metrics.IncSensorEventsDeduper(false)
 
 	// Lazily create the queue for a type when not found.
-	queue := s.workerQueues[eventType]
+	var queue *workerQueue
+	concurrency.WithRLock(&s.workerQueuesMutex, func() {
+		queue = s.workerQueues[workerType]
+	})
 	if queue == nil {
 		concurrency.WithLock(&s.workerQueuesMutex, func() {
-			queue = s.workerQueues[eventType]
+			queue = s.workerQueues[workerType]
 			if queue == nil {
-				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(eventType), s.injector)
-				s.workerQueues[eventType] = queue
+				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(workerType), s.injector)
+				s.workerQueues[workerType] = queue
 				go queue.run(ctx, s.stopSig, s.handleMessages)
 			}
 		})
