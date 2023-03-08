@@ -253,7 +253,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 				log.Warnf("Found active PLOP completed in the batch %+v", val)
 			}
 
-			// Commenting out the next line of codes is a hack 
+			// Commenting out the next line of code is a hack 
 			// to get TestProcessListeningOnPortReprocessCloseBeforeRetrying in reprocessor.go to pass
 			// The difficulty is with distinguishing between the following two cases 
 			//
@@ -303,30 +303,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
 
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
-		existingPLOP, prevExists := plopInfo.existingPLOPMap[plopKey]
-
-		// There are three options:
-		// * We found an existing PLOP object with different close timestamp.
-		//   It has to be updated.
-		// * We found an existing PLOP object with the same close timestamp.
-		//   Nothing has to be changed (XXX: Ideally it has to be excluded from
-		//   the upsert later on).
-		// * No existing PLOP object, create a new one with whatever close
-		//   timestamp we have received and fetched indicator ID.
-		if prevExists && existingPLOP.CloseTimestamp != val.CloseTimestamp {
-			log.Debugf("Got existing PLOP: %+v", existingPLOP)
-
-			// In the case when we are adding new plops we have the following two lines
-			// existingPLOP.CloseTimestamp = existingPLOP.CloseTimestamp
-			// existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
-			// This is not the case here because plops that are retried
-			// are older than their matching existingPLOPs with processindicatorid
-			// and therefore it is the state of the existingPLOP which is correct.
-			// In fact this whole block is not needed as the existingPLOP object will
-			// not be modified. I am leaving this here for now as there is a failing
-			// unit test that might be fixed with a modification of this block
-			plopObjects = append(plopObjects, existingPLOP)
-		}
+		_, prevExists := plopInfo.existingPLOPMap[plopKey]
 
 		if !prevExists {
 			if val.CloseTimestamp != nil {
