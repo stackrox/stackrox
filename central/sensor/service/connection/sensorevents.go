@@ -80,7 +80,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			workerType = nodeEventType
 			// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
 			// NodeInventory because the two should not dedupe between themselves.
-			msg.DedupeKey = fmt.Sprintf("%s:%s", "NodeInventory", msg.GetDedupeKey())
+			msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
 		default:
 			// Default worker type is the event type.
 			workerType = reflectutils.Type(evt.Event.Resource)
