@@ -238,6 +238,7 @@ describe('flowUtils', () => {
                         showPolicyState: true,
                         isExternallyConnected: false,
                         showExternalState: false,
+                        isFadedOut: false,
                     },
                 },
                 {
@@ -258,6 +259,7 @@ describe('flowUtils', () => {
                         showPolicyState: true,
                         isExternallyConnected: false,
                         showExternalState: false,
+                        isFadedOut: false,
                     },
                 },
             ];
@@ -548,6 +550,7 @@ describe('flowUtils', () => {
                         showPolicyState: true,
                         isExternallyConnected: false,
                         showExternalState: false,
+                        isFadedOut: false,
                     },
                 },
                 {
@@ -588,6 +591,7 @@ describe('flowUtils', () => {
                         showPolicyState: true,
                         isExternallyConnected: false,
                         showExternalState: false,
+                        isFadedOut: false,
                     },
                 },
             ];
@@ -619,6 +623,7 @@ describe('flowUtils', () => {
                         showPolicyState: true,
                         isExternallyConnected: false,
                         showExternalState: false,
+                        isFadedOut: false,
                     },
                 },
                 {
@@ -659,6 +664,7 @@ describe('flowUtils', () => {
                         showPolicyState: true,
                         isExternallyConnected: false,
                         showExternalState: false,
+                        isFadedOut: false,
                     },
                 },
             ];

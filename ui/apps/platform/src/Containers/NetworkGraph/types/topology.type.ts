@@ -74,6 +74,7 @@ export type DeploymentData = {
     showPolicyState: boolean;
     isExternallyConnected: boolean;
     showExternalState: boolean;
+    isFadedOut: boolean;
 };
 
 export type ExternalGroupData = {
@@ -86,6 +87,7 @@ export type ExternalEntitiesData = {
     type: 'EXTERNAL_ENTITIES';
     id: string;
     outEdges: OutEdges;
+    isFadedOut: boolean;
 };
 
 export type CIDRBlockData = {
@@ -97,6 +99,7 @@ export type CIDRBlockData = {
         name: string;
     };
     outEdges: OutEdges;
+    isFadedOut: boolean;
 };
 
 export type ExtraneousData = {
