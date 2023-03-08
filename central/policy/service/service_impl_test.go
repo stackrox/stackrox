@@ -621,12 +621,12 @@ func (s *PolicyServiceTestSuite) TestScopeClusterRegex() {
 func (s *PolicyServiceTestSuite) TestRuntimeLifecycle() {
 	s.testLifecycles("CVE:abcd+Process Name:123", storage.LifecycleStage_RUNTIME)
 	// Note that kube events/audit logs fields are simply dropped instead of being returned as unconvertableFields, since they are not searchable.
-	s.testLifecycles("CVE:abcd+Kubernetes Resource:PODS_EXEC", storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY)
-	s.testLifecycles("CVE:abcd+Kubernetes Resource:PODS_EXEC+Is Impersonated User:true", storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY)
+	s.testLifecycles("CVE:abcd+Kubernetes Resource:PODS_EXEC", storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY, storage.LifecycleStage_RUNTIME)
+	s.testLifecycles("CVE:abcd+Kubernetes Resource:PODS_EXEC+Is Impersonated User:true", storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY, storage.LifecycleStage_RUNTIME)
 }
 
-func (s *PolicyServiceTestSuite) TestBuildAndDeployLifecycles() {
-	s.testLifecycles("CVE:abcd", storage.LifecycleStage_DEPLOY, storage.LifecycleStage_BUILD)
+func (s *PolicyServiceTestSuite) TestBuildAndDeployAndRuntimeLifecycles() {
+	s.testLifecycles("CVE:abcd", storage.LifecycleStage_DEPLOY, storage.LifecycleStage_BUILD, storage.LifecycleStage_RUNTIME)
 }
 
 func (s *PolicyServiceTestSuite) TestOnePolicyField() {
@@ -771,7 +771,7 @@ func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
 	s.False(response.GetHasNestedFields())
 	s.Empty(response.GetAlteredSearchTerms())
 	s.ElementsMatch(expectedPolicyGroup, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
-	expectedLifecycleStages := []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
+	expectedLifecycleStages := []storage.LifecycleStage{storage.LifecycleStage_DEPLOY, storage.LifecycleStage_RUNTIME}
 	s.ElementsMatch(expectedLifecycleStages, response.GetPolicy().GetLifecycleStages())
 }
 

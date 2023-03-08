@@ -345,7 +345,7 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 					fieldnames.ImageTag:   "latest",
 					fieldnames.VolumeName: "BLAH",
 				}),
-			errExpected: true,
+			errExpected: false,
 		},
 		{
 			description: "Valid Run time with just process fields",
