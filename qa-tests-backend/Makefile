@@ -1,4 +1,5 @@
 .PHONY: all
+
 all: style test
 
 GRADLE := ./gradlew
