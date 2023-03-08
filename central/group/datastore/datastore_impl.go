@@ -40,7 +40,7 @@ func (ds *dataStoreImpl) Upsert(ctx context.Context, group *storage.Group) error
 		return err
 	}
 
-	return ds.storage.Upsert(ctx, group)
+	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
 }
 
 func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
@@ -133,7 +133,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 		return err
 	}
 
-	return ds.storage.Upsert(ctx, group)
+	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
 }
 
 func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force bool) error {
@@ -148,7 +148,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force
 	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force); err != nil {
 		return err
 	}
-	return ds.storage.Upsert(ctx, group)
+	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
 }
 
 func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error {
@@ -167,7 +167,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	}
 	if len(add) > 0 {
 		if err := ds.storage.UpsertMany(ctx, add); err != nil {
-			return err
+			return wrapAsConflictError(err)
 		}
 	}
 
@@ -178,7 +178,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	}
 	if len(update) > 0 {
 		if err := ds.storage.UpsertMany(ctx, update); err != nil {
-			return err
+			return wrapAsConflictError(err)
 		}
 	}
 
@@ -495,4 +495,13 @@ func (ds *dataStoreImpl) validateGroupExists(ctx context.Context, id string) (*s
 		return nil, errox.NotFound.Newf("group with id %q was not found", id)
 	}
 	return group, nil
+}
+
+// wrapAsConflictError will wrap the error as errox.AlreadyExists if the error indicates a unique
+// constraint violation. If not, the error will be returned.
+func wrapAsConflictError(err error) error {
+	if pgutils.IsUniqueConstraintError(err) {
+		return errox.AlreadyExists.CausedBy(err)
+	}
+	return err
 }

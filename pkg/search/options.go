@@ -294,6 +294,11 @@ var (
 	CollectionName       = newFieldLabel("Collection Name")
 	EmbeddedCollectionID = newFieldLabel("Embedded Collection ID")
 
+	// Group fields
+	GroupAuthProvider = newFieldLabel("Group Auth Provider")
+	GroupKey          = newFieldLabel("Group Key")
+	GroupValue        = newFieldLabel("Group Value")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")

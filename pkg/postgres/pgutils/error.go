@@ -66,3 +66,15 @@ func IsTransientError(err error) bool {
 	}
 	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe)
 }
+
+const (
+	errCodeUniqueConstraint = "23505"
+)
+
+// IsUniqueConstraintError specifies if the passed error is due to a unique constraint violation.
+func IsUniqueConstraintError(err error) bool {
+	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
+		return pgErr.Code == errCodeUniqueConstraint
+	}
+	return false
+}
