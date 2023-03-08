@@ -1,4 +1,4 @@
-package m172tom173
+package m174tom175
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v75"
-	newAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_enable_search_on_api_tokens/newapitokenpostgresstore"
-	oldAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_enable_search_on_api_tokens/oldapitokenpostgresstore"
+	newAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens/newapitokenpostgresstore"
+	oldAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens/oldapitokenpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -17,7 +17,7 @@ import (
 const (
 	batchSize = 500
 
-	startSeqNum = 172
+	startSeqNum = 174
 )
 
 var (
@@ -33,8 +33,6 @@ var (
 func init() {
 	migrations.MustRegisterMigration(migration)
 }
-
-// Additional code to support the migration
 
 func migrateAPITokens(postgresDB *postgres.DB, gormDB *gorm.DB) error {
 	ctx := context.Background()

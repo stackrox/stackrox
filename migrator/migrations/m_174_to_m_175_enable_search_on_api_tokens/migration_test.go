@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package m172tom173
+package m174tom175
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	oldSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	newAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_enable_search_on_api_tokens/newapitokenpostgresstore"
-	oldAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_enable_search_on_api_tokens/oldapitokenpostgresstore"
+	newAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens/newapitokenpostgresstore"
+	oldAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens/oldapitokenpostgresstore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
