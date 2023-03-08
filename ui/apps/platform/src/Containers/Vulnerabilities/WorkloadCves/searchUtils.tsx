@@ -3,7 +3,8 @@ import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 
-export type CveStatusTab = 'Observed' | 'Deferred' | 'False Positive';
+import { CveStatusTab, isValidCveStatusTab } from './types';
+
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
 
 export type WorkloadCvesSearch = {
@@ -11,14 +12,6 @@ export type WorkloadCvesSearch = {
     entityTab?: EntityTab;
     s?: SearchFilter;
 };
-
-function isValidCveStatusTab(cveStatusTab: unknown): cveStatusTab is CveStatusTab {
-    return (
-        cveStatusTab === 'Observed' ||
-        cveStatusTab === 'Deferred' ||
-        cveStatusTab === 'False Positive'
-    );
-}
 
 export function parseWorkloadCvesOverviewSearchString(search: string): WorkloadCvesSearch {
     const { cveStatusTab } = qs.parse(search, { ignoreQueryPrefix: true });
