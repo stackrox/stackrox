@@ -5,6 +5,7 @@ package reprocessor
 import (
 	"context"
 	"testing"
+	"time"
 
 	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
@@ -42,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protoconv"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/assert"
@@ -64,6 +66,8 @@ func TestGetActiveImageIDs(t *testing.T) {
 		testingDB := pgtest.ForT(t)
 		pool = testingDB.DB
 		defer pool.Close()
+
+		//testingDB.Teardown(t)
 
 		imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, dackboxConcurrency.NewKeyFence()), imagePG.NewIndexer(pool), nil, ranking.ImageRanker(), ranking.ComponentRanker())
 		deploymentsDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), pool, nil, nil, nil, nil, nil, nil,
@@ -125,7 +129,6 @@ func TestGetActiveImageIDs(t *testing.T) {
 }
 
 func TestProcessListeningOnPortReprocess(t *testing.T) {
-	t.Parallel()
 
 	testCtx := sac.WithAllAccess(context.Background())
 	testNamespace := "test_namespace"
@@ -139,18 +142,7 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
 		testingDB := pgtest.ForT(t)
 		pool = testingDB.DB
 		defer pool.Close()
-
-		//imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, dackboxConcurrency.NewKeyFence()), imagePG.NewIndexer(pool), nil, ranking.ImageRanker(), ranking.ComponentRanker())
-		//deploymentsDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), pool, nil, nil, nil, nil, nil, nil,
-		//	nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		//require.NoError(t, err)
-
-		//plops = processlisteningonportDatastore.Singleton()
 	}
-
-	//suite.postgres = pgtest.ForT(suite.T())
-        //suite.store = postgresStore.NewFullStore(suite.postgres.DB)
-
 
 	store := postgresStore.NewFullStore(pool)
 
@@ -182,7 +174,7 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
         }
 
         // Verify that the table is empty before the test
-        plopsFromDB := loop.getPlopsFromDB()
+        plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
         assert.Equal(t, len(plopsFromDB), 0)
 
 	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
@@ -206,7 +198,7 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
 
        indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
 
-        plopsFromDB = loop.getPlopsFromDB()
+        plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
         assert.Equal(t, len(plopsFromDB), 1)
 
 	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
@@ -226,7 +218,7 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
 
 	loop.runProcessListeningOnPortReprocessing()
 
-        plopsFromDB = loop.getPlopsFromDB()
+        plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
         assert.Equal(t, len(plopsFromDB), 1)
 
 	expectedPlopStorage = []*storage.ProcessListeningOnPortStorage{
@@ -237,10 +229,328 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
 			CloseTimestamp:     nil,
 			ProcessIndicatorId: indicators[0].Id,
 			Closed:             false,
+			Process:            nil,
+		},
+        }
+
+        assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
+
+	newPlops, _ := loop.plops.GetProcessListeningOnPort(testCtx, fixtureconsts.Deployment1)
+
+	assert.Equal(t, 1, len(newPlops))
+
+	expectedNewPlops := []*storage.ProcessListeningOnPort{
+		{
+			ContainerName: "test_container1",
+			PodId:         fixtureconsts.PodUID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			ClusterId:     fixtureconsts.Cluster1,
+			Namespace:     testNamespace,
+			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			        Port:     1234,
+			        Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			Signal: &storage.ProcessSignal{
+			        Name:         "test_process1",
+			        Args:         "test_arguments1",
+			        ExecFilePath: "test_path1",
+			},
+		},
+        }
+
+	assert.Equal(t, expectedNewPlops, newPlops)
+}
+
+func TestProcessListeningOnPortReprocessCloseBeforeRetrying(t *testing.T) {
+
+	testCtx := sac.WithAllAccess(context.Background())
+	testNamespace := "test_namespace"
+
+	var (
+		pool          *postgres.DB
+		plops		processlisteningonportDatastore.DataStore
+	)
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testingDB := pgtest.ForT(t)
+		pool = testingDB.DB
+		defer pool.Close()
+	}
+
+	store := postgresStore.NewFullStore(pool)
+
+        indicatorStorage := processIndicatorStorage.New(pool)
+        indicatorIndexer := processIndicatorStorage.NewIndexer(pool)
+        indicatorSearcher := processIndicatorSearch.New(indicatorStorage, indicatorIndexer)
+
+	indicatorDataStore, _ := processIndicatorDataStore.New(
+                indicatorStorage, store, indicatorIndexer, indicatorSearcher, nil)
+
+	plops = processlisteningonportDatastore.New(store, indicatorDataStore)
+
+	loop := NewLoop(nil, nil, nil, nil, nil, nil, nil, nil, nil, plops, queue.NewWaitableQueue()).(*loopImpl)
+
+
+        plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+                {
+                        Port:           1234,
+                        Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+                        CloseTimestamp: nil,
+                        Process: &storage.ProcessIndicatorUniqueKey{
+                                PodId:               fixtureconsts.PodUID1,
+                                ContainerName:       "test_container1",
+                                ProcessName:         "test_process1",
+                                ProcessArgs:         "test_arguments1",
+                                ProcessExecFilePath: "test_path1",
+                        },
+                },
+        }
+
+        // Verify that the table is empty before the test
+        plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+        assert.Equal(t, len(plopsFromDB), 0)
+
+	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+
+	indicators := []*storage.ProcessIndicator{
+	       {
+	               Id:            fixtureconsts.ProcessIndicatorID1,
+	               DeploymentId:  fixtureconsts.Deployment1,
+	               PodId:         fixtureconsts.PodUID1,
+	               ClusterId:     fixtureconsts.Cluster1,
+	               ContainerName: "test_container1",
+	               Namespace:     testNamespace,
+
+	               Signal: &storage.ProcessSignal{
+	                       Name:         "test_process1",
+	                       Args:         "test_arguments1",
+	                       ExecFilePath: "test_path1",
+	               },
+	       },
+       }
+
+       indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+
+        plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+        assert.Equal(t, len(plopsFromDB), 1)
+
+	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:                 plopsFromDB[0].GetId(),
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: "",
+			Closed:             false,
 			Process:            plopObjects[0].Process,
 		},
         }
 
 
         assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
+
+        closedPlopObjects := []*storage.ProcessListeningOnPortFromSensor{
+                {
+                        Port:           1234,
+                        Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+                        CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+                        Process: &storage.ProcessIndicatorUniqueKey{
+                                PodId:               fixtureconsts.PodUID1,
+                                ContainerName:       "test_container1",
+                                ProcessName:         "test_process1",
+                                ProcessArgs:         "test_arguments1",
+                                ProcessExecFilePath: "test_path1",
+                        },
+                },
+        }
+
+	loop.plops.AddProcessListeningOnPort(testCtx, closedPlopObjects...)
+
+	loop.runProcessListeningOnPortReprocessing()
+
+        plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+        assert.Equal(t, len(plopsFromDB), 1)
+
+	expectedPlopStorage = []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:                 plopsFromDB[0].GetId(),
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     closedPlopObjects[0].GetCloseTimestamp(),
+			ProcessIndicatorId: indicators[0].Id,
+			Closed:             true,
+			Process:            nil,
+		},
+        }
+
+        assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
+
+	newPlops, _ := loop.plops.GetProcessListeningOnPort(testCtx, fixtureconsts.Deployment1)
+
+	assert.Equal(t, len(newPlops), 0)
+}
+
+// Currently this fails. 
+// The test does the following things
+// 1. Adds an open plop with no matching indicator
+// 2. Adds the indicator for the plop 
+// 3. Adds a batch where the plop is closed and then opened
+// 4. Retries the plops that were not matched to processes
+//
+// Currently the result is that the plop is recorded as being closed which is incorrect
+// The reason for this is that when the batch with the open and close plop is added
+// it does not know about the open plop that was not matched to a process and it does
+// not know about the order of the plops in the batch so it thinks the plop was opened and then closed
+// Then when it goes to do the retry it ignores the first unmatched plop, because the plop is already
+// in the table.
+func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
+
+
+	testCtx := sac.WithAllAccess(context.Background())
+	testNamespace := "test_namespace"
+
+	var (
+		pool          *postgres.DB
+		plops		processlisteningonportDatastore.DataStore
+	)
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testingDB := pgtest.ForT(t)
+		pool = testingDB.DB
+		defer pool.Close()
+	}
+
+	store := postgresStore.NewFullStore(pool)
+
+        indicatorStorage := processIndicatorStorage.New(pool)
+        indicatorIndexer := processIndicatorStorage.NewIndexer(pool)
+        indicatorSearcher := processIndicatorSearch.New(indicatorStorage, indicatorIndexer)
+
+	indicatorDataStore, _ := processIndicatorDataStore.New(
+                indicatorStorage, store, indicatorIndexer, indicatorSearcher, nil)
+
+	plops = processlisteningonportDatastore.New(store, indicatorDataStore)
+
+	loop := NewLoop(nil, nil, nil, nil, nil, nil, nil, nil, nil, plops, queue.NewWaitableQueue()).(*loopImpl)
+
+
+        // Verify that the table is empty before the test
+        plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+        assert.Equal(t, 0, len(plopsFromDB))
+
+	openPlopObject := &storage.ProcessListeningOnPortFromSensor{
+	        Port:           1234,
+	        Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+	        CloseTimestamp: nil,
+	        Process: &storage.ProcessIndicatorUniqueKey{
+	                PodId:               fixtureconsts.PodUID1,
+	                ContainerName:       "test_container1",
+	                ProcessName:         "test_process1",
+	                ProcessArgs:         "test_arguments1",
+	                ProcessExecFilePath: "test_path1",
+	        },
+	}
+
+        plopObjects := []*storage.ProcessListeningOnPortFromSensor{openPlopObject}
+
+	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+
+	indicators := []*storage.ProcessIndicator{
+	       {
+	               Id:            fixtureconsts.ProcessIndicatorID1,
+	               DeploymentId:  fixtureconsts.Deployment1,
+	               PodId:         fixtureconsts.PodUID1,
+	               ClusterId:     fixtureconsts.Cluster1,
+	               ContainerName: "test_container1",
+	               Namespace:     testNamespace,
+
+	               Signal: &storage.ProcessSignal{
+	                       Name:         "test_process1",
+	                       Args:         "test_arguments1",
+	                       ExecFilePath: "test_path1",
+	               },
+	       },
+       }
+
+       indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+
+        plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+        assert.Equal(t, 1, len(plopsFromDB))
+
+	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:                 plopsFromDB[0].GetId(),
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: "",
+			Closed:             false,
+			Process:            plopObjects[0].Process,
+		},
+        }
+
+
+        assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
+
+	closedPlopObject := &storage.ProcessListeningOnPortFromSensor{
+	        Port:           1234,
+	        Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+                CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+	        Process: &storage.ProcessIndicatorUniqueKey{
+	                PodId:               fixtureconsts.PodUID1,
+	                ContainerName:       "test_container1",
+	                ProcessName:         "test_process1",
+	                ProcessArgs:         "test_arguments1",
+	                ProcessExecFilePath: "test_path1",
+	        },
+	}
+
+        batchPlopObjects := []*storage.ProcessListeningOnPortFromSensor{closedPlopObject, openPlopObject}
+
+	loop.plops.AddProcessListeningOnPort(testCtx, batchPlopObjects...)
+
+	loop.runProcessListeningOnPortReprocessing()
+
+        plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+        assert.Equal(t, 1, len(plopsFromDB))
+
+	expectedPlopStorage = []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:                 plopsFromDB[0].GetId(),
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     nil,
+			ProcessIndicatorId: indicators[0].Id,
+			Closed:             false,
+			Process:            nil,
+		},
+        }
+
+        assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
+
+	newPlops, _ := loop.plops.GetProcessListeningOnPort(testCtx, fixtureconsts.Deployment1)
+
+	assert.Equal(t, 1, len(newPlops))
+
+	expectedNewPlops := []*storage.ProcessListeningOnPort{
+		{
+			ContainerName: "test_container1",
+			PodId:         fixtureconsts.PodUID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			ClusterId:     fixtureconsts.Cluster1,
+			Namespace:     testNamespace,
+			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			        Port:     1234,
+			        Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			Signal: &storage.ProcessSignal{
+			        Name:         "test_process1",
+			        Args:         "test_arguments1",
+			        ExecFilePath: "test_path1",
+			},
+		},
+        }
+
+	assert.Equal(t, expectedNewPlops, newPlops)
+
 }

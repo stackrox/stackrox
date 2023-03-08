@@ -52,52 +52,67 @@ func (ds *datastoreImpl) GetPlopsFromDB(ctx context.Context) []*storage.ProcessL
         return plopsFromDB
 }
 
-//func (ds *datastoreImpl) GetMatchedAndUnmatchedPlopMap(ctx context.Context) (unmatchedPlopMap map map[[]*storage.ProcessListeningOnPortStorage]string, matchedPlopMap map[[]*storage.ProcessListeningOnPortStorage]string) {
-//        //plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-//        ds.WalkAll(ctx,
-//                func(plop *storage.ProcessListeningOnPortStorage) error {
-//                        //plopsFromDB = append(plopsFromDB, plop)
-//			key := getPlopWithoutIndicatorIdKey(plop)
-//			if plop.ProcessIndicatorId == "" {
-//				unmatchedPlopMap = append(unmatchedPlopMap[key], plop)
-//			} else {
-//				matchedPlopMap = append(matchedPlopMap[key], plop)
-//			}
-//                        return nil
-//                })
-//
-//
-//        return unmatchedPlopMap, matchedPlopMap
-//
-//}
+func convertPlopFromStorageToPlopFromSensor(plopStorage *storage.ProcessListeningOnPortStorage) *storage.ProcessListeningOnPortFromSensor {
+	log.Infof("In convertPlopFromStorageToPlopFromSensor plopStorage: %+v", plopStorage)
+	return &storage.ProcessListeningOnPortFromSensor{
+		Port:           plopStorage.Port,
+		Protocol:       plopStorage.Protocol,
+		Process:        plopStorage.Process,
+		CloseTimestamp: plopStorage.CloseTimestamp,
+		// Storage does not have ClusterId which PlopFromSensor has, but this does not seem
+		// to be a problem. Might want to examine this more.
+		// ClusterId:	plopStorage.ClusterId,
+	}
+}
 
-//func (ds *datastoreImpl) RetryPlop(ctx context.Context) error {
+func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) ([]*storage.ProcessListeningOnPortStorage, error) {
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	err := ds.WalkAll(ctx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			if plop.ProcessIndicatorId == "" {
+				plopsFromDB = append(plopsFromDB, plop)
+			}
+			return nil
+		})
 
-	//unmatchedPlopMap, matchedPlopMap := GetMatchedAndUnmatchedPlopMap(ctx)
+	return plopsFromDB, err
+}
 
-	//for key, val in 
+func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*storage.ProcessListeningOnPortFromSensor, error) {
 
+	portProcesses := make([]*storage.ProcessListeningOnPortFromSensor, 0)
+	unmatchedIds := make([]string, 0)
+	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
 
-func (ds *datastoreImpl) AddProcessListeningOnPort(
+	for _, val := range unmatchedPLOPs {
+		unmatchedIds = append(unmatchedIds, val.Id)
+		plop := convertPlopFromStorageToPlopFromSensor(val)
+		portProcesses = append(portProcesses, plop)
+	}
+
+	// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
+	// Deleting unmatched plops is not the most efficient solution.
+	// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
+	err := ds.storage.DeleteMany(ctx, unmatchedIds)
+
+	return portProcesses, err
+}
+
+func (ds *datastoreImpl) getPlopObjectsToUpsert(
 	ctx context.Context,
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
-) error {
-	defer metrics.SetDatastoreFunctionDuration(
-		time.Now(),
-		"ProcessListeningOnPort",
-		"AddProcessListeningOnPort",
-	)
+) ([]*storage.ProcessListeningOnPortStorage, error) {
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
 		log.Warnf("Tried to add PLOP not on Postgres, ignore: %+v", portProcesses)
-		return nil
+		return nil, nil
 	}
 
 	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
-		return err
+		return nil, err
 	} else if !ok {
-		return sac.ErrResourceAccessDenied
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
@@ -107,12 +122,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// bits from PLOP.
 	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, normalizedPLOPs...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
@@ -208,6 +223,193 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
+	}
+	return plopObjects, nil
+}
+
+// getPlopObjectsToUpsertForRetry and getPlopObjectsToUpsert will be probably be merged into one function
+// That or there will be some other refactoring
+func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
+	ctx context.Context,
+	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
+) ([]*storage.ProcessListeningOnPortStorage, error) {
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		// PLOP is a Postgres-only feature, do nothing.
+		log.Warnf("Tried to add PLOP not on Postgres, ignore: %+v", portProcesses)
+		return nil, nil
+	}
+
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
+
+	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
+	// be done in a single join query fetching both ProcessIndicator and needed
+	// bits from PLOP.
+	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, normalizedPLOPs...)
+	if err != nil {
+		return nil, err
+	}
+
+	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
+	if err != nil {
+		return nil, err
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortStorage{}
+	for _, val := range normalizedPLOPs {
+		indicatorID := ""
+		var processInfo *storage.ProcessIndicatorUniqueKey
+
+		key := getPlopProcessUniqueKey(val)
+
+		if indicator, ok := indicatorsMap[key]; ok {
+			indicatorID = indicator.GetId()
+			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
+		} else {
+			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
+			log.Warnf("Found no matching indicators for %s", key)
+			processInfo = val.Process
+		}
+
+		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
+
+		existingPLOP, prevExists := existingPLOPMap[plopKey]
+
+		// There are three options:
+		// * We found an existing PLOP object with different close timestamp.
+		//   It has to be updated.
+		// * We found an existing PLOP object with the same close timestamp.
+		//   Nothing has to be changed (XXX: Ideally it has to be excluded from
+		//   the upsert later on).
+		// * No existing PLOP object, create a new one with whatever close
+		//   timestamp we have received and fetched indicator ID.
+		if prevExists && existingPLOP.CloseTimestamp != val.CloseTimestamp {
+			log.Debugf("Got existing PLOP: %+v", existingPLOP)
+
+			// In the case when we are adding new plops we have the following two lines
+			// existingPLOP.CloseTimestamp = existingPLOP.CloseTimestamp
+			// existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
+			// This is not the case here because plops that are retried
+			// are older than their matching existingPLOPs with processindicatorid
+			// and therefore it is the state of the existingPLOP which is correct.
+			// In fact this whole block is not needed as the existingPLOP object will
+			// not be modified. I am leaving this here for now as there is a failing
+			// unit test that might be fixed with a modification of this block
+			plopObjects = append(plopObjects, existingPLOP)
+		}
+
+		if !prevExists {
+			if val.CloseTimestamp != nil {
+				// We try to close a not existing Endpoint, something is wrong
+				log.Warnf("Found no matching PLOP to close for %s", key)
+			}
+
+			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+		}
+	}
+
+	// completedInBatch should not be needed for retries as that should mean that a 
+	// port was opened and closed without being matched to a process indicator first.
+	// It means that the port is closed and it should be in whatever state the table
+	// already has it being in. Either closed, open, or non-existant.
+	// Leaving it here for now until there are unit tests that are impacted by it.
+
+	// Verify what to do about pairs of open/close events that close the
+	// lifecycle within the batch. There are only few options:
+	// * If an existing open PLOP is present in the db, they will do nothing
+	// * If an existing closed PLOP is present in the db, they will update the
+	// timestamp
+	// * If no existing PLOP is present, they will create a new closed PLOP
+	for _, val := range completedInBatch {
+		indicatorID := ""
+		var processInfo *storage.ProcessIndicatorUniqueKey
+
+		key := getPlopProcessUniqueKey(val)
+
+		if indicator, ok := indicatorsMap[key]; ok {
+			indicatorID = indicator.GetId()
+			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
+		} else {
+			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
+			log.Warnf("Found no matching indicators for %s", key)
+			processInfo = val.Process
+		}
+
+		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
+
+		existingPLOP, prevExists := existingPLOPMap[plopKey]
+
+		if prevExists {
+			log.Debugf("Got existing PLOP to update timestamp: %+v", existingPLOP)
+
+			if existingPLOP.CloseTimestamp != nil &&
+				existingPLOP.CloseTimestamp != val.CloseTimestamp {
+
+				// An existing closed PLOP, update timestamp
+				existingPLOP.CloseTimestamp = val.CloseTimestamp
+				plopObjects = append(plopObjects, existingPLOP)
+			}
+
+			// Add nothing if the PLOP is active, i.e. CloseTimestamp == nil
+		}
+
+		if !prevExists {
+			if val.CloseTimestamp == nil {
+				// This events should always be closing by definition
+				log.Warnf("Found active PLOP completed in the batch %+v", val)
+			}
+
+			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+		}
+	}
+	return plopObjects, nil
+}
+
+func (ds *datastoreImpl) AddProcessListeningOnPort(
+	ctx context.Context,
+	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
+) error {
+
+	defer metrics.SetDatastoreFunctionDuration(
+		time.Now(),
+		"ProcessListeningOnPort",
+		"AddProcessListeningOnPort",
+	)
+
+	// Separating out getting the updates needed and doing the updates
+	// seemed like a good idea. Further refactoring should be done so that
+	// there is a separation of functions using postgres and manipulating
+	// data from postgres. It would enable unit tests without postgres
+	// and greater flexibility and reusability.
+	plopObjects, err := ds.getPlopObjectsToUpsert(ctx, portProcesses...)
+
+	if err != nil {
+		return err
+	}
+
+	// Now save actual PLOP objects
+	return ds.storage.UpsertMany(ctx, plopObjects)
+}
+
+func (ds *datastoreImpl) RetryAddProcessListeningOnPort(ctx context.Context) error {
+
+	defer metrics.SetDatastoreFunctionDuration(
+		time.Now(),
+		"ProcessListeningOnPort",
+		"RetryAddProcessListeningOnPort",
+	)
+
+	portProcesses, _ := ds.getUnmatchedPlopsAndConvert(ctx)
+	plopObjects, err := ds.getPlopObjectsToUpsertForRetry(ctx, portProcesses...)
+
+	if err != nil {
+		return err
 	}
 
 	// Now save actual PLOP objects
@@ -512,14 +714,6 @@ func getPlopKeyFromParts(protocol storage.L4Protocol, port uint32, indicatorID s
 func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
 	return getPlopKeyFromParts(plop.GetProtocol(), plop.GetPort(), plop.GetProcessIndicatorId())
 }
-
-//func getPlopWithoutIndicatorIdKey(plop *storage.ProcessListeningOnPortStorage) string {
-//	return getPlopKeyFromParts(
-//		plop.GetProtocol(),
-//		plop.GetPort(),
-//		getPlopProcessUniqueKey(plop),
-//	}
-//}
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 	sort.Slice(values, func(i, j int) bool {

@@ -469,40 +469,8 @@ func (l *loopImpl) reprocessNode(id string) bool {
 	return true
 }
 
-func (l *loopImpl) getUnmatchedPlopsFromDB() []*storage.ProcessListeningOnPortStorage {
-        plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	l.plops.WalkAll(allAccessCtx,
-                func(plop *storage.ProcessListeningOnPortStorage) error {
-			if plop.ProcessIndicatorId == "" {
-			        plopsFromDB = append(plopsFromDB, plop)
-			}
-                        return nil
-                })
-
-
-        return plopsFromDB
-}
-
-func (l *loopImpl) getPlopsFromDB() []*storage.ProcessListeningOnPortStorage {
-        plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	l.plops.WalkAll(allAccessCtx,
-                func(plop *storage.ProcessListeningOnPortStorage) error {
-			plopsFromDB = append(plopsFromDB, plop)
-                        return nil
-                })
-
-
-        return plopsFromDB
-}
-
 func (l *loopImpl) runProcessListeningOnPortReprocessing() {
-	log.Infof("This is were retry goes")
-	log.Infof("l.plops= %+v", l.plops)
-
-	plopsFromDB := l.getUnmatchedPlopsFromDB()
-	//plopsFromDB := l.plops.GetPlopsFromDB(allAccessCtx)
-
-	log.Infof("len(plops)= %i", len(plopsFromDB))
+	l.plops.RetryAddProcessListeningOnPort(allAccessCtx)
 }
 
 func (l *loopImpl) reprocessNodes() {

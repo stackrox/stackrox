@@ -17,6 +17,7 @@ type WalkFn = func(plop *storage.ProcessListeningOnPortStorage) error
 type DataStore interface {
 	GetPlopsFromDB(ctx context.Context) []*storage.ProcessListeningOnPortStorage
 	AddProcessListeningOnPort(context.Context, ...*storage.ProcessListeningOnPortFromSensor) error
+	RetryAddProcessListeningOnPort(context.Context) error
 	GetProcessListeningOnPort(
 		ctx context.Context,
 		deployment string,
