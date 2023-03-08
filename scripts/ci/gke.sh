@@ -146,7 +146,7 @@ create_cluster() {
     if [[ -n "${GKE_CLUSTER_VERSION:-}" ]]; then
         ensure_supported_cluster_version
         echo "Using GKE cluster version: ${GKE_CLUSTER_VERSION} (which overrides release channel ${GKE_RELEASE_CHANNEL})"
-        VERSION_ARGS=(--cluster-version "${GKE_CLUSTER_VERSION}")
+        VERSION_ARGS=(--cluster-version "${GKE_CLUSTER_VERSION}" --no-enable-autoupgrade)
     else
         echo "Using GKE release channel: $GKE_RELEASE_CHANNEL"
         VERSION_ARGS=(--release-channel "${GKE_RELEASE_CHANNEL}")
@@ -174,7 +174,7 @@ create_cluster() {
             --services-ipv4-cidr=/24 \
             --enable-ip-alias \
             --enable-network-policy \
-            --enable-autorepair \
+            --no-enable-autorepair \
             "${VERSION_ARGS[@]}" \
             --image-type "${GCP_IMAGE_TYPE}" \
             --tags="${tags}" \
