@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -25,7 +26,8 @@ var (
 
 type sensorEventHandler struct {
 	// workerQueues are keyed by central.SensorEvent type names.
-	workerQueues map[string]*workerQueue
+	workerQueues      map[string]*workerQueue
+	workerQueuesMutex sync.Mutex
 
 	deduper  *deduper
 	pipeline pipeline.ClusterPipeline
@@ -74,10 +76,11 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			eventType = deploymentEventType
 		case *central.SensorEvent_NodeInventory:
 			// This will put both NodeInventory and Node events in the same worker queue,
-			// preventing events for the same Node ID to run concurrently. We need a new
-			// dedupe key since the default (the event ID) would dedupe on Node events.
+			// preventing events for the same Node ID to run concurrently.
 			eventType = nodeEventType
-			msg.DedupeKey = fmt.Sprintf("%s:%s", "NodeIventory", msg.GetDedupeKey())
+			// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
+			// NodeInventory because the two should not dedupe between themselves.
+			msg.DedupeKey = fmt.Sprintf("%s:%s", "NodeInventory", msg.GetDedupeKey())
 		default:
 			eventType = reflectutils.Type(evt.Event.Resource)
 			if !s.reconciliationMap.IsClosed() {
@@ -97,11 +100,17 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	}
 	metrics.IncSensorEventsDeduper(false)
 
+	// Lazily create the queue for a type when not found.
 	queue := s.workerQueues[eventType]
-	// Lazily create the queue for a type if necessary
 	if queue == nil {
-		queue = newWorkerQueue(workerQueueSize, stripTypePrefix(eventType), s.injector)
-		go queue.run(ctx, s.stopSig, s.handleMessages)
+		concurrency.WithLock(&s.workerQueuesMutex, func() {
+			queue = s.workerQueues[eventType]
+			if queue == nil {
+				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(eventType), s.injector)
+				s.workerQueues[eventType] = queue
+				go queue.run(ctx, s.stopSig, s.handleMessages)
+			}
+		})
 	}
 	queue.push(msg)
 }
