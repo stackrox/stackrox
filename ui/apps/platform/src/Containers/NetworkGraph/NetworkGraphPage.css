@@ -49,3 +49,7 @@
 div#topology-resize-panel table td {
     vertical-align: inherit;
 }
+
+.pf-topology-node-faded {
+    opacity: 30%;
+}
