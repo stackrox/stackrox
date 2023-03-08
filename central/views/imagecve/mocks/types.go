@@ -11,6 +11,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	views "github.com/stackrox/rox/central/views"
+	common "github.com/stackrox/rox/central/views/common"
 	imagecve "github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
@@ -81,10 +82,10 @@ func (mr *MockCveCoreMockRecorder) GetFirstDiscoveredInSystem() *gomock.Call {
 }
 
 // GetImagesBySeverity mocks base method.
-func (m *MockCveCore) GetImagesBySeverity() *imagecve.ResourceCountByCVESeverity {
+func (m *MockCveCore) GetImagesBySeverity() common.ResourceCountByCVESeverity {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetImagesBySeverity")
-	ret0, _ := ret[0].(*imagecve.ResourceCountByCVESeverity)
+	ret0, _ := ret[0].(common.ResourceCountByCVESeverity)
 	return ret0
 }
 
@@ -144,6 +145,21 @@ func (m *MockCveView) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (mr *MockCveViewMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockCveView)(nil).Count), ctx, q)
+}
+
+// CountBySeverity mocks base method.
+func (m *MockCveView) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountBySeverity", ctx, q)
+	ret0, _ := ret[0].(common.ResourceCountByCVESeverity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountBySeverity indicates an expected call of CountBySeverity.
+func (mr *MockCveViewMockRecorder) CountBySeverity(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBySeverity", reflect.TypeOf((*MockCveView)(nil).CountBySeverity), ctx, q)
 }
 
 // Get mocks base method.

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
+	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -31,10 +32,43 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	if err != nil {
 		return 0, err
 	}
+	if len(results) == 0 {
+		return 0, nil
+	}
 	if len(results) > 1 {
-		utils.Should(errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String()))
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
+		utils.Should(err)
+		return 0, err
 	}
 	return results[0].CVECount, nil
+}
+
+func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
+	if err := validateQuery(q); err != nil {
+		return nil, err
+	}
+
+	var err error
+	var results []*resourceCountByImageCVESeverity
+	results, err = pgSearch.RunSelectRequestForSchema[resourceCountByImageCVESeverity](ctx, v.db, v.schema, withCountBySeveritySelectQuery(q, search.CVE))
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return &resourceCountByImageCVESeverity{}, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
+		utils.Should(err)
+		return &resourceCountByImageCVESeverity{}, err
+	}
+
+	return &resourceCountByImageCVESeverity{
+		CriticalSeverityCount:  results[0].CriticalSeverityCount,
+		ImportantSeverityCount: results[0].ImportantSeverityCount,
+		ModerateSeverityCount:  results[0].ModerateSeverityCount,
+		LowSeverityCount:       results[0].LowSeverityCount,
+	}, nil
 }
 
 func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error) {
@@ -71,42 +105,7 @@ func withSelectQuery(q *v1.Query, options views.ReadOptions) *v1.Query {
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,
-			search.NewQuerySelect(search.ImageSHA).
-				AggrFunc(aggregatefunc.Count).
-				Filter("images_with_critical_severity",
-					search.NewQueryBuilder().
-						AddExactMatches(
-							search.Severity,
-							storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
-						).ProtoQuery(),
-				).Proto(),
-			search.NewQuerySelect(search.ImageSHA).
-				AggrFunc(aggregatefunc.Count).
-				Filter("images_with_important_severity",
-					search.NewQueryBuilder().
-						AddExactMatches(
-							search.Severity,
-							storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
-						).ProtoQuery(),
-				).Proto(),
-			search.NewQuerySelect(search.ImageSHA).
-				AggrFunc(aggregatefunc.Count).
-				Filter("images_with_moderate_severity",
-					search.NewQueryBuilder().
-						AddExactMatches(
-							search.Severity,
-							storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
-						).ProtoQuery(),
-				).Proto(),
-			search.NewQuerySelect(search.ImageSHA).
-				AggrFunc(aggregatefunc.Count).
-				Filter("images_with_low_severity",
-					search.NewQueryBuilder().
-						AddExactMatches(
-							search.Severity,
-							storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
-						).ProtoQuery(),
-				).Proto(),
+			withCountBySeveritySelectQuery(q, search.ImageSHA).Selects...,
 		)
 	}
 	if !options.SkipGetTopCVSS {
@@ -121,6 +120,53 @@ func withSelectQuery(q *v1.Query, options views.ReadOptions) *v1.Query {
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}
+	return cloned
+}
+
+func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+	cloned := q.Clone()
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter("critical_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter("important_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter("moderate_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter("low_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
 	return cloned
 }
 
