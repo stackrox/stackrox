@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +11,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
+	"github.com/stackrox/rox/compliance/collection/intervals"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/collection/nodeinventorizer"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -154,32 +156,27 @@ func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_Commun
 	}
 }
 
-func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scanner nodeinventorizer.NodeInventorizer) <-chan *sensor.MsgFromCompliance {
+func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scanner nodeinventorizer.NodeInventorizer) <-chan *sensor.MsgFromCompliance {
 	sensorC := make(chan *sensor.MsgFromCompliance)
 	nodeName := getNode()
 	go func() {
 		defer close(sensorC)
-		t := time.NewTicker(rescanInterval)
-
-		// first scan should happen on start
-		msg, err := scanNode(nodeName, scanner)
-		if err != nil {
-			log.Errorf("error running scanNode: %v", err)
-		} else {
-			sensorC <- msg
-		}
-
+		t := time.NewTicker(i.Initial())
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-t.C:
+				log.Infof("starting a node scan for node %q", nodeName)
 				msg, err := scanNode(nodeName, scanner)
 				if err != nil {
 					log.Errorf("error running scanNode: %v", err)
 				} else {
 					sensorC <- msg
 				}
+				interval := i.Next()
+				cmetrics.ObserveRescanInterval(interval, getNode())
+				t.Reset(interval)
 			}
 		}
 	}()
@@ -256,6 +253,9 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
+	// Set the random seed based on the current time.
+	rand.Seed(time.Now().UnixNano())
+
 	if features.RHCOSNodeScanning.Enabled() {
 		// Start the prometheus metrics server
 		metrics.NewDefaultHTTPServer().RunForever()
@@ -287,10 +287,6 @@ func main() {
 	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		rescanInterval := env.NodeRescanInterval.DurationSetting()
-		cmetrics.ObserveRescanInterval(rescanInterval, getNode())
-		log.Infof("Node Rescan interval: %s", rescanInterval.String())
-
 		var scanner nodeinventorizer.NodeInventorizer
 		if features.UseFakeNodeInventory.Enabled() {
 			log.Infof("Using FakeNodeInventorizer")
@@ -299,7 +295,9 @@ func main() {
 			log.Infof("Using NodeInventoryCollector")
 			scanner = &nodeinventorizer.NodeInventoryCollector{}
 		}
-		nodeInventoriesC := manageNodeScanLoop(ctx, rescanInterval, scanner)
+
+		i := intervals.NewNodeScanIntervalFromEnv()
+		nodeInventoriesC := manageNodeScanLoop(ctx, i, scanner)
 
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
 		go func() {
