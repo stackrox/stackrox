@@ -39,6 +39,7 @@ var (
 		"sensor/tests",
 		"sensor/testutils",
 		"sensor/upgrader",
+		"sensor/utils",
 		"tools",
 		"webhookserver",
 	)
@@ -303,6 +304,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 
 	if validImportRoot == "sensor/kubernetes" {
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/common")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/utils")
 	}
 
 	// Allow scale tests to import some constants from central, to be more DRY.
