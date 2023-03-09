@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -99,6 +100,16 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 	return nil
 }
 
+// UpsertNoAuthRegistry will store a new registry with no user/pass and return the created registry integration
+func (rs *Store) UpsertNoAuthRegistry(ctx context.Context, namespace string, imgName *storage.ImageName) (registryTypes.Registry, error) {
+	err := rs.UpsertRegistry(ctx, namespace, imgName.GetRegistry(), config.DockerConfigEntry{})
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.GetRegistryForImageInNamespace(imgName, namespace)
+}
+
 // getRegistriesInNamespace returns all the registries within a given namespace.
 func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 	rs.mutex.RLock()
@@ -108,12 +119,31 @@ func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 }
 
 // GetRegistryForImage returns the relevant image registry for the given image.
+//
 // An error is returned if the registry is unknown.
+//
+// Assumes the image is from an OCP internal registry
 func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
-	reg := image.GetRegistry()
-
 	ns := utils.ExtractOpenShiftProject(image)
-	regs := rs.getRegistriesInNamespace(ns)
+	return rs.GetRegistryForImageInNamespace(image, ns)
+}
+
+// HasRegistryForImage returns true when the registry store has the registry
+// for the given image.
+//
+// Assumes the image is from an OCP internal registry
+func (rs *Store) HasRegistryForImage(image *storage.ImageName) bool {
+	reg, err := rs.GetRegistryForImage(image)
+	return reg != nil && err == nil
+}
+
+// GetRegistryForImageWithNamespace returns the stored registry that matches image.Registry
+// and is associated with namespace
+//
+// An error is returned if no registry found
+func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namespace string) (registryTypes.Registry, error) {
+	reg := image.GetRegistry()
+	regs := rs.getRegistriesInNamespace(namespace)
 	if regs != nil {
 		for _, r := range regs.GetAll() {
 			if r.Name() == reg {
@@ -125,9 +155,47 @@ func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Re
 	return nil, errors.Errorf("Unknown image registry: %q", reg)
 }
 
-// HasRegistryForImage returns true when the registry store has the registry
-// for the given image.
-func (rs *Store) HasRegistryForImage(image *storage.ImageName) bool {
-	reg, err := rs.GetRegistryForImage(image)
+// HasRegistryForImageWithNamespace returns true when a registry is found in the store that matches
+// image.Registry and is associated with namespace
+func (rs *Store) HasRegistryForImageInNamespace(image *storage.ImageName, namespace string) bool {
+	reg, err := rs.GetRegistryForImageInNamespace(image, namespace)
 	return reg != nil && err == nil
+}
+
+// GetFirstRegistryForImage returns the first registry that matches image.Registry based on sorted
+// namespace order, namespaces are sorted to achieve consistent results
+//
+// An error is returned if no registry found
+func (rs *Store) GetFirstRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
+	// TODO: created for handling requests from admission controller where no namespace details are
+	// provided. This function will be deleted in future when registry integrations are used instead of
+	// pull secrets for 'on-prem' registry scanning.
+	rs.mutex.Lock()
+	defer rs.mutex.Unlock()
+
+	type finding struct {
+		namespace string
+		reg       registryTypes.Registry
+	}
+	findings := []finding{}
+
+	reg := image.GetRegistry()
+	for namespace, registries := range rs.store {
+		for _, registry := range registries.GetAll() {
+			if registry.Name() == reg {
+				findings = append(findings, finding{namespace, registry})
+			}
+		}
+	}
+
+	if len(findings) == 0 {
+		return nil, errors.Errorf("no matching image registry: %q", reg)
+	}
+
+	sort.Slice(findings, func(i, j int) bool {
+		return findings[i].namespace < findings[j].namespace
+	})
+	log.Debugf("found %d registries matching %q, using first from %q ", len(findings), reg, findings[0].namespace)
+
+	return findings[0].reg, nil
 }
