@@ -1,9 +1,8 @@
-import { VulnerabilitySeverity } from 'types/cve.proto';
-
+export type VulnerabilitySeverityLabel = 'Critical' | 'Important' | 'Moderate' | 'Low';
 export type FixableStatus = 'Fixable' | 'Not fixable';
 
 export type DefaultFilters = {
-    Severity: VulnerabilitySeverity[];
+    Severity: VulnerabilitySeverityLabel[];
     Fixable: FixableStatus[];
 };
 
