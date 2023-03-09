@@ -60,7 +60,7 @@ function WorkloadCvesOverviewPage() {
                 </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
-                <CveStatusTabNavigation />
+                <CveStatusTabNavigation defaultFilters={storedValue.preferences.defaultFilters} />
             </PageSection>
         </>
     );
