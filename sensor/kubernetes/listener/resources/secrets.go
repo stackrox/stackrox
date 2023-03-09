@@ -249,7 +249,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
 	serviceAcctName := secret.GetAnnotations()[saAnnotation]
-	hasServiceAccountAnnotation := len(serviceAcctName) > 0
+	hasServiceAcctNameAnnotation := len(serviceAcctName) > 0
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
 	// In OpenShift, the default service account also contains credentials for the
@@ -281,7 +281,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				}
 			}
 
-			if env.ForceLocalImageScanning.BooleanSetting() && !hasServiceAccountAnnotation {
+			if env.ForceLocalImageScanning.BooleanSetting() && !hasServiceAcctNameAnnotation {
 				// Store registry secrets to enable downstream scanning of all images
 				//
 				// Ignore secrets with the service-account.name annotation, each auto-generated secret for an OCP service

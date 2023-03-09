@@ -167,7 +167,7 @@ func TestProcessDockerConfig_ForceLocalScanning(t *testing.T) {
 				"fake.reg.local": {
 					"username": "hello",
 					"password": "world",
-					"email": "hello@example.com",
+					"email": "hello@example.com"
 				}
 			}
 		`)},
