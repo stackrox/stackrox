@@ -253,10 +253,10 @@ func (c *TestContext) run(t *testRun) {
 // If it is set, the RetryCallback will be called if the application of a resource fails.
 func (c *TestContext) runWithResources(resources []K8sResourceInfo, testCase TestCallback, retryFn RetryCallback) error {
 	_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
-	defer utils.IgnoreError(removeNamespace)
 	if err != nil {
 		return errors.Errorf("failed to create namespace: %s", err)
 	}
+	defer utils.IgnoreError(removeNamespace)
 	var removeFunctions []func() error
 	fileToObj := map[string]k8s.Object{}
 	for i := range resources {
