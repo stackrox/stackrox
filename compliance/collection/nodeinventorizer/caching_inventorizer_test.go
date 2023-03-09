@@ -156,7 +156,7 @@ func (s *TestComplianceCachingSuite) TestScanReadFaultyCachedInventory() {
 	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
 	w := &inventoryWrap{
 		CacheValidUntil:      time.Now().Add(2 * time.Minute),
-		RetryBackoffDuration: 0,
+		RetryBackoffDuration: "0s",
 		CachedInventory:      "{\n  \"nodeId\": \"notvalid\", \"LANGUAGE_CVES_UNAVAILABLE\"\n  ]\n}",
 	}
 	s.writeWrap(w, inventoryCachePath)
@@ -201,7 +201,7 @@ func (s *TestComplianceCachingSuite) TestScanHonorBackoff() {
 
 	w := &inventoryWrap{
 		CacheValidUntil:      time.Time{},
-		RetryBackoffDuration: 4 * time.Second,
+		RetryBackoffDuration: "4s",
 		CachedInventory:      "",
 	}
 	s.writeWrap(w, inventoryCachePath)
@@ -224,7 +224,7 @@ func (s *TestComplianceCachingSuite) TestScanReturnsCachedInventory() {
 
 	w := &inventoryWrap{
 		CacheValidUntil:      validUntil,
-		RetryBackoffDuration: 0,
+		RetryBackoffDuration: "0s",
 		CachedInventory:      "{\n  \"nodeId\": \"00000000-0000-0000-0000-000000000000\",\n  \"nodeName\": \"cachedNode\",\n  \"scanTime\": \"2023-11-11T11:11:11.382478080Z\",\n  \"components\": {\n    \"namespace\": \"unknown\"\n  },\n  \"notes\": [\n    \"LANGUAGE_CVES_UNAVAILABLE\"\n  ]\n}",
 	}
 	s.writeWrap(w, inventoryCachePath)
@@ -249,7 +249,7 @@ func (s *TestComplianceCachingSuite) TestScanRunsNewInventory() {
 
 	w := &inventoryWrap{
 		CacheValidUntil:      validUntil,
-		RetryBackoffDuration: 0,
+		RetryBackoffDuration: "0s",
 		CachedInventory:      "{\n  \"nodeId\": \"00000000-0000-0000-0000-000000000000\",\n  \"nodeName\": \"cachedNode\",\n  \"scanTime\": \"2023-11-11T11:11:11.382478080Z\",\n  \"components\": {\n    \"namespace\": \"unknown\"\n  },\n  \"notes\": [\n    \"LANGUAGE_CVES_UNAVAILABLE\"\n  ]\n}",
 	}
 	s.writeWrap(w, inventoryCachePath)

@@ -30,9 +30,9 @@ type CachingScanner struct {
 
 // inventoryWrap is a private struct that saves a given inventory alongside some meta-information.
 type inventoryWrap struct {
-	CacheValidUntil      time.Time     // CacheValidUntil indicates whether the cached inventory is fresh enough to use.
-	RetryBackoffDuration time.Duration // RetryBackoffDuration contains the duration a scan waits before its next iteration.
-	CachedInventory      string        // Serialized form of the cached inventory
+	CacheValidUntil      time.Time // CacheValidUntil indicates whether the cached inventory is fresh enough to use.
+	RetryBackoffDuration string    // RetryBackoffDuration contains the durations string representation a scan waits before its next iteration.
+	CachedInventory      string    // Serialized form of the cached inventory
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
@@ -101,8 +101,11 @@ func min(d1 time.Duration, d2 time.Duration) time.Duration {
 
 func readBackoff(path string) time.Duration {
 	wrap := readInventoryWrap(path)
-	if wrap != nil {
-		return wrap.RetryBackoffDuration
+	if wrap == nil {
+		return 0
+	}
+	if d, err := time.ParseDuration(wrap.RetryBackoffDuration); err == nil {
+		return d
 	}
 	return 0
 }
@@ -110,7 +113,7 @@ func readBackoff(path string) time.Duration {
 func writeBackoff(backoff time.Duration, path string) error {
 	wrap := inventoryWrap{
 		CacheValidUntil:      time.Time{},
-		RetryBackoffDuration: backoff,
+		RetryBackoffDuration: backoff.String(),
 		CachedInventory:      "",
 	}
 	return writeInventoryWrap(wrap, path)
@@ -131,14 +134,14 @@ func readCachedInventory(path string) (inventory *storage.NodeInventory, validUn
 }
 
 func writeCachedInventory(inventory *storage.NodeInventory, validUntil time.Time, path string) error {
-	strInv, err := jsonutil.ProtoToJSON(inventory)
+	strInv, err := jsonutil.ProtoToJSON(inventory, jsonutil.OptCompact)
 	if err != nil {
 		return err
 	}
 
 	wrap := inventoryWrap{
 		CacheValidUntil:      validUntil,
-		RetryBackoffDuration: 0,
+		RetryBackoffDuration: "0s",
 		CachedInventory:      strInv,
 	}
 	return writeInventoryWrap(wrap, path)
