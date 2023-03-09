@@ -32,11 +32,11 @@ var (
 	scannerClientSingleton   = scannerclient.GRPCClientSingleton
 )
 
-// EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
-// from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
+// EnrichLocalImage will enrich an image with scan results from local scanner as well as signatures
+// from the local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image.
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
-func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
+func EnrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registry registryTypes.Registry) (*storage.Image, error) {
 	imgName := ci.GetName().GetFullName()
 
 	// Check if there is a local Scanner.
@@ -46,17 +46,9 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		return nil, ErrNoLocalScanner
 	}
 
-	// Find the associated registry of the image.
-	matchingRegistry, err := getMatchingRegistry(ci.GetName())
-	if err != nil {
-		return nil, errors.Wrapf(err, "determining image registry for image %q", imgName)
-	}
-
-	log.Debugf("Received matching registry for image %q: %q", imgName, matchingRegistry.Name())
-
 	image := types.ToImage(ci)
 	// Retrieve the image's metadata.
-	metadata, err := matchingRegistry.Metadata(image)
+	metadata, err := registry.Metadata(image)
 	if err != nil {
 		log.Debugf("Failed fetching image metadata for image %q: %v", imgName, err)
 		return nil, errors.Wrapf(err, "fetching image metadata for image %q", imgName)
@@ -70,7 +62,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
 
 	// Scan the image via local scanner.
-	scannerResp, err := scanImg(ctx, image, matchingRegistry, scannerClient)
+	scannerResp, err := scanImg(ctx, image, registry, scannerClient)
 	if err != nil {
 		log.Debugf("Scan for image %q failed: %v", imgName, err)
 		return nil, errors.Wrapf(err, "scanning image %q locally", imgName)
@@ -78,11 +70,11 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 
 	// Fetch signatures from cluster-local registry.
 	sigs, err := fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(),
-		matchingRegistry)
+		registry)
 	if err != nil {
 		log.Debugf("Failed fetching signatures for image %q: %v", imgName, err)
 		return nil, errors.Wrapf(err, "fetching signature for image %q from registry %q",
-			imgName, matchingRegistry.Name())
+			imgName, registry.Name())
 	}
 
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
@@ -103,6 +95,24 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	log.Debugf("Retrieved image enrichment results for %q", imgName)
 
 	return centralResp.GetImage(), nil
+}
+
+// EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
+// from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
+// vulnerabilities will be fetched from central, returning the fully enriched image.
+// It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
+func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
+	imgName := ci.GetName().GetFullName()
+
+	// Find the associated registry of the image.
+	matchingRegistry, err := getMatchingRegistry(ci.GetName())
+	if err != nil {
+		return nil, errors.Wrapf(err, "determining image registry for image %q", imgName)
+	}
+
+	log.Debugf("Received matching registry for image %q: %q", imgName, matchingRegistry.Name())
+
+	return EnrichLocalImageFromRegistry(ctx, centralClient, ci, matchingRegistry)
 }
 
 // scanImage will scan the given image and return its components.
