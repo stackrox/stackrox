@@ -280,23 +280,23 @@ func main() {
 	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		var scanner nodeinventorizer.NodeInventorizer
+		var analyzer nodeinventorizer.NodeInventorizer
 		if features.UseFakeNodeInventory.Enabled() {
 			log.Infof("Using FakeNodeInventorizer")
-			scanner = &nodeinventorizer.FakeNodeInventorizer{}
+			analyzer = &nodeinventorizer.FakeNodeInventorizer{}
 		} else {
 			log.Infof("Using NodeInventoryCollector")
 			analyzer := &nodeinventorizer.NodeAnalyzer{}
-			scanner = nodeinventorizer.NewCachingScanner(
-				analyzer,
-				"/cache/inventory-cache",
-				env.NodeScanCacheDuration.DurationSetting(),
-				env.NodeScanInitialBackoff.DurationSetting(),
-				env.NodeScanMaxBackoff.DurationSetting(),
-				func(duration time.Duration) { time.Sleep(duration) })
 		}
 
 		i := intervals.NewNodeScanIntervalFromEnv()
+		scanner := nodeinventorizer.NewCachingScanner(
+			analyzer,
+			"/cache/inventory-cache",
+			env.NodeScanCacheDuration.DurationSetting(),
+			env.NodeScanInitialBackoff.DurationSetting(),
+			env.NodeScanMaxBackoff.DurationSetting(),
+			func(duration time.Duration) { time.Sleep(duration) })
 		nodeInventoriesC := manageNodeScanLoop(ctx, i, scanner)
 
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
