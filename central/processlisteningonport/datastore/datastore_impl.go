@@ -41,15 +41,14 @@ func newDatastoreImpl(
 }
 
 func (ds *datastoreImpl) GetPlopsFromDB(ctx context.Context) []*storage.ProcessListeningOnPortStorage {
-        plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-        ds.WalkAll(ctx,
-                func(plop *storage.ProcessListeningOnPortStorage) error {
-                        plopsFromDB = append(plopsFromDB, plop)
-                        return nil
-                })
+	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	ds.WalkAll(ctx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			plopsFromDB = append(plopsFromDB, plop)
+			return nil
+		})
 
-
-        return plopsFromDB
+	return plopsFromDB
 }
 
 func convertPlopFromStorageToPlopFromSensor(plopStorage *storage.ProcessListeningOnPortStorage) *storage.ProcessListeningOnPortFromSensor {
@@ -99,11 +98,10 @@ func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*st
 }
 
 type PlopInfo struct {
-	normalizedPLOPs		[]*storage.ProcessListeningOnPortFromSensor
-	completedInBatch	[]*storage.ProcessListeningOnPortFromSensor
-	indicatorsMap		map[string]*storage.ProcessIndicator
-	existingPLOPMap		map[string]*storage.ProcessListeningOnPortStorage
-
+	normalizedPLOPs  []*storage.ProcessListeningOnPortFromSensor
+	completedInBatch []*storage.ProcessListeningOnPortFromSensor
+	indicatorsMap    map[string]*storage.ProcessIndicator
+	existingPLOPMap  map[string]*storage.ProcessListeningOnPortStorage
 }
 
 func (ds *datastoreImpl) getPlopInfo(
@@ -128,29 +126,29 @@ func (ds *datastoreImpl) getPlopInfo(
 		return nil, nil
 	}
 
-	//plopInfo.normalizedPLOPs, plopInfo.completedInBatch = normalizePLOPs(portProcesses)
+	// plopInfo.normalizedPLOPs, plopInfo.completedInBatch = normalizePLOPs(portProcesses)
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 
 	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
 	// be done in a single join query fetching both ProcessIndicator and needed
 	// bits from PLOP.
 	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, normalizedPLOPs...)
-	//plopInfo.indicatorsMap, indicatorIds, err = ds.fetchIndicators(ctx, plopInfo.normalizedPLOPs...)
+	// plopInfo.indicatorsMap, indicatorIds, err = ds.fetchIndicators(ctx, plopInfo.normalizedPLOPs...)
 	if err != nil {
 		return nil, err
 	}
 
 	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
-	//plopInfo.existingPLOPMap, err = ds.fetchExistingPLOPs(ctx, indicatorIds)
+	// plopInfo.existingPLOPMap, err = ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
 		return nil, err
 	}
 
 	plopInfo := &PlopInfo{
-		normalizedPLOPs:	normalizedPLOPs,
-		completedInBatch:	completedInBatch,
-		indicatorsMap:		indicatorsMap,
-		existingPLOPMap:	existingPLOPMap,
+		normalizedPLOPs:  normalizedPLOPs,
+		completedInBatch: completedInBatch,
+		indicatorsMap:    indicatorsMap,
+		existingPLOPMap:  existingPLOPMap,
 	}
 
 	return plopInfo, nil
@@ -160,7 +158,6 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 	ctx context.Context,
 	plopInfo *PlopInfo,
 ) ([]*storage.ProcessListeningOnPortStorage, error) {
-
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
 	for _, val := range plopInfo.normalizedPLOPs {
@@ -216,7 +213,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 	// * If no existing PLOP is present, they will create a new closed PLOP
 	for _, val := range plopInfo.completedInBatch {
 		indicatorID := ""
-		//var processInfo *storage.ProcessIndicatorUniqueKey
+		// var processInfo *storage.ProcessIndicatorUniqueKey
 
 		key := getPlopProcessUniqueKey(val)
 
@@ -226,7 +223,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 		} else {
 			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
 			log.Warnf("Found no matching indicators for %s", key)
-			//processInfo = val.Process
+			// processInfo = val.Process
 		}
 
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
@@ -253,17 +250,17 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 				log.Warnf("Found active PLOP completed in the batch %+v", val)
 			}
 
-			// Commenting out the next line of code is a hack 
+			// Commenting out the next line of code is a hack
 			// to get TestProcessListeningOnPortReprocessCloseBeforeRetrying in reprocessor.go to pass
-			// The difficulty is with distinguishing between the following two cases 
+			// The difficulty is with distinguishing between the following two cases
 			//
 			// 1. Adds an open plop with no matching indicator
-			// 2. Adds the indicator for the plop 
+			// 2. Adds the indicator for the plop
 			// 3. Adds a batch where the plop is closed and then opened
 			// 4. Retries the plops that were not matched to processes
 			//
 			// 1. Adds an open plop with no matching indicator
-			// 2. Adds the indicator for the plop 
+			// 2. Adds the indicator for the plop
 			// 3. Adds the closed plop
 			// 4. Retries the plops that were not matched to processes
 			//
@@ -272,7 +269,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 			// the state will be that of the unmatched listening endpoint, which is correct.
 			// Commented out code left here for now.
 
-			//plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			// plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
 	return plopObjects, nil
@@ -320,7 +317,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
 		}
 	}
 
-	// completedInBatch should not be needed for retries as that should mean that a 
+	// completedInBatch should not be needed for retries as that should mean that a
 	// port was opened and closed without being matched to a process indicator first.
 	// It means that the port is closed and it should be in whatever state the table
 	// already has it being in. Either closed, open, or non-existant.

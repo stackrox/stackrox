@@ -55,6 +55,20 @@ func (mr *MockDataStoreMockRecorder) AddProcessListeningOnPort(arg0 interface{},
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).AddProcessListeningOnPort), varargs...)
 }
 
+// GetPlopsFromDB mocks base method.
+func (m *MockDataStore) GetPlopsFromDB(ctx context.Context) []*storage.ProcessListeningOnPortStorage {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPlopsFromDB", ctx)
+	ret0, _ := ret[0].([]*storage.ProcessListeningOnPortStorage)
+	return ret0
+}
+
+// GetPlopsFromDB indicates an expected call of GetPlopsFromDB.
+func (mr *MockDataStoreMockRecorder) GetPlopsFromDB(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlopsFromDB", reflect.TypeOf((*MockDataStore)(nil).GetPlopsFromDB), ctx)
+}
+
 // GetProcessListeningOnPort mocks base method.
 func (m *MockDataStore) GetProcessListeningOnPort(ctx context.Context, deployment string) ([]*storage.ProcessListeningOnPort, error) {
 	m.ctrl.T.Helper()
@@ -82,6 +96,20 @@ func (m *MockDataStore) RemoveProcessListeningOnPort(ctx context.Context, ids []
 func (mr *MockDataStoreMockRecorder) RemoveProcessListeningOnPort(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessListeningOnPort), ctx, ids)
+}
+
+// RetryAddProcessListeningOnPort mocks base method.
+func (m *MockDataStore) RetryAddProcessListeningOnPort(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetryAddProcessListeningOnPort", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RetryAddProcessListeningOnPort indicates an expected call of RetryAddProcessListeningOnPort.
+func (mr *MockDataStoreMockRecorder) RetryAddProcessListeningOnPort(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetryAddProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).RetryAddProcessListeningOnPort), arg0)
 }
 
 // WalkAll mocks base method.

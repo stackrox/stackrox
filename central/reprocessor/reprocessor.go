@@ -101,8 +101,8 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration,
 	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater, plops processlisteningonportDatastore.DataStore, indexQueue queue.WaitableQueue) *loopImpl {
 	return &loopImpl{
-		enrichAndDetectTickerDuration: enrichAndDetectDuration,
-		deploymentRiskTickerDuration:  deploymentRiskDuration,
+		enrichAndDetectTickerDuration:        enrichAndDetectDuration,
+		deploymentRiskTickerDuration:         deploymentRiskDuration,
 		processListeningOnPortTickerDuration: 30.0 * time.Second,
 
 		imageEnricher: imageEnricher,
@@ -121,13 +121,12 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		nodeEnricher: nodeEnricher,
 		nodes:        nodes,
 
-		plops:		plops,
+		plops: plops,
 
 		shortCircuitSig:   concurrency.NewSignal(),
 		stopSig:           concurrency.NewSignal(),
 		enrichmentStopped: concurrency.NewSignal(),
 		riskStopped:       concurrency.NewSignal(),
-
 
 		signatureVerificationSig: concurrency.NewSignal(),
 
@@ -151,13 +150,13 @@ type loopImpl struct {
 
 	watchedImages watchedImageDataStore.DataStore
 
-	deployments					deploymentDatastore.DataStore
-	deploymentRiskSet				set.StringSet
-	deploymentRiskLock				sync.Mutex
-	deploymentRiskTicker				*time.Ticker
-	deploymentRiskTickerDuration			time.Duration
-	processListeningOnPortTicker			*time.Ticker
-	processListeningOnPortTickerDuration		time.Duration
+	deployments                          deploymentDatastore.DataStore
+	deploymentRiskSet                    set.StringSet
+	deploymentRiskLock                   sync.Mutex
+	deploymentRiskTicker                 *time.Ticker
+	deploymentRiskTickerDuration         time.Duration
+	processListeningOnPortTicker         *time.Ticker
+	processListeningOnPortTickerDuration time.Duration
 
 	activeComponentStopped        concurrency.Signal
 	activeComponentTicker         *time.Ticker
@@ -167,14 +166,14 @@ type loopImpl struct {
 	nodes        nodeDatastore.DataStore
 	nodeEnricher nodeEnricher.NodeEnricher
 
-	plops			processlisteningonportDatastore.DataStore
+	plops processlisteningonportDatastore.DataStore
 
-	shortCircuitSig		concurrency.Signal
-	stopSig			concurrency.Signal
-	riskStopped		concurrency.Signal
-	processListeningOnPorts	concurrency.Signal
-	processListeningOnPortsStopped	concurrency.Signal
-	enrichmentStopped	concurrency.Signal
+	shortCircuitSig                concurrency.Signal
+	stopSig                        concurrency.Signal
+	riskStopped                    concurrency.Signal
+	processListeningOnPorts        concurrency.Signal
+	processListeningOnPortsStopped concurrency.Signal
+	enrichmentStopped              concurrency.Signal
 
 	signatureVerificationSig concurrency.Signal
 
