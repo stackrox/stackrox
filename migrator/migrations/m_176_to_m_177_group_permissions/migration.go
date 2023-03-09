@@ -1,11 +1,11 @@
-package m174tom175
+package m176tom177
 
 import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	permissionsetpostgresstore "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_group_permissions/permissionsetpostgresstore"
+	permissionsetpostgresstore "github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_group_permissions/permissionsetpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"

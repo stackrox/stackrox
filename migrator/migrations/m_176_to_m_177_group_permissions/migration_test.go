@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package m174tom175
+package m176tom177
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	permissionsetpostgresstore "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_group_permissions/permissionsetpostgresstore"
+	permissionsetpostgresstore "github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_group_permissions/permissionsetpostgresstore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
