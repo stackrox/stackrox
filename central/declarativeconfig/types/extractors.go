@@ -51,12 +51,8 @@ func extractIDFromProtoMessage(message proto.Message) string {
 func extractNameFromProtoMessage(message proto.Message) string {
 	// Special case, as the group specifies no name we will use a combination of multiple values to identify it.
 	if group, ok := message.(*storage.Group); ok {
-		groupName := fmt.Sprintf("group %s:%s", group.GetRoleName(), group.GetProps().GetAuthProviderId())
-		// If the key is non-empty, the value should be non-empty as well.
-		if group.GetProps().GetKey() != "" {
-			groupName += fmt.Sprintf(":%s:%s", group.GetProps().GetKey(), group.GetProps().GetValue())
-		}
-		return groupName
+		return fmt.Sprintf("group %s:%s:%s for auth provider ID %s",
+			group.GetProps().GetKey(), group.GetProps().GetValue(), group.GetRoleName(), group.GetProps().GetAuthProviderId())
 	}
 
 	messageWithName, ok := message.(interface {

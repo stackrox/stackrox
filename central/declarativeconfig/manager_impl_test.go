@@ -141,7 +141,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 			Id:           "group",
-			Name:         "group Admin:some-auth-provider:email:some@example.com in config map test-handler-2",
+			Name:         "group email:some@example.com:Admin for auth provider ID some-auth-provider in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
