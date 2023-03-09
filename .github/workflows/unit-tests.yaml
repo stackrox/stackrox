@@ -34,10 +34,22 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: ${{ matrix.gotags }} make go-unit-tests && make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        report_paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
-      run: ${{ matrix.gotags }} make integration-unit-tests
+      run: ${{ matrix.gotags }} make integration-unit-tests && make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        report_paths: 'junit-reports/report.xml'
 
   go-postgres:
     strategy:
@@ -69,7 +81,13 @@ jobs:
       run: pg_isready -h 127.0.0.1
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-postgres-unit-tests
+      run: ${{ matrix.gotags }} make go-postgres-unit-tests && make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        report_paths: 'junit-reports/report.xml'
 
   ui:
     runs-on: ubuntu-latest
@@ -122,6 +140,12 @@ jobs:
 
     - name: Local roxctl tests
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        report_paths: 'roxctl-test-output/*.xml'
 
   slack-on-unit-tests-failure:
     if: github.event_name == 'push' && failure()
