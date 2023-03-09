@@ -22,7 +22,7 @@ store_artifacts() {
         exit 1
     fi
 
-    # Circle CI does a poor job with ~ expansion
+    # Some CI do a poor job with ~ expansion
     if [[ "$path" =~ ^~ ]]; then
         path="$HOME$(cut -c2- -<<< "$path")"
     fi
@@ -102,15 +102,6 @@ set_gs_path_vars() {
         WORKFLOW_SUBDIR="${repo}/${workflow_id}"
         JOB_SUBDIR="${BUILD_ID}-${JOB_NAME}"
         GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
-    elif is_CIRCLECI; then
-        require_environment "CIRCLE_PROJECT_REPONAME"
-        require_environment "CIRCLE_WORKFLOW_ID"
-        require_environment "CIRCLE_BUILD_NUM"
-        require_environment "CIRCLE_JOB"
-
-        WORKFLOW_SUBDIR="${CIRCLE_PROJECT_REPONAME}/${CIRCLE_WORKFLOW_ID}"
-        JOB_SUBDIR="${CIRCLE_BUILD_NUM}-${CIRCLE_JOB}"
-        GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
     else
         die "Support is missing for this CI environment"
     fi
@@ -146,8 +137,6 @@ make_artifacts_help() {
     if is_OPENSHIFT_CI; then
         require_environment "ARTIFACT_DIR"
         help_file="$ARTIFACT_DIR/howto-locate-other-artifacts.html"
-    elif is_CIRCLECI; then
-        help_file="/tmp/howto-locate-artifacts.html"
     else
         die "This is an unsupported environment"
     fi
