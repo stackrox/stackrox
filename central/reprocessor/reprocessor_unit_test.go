@@ -31,7 +31,7 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 		setUpMocks func(t *testing.T, a *args, m *mocks)
 	}{
 		{
-			name: "when OS is RHCOS, nothing is done",
+			name: "when node is RHCOS then nothing is done",
 			setUpMocks: func(t *testing.T, a *args, m *mocks) {
 				node := &storage.Node{
 					OsImage: "Red Hat Enterprise Linux CoreOS 412.86.202302091419-0 (Ootpa)",
@@ -40,7 +40,7 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 			},
 		},
 		{
-			name: "when OS is not RHCOS, nothing scanner is called and node is upserted",
+			name: "when node is not RHCOS then scanner is called and node is upserted",
 			setUpMocks: func(t *testing.T, a *args, m *mocks) {
 				node := &storage.Node{
 					OsImage:     "Something that is not RHCOS",
@@ -58,14 +58,14 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "when get node returns err, returns false",
+			name: "when node storage returns err then returns false",
 			setUpMocks: func(t *testing.T, a *args, m *mocks) {
 				m.nodes.EXPECT().GetNode(gomock.Any(), a.id).Times(1).Return(nil, false, errors.New("foobar"))
 			},
 			want: false,
 		},
 		{
-			name: "when get node returns not found, returns false",
+			name: "when node storage is successful but node is not found then returns false",
 			setUpMocks: func(t *testing.T, a *args, m *mocks) {
 				m.nodes.EXPECT().GetNode(gomock.Any(), a.id).Times(1).Return(nil, false, nil)
 			},
@@ -75,7 +75,6 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 			m := mocks{
 				nodes:        nodeDatastoreMocks.NewMockDataStore(ctrl),
 				risk:         riskManagerMocks.NewMockManager(ctrl),
