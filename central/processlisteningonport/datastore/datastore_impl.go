@@ -65,24 +65,46 @@ func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) ([]*storag
 	return plopsFromDB, err
 }
 
-func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesses []*storage.ProcessListeningOnPortFromSensor) ([]*storage.ProcessListeningOnPortFromSensor, error) {
-
-	unmatchedIds := make([]string, 0)
-	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
-
-	for _, val := range unmatchedPLOPs {
-		unmatchedIds = append(unmatchedIds, val.Id)
-		plop := convertPlopFromStorageToPlopFromSensor(val)
-		portProcesses = append(portProcesses, plop)
+func convertToPlopsFromSensor(plops []*storage.ProcessListeningOnPortStorage) []*storage.ProcessListeningOnPortFromSensor {
+	plopsFromSensor := make([]*storage.ProcessListeningOnPortFromSensor, 0)
+	for _, plop := range plops {
+		plopFromSensor := convertPlopFromStorageToPlopFromSensor(plop)
+		plopsFromSensor = append(plopsFromSensor, plopFromSensor)
 	}
 
-	// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
-	// Deleting unmatched plops is not the most efficient solution.
-	// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
-	err := ds.storage.DeleteMany(ctx, unmatchedIds)
-
-	return portProcesses, err
+	return plopsFromSensor
 }
+
+func convertPlopsToMap(plops []*storage.ProcessListeningOnPortStorage) map[string]*storage.ProcessListeningOnPortStorage {
+	plopMap := make(map[string]*storage.ProcessListeningOnPortStorage)
+	for _, plop := range plops {
+		key := getPlopWithoutIndicatorKey(plop)
+		plopMap[key] = plop
+	}
+
+	return plopMap
+}
+
+//func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesses []*storage.ProcessListeningOnPortFromSensor) ([]*storage.ProcessListeningOnPortFromSensor, error) {
+//
+//	unmatchedIds := make([]string, 0)
+//
+//	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
+//
+//	for _, val := range unmatchedPLOPs {
+//		//unmatchedIds = append(unmatchedIds, val.Id)
+//		plop := convertPlopFromStorageToPlopFromSensor(val)
+//		portProcesses = append(portProcesses, plop)
+//		unmatchedPlopMap[key] = val
+//	}
+//
+//	//// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
+//	//// Deleting unmatched plops is not the most efficient solution.
+//	//// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
+//	//err := ds.storage.DeleteMany(ctx, unmatchedIds)
+//
+//	return portProcesses, err
+//}
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
@@ -106,7 +128,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	newAndUnmatchedPortProcesses, _ := ds.addUnmatchedProcesses(ctx, portProcesses)
+	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
+	unmatchedPlopsFromSensor := convertToPlopsFromSensor(unmatchedPLOPs)
+	unmatchedPLOPMap := convertPlopsToMap(unmatchedPLOPs)
+	newAndUnmatchedPortProcesses := append(portProcesses, unmatchedPlopsFromSensor...)
+	//newAndUnmatchedPortProcesses, _ := ds.addUnmatchedProcesses(ctx, portProcesses)
 	normalizedPLOPs, completedInBatch := normalizePLOPs(newAndUnmatchedPortProcesses)
 
 	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
@@ -138,9 +164,24 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			processInfo = val.Process
 		}
 
+		unmatchedPlopKey := getPlopFromSensorKey(val)
+		unmatchedPlop, unmatched := unmatchedPLOPMap[unmatchedPlopKey]
+
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]
+
+		if unmatched && !prevExists {
+			unmatchedPlop.ProcessIndicatorId = indicatorID
+			if indicatorID != "" {
+				unmatchedPlop.Process = nil
+			}
+			plopObjects = append(plopObjects, unmatchedPlop)
+		}
+
+		if unmatched && prevExists {
+			ds.storage.Delete(ctx, unmatchedPlop.Id)
+		}
 
 		// There are three options:
 		// * We found an existing PLOP object with different close timestamp.
@@ -158,7 +199,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			plopObjects = append(plopObjects, existingPLOP)
 		}
 
-		if !prevExists {
+		if !unmatched && !prevExists {
 			if val.CloseTimestamp != nil {
 				// We try to close a not existing Endpoint, something is wrong
 				log.Warnf("Found no matching PLOP to close for %s", key)
@@ -417,11 +458,7 @@ func normalizePLOPs(
 	completedEvents = []*storage.ProcessListeningOnPortFromSensor{}
 
 	for _, val := range plops {
-		key := getPlopKeyFromParts(
-			val.GetProtocol(),
-			val.GetPort(),
-			getPlopProcessUniqueKey(val),
-		)
+		key := getPlopFromSensorKey(val)
 
 		if prev, ok := normalizedMap[key]; ok {
 
@@ -488,14 +525,18 @@ func getProcessUniqueKeyFromParts(containerName string,
 	)
 }
 
-func getPlopProcessUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
+func getProcessIndicatorUniqueKeyString(process *storage.ProcessIndicatorUniqueKey) string {
 	return getProcessUniqueKeyFromParts(
-		plop.Process.ContainerName,
-		plop.Process.PodId,
-		plop.Process.ProcessName,
-		plop.Process.ProcessArgs,
-		plop.Process.ProcessExecFilePath,
+		process.GetContainerName(),
+		process.GetPodId(),
+		process.GetProcessName(),
+		process.GetProcessArgs(),
+		process.GetProcessExecFilePath(),
 	)
+}
+
+func getPlopProcessUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
+	return getProcessIndicatorUniqueKeyString(plop.Process)
 }
 
 func getProcessUniqueKey(process *storage.ProcessIndicator) string {
@@ -518,6 +559,22 @@ func getPlopKeyFromParts(protocol storage.L4Protocol, port uint32, indicatorID s
 
 func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
 	return getPlopKeyFromParts(plop.GetProtocol(), plop.GetPort(), plop.GetProcessIndicatorId())
+}
+
+func getPlopFromSensorKey(plop *storage.ProcessListeningOnPortFromSensor) string {
+	return getPlopKeyFromParts(
+		plop.GetProtocol(),
+		plop.GetPort(),
+		getPlopProcessUniqueKey(plop),
+	)
+}
+
+func getPlopWithoutIndicatorKey(plop *storage.ProcessListeningOnPortStorage) string {
+	return getPlopKeyFromParts(
+		plop.GetProtocol(),
+		plop.GetPort(),
+		getProcessIndicatorUniqueKeyString(plop.Process),
+	)
 }
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
