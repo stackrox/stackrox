@@ -42,6 +42,7 @@ func TestMigration(t *testing.T) {
 func (s *networkFlowsMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableNetworkFlowsStmt)
+	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableClustersStmt)
 
 	s.oldStore1 = previous.New(s.db.DB, cluster1)
 	s.oldStore2 = previous.New(s.db.DB, cluster2)
@@ -54,6 +55,10 @@ func (s *networkFlowsMigrationTestSuite) TearDownTest() {
 func (s *networkFlowsMigrationTestSuite) TestMigration() {
 	// Add some data to the original tables via the old stores.
 	s.addSomeOldData()
+	_, err := s.db.DB.exec(context.Background, "insert into clusters (id) values ($1)", cluster1)
+	s.NoError(err)
+	_, err = s.db.DB.exec(context.Background, "insert into clusters (id) values ($1)", cluster2)
+	s.NoError(err)
 
 	dbs := &types.Databases{
 		PostgresDB: s.db.DB,
