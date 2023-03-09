@@ -17,26 +17,13 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
-
-func hasAPI(client kubernetes.Interface, gv, kind string) (bool, error) {
-	apiResourceList, err := client.Discovery().ServerResourcesForGroupVersion(gv)
-	if err != nil {
-		return false, err
-	}
-	for _, apiResource := range apiResourceList.APIResources {
-		if apiResource.Kind == kind {
-			return true, nil
-		}
-	}
-	return false, nil
-}
 
 type startable interface {
 	Start(stopCh <-chan struct{})
@@ -244,7 +231,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(resyncingSif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetesPkg.Deployment), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	handle(resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.StatefulSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 
-	if ok, err := hasAPI(k.client.Kubernetes(), "batch/v1", kubernetesPkg.CronJob); err != nil {
+	if ok, err := sensorUtils.HasAPI(k.client.Kubernetes(), "batch/v1", kubernetesPkg.CronJob); err != nil {
 		log.Errorf("error determining API version to use for CronJobs: %v", err)
 	} else if ok {
 		handle(resyncingSif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
@@ -306,11 +293,11 @@ func handle(
 		seenIDs:                    make(map[types.UID]struct{}),
 		missingInitialIDs:          nil,
 	}
-	informer.AddEventHandler(handlerImpl)
+	_, err := informer.AddEventHandler(handlerImpl)
+	utils.Should(err)
 	if !informer.HasSynced() {
-		if err := informer.SetTransform(managedFieldsTransformer); err != nil {
-			utils.Should(err)
-		}
+		err := informer.SetTransform(managedFieldsTransformer)
+		utils.Should(err)
 	}
 	wg.Add(1)
 	go func() {

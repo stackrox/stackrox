@@ -86,6 +86,12 @@ func testImages() []*storage.Image {
 	return []*storage.Image{
 		{
 			Id: "sha1",
+			Name: &storage.ImageName{
+				Registry: "reg1",
+				Remote:   "img1",
+				Tag:      "tag1",
+				FullName: "reg1/img1:tag1",
+			},
 			SetCves: &storage.Image_Cves{
 				Cves: 3,
 			},
@@ -100,6 +106,7 @@ func testImages() []*storage.Image {
 								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "1.1",
 								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -112,6 +119,7 @@ func testImages() []*storage.Image {
 								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "1.5",
 								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -120,12 +128,14 @@ func testImages() []*storage.Image {
 						Version: "1.0",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:  "cve-2019-1",
-								Cvss: 4,
+								Cve:      "cve-2019-1",
+								Cvss:     4,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 							{
-								Cve:  "cve-2019-2",
-								Cvss: 3,
+								Cve:      "cve-2019-2",
+								Cvss:     3,
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -135,6 +145,12 @@ func testImages() []*storage.Image {
 		},
 		{
 			Id: "sha2",
+			Name: &storage.ImageName{
+				Registry: "reg2",
+				Remote:   "img2",
+				Tag:      "tag2",
+				FullName: "reg2/img2:tag2",
+			},
 			SetCves: &storage.Image_Cves{
 				Cves: 5,
 			},

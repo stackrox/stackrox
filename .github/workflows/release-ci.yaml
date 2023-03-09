@@ -119,7 +119,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: 'google-github-actions/auth@v0'
+      - uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
       - name: 'Set up Cloud SDK'

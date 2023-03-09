@@ -2,16 +2,22 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/contextutil"
 )
 
 // New creates a new DB wrapper
 func New(ctx context.Context, config *Config) (*DB, error) {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, 10*time.Second)
+	defer cancel()
+
 	pool, err := pgxpool.ConnectConfig(ctx, config.Config)
 	if err != nil {
+		incQueryErrors("connect", err)
 		return nil, err
 	}
 	return &DB{
@@ -30,8 +36,12 @@ func ParseConfig(source string) (*Config, error) {
 
 // Connect wraps pgxpool.Connect
 func Connect(ctx context.Context, sourceWithDatabase string) (*DB, error) {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, 10*time.Second)
+	defer cancel()
+
 	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
 	if err != nil {
+		incQueryErrors("connect", err)
 		return nil, err
 	}
 	return &DB{Pool: pool}, nil
@@ -44,41 +54,67 @@ type DB struct {
 
 // Begin wraps pgxpool.Pool Begin
 func (d *DB) Begin(ctx context.Context) (*Tx, error) {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
+
 	tx, err := d.Pool.Begin(ctx)
 	if err != nil {
+		incQueryErrors("begin", err)
 		return nil, err
 	}
 	return &Tx{
-		Tx: tx,
+		Tx:         tx,
+		cancelFunc: cancel,
 	}, nil
 }
 
 // Exec wraps pgxpool.Pool Exec
 func (d *DB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
-	return d.Pool.Exec(ctx, sql, args...)
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
+	defer cancel()
+
+	defer setQueryDuration(time.Now(), "pool", sql)
+	ct, err := d.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		incQueryErrors(sql, err)
+		return nil, err
+	}
+	return ct, nil
 }
 
 // Query wraps pgxpool.Pool Query
 func (d *DB) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
+
+	defer setQueryDuration(time.Now(), "pool", sql)
 	rows, err := d.Pool.Query(ctx, sql, args...)
 	if err != nil {
+		incQueryErrors(sql, err)
 		return nil, err
 	}
 	return &Rows{
-		Rows: rows,
+		Rows:       rows,
+		query:      sql,
+		cancelFunc: cancel,
 	}, nil
 }
 
 // QueryRow wraps pgxpool.Pool QueryRow
 func (d *DB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	return d.Pool.QueryRow(ctx, sql, args...)
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
+
+	defer setQueryDuration(time.Now(), "pool", sql)
+	return &Row{
+		Row:        d.Pool.QueryRow(ctx, sql, args...),
+		query:      sql,
+		cancelFunc: cancel,
+	}
 }
 
 // Acquire wraps pgxpool.Acquire
 func (d *DB) Acquire(ctx context.Context) (*Conn, error) {
-
 	conn, err := d.Pool.Acquire(ctx)
 	if err != nil {
+		incQueryErrors("acquire", err)
 		return nil, err
 	}
 	return &Conn{Conn: conn}, nil

@@ -33,9 +33,6 @@ assign_env_variables() {
     if is_OPENSHIFT_CI; then
         require_environment "BUILD_ID"
         build_num="${BUILD_ID}"
-    elif is_CIRCLECI; then
-        require_environment "CIRCLE_BUILD_NUM"
-        build_num="${CIRCLE_BUILD_NUM}"
     else
         die "Support is missing for this CI environment"
     fi
@@ -73,15 +70,6 @@ create_cluster() {
         labels="${labels},stackrox-ci-job=${JOB_NAME:0:63}"
         labels="${labels/%-/x}"
         labels="${labels},stackrox-ci-build-id=${BUILD_ID:0:63}"
-        labels="${labels/%-/x}"
-    elif is_CIRCLECI; then
-        require_environment "CIRCLE_JOB"
-        require_environment "CIRCLE_WORKFLOW_ID"
-        tags="${tags},stackrox-ci-${CIRCLE_JOB:0:50}"
-        tags="${tags/%-/x}"
-        labels="${labels},stackrox-ci-job=${CIRCLE_JOB:0:63}"
-        labels="${labels/%-/x}"
-        labels="${labels},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID:0:63}"
         labels="${labels/%-/x}"
     else
         die "Support is missing for this CI environment"

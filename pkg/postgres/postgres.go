@@ -14,6 +14,7 @@ import (
 
 var (
 	queryThreshold = env.PostgresQueryTracerQueryThreshold.DurationSetting()
+	defaultTimeout = env.PostgresDefaultStatementTimeout.DurationSetting()
 )
 
 type queryTracerKey struct{}

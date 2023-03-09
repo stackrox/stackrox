@@ -24,7 +24,10 @@ func patchNamespaces(client kubernetes.Interface, stopCond concurrency.Waitable)
 		nsClient: nsClient,
 		ctx:      concurrency.AsContext(stopCond),
 	}
-	nsInformer.AddEventHandler(patchHandler)
+
+	if _, err := nsInformer.AddEventHandler(patchHandler); err != nil {
+		log.Warnf("could not add event handler: %+v", err)
+	}
 	go nsInformer.Run(stopCond.Done())
 }
 

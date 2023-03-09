@@ -14,6 +14,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -25,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/ternary"
@@ -34,6 +37,8 @@ var (
 	log = logging.LoggerForModule()
 
 	emptyQueryErr = errox.InvalidArgs.New("empty query")
+
+	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
 )
 
 // QueryType describe what type of query to execute
@@ -308,7 +313,7 @@ func (p *parsedPaginationQuery) AsSQL() string {
 
 func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) error {
 	if len(querySelects) == 0 {
-		return nil
+		return errors.New("select portion of the query cannot be empty")
 	}
 
 	for idx, qs := range querySelects {
@@ -542,16 +547,19 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 	return parsedQuery, nil
 }
 
-func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
+func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
 	nowForQuery := time.Now()
+
+	var err error
+	q, err = scopeContextToQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
 	standardizeFieldNamesInQuery(q)
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
-
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
-	}
-	if len(q.GetSelects()) == 0 {
-		return nil, errors.New("select portion of the query cannot be empty")
 	}
 
 	parsedQuery := &query{
@@ -561,8 +569,7 @@ func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, q
 		InnerJoins: innerJoins,
 	}
 
-	err := populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery)
-	if err != nil {
+	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
 		return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 	}
 
@@ -592,6 +599,47 @@ func standardizeSelectQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, q
 		return nil, err
 	}
 	return parsedQuery, nil
+}
+
+func scopeContextToQuery(ctx context.Context, q *v1.Query) (*v1.Query, error) {
+	scopeQ, err := scoped.GetQueryForAllScopes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if scopeQ == nil {
+		return q, nil
+	}
+
+	return cloneAndCombine(q, scopeQ), nil
+}
+
+func cloneAndCombine(q *v1.Query, scopeQ *v1.Query) *v1.Query {
+	if q == nil {
+		return scopeQ
+	}
+	if scopeQ == nil {
+		return q
+	}
+
+	// Select, Group By, and Pagination must be set on the top-level query to be picked up by the query parser.
+	// Therefore, move them to the top-level query.
+
+	cloned := q.Clone()
+	selects := cloned.GetSelects()
+	groupBy := cloned.GetGroupBy()
+	pagination := cloned.GetPagination()
+
+	// Removing this from to-be nested query is optional because selects, group by and pagination from
+	// the nested query is ignored anyway. However, this make it safer.
+	cloned.Selects = nil
+	cloned.GroupBy = nil
+	cloned.Pagination = nil
+
+	cloned = searchPkg.ConjunctionQuery(cloned, scopeQ)
+	cloned.Selects = selects
+	cloned.GroupBy = groupBy
+	cloned.Pagination = pagination
+	return cloned
 }
 
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
@@ -975,7 +1023,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, sche
 		}
 	}()
 
-	query, err = standardizeSelectQueryAndPopulatePath(q, schema, SELECT)
+	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
 	if err != nil {
 		return nil, err
 	}
@@ -1078,21 +1126,25 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 
 	queryStr := query.AsSQL()
 
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating transaction")
 	}
 	closer = func() {
+		defer cancel()
 		if err := tx.Commit(ctx); err != nil {
 			log.Errorf("error committing cursor transaction: %v", err)
 		}
 	}
 
-	cursor, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
+	cursorSuffix, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
 	if err != nil {
 		closer()
 		return nil, nil, errors.Wrap(err, "creating cursor name")
 	}
+	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
 	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
 	if err != nil {
 		closer()
@@ -1119,7 +1171,7 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 
 	queryStr := query.AsSQL()
 	return pgutils.Retry(func() error {
-		_, err = db.Exec(ctx, queryStr, query.Data...)
+		_, err := db.Exec(ctx, queryStr, query.Data...)
 		if err != nil {
 			return errors.Wrapf(err, "could not delete from %q with query %s", schema.Table, queryStr)
 		}

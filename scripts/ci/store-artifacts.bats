@@ -75,8 +75,6 @@ make_env() {
     fi
     if is_OPENSHIFT_CI; then
         GS_URL="gs://roxci-artifacts/${REPO_NAME}/${PULL_PULL_SHA:-${PULL_BASE_SHA}}/${BUILD_ID}-${JOB_NAME}"
-    elif is_CIRCLECI; then
-        GS_URL="gs://roxci-artifacts/${CIRCLE_PROJECT_REPONAME}/${CIRCLE_WORKFLOW_ID}/${CIRCLE_BUILD_NUM}-${CIRCLE_JOB}"
     fi
     PATH="$BATS_RUN_TMPDIR:$PATH"
     TEST_OUTPUT=1

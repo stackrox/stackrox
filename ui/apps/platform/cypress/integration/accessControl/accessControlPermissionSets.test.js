@@ -39,6 +39,7 @@ describe('Access Control Permission sets', () => {
         cy.get('button:contains("Create permission set")');
 
         cy.get('th:contains("Name")');
+        cy.get('th:contains("Origin")');
         cy.get('th:contains("Description")');
         cy.get('th:contains("Roles")');
         cy.get('th[aria-label="Row actions"]');
