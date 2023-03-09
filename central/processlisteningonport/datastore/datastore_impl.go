@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 type datastoreImpl struct {
@@ -54,13 +55,24 @@ func convertPlopFromStorageToPlopFromSensor(plopStorage *storage.ProcessListenin
 
 func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) ([]*storage.ProcessListeningOnPortStorage, error) {
 	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
+	idsToDelete := make([]string, 0)
+	currentTime := time.Now()
+
 	err := ds.WalkAll(ctx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
+			timeFirstSeen := protoconv.ConvertTimestampToTimeOrNow(plop.TimeFirstSeen)
+			age := currentTime.Sub(timeFirstSeen)
 			if plop.ProcessIndicatorId == "" {
-				plopsFromDB = append(plopsFromDB, plop)
+				if age < 91 * time.Second {
+					plopsFromDB = append(plopsFromDB, plop)
+				} else {
+					idsToDelete = append(idsToDelete, plop.Id)
+				}
 			}
 			return nil
 		})
+
+	ds.storage.DeleteMany(ctx, idsToDelete)
 
 	return plopsFromDB, err
 }
@@ -84,27 +96,6 @@ func convertPlopsToMap(plops []*storage.ProcessListeningOnPortStorage) map[strin
 
 	return plopMap
 }
-
-//func (ds *datastoreImpl) addUnmatchedProcesses(ctx context.Context, portProcesses []*storage.ProcessListeningOnPortFromSensor) ([]*storage.ProcessListeningOnPortFromSensor, error) {
-//
-//	unmatchedIds := make([]string, 0)
-//
-//	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
-//
-//	for _, val := range unmatchedPLOPs {
-//		//unmatchedIds = append(unmatchedIds, val.Id)
-//		plop := convertPlopFromStorageToPlopFromSensor(val)
-//		portProcesses = append(portProcesses, plop)
-//		unmatchedPlopMap[key] = val
-//	}
-//
-//	//// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
-//	//// Deleting unmatched plops is not the most efficient solution.
-//	//// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
-//	//err := ds.storage.DeleteMany(ctx, unmatchedIds)
-//
-//	return portProcesses, err
-//}
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
@@ -132,7 +123,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	unmatchedPlopsFromSensor := convertToPlopsFromSensor(unmatchedPLOPs)
 	unmatchedPLOPMap := convertPlopsToMap(unmatchedPLOPs)
 	newAndUnmatchedPortProcesses := append(portProcesses, unmatchedPlopsFromSensor...)
-	//newAndUnmatchedPortProcesses, _ := ds.addUnmatchedProcesses(ctx, portProcesses)
 	normalizedPLOPs, completedInBatch := normalizePLOPs(newAndUnmatchedPortProcesses)
 
 	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
@@ -205,7 +195,10 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Warnf("Found no matching PLOP to close for %s", key)
 			}
 
+			//val.FirstTimeSeen = protoconv.ConvertTimeToTimestamp(time.Now())
+			//firstTimeSeen = protoconv.ConvertTimeToTimestamp(time.Now())
 			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			//plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, firstTimeSeen, val)
 		}
 	}
 
@@ -602,6 +595,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
+		TimeFirstSeen:		protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 
 	return append(plopObjects, newPLOP)
