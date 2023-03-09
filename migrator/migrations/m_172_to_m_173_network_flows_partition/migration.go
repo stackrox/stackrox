@@ -153,7 +153,7 @@ func getPreviousCount(parentCtx context.Context, store previous.FlowStore) (int,
 	defer cancel()
 
 	deadline, _ := ctx.Deadline()
-	log.WriteToStderrf("SHREWS -- context deadline %t", deadline)
+	log.WriteToStderrf("SHREWS -- context deadline %q", deadline.String())
 
 	return store.Count(ctx)
 }

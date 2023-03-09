@@ -191,7 +191,9 @@ func AnalyzeDatabase(config *postgres.Config, dbName string) error {
 	// Close the admin connection pool
 	defer connectPool.Close()
 
-	_, err := connectPool.Exec(context.Background(), "ANALYZE")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	_, err := connectPool.Exec(ctx, "ANALYZE")
 
 	log.Debug("Anaylze done")
 	return err
