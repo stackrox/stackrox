@@ -257,14 +257,14 @@ func main() {
 	// TODO: ROX-12750 update with new list of replaced/deprecated resources
 	log.Warn("The following permission resources have been replaced:\n" +
 		"	Access replaces AuthProvider, Group, Licenses, and User\n" +
+		"	Administration replaces AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
+		"	Cluster also covers ClusterCVE\n" +
+		"	Compliance replaces ComplianceRuns\n" +
 		"	DeploymentExtension replaces Indicator, NetworkBaseline, ProcessWhitelist, and Risk\n" +
 		"	Integration replaces APIToken, BackupPlugins, ImageIntegration, Notifier, and SignatureIntegration\n" +
 		"	Image now also covers ImageComponent\n" +
 		"The following permission resources will be replaced in the upcoming versions:\n" +
 		"	Access will replace Role\n" +
-		"	Administration will replace AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
-		"	Compliance will replace ComplianceRuns\n" +
-		"	Cluster will cover ClusterCVE\n" +
 		"	WorkflowAdministration will replace Policy and VulnerabilityReports.")
 	ensureDB(ctx)
 

@@ -27,7 +27,7 @@ class DiagnosticBundleTest extends BaseSpecification {
     @Shared
     private GenerateTokenResponse adminToken
     @Shared
-    private GenerateTokenResponse administrationReaderToken
+    private GenerateTokenResponse debugLogsReaderToken
     @Shared
     private GenerateTokenResponse noAccessToken
     @Shared
@@ -43,7 +43,7 @@ class DiagnosticBundleTest extends BaseSpecification {
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
                 ]
         )
-        administrationReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
+        debugLogsReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
                 administrationReaderRoleName)
         Map<String, RoleOuterClass.Access> resourceToAccess =
                 [
@@ -60,8 +60,8 @@ class DiagnosticBundleTest extends BaseSpecification {
         if (adminToken != null) {
             services.ApiTokenService.revokeToken(adminToken.metadata.id)
         }
-        if (administrationReaderToken != null) {
-            services.ApiTokenService.revokeToken(administrationReaderToken.metadata.id)
+        if (debugLogsReaderToken != null) {
+            services.ApiTokenService.revokeToken(debugLogsReaderToken.metadata.id)
         }
         if (noAccessToken != null) {
             services.ApiTokenService.revokeToken(noAccessToken.metadata.id)
@@ -82,8 +82,8 @@ class DiagnosticBundleTest extends BaseSpecification {
             case "noAccess":
                 token = noAccessToken.token
                 break
-            case "administrationRead":
-                token = administrationReaderToken.token
+            case "debugLogsRead":
+                token = debugLogsReaderToken.token
                 break
             case "adminAccess":
                 token = adminToken.token
@@ -129,10 +129,10 @@ class DiagnosticBundleTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        statusCode | authMethod           | desc
-        401        | ""                   | "does not succeed without auth"
-        403        | "noAccess"           | "does not succeed with no access token"
-        200        | "administrationRead" | "succeeds with debug logs reader token"
-        200        | "adminAccess"        | "succeeds with admin access token"
+        statusCode | authMethod      | desc
+        401        | ""              | "does not succeed without auth"
+        403        | "noAccess"      | "does not succeed with no access token"
+        200        | "debugLogsRead" | "succeeds with debug logs reader token"
+        200        | "adminAccess"   | "succeeds with admin access token"
     }
 }
