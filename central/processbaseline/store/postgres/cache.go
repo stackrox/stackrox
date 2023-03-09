@@ -71,11 +71,12 @@ func (c *cacheImpl) deleteNoLock(id string) {
 }
 
 func (c *cacheImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	if err := c.dbStore.Upsert(ctx, obj); err != nil {
 		return err
 	}
-	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	c.addNoLock(obj)
 	c.sanityCheckNoLock(ctx)
@@ -83,11 +84,11 @@ func (c *cacheImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) er
 }
 
 func (c *cacheImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	if err := c.dbStore.UpsertMany(ctx, objs); err != nil {
 		return err
 	}
-	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	for _, obj := range objs {
 		c.addNoLock(obj)
@@ -97,12 +98,12 @@ func (c *cacheImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBasel
 }
 
 func (c *cacheImpl) Delete(ctx context.Context, id string) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	if err := c.dbStore.Delete(ctx, id); err != nil {
 		return err
 	}
-
-	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	c.deleteNoLock(id)
 
@@ -116,11 +117,12 @@ func (c *cacheImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {
 }
 
 func (c *cacheImpl) DeleteMany(ctx context.Context, ids []string) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	if err := c.dbStore.DeleteMany(ctx, ids); err != nil {
 		return err
 	}
-	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	for _, id := range ids {
 		c.deleteNoLock(id)
@@ -233,6 +235,7 @@ func (c *cacheImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseli
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	c.sanityCheckNoLock(ctx)
+
 	for _, id := range c.cache.Keys() {
 		// Since Walk access every entry, no bother to update access of cache
 		obj, _ := c.cache.Peek(id)
