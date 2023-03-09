@@ -90,6 +90,11 @@ export const imageVulnerabilitiesQuery = gql`
     }
 `;
 
+const emptyDefaultFilters = {
+    Severity: [],
+    Fixable: [],
+};
+
 export type ImageSingleVulnerabilitiesProps = {
     imageId: string;
 };
@@ -184,11 +189,8 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
                     >
                         <PageSection variant="light" component="div" isFilled>
                             <WorkloadTableToolbar
-                                // TODO: wire up the actual default filters in this component
-                                defaultFilters={{
-                                    Severity: ['Critical'],
-                                    Fixable: ['Fixable'],
-                                }}
+                                // Default filters do not apply to singles pages
+                                defaultFilters={emptyDefaultFilters}
                             />
                             {mainContent}
                         </PageSection>
