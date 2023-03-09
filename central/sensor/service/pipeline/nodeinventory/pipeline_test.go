@@ -60,7 +60,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "when inventory then read, enrich, calculate risk and upsert",
+			name: "when event has inventory then enrich and upsert with risk",
 			setUp: func(t *testing.T, a *args, m *mocks) {
 				node := storage.Node{
 					Id: "test node id",

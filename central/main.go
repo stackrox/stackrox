@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -235,6 +236,7 @@ func runSafeMode() {
 }
 
 func main() {
+	fmt.Println("JVDM JVDM JVDM JVDM JVDM JVDM JVDM JVDM JVDM JVDM JVDM JVDM JVDM")
 	premain.StartMain()
 
 	conf := config.GetConfig()
