@@ -1,6 +1,6 @@
 export const deploymentTabs = {
     DETAILS: 'Details',
     FLOWS: 'Flows',
-    BASELINES: 'Baselines',
+    BASELINE: 'Baseline',
     NETWORK_POLICIES: 'Network policies',
 };
