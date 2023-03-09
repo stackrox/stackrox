@@ -1,11 +1,12 @@
 import entityTypes from 'constants/entityTypes';
 
-export function getFilteredComponentColumns(columns, workflowState) {
+export function getFilteredComponentColumns(columns, workflowState, isFeatureFlagEnabled) {
     const shouldKeepActiveColumn =
-        workflowState.isCurrentSingle(entityTypes.DEPLOYMENT) ||
-        workflowState.isPrecedingSingle(entityTypes.DEPLOYMENT) ||
-        (workflowState.getSingleAncestorOfType(entityTypes.DEPLOYMENT) &&
-            workflowState.getSingleAncestorOfType(entityTypes.IMAGE));
+        isFeatureFlagEnabled('ROX_ACTIVE_VULN_MGMT') &&
+        (workflowState.isCurrentSingle(entityTypes.DEPLOYMENT) ||
+            workflowState.isPrecedingSingle(entityTypes.DEPLOYMENT) ||
+            (workflowState.getSingleAncestorOfType(entityTypes.DEPLOYMENT) &&
+                workflowState.getSingleAncestorOfType(entityTypes.IMAGE)));
 
     const shouldRemoveColumns = !workflowState.isPreceding(entityTypes.IMAGE);
 
