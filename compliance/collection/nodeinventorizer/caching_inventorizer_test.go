@@ -113,7 +113,7 @@ func (s *TestComplianceCachingSuite) TestMin() {
 	}
 }
 
-func (s *TestComplianceCachingSuite) TestCalcNextBackoffTable() {
+func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
 	cases := map[string]struct {
 		initial         time.Duration
 		cacheDuration   time.Duration
