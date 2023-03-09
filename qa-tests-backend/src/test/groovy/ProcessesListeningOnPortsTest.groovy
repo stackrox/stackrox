@@ -4,15 +4,13 @@ import objects.Deployment
 import objects.K8sServiceAccount
 import objects.Service
 import services.ClusterService
+import services.ProcessesListeningOnPortsService
 import util.Env
-import util.Helpers
 
 import spock.lang.IgnoreIf
 import spock.lang.Shared
-import spock.lang.Tag
 import spock.lang.Stepwise
-
-import services.ProcessesListeningOnPortsService
+import spock.lang.Tag
 
 @Stepwise
 // TODO: Solve the flake and change back to @IgnoreIf({ !Env.get("ROX_POSTGRES_DATASTORE", null) })
@@ -100,21 +98,10 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         destroyDeployments()
     }
 
-    def rebuildForRetries() {
-        if (Helpers.getAttemptCount() > 1) {
-            log.info ">>>> Recreating test deployments prior to retest <<<<<"
-            destroyDeployments()
-            createDeployments()
-            log.info ">>>> Done <<<<<"
-        }
-    }
-
     @Tag("BAT")
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         "Two deployments that listen on ports are started up"
-
-        rebuildForRetries()
         def clusterId = ClusterService.getClusterId()
 
         String deploymentId1 = targetDeployments[0].getDeploymentUid()

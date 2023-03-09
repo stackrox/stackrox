@@ -110,7 +110,6 @@ import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
 import util.Env
-import util.Helpers
 import util.Timer
 
 @CompileStatic
@@ -1943,11 +1942,11 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
+            int att = 0
             withK8sClientRetry(maxNumRetries, 1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-                int att = Helpers.getAttemptCount()
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". " +
-                          "Attempt " + att + " of " + maxNumRetries
+                att++
+                log.debug "Told the orchestrator to createOrReplace $deployment.name. Attempt $att of $maxNumRetries"
             }
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)

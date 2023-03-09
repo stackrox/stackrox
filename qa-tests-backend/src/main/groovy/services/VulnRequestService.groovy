@@ -4,7 +4,6 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.VulnReqService
 import io.stackrox.proto.api.v1.VulnerabilityRequestServiceGrpc
 import io.stackrox.proto.storage.VulnRequests.VulnerabilityRequest
-import util.Helpers
 
 class VulnRequestService extends BaseService {
     static getVulnRequestClient() {
@@ -66,7 +65,7 @@ class VulnRequestService extends BaseService {
                 .build()
         def response = getVulnRequestClient().undoVulnerabilityRequest(id)
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        sleep(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         return response
     }
 

@@ -1,3 +1,4 @@
+import static spock.lang.Retry.Mode.SETUP_FEATURE_CLEANUP
 import static util.Helpers.withRetry
 
 import java.security.SecureRandom
@@ -30,6 +31,7 @@ import util.Env
 import util.Helpers
 import util.OnFailure
 
+import org.junit.AssumptionViolatedException
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -37,7 +39,7 @@ import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Specification
 
-@Retry(condition = { Helpers.determineRetry(failure) })
+@Retry(condition = { Object failure -> this.determineRetry(failure as Throwable) }, mode = SETUP_FEATURE_CLEANUP)
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
@@ -77,7 +79,7 @@ class BaseSpecification extends Specification {
 
         LOG.info "Performing global setup"
 
-        if (!Env.IN_CI || Env.get("BUILD_TAG")) {
+        if (!Env.IN_CI || Env.get("CIRCLE_TAG")) {
             // Strictly test integration with external services when running in
             // a dev environment or in CI against tagged builds (e.g. nightly builds).
             LOG.info "Will perform strict integration testing (if any is required)"
@@ -315,8 +317,7 @@ class BaseSpecification extends Specification {
 
     def cleanup() {
         log.info("Ending testcase")
-
-        Helpers.resetRetryAttempts()
+        resetRetryAttempts()
     }
 
     static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
@@ -400,6 +401,28 @@ class BaseSpecification extends Specification {
 
     static Boolean isRaceBuild() {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
+    }
+
+    private static final int MAX_RETRY_ATTEMPTS = 2
+    private int retryAttempt = 0
+
+    boolean determineRetry(Throwable failure) {
+        if (failure instanceof AssumptionViolatedException) {
+            LOG.debug "Skipping retry for: " + failure
+            return false
+        }
+
+        retryAttempt++
+        def willRetry = retryAttempt <= MAX_RETRY_ATTEMPTS
+        if (willRetry) {
+            LOG.debug("An exception occurred which will cause a retry: ", failure)
+            LOG.debug "Test Failed... Attempting Retry #${retryAttempt}"
+        }
+        return willRetry
+    }
+
+    void resetRetryAttempts() {
+        retryAttempt = 0
     }
 }
 
