@@ -27,6 +27,7 @@ updates:
     labels:
       - "ci-all-qa-tests"
       - "dependencies"
+      - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
 
@@ -38,6 +39,7 @@ updates:
     labels:
       - "ci-all-qa-tests"
       - "dependencies"
+      - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
     ignore:
@@ -52,6 +54,7 @@ updates:
     open-pull-requests-limit: 3
     labels:
     - "dependencies"
+    - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
 
@@ -63,6 +66,7 @@ updates:
     open-pull-requests-limit: 3
     labels:
     - "dependencies"
+    - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
 
