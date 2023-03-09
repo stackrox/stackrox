@@ -12,7 +12,8 @@ import (
 )
 
 // NewWithCache takes a postgres db and generates a store with in memory cache
-// Note: This cache bypasses the SAC check and relies on the SAC check on
+// Note: This cache bypasses the SAC check and relies on the SAC check on datastore.
+// If it is not true, the cache may not functional correctly.
 func NewWithCache(dbStore Store) (Store, error) {
 	impl := &cacheImpl{
 		dbStore: dbStore,
@@ -85,7 +86,7 @@ func (c *cacheImpl) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (c *cacheImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {
+func (c *cacheImpl) DeleteByQuery(_ context.Context, q *v1.Query) error {
 	// TODO implement me
 	panic("implement me")
 }
@@ -103,14 +104,14 @@ func (c *cacheImpl) DeleteMany(ctx context.Context, ids []string) error {
 	return nil
 }
 
-func (c *cacheImpl) Count(ctx context.Context) (int, error) {
+func (c *cacheImpl) Count(_ context.Context) (int, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
 	return len(c.cache), nil
 }
 
-func (c *cacheImpl) Exists(ctx context.Context, id string) (bool, error) {
+func (c *cacheImpl) Exists(_ context.Context, id string) (bool, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -118,7 +119,7 @@ func (c *cacheImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return ok, nil
 }
 
-func (c *cacheImpl) Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error) {
+func (c *cacheImpl) Get(_ context.Context, id string) (*storage.ProcessBaseline, bool, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -135,7 +136,7 @@ func (c *cacheImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	return c.dbStore.GetByQuery(ctx, query)
 }
 
-func (c *cacheImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error) {
+func (c *cacheImpl) GetMany(_ context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
