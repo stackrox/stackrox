@@ -48,7 +48,7 @@ func (c *cacheImpl) addNoLock(obj *storage.ProcessBaseline) {
 	c.cache[obj.GetId()] = obj.Clone()
 }
 
-func (c cacheImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) error {
+func (c *cacheImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) error {
 	if err := c.dbStore.Upsert(ctx, obj); err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (c cacheImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) err
 	return nil
 }
 
-func (c cacheImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error {
+func (c *cacheImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error {
 	if err := c.dbStore.UpsertMany(ctx, objs); err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (c cacheImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBaseli
 	return nil
 }
 
-func (c cacheImpl) Delete(ctx context.Context, id string) error {
+func (c *cacheImpl) Delete(ctx context.Context, id string) error {
 	if err := c.dbStore.Delete(ctx, id); err != nil {
 		return err
 	}
@@ -85,12 +85,12 @@ func (c cacheImpl) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (c cacheImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {
-	//TODO implement me
+func (c *cacheImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {
+	// TODO implement me
 	panic("implement me")
 }
 
-func (c cacheImpl) DeleteMany(ctx context.Context, ids []string) error {
+func (c *cacheImpl) DeleteMany(ctx context.Context, ids []string) error {
 	if err := c.dbStore.DeleteMany(ctx, ids); err != nil {
 		return err
 	}
@@ -103,14 +103,14 @@ func (c cacheImpl) DeleteMany(ctx context.Context, ids []string) error {
 	return nil
 }
 
-func (c cacheImpl) Count(ctx context.Context) (int, error) {
+func (c *cacheImpl) Count(ctx context.Context) (int, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
 	return len(c.cache), nil
 }
 
-func (c cacheImpl) Exists(ctx context.Context, id string) (bool, error) {
+func (c *cacheImpl) Exists(ctx context.Context, id string) (bool, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -118,7 +118,7 @@ func (c cacheImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return ok, nil
 }
 
-func (c cacheImpl) Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error) {
+func (c *cacheImpl) Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -129,13 +129,13 @@ func (c cacheImpl) Get(ctx context.Context, id string) (*storage.ProcessBaseline
 	return obj.Clone(), true, nil
 }
 
-func (c cacheImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessBaseline, error) {
+func (c *cacheImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessBaseline, error) {
 	// Call dbStore function directly. It is not in use as of current time so add a reminder here.
 	utils.Should(errors.New("Engineering alert: this function is not optimized."))
 	return c.dbStore.GetByQuery(ctx, query)
 }
 
-func (c cacheImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error) {
+func (c *cacheImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -147,12 +147,12 @@ func (c cacheImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proces
 			missingIndices = append(missingIndices, i)
 			continue
 		}
-		objs = append(objs, obj)
+		objs = append(objs, obj.Clone())
 	}
 	return objs, missingIndices, nil
 }
 
-func (c cacheImpl) GetIDs(_ context.Context) ([]string, error) {
+func (c *cacheImpl) GetIDs(_ context.Context) ([]string, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -163,22 +163,22 @@ func (c cacheImpl) GetIDs(_ context.Context) ([]string, error) {
 	return ids, nil
 }
 
-func (c cacheImpl) Walk(_ context.Context, fn func(obj *storage.ProcessBaseline) error) error {
+func (c *cacheImpl) Walk(_ context.Context, fn func(obj *storage.ProcessBaseline) error) error {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
 	for _, obj := range c.cache {
-		if err := fn(obj); err != nil {
+		if err := fn(obj.Clone()); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (c cacheImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+func (c *cacheImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return c.dbStore.AckKeysIndexed(ctx, keys...)
 }
 
-func (c cacheImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+func (c *cacheImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return c.dbStore.GetKeysToIndex(ctx)
 }
