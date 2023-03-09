@@ -13,9 +13,9 @@ for tag in $(git -C "$workdir" tag | egrep '^3\.(6[3-9]|0\.62)\.\d+$' | sort -V)
 	docker push "quay.io/rhacs-eng/stackrox-operator:${version}"
 
 	git -C "$workdir" checkout "$tag"
-	CI=1 CIRCLE_TAG="$tag" IMAGE_REPO="quay.io/rhacs-eng" IMAGE_TAG_BASE="quay.io/rhacs-eng/stackrox-operator" make -C "$workdir/operator" bundle-build
+	CI=1 BUILD_TAG="$tag" IMAGE_REPO="quay.io/rhacs-eng" IMAGE_TAG_BASE="quay.io/rhacs-eng/stackrox-operator" make -C "$workdir/operator" bundle-build
 	docker push "quay.io/rhacs-eng/stackrox-operator-bundle:v${version}"
 
-	CI=1 CIRCLE_TAG="$tag" IMAGE_REPO="quay.io/rhacs-eng" IMAGE_TAG_BASE="quay.io/rhacs-eng/stackrox-operator" make -C "$workdir/operator" index-build
+	CI=1 BUILD_TAG="$tag" IMAGE_REPO="quay.io/rhacs-eng" IMAGE_TAG_BASE="quay.io/rhacs-eng/stackrox-operator" make -C "$workdir/operator" index-build
 	docker push "quay.io/rhacs-eng/stackrox-operator-index:v${version}"
 done

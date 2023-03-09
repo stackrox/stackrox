@@ -98,7 +98,7 @@ in `migrations` directory, or at the examples listed below.
 
 ## How to test migration on locally deployed cluster
 
-1. Create PR with migration files to build image in CircleCI
+1. Create PR with migration files to build image in CI
 2. Checkout **before** commit with migration files and `make clean image`
 3. `export STORAGE=pvc`
 4. `teardown && ./deploy/k8s/deploy-local.sh`

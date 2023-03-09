@@ -42,5 +42,5 @@ function cleanup() {
     run handle_gha_tagged_build
     assert_success
     assert_output --partial 'This is a tagged build: 3.73.x-nightly-20221221'
-    assert_equal "$(cat $GITHUB_ENV)" "CIRCLE_TAG=3.73.x-nightly-20221221"
+    assert_equal "$(cat $GITHUB_ENV)" "BUILD_TAG=3.73.x-nightly-20221221"
 }

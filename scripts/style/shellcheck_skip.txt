@@ -46,7 +46,6 @@ scale/profiler/launch-profiler.sh
 scale/profiler/port-forward.sh
 scale/signatures/deploy.sh
 scripts/certification/run.sh
-scripts/check-debugger.sh
 scripts/ci/bench-and-graph.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh
