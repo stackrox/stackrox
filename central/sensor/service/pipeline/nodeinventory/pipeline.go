@@ -65,8 +65,8 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	log.Infof("Received NodeInventory for Node name='%s' ID='%s'", ninv.GetNodeName(), ninv.GetNodeId())
 	log.Debugf("NodeInventory for name='%s' contains %d packages to scan from %d content sets", ninv.GetNodeName(),
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
-	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
-		log.Warn("Deletion of NodeInventories is not supported")
+	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
+		log.Warn("NodeInventory event action %q is not supported", event.GetAction())
 		return nil
 	}
 	ninv = ninv.Clone()
