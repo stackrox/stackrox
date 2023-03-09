@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/require"
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessBaselines.
@@ -60,9 +61,11 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, p
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
-	dbstore := pgStore.New(pool)
+	dbStore := pgStore.New(pool)
+	store, err := pgStore.NewWithCache(dbStore)
+	require.NoError(t, err)
 	indexer := pgStore.NewIndexer(pool)
-	searcher, err := search.New(dbstore, indexer)
+	searcher, err := search.New(store, indexer)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +77,7 @@ func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error
 	if err != nil {
 		return nil, err
 	}
-	return New(dbstore, indexer, searcher, resultsStore, indicatorStore), nil
+	return New(store, indexer, searcher, resultsStore, indicatorStore), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
