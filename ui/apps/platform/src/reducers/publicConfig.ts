@@ -48,6 +48,7 @@ const publicConfigInitialState: PublicConfig = {
     footer: null,
     header: null,
     loginNotice: null,
+    telemetry: null,
 };
 
 const publicConfig: Reducer<PublicConfig, PublicConfigAction> = (

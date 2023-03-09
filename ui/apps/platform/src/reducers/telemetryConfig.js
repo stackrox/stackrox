@@ -37,7 +37,7 @@ export const fetchTelemetryConfigThunk = () => {
 
 const telemetryConfig = (state = [], action) => {
     if (action.type === types.FETCH_TELEMETRY_CONFIG.SUCCESS) {
-        return action.response.telemetryConfig ?? state;
+        return action.response ?? state;
     }
     return state;
 };
@@ -70,20 +70,37 @@ const isLoading = (state = true, action) => {
     }
 };
 
+const isEnabled = (state = false, action) => {
+    switch (action.type) {
+        case types.FETCH_TELEMETRY_CONFIG.SUCCESS:
+            return true;
+
+        case types.FETCH_TELEMETRY_CONFIG.FAILURE:
+        case types.FETCH_TELEMETRY_CONFIG.REQUEST:
+            return false;
+
+        default:
+            return state;
+    }
+};
+
 const reducer = combineReducers({
     telemetryConfig,
     error,
     isLoading,
+    isEnabled,
 });
 
 const getTelemetryConfig = (state) => state.telemetryConfig;
 const getTelemetryConfigError = (state) => state.error;
 const getIsLoadingTelemetryConfig = (state) => state.isLoading;
+const getIsEnabledTelemetryConfig = (state) => state.isEnabled;
 
 export const selectors = {
     getTelemetryConfig,
     getTelemetryConfigError,
     getIsLoadingTelemetryConfig,
+    getIsEnabledTelemetryConfig,
 };
 
 export default reducer;
