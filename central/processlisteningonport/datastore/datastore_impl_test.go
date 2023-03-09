@@ -194,6 +194,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 		Closed:             false,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -357,6 +358,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 		Closed:             true,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -481,6 +483,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 		Closed:             false,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -588,6 +591,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 		Closed:             true,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -686,6 +690,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 		Closed:             true,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -775,6 +780,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 		Closed:             true,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -838,6 +844,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		ProcessIndicatorId: "",
 		Closed:             false,
 		Process:            plopObjects[0].GetProcess(),
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -887,6 +894,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 		ProcessIndicatorId: "",
 		Closed:             true,
 		Process:            plopObjects[0].GetProcess(),
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -951,6 +959,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetry() {
 		ProcessIndicatorId: "",
 		Closed:             false,
 		Process:            plopObjects[0].GetProcess(),
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1066,22 +1075,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetry() {
 
 	expectedPlopStorage2 := []*storage.ProcessListeningOnPortStorage{
 		{
-			Id:                 plopsFromDBMap[plopObjects[0].GetPort()].Id,
+			Id:                 plopsFromDBMap[plopObjects[0].GetPort()].GetId(),
 			Port:               plopObjects[0].GetPort(),
 			Protocol:           plopObjects[0].GetProtocol(),
 			CloseTimestamp:     nil,
 			ProcessIndicatorId: indicators[0].GetId(),
 			Closed:             false,
 			Process:            nil,
+			TimeFirstSeen:      plopsFromDBMap[plopObjects[0].GetPort()].GetTimeFirstSeen(),
 		},
 		{
-			Id:                 plopsFromDBMap[plopObjects2[0].GetPort()].Id,
+			Id:                 plopsFromDBMap[plopObjects2[0].GetPort()].GetId(),
 			Port:               plopObjects2[0].GetPort(),
 			Protocol:           plopObjects2[0].GetProtocol(),
 			CloseTimestamp:     nil,
 			ProcessIndicatorId: indicators[1].GetId(),
 			Closed:             false,
 			Process:            nil,
+			TimeFirstSeen:      plopsFromDBMap[plopObjects2[0].GetPort()].GetTimeFirstSeen(),
 		},
 	}
 
@@ -1147,6 +1158,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetryNil() {
 		ProcessIndicatorId: "",
 		Closed:             false,
 		Process:            plopObjects[0].GetProcess(),
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1234,6 +1246,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetryNil() {
 			ProcessIndicatorId: indicators[0].GetId(),
 			Closed:             false,
 			Process:            nil,
+			TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 		},
 	}
 
@@ -1334,6 +1347,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		ProcessIndicatorId: indicators[0].GetId(),
 		Closed:             false,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1439,6 +1453,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 		ProcessIndicatorId: indicators[0].GetId(),
 		Closed:             false,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1543,6 +1558,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 		ProcessIndicatorId: indicators[0].GetId(),
 		Closed:             true,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1681,6 +1697,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		ProcessIndicatorId: indicators[0].GetId(),
 		Closed:             true,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1820,6 +1837,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		ProcessIndicatorId: indicators[0].GetId(),
 		Closed:             false,
 		Process:            nil,
+		TimeFirstSeen:      newPlopsFromDB[0].GetTimeFirstSeen(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
