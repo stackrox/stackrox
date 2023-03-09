@@ -1,4 +1,4 @@
-// //go:build sql_integration
+//go:build sql_integration
 
 package datastore
 
@@ -98,12 +98,10 @@ func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.Pro
 	return indicatorsFromDB
 }
 
-// TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
-// with a correct process indicator reference and could be fetched later.
-func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
+func getProcessIndicators() []*storage.ProcessIndicator {
 	testNamespace := "test_namespace"
 
-	indicators := []*storage.ProcessIndicator{
+	return []*storage.ProcessIndicator{
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
@@ -133,6 +131,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 			},
 		},
 	}
+}
+
+// TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
+// with a correct process indicator reference and could be fetched later.
+func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
+	testNamespace := "test_namespace"
+
+	indicators := getProcessIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		{
@@ -236,8 +242,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNil() {
 		},
 	}
 
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{}
-	plopObjects = nil
+	var plopObjects []*storage.ProcessListeningOnPortFromSensor
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1066,7 +1071,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetry() {
 	newPlopsFromDB2 := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB2, 2)
 
-
 	plopsFromDBMap := make(map[uint32]*storage.ProcessListeningOnPortStorage)
 
 	for _, plop := range newPlopsFromDB2 {
@@ -1194,8 +1198,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddRetryNil() {
 		},
 	}
 
-	plopObjects2 := []*storage.ProcessListeningOnPortFromSensor{}
-	plopObjects2 = nil
+	var plopObjects2 []*storage.ProcessListeningOnPortFromSensor
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(

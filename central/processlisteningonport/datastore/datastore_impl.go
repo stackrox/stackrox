@@ -15,10 +15,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 type datastoreImpl struct {
@@ -63,7 +63,7 @@ func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) ([]*storag
 			timeFirstSeen := protoconv.ConvertTimestampToTimeOrNow(plop.TimeFirstSeen)
 			age := currentTime.Sub(timeFirstSeen)
 			if plop.ProcessIndicatorId == "" {
-				if age < 91 * time.Second {
+				if age < 91*time.Second {
 					plopsFromDB = append(plopsFromDB, plop)
 				} else {
 					idsToDelete = append(idsToDelete, plop.Id)
@@ -72,7 +72,11 @@ func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) ([]*storag
 			return nil
 		})
 
-	ds.storage.DeleteMany(ctx, idsToDelete)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ds.storage.DeleteMany(ctx, idsToDelete)
 
 	return plopsFromDB, err
 }
@@ -170,7 +174,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		if unmatched && prevExists {
-			ds.storage.Delete(ctx, unmatchedPlop.Id)
+			_ = ds.storage.Delete(ctx, unmatchedPlop.Id)
 		}
 
 		// There are three options:
@@ -195,10 +199,10 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Warnf("Found no matching PLOP to close for %s", key)
 			}
 
-			//val.FirstTimeSeen = protoconv.ConvertTimeToTimestamp(time.Now())
-			//firstTimeSeen = protoconv.ConvertTimeToTimestamp(time.Now())
+			// val.FirstTimeSeen = protoconv.ConvertTimeToTimestamp(time.Now())
+			// firstTimeSeen = protoconv.ConvertTimeToTimestamp(time.Now())
 			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
-			//plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, firstTimeSeen, val)
+			// plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, firstTimeSeen, val)
 		}
 	}
 
@@ -595,7 +599,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
-		TimeFirstSeen:		protoconv.ConvertTimeToTimestamp(time.Now()),
+		TimeFirstSeen:      protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 
 	return append(plopObjects, newPLOP)
