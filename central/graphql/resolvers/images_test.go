@@ -16,16 +16,15 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
-func TestDeploymentResolvers(t *testing.T) {
-	suite.Run(t, new(DeploymentResolversTestSuite))
+func TestImageResolvers(t *testing.T) {
+	suite.Run(t, new(ImageResolversTestSuite))
 }
 
-type DeploymentResolversTestSuite struct {
+type ImageResolversTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
@@ -36,7 +35,7 @@ type DeploymentResolversTestSuite struct {
 	testImages      []*storage.Image
 }
 
-func (s *DeploymentResolversTestSuite) SetupSuite() {
+func (s *ImageResolversTestSuite) SetupSuite() {
 	s.T().Setenv(features.VulnMgmtWorkloadCVEs.EnvVar(), "true")
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
@@ -62,11 +61,11 @@ func (s *DeploymentResolversTestSuite) SetupSuite() {
 	}
 }
 
-func (s *DeploymentResolversTestSuite) TearDownSuite() {
+func (s *ImageResolversTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *DeploymentResolversTestSuite) TestDeployments() {
+func (s *ImageResolversTestSuite) TestDeployments() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	for _, tc := range []struct {
@@ -88,6 +87,15 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 			q:    PaginatedQuery{Query: pointers.String("Namespace:namespace1name")},
 			deploymentFiler: func(d *storage.Deployment) bool {
 				return strings.HasPrefix(d.GetNamespace(), "namespace1name")
+			},
+			imageFilter: func(_ *storage.Image) bool { return true },
+			vulnFilter:  func(_ *storage.EmbeddedVulnerability) bool { return true },
+		},
+		{
+			desc: "filter by deployment",
+			q:    PaginatedQuery{Query: pointers.String("Deployment:dep1name")},
+			deploymentFiler: func(d *storage.Deployment) bool {
+				return d.GetName() == "dep1name"
 			},
 			imageFilter: func(_ *storage.Image) bool { return true },
 			vulnFilter:  func(_ *storage.EmbeddedVulnerability) bool { return true },
@@ -180,35 +188,36 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			paginatedQ := tc.q
 
-			// Test DeploymentCount query.
-			expectedDeployments, expectedImagesPerDeployments := compileExpected(s.testDeployments, s.testImages, tc.deploymentFiler, tc.imageFilter)
-			count, err := s.resolver.DeploymentCount(ctx, RawQuery{Query: paginatedQ.Query})
+			// Test ImageCount query.
+			expectedImages, expectedDeploymentsPerImage := compileExpectedForImageGraphQL(s.testDeployments, s.testImages, tc.deploymentFiler, tc.imageFilter)
+			count, err := s.resolver.ImageCount(ctx, RawQuery{Query: paginatedQ.Query})
 			assert.NoError(t, err)
-			assert.Equal(t, int32(len(expectedDeployments)), count)
+			assert.Equal(t, int32(len(expectedImages)), count)
 
-			// Test Deployments query.
-			actualDeployments, err := s.resolver.Deployments(ctx, paginatedQ)
+			// Test Images query.
+			actualImages, err := s.resolver.Images(ctx, paginatedQ)
 			assert.NoError(t, err)
 			var expectedIDs []string
-			for _, dep := range expectedDeployments {
+			for _, dep := range expectedImages {
 				expectedIDs = append(expectedIDs, dep.GetId())
 			}
-			assert.ElementsMatch(t, expectedIDs, getIDList(ctx, actualDeployments))
+			assert.ElementsMatch(t, expectedIDs, getIDList(ctx, actualImages))
 
-			for _, dep := range actualDeployments {
-				// Test ImageCount field for each deployment resolver.
-				images := expectedImagesPerDeployments[string(dep.Id(ctx))]
-				imgCnt, err := dep.ImageCount(ctx, RawQuery{Query: paginatedQ.Query})
+			for _, image := range actualImages {
+				imageID := string(image.Id(ctx))
+				// Test DeploymentCount field for each image resolver.
+				expectedDeployments := expectedDeploymentsPerImage[imageID]
+				actualDeploymentCount, err := image.DeploymentCount(ctx, RawQuery{Query: paginatedQ.Query})
 				assert.NoError(t, err)
-				assert.Equal(t, int32(len(images)), imgCnt)
+				assert.Equal(t, int32(len(expectedDeployments)), actualDeploymentCount)
 
 				if !features.VulnMgmtWorkloadCVEs.Enabled() {
 					return
 				}
 
 				// Test ImageCVECountBySeverity for each deployment resolver.
-				expectedCVESevCount := compileExpectedCountBySeverity(images, tc.vulnFilter)
-				actualCVECnt, err := dep.ImageCVECountBySeverity(ctx, RawQuery{Query: paginatedQ.Query})
+				expectedCVESevCount := compileExpectedCountBySeverity([]*storage.Image{expectedImages[imageID]}, tc.vulnFilter)
+				actualCVECnt, err := image.ImageCVECountBySeverity(ctx, RawQuery{Query: paginatedQ.Query})
 				assert.NoError(t, err)
 
 				assert.Equal(t, int32(expectedCVESevCount.critical), actualCVECnt.Critical(ctx))
@@ -220,71 +229,40 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 	}
 }
 
-func compileExpected(deployments []*storage.Deployment, images []*storage.Image,
+func compileExpectedForImageGraphQL(deployments []*storage.Deployment, images []*storage.Image,
 	deploymentFilter func(d *storage.Deployment) bool,
-	imageFilter func(d *storage.Image) bool) ([]*storage.Deployment, map[string][]*storage.Image) {
-	imageMap := make(map[string]*storage.Image)
-	for _, img := range images {
-		imageMap[img.GetName().GetFullName()] = img
+	imageFilter func(d *storage.Image) bool) (map[string]*storage.Image, map[string][]*storage.Deployment) {
+	imageToDeploymentsMap := make(map[string][]*storage.Deployment)
+	for _, deployment := range deployments {
+		for _, container := range deployment.GetContainers() {
+			imgName := container.GetImage().GetName().GetFullName()
+			imageToDeploymentsMap[imgName] = append(imageToDeploymentsMap[imgName], deployment)
+		}
 	}
 
-	var matchedDeployments []*storage.Deployment
-	matchedImages := make(map[string][]*storage.Image)
-	for _, deployment := range deployments {
-		if !deploymentFilter(deployment) {
+	matchedImages := make(map[string]*storage.Image)
+	matchedDeploymentsPerImage := make(map[string][]*storage.Deployment)
+	for _, image := range images {
+		if !imageFilter(image) {
 			continue
 		}
 
-		var imageFilterPassed bool
-		for _, container := range deployment.GetContainers() {
-			image := imageMap[container.GetImage().GetName().GetFullName()]
-			if image == nil {
+		var deploymentFilterPassed bool
+		for _, deployment := range imageToDeploymentsMap[image.GetName().GetFullName()] {
+			if deployment == nil {
 				continue
 			}
-			if !imageFilter(image) {
+			if !deploymentFilter(deployment) {
 				continue
 			}
-			imageFilterPassed = true
-			matchedImages[deployment.GetId()] = append(matchedImages[deployment.GetId()], image)
+			deploymentFilterPassed = true
+			matchedDeploymentsPerImage[image.GetId()] = append(matchedDeploymentsPerImage[image.GetId()], deployment)
 		}
 
-		if imageFilterPassed {
-			matchedDeployments = append(matchedDeployments, deployment)
+		if deploymentFilterPassed {
+			matchedImages[image.GetId()] = image
 		}
 	}
-	return matchedDeployments, matchedImages
-}
 
-func compileExpectedCountBySeverity(images []*storage.Image, vulnFilter func(d *storage.EmbeddedVulnerability) bool) *cveCountBySeverity {
-	sevMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
-	for _, image := range images {
-		for _, component := range image.GetScan().GetComponents() {
-			for _, vuln := range component.GetVulns() {
-				if !vulnFilter(vuln) {
-					continue
-				}
-
-				if vuln.GetSeverity() == storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY {
-					continue
-				}
-
-				cves := sevMap[vuln.GetSeverity()]
-				cves.Add(vuln.GetCve())
-				sevMap[vuln.GetSeverity()] = cves
-			}
-		}
-	}
-	return &cveCountBySeverity{
-		critical:  sevMap[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality(),
-		important: sevMap[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality(),
-		moderate:  sevMap[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality(),
-		low:       sevMap[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality(),
-	}
-}
-
-type cveCountBySeverity struct {
-	critical  int
-	important int
-	moderate  int
-	low       int
+	return matchedImages, matchedDeploymentsPerImage
 }
