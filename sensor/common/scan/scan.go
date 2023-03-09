@@ -32,7 +32,7 @@ var (
 	scannerClientSingleton   = scannerclient.GRPCClientSingleton
 )
 
-// EnrichLocalImage will enrich an image with scan results from local scanner as well as signatures
+// EnrichLocalImageFromRegistry will enrich an image with scan results from local scanner as well as signatures
 // from the local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image.
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.

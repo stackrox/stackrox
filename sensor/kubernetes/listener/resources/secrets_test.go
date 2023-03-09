@@ -2,11 +2,11 @@ package resources
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stretchr/testify/assert"
@@ -179,10 +179,7 @@ func TestProcessDockerConfig_ForceLocalScanning(t *testing.T) {
 		FullName: "fake.reg.local/fake/repo:latest",
 	}
 
-	origEnv := os.Getenv("ROX_FORCE_LOCAL_IMAGE_SCANNING")
-	defer os.Setenv("ROX_FORCE_LOCAL_IMAGE_SCANNING", origEnv)
-
-	os.Setenv("ROX_FORCE_LOCAL_IMAGE_SCANNING", "false")
+	t.Setenv(env.ForceLocalImageScanning.EnvVar(), "false")
 
 	// with feature disabled, registry secret should NOT be stored
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
@@ -193,7 +190,7 @@ func TestProcessDockerConfig_ForceLocalScanning(t *testing.T) {
 	assert.Nil(t, reg)
 	assert.Error(t, err)
 
-	os.Setenv("ROX_FORCE_LOCAL_IMAGE_SCANNING", "true")
+	t.Setenv(env.ForceLocalImageScanning.EnvVar(), "true")
 
 	// feature is enabled, registry secret should be stored
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)

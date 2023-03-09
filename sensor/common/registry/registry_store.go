@@ -137,7 +137,7 @@ func (rs *Store) HasRegistryForImage(image *storage.ImageName) bool {
 	return reg != nil && err == nil
 }
 
-// GetRegistryForImageWithNamespace returns the stored registry that matches image.Registry
+// GetRegistryForImageInNamespace returns the stored registry that matches image.Registry
 // and is associated with namespace
 //
 // An error is returned if no registry found
@@ -155,7 +155,7 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 	return nil, errors.Errorf("Unknown image registry: %q", reg)
 }
 
-// HasRegistryForImageWithNamespace returns true when a registry is found in the store that matches
+// HasRegistryForImageInNamespace returns true when a registry is found in the store that matches
 // image.Registry and is associated with namespace
 func (rs *Store) HasRegistryForImageInNamespace(image *storage.ImageName, namespace string) bool {
 	reg, err := rs.GetRegistryForImageInNamespace(image, namespace)
