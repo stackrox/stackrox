@@ -23,7 +23,7 @@ function FilterAutocompleteSelect({
 
     return (
         <SearchInput
-            aria-label={`Filter by ${resource}`}
+            aria-label={`Filter by ${resource as string}`}
             onChange={(e, value) => {
                 onInputChange(value);
             }}
@@ -31,7 +31,7 @@ function FilterAutocompleteSelect({
             onClear={() => {
                 onInputChange('');
             }}
-            placeholder={`Filter by ${resource}`}
+            placeholder={`Filter by ${resource as string}`}
         />
     );
 }
