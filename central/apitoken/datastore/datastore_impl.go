@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
 	rocksdbStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/rocksdb"
@@ -143,7 +143,7 @@ func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 		return nil, err
 	}
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, fmt.Errorf("API Token search is only available in postgres mode")
+		return nil, errors.New("API Token search is only available in postgres mode")
 	}
 	return b.searcher.Search(ctx, q)
 }
@@ -153,7 +153,7 @@ func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*st
 		return nil, err
 	}
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, fmt.Errorf("API Token search is only available in postgres mode")
+		return nil, errors.New("API Token search is only available in postgres mode")
 	}
 	return b.storage.GetByQuery(ctx, q)
 
