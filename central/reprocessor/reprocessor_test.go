@@ -177,10 +177,11 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
 	}
 
 	// Verify that the table is empty before the test
-	plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ := loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 0)
 
-	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	err := loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	require.NoError(t, err)
 
 	indicators := []*storage.ProcessIndicator{
 		{
@@ -199,9 +200,10 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
 		},
 	}
 
-	indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+	err = indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 1)
 
 	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
@@ -218,9 +220,10 @@ func TestProcessListeningOnPortReprocess(t *testing.T) {
 
 	assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
 
-	loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	err = loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 1)
 
 	expectedPlopStorage = []*storage.ProcessListeningOnPortStorage{
@@ -310,12 +313,13 @@ func TestProcessListeningOnPortReprocessNoIndicator(t *testing.T) {
 	}
 
 	// Verify that the table is empty before the test
-	plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ := loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 0)
 
-	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	err := loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 1)
 
 	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
@@ -332,9 +336,10 @@ func TestProcessListeningOnPortReprocessNoIndicator(t *testing.T) {
 
 	assert.Equal(t, expectedPlopStorage[0], plopsFromDB[0])
 
-	loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	err = loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 1)
 
 	expectedPlopStorage = []*storage.ProcessListeningOnPortStorage{
@@ -406,10 +411,11 @@ func TestProcessListeningOnPortReprocessCloseBeforeRetrying(t *testing.T) {
 	}
 
 	// Verify that the table is empty before the test
-	plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ := loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 0)
 
-	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	err := loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	require.NoError(t, err)
 
 	indicators := []*storage.ProcessIndicator{
 		{
@@ -428,9 +434,10 @@ func TestProcessListeningOnPortReprocessCloseBeforeRetrying(t *testing.T) {
 		},
 	}
 
-	indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+	err = indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 1)
 
 	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
@@ -462,11 +469,13 @@ func TestProcessListeningOnPortReprocessCloseBeforeRetrying(t *testing.T) {
 		},
 	}
 
-	loop.plops.AddProcessListeningOnPort(testCtx, closedPlopObjects...)
+	err = loop.plops.AddProcessListeningOnPort(testCtx, closedPlopObjects...)
+	require.NoError(t, err)
 
-	loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	err = loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, len(plopsFromDB), 1)
 
 	expectedPlopStorage = []*storage.ProcessListeningOnPortStorage{
@@ -523,7 +532,7 @@ func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 	loop := NewLoop(nil, nil, nil, nil, nil, nil, nil, nil, nil, plops, queue.NewWaitableQueue()).(*loopImpl)
 
 	// Verify that the table is empty before the test
-	plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ := loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, 0, len(plopsFromDB))
 
 	openPlopObject := &storage.ProcessListeningOnPortFromSensor{
@@ -541,7 +550,8 @@ func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{openPlopObject}
 
-	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	err := loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	require.NoError(t, err)
 
 	indicators := []*storage.ProcessIndicator{
 		{
@@ -560,9 +570,10 @@ func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 		},
 	}
 
-	indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+	err = indicatorDataStore.AddProcessIndicators(testCtx, indicators...)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, 1, len(plopsFromDB))
 
 	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
@@ -594,11 +605,13 @@ func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 
 	batchPlopObjects := []*storage.ProcessListeningOnPortFromSensor{closedPlopObject, openPlopObject}
 
-	loop.plops.AddProcessListeningOnPort(testCtx, batchPlopObjects...)
+	err = loop.plops.AddProcessListeningOnPort(testCtx, batchPlopObjects...)
+	require.NoError(t, err)
 
-	loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	err = loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, 1, len(plopsFromDB))
 
 	expectedPlopStorage = []*storage.ProcessListeningOnPortStorage{
@@ -673,12 +686,13 @@ func TestProcessListeningOnPortReprocesskRetryEmpty(t *testing.T) {
 	loop := NewLoop(nil, nil, nil, nil, nil, nil, nil, nil, nil, plops, queue.NewWaitableQueue()).(*loopImpl)
 
 	// Verify that the table is empty before the test
-	plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ := loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, 0, len(plopsFromDB))
 
-	loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	err := loop.plops.RetryAddProcessListeningOnPort(testCtx)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, 0, len(plopsFromDB))
 }
 
@@ -714,7 +728,7 @@ func TestProcessListeningOnPortReprocessBatchRetrying(t *testing.T) {
 	loop := NewLoop(nil, nil, nil, nil, nil, nil, nil, nil, nil, plops, queue.NewWaitableQueue()).(*loopImpl)
 
 	// Verify that the table is empty before the test
-	plopsFromDB := loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ := loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, 0, len(plopsFromDB))
 
 	openPlopObject := &storage.ProcessListeningOnPortFromSensor{
@@ -745,8 +759,9 @@ func TestProcessListeningOnPortReprocessBatchRetrying(t *testing.T) {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{openPlopObject, closedPlopObject}
 
-	loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	err := loop.plops.AddProcessListeningOnPort(testCtx, plopObjects...)
+	require.NoError(t, err)
 
-	plopsFromDB = loop.plops.GetPlopsFromDB(testCtx)
+	plopsFromDB, _ = loop.plops.GetPlopsFromDB(testCtx)
 	assert.Equal(t, 0, len(plopsFromDB))
 }

@@ -594,7 +594,10 @@ func (l *loopImpl) processListeningOnPortLoop() {
 		case <-l.stopSig.Done():
 			return
 		case <-l.processListeningOnPortTicker.C:
-			l.plops.RetryAddProcessListeningOnPort(allAccessCtx)
+			err := l.plops.RetryAddProcessListeningOnPort(allAccessCtx)
+			if err != nil {
+				log.Errorf("Error reprocessing process listening on ports %+v", err)
+			}
 		}
 	}
 }

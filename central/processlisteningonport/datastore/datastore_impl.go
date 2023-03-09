@@ -40,15 +40,15 @@ func newDatastoreImpl(
 	}
 }
 
-func (ds *datastoreImpl) GetPlopsFromDB(ctx context.Context) []*storage.ProcessListeningOnPortStorage {
+func (ds *datastoreImpl) GetPlopsFromDB(ctx context.Context) ([]*storage.ProcessListeningOnPortStorage, error) {
 	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	ds.WalkAll(ctx,
+	err := ds.WalkAll(ctx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			plopsFromDB = append(plopsFromDB, plop)
 			return nil
 		})
 
-	return plopsFromDB
+	return plopsFromDB, err
 }
 
 func convertPlopFromStorageToPlopFromSensor(plopStorage *storage.ProcessListeningOnPortStorage) *storage.ProcessListeningOnPortFromSensor {
@@ -97,6 +97,7 @@ func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*st
 	return portProcesses, err
 }
 
+// PlopInfo contains the information needed to determine the upserts for plop
 type PlopInfo struct {
 	normalizedPLOPs  []*storage.ProcessListeningOnPortFromSensor
 	completedInBatch []*storage.ProcessListeningOnPortFromSensor
@@ -109,7 +110,6 @@ func (ds *datastoreImpl) getPlopInfo(
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
 ) (*PlopInfo, error) {
 
-	indicatorIds := make([]string, 0)
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// PLOP is a Postgres-only feature, do nothing.
 		log.Warnf("Tried to add PLOP not on Postgres, ignore: %+v", portProcesses)
@@ -122,7 +122,7 @@ func (ds *datastoreImpl) getPlopInfo(
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	if portProcesses == nil || len(portProcesses) == 0 {
+	if len(portProcesses) == 0 {
 		return nil, nil
 	}
 
@@ -392,8 +392,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// and greater flexibility and reusability.
 
 	plopInfo, err := ds.getPlopInfo(ctx, portProcesses...)
-	plopObjects, err := ds.getPlopObjectsToUpsert(ctx, plopInfo)
+	if err != nil {
+		return err
+	}
 
+	plopObjects, err := ds.getPlopObjectsToUpsert(ctx, plopInfo)
 	if err != nil {
 		return err
 	}
@@ -412,8 +415,11 @@ func (ds *datastoreImpl) RetryAddProcessListeningOnPort(ctx context.Context) err
 
 	portProcesses, _ := ds.getUnmatchedPlopsAndConvert(ctx)
 	plopInfo, err := ds.getPlopInfo(ctx, portProcesses...)
-	plopObjects, err := ds.getPlopObjectsToUpsertForRetry(ctx, plopInfo)
+	if err != nil {
+		return err
+	}
 
+	plopObjects, err := ds.getPlopObjectsToUpsertForRetry(ctx, plopInfo)
 	if err != nil {
 		return err
 	}

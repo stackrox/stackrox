@@ -15,7 +15,7 @@ type WalkFn = func(plop *storage.ProcessListeningOnPortStorage) error
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	GetPlopsFromDB(ctx context.Context) []*storage.ProcessListeningOnPortStorage
+	GetPlopsFromDB(ctx context.Context) ([]*storage.ProcessListeningOnPortStorage, error)
 	AddProcessListeningOnPort(context.Context, ...*storage.ProcessListeningOnPortFromSensor) error
 	RetryAddProcessListeningOnPort(context.Context) error
 	GetProcessListeningOnPort(
