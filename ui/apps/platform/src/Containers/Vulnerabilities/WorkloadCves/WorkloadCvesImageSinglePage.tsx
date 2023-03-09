@@ -15,7 +15,6 @@ import {
     Tab,
     Tabs,
     TabsComponent,
-    TabsProps,
     TabTitleText,
     Title,
     Tooltip,
@@ -27,10 +26,10 @@ import { useParams } from 'react-router-dom';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
-import useDetailsTabParameter from './hooks/useDetailsTabParameter';
-import { isDetailsTab } from './types';
+import { detailsTabValues } from './types';
 import { getOverviewCvesPath } from './searchUtils';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
@@ -144,16 +143,10 @@ function WorkloadCvesImageSinglePage() {
         }
     );
 
-    const [activeTabKey, setActiveTabKey] = useDetailsTabParameter();
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const imageData = data && data.image;
     const imageName = imageData?.name?.fullName ?? 'NAME UNKNOWN';
-
-    const handleTabClick: TabsProps['onSelect'] = (e, tabKey) => {
-        if (isDetailsTab(tabKey)) {
-            setActiveTabKey(tabKey);
-        }
-    };
 
     let mainContent: ReactNode | null = null;
 
@@ -199,7 +192,7 @@ function WorkloadCvesImageSinglePage() {
                 >
                     <Tabs
                         activeKey={activeTabKey}
-                        onSelect={handleTabClick}
+                        onSelect={(e, key) => setActiveTabKey(key)}
                         component={TabsComponent.nav}
                         className="pf-u-pl-md pf-u-background-color-100"
                         mountOnEnter
