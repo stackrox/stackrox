@@ -168,7 +168,6 @@ func TestProcessDockerConfig_ForceLocalScanning(t *testing.T) {
 					"username": "hello",
 					"password": "world",
 					"email": "hello@example.com",
-					"auth": "aGVsbG86d29ybGQ="
 				}
 			}
 		`)},
