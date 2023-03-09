@@ -211,7 +211,7 @@ func (s *TestComplianceCachingSuite) TestScanHonorBackoff() {
 	s.NoError(err)
 	s.Equal(4*time.Second, sleeper.receivedDuration, "Scan should have waited for 4 seconds.")
 	s.Equal(1, sleeper.callCount)
-	s.Equal(nodeName, ci.GetNodeName(), "Result should have been cached.")
+	s.Equal(nodeName, ci.GetNodeName())
 }
 
 func (s *TestComplianceCachingSuite) TestScanReturnsCachedInventory() {
@@ -236,12 +236,12 @@ func (s *TestComplianceCachingSuite) TestScanReturnsCachedInventory() {
 
 	// Check cached results
 	wrap := s.readWrap(inventoryCachePath)
-	s.WithinDuration(validUntil, wrap.CacheValidUntil, 100*time.Millisecond, "Cache validity should not change when accessing a cached scan.")
+	s.WithinDuration(validUntil, wrap.CacheValidUntil, 0, "Cache validity should not change when accessing a cached scan.")
 }
 
 func (s *TestComplianceCachingSuite) TestScanRunsNewInventory() {
 	initial := 2 * time.Second
-	cache := initial
+	cache := 10 * time.Second
 	maxBackoff := 10 * time.Second
 	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
 	cs := *NewCachingScanner(mockScanner{}, inventoryCachePath, cache, initial, maxBackoff, func(time.Duration) {})
@@ -263,6 +263,7 @@ func (s *TestComplianceCachingSuite) TestScanRunsNewInventory() {
 	wrap := s.readWrap(inventoryCachePath)
 	ci := s.wrapToInventory(wrap)
 	s.Equal("testme", ci.GetNodeName(), "Cache should have been updated with new results.")
+	s.Greater(wrap.CacheValidUntil.Unix(), time.Now().Unix(), "The cache should be valid to some time in the future.")
 }
 
 func (s *TestComplianceCachingSuite) TestScanFailsOnBackoffWrite() {
