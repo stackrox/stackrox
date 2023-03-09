@@ -39,6 +39,7 @@ describe('Access Control Roles', () => {
         cy.get('button:contains("Create role")');
 
         cy.get('th:contains("Name")');
+        cy.get('th:contains("Origin")');
         cy.get('th:contains("Description")');
         cy.get('th:contains("Permission set")');
         cy.get('th:contains("Access scope")');
