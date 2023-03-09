@@ -56,11 +56,12 @@ func (mr *MockDataStoreMockRecorder) AddProcessListeningOnPort(arg0 interface{},
 }
 
 // GetPlopsFromDB mocks base method.
-func (m *MockDataStore) GetPlopsFromDB(ctx context.Context) []*storage.ProcessListeningOnPortStorage {
+func (m *MockDataStore) GetPlopsFromDB(ctx context.Context) ([]*storage.ProcessListeningOnPortStorage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPlopsFromDB", ctx)
 	ret0, _ := ret[0].([]*storage.ProcessListeningOnPortStorage)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetPlopsFromDB indicates an expected call of GetPlopsFromDB.
