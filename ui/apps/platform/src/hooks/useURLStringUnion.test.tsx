@@ -90,7 +90,6 @@ test('should read/write only the specified set of strings to the URL parameter',
 });
 
 test('should default to the current URL parameter value on initialization, if it is valid', async () => {
-    let params;
     let testLocation;
 
     const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
@@ -110,10 +109,15 @@ test('should default to the current URL parameter value on initialization, if it
     );
 
     // Check that default value is not applied if the URL param already contains a valid value
-    params = new URLSearchParams(testLocation.search);
+    const params = new URLSearchParams(testLocation.search);
     expect(initialValidResult.current[0]).toBe('Beta');
     expect(params.get('urlKey')).toBe('Beta');
+});
 
+test('should use the default value when an invalid value is entered directly into the URL', async () => {
+    let testLocation;
+
+    const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
     const { result: initialInvalidResult } = renderHook(
         () => useURLStringUnion('urlKey', possibleUrlValues),
         {
@@ -129,7 +133,7 @@ test('should default to the current URL parameter value on initialization, if it
     );
 
     // Check that default value is applied correctly when the URL param is invalid
-    params = new URLSearchParams(testLocation.search);
+    const params = new URLSearchParams(testLocation.search);
     expect(initialInvalidResult.current[0]).toBe('Alpha');
     expect(params.get('urlKey')).toBe('Alpha');
 });
