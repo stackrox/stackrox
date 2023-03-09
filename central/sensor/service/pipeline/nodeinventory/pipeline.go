@@ -66,7 +66,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	log.Debugf("NodeInventory for name='%s' contains %d packages to scan from %d content sets", ninv.GetNodeName(),
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
 	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
-		log.Warn("NodeInventory event action %q is not supported", event.GetAction())
+		log.Errorf("NodeInventory event with unsupported action: %s", event.GetAction())
 		return nil
 	}
 	ninv = ninv.Clone()

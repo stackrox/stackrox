@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_pipelineImpl_Run(t *testing.T) {
@@ -93,7 +94,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				riskManager:   tt.mocks.riskManager,
 			}
 			if err := p.Run(tt.args.ctx, tt.args.clusterID, tt.args.msg, tt.args.injector); (err != nil) != (tt.wantErr != "") {
-				t.Errorf("Run() error = %v, wantErr = %q", err, tt.wantErr)
+				assert.ErrorContainsf(t, err, tt.wantErr, "Run() error = %v, wantErr = %q", err, tt.wantErr)
 			}
 		})
 	}

@@ -118,7 +118,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				riskManager:   tt.mocks.riskManager,
 			}
 			if err := p.Run(tt.args.ctx, tt.args.clusterID, tt.args.msg, tt.args.injector); (err != nil) != (tt.wantErr != "") {
-				assert.ErrorContains(t, err, tt.wantErr, "Run() error = %v, wantErr = %q", err, tt.wantErr)
+				assert.ErrorContainsf(t, err, tt.wantErr, "Run() error = %v, wantErr = %q", err, tt.wantErr)
 			}
 		})
 	}

@@ -467,9 +467,12 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	storedNode, found, err := suite.datastore.GetNode(ctx, testNode.GetId())
 	suite.NoError(err)
 	suite.True(found)
-	for _, component := range testNode.GetScan().GetComponents() {
-		for _, cve := range component.GetVulnerabilities() {
-			cve.CveBaseInfo.CreatedAt = storedNode.GetLastUpdated()
+	for cIdx, component := range testNode.GetScan().GetComponents() {
+		for vIdx, vuln := range component.GetVulnerabilities() {
+			vuln.GetCveBaseInfo().CreatedAt = storedNode.GetScan().
+				GetComponents()[cIdx].
+				GetVulnerabilities()[vIdx].
+				GetCveBaseInfo().CreatedAt
 		}
 	}
 	expectedNode := cloneAndUpdateRiskPriority(testNode)
@@ -544,10 +547,13 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
 	suite.NoError(err)
 	suite.True(found)
-	for _, component := range testNode2.GetScan().GetComponents() {
+	for cIdx, component := range testNode2.GetScan().GetComponents() {
 		// Components and Vulns are deduped, therefore, update testNode structure.
-		for _, cve := range component.GetVulnerabilities() {
-			cve.CveBaseInfo.CreatedAt = storedNode.GetLastUpdated()
+		for vIdx, cve := range component.GetVulnerabilities() {
+			cve.GetCveBaseInfo().CreatedAt = storedNode.GetScan().
+				GetComponents()[cIdx].
+				GetVulnerabilities()[vIdx].
+				GetCveBaseInfo().CreatedAt
 		}
 	}
 	expectedNode = cloneAndUpdateRiskPriority(testNode2)
