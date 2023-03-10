@@ -1,4 +1,5 @@
 import static io.stackrox.proto.storage.ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel
+import static util.Helpers.withRetry
 
 import java.nio.file.Files
 import java.nio.file.Paths

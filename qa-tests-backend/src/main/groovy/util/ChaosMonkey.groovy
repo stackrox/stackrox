@@ -1,18 +1,21 @@
 package util
 
 import common.Constants
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.api.model.Pod
 import orchestratormanager.OrchestratorMain
 
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
 
+@CompileStatic
 @Slf4j
 class ChaosMonkey {
-    def stopFlag = new AtomicBoolean()
-    def lock = new ReentrantLock()
-    def effectCond = lock.newCondition()
+    AtomicBoolean stopFlag = new AtomicBoolean()
+    ReentrantLock lock = new ReentrantLock()
+    Condition effectCond = lock.newCondition()
 
     Thread thread
     OrchestratorMain orchestrator
@@ -27,7 +30,7 @@ class ChaosMonkey {
         this.minReadyReplicas = minReadyReplicas
         this.gracePeriod = gracePeriod
 
-        def pods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
+        List<Pod> pods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
         assert pods.size() > 0, "There are no ${ADMISSION_CONTROLLER_APP_NAME} pods. " +
                 "Did you enable ADMISSION_CONTROLLER when deploying?"
     }

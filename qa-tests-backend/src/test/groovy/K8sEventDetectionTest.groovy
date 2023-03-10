@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.storage.AlertOuterClass

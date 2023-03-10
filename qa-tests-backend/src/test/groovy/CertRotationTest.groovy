@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import java.nio.charset.Charset
 import java.security.cert.X509Certificate
 
@@ -17,11 +19,11 @@ import services.ClusterService
 import services.DirectHTTPService
 import services.SensorUpgradeService
 import util.Cert
+import util.Env
 
 import org.junit.Assume
-import spock.lang.Tag
 import spock.lang.IgnoreIf
-import util.Env
+import spock.lang.Tag
 
 @Tag("BAT")
 // ROX-14228 skipping tests for 1st release on power & z

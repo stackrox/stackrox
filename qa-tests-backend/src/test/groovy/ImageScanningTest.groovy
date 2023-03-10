@@ -1,4 +1,5 @@
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
+import static util.Helpers.withRetry
 
 import io.grpc.StatusRuntimeException
 import orchestratormanager.OrchestratorTypes
@@ -824,8 +825,9 @@ class ImageScanningTest extends BaseSpecification {
     private static ImageOuterClass.Image expectDigestedImage(String imageName, String source) {
         def imageDigest
         withRetry(30, 2) {
-            imageDigest = ImageService.getImages().find { it.name == imageName }
-            assert imageDigest?.id
+            def images = ImageService.getImages()
+            imageDigest = images.find { it.name == imageName }
+            assert imageDigest?.id, "image ${imageName} not found among ${images*.name}"
         }
         ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest?.id)
         validateImageMetadata(imageDetail, source)
