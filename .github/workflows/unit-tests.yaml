@@ -37,7 +37,7 @@ jobs:
       run: ${{ matrix.gotags }} make go-unit-tests && make generate-junit-reports
 
     - name: Publish Test Report
-      uses: janisz/action@v2
+      uses: test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -46,7 +46,7 @@ jobs:
       run: ${{ matrix.gotags }} make integration-unit-tests && make generate-junit-reports
 
     - name: Publish Test Report
-      uses: janisz/action@v2
+      uses: test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -84,7 +84,7 @@ jobs:
       run: ${{ matrix.gotags }} make go-postgres-unit-tests && make generate-junit-reports
 
     - name: Publish Test Report
-      uses: janisz/action@v2
+      uses: test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -112,7 +112,7 @@ jobs:
       run: make ui-test
 
     - name: Publish Test Report
-      uses: janisz/action@v2
+      uses: test-summary/action@v2
       if: always()
       with:
         paths: 'ui/test-results/reports/*.xml'
@@ -142,7 +142,7 @@ jobs:
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
 
     - name: Publish Test Report
-      uses: janisz/action@v2
+      uses: test-summary/action@v2
       if: always()
       with:
         paths: 'roxctl-test-output/*.xml'
