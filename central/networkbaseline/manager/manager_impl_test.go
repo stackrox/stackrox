@@ -231,7 +231,8 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 				Id:   extSrcID(10),
 				Desc: &storage.NetworkEntityInfo_ExternalSource_{
 					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: extSrcName(10),
+						Name:   extSrcName(10),
+						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: "11.0.0.0/32"},
 					},
 				},
 			},
@@ -298,7 +299,8 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 					Id:   extSrcID(10),
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Name: extSrcName(10),
+							Name:   extSrcName(10),
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: "11.0.0.0/32"},
 						},
 					},
 				}},

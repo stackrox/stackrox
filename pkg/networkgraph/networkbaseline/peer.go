@@ -107,29 +107,44 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 			Entity: peer.Entity,
 			Name:   peer.Name,
 		}
-		propertiesByEntity[entity] = EntityProperties{
-			CIDRBlock: peer.CidrBlock,
-			ConnectionProperties: []*storage.NetworkBaselineConnectionProperties{
-				{
+
+		if properties, ok := propertiesByEntity[entity]; ok {
+			properties.ConnectionProperties = append(propertiesByEntity[entity].ConnectionProperties,
+				&storage.NetworkBaselineConnectionProperties{
 					Ingress:  peer.IsIngress,
 					Port:     peer.DstPort,
 					Protocol: peer.Protocol,
+				})
+			propertiesByEntity[entity] = properties
+		} else {
+			propertiesByEntity[entity] = EntityProperties{
+				CIDRBlock: peer.CidrBlock,
+				ConnectionProperties: []*storage.NetworkBaselineConnectionProperties{
+					{
+						Ingress:  peer.IsIngress,
+						Port:     peer.DstPort,
+						Protocol: peer.Protocol,
+					},
 				},
-			},
+			}
 		}
+
 	}
 
 	out := make([]*storage.NetworkBaselinePeer, 0, len(propertiesByEntity))
 	for entity, properties := range propertiesByEntity {
-		sort.Slice(properties.ConnectionProperties, func(i, j int) bool {
-			if properties.ConnectionProperties[i].Ingress != properties.ConnectionProperties[j].Ingress {
-				return properties.ConnectionProperties[i].Ingress
+		connectionProperties := properties.ConnectionProperties
+		sort.Slice(connectionProperties, func(i, j int) bool {
+			if connectionProperties[i].Ingress != connectionProperties[j].Ingress {
+				return connectionProperties[i].Ingress
 			}
-			if properties.ConnectionProperties[i].Protocol != properties.ConnectionProperties[j].Protocol {
-				return properties.ConnectionProperties[i].Protocol < properties.ConnectionProperties[j].Protocol
+			if connectionProperties[i].Protocol != connectionProperties[j].Protocol {
+				return connectionProperties[i].Protocol < connectionProperties[j].Protocol
 			}
-			return properties.ConnectionProperties[i].Port < properties.ConnectionProperties[j].Port
+			return connectionProperties[i].Port < connectionProperties[j].Port
 		})
+		properties.ConnectionProperties = connectionProperties
+		propertiesByEntity[entity] = properties
 
 		// Get corresponding entity proto
 		entityInfo := &storage.NetworkEntityInfo{
