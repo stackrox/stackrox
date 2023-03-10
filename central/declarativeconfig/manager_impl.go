@@ -241,7 +241,6 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 			}
 		}
 	}
-	// TODO(ROX-14694): Add deletion of resources.
 	log.Debugf("Deleting all proto messages that have traits.Origin==DECLARATIVE but are not contained"+
 		" within the current list of transformed messages: %+v", transformedMessagesByHandler)
 }
