@@ -159,6 +159,27 @@ func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, erro
 	return ds.getAllRolesNoScopeCheck(ctx)
 }
 
+func (ds *dataStoreImpl) GetRolesFiltered(ctx context.Context, filter func(role *storage.Role) bool) ([]*storage.Role, error) {
+	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+		return nil, err
+	}
+
+	var filteredRoles []*storage.Role
+	walkFn := func() error {
+		filteredRoles = filteredRoles[:0]
+		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
+			if filter(role) {
+				filteredRoles = append(filteredRoles, role)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+	return filteredRoles, nil
+}
+
 func (ds *dataStoreImpl) CountRoles(ctx context.Context) (int, error) {
 	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
 		return 0, err
@@ -292,6 +313,29 @@ func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.P
 	}
 
 	return permissionSets, nil
+}
+
+func (ds *dataStoreImpl) GetPermissionSetsFiltered(ctx context.Context,
+	filter func(permissionSet *storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
+	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+		return nil, err
+	}
+
+	var filteredPermissionSets []*storage.PermissionSet
+	walkFn := func() error {
+		filteredPermissionSets = filteredPermissionSets[:0]
+		return ds.permissionSetStorage.Walk(ctx, func(permissionSet *storage.PermissionSet) error {
+			if filter(permissionSet) {
+				filteredPermissionSets = append(filteredPermissionSets, permissionSet)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+
+	return filteredPermissionSets, nil
 }
 
 func (ds *dataStoreImpl) CountPermissionSets(ctx context.Context) (int, error) {
@@ -444,6 +488,29 @@ func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.Sim
 	}
 
 	return scopes, nil
+}
+
+func (ds *dataStoreImpl) GetAccessScopesFiltered(ctx context.Context,
+	filter func(accessScope *storage.SimpleAccessScope) bool) ([]*storage.SimpleAccessScope, error) {
+	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+		return nil, err
+	}
+
+	var filteredScopes []*storage.SimpleAccessScope
+	walkFn := func() error {
+		filteredScopes = filteredScopes[:0]
+		return ds.accessScopeStorage.Walk(ctx, func(scope *storage.SimpleAccessScope) error {
+			if filter(scope) {
+				filteredScopes = append(filteredScopes, scope)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+
+	return filteredScopes, nil
 }
 
 func (ds *dataStoreImpl) CountAccessScopes(ctx context.Context) (int, error) {

@@ -54,7 +54,13 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
-	group, _, err := ds.storage.Get(ctx, props.GetId())
+	group, exists, err := ds.storage.Get(ctx, props.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errox.NotFound.Newf("could not find group %s", props.GetId())
+	}
 	return group, err
 }
 

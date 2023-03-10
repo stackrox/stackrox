@@ -97,13 +97,19 @@ func (s *groupDataStoreTestSuite) TestAllowsGet() {
 
 func (s *groupDataStoreTestSuite) TestGet() {
 	group := fixtures.GetGroup()
-	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil).Times(1)
 
 	// Test that can fetch by id
 	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
 		AuthProviderId: group.GetProps().GetAuthProviderId()})
 	s.NoError(err)
 	s.Equal(group, g)
+
+	// Test that a non-existing group will yield errox.NotFound.
+	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(nil, false, nil).Times(1)
+	g, err = s.dataStore.Get(s.hasReadCtx, group.GetProps())
+	s.Nil(g)
+	s.ErrorIs(err, errox.NotFound)
 }
 
 func (s *groupDataStoreTestSuite) TestGetWithoutID() {

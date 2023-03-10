@@ -142,6 +142,26 @@ func (s *authProviderDataStoreTestSuite) TestErrorOnAdd() {
 	s.Error(err)
 }
 
+func (s *authProviderDataStoreTestSuite) TestGetFiltered() {
+	authProviders := []*storage.AuthProvider{
+		{
+			Id:   "some-id-1",
+			Name: "some-name-1",
+		},
+		{
+			Id:   "some-id-2",
+			Name: "some-name-2",
+		},
+	}
+	s.storage.EXPECT().GetAll(gomock.Any()).Return(authProviders, nil)
+
+	filteredAuthProviders, err := s.dataStore.GetAuthProvidersFiltered(s.hasReadCtx, func(authProvider *storage.AuthProvider) bool {
+		return authProvider.GetName() == "some-name-1"
+	})
+	s.NoError(err)
+	s.ElementsMatch(filteredAuthProviders, []*storage.AuthProvider{authProviders[0]})
+}
+
 func (s *authProviderDataStoreTestSuite) TestAllowsUpdate() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{}, true, nil).Times(1)
