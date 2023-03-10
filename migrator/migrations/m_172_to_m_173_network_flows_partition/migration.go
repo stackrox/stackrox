@@ -3,7 +3,6 @@ package m172tom173
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -39,7 +38,6 @@ var (
 
 // MigrateToPartitions updates the btree network flow indexes to be hash
 func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
-	partitionNames := []string{}
 	parentCtx := context.Background()
 
 	err := analyzeOldTable(parentCtx, db)
@@ -68,11 +66,10 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 		}
 		log.WriteToStderrf("Found %d total network flows to consider for migration.", previousCount)
 
-		// Create the updated store which will create the partiion
+		// Create the updated store which will create the partition
 		destinationStore := updated.New(db, cluster)
-		partitionNames = append(partitionNames, destinationStore.GetPartitionName())
 
-		err = migrateData(parentCtx, db, cluster)
+		err = migrateData(parentCtx, db, destinationStore.GetPartitionName(), cluster)
 		if err != nil {
 			log.WriteToStderrf("unable to move data for cluster %q, %v", cluster, err)
 			return err
@@ -89,7 +86,7 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 
 		// Ideally this would have been done on the source.  However, the reason we are implementing
 		// this change is because removing the stale flows was becoming problematic with large amounts of data.
-		// So we will copy it all over and then remove the stale data once it is migrated.
+		// So we will copy it all over and then remove the stale data from the partition once it is migrated.
 		err = cleanupDestinationPartition(parentCtx, destinationStore)
 		if err != nil {
 			return err
@@ -101,40 +98,6 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 		}
 		log.WriteToStderrf("Trimmed network flows to length of %d from %d.", migratedCount, previousCount)
 	}
-
-	// Now deal with all the indexes
-	// First the parent indexes
-	//for _, statement := range updatedSchema.ParentIndexStmts {
-	//	if err := executeStatementWithContext(parentCtx, db, statement); err != nil {
-	//		return err
-	//	}
-	//}
-
-	// Now the children
-	//for idx, partition := range partitionNames {
-	//	// Add the index for the cluster
-	//	for _, index := range updatedSchema.PartitionIndexes {
-	//		namePart := clusters[idx]
-	//		difference := 64 - len(index.IndexName) - 2 + len(clusters[idx])
-	//
-	//		if difference < 0 {
-	//			namePart = clusters[idx][:64+difference]
-	//		}
-	//
-	//		officialName := fmt.Sprintf(index.IndexName, strings.ReplaceAll(namePart, "-", "_"))
-	//		createIndex := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING %s(%s)", officialName, partition, index.IndexType, index.IndexField)
-	//		log.WriteToStderrf("SHREWS -- %q", createIndex)
-	//		if err := executeStatementWithContext(parentCtx, db, createIndex); err != nil {
-	//			return err
-	//		}
-	//
-	//		attachIndex := fmt.Sprintf("alter index %s ATTACH PARTITION %s", index.ParentName, officialName)
-	//		log.WriteToStderrf("SHREWS -- %q", attachIndex)
-	//		if err := executeStatementWithContext(parentCtx, db, attachIndex); err != nil {
-	//			return err
-	//		}
-	//	}
-	//}
 
 	// Drop the old table
 	err = gormDB.Migrator().DropTable("network_flows")
@@ -151,9 +114,6 @@ func getPreviousCount(parentCtx context.Context, store previous.FlowStore) (int,
 	// pass a context with the migration timeout to them.
 	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
 	defer cancel()
-
-	deadline, _ := ctx.Deadline()
-	log.WriteToStderrf("SHREWS -- context deadline %q", deadline.String())
 
 	return store.Count(ctx)
 }
@@ -184,14 +144,6 @@ func analyzeOldTable(parentCtx context.Context, db *postgres.DB) error {
 	return err
 }
 
-func executeStatementWithContext(parentCtx context.Context, db *postgres.DB, statement string) error {
-	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
-	defer cancel()
-
-	_, err := db.Exec(ctx, statement)
-	return err
-}
-
 func getClusters(parentCtx context.Context, db *postgres.DB) ([]string, error) {
 	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
 	defer cancel()
@@ -217,19 +169,17 @@ func getClusters(parentCtx context.Context, db *postgres.DB) ([]string, error) {
 	return clusters, rows.Err()
 }
 
-func migrateData(parentCtx context.Context, db *postgres.DB, cluster string) error {
+func migrateData(parentCtx context.Context, db *postgres.DB, partitionName string, cluster string) error {
 	clusterUUID, err := uuid.FromString(cluster)
 	if err != nil {
 		return err
 	}
 
-	partitionPostFix := strings.ReplaceAll(cluster, "-", "_")
-
 	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
 	defer cancel()
 
 	// Skip the serial ID
-	moveDataStmt := fmt.Sprintf("INSERT INTO network_flows_v2_%s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM network_flows WHERE ClusterId = $1", partitionPostFix)
+	moveDataStmt := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM network_flows WHERE ClusterId = $1", partitionName)
 
 	_, err = db.Exec(ctx, moveDataStmt, clusterUUID)
 	if err != nil {
