@@ -1,3 +1,5 @@
+import static util.Helpers.evaluateWithRetry
+
 import objects.Deployment
 import objects.K8sServiceAccount
 import objects.Service

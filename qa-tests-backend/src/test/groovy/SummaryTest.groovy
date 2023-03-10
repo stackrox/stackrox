@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.ListCompareAlgorithm
