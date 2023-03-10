@@ -361,7 +361,7 @@ func TestProcessListeningOnPortReprocessNoIndicator(t *testing.T) {
 }
 
 // TestProcessListeningOnPortReprocessCloseBeforeRetrying does the following
-// 1. Adds an open plop without and indicator
+// 1. Adds an open plop without an indicator
 // 2. Adds a process indicator for the plop
 // 3. Closes the plop
 // 4. Retries the unmatched plops
