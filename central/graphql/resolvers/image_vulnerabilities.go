@@ -490,6 +490,9 @@ func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string
 }
 
 func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return &activeStateResolver{}, nil
+	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ActiveState")
 
 	if resolver.ctx == nil {

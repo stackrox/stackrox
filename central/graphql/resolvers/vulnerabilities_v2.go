@@ -990,6 +990,9 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuer
 
 // ActiveState shows the activeness of a vulnerability in a deployment context.
 func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return &activeStateResolver{}, nil
+	}
 	scopeQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
