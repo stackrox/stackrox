@@ -423,6 +423,16 @@ func normalizePLOPs(
 		} else {
 			normalizedResult = append(normalizedResult, value.closed[nClosed-1])
 		}
+
+		if nOpen + nClosed > 1 {
+			log.Infof("The same listening endpoint appears multiple times in a batch")
+			for openPlop, _ := range value.open {
+				log.Infof("Batch open %+v", openPlop)
+			}
+			for closePlop, _ := range value.closed {
+				log.Infof("Batch close %+v", closePlop)
+			}
+		}
 	}
 
 	return normalizedResult, completedEvents
