@@ -7,6 +7,15 @@ export type ImageVulnerabilitiesVariables = {
     vulnQuery: string;
 };
 
+export type ImageVulnerabilityComponent = {
+    id: string;
+    name: string;
+    version: string;
+    fixedIn: string;
+    location: string;
+    layerIndex: number | null;
+};
+
 export type ImageVulnerabilitiesResponse = {
     image: {
         id: string;
@@ -16,14 +25,7 @@ export type ImageVulnerabilitiesResponse = {
             cve: string;
             summary: string;
             discoveredAtImage: Date | null;
-            imageComponents: {
-                id: string;
-                name: string;
-                version: string;
-                fixedIn: string;
-                location: string;
-                layerIndex: number | null;
-            }[];
+            imageComponents: ImageVulnerabilityComponent[];
         }[];
     };
 };
