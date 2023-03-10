@@ -60,7 +60,7 @@ func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 
 	// check for existing backoff, wait for specified duration if needed, then persist the new backoff duration
 	backoffDuration := c.initialBackoff
-	cachedBackoff := readBackoff(c.inventoryCachePath)
+	cachedBackoff := readBackoff(c.inventoryCachePath, c.maxBackoff)
 	if cachedBackoff > 0 {
 		backoffDuration = min(cachedBackoff, c.maxBackoff)
 		log.Warnf("Found existing node scan backoff - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
@@ -99,15 +99,18 @@ func min(d1 time.Duration, d2 time.Duration) time.Duration {
 	return d1
 }
 
-func readBackoff(path string) time.Duration {
+// readBackoff reads a backoff from a location. It will return either the loaded time.Duration, 0 if it doesn't exist, or errorBackoff on errors.
+func readBackoff(path string, errorBackoff time.Duration) time.Duration {
 	wrap := readInventoryWrap(path)
 	if wrap == nil {
 		return 0
 	}
-	if d, err := time.ParseDuration(wrap.RetryBackoffDuration); err == nil {
-		return d
+	d, err := time.ParseDuration(wrap.RetryBackoffDuration)
+	if err != nil {
+		return errorBackoff
 	}
-	return 0
+
+	return d
 }
 
 func writeBackoff(backoff time.Duration, path string) error {

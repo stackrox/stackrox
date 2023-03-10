@@ -141,6 +141,46 @@ func (s *TestComplianceCachingSuite) TestCalcNextBackoff() {
 	}
 }
 
+func (s *TestComplianceCachingSuite) TestReadBackoff() {
+	cases := map[string]struct {
+		savedBackoff    string
+		errorBackoff    time.Duration
+		expectedBackoff time.Duration
+	}{
+		"read backoff should return saved duration on success": {
+			savedBackoff:    "5s",
+			errorBackoff:    42 * time.Second,
+			expectedBackoff: 5 * time.Second,
+		},
+		"read backoff should return 0 if no wrap exists": {
+			savedBackoff:    "",
+			errorBackoff:    42 * time.Second,
+			expectedBackoff: 0,
+		},
+		"read backoff should return errorBackoff on errors": {
+			savedBackoff:    "thisIsNotADuration",
+			errorBackoff:    42 * time.Second,
+			expectedBackoff: 42 * time.Second,
+		},
+	}
+	for name, c := range cases {
+		s.Run(name, func() {
+			path := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
+			if c.savedBackoff != "" {
+				s.writeWrap(&inventoryWrap{
+					CacheValidUntil:      time.Time{},
+					RetryBackoffDuration: c.savedBackoff,
+					CachedInventory:      "",
+				}, path)
+			}
+
+			actual := readBackoff(path, c.errorBackoff)
+
+			s.Equal(c.expectedBackoff, actual)
+		})
+	}
+}
+
 func (s *TestComplianceCachingSuite) TestReadInventoryWrapFaultyUnmarshal() {
 	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
 	brokenWrap := "{\"CachedInventory\":42}"
