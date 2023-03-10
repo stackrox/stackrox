@@ -148,6 +148,14 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		})),
 	)
 
+	gomock.InOrder(
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{"id-perm-set-1", "id-perm-set-2"})).Return(nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-access-scope"}).Return(nil),
+	)
+
 	m := newTestManager(t)
 	m.updaters = map[reflect.Type]updater.ResourceUpdater{
 		types.PermissionSetType: mockUpdater,
@@ -202,6 +210,8 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		Status:       storage.IntegrationHealth_UNHEALTHY,
 		ErrorMessage: "test error",
 	}))
+
+	permissionSetUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	m := newTestManager(t)
 	m.updaters = map[reflect.Type]updater.ResourceUpdater{

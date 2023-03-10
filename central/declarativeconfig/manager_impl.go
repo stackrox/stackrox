@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
+	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -23,7 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -224,6 +225,27 @@ func (m *managerImpl) runReconciliation() {
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
 	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
+	m.doReconciliation(transformedMessagesByHandler, protoTypesOrder, func(handler string, typeUpdater updater.ResourceUpdater, messages []proto.Message) {
+		for _, message := range messages {
+			err := typeUpdater.Upsert(m.reconciliationCtx, message)
+			m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
+		}
+	})
+	// We inverse the proto types order of insertion, to potentially avoid stale references / errors during the
+	// reconciliation.
+	m.doReconciliation(transformedMessagesByHandler, sliceutils.Reversed(protoTypesOrder), func(handler string, typeUpdater updater.ResourceUpdater, messages []proto.Message) {
+		idsToSkip := make([]string, 0, len(messages))
+		for _, message := range messages {
+			idsToSkip = append(idsToSkip, m.idExtractor(message))
+		}
+		log.Debugf("Running deletion with resource updater %T, skipping IDs %+v", typeUpdater, idsToSkip)
+		err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
+		log.Debugf("Finished deletion, return value: %+v", err)
+	})
+}
+
+func (m *managerImpl) doReconciliation(transformedMessagesByHandler map[string]protoMessagesByType,
+	protoTypesOrder []reflect.Type, action func(handler string, typeUpdater updater.ResourceUpdater, messages []proto.Message)) {
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
@@ -235,14 +257,9 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 				m.handleMissingTypeUpdater(handler, protoType, messages)
 				return
 			}
-			for _, message := range messages {
-				err := typeUpdater.Upsert(m.reconciliationCtx, message)
-				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
-			}
+			action(handler, typeUpdater, messages)
 		}
 	}
-	log.Debugf("Deleting all proto messages that have traits.Origin==DECLARATIVE but are not contained"+
-		" within the current list of transformed messages: %+v", transformedMessagesByHandler)
 }
 
 func (m *managerImpl) handleMissingTypeUpdater(handler string, protoType reflect.Type, messages []proto.Message) {
@@ -261,33 +278,19 @@ func (m *managerImpl) handleMissingTypeUpdater(handler string, protoType reflect
 // status will be set to unhealthy.
 func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int32) {
 	messageID := m.idExtractor(message)
-	messageName := m.messageNameForIntegrationHealth(handler, message)
+	integrationHealth := declarativeConfigUtils.IntegrationHealthForProtoMessage(message, handler, err, m.idExtractor, m.nameExtractor)
 
 	if err != nil {
 		currentDeclarativeConfigErrors := m.errorsPerDeclarativeConfig[messageID] + 1
 		m.errorsPerDeclarativeConfig[messageID] = currentDeclarativeConfigErrors
 
 		if currentDeclarativeConfigErrors >= threshold {
-			m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-				Id:            messageID,
-				Name:          messageName,
-				Type:          storage.IntegrationHealth_DECLARATIVE_CONFIG,
-				Status:        storage.IntegrationHealth_UNHEALTHY,
-				ErrorMessage:  err.Error(),
-				LastTimestamp: timestamp.TimestampNow(),
-			})
+			m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(integrationHealth)
 		}
 		log.Debugf("Error within reconciliation for %+v: %v", message, err)
 	} else {
 		m.errorsPerDeclarativeConfig[messageID] = 0
-		m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-			Id:            messageID,
-			Name:          messageName,
-			Type:          storage.IntegrationHealth_DECLARATIVE_CONFIG,
-			Status:        storage.IntegrationHealth_HEALTHY,
-			ErrorMessage:  "",
-			LastTimestamp: timestamp.TimestampNow(),
-		})
+		m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(integrationHealth)
 		log.Debugf("Message %+v marked as healthy", message)
 	}
 }
@@ -312,18 +315,13 @@ func (m *managerImpl) updateHandlerHealth(handlerID string, err error) {
 func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto.Message) {
 	for _, message := range messages {
 		messageID := m.idExtractor(message)
-		messageName := m.messageNameForIntegrationHealth(handler, message)
+		messageName := declarativeConfigUtils.NameForIntegrationHealthFromProtoMessage(message, handler, m.nameExtractor, m.idExtractor)
 
 		if err := m.declarativeConfigErrorReporter.Register(messageID, messageName,
 			storage.IntegrationHealth_DECLARATIVE_CONFIG); err != nil {
 			log.Errorf("Error registering health status for declarative config %+v: %v", message, err)
 		}
 	}
-}
-
-func (m *managerImpl) messageNameForIntegrationHealth(handler string, message proto.Message) string {
-	return fmt.Sprintf("%s in config map %s",
-		stringutils.FirstNonEmpty(m.nameExtractor(message), m.idExtractor(message)), path.Base(handler))
 }
 
 func handlerNameForIntegrationHealth(handlerID string) string {

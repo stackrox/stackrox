@@ -35,6 +35,25 @@ func (m *MockResourceUpdater) EXPECT() *MockResourceUpdaterMockRecorder {
 	return m.recorder
 }
 
+// DeleteResources mocks base method.
+func (m *MockResourceUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx}
+	for _, a := range resourceIDsToSkip {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteResources", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteResources indicates an expected call of DeleteResources.
+func (mr *MockResourceUpdaterMockRecorder) DeleteResources(ctx interface{}, resourceIDsToSkip ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx}, resourceIDsToSkip...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResources", reflect.TypeOf((*MockResourceUpdater)(nil).DeleteResources), varargs...)
+}
+
 // Upsert mocks base method.
 func (m_2 *MockResourceUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	m_2.ctrl.T.Helper()
@@ -47,4 +66,41 @@ func (m_2 *MockResourceUpdater) Upsert(ctx context.Context, m proto.Message) err
 func (mr *MockResourceUpdaterMockRecorder) Upsert(ctx, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockResourceUpdater)(nil).Upsert), ctx, m)
+}
+
+// MockhealthStatusRemover is a mock of healthStatusRemover interface.
+type MockhealthStatusRemover struct {
+	ctrl     *gomock.Controller
+	recorder *MockhealthStatusRemoverMockRecorder
+}
+
+// MockhealthStatusRemoverMockRecorder is the mock recorder for MockhealthStatusRemover.
+type MockhealthStatusRemoverMockRecorder struct {
+	mock *MockhealthStatusRemover
+}
+
+// NewMockhealthStatusRemover creates a new mock instance.
+func NewMockhealthStatusRemover(ctrl *gomock.Controller) *MockhealthStatusRemover {
+	mock := &MockhealthStatusRemover{ctrl: ctrl}
+	mock.recorder = &MockhealthStatusRemoverMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockhealthStatusRemover) EXPECT() *MockhealthStatusRemoverMockRecorder {
+	return m.recorder
+}
+
+// Remove mocks base method.
+func (m *MockhealthStatusRemover) Remove(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove.
+func (mr *MockhealthStatusRemoverMockRecorder) Remove(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockhealthStatusRemover)(nil).Remove), id)
 }
