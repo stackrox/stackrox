@@ -111,6 +111,15 @@ type accessModeLevelScopeCheckerCore struct {
 	access storage.Access
 }
 
+func (a *accessModeLevelScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	if a.access < resource.Access {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	return a.
+		SubScopeChecker(sac.ResourceScopeKey(resource.Resource.GetResource())).
+		EffectiveAccessScope(resource)
+}
+
 func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
 	scope, ok := scopeKey.(sac.ResourceScopeKey)
 	if !ok {
@@ -190,8 +199,9 @@ func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permission
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
 	// Ensure replaced resources are also taken into account.
-	if a.resource != resource.Resource && (a.resource.ReplacingResource == nil ||
-		(a.resource.ReplacingResource != nil && *a.resource.ReplacingResource != resource.Resource)) {
+	if a.resource.GetResource() != resource.Resource.GetResource() && (a.resource.ReplacingResource == nil ||
+		(a.resource.ReplacingResource != nil &&
+			a.resource.ReplacingResource.GetResource() != resource.Resource.GetResource())) {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
 
