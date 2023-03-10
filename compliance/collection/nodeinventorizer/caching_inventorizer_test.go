@@ -157,7 +157,7 @@ func (s *TestComplianceCachingSuite) TestReadBackoff() {
 			errorBackoff:    42 * time.Second,
 			expectedBackoff: 0,
 		},
-		"read backoff should return errorBackoff on errors": {
+		"read backoff should return errorBackoff on duration parse error": {
 			savedBackoff:    "thisIsNotADuration",
 			errorBackoff:    42 * time.Second,
 			expectedBackoff: 42 * time.Second,
@@ -181,15 +181,36 @@ func (s *TestComplianceCachingSuite) TestReadBackoff() {
 	}
 }
 
+func (s *TestComplianceCachingSuite) TestReadBackoffErrorsOnFaultyWrap() {
+	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
+	brokenWrap := "{\"UnknownKey\":Value}"
+	err := os.WriteFile(inventoryCachePath, []byte(brokenWrap), 0600)
+	s.NoError(err)
+
+	actual := readBackoff(inventoryCachePath, 6*time.Second)
+
+	s.Equal(actual, 6*time.Second)
+}
+
 func (s *TestComplianceCachingSuite) TestReadInventoryWrapFaultyUnmarshal() {
 	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
 	brokenWrap := "{\"CachedInventory\":42}"
 	err := os.WriteFile(inventoryCachePath, []byte(brokenWrap), 0600)
 	s.NoError(err)
 
-	actual := readInventoryWrap(inventoryCachePath)
+	actual, err := readInventoryWrap(inventoryCachePath)
 
-	s.Nil(actual) // We expect nil, but no panic even when the unmarshal fails
+	s.Nil(actual)
+	s.Error(err)
+}
+
+func (s *TestComplianceCachingSuite) TestReadInventoryWrapDoesntExist() {
+	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
+
+	actual, err := readInventoryWrap(inventoryCachePath)
+
+	s.Nil(actual)
+	s.NoError(err)
 }
 
 func (s *TestComplianceCachingSuite) TestScanReadFaultyCachedInventory() {
@@ -201,11 +222,12 @@ func (s *TestComplianceCachingSuite) TestScanReadFaultyCachedInventory() {
 	}
 	s.writeWrap(w, inventoryCachePath)
 
-	actualInventory, actualValidity := readCachedInventory(inventoryCachePath)
+	actualInventory, actualValidity, err := readCachedInventory(inventoryCachePath)
 
 	// both actual values should be empty
 	s.Nil(actualInventory)
 	s.Equal(time.Time{}, actualValidity)
+	s.Error(err)
 }
 
 func (s *TestComplianceCachingSuite) TestScanWithoutExistingCacheWritesCache() {
@@ -227,6 +249,28 @@ func (s *TestComplianceCachingSuite) TestScanWithoutExistingCacheWritesCache() {
 
 	s.Equal(nodeName, ci.GetNodeName(), "The result should be written to cache correctly.")
 	s.Greater(w.CacheValidUntil.Unix(), time.Now().Unix(), "The cache should be valid to some time in the future.")
+}
+
+func (s *TestComplianceCachingSuite) TestScanWriteBackoffOnCacheFail() {
+	sleeper := mockSleeper{callCount: 0}
+
+	initial := 2 * time.Second // must be lower than BackoffDuration in file
+	cache := 5 * time.Second
+	maxBackoff := 10 * time.Second
+	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
+	cs := *NewCachingScanner(mockScanner{}, inventoryCachePath, cache, initial, maxBackoff, sleeper.mockWaitCallback)
+	nodeName := "testme"
+
+	brokenWrap := "{\"UnknownKey\":Value}"
+	err := os.WriteFile(inventoryCachePath, []byte(brokenWrap), 0600)
+	s.NoError(err)
+
+	ci, err := cs.Scan(nodeName)
+
+	s.NoError(err)
+	s.Equal(10*time.Second, sleeper.receivedDuration, "Scan should have waited for maxBackoff")
+	s.Equal(1, sleeper.callCount)
+	s.Equal(nodeName, ci.GetNodeName())
 }
 
 func (s *TestComplianceCachingSuite) TestScanHonorBackoff() {
