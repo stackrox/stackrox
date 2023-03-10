@@ -52,13 +52,7 @@ func NewCachingScanner(analyzer NodeInventorizer, inventoryCachePath string, cac
 // Otherwise, a new scan guarded by a backoff is run by the injected analyzer.
 func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	// Check whether a cached inventory exists that has not exceeded its validity.
-	// On errors, we write a backoff file to ensure we wait before continuing.
-	cachedInv, validUntil, err := readCachedInventory(c.inventoryCachePath)
-	if err != nil {
-		if err := writeBackoff(c.maxBackoff, c.inventoryCachePath); err != nil {
-			return nil, errors.Wrap(err, "writing node scan backoff file")
-		}
-	}
+	cachedInv, validUntil := readCachedInventory(c.inventoryCachePath)
 	if cachedInv != nil && !validUntil.IsZero() && validUntil.After(time.Now()) {
 		log.Debugf("Using cached node scan (valid until %v)", validUntil)
 		return cachedInv, nil
@@ -131,18 +125,18 @@ func writeBackoff(backoff time.Duration, path string) error {
 	return writeInventoryWrap(wrap, path)
 }
 
-func readCachedInventory(path string) (inventory *storage.NodeInventory, validUntil time.Time, err error) {
+func readCachedInventory(path string) (inventory *storage.NodeInventory, validUntil time.Time) {
 	wrap, err := readInventoryWrap(path)
 	if err != nil || wrap == nil || wrap.CachedInventory == "" {
-		return nil, time.Time{}, err
+		return nil, time.Time{}
 	}
 
 	var cachedInv storage.NodeInventory
 	if err := jsonutil.JSONToProto(wrap.CachedInventory, &cachedInv); err != nil {
 		log.Warnf("error unmarshalling node scan from cache: %v", err)
-		return nil, time.Time{}, err
+		return nil, time.Time{}
 	}
-	return &cachedInv, wrap.CacheValidUntil, nil
+	return &cachedInv, wrap.CacheValidUntil
 }
 
 func writeCachedInventory(inventory *storage.NodeInventory, validUntil time.Time, path string) error {

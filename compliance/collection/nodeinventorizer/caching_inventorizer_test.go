@@ -181,7 +181,7 @@ func (s *TestComplianceCachingSuite) TestReadBackoff() {
 	}
 }
 
-func (s *TestComplianceCachingSuite) TestReadBackoffErrorsOnFaultyWrap() {
+func (s *TestComplianceCachingSuite) TestReadBackoffDefaultOnFaultyWrap() {
 	inventoryCachePath := fmt.Sprintf("%s/inventory-cache", s.T().TempDir())
 	brokenWrap := "{\"UnknownKey\":Value}"
 	err := os.WriteFile(inventoryCachePath, []byte(brokenWrap), 0600)
@@ -222,12 +222,11 @@ func (s *TestComplianceCachingSuite) TestScanReadFaultyCachedInventory() {
 	}
 	s.writeWrap(w, inventoryCachePath)
 
-	actualInventory, actualValidity, err := readCachedInventory(inventoryCachePath)
+	actualInventory, actualValidity := readCachedInventory(inventoryCachePath)
 
 	// both actual values should be empty
 	s.Nil(actualInventory)
 	s.Equal(time.Time{}, actualValidity)
-	s.Error(err)
 }
 
 func (s *TestComplianceCachingSuite) TestScanWithoutExistingCacheWritesCache() {
