@@ -17,6 +17,11 @@ var (
 
 // RestoreMigrationVersion - restores the migration version file
 func RestoreMigrationVersion(ctx RestoreFileContext, fileReader io.Reader, _ int64) error {
+	// Skip this if processing a Postgres bundle.
+	if ctx.IsPostgresBundle() {
+		return nil
+	}
+
 	versionFile, err := ctx.OpenFile(migrations.MigrationVersionFile, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return errors.Wrap(err, "could not create migration version file")
