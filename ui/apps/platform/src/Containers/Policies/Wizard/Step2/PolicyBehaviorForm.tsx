@@ -148,13 +148,13 @@ function PolicyBehaviorForm() {
                         </p>
                         <p>
                             Deploy-time policies can include all build-time policy criteria but they
-                            can also include data form your cluster configurations, such as running
+                            can also include data from your cluster configurations, such as running
                             in privileged mode or mounting the Docker socket.
                         </p>
                         <p>
                             Runtime policies can include all build-time and deploy-time policy
-                            criteria but they <strong>must</strong> include one policy criterion
-                            from either process, network flow, audit log events, or Kubernetes
+                            criteria but they <strong>must</strong> include at least one policy
+                            criterion from process, network flow, audit log events, or Kubernetes
                             events criteria categories.
                         </p>
                     </Flex>
