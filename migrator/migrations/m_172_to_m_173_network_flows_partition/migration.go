@@ -104,37 +104,37 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 
 	// Now deal with all the indexes
 	// First the parent indexes
-	for _, statement := range updatedSchema.ParentIndexStmts {
-		if err := executeStatementWithContext(parentCtx, db, statement); err != nil {
-			return err
-		}
-	}
+	//for _, statement := range updatedSchema.ParentIndexStmts {
+	//	if err := executeStatementWithContext(parentCtx, db, statement); err != nil {
+	//		return err
+	//	}
+	//}
 
 	// Now the children
-	for idx, partition := range partitionNames {
-		// Add the index for the cluster
-		for _, index := range updatedSchema.PartitionIndexes {
-			namePart := clusters[idx]
-			difference := 64 - len(index.IndexName) - 2 + len(clusters[idx])
-
-			if difference < 0 {
-				namePart = clusters[idx][:64+difference]
-			}
-
-			officialName := fmt.Sprintf(index.IndexName, strings.ReplaceAll(namePart, "-", "_"))
-			createIndex := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING %s(%s)", officialName, partition, index.IndexType, index.IndexField)
-			log.WriteToStderrf("SHREWS -- %q", createIndex)
-			if err := executeStatementWithContext(parentCtx, db, createIndex); err != nil {
-				return err
-			}
-
-			attachIndex := fmt.Sprintf("alter index %s ATTACH PARTITION %s", index.ParentName, officialName)
-			log.WriteToStderrf("SHREWS -- %q", attachIndex)
-			if err := executeStatementWithContext(parentCtx, db, attachIndex); err != nil {
-				return err
-			}
-		}
-	}
+	//for idx, partition := range partitionNames {
+	//	// Add the index for the cluster
+	//	for _, index := range updatedSchema.PartitionIndexes {
+	//		namePart := clusters[idx]
+	//		difference := 64 - len(index.IndexName) - 2 + len(clusters[idx])
+	//
+	//		if difference < 0 {
+	//			namePart = clusters[idx][:64+difference]
+	//		}
+	//
+	//		officialName := fmt.Sprintf(index.IndexName, strings.ReplaceAll(namePart, "-", "_"))
+	//		createIndex := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING %s(%s)", officialName, partition, index.IndexType, index.IndexField)
+	//		log.WriteToStderrf("SHREWS -- %q", createIndex)
+	//		if err := executeStatementWithContext(parentCtx, db, createIndex); err != nil {
+	//			return err
+	//		}
+	//
+	//		attachIndex := fmt.Sprintf("alter index %s ATTACH PARTITION %s", index.ParentName, officialName)
+	//		log.WriteToStderrf("SHREWS -- %q", attachIndex)
+	//		if err := executeStatementWithContext(parentCtx, db, attachIndex); err != nil {
+	//			return err
+	//		}
+	//	}
+	//}
 
 	// Drop the old table
 	err = gormDB.Migrator().DropTable("network_flows")

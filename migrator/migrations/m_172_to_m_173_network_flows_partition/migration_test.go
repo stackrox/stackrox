@@ -55,9 +55,10 @@ func (s *networkFlowsMigrationTestSuite) TearDownTest() {
 func (s *networkFlowsMigrationTestSuite) TestMigration() {
 	// Add some data to the original tables via the old stores.
 	s.addSomeOldData()
-	_, err := s.db.DB.exec(context.Background, "insert into clusters (id) values ($1)", cluster1)
+
+	_, err := s.db.DB.Exec(context.Background(), "insert into clusters (id) values ($1)", cluster1)
 	s.NoError(err)
-	_, err = s.db.DB.exec(context.Background, "insert into clusters (id) values ($1)", cluster2)
+	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id) values ($1)", cluster2)
 	s.NoError(err)
 
 	dbs := &types.Databases{
