@@ -130,6 +130,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 		return nil, err
 	}
 
+	// Create the paths for the restore directory
 	finalOutputDir := m.finalOutputDir()
 	tempOutputDir := filepath.Join(m.outputRoot, fmt.Sprintf(".restore-%s", process.Metadata().GetId()))
 
