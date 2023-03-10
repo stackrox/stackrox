@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -23,8 +24,6 @@ import (
 
 const (
 	defaultReattachTimeout = 24 * time.Hour
-
-	postgresDumpFileName = "postgres.dump"
 )
 
 // RestoreProcess provides a handle to ongoing database restore processes.
@@ -87,7 +86,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 	files := make([]*restoreFile, 0, len(mfFiles))
 	for i, manifestFile := range mfFiles {
 		// Check to see if we are processing a postgres bundle
-		if manifestFile.GetName() == postgresDumpFileName {
+		if manifestFile.GetName() == backup.PostgresFileName {
 			postgresBundle = true
 		}
 		files = append(files, &restoreFile{
