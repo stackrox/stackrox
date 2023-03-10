@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"net/http"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -12,7 +14,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
+
+const (
+	timeout = 5 * time.Second
+)
+
+var httpClient = &http.Client{
+	Timeout:   timeout,
+	Transport: proxy.Without(),
+}
 
 // GetMetadata tries to obtain the AWS instance metadata.
 // If not on AWS, returns nil, nil.
