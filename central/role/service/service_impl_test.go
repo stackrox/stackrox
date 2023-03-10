@@ -759,7 +759,6 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissionsPagination() {
 			resources.Node.GetResource():         testResourceScope1,
 			resources.Deployment.GetResource():   testResourceScope1,
 			resources.NetworkGraph.GetResource(): testResourceScope2,
-			resources.Image.GetResource():        testResourceScope3,
 		},
 	}
 
