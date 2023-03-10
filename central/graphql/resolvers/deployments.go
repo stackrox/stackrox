@@ -359,15 +359,11 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 	if err != nil {
 		return 0, err
 	}
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, query)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, query)
 	if err != nil {
 		return 0, nil
 	}
-	set := set.NewStringSet()
-	for _, alert := range alerts {
-		set.Add(alert.GetPolicy().GetId())
-	}
-	return int32(set.Cardinality()), nil
+	return int32(count), nil
 }
 
 // FailingRuntimePolicyCount returns count of all runtime policies failing on this deployment (not just unique)
