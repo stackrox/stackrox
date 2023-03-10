@@ -25,6 +25,7 @@ func TestProcessBaselinesCacheStore(t *testing.T) {
 
 func (s *ProcessBaselinesCacheSuite) SetupSuite() {
 	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.BaselineCacheSize.EnvVar(), "20")
 	s.testDB = pgtest.ForT(s.T())
 }
 
@@ -41,10 +42,9 @@ func (s *ProcessBaselinesCacheSuite) TearDownSuite() {
 
 func (s *ProcessBaselinesCacheSuite) TestCacheStore() {
 	dbStore := New(s.testDB.DB)
-	maxCacheSize = 10
-
 	store, err := NewWithCache(dbStore)
 	s.NoError(err)
+
 	ctx := sac.WithAllAccess(context.Background())
 
 	processBaseline := &storage.ProcessBaseline{}

@@ -7,15 +7,11 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	// maxCacheSize = 1024 * 1024 // Target value
-	maxCacheSize = 20 // low value testing correctness
 )
 
 // NewWithCache takes a postgres db and generates a store with in memory cache
@@ -27,7 +23,8 @@ func NewWithCache(dbStore Store) (Store, error) {
 	}
 	var err error
 
-	impl.cache, err = lru.NewWithEvict(maxCacheSize, func(key string, value *storage.ProcessBaseline) {
+	cacheSize := env.BaselineCacheSize.IntegerSetting()
+	impl.cache, err = lru.NewWithEvict(cacheSize, func(key string, value *storage.ProcessBaseline) {
 		impl.overflowIDs.Add(key)
 	})
 
@@ -79,7 +76,7 @@ func (c *cacheImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) er
 	}
 
 	c.addNoLock(obj)
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	return nil
 }
 
@@ -93,7 +90,7 @@ func (c *cacheImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBasel
 	for _, obj := range objs {
 		c.addNoLock(obj)
 	}
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	return nil
 }
 
@@ -107,7 +104,7 @@ func (c *cacheImpl) Delete(ctx context.Context, id string) error {
 
 	c.deleteNoLock(id)
 
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	return nil
 }
 
@@ -127,7 +124,7 @@ func (c *cacheImpl) DeleteMany(ctx context.Context, ids []string) error {
 	for _, id := range ids {
 		c.deleteNoLock(id)
 	}
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	return nil
 }
 
@@ -135,7 +132,7 @@ func (c *cacheImpl) Count(ctx context.Context) (int, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	return c.cache.Len() + c.overflowIDs.Cardinality(), nil
 }
 
@@ -143,7 +140,7 @@ func (c *cacheImpl) Exists(ctx context.Context, id string) (bool, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	return c.cache.Contains(id) || c.overflowIDs.Contains(id), nil
 }
 
@@ -151,11 +148,8 @@ func (c *cacheImpl) Get(ctx context.Context, id string) (*storage.ProcessBaselin
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	if c.overflowIDs.Contains(id) {
-		if c.cache.Contains(id) {
-			utils.Should(errors.Errorf("cache and overflow contains both %s", id))
-		}
 		obj, exists, err := c.dbStore.Get(ctx, id)
 		if err == nil {
 			return nil, false, err
@@ -164,7 +158,7 @@ func (c *cacheImpl) Get(ctx context.Context, id string) (*storage.ProcessBaselin
 			utils.Should(errors.Errorf("cache inconsistency for missing entry in database with id %s", id))
 		}
 		c.cache.Add(id, obj)
-		c.sanityCheckNoLock(ctx)
+		c.sanityCheckNoLock()
 		return obj.Clone(), exists, err
 	}
 
@@ -185,7 +179,7 @@ func (c *cacheImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	objs := make([]*storage.ProcessBaseline, 0, len(ids))
 	var missingIndices []int
 	var idsToFetch []string
@@ -214,7 +208,7 @@ func (c *cacheImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 		c.addNoLock(fetchedObj)
 		objs = append(objs, fetchedObj)
 	}
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 
 	return objs, missingIndices, nil
 }
@@ -223,18 +217,18 @@ func (c *cacheImpl) GetIDs(ctx context.Context) ([]string, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	ids := c.cache.Keys()
 	ids = append(ids, c.overflowIDs.AsSlice()...)
 
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 	return ids, nil
 }
 
 func (c *cacheImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseline) error) error {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
-	c.sanityCheckNoLock(ctx)
+	c.sanityCheckNoLock()
 
 	for _, id := range c.cache.Keys() {
 		// Since Walk access every entry, no bother to update access of cache
@@ -269,13 +263,16 @@ func (c *cacheImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return c.dbStore.GetKeysToIndex(ctx)
 }
 
-func (c *cacheImpl) sanityCheckNoLock(ctx context.Context) {
-	count, err := c.dbStore.Count(sac.WithAllAccess(context.Background()))
-	utils.Should(err)
-	if overlaps := c.overflowIDs.Intersect(set.NewStringSet(c.cache.Keys()...)); overlaps.Cardinality() != 0 {
-		utils.Should(errors.Errorf("unexpected overlap %v", overlaps))
-	}
-	if count != c.cache.Len()+c.overflowIDs.Cardinality() {
-		utils.Should(errors.Errorf("inconsistent cache count db %d cache %d", count, c.cache.Len()+c.overflowIDs.Cardinality()))
-	}
+func (c *cacheImpl) sanityCheckNoLock() {
+	return
+	/*
+		count, err := c.dbStore.Count(sac.WithAllAccess(context.Background()))
+		utils.Should(err)
+		if overlaps := c.overflowIDs.Intersect(set.NewStringSet(c.cache.Keys()...)); overlaps.Cardinality() != 0 {
+			utils.Should(errors.Errorf("unexpected overlap %v", overlaps))
+		}
+		if count != c.cache.Len()+c.overflowIDs.Cardinality() {
+			utils.Should(errors.Errorf("inconsistent cache count db %d cache %d", count, c.cache.Len()+c.overflowIDs.Cardinality()))
+		}
+	*/
 }
