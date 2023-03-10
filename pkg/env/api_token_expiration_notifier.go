@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	APITokenValidityDuration               = registerDurationSetting("", 365*timeutil.HoursInDay*time.Hour)
 	APITokenExpirationNotificationEnabled  = RegisterBooleanSetting("ROX_TOKEN_EXPIRATION_NOTIFICATION_ENABLED", false)
 	APITokenExpirationNotificationInterval = registerDurationSetting("ROX_TOKEN_EXPIRATION_NOTIFIER_INTERVAL" /* default: 1 hour */, 1*time.Hour)
 	APITokenExpirationStaleNotificationAge = registerDurationSetting("ROX_TOKEN_EXPIRATION_NOTIFIER_BACKOFF_INTERVAL" /* default: 1 day  */, timeutil.HoursInDay*time.Hour)
