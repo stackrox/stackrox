@@ -209,12 +209,25 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 		// Track the group properties update with the same device ID
 		// to ensure following events get the properties attached. This is
 		// due to Amplitude partioning by device ID.
-		if err := t.client.Enqueue(segment.Track{
+		track := segment.Track{
 			Event:   "Group Properties Updated",
 			Context: dctx,
-		}); err != nil {
-			log.Error("Cannot enqueue Segment track event: ", err)
 		}
+		go func() {
+			// Segment does not guarantee the processing order of the events,
+			// we need, therefore, to add a delay between Group and Track to
+			// ensure the Track catches the group properties. We do it several
+			// times to raise the chances for the potential events from other
+			// clients coming in between to capture the group properties.
+			for i := 0; i < 3; i++ {
+				if i != 0 {
+					time.Sleep(2 * time.Second)
+				}
+				if err := t.client.Enqueue(track); err != nil {
+					log.Error("Cannot enqueue Segment track event: ", err)
+				}
+			}
+		}()
 	}
 }
 
