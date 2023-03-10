@@ -349,11 +349,11 @@ func (s *policyValidator) compilesForDeployTime(policy *storage.Policy, options 
 func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	// Runtime policies must contain one category of runtime criteria, but can have deploy time criteria as well
 	if !booleanpolicy.ContainsRuntimeFields(policy) {
-		return errors.New("A run time policy must contain at least one policy criterion from process, network flow, audit log events or Kubernetes events criteria categories")
+		return errors.New("A runtime policy must contain at least one policy criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
 	}
 
 	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
-		return errors.New("A run time policy section must contain only one criterion from process, network flow, audit log events or Kubernetes events criteria categories")
+		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
 	}
 
 	var err error
