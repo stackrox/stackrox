@@ -105,6 +105,13 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
 
+    # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
+    # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
+    echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
+    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> scripts/ci/logcheck/allowlist-patterns
+    echo "Unable to connect to Sensor at"
+    echo >> scripts/ci/logcheck/allowlist-patterns
+
     ########################################################################################
     # Use helm to upgrade to a Postgres release.                                           #
     ########################################################################################
@@ -112,8 +119,6 @@ test_upgrade_paths() {
     helm_upgrade_to_postgres
     wait_for_api
     wait_for_scanner_to_be_ready
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     # Upgraded to Postgres via helm.  Validate the upgrade.
     validate_upgrade "00_upgrade" "central upgrade to postgres" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
@@ -161,11 +166,6 @@ test_upgrade_paths() {
     checkForPostgresAccessScopes
 
     validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-
-    # Since we bounced the DB we may see some errors.  Those need to be allowed in the case of this test ONLY.
-    echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
-    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> scripts/ci/logcheck/allowlist-patterns
-    echo >> scripts/ci/logcheck/allowlist-patterns
 
     collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
 
@@ -226,9 +226,6 @@ test_upgrade_paths() {
         "compliance=$REGISTRY/main:$CURRENT_TAG"
 
     sensor_wait
-
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     wait_for_central_reconciliation
 
@@ -320,7 +317,7 @@ deploy_scaled_workload() {
 
     info "Sleep for a bit to let the scale build"
     # shellcheck disable=SC2034
-    for i in $(seq 1 200); do
+    for i in $(seq 1 150); do
         echo -n .
         sleep 5
     done
