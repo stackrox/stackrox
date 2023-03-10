@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	//#nosec G101 -- This is a false positive
 	tokenURL = `http://169.254.169.254/latest/api/token`
 	pkcs7URL = `http://169.254.169.254/latest/dynamic/instance-identity/pkcs7`
 )
