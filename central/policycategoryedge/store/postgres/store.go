@@ -424,10 +424,12 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	if !scopeChecker.IsAllowed() {
 		return nil, nil
 	}
+	pagination := query.GetPagination()
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		query,
 	)
+	q.Pagination = pagination
 
 	rows, err := pgSearch.RunGetManyQueryForSchema[storage.PolicyCategoryEdge](ctx, schema, q, s.db)
 	if err != nil {
