@@ -8,6 +8,8 @@ import (
 )
 
 // awsCerts lists all known AWS certificates as of time of writing.
+// See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/verify-pkcs7.html
+// for the current list of certificates.
 //
 // Note: THIS CAN BE BRITTLE. THERE IS NO GUARANTEE THESE CERTS WILL LAST FOREVER.
 // See https://github.com/aws/aws-sdk-go/pull/1593#pullrequestreview-70664445.

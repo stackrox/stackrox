@@ -20,11 +20,14 @@ const (
 )
 
 func getIdentityDocFromPKCS7(ctx context.Context) (*ec2metadata.EC2InstanceIdentityDocument, error) {
+	// IMDSv2 requires the retrieval of a token before retrieving the PKSC7 signature.
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, tokenURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("X-aws-ec2-metadata-token-ttl-seconds", "21600")
+	// Set the TTL to about 1 year. The number was taken directly from the instructions
+	// at https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/verify-pkcs7.html.
+	req.Header.Set("X-aws-ec2-metadata-token-ttl-seconds", "21600")
 
 	resp, err := httpClient.Do(req)
 	// Assume the service is unavailable if we encounter a transport error or a non-2xx status code
@@ -46,7 +49,8 @@ func getIdentityDocFromPKCS7(ctx context.Context) (*ec2metadata.EC2InstanceIdent
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("X-aws-ec2-metadata-token", string(token))
+	// IMDSv2 requires we provide a token to the PKCS7 URL.
+	req.Header.Set("X-aws-ec2-metadata-token", string(token))
 
 	resp, err = httpClient.Do(req)
 	// Assume the service is unavailable if we encounter a transport error or a non-2xx status code
@@ -75,10 +79,10 @@ func getIdentityDocFromPKCS7(ctx context.Context) (*ec2metadata.EC2InstanceIdent
 		return nil, errors.Wrap(err, "verifying PKCS7 signature")
 	}
 
-	var instanceIDDoc ec2metadata.EC2InstanceIdentityDocument
-	if err := json.Unmarshal(pkcs7Data.Content, &instanceIDDoc); err != nil {
+	instanceIDDoc := &ec2metadata.EC2InstanceIdentityDocument{}
+	if err := json.Unmarshal(pkcs7Data.Content, instanceIDDoc); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling instance identity document")
 	}
 
-	return &instanceIDDoc, nil
+	return instanceIDDoc, nil
 }
