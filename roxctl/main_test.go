@@ -47,7 +47,7 @@ func TestSetDescription(t *testing.T) {
 			cmd: &cobra.Command{
 				Use: "version",
 			},
-			short: "Display the current roxctl version.",
+			short: "Display the current roxctl version",
 			long:  "Display the current roxctl version.",
 		},
 	}
