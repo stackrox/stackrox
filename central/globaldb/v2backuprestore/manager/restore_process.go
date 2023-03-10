@@ -83,11 +83,10 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 	if len(mfFiles) != len(handlerFuncs) {
 		return nil, utils.ShouldErr(errors.Errorf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles)))
 	}
-	log.Infof("SHREWS -- mFiles %v", mfFiles)
 
 	files := make([]*restoreFile, 0, len(mfFiles))
 	for i, manifestFile := range mfFiles {
-		log.Infof("SHREWS -- manifestFile %v", manifestFile.GetName())
+		// Check to see if we are processing a postgres bundle
 		if manifestFile.GetName() == postgresDumpFileName {
 			postgresBundle = true
 		}
@@ -162,7 +161,7 @@ func (p *restoreProcess) run(tempOutputDir, finalDir string) {
 }
 
 func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir string) error {
-	// If postgres bundle, skip
+	// If processing a postgres bundle, do not create the restore directories
 	if !p.postgresBundle {
 		if err := os.MkdirAll(tempOutputDir, 0700); err != nil {
 			return errors.Wrapf(err, "could not create temporary output directory %s", tempOutputDir)
@@ -180,7 +179,7 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir stri
 		return err
 	}
 
-	// If postgres bundle, skip
+	// If processing a postgres bundle, do not update the restore symlink
 	if !p.postgresBundle {
 		if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
 			return errors.Wrapf(err, "failed to atomically create a symbolic link to restore directory %s", tempOutputDir)
