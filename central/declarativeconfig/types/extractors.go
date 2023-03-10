@@ -12,7 +12,7 @@ import (
 // IDExtractor extracts the ID from proto messages.
 type IDExtractor func(m proto.Message) string
 
-// NameExtractor extracts the ID from proto messages.
+// NameExtractor extracts the name from proto messages.
 type NameExtractor func(m proto.Message) string
 
 // UniversalIDExtractor provides a way to extract the ID from proto messages.

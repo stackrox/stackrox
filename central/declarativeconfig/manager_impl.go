@@ -280,10 +280,7 @@ func (m *managerImpl) updateHealthForMessage(handler string, message proto.Messa
 		}
 		log.Debugf("Error within reconciliation for %+v: %v", message, err)
 	} else {
-		currentDeclarativeConfigErrors := m.errorsPerDeclarativeConfig[messageID]
-		if currentDeclarativeConfigErrors > 0 {
-			m.errorsPerDeclarativeConfig[messageID] = 0
-		}
+		m.errorsPerDeclarativeConfig[messageID] = 0
 		m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
 			Id:            messageID,
 			Name:          messageName,
