@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -99,6 +100,7 @@ func deploymentsWithMostSevereViolations(ctx context.Context, resolver *Resolver
 		return nil, err
 	}
 
+	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
 	alerts, err := resolver.ViolationsDataStore.SearchListAlerts(ctx, q)
 	if err != nil {
 		return nil, err

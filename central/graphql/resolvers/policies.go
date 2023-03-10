@@ -13,6 +13,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -182,6 +183,8 @@ func (resolver *policyResolver) FailingDeployments(ctx context.Context, args Pag
 func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Query) ([]*deploymentResolver, error) {
 	alertsQuery := search.ConjunctionQuery(resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+
+	alertsQuery = paginated.FillDefaultSortOption(alertsQuery, paginated.ViolationTimeSortOption)
 	listAlerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, alertsQuery)
 	if err != nil {
 		return nil, err
