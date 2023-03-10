@@ -3,8 +3,9 @@ import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
 
 import { Cluster } from 'types/cluster.proto';
 import useURLSearch from 'hooks/useURLSearch';
-import { useEnrichNamespacesWithDeploymentCounts } from 'hooks/useEnrichNamespacesWithDeploymentCounts';
-import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNamespacesForPermissions';
+// import { useEnrichNamespacesWithDeploymentCounts } from 'hooks/useEnrichNamespacesWithDeploymentCounts';
+// import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNamespacesForPermissions';
+import { useFetchClusterNamespacesWithDeploymentCountForPermissions } from 'hooks/useFetchClusterNamespaceWithDeploymentCountForPermissions';
 import useFetchNamespaceDeployments from 'hooks/useFetchNamespaceDeployments';
 import ClusterSelector from './ClusterSelector';
 import NamespaceSelector from './NamespaceSelector';
@@ -25,12 +26,19 @@ function NetworkBreadcrumbs({
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
+    /*
     const fetchedNamespaces = useFetchClusterNamespacesForPermissions(
         ['NetworkGraph', 'Deployment'],
         selectedCluster?.id
     );
     const { namespaces } = useEnrichNamespacesWithDeploymentCounts(
         fetchedNamespaces.namespaces,
+        selectedCluster?.id
+    );
+
+     */
+    const { namespaces } = useFetchClusterNamespacesWithDeploymentCountForPermissions(
+        ['Deployment', 'NetworkGraph'],
         selectedCluster?.id
     );
     const selectedNamespaceIds = namespaces.reduce<string[]>((acc: string[], namespace) => {
