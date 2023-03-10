@@ -96,6 +96,7 @@ func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsR
 	}
 
 	paginated.FillPagination(q, request.GetPagination(), math.MaxInt32)
+	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
 
 	alerts, err := ds.SearchListAlerts(ctx, q)
 	if err != nil {
