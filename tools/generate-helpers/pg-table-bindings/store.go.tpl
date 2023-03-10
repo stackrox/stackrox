@@ -833,10 +833,12 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
 	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
+    pagination := query.GetPagination()
     q := search.ConjunctionQuery(
         sacQueryFilter,
         query,
     )
+    q.Pagination = pagination
 
 	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
