@@ -36,8 +36,8 @@ type inventoryWrap struct {
 }
 
 type cacheState struct {
-	CachedInventory *storage.NodeInventory
-	BackoffDuration time.Duration
+	inventory *storage.NodeInventory
+	backoff   time.Duration
 }
 
 // NewCachingScanner returns a ready to use instance of Caching Scanner
@@ -58,12 +58,12 @@ func NewCachingScanner(analyzer NodeInventorizer, inventoryCachePath string, cac
 func (c *CachingScanner) Scan(nodeName string) (*storage.NodeInventory, error) {
 	cache := c.readCacheState(c.inventoryCachePath)
 
-	if cache.CachedInventory != nil {
-		return cache.CachedInventory, nil
+	if cache.inventory != nil {
+		return cache.inventory, nil
 	}
 
 	// check for existing backoff, wait for specified duration if needed, then persist the new backoff duration
-	backoffDuration := cache.BackoffDuration
+	backoffDuration := cache.backoff
 	if backoffDuration > 0 {
 		backoffDuration = min(backoffDuration, c.maxBackoff)
 		log.Warnf("Found existing node scan backoff - last scan may have failed. Waiting %v seconds before retrying", backoffDuration.Seconds())
@@ -101,58 +101,37 @@ func (c *CachingScanner) calcNextBackoff(currentBackoff time.Duration) time.Dura
 func (c *CachingScanner) readCacheState(path string) *cacheState {
 	wrap, err := readInventoryWrap(path)
 	if err != nil {
-		return &cacheState{
-			CachedInventory: nil,
-			BackoffDuration: c.maxBackoff,
-		}
+		return &cacheState{inventory: nil, backoff: c.maxBackoff}
 	}
 
 	// This will happen on the first run or if the cache was removed somehow
 	if wrap == nil {
-		return &cacheState{
-			CachedInventory: nil,
-			BackoffDuration: 0,
-		}
+		return &cacheState{inventory: nil, backoff: 0}
 	}
 
 	// Parse backoff
 	backoff, err := time.ParseDuration(wrap.RetryBackoffDuration)
 	if err != nil {
-		return &cacheState{
-			CachedInventory: nil,
-			BackoffDuration: c.maxBackoff,
-		}
+		return &cacheState{inventory: nil, backoff: c.maxBackoff}
 	}
 	if backoff > 0 {
-		return &cacheState{
-			CachedInventory: nil,
-			BackoffDuration: backoff,
-		}
+		return &cacheState{inventory: nil, backoff: backoff}
 	}
 
 	// Check if the inventory is too old
 	if wrap.CacheValidUntil.Before(time.Now()) {
-		return &cacheState{
-			CachedInventory: nil,
-			BackoffDuration: 0,
-		}
+		return &cacheState{inventory: nil, backoff: 0}
 	}
 
 	// Parse cached inventory
 	var cachedInv storage.NodeInventory
 	if err := jsonutil.JSONToProto(wrap.CachedInventory, &cachedInv); err != nil {
 		log.Warnf("error unmarshalling node scan from cache: %v", err)
-		return &cacheState{
-			CachedInventory: nil,
-			BackoffDuration: c.maxBackoff,
-		}
+		return &cacheState{inventory: nil, backoff: c.maxBackoff}
 	}
 
 	log.Debugf("Using cached node scan (valid until %v)", wrap.CacheValidUntil)
-	return &cacheState{
-		CachedInventory: &cachedInv,
-		BackoffDuration: 0,
-	}
+	return &cacheState{inventory: &cachedInv, backoff: 0}
 }
 
 func min(d1 time.Duration, d2 time.Duration) time.Duration {
