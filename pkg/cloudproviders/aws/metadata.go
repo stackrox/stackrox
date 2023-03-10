@@ -75,6 +75,9 @@ func identityDocFromPKCS7(ctx context.Context, mdClient *ec2metadata.EC2Metadata
 		return nil, err
 	}
 
+	// It is probably possible to determine which certificate to use
+	// based on the region returned by the metadata service,
+	// but there is no harm in just checking all known certs.
 	pks7.Certificates = awsCerts
 	if err := pks7.Verify(); err != nil {
 		return nil, errors.Wrap(err, "verifying PKCS7 signature")
