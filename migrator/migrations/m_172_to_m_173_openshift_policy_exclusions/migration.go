@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	postgresHelper "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_openshift_policy_exclusion/postgres"
+	postgresHelper "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_openshift_policy_exclusions/postgres"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
