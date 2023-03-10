@@ -225,27 +225,14 @@ func (m *managerImpl) runReconciliation() {
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
 	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
-	m.doReconciliation(transformedMessagesByHandler, protoTypesOrder, func(handler string, typeUpdater updater.ResourceUpdater, messages []proto.Message) {
-		for _, message := range messages {
-			err := typeUpdater.Upsert(m.reconciliationCtx, message)
-			m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
-		}
-	})
-	// We inverse the proto types order of insertion, to potentially avoid stale references / errors during the
-	// reconciliation.
-	m.doReconciliation(transformedMessagesByHandler, sliceutils.Reversed(protoTypesOrder), func(handler string, typeUpdater updater.ResourceUpdater, messages []proto.Message) {
-		idsToSkip := make([]string, 0, len(messages))
-		for _, message := range messages {
-			idsToSkip = append(idsToSkip, m.idExtractor(message))
-		}
-		log.Debugf("Running deletion with resource updater %T, skipping IDs %+v", typeUpdater, idsToSkip)
-		err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
-		log.Debugf("Finished deletion, return value: %+v", err)
-	})
+	if ok := m.doReconciliation(transformedMessagesByHandler); !ok {
+		// We ran into an issue during reconciliation that is irrecoverable, i.e. a missing type updater, and return.
+		return
+	}
+	m.doDeletion(transformedMessagesByHandler)
 }
 
-func (m *managerImpl) doReconciliation(transformedMessagesByHandler map[string]protoMessagesByType,
-	protoTypesOrder []reflect.Type, action func(handler string, typeUpdater updater.ResourceUpdater, messages []proto.Message)) {
+func (m *managerImpl) doReconciliation(transformedMessagesByHandler map[string]protoMessagesByType) bool {
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
@@ -255,10 +242,31 @@ func (m *managerImpl) doReconciliation(transformedMessagesByHandler map[string]p
 			typeUpdater, hasUpdater := m.updaters[protoType]
 			if !hasUpdater {
 				m.handleMissingTypeUpdater(handler, protoType, messages)
-				return
+				return false
 			}
-			action(handler, typeUpdater, messages)
+			for _, message := range messages {
+				err := typeUpdater.Upsert(m.reconciliationCtx, message)
+				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
+			}
 		}
+	}
+	return true
+}
+
+func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
+	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
+	for _, protoType := range reversedProtoTypes {
+		var idsToSkip []string
+		for _, protoMessageByType := range transformedMessagesByHandler {
+			messages := protoMessageByType[protoType]
+			for _, message := range messages {
+				idsToSkip = append(idsToSkip, m.idExtractor(message))
+			}
+		}
+		typeUpdater := m.updaters[protoType]
+		log.Debugf("Running deletion with resource updater %T, skipping IDs %+v", typeUpdater, idsToSkip)
+		err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
+		log.Debugf("Finished deletion, return value: %+v", err)
 	}
 }
 
