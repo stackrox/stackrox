@@ -7,11 +7,18 @@ import (
 )
 
 var (
-	APITokenValidityDuration               = registerDurationSetting("", 365*timeutil.HoursInDay*time.Hour)
-	APITokenExpirationNotificationEnabled  = RegisterBooleanSetting("ROX_TOKEN_EXPIRATION_NOTIFICATION_ENABLED", false)
+	// APITokenValidityDuration is the duration during which a generated API Token is valid.
+	APITokenValidityDuration = registerDurationSetting("", 365*timeutil.HoursInDay*time.Hour)
+	// APITokenExpirationNotificationEnabled gives the content of the env variable in charge of enabling notifications for expiring API tokens.
+	APITokenExpirationNotificationEnabled = RegisterBooleanSetting("ROX_TOKEN_EXPIRATION_NOTIFICATION_ENABLED", false)
+	// APITokenExpirationNotificationInterval is the duration of the interval between two notification loop runs.
 	APITokenExpirationNotificationInterval = registerDurationSetting("ROX_TOKEN_EXPIRATION_NOTIFIER_INTERVAL" /* default: 1 hour */, 1*time.Hour)
+	// APITokenExpirationStaleNotificationAge is the duration during which no new notification will be sent out.
 	APITokenExpirationStaleNotificationAge = registerDurationSetting("ROX_TOKEN_EXPIRATION_NOTIFIER_BACKOFF_INTERVAL" /* default: 1 day  */, timeutil.HoursInDay*time.Hour)
-	APITokenExpirationExpirationWindow     = registerDurationSetting("ROX_TOKEN_EXPIRATION_DETECTION_WINDOW" /* default: 1 week */, timeutil.DaysInWeek*timeutil.HoursInDay*time.Hour)
-	APITokenExpirationExpirationSlice      = registerDurationSetting("ROX_TOKEN_EXPIRATION_LOG_SLICE_DURATION" /* default: 1 day */, timeutil.HoursInDay*time.Hour)
-	APITokenExpirationExpirationSliceName  = RegisterSetting("ROX_TOKEN_EXPIRATION_LOG_SLICE_DURATION_NAME", WithDefault("day"))
+	// APITokenExpirationExpirationWindow is the duration of the window taken from the current point in time during which token expiration date will trigger notification.
+	APITokenExpirationExpirationWindow = registerDurationSetting("ROX_TOKEN_EXPIRATION_DETECTION_WINDOW" /* default: 1 week */, timeutil.DaysInWeek*timeutil.HoursInDay*time.Hour)
+	// APITokenExpirationExpirationSlice is the duration of the slice used to generate the expiration log
+	APITokenExpirationExpirationSlice = registerDurationSetting("ROX_TOKEN_EXPIRATION_LOG_SLICE_DURATION" /* default: 1 day */, timeutil.HoursInDay*time.Hour)
+	// APITokenExpirationExpirationSliceName is the name used for the time slice described by APITokenExpirationExpirationSlice
+	APITokenExpirationExpirationSliceName = RegisterSetting("ROX_TOKEN_EXPIRATION_LOG_SLICE_DURATION_NAME", WithDefault("day"))
 )
