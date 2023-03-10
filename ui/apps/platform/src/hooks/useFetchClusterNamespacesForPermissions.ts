@@ -21,7 +21,7 @@ const emptyResponse: NamespaceResponse = {
 
 export function useFetchClusterNamespacesForPermissions(
     permissions: string[],
-    selectedClusterId?: string|null
+    selectedClusterId?: string | null
 ) {
     const [requestedPermissions] = useState<string[]>(permissions);
     const [namespaceResponse, setNamespaceResponse] = useState<NamespaceResponse>(emptyResponse);
