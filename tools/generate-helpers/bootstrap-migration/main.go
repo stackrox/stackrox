@@ -40,6 +40,12 @@ var (
 	seqNumTemplate        = newTemplate(seqNumFile)
 )
 
+func closeFile(file *os.File) {
+	if err := file.Close(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error closing file %q\n", file.Name())
+	}
+}
+
 func main() {
 	c := &cobra.Command{
 		Use: "bootstrap datastore migration",
@@ -137,7 +143,7 @@ func getMigrationDirName(startVersion int, description string) string {
 func readRegistrationFileAndRegisterMigration(registrationFilePath string, migrationDirName string) ([]string, error) {
 	newFileLines := make([]string, 0)
 	readFile, err := os.Open(registrationFilePath)
-	defer readFile.Close()
+	defer closeFile(readFile)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +182,7 @@ func registerMigration(registrationFilePath string, migrationDirName string) err
 	}
 	// Write back
 	writeFile, err := os.OpenFile(registrationFilePath, os.O_RDWR, 0644)
-	defer writeFile.Close()
+	defer closeFile(writeFile)
 	if err != nil {
 		return err
 	}
