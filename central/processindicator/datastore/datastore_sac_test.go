@@ -210,7 +210,7 @@ func (s *processIndicatorDatastoreSACSuite) TestUnrestrictedSearchRaw() {
 
 func (s *processIndicatorDatastoreSACSuite) runSearchRawTest(c sacTestUtils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
-	results, err := s.datastore.SearchRawProcessIndicators(ctx, nil)
+	results, err := s.datastore.SearchRawProcessIndicators(ctx, searchPkg.NewQueryBuilder().AddStrings(searchPkg.ProcessID, searchPkg.WildcardString).ProtoQuery())
 	s.Require().NoError(err)
 	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
 	for i := range results {
