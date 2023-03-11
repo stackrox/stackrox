@@ -25,7 +25,10 @@ type datastoreImpl struct {
 
 // GetAllAuthProviders retrieves authProviders.
 func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error) {
-	// No SAC checks here because all users need to be able to read auth providers in order to authenticate.
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+
 	return b.storage.GetAll(ctx)
 }
 
@@ -34,7 +37,7 @@ func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-	// TODO(ROX-XXXXX): The store currently doesn't provide a Walk function. This is mostly due to us supporting the
+	// TODO(ROX-15902): The store currently doesn't provide a Walk function. This is mostly due to us supporting the
 	// old bolt store. Once we deprecate old store solutions with the 4.0.0 release, this should be changed to use
 	// store.Walk.
 	authProviders, err := b.storage.GetAll(ctx)

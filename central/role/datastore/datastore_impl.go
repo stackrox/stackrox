@@ -144,23 +144,21 @@ func (ds *dataStoreImpl) UpsertAccessScope(ctx context.Context, newScope *storag
 }
 
 func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Role, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, false, err
 	}
-
 	return ds.roleStorage.Get(ctx, name)
 }
 
 func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
 	return ds.getAllRolesNoScopeCheck(ctx)
 }
 
 func (ds *dataStoreImpl) GetRolesFiltered(ctx context.Context, filter func(role *storage.Role) bool) ([]*storage.Role, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -181,7 +179,7 @@ func (ds *dataStoreImpl) GetRolesFiltered(ctx context.Context, filter func(role 
 }
 
 func (ds *dataStoreImpl) CountRoles(ctx context.Context) (int, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return 0, err
 	}
 
@@ -288,18 +286,16 @@ func verifyRoleOrigin(ctx context.Context, role *storage.Role) error {
 //                                                                            //
 
 func (ds *dataStoreImpl) GetPermissionSet(ctx context.Context, id string) (*storage.PermissionSet, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, false, err
 	}
-
 	return ds.permissionSetStorage.Get(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
 	var permissionSets []*storage.PermissionSet
 	walkFn := func() error {
 		permissionSets = permissionSets[:0]
@@ -317,10 +313,9 @@ func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.P
 
 func (ds *dataStoreImpl) GetPermissionSetsFiltered(ctx context.Context,
 	filter func(permissionSet *storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
 	var filteredPermissionSets []*storage.PermissionSet
 	walkFn := func() error {
 		filteredPermissionSets = filteredPermissionSets[:0]
@@ -339,10 +334,9 @@ func (ds *dataStoreImpl) GetPermissionSetsFiltered(ctx context.Context,
 }
 
 func (ds *dataStoreImpl) CountPermissionSets(ctx context.Context) (int, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return 0, err
 	}
-
 	return ds.permissionSetStorage.Count(ctx)
 }
 
@@ -463,18 +457,16 @@ func verifyPermissionSetOrigin(ctx context.Context, ps *storage.PermissionSet) e
 //                                                                            //
 
 func (ds *dataStoreImpl) GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, false, err
 	}
-
 	return ds.accessScopeStorage.Get(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.SimpleAccessScope, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
 	var scopes []*storage.SimpleAccessScope
 	walkFn := func() error {
 		scopes = scopes[:0]
@@ -492,10 +484,9 @@ func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.Sim
 
 func (ds *dataStoreImpl) GetAccessScopesFiltered(ctx context.Context,
 	filter func(accessScope *storage.SimpleAccessScope) bool) ([]*storage.SimpleAccessScope, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
 	var filteredScopes []*storage.SimpleAccessScope
 	walkFn := func() error {
 		filteredScopes = filteredScopes[:0]
@@ -514,10 +505,9 @@ func (ds *dataStoreImpl) GetAccessScopesFiltered(ctx context.Context,
 }
 
 func (ds *dataStoreImpl) CountAccessScopes(ctx context.Context) (int, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return 0, err
 	}
-
 	return ds.accessScopeStorage.Count(ctx)
 }
 
@@ -627,7 +617,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 }
 
 func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (permissions.ResolvedRole, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
 

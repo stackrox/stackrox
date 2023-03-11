@@ -55,6 +55,19 @@ func (s *authProviderDataStoreEnforceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
+func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesGetAll() {
+	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).AnyTimes()
+
+	_, err := s.dataStore.GetAllAuthProviders(s.hasNoneCtx)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	_, err = s.dataStore.GetAllAuthProviders(s.hasReadCtx)
+	s.NoError(err)
+
+	_, err = s.dataStore.GetAllAuthProviders(s.hasWriteCtx)
+	s.NoError(err)
+}
+
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesAdd() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
@@ -159,6 +172,7 @@ func (s *authProviderDataStoreTestSuite) TestGetFiltered() {
 		return authProvider.GetName() == "some-name-1"
 	})
 	s.NoError(err)
+	s.Len(filteredAuthProviders, 1)
 	s.ElementsMatch(filteredAuthProviders, []*storage.AuthProvider{authProviders[0]})
 }
 

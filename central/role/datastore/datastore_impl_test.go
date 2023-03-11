@@ -186,17 +186,17 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 	badRole := getInvalidRole("new invalid role")
 
 	role, found, err := s.dataStore.GetRole(s.hasNoneCtx, s.existingRole.GetName())
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found, "not found")
 	s.Nil(role)
 
 	role, found, err = s.dataStore.GetRole(s.hasNoneCtx, goodRole.GetName())
-	s.NoError(err, "no error even if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found, "not found")
 	s.Nil(role)
 
 	roles, err := s.dataStore.GetAllRoles(s.hasNoneCtx)
-	s.NoError(err, "no access for GetAll*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Empty(roles)
 
 	err = s.dataStore.AddRole(s.hasNoneCtx, goodRole)
@@ -396,17 +396,17 @@ func (s *roleDataStoreTestSuite) TestPermissionSetPermissions() {
 	badPermissionSet := getInvalidPermissionSet("permissionset.invalid", "new invalid permission set")
 
 	permissionSet, found, err := s.dataStore.GetPermissionSet(s.hasNoneCtx, s.existingPermissionSet.GetId())
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found)
 	s.Nil(permissionSet)
 
 	permissionSet, found, err = s.dataStore.GetPermissionSet(s.hasNoneCtx, goodPermissionSet.GetId())
-	s.NoError(err, "no error even if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found)
 	s.Nil(permissionSet)
 
 	permissionSets, err := s.dataStore.GetAllPermissionSets(s.hasNoneCtx)
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Empty(permissionSets)
 
 	err = s.dataStore.AddPermissionSet(s.hasNoneCtx, goodPermissionSet)
@@ -637,17 +637,17 @@ func (s *roleDataStoreTestSuite) TestAccessScopePermissions() {
 	badScope := getInvalidAccessScope("scope.invalid", "new invalid scope")
 
 	scope, found, err := s.dataStore.GetAccessScope(s.hasNoneCtx, s.existingScope.GetId())
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found)
 	s.Nil(scope)
 
 	scope, found, err = s.dataStore.GetAccessScope(s.hasNoneCtx, goodScope.GetId())
-	s.NoError(err, "no error even if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found)
 	s.Nil(scope)
 
 	scopes, err := s.dataStore.GetAllAccessScopes(s.hasNoneCtx)
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Empty(scopes)
 
 	err = s.dataStore.AddAccessScope(s.hasNoneCtx, goodScope)
@@ -891,7 +891,7 @@ func (s *roleDataStoreTestSuite) TestGetAndResolveRole() {
 	noScopeRole := getValidRole("role without a scope", s.existingPermissionSet.GetId(), "")
 
 	resolvedRole, err := s.dataStore.GetAndResolveRole(s.hasNoneCtx, s.existingRole.GetName())
-	s.NoError(err, "no access for GetAndResolveRole() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Nil(resolvedRole)
 
 	resolvedRole, err = s.dataStore.GetAndResolveRole(s.hasReadCtx, noScopeRole.GetName())
