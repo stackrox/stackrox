@@ -104,7 +104,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Infof("val= %+v", val)
 			}
 			if existingPLOP.CloseTimestamp == nil && val.CloseTimestamp == nil {
-				log.Infof("Got two consecutive close plops")
+				log.Infof("Got two consecutive open plops")
 				log.Infof("existingPLOP= %+v", existingPLOP)
 				log.Infof("val= %+v", val)
 			}
@@ -168,7 +168,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Infof("val= %+v", val)
 			}
 			if existingPLOP.CloseTimestamp == nil && val.CloseTimestamp == nil {
-				log.Infof("Got two consecutive close plops")
+				log.Infof("Got two consecutive open plops")
 				log.Infof("existingPLOP= %+v", existingPLOP)
 				log.Infof("val= %+v", val)
 			}
