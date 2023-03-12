@@ -57,4 +57,5 @@ message ProcessListeningOnPortStorage {
     // ProcessIndicator will be not empty only for those cases when we were not
     // able to find references process in the database
     ProcessIndicatorUniqueKey process = 7;
+    google.protobuf.Timestamp time_first_seen = 8;
 }
