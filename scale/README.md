@@ -4,14 +4,14 @@ This quickstart guide is for anyone looking to quickly test performance scenario
 
 To start a scale simulation, run the following from the root of the stackrox repo:
 
+**Note that this is a destructive operation on your current active `kubectx` cluster that cannot be easily undone.**
+
 ```sh
 cd scale
 ./launch_workload.sh <workload_name>
 # <workload_name> is the name of a yaml file in the `workloads` directory, without file extension
 # e.g. $ ./launch_workload.sh xlarge
 ```
-
-**Note that this is a destructive operation on your current active `kubectx` cluster that cannot be easily undone.**
 
 ## Overview
 
