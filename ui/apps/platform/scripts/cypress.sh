@@ -27,9 +27,7 @@ if [[ -n "${UI_BASE_URL}" ]]; then
 fi
 
 # be able to skip tests that are not relevant, for example: openshift
-if [[ -n "${ORCHESTRATOR_FLAVOR}" ]]; then
-  export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
-fi
+export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
 if [ $2 == "--spec" ]; then
     if [ $# -ne 3 ]; then
