@@ -4,6 +4,7 @@ package expiration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -130,4 +131,28 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectExpiredToken() {
 	s.NoError(err)
 	expectedResults := []*storage.TokenMetadata{}
 	s.ElementsMatch(expectedResults, fetchedTokens)
+}
+
+func (s *apiTokenExpirationNotifierTestSuite) TestLogGeneration() {
+	now := time.Now()
+	sliceDuration := time.Hour
+	sliceName := "hour"
+
+	generated1 := now.Add(-(3*time.Hour + 10*time.Minute))
+	expiration1 := now.Add(2*time.Hour - 10*time.Minute)
+	token1 := generateToken(&generated1, &expiration1, false)
+	log1 := generateExpiringTokenLog(token1, now, sliceDuration, sliceName)
+	s.Equal(fmt.Sprintf("API Token %s (ID %s) will expire in less than 2 hours.", token1.GetName(), token1.GetId()), log1)
+
+	generated2 := now.Add(-(4*time.Hour + 10*time.Minute))
+	expiration2 := now.Add(1*time.Hour - 10*time.Minute)
+	token2 := generateToken(&generated2, &expiration2, false)
+	log2 := generateExpiringTokenLog(token1, now, sliceDuration, sliceName)
+	s.Equal(fmt.Sprintf("API Token %s (ID %s) will expire in less than 1 hour.", token2.GetName(), token2.GetId()), log2)
+
+	generated3 := now.Add(-2 * time.Hour)
+	expiration3 := now.Add(3 * time.Hour)
+	token3 := generateToken(&generated3, &expiration3, false)
+	log3 := generateExpiringTokenLog(token1, now, sliceDuration, sliceName)
+	s.Equal(fmt.Sprintf("API Token %s (ID %s) will expire in less than 3 hours.", token3.GetName(), token3.GetId()), log3)
 }

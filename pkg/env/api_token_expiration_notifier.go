@@ -7,10 +7,6 @@ import (
 )
 
 var (
-	// APITokenValidityDuration is the duration during which a generated API Token is valid.
-	APITokenValidityDuration = registerDurationSetting("ROX_TOKEN_VALIDITY_DURATION", 365*timeutil.HoursInDay*time.Hour)
-	// APITokenExpirationNotificationEnabled gives the content of the env variable in charge of enabling notifications for expiring API tokens.
-	APITokenExpirationNotificationEnabled = RegisterBooleanSetting("ROX_TOKEN_EXPIRATION_NOTIFICATION_ENABLED", false)
 	// APITokenExpirationNotificationInterval is the duration of the interval between two notification loop runs.
 	APITokenExpirationNotificationInterval = registerDurationSetting("ROX_TOKEN_EXPIRATION_NOTIFIER_INTERVAL" /* default: 1 hour */, 1*time.Hour)
 	// APITokenExpirationStaleNotificationAge is the duration during which no new notification will be sent out.

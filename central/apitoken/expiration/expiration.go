@@ -46,16 +46,24 @@ type TokenExpirationLoop interface {
 	Stop()
 }
 
+// TokenExpirationNotifier is the interface for any mechanism that notifies that API Tokens are about to expire
+type TokenExpirationNotifier interface {
+	Notify([]*storage.TokenMetadata) error
+}
+
 type expirationNotifierImpl struct {
 	store datastore.DataStore
 
 	stopper concurrency.Stopper
+
+	notifier TokenExpirationNotifier
 }
 
 func newExpirationNotifier(store datastore.DataStore) *expirationNotifierImpl {
 	return &expirationNotifierImpl{
-		store:   store,
-		stopper: concurrency.NewStopper(),
+		store:    store,
+		stopper:  concurrency.NewStopper(),
+		notifier: &logExpirationNotifier{},
 	}
 }
 
@@ -96,10 +104,6 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 		return
 	}
 
-	// Skip if not activated
-	if !env.APITokenExpirationNotificationEnabled.BooleanSetting() {
-		return
-	}
 	now := time.Now()
 	aboutToExpireDate := now.Add(env.APITokenExpirationExpirationWindow.DurationSetting())
 	staleNotificationDate := now.Add(-env.APITokenExpirationStaleNotificationAge.DurationSetting())
@@ -135,7 +139,7 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 		log.Error("Failed to list API Tokens about to expire: ", err)
 		return
 	}
-	err = n.notify(expiringTokens)
+	err = n.notifier.Notify(expiringTokens)
 	if err != nil {
 		log.Error("Failed to send notifications for API Tokens about to expire: ", err)
 		return
@@ -169,6 +173,8 @@ func (n *expirationNotifierImpl) listItemsToNotify(now time.Time, expiresUntil t
 	return response, nil
 }
 
+type logExpirationNotifier struct{}
+
 func generateExpiringTokenLog(token *storage.TokenMetadata, now time.Time, expirationSliceDuration time.Duration, sliceName string) string {
 	expiration := protoconv.ConvertTimestampToTimeOrNow(token.GetExpiration())
 	ttl := expiration.Sub(now)
@@ -185,7 +191,7 @@ func generateExpiringTokenLog(token *storage.TokenMetadata, now time.Time, expir
 	return fmt.Sprintf("API Token %s (ID %s) will expire in less than %d %s.", token.GetName(), token.GetId(), sliceCount, sliceDuration)
 }
 
-func (n *expirationNotifierImpl) notify(items []*storage.TokenMetadata) error {
+func (n *logExpirationNotifier) Notify(items []*storage.TokenMetadata) error {
 	now := time.Now()
 	expirationSliceDuration := env.APITokenExpirationExpirationSlice.DurationSetting()
 	expirationSliceName := env.APITokenExpirationExpirationSliceName.Setting()
