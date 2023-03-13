@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -64,6 +65,16 @@ func convertPlopFromStorageToPlopFromSensor(plopStorage *storage.ProcessListenin
 	}
 }
 
+func convertToPlopsFromSensor(plops []*storage.ProcessListeningOnPortStorage) []*storage.ProcessListeningOnPortFromSensor {
+	plopsFromSensor := make([]*storage.ProcessListeningOnPortFromSensor, 0)
+	for _, plop := range plops {
+		plopFromSensor := convertPlopFromStorageToPlopFromSensor(plop)
+		plopsFromSensor = append(plopsFromSensor, plopFromSensor)
+	}
+
+	return plopsFromSensor
+}
+
 func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) ([]*storage.ProcessListeningOnPortStorage, error) {
 	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
 	err := ds.WalkAll(ctx,
@@ -77,25 +88,46 @@ func (ds *datastoreImpl) getUnmatchedPlopsFromDB(ctx context.Context) ([]*storag
 	return plopsFromDB, err
 }
 
-func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*storage.ProcessListeningOnPortFromSensor, error) {
+func splitPlopsIntoExpiredAndUnexpired(plops []*storage.ProcessListeningOnPortStorage) ([]*storage.ProcessListeningOnPortStorage, []string) {
+	unexpiredPlops := make([]*storage.ProcessListeningOnPortStorage, 0)
+	idsToDelete := make([]string, 0)
+	currentTime := time.Now()
+	expirationLifetime := 91*time.Second
 
-	portProcesses := make([]*storage.ProcessListeningOnPortFromSensor, 0)
-	unmatchedIds := make([]string, 0)
-	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
-
-	for _, val := range unmatchedPLOPs {
-		unmatchedIds = append(unmatchedIds, val.Id)
-		plop := convertPlopFromStorageToPlopFromSensor(val)
-		portProcesses = append(portProcesses, plop)
+	for _, plop := range plops {
+		timeFirstSeen := protoconv.ConvertTimestampToTimeOrNow(plop.TimeFirstSeen)
+		age := currentTime.Sub(timeFirstSeen)
+		if age < expirationLifetime {
+			unexpiredPlops = append(unexpiredPlops, plop)
+		} else {
+			idsToDelete = append(idsToDelete, plop.Id)
+		}
 	}
 
-	// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
-	// Deleting unmatched plops is not the most efficient solution.
-	// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
-	err := ds.storage.DeleteMany(ctx, unmatchedIds)
-
-	return portProcesses, err
+	return unexpiredPlops, idsToDelete
 }
+
+
+//func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*storage.ProcessListeningOnPortFromSensor, error) {
+//
+//	portProcesses := make([]*storage.ProcessListeningOnPortFromSensor, 0)
+//	unmatchedIds := make([]string, 0)
+//	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
+//	unexpiredUnmatchedPLOPs, idsToDelete := splitPlopsIntoExpiredAndUnexpired(unmatchedPLOPs)
+//
+//	for _, val := range unexpirtedUnmatchedPLOPs {
+//		unmatchedIds = append(unmatchedIds, val.Id)
+//		plop := convertPlopFromStorageToPlopFromSensor(val)
+//		portProcesses = append(portProcesses, plop)
+//	}
+//
+//	// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
+//	// Deleting unmatched plops is not the most efficient solution.
+//	// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
+//	err := ds.storage.DeleteMany(ctx, unmatchedIds)
+//
+//	return portProcesses, err
+//}
 
 // PlopInfo contains the information needed to determine the upserts for plop
 type PlopInfo struct {
@@ -313,8 +345,23 @@ func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
 				log.Warnf("Found no matching PLOP to close for %s", key)
 			}
 
-			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			// plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			val.ProcessIndicatorId = indicatorID
+			val.process = nil
+
 		}
+
+		if unmatched && !prevExists {
+￼			unmatchedPlop.ProcessIndicatorId = indicatorID
+￼			if indicatorID != "" {
+￼				unmatchedPlop.Process = nil
+￼			}
+￼			plopObjects = append(plopObjects, unmatchedPlop)
+￼		}
+￼
+￼		if unmatched && prevExists {
+￼			_ = ds.storage.Delete(ctx, unmatchedPlop.Id)
+￼		}
 	}
 
 	// completedInBatch should not be needed for retries as that should mean that a
@@ -413,7 +460,11 @@ func (ds *datastoreImpl) RetryAddProcessListeningOnPort(ctx context.Context) err
 		"RetryAddProcessListeningOnPort",
 	)
 
-	portProcesses, _ := ds.getUnmatchedPlopsAndConvert(ctx)
+	// portProcesses, _ := ds.getUnmatchedPlopsAndConvert(ctx)
+	allUnmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
+	unexpiredUnmatchedPLOPs, idsToDelete := splitPlopsIntoExpiredAndUnexpired(allUnmatchedPLOPs)
+	portProcesses := convertToPlopsFromSensor(unexpiredUnmatchedPLOPs)
+
 	plopInfo, err := ds.getPlopInfo(ctx, portProcesses...)
 	if err != nil {
 		return err
@@ -425,7 +476,15 @@ func (ds *datastoreImpl) RetryAddProcessListeningOnPort(ctx context.Context) err
 	}
 
 	// Now save actual PLOP objects
-	return ds.storage.UpsertMany(ctx, plopObjects)
+	err = ds.storage.UpsertMany(ctx, plopObjects)
+	if err != nil {
+		return err
+	}
+
+	// Delete the expired plops
+	err = ds.storage.DeleteMany(ctx, idsToDelete)
+
+	return err
 }
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
@@ -752,6 +811,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
+		FirstTimeSeen:		protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 
 	return append(plopObjects, newPLOP)
