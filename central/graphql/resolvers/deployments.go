@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -203,6 +204,7 @@ func (resolver *deploymentResolver) DeployAlerts(ctx context.Context, args Pagin
 
 	nested.Pagination = pagination
 
+	nested = paginated.FillDefaultSortOption(nested, paginated.ViolationTimeSortOption)
 	return resolver.root.wrapAlerts(
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, nested))
 }
@@ -315,6 +317,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 	pagination := q.GetPagination()
 	q.Pagination = &v1.QueryPagination{SortOptions: pagination.GetSortOptions()}
 
+	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
 	alerts, err := resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, q)
 	if err != nil {
 		return nil, err
@@ -356,15 +359,11 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 	if err != nil {
 		return 0, err
 	}
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, query)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, query)
 	if err != nil {
 		return 0, nil
 	}
-	set := set.NewStringSet()
-	for _, alert := range alerts {
-		set.Add(alert.GetPolicy().GetId())
-	}
-	return int32(set.Cardinality()), nil
+	return int32(count), nil
 }
 
 // FailingRuntimePolicyCount returns count of all runtime policies failing on this deployment (not just unique)
@@ -383,11 +382,11 @@ func (resolver *deploymentResolver) FailingRuntimePolicyCount(ctx context.Contex
 	}
 	query = search.ConjunctionQuery(query,
 		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery())
-	alerts, err := resolver.root.ViolationsDataStore.Search(ctx, query)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(alerts)), nil
+	return int32(count), nil
 }
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.

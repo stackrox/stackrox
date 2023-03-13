@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -481,6 +482,9 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 		return "", err
 	}
 
+	q.Pagination = &v1.QueryPagination{
+		Limit: 1,
+	}
 	results, err := resolver.root.ViolationsDataStore.Search(ctx,
 		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
@@ -503,12 +507,14 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 
 	namespace := resolver.data
 
-	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx,
-		search.ConjunctionQuery(q,
-			search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
-				AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
-				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-				AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
+	q = search.ConjunctionQuery(q,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
+			AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery())
+	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
+
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
 }
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
