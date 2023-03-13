@@ -107,7 +107,7 @@ func Test_Group(t *testing.T) {
 	mock := clock.NewMock()
 	internalClock = mock
 
-	var i int32 = 0
+	var i int32
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&i, 1)
@@ -129,7 +129,7 @@ func Test_GroupWithProps(t *testing.T) {
 	mock := clock.NewMock()
 	internalClock = mock
 
-	var i int32 = 0
+	var i int32
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&i, 1)
