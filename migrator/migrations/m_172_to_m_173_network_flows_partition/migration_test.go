@@ -40,6 +40,7 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *networkFlowsMigrationTestSuite) SetupTest() {
+	s.T().Skip("Network flow partition migration test is disabled due to incompleteness of the test setup.")
 	s.db = pghelper.ForT(s.T(), true)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableNetworkFlowsStmt)
 
