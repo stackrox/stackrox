@@ -368,7 +368,7 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 					},
 				},
 				Summary: map[string]int{
-					"TOTAL":    1000,
+					"TOTAL":    1,
 					"LOW":      0,
 					"MEDIUM":   0,
 					"HIGH":     1,

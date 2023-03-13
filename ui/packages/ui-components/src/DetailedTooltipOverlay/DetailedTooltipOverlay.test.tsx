@@ -15,7 +15,7 @@ describe('DetailedTooltipOverlay', () => {
         );
         expect(screen.getByTestId('tooltip-title')).toHaveTextContent('Title');
         expect(screen.getByTestId('tooltip-subtitle')).toHaveTextContent('Subtitle');
-        expect(screen.getByTestId('tooltip-footer')).toHaveTextContent('Footer Just For Test');
+        expect(screen.getByTestId('tooltip-footer')).toHaveTextContent('Footer');
 
         expect(screen.getByTestId('tooltip-body')).toHaveTextContent('Body');
         expect(screen.getByText('Body')).toHaveClass('my-class');
