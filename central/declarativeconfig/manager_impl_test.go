@@ -192,7 +192,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 
 func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 	controller := gomock.NewController(t)
-	permissionSetUpdater := updaterMocks.NewMockResourceUpdater(controller)
+	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
 	reporter := reporterMocks.NewMockReporter(controller)
 
 	permissionSet1 := &storage.PermissionSet{
@@ -201,7 +201,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 	}
 
 	testError := errors.New("test error")
-	permissionSetUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(testError).Times(5)
+	mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(testError).Times(5)
 
 	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 		Id:           "some-id",
@@ -211,11 +211,15 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		ErrorMessage: "test error",
 	}))
 
-	permissionSetUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	m := newTestManager(t)
 	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: permissionSetUpdater,
+		types.PermissionSetType: mockUpdater,
+		types.AccessScopeType:   mockUpdater,
+		types.GroupType:         mockUpdater,
+		types.AuthProviderType:  mockUpdater,
+		types.RoleType:          mockUpdater,
 	}
 	m.declarativeConfigErrorReporter = reporter
 
