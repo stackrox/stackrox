@@ -341,13 +341,21 @@ func (s *policyValidator) compilesForDeployTime(policy *storage.Policy, options 
 		return errors.Wrap(err, "policy configuration is invalid for deploy time")
 	}
 	if booleanpolicy.ContainsRuntimeFields(policy) {
-		return errors.New("deploy time policy cannot contain runtime fields")
+		return errors.New("deploy time policy cannot contain runtime criteria")
 	}
 	return nil
 }
 
 func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
-	// Runtime policies must contain one or more runtime fields, but can have deploy time fields as well
+	// Runtime policies must contain one category of runtime criteria, but can have deploy time criteria as well
+	if !booleanpolicy.ContainsRuntimeFields(policy) {
+		return errors.New("A runtime policy must contain at least one policy criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+	}
+
+	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
+		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+	}
+
 	var err error
 	if s.isAuditEventPolicy(policy) {
 		_, err = booleanpolicy.BuildAuditLogEventMatcher(policy, booleanpolicy.ValidateSourceIsAuditLogEvents())
@@ -359,13 +367,6 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 		return errors.Wrap(err, "policy configuration is invalid for runtime")
 	}
 
-	if !booleanpolicy.ContainsRuntimeFields(policy) {
-		return errors.New("run time policy must contain runtime specific constraints")
-	}
-
-	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
-		return errors.New("a run time policy section must not contain both process and kubernetes event constraints")
-	}
 	return nil
 }
 
