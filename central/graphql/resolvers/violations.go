@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -33,6 +34,8 @@ func (resolver *Resolver) Violations(ctx context.Context, args PaginatedQuery) (
 	if err != nil {
 		return nil, err
 	}
+
+	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
 	return resolver.wrapListAlerts(
 		resolver.ViolationsDataStore.SearchListAlerts(ctx, q))
 }

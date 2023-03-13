@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -348,6 +349,7 @@ func (resolver *Resolver) getPolicyViolationEvents(ctx context.Context, query *v
 		return nil, err
 	}
 
+	query = paginated.FillDefaultSortOption(query, paginated.ViolationTimeSortOption)
 	alerts, err := resolver.ViolationsDataStore.SearchRawAlerts(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving alerts from search")
