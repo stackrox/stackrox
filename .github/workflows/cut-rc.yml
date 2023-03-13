@@ -31,6 +31,11 @@ on:
         required: true
         default: true
         type: boolean
+      check-jira-issues:
+        description: Check Jira issues for current release
+        required: true
+        default: true
+        type: boolean
 
 env:
   main_branch: ${{github.event.repository.default_branch}}
@@ -89,6 +94,7 @@ jobs:
 
   check-jira:
     name: Check Jira tickets for release
+    if: github.event.inputs.check-jira-issues == 'true'
     needs: [variables, properties]
     runs-on: ubuntu-latest
     steps:
