@@ -25,6 +25,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   to fetch vulnerability updates from Central. The flag will be removed as part of the 4.2.0 release.
 
 ### Technical Changes
+- Active Vulnerability Management has been moved behind that ROX_ACTIVE_VULN_MGMT flag and has been defaulted to false due to
+  performance. If Active Vulnerability Management is desired, then a user may set this flag to true and it will be reactivated;
+  however, it is recommended to increase the memory limit of Central.
 
 ## [3.74.0]
 
