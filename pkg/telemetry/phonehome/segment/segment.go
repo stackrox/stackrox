@@ -3,6 +3,7 @@ package segment
 import (
 	"time"
 
+	"github.com/benbjohnson/clock"
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -12,6 +13,8 @@ import (
 var (
 	log                     = logging.LoggerForModule()
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
+
+	internalClock clock.Clock = clock.New()
 )
 
 type segmentTelemeter struct {
@@ -184,12 +187,11 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 	}
 
 	options := telemeter.ApplyOptions(opts)
-	dctx := t.makeContext(options)
 	group := segment.Group{
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      props,
-		Context:     dctx,
+		Context:     t.makeContext(options),
 	}
 
 	for _, ids := range options.Groups {
@@ -210,8 +212,10 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 		// to ensure following events get the properties attached. This is
 		// due to Amplitude partioning by device ID.
 		track := segment.Track{
-			Event:   "Group Properties Updated",
-			Context: dctx,
+			UserId:      group.UserId,
+			AnonymousId: group.AnonymousId,
+			Event:       "Group Properties Updated",
+			Context:     group.Context,
 		}
 		go func() {
 			// Segment does not guarantee the processing order of the events,
@@ -221,7 +225,7 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 			// clients coming in between to capture the group properties.
 			for i := 0; i < 3; i++ {
 				if i != 0 {
-					time.Sleep(2 * time.Second)
+					internalClock.Sleep(2 * time.Second)
 				}
 				if err := t.client.Enqueue(track); err != nil {
 					log.Error("Cannot enqueue Segment track event: ", err)
