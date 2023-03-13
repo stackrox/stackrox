@@ -6,12 +6,12 @@ import { isParsedQs } from 'utils/queryStringUtils';
 
 export type GetSortParams = (field: string) => ThProps['sort'] | undefined;
 
-type UseTableSortProps = {
+export type UseURLSortProps = {
     sortFields: string[];
     defaultSortOption: SortOption;
 };
 
-type UseTableSortResult = {
+export type UseURLSortResult = {
     sortOption: ApiSortOption;
     getSortParams: GetSortParams;
 };
@@ -27,7 +27,7 @@ function isDirection(val: unknown): val is 'asc' | 'desc' {
     return val === 'asc' || val === 'desc';
 }
 
-function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTableSortResult {
+function useURLSort({ sortFields, defaultSortOption }: UseURLSortProps): UseURLSortResult {
     const [sortOption, setSortOption] = useURLParameter('sortOption', defaultSortOption);
 
     // get the parsed sort option values from the URL, if available

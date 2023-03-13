@@ -5,19 +5,26 @@ import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { vulnerabilitySeverityLabels } from 'messages/common';
+import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
+import {
+    ImageVulnerabilityCounter,
+    ImageVulnerabilityCounterKey,
+} from '../hooks/useImageVulnerabilities';
 
 export type BySeveritySummaryCardProps = {
     title: string;
-    severityCounts: Record<VulnerabilitySeverity, number>;
+    severityCounts: ImageVulnerabilityCounter;
     hiddenSeverities: Set<VulnerabilitySeverity>;
 };
 
-const severitiesCriticalToLow = [
-    'CRITICAL_VULNERABILITY_SEVERITY',
-    'IMPORTANT_VULNERABILITY_SEVERITY',
-    'MODERATE_VULNERABILITY_SEVERITY',
-    'LOW_VULNERABILITY_SEVERITY',
-] as const;
+const vulnCounterToSeverity: Record<ImageVulnerabilityCounterKey, VulnerabilitySeverity> = {
+    low: 'LOW_VULNERABILITY_SEVERITY',
+    moderate: 'MODERATE_VULNERABILITY_SEVERITY',
+    important: 'IMPORTANT_VULNERABILITY_SEVERITY',
+    critical: 'CRITICAL_VULNERABILITY_SEVERITY',
+} as const;
+
+const severitiesCriticalToLow = ['critical', 'important', 'moderate', 'low'] as const;
 
 const disabledColor100 = 'var(--pf-global--disabled-color--100)';
 const disabledColor200 = 'var(--pf-global--disabled-color--200)';
@@ -34,11 +41,12 @@ function BySeveritySummaryCard({
                 <Grid className="pf-u-pl-sm">
                     {severitiesCriticalToLow.map((severity) => {
                         const count = severityCounts[severity];
-                        const hasNoResults = count === 0;
-                        const isHidden = hiddenSeverities.has(severity);
+                        const hasNoResults = count.total === 0;
+                        const vulnSeverity = vulnCounterToSeverity[severity];
+                        const isHidden = hiddenSeverities.has(vulnSeverity);
 
                         let textColor = '';
-                        let text = `${count} ${vulnerabilitySeverityLabels[severity]}`;
+                        let text = `${count.total} ${vulnerabilitySeverityLabels[vulnSeverity]}`;
 
                         if (isHidden) {
                             textColor = disabledColor100;
@@ -48,16 +56,17 @@ function BySeveritySummaryCard({
                             text = 'No results';
                         }
 
-                        const Icon = SeverityIcons[severity];
+                        const Icon: React.FC<SVGIconProps> | undefined =
+                            SeverityIcons[vulnSeverity];
 
                         return (
-                            <GridItem key={severity} span={6}>
+                            <GridItem key={vulnSeverity} span={6}>
                                 <Flex
                                     className="pf-u-pt-sm"
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >
-                                    <Icon color={hasNoResults ? textColor : undefined} />
+                                    {Icon && <Icon color={hasNoResults ? textColor : undefined} />}
                                     <Text style={{ color: textColor }}>{text}</Text>
                                 </Flex>
                             </GridItem>

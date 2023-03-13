@@ -3,9 +3,13 @@ import { Card, CardTitle, CardBody, Flex, Text, Grid, GridItem } from '@patternf
 
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { FixableStatus } from '../types';
+import {
+    ImageVulnerabilityCounter,
+    imageVulnerabilityCounterKeys,
+} from '../hooks/useImageVulnerabilities';
 
 export type CvesByStatusSummaryCardProps = {
-    cveStatusCounts: Record<FixableStatus, number | 'hidden'>;
+    cveStatusCounts: ImageVulnerabilityCounter;
     hiddenStatuses: Set<FixableStatus>;
 };
 
@@ -14,15 +18,25 @@ const statusDisplays = [
         status: 'Fixable',
         Icon: CheckCircleIcon,
         iconColor: 'var(--pf-global--success-color--100)',
-        text: (counts: CvesByStatusSummaryCardProps['cveStatusCounts']) =>
-            `${counts.Fixable} vulnerabilities with available fixes`,
+        text: (counts: ImageVulnerabilityCounter) => {
+            let count = 0;
+            imageVulnerabilityCounterKeys.forEach((key) => {
+                count += counts[key].fixable;
+            });
+            return `${count} vulnerabilities with available fixes`;
+        },
     },
     {
         status: 'Not fixable',
         Icon: ExclamationCircleIcon,
         iconColor: 'var(--pf-global--danger-color--100)',
-        text: (counts: CvesByStatusSummaryCardProps['cveStatusCounts']) =>
-            `${counts['Not fixable']} vulnerabilities without fixes`,
+        text: (counts: ImageVulnerabilityCounter) => {
+            let count = 0;
+            imageVulnerabilityCounterKeys.forEach((key) => {
+                count += counts[key].total - counts[key].fixable;
+            });
+            return `${count} vulnerabilities without fixes`;
+        },
     },
 ] as const;
 
