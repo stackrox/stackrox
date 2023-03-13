@@ -24,8 +24,6 @@ import (
 // scoped access control)
 
 const (
-	baseTable = "permission_sets"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -64,7 +62,7 @@ func New(db *postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storage.PermissionSet) error {
+func insertIntoPermissionSets(_ context.Context, batch *pgx.Batch, obj *storage.PermissionSet) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -151,7 +149,7 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx *postgres.Tx,
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err

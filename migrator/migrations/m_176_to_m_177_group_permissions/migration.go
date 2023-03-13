@@ -64,8 +64,6 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-// Additional code to support the migration
-
 func propagateAccessForPermission(permission string, accessLevel storage.Access, permissionSet map[string]storage.Access) storage.Access {
 	oldLevel, found := permissionSet[permission]
 	if !found {
@@ -97,15 +95,16 @@ func migrateReplacedResourcesInPermissionSets(db *postgres.DB) error {
 			newPermissionSet.ResourceToAccess[resource] =
 				propagateAccessForPermission(resource, accessLevel, newPermissionSet.GetResourceToAccess())
 		}
-		if changed {
-			migratedPermissionSets = append(migratedPermissionSets, newPermissionSet)
-			if len(migratedPermissionSets) >= batchSize {
-				err := store.UpsertMany(ctx, migratedPermissionSets)
-				if err != nil {
-					return err
-				}
-				migratedPermissionSets = migratedPermissionSets[:0]
+		if !changed {
+			return nil
+		}
+		migratedPermissionSets = append(migratedPermissionSets, newPermissionSet)
+		if len(migratedPermissionSets) >= batchSize {
+			err := store.UpsertMany(ctx, migratedPermissionSets)
+			if err != nil {
+				return err
 			}
+			migratedPermissionSets = migratedPermissionSets[:0]
 		}
 		return nil
 	})
