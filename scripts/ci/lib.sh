@@ -657,9 +657,9 @@ mark_collector_release() {
     fi
 
     PRs=$(gh pr list -s open \
-    --head "${branch_name}" \
-    --json number \
-    --jq length)
+            --head "${branch_name}" \
+            --json number \
+            --jq length)
     if [ "$PRs" -eq 0 ]; then
         echo "Create a PR for collector to add this release to its RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
         gh pr create \
