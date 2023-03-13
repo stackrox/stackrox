@@ -306,6 +306,8 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalBatch() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestPruning() {
+	suite.T().Setenv(env.ProcessPruningEnabled.EnvVar(), "true")
+
 	const prunePeriod = 100 * time.Millisecond
 	mockPrunerFactory := prunerMocks.NewMockFactory(suite.mockCtrl)
 	mockPrunerFactory.EXPECT().Period().Return(prunePeriod)
