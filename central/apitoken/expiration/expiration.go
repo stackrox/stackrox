@@ -146,8 +146,8 @@ func (n *expirationNotifierImpl) listItemsToNotify(now time.Time, expiresUntil t
 	formattedNow := now.Format(timestampLayout)
 	formattedExpiresUntil := expiresUntil.Format(timestampLayout)
 	// Search tokens that expire before expiresUntil, that have not expired yet,
-	// and that have not been notified since notifiedUntil.
-	// That is Expiration < expiresUntil and LastNotified < notifiedUntil.
+	// and that have not been revoked.
+	// That is now < Expiration < expiresUntil and Revoked = false.
 	queryNotExpired := search.NewQueryBuilder().
 		AddStrings(search.Expiration, fmt.Sprintf(">%s", formattedNow)).
 		ProtoQuery()
