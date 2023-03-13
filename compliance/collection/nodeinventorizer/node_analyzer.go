@@ -13,19 +13,21 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// NodeInventorizer is the interface that defines the interface a scanner must implement
+// NodeInventorizer is the interface that defines the interface a node scanner must implement
 type NodeInventorizer interface {
 	Scan(nodeName string) (*storage.NodeInventory, error)
 }
 
-// NodeInventoryCollector is an implementation of NodeInventorizer
-type NodeInventoryCollector struct {
+// NodeAnalyzer is an implementation of NodeInventorizer
+type NodeAnalyzer struct {
 }
 
-// Scan scans the current node and returns the results as storage.NodeInventory object
-func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, error) {
+// Scan scans the current node and returns the results as storage.NodeInventory struct.
+func (n *NodeAnalyzer) Scan(nodeName string) (*storage.NodeInventory, error) {
 	metrics.ObserveScansTotal(nodeName)
 	startTime := time.Now()
+
+	log.Debug("Starting node scan")
 
 	// uncertifiedRHEL is set to false, as scans are only supported on RHCOS for now,
 	// which only exists in certified versions
@@ -33,13 +35,13 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 
 	scanDuration := time.Since(startTime)
 	metrics.ObserveScanDuration(scanDuration, nodeName, err)
-	log.Debugf("Collecting Node Inventory took %f seconds", scanDuration.Seconds())
+	log.Debugf("Scanning the node took %f seconds", scanDuration.Seconds())
 
 	if err != nil {
-		log.Errorf("Error scanning node /host inventory: %v", err)
+		log.Errorf("Error scanning node: %v", err)
 		return nil, err
 	}
-	log.Debugf("Components found under /host: %v", componentsHost)
+	log.Debugf("Components found on host filesystem: %v", componentsHost)
 
 	protoComponents := protoComponentsFromScanComponents(componentsHost)
 
@@ -54,7 +56,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	// which only exists in certified versions. Therefore, no specific notes needed
 	// if uncertifiedRHEL can be true in the future, we can add Note_CERTIFIED_RHEL_SCAN_UNAVAILABLE
 	m := &storage.NodeInventory{
-		NodeId:     uuid.Nil.String(),
+		NodeId:     uuid.Nil.String(), // The NodeID is not available in compliance, but only in Sensor and later on
 		NodeName:   nodeName,
 		ScanTime:   timestamp.TimestampNow(),
 		Components: protoComponents,
@@ -65,6 +67,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	return m, nil
 }
 
+// TODO(ROX-14029): Move conversion function into Scanner
 func protoComponentsFromScanComponents(c *nodes.Components) *storage.NodeInventory_Components {
 	if c == nil {
 		return nil
@@ -94,6 +97,7 @@ func protoComponentsFromScanComponents(c *nodes.Components) *storage.NodeInvento
 	return protoComponents
 }
 
+// TODO(ROX-14029): Move conversion function into Scanner
 func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*storage.NodeInventory_Components_RHELComponent {
 	if rc == nil || rc.Packages == nil {
 		log.Warn("No RHEL packages found in scan result")
@@ -132,6 +136,7 @@ func convertAndDedupRHELComponents(rc *database.RHELv2Components) []*storage.Nod
 	return maps.Values(convertedComponents)
 }
 
+// TODO(ROX-14029): Move conversion function into Scanner
 func convertExecutables(exe []*scannerV1.Executable) []*storage.NodeInventory_Components_RHELComponent_Executable {
 	arr := make([]*storage.NodeInventory_Components_RHELComponent_Executable, len(exe))
 	for i, executable := range exe {

@@ -143,6 +143,8 @@ spec:
           readOnly: true
         - mountPath: /tmp/
           name: tmp-volume
+        - mountPath: /cache
+          name: cache-volume
       volumes:
       - hostPath:
           path: /var/run/docker.sock
@@ -184,3 +186,7 @@ spec:
         emptyDir: {}
       - name: tmp-volume
         emptyDir: {}
+      - name: cache-volume
+        emptyDir:
+          sizeLimit: 200Mi
+
