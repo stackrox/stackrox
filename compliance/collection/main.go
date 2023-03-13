@@ -301,9 +301,9 @@ func main() {
 		scanner := nodeinventorizer.NewCachingScanner(
 			analyzer,
 			"/cache/inventory-cache",
-			env.NodeScanCacheDuration.DurationSetting(),
-			env.NodeScanInitialBackoff.DurationSetting(),
-			env.NodeScanMaxBackoff.DurationSetting(),
+			env.NodeScanningCacheDuration.DurationSetting(),
+			env.NodeScanningInitialBackoff.DurationSetting(),
+			env.NodeScanningMaxBackoff.DurationSetting(),
 			func(duration time.Duration) { time.Sleep(duration) })
 		nodeInventoriesC := manageNodeScanLoop(ctx, i, scanner)
 
