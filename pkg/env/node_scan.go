@@ -15,8 +15,8 @@ var (
 	// scanning wait time.
 	NodeScanningMaxInitialWait = registerDurationSetting("ROX_NODE_SCANNING_MAX_INITIAL_WAIT", 5*time.Minute)
 
-	// NodeScanCacheDuration defines the time after which a cached inventory is considered outdated. Defaults to 90% of rescan interval.
-	NodeScanCacheDuration = registerDurationSetting("ROX_NODE_SCAN_CACHE_TIME", time.Duration(NodeRescanInterval.DurationSetting().Nanoseconds()-NodeRescanInterval.DurationSetting().Nanoseconds()/10))
+	// NodeScanCacheDuration defines the time after which a cached inventory is considered outdated. Defaults to 90% of NodeScanningInterval.
+	NodeScanCacheDuration = registerDurationSetting("ROX_NODE_SCAN_CACHE_TIME", time.Duration(NodeScanningInterval.DurationSetting().Nanoseconds()-NodeScanningInterval.DurationSetting().Nanoseconds()/10))
 
 	// NodeScanInitialBackoff defines the initial time in seconds a Node scan will be delayed if a backoff file is found
 	NodeScanInitialBackoff = registerDurationSetting("ROX_NODE_SCAN_INITIAL_BACKOFF", 30*time.Second)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -173,11 +172,6 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 				if err != nil {
 					log.Errorf("error running scanNode: %v", err)
 				} else {
-					msg := &sensor.MsgFromCompliance{
-						Node: nodeName,
-						Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inventory},
-					}
-					cmetrics.ObserveInventoryProtobufMessage(msg)
 					sensorC <- msg
 				}
 				interval := i.Next()
@@ -187,6 +181,19 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 		}
 	}()
 	return sensorC
+}
+
+func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
+	result, err := scanner.Scan(nodeName)
+	if err != nil {
+		return nil, err
+	}
+	msg := &sensor.MsgFromCompliance{
+		Node: nodeName,
+		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: result},
+	}
+	cmetrics.ObserveInventoryProtobufMessage(msg)
+	return msg, nil
 }
 
 func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
@@ -279,6 +286,7 @@ func main() {
 	defer close(sensorC)
 	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
+	// TODO(ROX-13935): Remove FakeNodeInventory and its FF
 	if features.RHCOSNodeScanning.Enabled() {
 		var analyzer nodeinventorizer.NodeInventorizer
 		if features.UseFakeNodeInventory.Enabled() {
@@ -286,7 +294,7 @@ func main() {
 			analyzer = &nodeinventorizer.FakeNodeInventorizer{}
 		} else {
 			log.Infof("Using NodeInventoryCollector")
-			analyzer := &nodeinventorizer.NodeAnalyzer{}
+			analyzer = &nodeinventorizer.NodeAnalyzer{}
 		}
 
 		i := intervals.NewNodeScanIntervalFromEnv()
