@@ -129,12 +129,6 @@ function WorkloadTableToolbar({
         }
     }, [defaultFilters, searchFilter, setSearchFilter]);
 
-    useEffect(() => {
-        if (!searchFilter.resource) {
-            setSearchFilter({ ...searchFilter, resource: 'CVE' });
-        }
-    }, []);
-
     const severitySearchFilter = searchFilter.Severity as VulnerabilitySeverityLabel[];
     severitySearchFilter?.forEach((sev) => {
         if (defaultFilters.Severity?.includes(sev)) {
@@ -188,17 +182,18 @@ function WorkloadTableToolbar({
                     className="pf-u-flex-1"
                 >
                     <ToolbarGroup variant="filter-group" className="pf-u-flex-grow-1">
-                        <ToolbarItem className="pf-u-w-25">
+                        {/* <ToolbarItem className="pf-u-w-25">
                             <FilterResourceDropdown
                                 onSelect={onSelect}
                                 searchFilter={searchFilter}
                                 resourceContext={resourceContext}
                             />
-                        </ToolbarItem>
+                        </ToolbarItem> */}
                         <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
                             <FilterAutocompleteSelect
                                 searchFilter={searchFilter}
                                 setSearchFilter={setSearchFilter}
+                                resourceContext={resourceContext}
                             />
                         </ToolbarItem>
                     </ToolbarGroup>
