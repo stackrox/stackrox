@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
-	//countMetrics "github.com/stackrox/rox/central/metrics"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -89,14 +88,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	allPLOPs := append(normalizedPLOPs, completedInBatch...)
 	indicatorIds := getIndicatorIdsForPlops(allPLOPs)
 
-	//// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
-	//// be done in a single join query fetching both ProcessIndicator and needed
-	//// bits from PLOP.
-	//indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, normalizedPLOPs...)
-	//if err != nil {
-	//	return err
-	//}
-
+	// TODO ROX-14376: This ticket might need to be changed, but is not completely obsolete
 	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
 		return err
@@ -104,20 +96,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
 	for _, val := range normalizedPLOPs {
-		//indicatorID := ""
-		//var processInfo *storage.ProcessIndicatorUniqueKey
-
-		//key := getPlopProcessUniqueKey(val)
-
-		//if indicator, ok := indicatorsMap[key]; ok {
-		//	indicatorID = indicator.GetId()
-		//	log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
-		//} else {
-		//	countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-		//	log.Warnf("Found no matching indicators for %s", key)
-		//	processInfo = val.Process
-		//}
-
 		indicatorID := getIndicatorIdForPlop(val)
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
@@ -146,7 +124,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			}
 
 			plopObjects = addNewPLOP(plopObjects, indicatorID, nil, val)
-			//plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
 
@@ -157,19 +134,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// timestamp
 	// * If no existing PLOP is present, they will create a new closed PLOP
 	for _, val := range completedInBatch {
-		//indicatorID := ""
-		//var processInfo *storage.ProcessIndicatorUniqueKey
-
-		//key := getPlopProcessUniqueKey(val)
-
-		//if indicator, ok := indicatorsMap[key]; ok {
-		//	indicatorID = indicator.GetId()
-		//	log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
-		//} else {
-		//	countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-		//	log.Warnf("Found no matching indicators for %s", key)
-		//	processInfo = val.Process
-		//}
 
 		indicatorID := getIndicatorIdForPlop(val)
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
@@ -197,7 +161,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			}
 
 			plopObjects = addNewPLOP(plopObjects, indicatorID, nil, val)
-			//plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
 
