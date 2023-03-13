@@ -299,6 +299,7 @@ describe('Entities single views', () => {
     });
 
     it('should show the active state in Component overview when scoped under a deployment', () => {
+        const activeVulnEnabled = hasFeatureFlag('ROX_ACTIVE_VULN_MGMT');
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
         const entitiesKey1 = 'deployments';
         const entitiesKey2 = usingVMUpdates ? 'image-components' : 'components';
@@ -327,14 +328,23 @@ describe('Entities single views', () => {
             cy.get(`[data-testid="side-panel"] ${selectors.tableBodyRows}:eq(0)`).click();
         }, entitiesKey2);
 
-        cy.get(`[data-testid="Active status-value"]`)
-            .invoke('text')
-            .then((activeStatusText) => {
-                expect(activeStatusText).to.be.oneOf(['Active', 'Inactive', 'Undetermined']);
-            });
+        if (activeVulnEnabled) {
+            cy.get(`[data-testid="Active status-value"]`)
+                .invoke('text')
+                .then((activeStatusText) => {
+                    expect(activeStatusText).to.be.oneOf(['Active', 'Inactive', 'Undetermined']);
+                });
+        } else {
+            cy.get('.rt-th')
+                .invoke('text')
+                .then((tableHeaderText) => {
+                    expect(tableHeaderText).not.to.contain('Active');
+                });
+        }
     });
 
     it('should show the active state in the fixable CVES widget for a single deployment', () => {
+        const activeVulnEnabled = hasFeatureFlag('ROX_ACTIVE_VULN_MGMT');
         const entitiesKey = 'deployments';
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
@@ -355,11 +365,20 @@ describe('Entities single views', () => {
         }, entitiesKey);
 
         cy.wait('@getFixableCvesForEntity');
-        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`).contains(
-            'Active'
-        );
-        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20232")`).contains(
-            'Inactive'
-        );
+
+        if (activeVulnEnabled) {
+            cy.get(
+                `${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`
+            ).contains('Active');
+            cy.get(
+                `${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20232")`
+            ).contains('Inactive');
+        } else {
+            cy.get('.rt-th')
+                .invoke('text')
+                .then((tableHeaderText) => {
+                    expect(tableHeaderText).not.to.contain('Active');
+                });
+        }
     });
 });
