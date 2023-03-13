@@ -144,9 +144,6 @@ test_upgrade_paths() {
     checkForRocksAccessScopes
     checkForPostgresAccessScopes
 
-    # Bounce collectors to avoid restarts on if central is down long enough so sensor restarts
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
-
     validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
 
