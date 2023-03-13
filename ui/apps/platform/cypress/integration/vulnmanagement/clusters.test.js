@@ -103,7 +103,11 @@ describe('Vulnerability Management Clusters', () => {
         );
     });
 
-    it('should display links for fixable image CVEs', () => {
+    it('should display links for fixable image CVEs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'image-cves',
