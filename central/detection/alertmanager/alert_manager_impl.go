@@ -71,8 +71,8 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 		return nil, err
 	}
 
-	// rox-7233: runtime alerts always get notifications so send for updated alerts as well
-	d.notifyUpdatedRuntimeAlerts(ctx, updatedAlerts)
+	// rox-7233: runtime alerts always get notifications sent for updated alerts as well
+	go d.notifyUpdatedRuntimeAlerts(ctx, updatedAlerts)
 
 	return modifiedDeployments, nil
 }
@@ -87,7 +87,7 @@ func (d *alertManagerImpl) notifyUpdatedRuntimeAlerts(ctx context.Context, updat
 
 	for _, alert := range updatedAlerts {
 		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
-			d.notifier.ProcessAlert(ctx, alert)
+			go d.notifier.ProcessAlert(ctx, alert)
 		}
 	}
 }
@@ -95,9 +95,7 @@ func (d *alertManagerImpl) notifyUpdatedRuntimeAlerts(ctx context.Context, updat
 // updateBatch updates all alerts in the datastore.
 func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error updating alerts: ")
-	for _, existingAlert := range alertsToMark {
-		errList.AddError(d.alerts.UpsertAlert(ctx, existingAlert))
-	}
+	errList.AddError(d.alerts.UpsertAlerts(ctx, alertsToMark))
 	return errList.ToError()
 }
 
@@ -116,7 +114,7 @@ func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*
 		return err
 	}
 	for _, resolvedAlert := range resolvedAlerts {
-		d.notifier.ProcessAlert(ctx, resolvedAlert)
+		go d.notifier.ProcessAlert(ctx, resolvedAlert)
 	}
 	return nil
 }
@@ -161,7 +159,8 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMar
 		if d.shouldDebounceNotification(ctx, existingAlert) {
 			continue
 		}
-		d.notifier.ProcessAlert(ctx, existingAlert)
+		// since the act of notifying an alert does not change the alert object itself, updateBatch can run in parallel
+		go d.notifier.ProcessAlert(ctx, existingAlert)
 	}
 	return d.updateBatch(ctx, alertsToMark)
 }
@@ -371,7 +370,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			if deployment := previousAlert.GetDeployment(); deployment != nil {
 				depID := deployment.GetId()
 				if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
-					if deployment := previousAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
+					if !deployment.GetInactive() {
 						deployment.Inactive = true
 						updatedAlerts = append(updatedAlerts, previousAlert)
 					}
