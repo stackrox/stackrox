@@ -77,7 +77,11 @@ describe('Vulnerability Management Node Components', () => {
     });
 
     // TODO Investigate whether not yet supported or incorrect field in payload.
-    it.skip('should sort the Top CVSS column', () => {
+    it.skip('should sort the Top CVSS column', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Top CVSS")';

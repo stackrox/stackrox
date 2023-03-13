@@ -82,7 +82,11 @@ describe('Vulnerability Management Node CVEs', () => {
     });
 
     // TODO Investigate whether not yet supported or incorrect field in payload.
-    it.skip('should sort the Severity column', () => {
+    it.skip('should sort the Severity column', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Severity")';
