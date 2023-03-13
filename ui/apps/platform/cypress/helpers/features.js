@@ -9,3 +9,7 @@ export default (flag, desiredValue) => {
 export function hasFeatureFlag(flag) {
     return Cypress.env(flag) || false;
 }
+
+export function hasOrchestratorFlavor(value) {
+    return Cypress.env('ORCHESTRATOR_FLAVOR') === value;
+}
