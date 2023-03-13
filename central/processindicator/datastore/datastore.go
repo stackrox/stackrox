@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -61,7 +62,10 @@ func New(store store.Store, plopStorage plopStore.Store, indexer index.Indexer, 
 	if err := d.buildIndex(ctx); err != nil {
 		return nil, err
 	}
-	go d.prunePeriodically(ctx)
+
+	if env.ProcessPruningEnabled.BooleanSetting() {
+		go d.prunePeriodically(ctx)
+	}
 	return d, nil
 }
 
