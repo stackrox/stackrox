@@ -347,7 +347,7 @@ generate_bundle() {
   installation_flavor="$1";shift
   run roxctl_authenticated sensor generate "$installation_flavor" \
         --output-dir="$out_dir" \
-        --timeout=10m \
+        --timeout=15m \
         --continue-if-exists \
         "$@"
 }
