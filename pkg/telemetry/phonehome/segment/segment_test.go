@@ -1,12 +1,11 @@
 package segment
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"net/http"
-	"net/http/httptest"
 
 	"github.com/benbjohnson/clock"
 	segment "github.com/segmentio/analytics-go/v3"
