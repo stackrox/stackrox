@@ -75,9 +75,8 @@ func init() {
 		// TODO: ROX-14398 Replace Role with Access
 		&storage.Role{}: resources.Role,
 		// TODO: ROX-12750 Replace SensorUpgradeConfig with Administration.
-		&storage.SensorUpgradeConfig{}: resources.SensorUpgradeConfig,
-		// TODO: ROX-12750 Replace ServiceIdentity with Administration.
-		&storage.ServiceIdentity{}:      resources.ServiceIdentity,
+		&storage.SensorUpgradeConfig{}:  resources.SensorUpgradeConfig,
+		&storage.ServiceIdentity{}:      resources.Administration,
 		&storage.SignatureIntegration{}: resources.Integration,
 		// TODO: ROX-14398 Replace Role with Access
 		&storage.SimpleAccessScope{}:      resources.Role,
