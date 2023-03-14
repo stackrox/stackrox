@@ -19,6 +19,11 @@ source "$TEST_ROOT/tests/upgrade/validation.sh"
 test_upgrade() {
     info "Starting Rocks to 4.0 Postgres back to Rocks at 3.74 upgrade/rollback test"
 
+    info "SHREWS"
+    echo "${GCE_METADATA_HOST}"
+    curl http://169.254.169.254/computeMetadata/v1/instance/hostname
+    info "end SHREWS"
+
     # Need to push the flag to ci so that is where it needs to be for the part
     # of the test.  We start this test with RocksDB
     ci_export ROX_POSTGRES_DATASTORE "false"

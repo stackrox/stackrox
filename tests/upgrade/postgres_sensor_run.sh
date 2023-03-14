@@ -19,11 +19,6 @@ source "$TEST_ROOT/tests/upgrade/validation.sh"
 test_upgrade() {
     info "Starting Postgres upgrade test with sensor"
 
-    info "SHREWS"
-    echo "${GCE_METADATA_HOST}"
-    curl http://169.254.169.254/computeMetadata/v1/instance/hostname
-    info "end SHREWS"
-
     cd "$TEST_ROOT"
 
     # Need to push the flag to ci so that is where it needs to be for the part
