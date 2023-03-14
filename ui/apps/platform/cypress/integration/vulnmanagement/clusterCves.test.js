@@ -1,6 +1,6 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -42,7 +42,11 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
         ]);
     });
 
-    it('should sort the CVSS Score column', () => {
+    it('should sort the CVSS Score column', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("CVSS Score")';
@@ -75,7 +79,11 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
 
     // Cluster (Platform) CVEs does not yet have Severity column.
 
-    it('should display vulnerability descriptions', () => {
+    it('should display vulnerability descriptions', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementEntities(entitiesKey);
 
         // Balance positive and negative assertions.
@@ -90,7 +98,11 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for clusters', () => {
+    it('should display links for clusters', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifySecondaryEntities(entitiesKey, 'clusters', 9, /^\d+ clusters?$/);
     });
 });

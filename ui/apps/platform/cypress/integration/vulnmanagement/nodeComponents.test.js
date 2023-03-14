@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -77,7 +77,11 @@ describe('Vulnerability Management Node Components', () => {
     });
 
     // TODO Investigate whether not yet supported or incorrect field in payload.
-    it.skip('should sort the Top CVSS column', () => {
+    it.skip('should sort the Top CVSS column', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Top CVSS")';
@@ -122,7 +126,11 @@ describe('Vulnerability Management Node Components', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for all node CVEs', () => {
+    it('should display links for all node CVEs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifySecondaryEntities(
             entitiesKey,
             'node-cves',
@@ -132,7 +140,11 @@ describe('Vulnerability Management Node Components', () => {
         );
     });
 
-    it('should display links for fixable node CVEs', () => {
+    it('should display links for fixable node CVEs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'node-cves',
