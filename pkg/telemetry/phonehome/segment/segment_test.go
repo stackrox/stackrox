@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stretchr/testify/assert"
@@ -103,9 +102,6 @@ func Test_getIDs(t *testing.T) {
 }
 
 func Test_Group(t *testing.T) {
-	mock := clock.NewMock()
-	internalClock = mock
-
 	var i int32
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -114,9 +110,11 @@ func Test_Group(t *testing.T) {
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
 
-	tt.Group(nil, telemeter.WithGroups("Test", "test-group-id"))
-	for i := 0; i < 5; i++ {
-		mock.Add(1 * time.Second)
+	ch := make(chan time.Time, 3)
+	ti := &time.Ticker{C: ch}
+	tt.group(nil, ti, telemeter.WithGroups("Test", "test-group-id"))
+	for i := 0; i < 3; i++ {
+		ch <- time.Time{}
 	}
 
 	tt.Stop()
@@ -125,9 +123,6 @@ func Test_Group(t *testing.T) {
 }
 
 func Test_GroupWithProps(t *testing.T) {
-	mock := clock.NewMock()
-	internalClock = mock
-
 	var i int32
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -136,9 +131,11 @@ func Test_GroupWithProps(t *testing.T) {
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
 
-	tt.Group(map[string]any{"key": "value"}, telemeter.WithGroups("Test", "test-group-id"))
-	for i := 0; i < 5; i++ {
-		mock.Add(1 * time.Second)
+	ch := make(chan time.Time, 3)
+	ti := &time.Ticker{C: ch}
+	tt.group(map[string]any{"key": "value"}, ti, telemeter.WithGroups("Test", "test-group-id"))
+	for i := 0; i < 3; i++ {
+		ch <- time.Time{}
 	}
 
 	tt.Stop()

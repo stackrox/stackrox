@@ -3,7 +3,6 @@ package segment
 import (
 	"time"
 
-	"github.com/benbjohnson/clock"
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -13,8 +12,6 @@ import (
 var (
 	log                     = logging.LoggerForModule()
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
-
-	internalClock clock.Clock = clock.New()
 )
 
 type segmentTelemeter struct {
@@ -182,6 +179,10 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 }
 
 func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
+	t.group(props, nil, opts...)
+}
+
+func (t *segmentTelemeter) group(props map[string]any, ti *time.Ticker, opts ...telemeter.Option) {
 	if t == nil {
 		return
 	}
@@ -218,6 +219,9 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 			Context:     group.Context,
 		}
 		go func() {
+			if ti == nil {
+				ti = time.NewTicker(2 * time.Second)
+			}
 			// Segment does not guarantee the processing order of the events,
 			// we need, therefore, to add a delay between Group and Track to
 			// ensure the Track catches the group properties. We do it several
@@ -225,12 +229,13 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 			// clients coming in between to capture the group properties.
 			for i := 0; i < 3; i++ {
 				if i != 0 {
-					internalClock.Sleep(2 * time.Second)
+					<-ti.C
 				}
 				if err := t.client.Enqueue(track); err != nil {
 					log.Error("Cannot enqueue Segment track event: ", err)
 				}
 			}
+			ti.Stop()
 		}()
 	}
 }
