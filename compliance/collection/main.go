@@ -16,6 +16,7 @@ import (
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -28,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/sensor/common/compliance"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc/metadata"
 )
@@ -324,7 +324,7 @@ func main() {
 		nodeInventoriesC := manageNodeScanLoop(ctx, i, nodeInventoryClient)
 
 		// merging sources fromSensorC and sensorC into output toSensorC
-		output := compliance.FanIn[sensor.MsgFromCompliance](ctx, fromSensorC, nodeInventoriesC)
+		output := channelmultiplexer.FanIn[sensor.MsgFromCompliance](ctx, fromSensorC, nodeInventoriesC)
 		for o := range output {
 			toSensorC <- o
 		}
