@@ -17,6 +17,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-14336: product `BuildDate` attribute was removed. It won't be returned by
 `/debug/versions.json` endpoint and `roxctl version --json` command.
+- ROX-12750: As announced in 3.73.0 (ROX-11101), some permissions for permission sets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions. 
+  - Permission `Administration` replaces the deprecated permissions `AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity`.
+  - Permission `Compliance` replaces the deprecated permission `ComplianceRuns`.
+
 
 ### Deprecated Features
 - Deprecated `/v1/telemetry/configure` service.
