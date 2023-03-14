@@ -36,8 +36,28 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
 
   go-postgres:
     strategy:
@@ -71,6 +91,16 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
   ui:
     runs-on: ubuntu-latest
     container:
@@ -92,6 +122,12 @@ jobs:
 
     - name: UI Unit Tests
       run: make ui-test
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'ui/test-results/reports/*.xml'
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
@@ -116,6 +152,12 @@ jobs:
 
     - name: Local roxctl tests
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'roxctl-test-output/*.xml'
 
   slack-on-unit-tests-failure:
     if: github.event_name == 'push' && failure()
