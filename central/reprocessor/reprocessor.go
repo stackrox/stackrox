@@ -454,7 +454,6 @@ func (l *loopImpl) reprocessNode(id string) bool {
 			node.GetClusterName(), node.GetName(), id, err)
 		return false
 	}
-	node.LastUpdated = nil
 	if err := l.risk.CalculateRiskAndUpsertNode(node); err != nil {
 		log.Errorf("upserting node %s:%s (id: %s): %v",
 			node.GetClusterName(), node.GetName(), id, err)

@@ -471,31 +471,23 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 	if !found {
 		return true, nil
 	}
-
-	scanUpdated := false
-	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
-	if oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) > 0 {
-		node.Scan = oldNode.Scan
-	} else {
-		scanUpdated = true
-	}
-
-	// If the node in the DB is latest, then use its risk score and scan stats
+	// We skip rewriting components and vulnerabilities if the node scan is older.
+	scanUpdated := oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
+		node.Scan = oldNode.Scan
 		node.RiskScore = oldNode.GetRiskScore()
 		node.SetComponents = oldNode.GetSetComponents()
 		node.SetCves = oldNode.GetSetCves()
 		node.SetFixable = oldNode.GetSetFixable()
 		node.SetTopCvss = oldNode.GetSetTopCvss()
 	}
-
 	return scanUpdated, nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	iTime := protoTypes.TimestampNow()
 
-	if !s.noUpdateTimestamps && obj.GetLastUpdated() == nil {
+	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
 	}
 	scanUpdated, err := s.isUpdated(ctx, obj)

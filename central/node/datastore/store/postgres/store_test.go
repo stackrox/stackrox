@@ -75,17 +75,11 @@ func (s *NodesStoreSuite) TestStore() {
 	foundNode, exists, err = store.Get(s.ctx, node.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(node.LastUpdated, foundNode.LastUpdated)
 	cloned := node.Clone()
 
-	// Upon insertion, all CVE objects are given Now() as they creation time, we
-	// updated our node to allow assertion with s.Equal()
-	for cIdx, component := range cloned.GetScan().GetComponents() {
-		for vIdx, vuln := range component.GetVulnerabilities() {
-			vuln.GetCveBaseInfo().CreatedAt = foundNode.GetScan().
-				GetComponents()[cIdx].
-				GetVulnerabilities()[vIdx].
-				GetCveBaseInfo().CreatedAt
+	for _, component := range cloned.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulnerabilities() {
+			vuln.CveBaseInfo.CreatedAt = node.GetLastUpdated()
 		}
 	}
 	s.Equal(cloned, foundNode)
@@ -102,6 +96,9 @@ func (s *NodesStoreSuite) TestStore() {
 	foundNode, exists, err = store.Get(s.ctx, node.GetId())
 	s.NoError(err)
 	s.True(exists)
+
+	// Reconcile the timestamps that are set during upsert.
+	cloned.LastUpdated = foundNode.LastUpdated
 	s.Equal(cloned, foundNode)
 
 	s.NoError(store.Delete(s.ctx, node.GetId()))

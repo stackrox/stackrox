@@ -84,7 +84,6 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	node = node.Clone()
-	node.LastUpdated = nil
 	node.ClusterId = clusterID
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
