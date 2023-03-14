@@ -344,7 +344,7 @@ var (
 				Administration: storage.Access_NO_ACCESS,
 				Compliance:     storage.Access_NO_ACCESS,
 				// Non-replaced resources
-				Access:                           storage.Access_NO_ACCESS,
+				Access:                           storage.Access_READ_ACCESS,
 				Alert:                            storage.Access_NO_ACCESS,
 				CVE:                              storage.Access_NO_ACCESS,
 				Cluster:                          storage.Access_READ_WRITE_ACCESS,
@@ -352,7 +352,7 @@ var (
 				DeploymentExtension:              storage.Access_NO_ACCESS,
 				Detection:                        storage.Access_NO_ACCESS,
 				Image:                            storage.Access_NO_ACCESS,
-				Integration:                      storage.Access_NO_ACCESS,
+				Integration:                      storage.Access_READ_WRITE_ACCESS,
 				K8sRole:                          storage.Access_NO_ACCESS,
 				K8sRoleBinding:                   storage.Access_READ_ACCESS,
 				K8sSubject:                       storage.Access_NO_ACCESS,
