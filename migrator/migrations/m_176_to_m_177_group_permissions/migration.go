@@ -14,7 +14,7 @@ import (
 const (
 	batchSize = 500
 
-	startSeqNum = 174
+	startSeqNum = 176
 )
 
 // Replacement resources
