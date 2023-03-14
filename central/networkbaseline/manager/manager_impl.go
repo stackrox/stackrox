@@ -256,25 +256,25 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			continue
 		}
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			info := m.lookUpPeerInfo(conn.DstEntity)
-			if info.name != "" {
+			peer := m.lookUpPeerInfo(conn.DstEntity)
+			if peer.name != "" {
 				m.maybeAddPeer(conn.SrcEntity.ID, &networkbaseline.Peer{
 					IsIngress: false,
 					Entity:    conn.DstEntity,
-					Name:      info.name,
+					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
-					CidrBlock: info.cidrBlock,
+					CidrBlock: peer.cidrBlock,
 				}, modifiedDeploymentIDs)
 			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peerInfo := m.lookUpPeerInfo(conn.SrcEntity)
-			if peerInfo.name != "" {
+			peer := m.lookUpPeerInfo(conn.SrcEntity)
+			if peer.name != "" {
 				m.maybeAddPeer(conn.DstEntity.ID, &networkbaseline.Peer{
 					IsIngress: true,
 					Entity:    conn.SrcEntity,
-					Name:      peerInfo.name,
+					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
 				}, modifiedDeploymentIDs)
