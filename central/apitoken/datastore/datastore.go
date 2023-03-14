@@ -21,6 +21,9 @@ type DataStore interface {
 
 	AddToken(ctx context.Context, token *storage.TokenMetadata) error
 	RevokeToken(ctx context.Context, id string) (exists bool, err error)
+
+	GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error)
+	UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error
 }
 
 // New returns a ready-to-use DataStore instance.
