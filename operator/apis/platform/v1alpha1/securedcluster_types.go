@@ -198,7 +198,7 @@ const (
 	// CollectionEBPF means: use EBPF collection.
 	CollectionEBPF CollectionMethod = "EBPF"
 	// CollectionModernBPF means: use modern_bpf collection.
-	CollectionModernBpf CollectionMehtod = "modern_bpf"
+	CollectionCoreBpf CollectionMethod = "CoreBpf"
 	// CollectionKernelModule means: use KERNEL_MODULE collection.
 	CollectionKernelModule CollectionMethod = "KernelModule"
 	// CollectionNone means: NO_COLLECTION.

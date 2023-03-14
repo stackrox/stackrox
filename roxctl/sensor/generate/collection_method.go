@@ -13,6 +13,7 @@ var (
 		"none":          storage.CollectionMethod_NO_COLLECTION,
 		"kernel-module": storage.CollectionMethod_KERNEL_MODULE,
 		"ebpf":          storage.CollectionMethod_EBPF,
+		"core-bpf":      storage.CollectionMethod_CORE_BPF,
 	}
 
 	enumToHumanReadable = func() map[storage.CollectionMethod]string {
