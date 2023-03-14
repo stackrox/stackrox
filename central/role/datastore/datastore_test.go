@@ -43,12 +43,7 @@ func TestAllDefaultRolesAreCovered(t *testing.T) {
 	}
 }
 
-// TODO ROX-12750 Replace DebugLogs with Administration.
-// TODO ROX-12750 Additionally Announce in CHANGELOG the behaviour change.
-// Announce suggestion (in Technical Changes):
-// ROX-12750: The Analyst permission set which used to have read access on all permissions except
-// the now deprecated `DebugLogs` permission now has read access to all permissions except `Administration`.
-func TestAnalystRoleDoesNotContainDebugLogs(t *testing.T) {
+func TestAnalystRoleDoesNotContainAdministration(t *testing.T) {
 	analystRole, found := defaultRoles[role.Analyst]
 	// Analyst is one of the default roles.
 	assert.True(t, found)
@@ -56,11 +51,9 @@ func TestAnalystRoleDoesNotContainDebugLogs(t *testing.T) {
 	resourceToAccess := analystRole.resourceWithAccess
 	// Contains all resources except one.
 	assert.Len(t, resourceToAccess, len(resources.ListAll())-1)
-	// TODO ROX-12750 Replace DebugLogs with Administration.
-	// Does not contain DebugLogs resource.
+	// Does not contain Administration resource.
 	for _, resource := range resourceToAccess {
-		// TODO ROX-12750 Replace DebugLogs with Administration.
-		assert.NotEqual(t, resource.Resource.GetResource(), resources.DebugLogs.GetResource())
+		assert.NotEqual(t, resource.Resource.GetResource(), resources.Administration.GetResource())
 	}
 }
 

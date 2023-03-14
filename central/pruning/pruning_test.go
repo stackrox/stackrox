@@ -629,9 +629,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 
 	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(s.T(),
 		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-			// TODO: ROX-12750 Replace Config with Administration.
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.DeploymentExtension),
@@ -1212,9 +1211,8 @@ func (s *PruningTestSuite) TestAlertPruning() {
 	}
 	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(s.T(),
 		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-			// TODO: ROX-12750 Replace Config with Administration.
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
 			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Alert),

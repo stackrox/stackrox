@@ -83,12 +83,6 @@ var (
 	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
-	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
-	Config = newDeprecatedResourceMetadata("Config", permissions.GlobalScope,
-		Administration)
-	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
-	DebugLogs = newDeprecatedResourceMetadata("DebugLogs", permissions.GlobalScope,
-		Administration)
 	// To-be-deprecated in 4.1 with ROX-13888 (deprecation notice in 3.74).
 	Policy = newDeprecatedResourceMetadata("Policy", permissions.GlobalScope, WorkflowAdministration)
 	// To-be-deprecated in 4.0 with ROX-12750 (deprecation notice in 3.73).
