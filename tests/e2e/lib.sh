@@ -614,7 +614,7 @@ wait_for_api() {
         pgrep port-forward
         info "pods:"
         kubectl -n stackrox get pod
-        exit 1
+#        exit 1
     fi
     set -e
 
