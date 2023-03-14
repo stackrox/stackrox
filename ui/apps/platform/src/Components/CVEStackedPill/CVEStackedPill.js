@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { AlertTriangle } from 'react-feather';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
-
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import FixableCVECount from 'Components/FixableCVECount';
 import SeverityStackedPill from 'Components/visuals/SeverityStackedPill';
 
@@ -84,7 +84,7 @@ const CVEStackedPill = ({
                 <Tooltip
                     type="alert"
                     content={
-                        <DetailedTooltipOverlay
+                        <DetailedTooltipContent
                             extraClassName="text-alert-800"
                             title="CVE Data May Be Inaccurate"
                             subtitle={scanMessage?.header}

@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Tooltip } from '@patternfly/react-core';
 
 import Menu from 'Components/Menu';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 const RowActionMenu = ({
     text,
@@ -14,7 +14,7 @@ const RowActionMenu = ({
     options,
     dataTestId,
 }) => (
-    <Tooltip content={<TooltipOverlay>{text}</TooltipOverlay>}>
+    <Tooltip content={text}>
         <div>
             <Menu
                 className={`${className} ${border}`}

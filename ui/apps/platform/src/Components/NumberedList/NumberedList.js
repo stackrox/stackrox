@@ -1,8 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 
 const leftSideClasses = 'p-2 text-sm text-primary-800 font-600 w-full';
 
@@ -59,8 +60,9 @@ const NumberedList = ({ data, linkLeftOnly }) => {
             <li key={text + subText + url} className={className}>
                 {tooltip && (
                     <Tooltip
+                        isContentLeftAligned
                         content={
-                            <DetailedTooltipOverlay
+                            <DetailedTooltipContent
                                 title={tooltip.title}
                                 body={tooltip.body}
                                 subtitle={tooltip.subtitle}

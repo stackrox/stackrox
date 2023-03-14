@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
 import { ExternalLink } from 'react-feather';
 import { differenceInDays } from 'date-fns';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import { getTime, getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import useMetadata from 'hooks/useMetadata';
@@ -57,7 +57,7 @@ function CredentialExpiration({
         }
         // A tooltip displays expiration date or time
         expirationElement = (
-            <Tooltip content={<TooltipOverlay>{tooltipText}</TooltipOverlay>}>
+            <Tooltip content={tooltipText}>
                 <div data-testid={testId}>{distanceElement}</div>
             </Tooltip>
         );
