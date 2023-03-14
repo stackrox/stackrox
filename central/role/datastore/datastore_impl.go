@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	groupDS "github.com/stackrox/rox/central/group/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
@@ -28,6 +29,7 @@ type dataStoreImpl struct {
 	roleStorage          rocksDBStore.RoleStore
 	permissionSetStorage rocksDBStore.PermissionSetStore
 	accessScopeStorage   rocksDBStore.SimpleAccessScopeStore
+	groupStorage         groupDS.DataStore
 
 	lock sync.RWMutex
 }
@@ -721,11 +723,35 @@ func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string)
 	if !found {
 		return errors.Wrapf(errox.NotFound, "name = %q", name)
 	}
-	if err = verifyRoleOrigin(ctx, role); err != nil {
+	if err := verifyRoleOrigin(ctx, role); err != nil {
 		return err
 	}
 
-	return verifyNotDefaultRole(role)
+	if err := verifyNotDefaultRole(role); err != nil {
+		return err
+	}
+
+	// Elevate the context to use resources.Access.
+	// TODO(ROX-14398): Once we use Access for this datastore instead of role, we can reuse the same context here.
+	groupCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
+	return ds.verifyGroupReferences(groupCtx, role)
+}
+
+// Returns errox.ReferencedByAnotherObject if the given role is referenced by a group.
+func (ds *dataStoreImpl) verifyGroupReferences(ctx context.Context, role *storage.Role) error {
+	groups, err := ds.groupStorage.GetFiltered(ctx, func(group *storage.Group) bool {
+		return group.GetRoleName() == role.GetName()
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(groups) > 0 {
+		return errox.ReferencedByAnotherObject.Newf("role %s is referenced by %d groups in auth providers, "+
+			"ensure all references to the role are removed", role.GetName(), len(groups))
+	}
+	return nil
 }
 
 // Returns errox.InvalidArgs if the given scope is a default one.

@@ -68,7 +68,7 @@ func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
 	return ds.storage.GetAll(ctx)
 }
 
-func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
+func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
 	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
@@ -79,7 +79,7 @@ func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.G
 	walkFn := func() error {
 		groups = groups[:0]
 		return ds.storage.Walk(ctx, func(g *storage.Group) error {
-			if filter == nil || filter(g.GetProps()) {
+			if filter == nil || filter(g) {
 				groups = append(groups, g)
 			}
 			return nil
@@ -220,8 +220,8 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 }
 
 func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string, force bool) error {
-	groups, err := ds.GetFiltered(ctx, func(properties *storage.GroupProperties) bool {
-		return authProviderID == properties.GetAuthProviderId()
+	groups, err := ds.GetFiltered(ctx, func(group *storage.Group) bool {
+		return authProviderID == group.GetProps().GetAuthProviderId()
 	})
 	if err != nil {
 		return errors.Wrap(err, "collecting associated groups")
@@ -231,11 +231,9 @@ func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authPr
 
 func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error {
 	// Search through all groups and verify whether any group exists with empty properties and attempt to delete them.
-	isEmptyGroupPropertiesF := func(props *storage.GroupProperties) bool {
-		if props.GetAuthProviderId() == "" && props.GetKey() == "" && props.GetValue() == "" {
-			return true
-		}
-		return false
+	isEmptyGroupPropertiesF := func(group *storage.Group) bool {
+		return group.GetProps().GetAuthProviderId() == "" && group.GetProps().GetKey() == "" &&
+			group.GetProps().GetValue() == ""
 	}
 	groups, err := ds.GetFiltered(ctx, isEmptyGroupPropertiesF)
 	if err != nil {
@@ -419,8 +417,8 @@ func isDefaultGroup(props *storage.GroupProperties) bool {
 // getByProps returns a group matching the given properties if it exists from the store.
 // If more than one group is found matching the properties, an error will be returned.
 func (ds *dataStoreImpl) getByProps(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
-	groups, err := ds.GetFiltered(ctx, func(p *storage.GroupProperties) bool {
-		return propertiesMatch(p, props)
+	groups, err := ds.GetFiltered(ctx, func(g *storage.Group) bool {
+		return propertiesMatch(g.GetProps(), props)
 	})
 
 	if err != nil {

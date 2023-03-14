@@ -6,6 +6,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	groupMock "github.com/stackrox/rox/central/group/datastore/mocks"
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
@@ -87,6 +89,8 @@ type roleDataStoreTestSuite struct {
 	boltDB    *bolt.DB
 	rocksie   *rocksdb.RocksDB
 
+	groupsDataStore *groupMock.MockDataStore
+
 	postgresTest *pgtest.TestPostgres
 
 	existingRole          *storage.Role
@@ -135,7 +139,8 @@ func (s *roleDataStoreTestSuite) initDataStore() {
 		s.Require().NoError(err)
 	}
 
-	s.dataStore = New(roleStorage, permissionSetStorage, accessScopeStorage)
+	s.groupsDataStore = groupMock.NewMockDataStore(gomock.NewController(s.T()))
+	s.dataStore = New(roleStorage, permissionSetStorage, accessScopeStorage, s.groupsDataStore)
 
 	// Insert a permission set, access scope, and role into the test DB.
 	s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
@@ -253,6 +258,7 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	badDeclarativeRole.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
+	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, secondExistingPermissionSet)
 	s.NoError(err, "failed to add second permission set needed for test")
@@ -349,6 +355,11 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 
 	err = s.dataStore.UpsertRole(s.hasWriteDeclarativeCtx, badDeclarativeRole)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(declarative resource)")
+}
+
+func (s *roleDataStoreTestSuite) TestRoleGroupReferences() {
+	// 1. If a group is returned, deletion should not be possible for the group.
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -828,7 +839,16 @@ func (s *roleDataStoreTestSuite) TestForeignKeyConstraints() {
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId())
 	s.ErrorIs(err, errox.ReferencedByAnotherObject, "cannot delete an Access Scope referred to by a Role")
 
-	s.NoError(s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName()))
+	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return([]*storage.Group{{
+		RoleName: role.GetName(),
+	}}, nil)
+	err = s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName())
+	s.ErrorIs(err, errox.ReferencedByAnotherObject)
+
+	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
+	err = s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName())
+	s.NoError(err)
+
 	s.NoError(s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId()))
 	s.NoError(s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId()))
 }
