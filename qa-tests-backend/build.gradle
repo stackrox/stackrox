@@ -20,7 +20,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.22.0'
 def protobufVersion = '3.22.0'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '6.4.1'
+def fabric8Version = '6.5.0'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -69,7 +69,7 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.9')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.10')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"

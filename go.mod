@@ -75,10 +75,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/client_model v0.3.0
-	github.com/prometheus/common v0.39.0
+	github.com/prometheus/common v0.42.0
 	github.com/quay/claircore v1.4.18
 	github.com/russellhaering/gosaml2 v0.9.0
-	github.com/russellhaering/goxmldsig v1.2.0
+	github.com/russellhaering/goxmldsig v1.3.0
 	github.com/sergi/go-diff v1.3.1
 	github.com/sigstore/cosign v1.13.1
 	github.com/sigstore/sigstore v1.5.1
@@ -105,7 +105,7 @@ require (
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.6.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.6.0
+	golang.org/x/tools v0.7.0
 	golang.stackrox.io/grpc-http1 v0.2.6
 	google.golang.org/api v0.111.0
 	google.golang.org/genproto v0.0.0-20230223222841-637eb2293923
@@ -116,11 +116,11 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.4.8
 	gorm.io/gorm v1.24.6
-	helm.sh/helm/v3 v3.11.1
-	k8s.io/api v0.26.1
-	k8s.io/apimachinery v0.26.1
+	helm.sh/helm/v3 v3.11.2
+	k8s.io/api v0.26.2
+	k8s.io/apimachinery v0.26.2
 	k8s.io/apiserver v0.26.1
-	k8s.io/client-go v0.26.1
+	k8s.io/client-go v0.26.2
 	k8s.io/kubectl v0.26.0
 	k8s.io/kubelet v0.26.1
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491
@@ -189,7 +189,7 @@ require (
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.4.0 // indirect
 	github.com/go-git/go-git/v5 v5.5.2 // indirect
-	github.com/go-gorp/gorp/v3 v3.0.2 // indirect
+	github.com/go-gorp/gorp/v3 v3.0.5 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
@@ -223,7 +223,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/huandu/xstrings v1.3.3 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/in-toto/in-toto-golang v0.3.4-0.20220709202702-fa494aaa0add // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
@@ -290,15 +290,14 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
-	github.com/rogpeppe/go-internal v1.8.1 // indirect
-	github.com/rubenv/sql-migrate v1.2.0 // indirect
+	github.com/rubenv/sql-migrate v1.3.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sassoftware/relic v0.0.0-20210427151427-dfb082b79b74 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0 // indirect
 	github.com/segmentio/analytics-go/v3 v3.2.1
 	github.com/segmentio/backo-go v1.0.1 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
-	github.com/shopspring/decimal v1.2.0 // indirect
+	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sigstore/rekor v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
@@ -337,7 +336,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/mod v0.8.0 // indirect
+	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect

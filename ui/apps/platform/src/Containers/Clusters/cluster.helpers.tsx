@@ -208,6 +208,22 @@ export const sensorUpgradeStyles = {
     failure: styleUnhealthy,
 };
 
+export const sensorUpgradeStylesPF = {
+    current: styleHealthyPF,
+    progress: {
+        Icon: InProgressIcon,
+        bgColor: 'bg-tertiary-200',
+        fgColor: 'text-tertiary-700',
+    },
+    download: {
+        Icon: DownloadCloud,
+        bgColor: 'bg-tertiary-200',
+        fgColor: 'text-tertiary-700',
+    },
+    intervention: styleDegradedPF,
+    failure: styleUnhealthyPF,
+};
+
 type UpgradeState = {
     displayValue?: string;
     type: string;

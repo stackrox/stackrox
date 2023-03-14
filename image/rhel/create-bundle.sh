@@ -122,7 +122,7 @@ fi
 rpm_base_url="http://mirror.centos.org/centos/8-stream/BaseOS/${arch}/os/Packages"
 rpm_suffix="el8.${arch}.rpm"
 
-curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_suffix}"
+curl --retry 3 -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_suffix}"
 
 # Install Postgres Client so central can initiate backups/restores
 # Get postgres RPMs directly
@@ -149,9 +149,9 @@ EOF
     rm -rf "${build_dir}"
 fi
 
-curl -sS --fail -o "${bundle_root}/postgres.rpm" \
+curl --retry 3 -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
-curl -sS --fail -o "${bundle_root}/postgres-libs.rpm" \
+curl --retry 3 -sS --fail -o "${bundle_root}/postgres-libs.rpm" \
     "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
 
 # =============================================================================

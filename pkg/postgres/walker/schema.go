@@ -418,6 +418,10 @@ type PostgresOptions struct {
 	// IgnoreChildFKs is an option used to tell the walker that
 	// foreign keys of children of this field should be ignored.
 	IgnoreChildFKs bool
+
+	// IgnoreChildIndexes is an option used to tell the walker that
+	// index options of children of this field should be ignored.
+	IgnoreChildIndexes bool
 }
 
 type foreignKeyRef struct {

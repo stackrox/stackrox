@@ -550,37 +550,43 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.get(selectors.eventTimeline.legend).click();
 
             // make sure the process activity icon and text shows up
-            cy.get(`${selectors.tooltip.legendContents}:eq(0):contains("Process Activity")`);
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(0) ${selectors.tooltip.legendContent.event.processActivity}`
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(0):contains("Process Activity")`
+            );
+            cy.get(
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(0) ${selectors.tooltip.legendContent.event.processActivity}`
             );
 
             // make sure the policy violation icon and text shows up
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(1):contains("Process Activity with Violation")`
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(1):contains("Process Activity with Violation")`
             );
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(1) ${selectors.tooltip.legendContent.event.policyViolation}`
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(1) ${selectors.tooltip.legendContent.event.policyViolation}`
             );
 
             // make sure the process in baseline activity icon and text shows up
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(2):contains("Baseline Process Activity")`
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(2):contains("Baseline Process Activity")`
             );
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(2) ${selectors.tooltip.legendContent.event.processInBaselineActivity}`
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(2) ${selectors.tooltip.legendContent.event.processInBaselineActivity}`
             );
 
             // make sure the container restart icon and text shows up
-            cy.get(`${selectors.tooltip.legendContents}:eq(3):contains("Container Restart")`);
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(3) ${selectors.tooltip.legendContent.event.restart}`
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(3):contains("Container Restart")`
+            );
+            cy.get(
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(3) ${selectors.tooltip.legendContent.event.restart}`
             );
 
             // make sure the container termination icon and text shows up
-            cy.get(`${selectors.tooltip.legendContents}:eq(4):contains("Container Termination")`);
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(4) ${selectors.tooltip.legendContent.event.termination}`
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(4):contains("Container Termination")`
+            );
+            cy.get(
+                `${selectors.tooltip.legendContents} [data-testid="timeline-legend-items"] div:eq(4) ${selectors.tooltip.legendContent.event.termination}`
             );
         });
     });

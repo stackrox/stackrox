@@ -645,16 +645,27 @@ mark_collector_release() {
 
     # We need to make sure the file ends with a newline so as not to corrupt it when appending.
     [[ ! -f RELEASED_VERSIONS ]] || sed --in-place -e '$a'\\ RELEASED_VERSIONS
-    echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
-        >>RELEASED_VERSIONS
-    gitbot add RELEASED_VERSIONS
-    gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
-    gitbot push origin "${branch_name}"
+    if grep -q "${tag}" RELEASED_VERSIONS; then
+        echo "Skip RELEASED_VERSIONS file change, already up to date ..." >> "${GITHUB_STEP_SUMMARY}"
+    else
+        echo "Update RELEASED_VERSIONS file ..." >> "${GITHUB_STEP_SUMMARY}"
+        echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
+            >>RELEASED_VERSIONS
+        gitbot add RELEASED_VERSIONS
+        gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
+        gitbot push origin "${branch_name}"
+    fi
 
-    echo "Create a PR for collector to add this release to its RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
-    gh pr create \
-        --title "Update RELEASED_VERSIONS for StackRox release ${tag}" \
-        --body "Add entry into the RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+    PRs=$(gh pr list -s open \
+            --head "${branch_name}" \
+            --json number \
+            --jq length)
+    if [ "$PRs" -eq 0 ]; then
+        echo "Create a PR for collector to add this release to its RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+        gh pr create \
+            --title "Update RELEASED_VERSIONS for StackRox release ${tag}" \
+            --body "Add entry into the RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+    fi
     popd
 }
 

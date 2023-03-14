@@ -39,19 +39,19 @@ class ImageSignatureVerificationTest extends BaseSpecification {
 
     // Public keys used within signature integrations.
     static final private Map<String, String> DISTROLESS_PUBLIC_KEY = [
-            // Source: https://raw.githubusercontent.com/GoogleContainerTools/distroless/main/cosign.pub
+            // Source: https://vault.bitwarden.com/#/vault?itemId=95313e19-de46-4533-b160-af620120452a.
             "Distroless": """\
 -----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZzVzkb8A+DbgDpaJId/bOmV8n7Q
-OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2QA+RSRa8Vg99d/+SIXxDxN/yzB6
+3sr+xlBGf1bF8Gdr9NPHPoOvbGY0AjgfQ2Zua2d7VxPCPKElLspit9GT8g==
 -----END PUBLIC KEY-----""",
     ]
     static final private Map<String, String> TEKTON_COSIGN_PUBLIC_KEY = [
-            // Source: https://raw.githubusercontent.com/tektoncd/chains/main/tekton.pub
+            // Source: https://vault.bitwarden.com/#/vault?itemId=95313e19-de46-4533-b160-af620120452a.
             "Tekton": """\
 -----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnLNw3RYx9xQjXbUEw8vonX3U4+tB
-kPnJq+zt386SCoG0ewIH5MB8+GjIDGArUULSDfjfM31Eae/71kavAUI0OA==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEOp8ZlfXy8X2Xmnwd42tEQNQ89ywz
+SA4GiM5faRXdIis6gk/codRMmN+fZh6E4uwYC3fgl6v4zqBYUZZUhqb2ow==
 -----END PUBLIC KEY-----""",
     ]
     static final private Map<String, String> UNVERIFIABLE_COSIGN_PUBLIC_KEY = [
@@ -74,7 +74,9 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
     static final private Deployment DISTROLESS_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-distroless")
-            .setImage("gcr.io/distroless/base@sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766")
+            // quay.io/rhacs-eng/qa-signatures:distroless-base
+            .setImage("quay.io/rhacs-eng/qa-signatures@" +
+                    "sha256:0e283722d5121a2610ce7fb85fd04800cc3a99fd2321f5678a2aa35f9e98d9c2")
             .addLabel("app", "image-with-signature-distroless-test")
             .setCommand(["sleep", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -82,8 +84,9 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which has a cosign signature that is verifiable with the TEKTON_PUBLIC_KEY.
     static final private Deployment TEKTON_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-tekton")
-            .setImage("gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init@" +
-                    "sha256:79f768d28ff9af9fcbf186f9fc1b8e9f88835dfb07be91610a1f17cf862db89e")
+            // quay.io/rhacs-eng/qa-signatures:tekton
+            .setImage("quay.io/rhacs-eng/qa-signatures@" +
+                    "sha256:5bc15c838843506f6aaa6fa8d03b8d83f15b936a0362d6732afa0f45135fcf54")
             .addLabel("app", "image-with-signature-tekton-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -91,7 +94,9 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which has a cosign signature that is not verifiable by any cosign public key.
     static final private Deployment UNVERIFIABLE_DEPLOYMENT = new Deployment()
             .setName("with-signature-unverifiable")
-            .setImage("docker.io/istio/proxyv2@sha256:134e99aa9597fdc17305592d13add95e2032609d23b4c508bd5ebd32ed2df47d")
+            // quay.io/rhacs-eng/qa-signatures:istio-proxy
+            .setImage("quay.io/rhacs-eng/qa-signatures@" +
+                    "sha256:134e99aa9597fdc17305592d13add95e2032609d23b4c508bd5ebd32ed2df47d")
             .addLabel("app", "image-with-unverifiable-signature-test")
             .setCommand(["/usr/local/bin/pilot-agent", "wait", "--timeoutSeconds", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -99,22 +104,27 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     // Deployment holding an image which does not have a cosign signature.
     static final private Deployment WITHOUT_SIGNATURE_DEPLOYMENT = new Deployment()
             .setName("without-signature")
-            .setImage("docker.io/nginx@sha256:63aa22a3a677b20b74f4c977a418576934026d8562c04f6a635f0e71e0686b6d")
+            // quay.io/rhacs-eng/qa:nginx-204a9a8
+            .setImage("quay.io/rhacs-eng/qa@" +
+                    "sha256:7413e4ab770f308c01659dd1015e61dcc1dead3923d4347dbf3c59206594332f")
             .addLabel("app", "image-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
-    // Deployment holding an image with the same digest as docker.io/daha97/alt-nginx that does not have a cosign
-    // signature associated with it.
+    // Deployment holding an image with the same digest as quay.io/rhacs-eng/qa-signatures:nginx that does
+    // not have a cosign signature associated with it.
     static final private Deployment SAME_DIGEST_NO_SIGNATURE = new Deployment()
             .setName("same-digest-without-signature")
-            .setImage("quay.io/rhacs-eng/qa@sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
+            // quay.io/rhacs-eng/qa:enforcement
+            .setImage("quay.io/rhacs-eng/qa@" +
+                    "sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
             .addLabel("app", "image-same-digest-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
-    // Deployment holding an image with the same digest as docker.io/daha97/nginx that does have a cosign signature
-    // associated with it.
+    // Deployment holding an image with the same digest as quay.io/rhacs-eng/qa:enforcement that does
+    // have a cosign signature associated with it.
     static final private Deployment SAME_DIGEST_WITH_SIGNATURE = new Deployment()
             .setName("same-digest-with-signature")
+            // quay.io/rhacs-eng/qa-signatures:nginx
             .setImage("quay.io/rhacs-eng/qa-signatures@" +
                     "sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
             .addLabel("app", "image-same-digest-with-signature")

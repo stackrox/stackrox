@@ -299,6 +299,10 @@ var (
 	GroupKey          = newFieldLabel("Group Key")
 	GroupValue        = newFieldLabel("Group Value")
 
+	// API Token fields
+	Expiration = newFieldLabel("Expiration")
+	Revoked    = newFieldLabel("Revoked")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")

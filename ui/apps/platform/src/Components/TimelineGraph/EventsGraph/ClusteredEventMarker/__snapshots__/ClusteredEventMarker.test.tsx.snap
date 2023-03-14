@@ -11,9 +11,7 @@ exports[`should show a clustered container restart event marker 1`] = `
       data-testid="timeline-clustered-event-marker"
       transform="translate(NaN, 12.5)"
     >
-      <g
-        aria-expanded="false"
-      >
+      <g>
         <svg
           class="cursor-pointer"
           clip-rule="evenodd"
@@ -73,9 +71,7 @@ exports[`should show a clustered generic event marker 1`] = `
       data-testid="timeline-clustered-event-marker"
       transform="translate(NaN, 12.5)"
     >
-      <g
-        aria-expanded="false"
-      >
+      <g>
         <svg
           class="cursor-pointer"
           data-testid="clustered-generic-event"
@@ -141,9 +137,7 @@ exports[`should show a clustered policy violation event marker 1`] = `
       data-testid="timeline-clustered-event-marker"
       transform="translate(NaN, 12.5)"
     >
-      <g
-        aria-expanded="false"
-      >
+      <g>
         <svg
           class="cursor-pointer"
           data-testid="clustered-policy-violation-event"
@@ -218,9 +212,7 @@ exports[`should show a clustered process activity event marker 1`] = `
       data-testid="timeline-clustered-event-marker"
       transform="translate(NaN, 12.5)"
     >
-      <g
-        aria-expanded="false"
-      >
+      <g>
         <svg
           class="cursor-pointer"
           data-testid="clustered-process-activity-event"
@@ -286,9 +278,7 @@ exports[`should show a clustered process in baseline activity event marker 1`] =
       data-testid="timeline-clustered-event-marker"
       transform="translate(NaN, 12.5)"
     >
-      <g
-        aria-expanded="false"
-      >
+      <g>
         <svg
           class="cursor-pointer"
           data-testid="clustered-process-in-baseline-activity-event"
@@ -362,9 +352,7 @@ exports[`should show a container termination event marker 1`] = `
       data-testid="timeline-clustered-event-marker"
       transform="translate(NaN, 12.5)"
     >
-      <g
-        aria-expanded="false"
-      >
+      <g>
         <svg
           class="cursor-pointer"
           data-testid="clustered-termination-event"

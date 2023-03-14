@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
@@ -18,7 +18,7 @@ function Undo({ undoModification, applicationState }: UndoProps): ReactElement {
     }
 
     return (
-        <Tooltip content={<TooltipOverlay>Revert most recently applied YAML</TooltipOverlay>}>
+        <Tooltip content="Revert most recently applied YAML">
             <button
                 type="button"
                 disabled={applicationState === 'REQUEST'}

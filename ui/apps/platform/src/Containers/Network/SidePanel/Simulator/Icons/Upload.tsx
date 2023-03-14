@@ -2,7 +2,7 @@ import React, { useCallback, ReactElement } from 'react';
 import { connect } from 'react-redux';
 import * as Icon from 'react-feather';
 import { useDropzone } from 'react-dropzone';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -69,7 +69,7 @@ function Upload({
     const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
     return (
-        <Tooltip content={<TooltipOverlay>Upload a new YAML</TooltipOverlay>}>
+        <Tooltip content="Upload a new YAML">
             <div
                 {...getRootProps()}
                 className="inline-block px-2 py-2 border-r border-base-300 cursor-pointer outline-none"
