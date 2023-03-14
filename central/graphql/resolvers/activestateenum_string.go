@@ -11,11 +11,12 @@ func _() {
 	_ = x[Undetermined-0]
 	_ = x[Inactive-1]
 	_ = x[Active-2]
+	_ = x[FeatureDisabled-3]
 }
 
-const _ActiveStateEnum_name = "UndeterminedInactiveActive"
+const _ActiveStateEnum_name = "UndeterminedInactiveActiveFeatureDisabled"
 
-var _ActiveStateEnum_index = [...]uint8{0, 12, 20, 26}
+var _ActiveStateEnum_index = [...]uint8{0, 12, 20, 26, 41}
 
 func (i ActiveStateEnum) String() string {
 	if i < 0 || i >= ActiveStateEnum(len(_ActiveStateEnum_index)-1) {
