@@ -176,13 +176,7 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
                         title={<TabTitleText>Observed CVEs</TabTitleText>}
                     >
                         <PageSection variant="light" component="div" isFilled>
-                            <WorkloadTableToolbar
-                                // TODO: wire up the actual default filters in this component
-                                defaultFilters={{
-                                    Severity: ['Critical'],
-                                    Fixable: ['Fixable'],
-                                }}
-                            />
+                            <WorkloadTableToolbar />
                             {mainContent}
                         </PageSection>
                     </Tab>
