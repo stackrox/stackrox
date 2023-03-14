@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import generate from 'images/generate.svg';
@@ -15,7 +15,7 @@ function Generate({ generatePolicyModification }: GenerateProps): ReactElement {
     }
 
     return (
-        <Tooltip content={<TooltipOverlay>Generate a new YAML</TooltipOverlay>}>
+        <Tooltip content="Generate a new YAML">
             <button
                 type="button"
                 className="inline-block px-2 py-2 border-r border-base-300 cursor-pointer"

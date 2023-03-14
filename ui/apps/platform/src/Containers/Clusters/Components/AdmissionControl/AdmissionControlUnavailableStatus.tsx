@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import HealthStatus from '../HealthStatus';
 
 type AdmissionControlUnavailableStatusProps = {
@@ -25,7 +25,7 @@ function AdmissionControlUnavailableStatus({
     );
 
     return isList ? (
-        <Tooltip content={<TooltipOverlay>{reasonUnavailable}</TooltipOverlay>}>
+        <Tooltip content={reasonUnavailable}>
             <div className="inline">{healthStatusElement}</div>
         </Tooltip>
     ) : (
