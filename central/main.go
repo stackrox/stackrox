@@ -619,16 +619,14 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
 		{
-			Route: "/api/extensions/clusters/zip",
-			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity))),
+			Route:         "/api/extensions/clusters/zip",
+			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{
-			Route: "/api/extensions/scanner/zip",
-			// TODO: ROX-12750 Replace ScannerBundle with Administration.
-			Authorizer:    user.With(permissions.View(resources.ScannerBundle)),
+			Route:         "/api/extensions/scanner/zip",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
 		},
@@ -784,12 +782,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
 				or.SensorOrAuthorizer(
 					or.ScannerOr(
-						// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
-						user.With(permissions.View(resources.ScannerDefinitions)))): {
+						user.With(permissions.View(resources.Administration)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
-				// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
-				user.With(permissions.Modify(resources.ScannerDefinitions)): {
+				user.With(permissions.Modify(resources.Administration)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},
 			}),
