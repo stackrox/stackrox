@@ -33,15 +33,19 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 		return nil, nil
 	}
 
+	log.Info("SHREWS -- in GetMetadata before OnGCE call")
 	if !metadata.OnGCE() {
 		return nil, nil
 	}
+	log.Info("SHREWS -- in GetMetadata after OnGCE call")
 
 	c := metadata.NewClient(metadataHTTPClient)
+	log.Info("SHREWS -- in GetMetadata after NewClient call")
 
 	var verified bool
 	errs := errorhelpers.NewErrorList("retrieving GCE metadata")
 	md, err := getMetadataFromIdentityToken(ctx)
+	log.Info("SHREWS -- in GetMetadata after getMetadataFromIdentityToken call")
 	errs.AddError(err)
 	if md != nil {
 		verified = true
@@ -63,6 +67,8 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 
 	// clusterName only exists on GKE
 	clusterName, err := c.InstanceAttributeValue("cluster-name")
+	log.Info("SHREWS -- in GetMetadata after clusterName call")
+
 	if err != nil && !isNotDefinedError(err) {
 		return nil, err
 	}
