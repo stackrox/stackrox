@@ -130,4 +130,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations"
 	_ "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_network_flows_partition"
 	_ "github.com/stackrox/rox/migrator/migrations/m_173_to_m_174_group_unique_constraint"
+	_ "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens"
 )
