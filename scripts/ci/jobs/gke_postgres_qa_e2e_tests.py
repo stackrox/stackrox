@@ -10,6 +10,7 @@ from clusters import GKECluster
 # set test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["GCP_IMAGE_TYPE"] = "cos_containerd"
+os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
 # use postgres
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
