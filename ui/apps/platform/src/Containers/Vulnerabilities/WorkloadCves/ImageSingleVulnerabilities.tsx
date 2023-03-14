@@ -134,21 +134,23 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
         const hiddenStatuses = new Set<FixableStatus>([]);
 
         mainContent = (
-            <Grid hasGutter>
-                <GridItem sm={12} md={6} xl2={4}>
-                    <BySeveritySummaryCard
-                        title="CVEs by severity"
-                        severityCounts={severityCounts}
-                        hiddenSeverities={hiddenSeverities}
-                    />
-                </GridItem>
-                <GridItem sm={12} md={6} xl2={4}>
-                    <CvesByStatusSummaryCard
-                        cveStatusCounts={cveStatusCounts}
-                        hiddenStatuses={hiddenStatuses}
-                    />
-                </GridItem>
-            </Grid>
+            <div className="pf-u-px-lg pf-u-pb-lg">
+                <Grid hasGutter>
+                    <GridItem sm={12} md={6} xl2={4}>
+                        <BySeveritySummaryCard
+                            title="CVEs by severity"
+                            severityCounts={severityCounts}
+                            hiddenSeverities={hiddenSeverities}
+                        />
+                    </GridItem>
+                    <GridItem sm={12} md={6} xl2={4}>
+                        <CvesByStatusSummaryCard
+                            cveStatusCounts={cveStatusCounts}
+                            hiddenStatuses={hiddenStatuses}
+                        />
+                    </GridItem>
+                </Grid>
+            </div>
         );
     }
 
@@ -175,16 +177,12 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
                         eventKey="Observed"
                         title={<TabTitleText>Observed CVEs</TabTitleText>}
                     >
-                        <PageSection variant="light" component="div" isFilled>
-                            <WorkloadTableToolbar
-                                // TODO: wire up the actual default filters in this component
-                                defaultFilters={{
-                                    Severity: ['Critical'],
-                                    Fixable: ['Fixable'],
-                                }}
-                            />
+                        <div className="pf-u-px-sm pf-u-background-color-100">
+                            <WorkloadTableToolbar />
+                        </div>
+                        <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                             {mainContent}
-                        </PageSection>
+                        </div>
                     </Tab>
                     <Tab
                         className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"

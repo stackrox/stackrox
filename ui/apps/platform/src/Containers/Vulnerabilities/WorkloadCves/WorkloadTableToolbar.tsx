@@ -22,14 +22,22 @@ import CVEStatusDropdown from './CVEStatusDropdown';
 
 import './WorkloadTableToolbar.css';
 
+const emptyDefaultFilters = {
+    Severity: [],
+    Fixable: [],
+};
+
 type FilterType = 'resource' | 'Severity' | 'Fixable';
 
 type WorkloadTableToolbarProps = {
-    defaultFilters: DefaultFilters;
+    defaultFilters?: DefaultFilters;
     resourceContext?: Resource;
 };
 
-function WorkloadTableToolbar({ defaultFilters, resourceContext }: WorkloadTableToolbarProps) {
+function WorkloadTableToolbar({
+    defaultFilters = emptyDefaultFilters,
+    resourceContext,
+}: WorkloadTableToolbarProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const severityFilterChips: ToolbarChip[] = [];
     const fixableFilterChips: ToolbarChip[] = [];
