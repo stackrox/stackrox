@@ -19,8 +19,8 @@ const (
 	Inactive
 	// Active means the vulnerability or component is active.
 	Active
-	// Disabled means the feature is disabled
-	Disabled
+	// FeatureDisabled means the feature is disabled
+	FeatureDisabled
 )
 
 func init() {
@@ -42,7 +42,7 @@ type activeStateResolver struct {
 // State is the activeness state
 func (asr *activeStateResolver) State(_ context.Context) string {
 	if !env.ActiveVulnMgmt.BooleanSetting() {
-		return Disabled.String()
+		return FeatureDisabled.String()
 	}
 	return asr.state.String()
 }
