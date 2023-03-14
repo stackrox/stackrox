@@ -21,7 +21,7 @@ test_upgrade() {
 
     info "SHREWS"
     echo "${GCE_METADATA_HOST}"
-    curl http://169.254.169.254/computeMetadata/v1/instance/hostname
+#    curl http://169.254.169.254/computeMetadata/v1/instance/hostname
     info "end SHREWS"
 
     # Need to push the flag to ci so that is where it needs to be for the part
