@@ -56,6 +56,8 @@ type expirationNotifierImpl struct {
 
 	stopper concurrency.Stopper
 
+	notificationTicker *time.Ticker
+
 	notifier TokenExpirationNotifier
 }
 
@@ -69,6 +71,7 @@ func newExpirationNotifier(store datastore.DataStore) *expirationNotifierImpl {
 
 func (n *expirationNotifierImpl) Start() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		n.notificationTicker = time.NewTicker(env.APITokenExpirationNotificationInterval.DurationSetting())
 		go n.runExpirationNotifier()
 	}
 }
@@ -86,11 +89,13 @@ func (n *expirationNotifierImpl) runExpirationNotifier() {
 
 	n.checkAndNotifyExpirations()
 
-	t := time.NewTicker(env.APITokenExpirationNotificationInterval.DurationSetting())
-	defer t.Stop()
+	if n.notificationTicker == nil {
+		n.notificationTicker = time.NewTicker(env.APITokenExpirationNotificationInterval.DurationSetting())
+	}
+	defer n.notificationTicker.Stop()
 	for {
 		select {
-		case <-t.C:
+		case <-n.notificationTicker.C:
 			n.checkAndNotifyExpirations()
 		case <-n.stopper.Flow().StopRequested():
 			return
