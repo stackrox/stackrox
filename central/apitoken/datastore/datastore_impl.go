@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	scheduleStore "github.com/stackrox/rox/central/apitoken/datastore/internal/schedulestore/postgres"
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
 	rocksdbStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/rocksdb"
@@ -31,6 +32,8 @@ type datastoreImpl struct {
 	storage  store.Store
 	searcher search.Searcher
 
+	scheduleStorage scheduleStore.Store
+
 	sync.Mutex
 }
 
@@ -38,18 +41,21 @@ func newPostgres(pool *postgres.DB) *datastoreImpl {
 	storage := postgresStore.New(pool)
 	indexer := postgresStore.NewIndexer(pool)
 	searcher := blevesearch.WrapUnsafeSearcherAsSearcher(indexer)
+	scheduleStorage := scheduleStore.New(pool)
 
 	return &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage:         storage,
+		searcher:        searcher,
+		scheduleStorage: scheduleStorage,
 	}
 }
 
 func newRocks(rocksDBInstance *rocksdb.RocksDB) *datastoreImpl {
 	storage := rocksdbStore.New(rocksDBInstance)
 	return &datastoreImpl{
-		storage:  storage,
-		searcher: nil,
+		storage:         storage,
+		searcher:        nil,
+		scheduleStorage: nil,
 	}
 }
 
@@ -157,4 +163,18 @@ func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*st
 	}
 	return b.storage.GetByQuery(ctx, q)
 
+}
+
+func (b *datastoreImpl) GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error) {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil, false, errors.New("API Token notification schedule retrieval is only supported in postgres mode")
+	}
+	return b.scheduleStorage.Get(ctx)
+}
+
+func (b *datastoreImpl) UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return errors.New("API Token notification schedule update is only supported in postgres mode")
+	}
+	return b.scheduleStorage.Upsert(ctx, schedule)
 }
