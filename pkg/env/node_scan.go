@@ -32,4 +32,7 @@ var (
 
 	// NodeInventoryContainerEnabled is used to tell compliance whether a connection to the node-inventory container should be attempted
 	NodeInventoryContainerEnabled = RegisterBooleanSetting("ROX_CALL_NODE_INVENTORY_ENABLED", true)
+
+	// NodeAnalysisDeadline is a time in which node analyzer should finish filesystem scanning and produce an inventory
+	NodeAnalysisDeadline = registerDurationSetting("ROX_NODE_SCANNING_DEADLINE", 15*time.Second)
 )
