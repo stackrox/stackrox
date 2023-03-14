@@ -36,6 +36,29 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    - name: Go Integration Unit Tests
+      run: ${{ matrix.gotags }} make integration-unit-tests
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
   go-postgres:
     strategy:
       matrix:
@@ -68,6 +91,16 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
   ui:
     runs-on: ubuntu-latest
     container:
@@ -89,3 +122,59 @@ jobs:
 
     - name: UI Unit Tests
       run: make ui-test
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'ui/test-results/reports/*.xml'
+
+  local-roxctl-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - uses: ./.github/actions/handle-tagged-build
+
+    - name: Local roxctl tests
+      run: ./scripts/ci/jobs/local-roxctl-tests.sh
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'roxctl-test-output/*.xml'
+
+  slack-on-unit-tests-failure:
+    if: github.event_name == 'push' && failure()
+    name: Post failure message to Slack
+    runs-on: ubuntu-latest
+    needs:
+      - go
+      - go-postgres
+      - ui
+      - local-roxctl-tests
+    permissions:
+      actions: read
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@26a36836c887f260477432e4314ec3490a84f309
+        with:
+          include_commit_message: true
+          include_jobs: on-failure
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}
