@@ -84,15 +84,19 @@ function roxcurl() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
+    info "SHREWS"
     if is_CI; then
-        gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
+#        gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
+        make cli
     else
         make cli
     fi
     chmod +x "bin/$TEST_HOST_PLATFORM/roxctl"
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
+#    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
+#    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+#    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
+    bin/"$TEST_HOST_PLATFORM"/roxctl version
+    bin/"$TEST_HOST_PLATFORM"/roxctl \
     MAIN_IMAGE_TAG="$EARLIER_TAG" \
     SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
     SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
