@@ -24,11 +24,21 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `--offline-mode` flag for the `roxctl scanner generate` command is deprecated, as Scanner's default behavior is
   to fetch vulnerability updates from Central. The flag will be removed as part of the 4.2.0 release.
 
+### Required Actions
+- The `Analyst` permission set will change behaviour: instead of allowing read to all resources except `DebugLogs`, it will 
+  allow read to all resources except `Administration`.
+  If you were using the `Analyst` role or permission set for actions requiring read on `AllComments`, `Config`,
+  `NetworkGraphConfig`, `ProbeUpload`, `ScannerBundle`, `ScannerDefinitions`, `SensorUpgradeConfig` or `ServiceIdentity`
+  resources, you should preemptively create a new permission set with read access on the `Administration`
+  and other required resources, and reference it instead of `Analyst` in the created roles.
+
 ### Technical Changes
 - Active Vulnerability Management has been moved behind that ROX_ACTIVE_VULN_MGMT flag and has been defaulted to false due to
   performance. If Active Vulnerability Management is desired, then a user may set this flag to true and it will be reactivated;
   however, it is recommended to increase the memory limit of Central.
 - ROX-14251: StackRox now uses IMDSv2 to retrieve AWS metadata instead of IMDSv1.
+- ROX-12750: The `Analyst` permission set which used to have read access on all permissions except
+  the now deprecated `DebugLogs` permission now has read access to all permissions except `Administration`.
 
 ## [3.74.0]
 

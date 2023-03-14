@@ -544,8 +544,7 @@ func startGRPCServer() {
 	telemetryCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-12750 Replace Config with Administration.
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	if cds, err := configDS.Singleton().GetConfig(telemetryCtx); err == nil || cds == nil {
 		if t := cds.GetPublicConfig().GetTelemetry(); t == nil || t.GetEnabled() {
