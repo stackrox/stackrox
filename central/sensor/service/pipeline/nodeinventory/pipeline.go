@@ -76,11 +76,11 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// Read the node from the database, if not found we fail.
 	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())
 	if err != nil {
-		log.Errorf("fetching node id %q from the database: %v", ninv.GetNodeId(), err)
+		log.Errorf("fetching node (id: %q) from the database: %v", ninv.GetNodeId(), err)
 		return errors.WithMessagef(err, "fetching node: %s", ninv.GetNodeId())
 	}
 	if !found {
-		log.Errorf("fetching node id %q from the database: node does not exist", ninv.GetNodeId())
+		log.Errorf("fetching node (id: %q) from the database: node does not exist", ninv.GetNodeId())
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
 	}
 	log.Debugf("node %s found, enriching with node inventory", nodeDatastore.NodeString(node))
