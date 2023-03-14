@@ -38,15 +38,15 @@ var (
 
 // MigrateToPartitions updates the btree network flow indexes to be hash
 func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
-	parentCtx := context.Background()
+	ctx := context.Background()
 
-	err := analyzeOldTable(parentCtx, db)
+	err := analyzeOldTable(ctx, db)
 	if err != nil {
 		log.WriteToStderrf("unable to analyze network_flows.  Will continue processing though it may be slow. %v", err)
 	}
 
 	// First get the distinct clusters in the network_flows table
-	clusters, err := getClusters(parentCtx, db)
+	clusters, err := getClusters(ctx, db)
 	if err != nil {
 		log.WriteToStderrf("unable to retrieve clusters from network_flows, %v", err)
 		return err
@@ -54,13 +54,13 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 
 	// Now apply the updated schema to create a partition table with updated index types.  The
 	// individual partitions will be created on a per cluster basis as the store is created.
-	pgutils.CreateTableFromModel(parentCtx, gormDB, updatedSchema.CreateTableNetworkFlowsStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, updatedSchema.CreateTableNetworkFlowsStmt)
 
 	// Create the partition and move the data
 	for _, cluster := range clusters {
 		sourceStore := previous.New(db, cluster)
 
-		previousCount, err := getPreviousCount(parentCtx, sourceStore)
+		previousCount, err := getPreviousCount(ctx, sourceStore)
 		if err != nil {
 			return err
 		}
@@ -69,13 +69,13 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 		// Create the updated store which will create the partition
 		destinationStore := updated.New(db, cluster)
 
-		err = migrateData(parentCtx, db, destinationStore.GetPartitionName(), cluster)
+		err = migrateData(ctx, db, destinationStore.GetPartitionName(), cluster)
 		if err != nil {
 			log.WriteToStderrf("unable to move data for cluster %q, %v", cluster, err)
 			return err
 		}
 
-		migratedCount, err := getDestinationCount(parentCtx, destinationStore)
+		migratedCount, err := getDestinationCount(ctx, destinationStore)
 		if err != nil {
 			return err
 		}
@@ -87,12 +87,12 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 		// Ideally this would have been done on the source.  However, the reason we are implementing
 		// this change is because removing the stale flows was becoming problematic with large amounts of data.
 		// So we will copy it all over and then remove the stale data from the partition once it is migrated.
-		err = cleanupDestinationPartition(parentCtx, destinationStore)
+		err = cleanupDestinationPartition(ctx, destinationStore)
 		if err != nil {
 			return err
 		}
 
-		migratedCount, err = getDestinationCount(parentCtx, destinationStore)
+		migratedCount, err = getDestinationCount(ctx, destinationStore)
 		if err != nil {
 			return err
 		}
@@ -109,43 +109,43 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 	return nil
 }
 
-func getPreviousCount(parentCtx context.Context, store previous.FlowStore) (int, error) {
+func getPreviousCount(ctx context.Context, store previous.FlowStore) (int, error) {
 	// Due to heavy load with network flows, each call to the store could take a long time so we will
 	// pass a context with the migration timeout to them.
-	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
 	return store.Count(ctx)
 }
 
-func getDestinationCount(parentCtx context.Context, store updated.FlowStore) (int, error) {
+func getDestinationCount(ctx context.Context, store updated.FlowStore) (int, error) {
 	// Due to heavy load with network flows, each call to the store could take a long time so we will
 	// pass a context with the migration timeout to them.
-	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
 	return store.Count(ctx)
 }
 
-func cleanupDestinationPartition(parentCtx context.Context, store updated.FlowStore) error {
+func cleanupDestinationPartition(ctx context.Context, store updated.FlowStore) error {
 	// Due to heavy load with network flows, each call to the store could take a long time so we will
 	// pass a context with the migration timeout to them.
-	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
 	return store.RemoveStaleFlows(ctx)
 }
 
-func analyzeOldTable(parentCtx context.Context, db *postgres.DB) error {
-	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
+func analyzeOldTable(ctx context.Context, db *postgres.DB) error {
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
 	_, err := db.Exec(ctx, "ANALYZE network_flows;")
 	return err
 }
 
-func getClusters(parentCtx context.Context, db *postgres.DB) ([]string, error) {
-	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
+func getClusters(ctx context.Context, db *postgres.DB) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
 	var clusters []string
@@ -169,13 +169,13 @@ func getClusters(parentCtx context.Context, db *postgres.DB) ([]string, error) {
 	return clusters, rows.Err()
 }
 
-func migrateData(parentCtx context.Context, db *postgres.DB, partitionName string, cluster string) error {
+func migrateData(ctx context.Context, db *postgres.DB, partitionName string, cluster string) error {
 	clusterUUID, err := uuid.FromString(cluster)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(parentCtx, types.DefaultMigrationTimeout)
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
 	// Skip the serial ID

@@ -197,7 +197,7 @@ func AnalyzeDatabase(config *postgres.Config, dbName string) error {
 	defer cancel()
 	_, err := connectPool.Exec(ctx, "ANALYZE")
 
-	log.Debug("Anaylze done")
+	log.Debug("Analyze done")
 	return err
 }
 
