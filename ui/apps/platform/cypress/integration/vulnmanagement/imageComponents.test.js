@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -134,7 +134,11 @@ describe('Vulnerability Management Image Components', () => {
         );
     });
 
-    it('should display links for fixable image CVEs', () => {
+    it('should display links for fixable image CVEs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'image-cves',

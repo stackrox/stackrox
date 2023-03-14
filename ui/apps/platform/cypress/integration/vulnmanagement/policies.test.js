@@ -1,6 +1,7 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import { selectors as policySelectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingPolicySeverityValuesFromElements,
@@ -84,6 +85,10 @@ describe('Vulnerability Management Policies', () => {
     // Some tests might fail in local deployment.
 
     it('should display links for failing deployments', () => {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'deployments',
