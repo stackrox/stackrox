@@ -40,7 +40,7 @@ func newDatastoreImpl(
 	}
 }
 
-func getIndicatorIdForPlop(plop *storage.ProcessListeningOnPortFromSensor) string {
+func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) string {
 	if plop == nil {
 		return ""
 	}
@@ -55,8 +55,8 @@ func getIndicatorIdForPlop(plop *storage.ProcessListeningOnPortFromSensor) strin
 func getIndicatorIdsForPlops(plops []*storage.ProcessListeningOnPortFromSensor) []string {
 	indicatorIds := make([]string, 0)
 	for _, plop := range plops {
-		indicatorId := getIndicatorIdForPlop(plop)
-		indicatorIds = append(indicatorIds, indicatorId)
+		indicatorID := getIndicatorIDForPlop(plop)
+		indicatorIds = append(indicatorIds, indicatorID)
 	}
 
 	return indicatorIds
@@ -96,7 +96,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
 	for _, val := range normalizedPLOPs {
-		indicatorID := getIndicatorIdForPlop(val)
+		indicatorID := getIndicatorIDForPlop(val)
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]
@@ -135,7 +135,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// * If no existing PLOP is present, they will create a new closed PLOP
 	for _, val := range completedInBatch {
 
-		indicatorID := getIndicatorIdForPlop(val)
+		indicatorID := getIndicatorIDForPlop(val)
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]

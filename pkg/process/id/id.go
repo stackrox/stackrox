@@ -13,9 +13,9 @@ var (
 )
 
 // GetIndicatorIDFromParts gets the indicator ID based on the stable namespace
-func GetIndicatorIDFromParts(podId string, containerName string, execFilePath string, name string, args string) string {
+func GetIndicatorIDFromParts(podID string, containerName string, execFilePath string, name string, args string) string {
 	id := uuid.NewV5(processIDNamespace,
-		fmt.Sprintf("%s %s %s %s %s", podId, containerName,
+		fmt.Sprintf("%s %s %s %s %s", podID, containerName,
 			execFilePath, name, args)).String()
 
 	return id
@@ -24,7 +24,7 @@ func GetIndicatorIDFromParts(podId string, containerName string, execFilePath st
 // SetIndicatorID sets the indicator ID based on the stable namespace
 func SetIndicatorID(indicator *storage.ProcessIndicator) {
 	id := GetIndicatorIDFromParts(indicator.GetPodId(), indicator.GetContainerName(),
-			indicator.GetSignal().GetExecFilePath(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs())
+		indicator.GetSignal().GetExecFilePath(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs())
 
 	indicator.Id = id
 }
