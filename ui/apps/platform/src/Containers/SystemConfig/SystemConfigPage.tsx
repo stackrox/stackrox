@@ -13,7 +13,6 @@ import {
 /*
 import { clustersBasePath, getIsRoutePathRendered } from 'routePaths';
 */
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import { fetchSystemConfig } from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
@@ -29,10 +28,6 @@ const SystemConfigPage = (): ReactElement => {
     const { hasReadWriteAccess } = usePermissions();
     // TODO: ROX-12750 Replace Config with Administration
     const hasReadWriteAccessForConfig = hasReadWriteAccess('Config');
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
-        'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
-    );
     /*
     const isClustersRoutePathRendered = getIsRoutePathRendered({
         hasReadAccess,
@@ -83,9 +78,6 @@ const SystemConfigPage = (): ReactElement => {
         content = isEditing ? (
             <PageSection variant="light">
                 <SystemConfigForm
-                    isDecommissionedClusterRetentionEnabled={
-                        isDecommissionedClusterRetentionEnabled
-                    }
                     systemConfig={systemConfig}
                     setSystemConfig={setSystemConfig}
                     setIsNotEditing={setIsNotEditing}
@@ -94,7 +86,6 @@ const SystemConfigPage = (): ReactElement => {
         ) : (
             <SystemConfigDetails
                 isClustersRoutePathRendered={isClustersRoutePathRendered}
-                isDecommissionedClusterRetentionEnabled={isDecommissionedClusterRetentionEnabled}
                 systemConfig={systemConfig}
             />
         );
