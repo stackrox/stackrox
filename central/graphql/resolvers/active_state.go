@@ -41,7 +41,7 @@ type activeStateResolver struct {
 
 // State is the activeness state
 func (asr *activeStateResolver) State(_ context.Context) string {
-	if env.ActiveVulnMgmt.BooleanSetting() {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
 		return Disabled.String()
 	}
 	return asr.state.String()
