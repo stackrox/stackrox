@@ -77,12 +77,12 @@ func identityDocFromPKCS7(ctx context.Context, mdClient *ec2metadata.EC2Metadata
 		return nil, errors.Wrap(err, "retrieving PKCS7 signature")
 	}
 
-	pkcs7Raw, err := base64.StdEncoding.DecodeString(pkcsBase64)
+	rawPKCS7, err := base64.StdEncoding.DecodeString(pkcsBase64)
 	if err != nil {
 		return nil, err
 	}
 
-	pks7, err := pkcs7.Parse(pkcs7Raw)
+	p7, err := pkcs7.Parse(rawPKCS7)
 	if err != nil {
 		return nil, err
 	}
@@ -90,13 +90,13 @@ func identityDocFromPKCS7(ctx context.Context, mdClient *ec2metadata.EC2Metadata
 	// It is probably possible to determine which certificate to use
 	// based on the region returned by the metadata service,
 	// but there is no harm in just checking all known certs.
-	pks7.Certificates = awsCerts
-	if err := pks7.Verify(); err != nil {
+	p7.Certificates = awsCerts
+	if err := p7.Verify(); err != nil {
 		return nil, errors.Wrap(err, "verifying PKCS7 signature")
 	}
 
 	doc := &ec2metadata.EC2InstanceIdentityDocument{}
-	if err := json.Unmarshal(pks7.Content, &doc); err != nil {
+	if err := json.Unmarshal(p7.Content, doc); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling instance identity document")
 	}
 
