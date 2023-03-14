@@ -72,6 +72,10 @@ func (d *DB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
+	if tx, ok := TxFromContext(ctx); ok {
+		return tx.Exec(ctx, sql, args...)
+	}
+
 	defer setQueryDuration(time.Now(), "pool", sql)
 	ct, err := d.Pool.Exec(ctx, sql, args...)
 	if err != nil {
@@ -84,6 +88,10 @@ func (d *DB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 // Query wraps pgxpool.Pool Query
 func (d *DB) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
+
+	if tx, ok := TxFromContext(ctx); ok {
+		return tx.Query(ctx, sql, args...)
+	}
 
 	defer setQueryDuration(time.Now(), "pool", sql)
 	rows, err := d.Pool.Query(ctx, sql, args...)
@@ -99,15 +107,32 @@ func (d *DB) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 }
 
 // QueryRow wraps pgxpool.Pool QueryRow
-func (d *DB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+func (d *DB) QueryRow(ctx context.Context, sql string, args ...interface{}) *Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	defer setQueryDuration(time.Now(), "pool", sql)
+	var row pgx.Row
+	if tx, ok := TxFromContext(ctx); ok {
+		row = tx.QueryRow(ctx, sql, args...)
+	} else {
+		defer setQueryDuration(time.Now(), "pool", sql)
+		row = d.Pool.QueryRow(ctx, sql, args...)
+	}
 	return &Row{
-		Row:        d.Pool.QueryRow(ctx, sql, args...),
+		Row:        row,
 		query:      sql,
 		cancelFunc: cancel,
 	}
+}
+
+// CopyFrom wraps pgxpool.Pool CopyFrom
+func (d *DB) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
+	defer cancel()
+
+	if tx, ok := TxFromContext(ctx); ok {
+		return tx.CopyFrom(ctx, tableName, columnNames, rowSrc)
+	}
+	return d.Pool.CopyFrom(ctx, tableName, columnNames, rowSrc)
 }
 
 // Acquire wraps pgxpool.Acquire
