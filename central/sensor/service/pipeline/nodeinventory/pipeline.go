@@ -2,6 +2,7 @@ package nodeinventory
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -62,11 +63,12 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if ninv == nil {
 		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
-	log.Infof("Received NodeInventory for Node name='%s' ID='%s'", ninv.GetNodeName(), ninv.GetNodeId())
-	log.Debugf("NodeInventory for name='%s' contains %d packages to scan from %d content sets", ninv.GetNodeName(),
+	invStr := fmt.Sprintf("for node %s (id: %s)", ninv.GetNodeName(), ninv.GetNodeId())
+	log.Infof("received node inventory %s", invStr)
+	log.Debugf("node inventory %s contains %d packages to scan from %d content sets", invStr,
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
 	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
-		log.Errorf("NodeInventory event with unsupported action: %s", event.GetAction())
+		log.Errorf("node inventory %s with unsupported action: %s", invStr, event.GetAction())
 		return nil
 	}
 	ninv = ninv.Clone()
@@ -81,22 +83,22 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		log.Errorf("fetching node id %q from the database: node does not exist", ninv.GetNodeId())
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
 	}
-	log.Debugf("Node ID %s found. Will enrich Node with NodeInventory", ninv.GetNodeId())
+	log.Debugf("node %s found, enriching with node inventory", nodeDatastore.NodeString(node))
 
 	// Call Scanner to enrich the node inventory and attach the results to the node object.
 	err = p.enricher.EnrichNodeWithInventory(node, ninv)
 	if err != nil {
-		log.Errorf("enriching node %s:%s with node inventory: %v", node.GetClusterName(), node.GetName(), err)
-		return errors.WithMessagef(err, "erinching node: %s", ninv.GetNodeId())
+		log.Errorf("enriching node %s: %v", nodeDatastore.NodeString(node), err)
+		return errors.WithMessagef(err, "enrinching node %s", nodeDatastore.NodeString(node))
 	}
-	log.Debugf("NodeInventory for name='%s' has been scanned and contains %d results", ninv.GetNodeName(),
-		len(node.GetScan().GetComponents()))
+	log.Debugf("node inventory for node %s has been scanned and contains %d results",
+		nodeDatastore.NodeString(node), len(node.GetScan().GetComponents()))
 
 	// Update the whole node in the database with the new and previous information.
 	err = p.riskManager.CalculateRiskAndUpsertNode(node)
 	if err != nil {
-		log.Errorf("updating risk and node %s:%s with node inventory: %v", node.GetClusterName(), node.GetName(), err)
-		return errors.WithMessagef(err, "calculating risk and upserting node %s:%s", node.GetClusterName(), node.GetName())
+		log.Error(err)
+		return err
 	}
 
 	return nil
