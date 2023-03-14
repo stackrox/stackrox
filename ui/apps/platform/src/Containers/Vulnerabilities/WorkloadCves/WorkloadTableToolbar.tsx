@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import {
     Toolbar,
-    ToolbarItem,
     ToolbarFilter,
     ToolbarToggleGroup,
     ToolbarGroup,
@@ -15,8 +14,8 @@ import { Globe } from 'react-feather';
 import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';
 import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from './types';
-import FilterResourceDropdown, { Resource } from './FilterResourceDropdown';
-import FilterAutocompleteSelect from './FilterAutocompleteSelect';
+import { Resource } from './FilterResourceDropdown';
+import FilterAutocomplete from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
@@ -69,18 +68,18 @@ function WorkloadTableToolbar({
         }
     }
 
-    function onDelete(type: FilterType, id: string) {
+    function onDelete(type: FilterType, chip: ToolbarChip) {
         if (type === 'Severity') {
             const severitySearchFilter = searchFilter.Severity as string[];
             setSearchFilter({
                 ...searchFilter,
-                Severity: severitySearchFilter.filter((fil: string) => fil !== id),
+                Severity: severitySearchFilter.filter((fil: string) => fil !== chip.key),
             });
         } else if (type === 'Fixable') {
             const fixableSearchFilter = searchFilter.Fixable as string[];
             setSearchFilter({
                 ...searchFilter,
-                Fixable: fixableSearchFilter.filter((fil: string) => fil !== id),
+                Fixable: fixableSearchFilter.filter((fil: string) => fil !== chip.key),
             });
         }
     }
@@ -100,10 +99,7 @@ function WorkloadTableToolbar({
     }
 
     function onDeleteAll() {
-        const { Severity, Fixable, ...remainingSearchFilter } = searchFilter;
-        setSearchFilter({
-            ...remainingSearchFilter,
-        });
+        setSearchFilter({});
     }
 
     useEffect(() => {
@@ -181,27 +177,16 @@ function WorkloadTableToolbar({
                     breakpoint="xl"
                     className="pf-u-flex-1"
                 >
-                    <ToolbarGroup variant="filter-group" className="pf-u-flex-grow-1">
-                        {/* <ToolbarItem className="pf-u-w-25">
-                            <FilterResourceDropdown
-                                onSelect={onSelect}
-                                searchFilter={searchFilter}
-                                resourceContext={resourceContext}
-                            />
-                        </ToolbarItem> */}
-                        <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
-                            <FilterAutocompleteSelect
-                                searchFilter={searchFilter}
-                                setSearchFilter={setSearchFilter}
-                                resourceContext={resourceContext}
-                            />
-                        </ToolbarItem>
-                    </ToolbarGroup>
+                    <FilterAutocomplete
+                        searchFilter={searchFilter}
+                        setSearchFilter={setSearchFilter}
+                        resourceContext={resourceContext}
+                    />
                     <ToolbarGroup>
                         <ToolbarFilter
                             chips={severityFilterChips}
                             deleteChip={(category, chip) =>
-                                onDelete(category as FilterType, chip as string)
+                                onDelete(category as FilterType, chip as ToolbarChip)
                             }
                             deleteChipGroup={(category) => onDeleteGroup(category as FilterType)}
                             categoryName="Severity"
@@ -211,7 +196,7 @@ function WorkloadTableToolbar({
                         <ToolbarFilter
                             chips={fixableFilterChips}
                             deleteChip={(category, chip) =>
-                                onDelete(category as FilterType, chip as string)
+                                onDelete(category as FilterType, chip as ToolbarChip)
                             }
                             deleteChipGroup={(category) => onDeleteGroup(category as FilterType)}
                             categoryName="Fixable"

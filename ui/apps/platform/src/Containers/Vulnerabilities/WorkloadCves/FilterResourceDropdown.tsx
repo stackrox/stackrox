@@ -46,6 +46,7 @@ function FilterResourceDropdown({
             onSelect={onResourceSelect}
             selections={resource}
             isOpen={isOpen}
+            className="pf-u-w-25"
         >
             {resourceContext
                 ? resourceOptions.filter((res) => res.key !== resourceContext)
