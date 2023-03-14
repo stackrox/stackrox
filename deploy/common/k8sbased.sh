@@ -199,6 +199,10 @@ function launch_central {
       add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
     fi
 
+    if [[ -n "${ROX_DECLARATIVE_CONFIGURATION}" ]]; then
+        add_args "--declarative-config-config-maps=declarative-configurations"
+    fi
+
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
