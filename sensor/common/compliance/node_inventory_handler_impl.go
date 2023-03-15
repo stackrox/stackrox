@@ -97,8 +97,8 @@ func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan 
 					return
 				}
 				if !c.centralReady.IsDone() {
-					// TODO(ROX-13164): Reply with NACK to compliance
-					log.Warnf("Received node inventory but Central is unavailable")
+					log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
+					c.sendNackToCompliance(toCompliance, inventory)
 					continue
 				}
 				if inventory == nil {
