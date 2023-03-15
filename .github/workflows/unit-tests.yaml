@@ -15,7 +15,7 @@ jobs:
   go:
     strategy:
       matrix:
-        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ] # Note the poor-man's string substitution below when changing gotags.
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
@@ -36,7 +36,7 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
-    - name: Generate junit report
+    - name: Generate JUnit report
       if: always()
       run: make generate-junit-reports
 
@@ -45,6 +45,24 @@ jobs:
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - name: Save JUnit report for processing by junit2jira
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        # GHA disallows double-quote characters in names, and does not provide any string substitution
+        # functions in expressions, so we use a makeshift ternary operator here, and below.
+        name: junit-go-unit-${{ contains(matrix.gotags, 'release') && 'release' || 'norelease' }}
+        path: junit-reports/report.xml
+
+    # TODO(porridge): The steps below should be deleted once the go-integration job is made required.
+
+    - name: Delete JUnit report file from Go Unit tests
+      if: always()
+      # This prevents test-summary/action from processing the same report twice
+      # and thus producing duplicates, in case the integration test step does not overwrite the file
+      # (for example when it is skipped).
+      run: rm -f junit-reports/report.xml
 
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
@@ -59,10 +77,53 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
+    # We call junit2jira in the go-integration job, rather than here, to prevent duplicates.
+
+  go-integration:
+    strategy:
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ] # Note the poor-man's string substitution below when changing gotags.
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Go Integration Unit Tests
+      run: ${{ matrix.gotags }} make integration-unit-tests
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    - name: Save JUnit report for processing by junit2jira
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: junit-go-integration-${{ contains(matrix.gotags, 'release') && 'release' || 'norelease' }}
+        path: junit-reports/report.xml
+
   go-postgres:
     strategy:
       matrix:
-        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ] # Note the poor-man's string substitution below when changing gotags.
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
@@ -101,6 +162,13 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
+    - name: Save JUnit report for processing by junit2jira
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: junit-go-postgres-unit-${{ contains(matrix.gotags, 'release') && 'release' || 'norelease' }}
+        path: junit-reports/report.xml
+
   ui:
     runs-on: ubuntu-latest
     container:
@@ -128,6 +196,13 @@ jobs:
       if: always()
       with:
         paths: 'ui/test-results/reports/*.xml'
+
+    - name: Save JUnit report for processing by junit2jira
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: junit-ui
+        path: ui/test-results/reports/*.xml
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
@@ -159,12 +234,20 @@ jobs:
       with:
         paths: 'roxctl-test-output/*.xml'
 
+    - name: Save JUnit report for processing by junit2jira
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: junit-roxctl
+        path: roxctl-test-output/*.xml
+
   slack-on-unit-tests-failure:
     if: github.event_name == 'push' && failure()
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
       - go
+      - go-integration
       - go-postgres
       - ui
       - local-roxctl-tests
@@ -178,3 +261,34 @@ jobs:
           include_jobs: on-failure
           repo_token: ${{secrets.GITHUB_TOKEN}}
           slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}
+
+  propagate-to-jira:
+#    if: github.event_name == 'push' && failure()
+    if: failure()
+    name: File or update JIRA tickets for failures
+    runs-on: ubuntu-latest
+    needs:
+    - go
+    - go-integration
+    - go-postgres
+    - ui
+    - local-roxctl-tests
+    steps:
+    - name: Fetch junit2jira
+      run: |
+        set -euo pipefail
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.5/junit2jira -o junit2jira
+        chmod +x junit2jira
+
+    - name: Download ALL artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: Display structure of downloaded files
+      run: ls -R
+      working-directory: artifacts
+
+    - name: Propagate errors from JUnit files to JIRA
+      # High threshold as we process output from 5 jobs.
+      run: ./junit2jira -junit-reports-dir artifacts -threshold 50
