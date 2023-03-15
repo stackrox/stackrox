@@ -1,4 +1,4 @@
-package m_175_to_m_176_network_baselines_cidr
+package m176tom177
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stackrox/rox/generated/storage"
 	frozenSchemav73 "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	"github.com/stackrox/rox/migrator/migrations/m_175_to_m_176_network_baselines_cidr/networkbaselinestore"
-	"github.com/stackrox/rox/migrator/migrations/m_175_to_m_176_network_baselines_cidr/networkentitystore"
+	"github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkbaselinestore"
+	"github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkentitystore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
