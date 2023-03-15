@@ -35,7 +35,7 @@ func (resolver *Resolver) Violations(ctx context.Context, args PaginatedQuery) (
 		return nil, err
 	}
 
-	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 	return resolver.wrapListAlerts(
 		resolver.ViolationsDataStore.SearchListAlerts(ctx, q))
 }
