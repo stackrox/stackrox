@@ -2,6 +2,7 @@ package nodeinventory
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -56,49 +57,50 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeInventory)
 
+	// Sanitize input.
 	event := msg.GetEvent()
 	ninv := event.GetNodeInventory()
 	if ninv == nil {
 		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
-
-	log.Infof("Received NodeInventory for Node name='%s' ID='%s'", ninv.GetNodeName(), ninv.GetNodeId())
-	log.Debugf("NodeInventory for name='%s' contains %d packages to scan from %d content sets", ninv.GetNodeName(),
+	invStr := fmt.Sprintf("for node %s (id: %s)", ninv.GetNodeName(), ninv.GetNodeId())
+	log.Infof("received node inventory %s", invStr)
+	log.Debugf("node inventory %s contains %d packages to scan from %d content sets", invStr,
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
-
-	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
-		log.Warn("Deletion of NodeInventories is not supported")
+	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
+		log.Errorf("node inventory %s with unsupported action: %s", invStr, event.GetAction())
 		return nil
 	}
-
 	ninv = ninv.Clone()
 
-	// TODO(ROX-14484): Resolve the race between pipelines - Start of critical section
+	// Read the node from the database, if not found we fail.
 	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())
-	if err != nil || !found {
-		log.Warnf("Node ID %s not found when processing NodeInventory", ninv.GetNodeId())
-		return errors.WithMessagef(err, "processing node inventory for node '%s'", ninv.GetNodeId())
+	if err != nil {
+		log.Errorf("fetching node (id: %q) from the database: %v", ninv.GetNodeId(), err)
+		return errors.WithMessagef(err, "fetching node: %s", ninv.GetNodeId())
 	}
-	log.Debugf("Node ID %s found. Will enrich Node with NodeInventory", ninv.GetNodeId())
+	if !found {
+		log.Errorf("fetching node (id: %q) from the database: node does not exist", ninv.GetNodeId())
+		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
+	}
+	log.Debugf("node %s found, enriching with node inventory", nodeDatastore.NodeString(node))
 
+	// Call Scanner to enrich the node inventory and attach the results to the node object.
 	err = p.enricher.EnrichNodeWithInventory(node, ninv)
 	if err != nil {
-		log.Warnf("enriching node with node inventory %s:%s: %v", node.GetClusterName(), node.GetName(), err)
+		log.Errorf("enriching node %s: %v", nodeDatastore.NodeString(node), err)
+		return errors.WithMessagef(err, "enrinching node %s", nodeDatastore.NodeString(node))
 	}
+	log.Debugf("node inventory for node %s has been scanned and contains %d results",
+		nodeDatastore.NodeString(node), len(node.GetScan().GetComponents()))
 
-	log.Debugf("NodeInventory for name='%s' has been scanned and contains %d results", ninv.GetNodeName(),
-		len(node.GetScan().GetComponents()))
-
-	// Here NodeInventory stops to matter. All data required for the DB and UI is in node.NodeScan already
-
-	if err := p.riskManager.CalculateRiskAndUpsertNode(node); err != nil {
-		err = errors.Wrapf(err, "upserting node %s:%s into datastore", node.GetClusterName(), node.GetName())
+	// Update the whole node in the database with the new and previous information.
+	err = p.riskManager.CalculateRiskAndUpsertNode(node)
+	if err != nil {
 		log.Error(err)
 		return err
 	}
-	// TODO(ROX-14484): Resolve the race between pipelines - End of critical section (when CalculateRiskAndUpsertNode finishes)
-	// We will loose data written in the node pipeline if the node pipeline writes an update to the DB
-	// while this pipeline is in the critical section!
+
 	return nil
 }
 

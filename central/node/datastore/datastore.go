@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -102,4 +103,9 @@ func GetTestRocksBleveDataStore(t testing.TB, rocksengine *rocksdbBase.RocksDB, 
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
 	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker), nil
+}
+
+// NodeString returns a human-readable string representation of a node.
+func NodeString(node *storage.Node) string {
+	return fmt.Sprintf("%s/%s (id: %s)", node.GetClusterName(), node.GetName(), node.GetId())
 }
