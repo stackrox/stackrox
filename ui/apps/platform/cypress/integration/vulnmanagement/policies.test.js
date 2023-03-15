@@ -84,7 +84,7 @@ describe('Vulnerability Management Policies', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for failing deployments', () => {
+    it('should display links for failing deployments', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
