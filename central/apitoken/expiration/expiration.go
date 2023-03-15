@@ -89,9 +89,6 @@ func (n *expirationNotifierImpl) runExpirationNotifier() {
 
 	n.checkAndNotifyExpirations()
 
-	if n.notificationTicker == nil {
-		n.notificationTicker = time.NewTicker(env.APITokenExpirationNotificationInterval.DurationSetting())
-	}
 	defer n.notificationTicker.Stop()
 	for {
 		select {
