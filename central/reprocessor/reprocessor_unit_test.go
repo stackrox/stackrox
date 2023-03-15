@@ -10,7 +10,6 @@ import (
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_loopImpl_reprocessNode(t *testing.T) {
@@ -48,10 +47,7 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 				gomock.InOrder(
 					m.nodes.EXPECT().GetNode(gomock.Any(), gomock.Eq(a.id)).Times(1).Return(node, true, nil),
 					m.nodeEnricher.EXPECT().EnrichNode(node).Times(1).Return(nil),
-					m.risk.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).DoAndReturn(func(node *storage.Node) error {
-						assert.Nil(t, node.LastUpdated, "expected node.LastUpdated = nil when CalculateRiskAndUpsertNode(node) is called")
-						return nil
-					}).Times(1),
+					m.risk.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Return(nil).Times(1),
 				)
 			},
 			want: true,

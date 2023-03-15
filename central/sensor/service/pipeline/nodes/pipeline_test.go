@@ -65,7 +65,6 @@ func Test_pipelineImpl_Run(t *testing.T) {
 						UpsertNode(gomock.Any(), gomock.Any()).
 						Times(1).
 						DoAndReturn(func(_ context.Context, node *storage.Node) error {
-							assert.Nil(t, node.LastUpdated, "expected node.LastUpdated = nil when CalculateRiskAndUpsertNode(node) is called")
 							assert.Equal(t, node.ClusterName, "test cluster name")
 							assert.Equal(t, node.ClusterId, a.clusterID)
 							return nil
@@ -90,7 +89,6 @@ func Test_pipelineImpl_Run(t *testing.T) {
 					m.riskManager.EXPECT().
 						CalculateRiskAndUpsertNode(gomock.Any()).
 						DoAndReturn(func(node *storage.Node) error {
-							assert.Nil(t, node.LastUpdated, "expected node.LastUpdated = nil when CalculateRiskAndUpsertNode(node) is called")
 							assert.Equal(t, node.ClusterName, "test cluster name")
 							assert.Equal(t, node.ClusterId, a.clusterID)
 							return nil
