@@ -107,6 +107,71 @@ func splitPlopsIntoExpiredAndUnexpired(plops []*storage.ProcessListeningOnPortSt
 	return unexpiredPlops, idsToDelete
 }
 
+func getPLOPMap(plops []*storage.ProcessListeningOnPortStorage) map[string][]*storage.ProcessListeningOnPortStorage {
+	plopsMap := make(map[string][]*storage.ProcessListeningOnPortStorage)
+
+	for _, plop := range plops {
+		key := getPlopKeyFromParts(
+			plop.GetProtocol(),
+			plop.GetPort(),
+			getPlopProcessUniqueKey(plop.GetProcess()))
+
+		plopsMap[key] = append(plopsMap[key], plop)
+	}
+
+	return plopsMap
+}
+
+func normalizePLOPsForRetryKey(plops []*storage.ProcessListeningOnPortStorage) (*storage.ProcessListeningOnPortStorage, []string) {
+	nclosed := 0
+	nopen := 0
+	var latestPlop *storage.ProcessListeningOnPortStorage
+	idsToDelete := make([]string, 0)
+
+	for _, plop := range plops {
+		if latestPlop == nil {
+			latestPlop = plop
+		}
+
+		if plop.GetCloseTimestamp().Compare(latestPlop.GetCloseTimestamp()) == -1 {
+			latestPlop.CloseTimestamp = plop.GetCloseTimestamp()
+		}
+
+		if plop.GetTimeFirstSeen().Compare(latestPlop.GetTimeFirstSeen()) == 1 {
+			latestPlop.TimeFirstSeen = plop.GetTimeFirstSeen()
+		}
+
+		if plop.GetCloseTimestamp() != nil {
+			nclosed += 1
+		} else {
+			nopen += 1
+		}
+
+		idsToDelete = append(idsToDelete, plop.GetId())
+	}
+
+	if nopen > 1 {
+		latestPlop.Closed = false
+		latestPlop.CloseTimestamp = nil
+	}
+
+	return latestPlop, idsToDelete[:len(idsToDelete)-1]
+}
+
+func normalizePLOPsForRetry(plops []*storage.ProcessListeningOnPortStorage) (map[string]*storage.ProcessListeningOnPortStorage, []string) {
+	plopsMap := getPLOPMap(plops)
+	normalizedPlopsMap := make(map[string]*storage.ProcessListeningOnPortStorage)
+	idsToDelete := make([]string, 0)
+
+	for key, plops := range plopsMap {
+		var idsToDeleteForKey []string
+		normalizedPlopsMap[key], idsToDeleteForKey = normalizePLOPsForRetryKey(plops)
+		idsToDelete = append(idsToDelete, idsToDeleteForKey...)
+	}
+
+	return normalizedPlopsMap, idsToDelete
+}
+
 
 //func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*storage.ProcessListeningOnPortFromSensor, error) {
 //
@@ -186,8 +251,7 @@ func (ds *datastoreImpl) getPlopInfo(
 	return plopInfo, nil
 }
 
-func (ds *datastoreImpl) getPlopObjectsToUpsert(
-	ctx context.Context,
+func getPlopObjectsToUpsert(
 	plopInfo *PlopInfo,
 ) ([]*storage.ProcessListeningOnPortStorage, error) {
 
@@ -196,7 +260,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 		indicatorID := ""
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
-		key := getPlopProcessUniqueKey(val)
+		key := getPlopProcessUniqueKey(val.Process)
 
 		if indicator, ok := plopInfo.indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
@@ -247,7 +311,7 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 		indicatorID := ""
 		// var processInfo *storage.ProcessIndicatorUniqueKey
 
-		key := getPlopProcessUniqueKey(val)
+		key := getPlopProcessUniqueKey(val.Process)
 
 		if indicator, ok := plopInfo.indicatorsMap[key]; ok {
 			indicatorID = indicator.GetId()
@@ -309,116 +373,42 @@ func (ds *datastoreImpl) getPlopObjectsToUpsert(
 
 // getPlopObjectsToUpsertForRetry and getPlopObjectsToUpsert will be probably be merged into one function
 // That or there will be some other refactoring
-func (ds *datastoreImpl) getPlopObjectsToUpsertForRetry(
-	ctx context.Context,
-	plopInfo *PlopInfo,
-) ([]*storage.ProcessListeningOnPortStorage, error) {
+func getPlopObjectsToUpsertForRetry(
+	unmatchedPLOPMap map[string]*storage.ProcessListeningOnPortStorage,
+	existingPLOPMap map[string]*storage.ProcessListeningOnPortStorage,
+	indicatorsMap map[string]*storage.ProcessIndicator,
+) ([]*storage.ProcessListeningOnPortStorage, []string) {
 
-	if plopInfo == nil || plopInfo.normalizedPLOPs == nil {
-		return nil, nil
-	}
+	idsToDelete := make([]string, 0)
+	plopObjects := make([]*storage.ProcessListeningOnPortStorage, 0)
 
-	plopObjects := []*storage.ProcessListeningOnPortStorage{}
-	log.Infof("plopInfo.normalizedPLOPs= %+v", plopInfo.normalizedPLOPs)
-	for _, val := range plopInfo.normalizedPLOPs {
+
+	for key, unmatchedPlop := range unmatchedPLOPMap {
 		indicatorID := ""
-		var processInfo *storage.ProcessIndicatorUniqueKey
 
-		key := getPlopProcessUniqueKey(val)
+		plopProcessKey := getPlopProcessUniqueKey(unmatchedPlop.Process)
 
-		if indicator, ok := plopInfo.indicatorsMap[key]; ok {
+		if indicator, ok := indicatorsMap[plopProcessKey]; ok {
 			indicatorID = indicator.GetId()
+			unmatchedPlop.Process = nil
 			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
 		} else {
-			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
 			log.Warnf("Found no matching indicators for %s", key)
-			processInfo = val.Process
 		}
 
-		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
+		plopKey := getPlopKeyFromParts(unmatchedPlop.GetProtocol(), unmatchedPlop.GetPort(), indicatorID)
 
-		_, prevExists := plopInfo.existingPLOPMap[plopKey]
+		_, prev := existingPLOPMap[plopKey]
 
-		if !prevExists {
-			if val.CloseTimestamp != nil {
-				// We try to close a not existing Endpoint, something is wrong
-				log.Warnf("Found no matching PLOP to close for %s", key)
-			}
-
-			// plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
-			val.ProcessIndicatorId = indicatorID
-			val.process = nil
-
-		}
-
-		if unmatched && !prevExists {
-￼			unmatchedPlop.ProcessIndicatorId = indicatorID
-￼			if indicatorID != "" {
-￼				unmatchedPlop.Process = nil
-￼			}
-￼			plopObjects = append(plopObjects, unmatchedPlop)
-￼		}
-￼
-￼		if unmatched && prevExists {
-￼			_ = ds.storage.Delete(ctx, unmatchedPlop.Id)
-￼		}
-	}
-
-	// completedInBatch should not be needed for retries as that should mean that a
-	// port was opened and closed without being matched to a process indicator first.
-	// It means that the port is closed and it should be in whatever state the table
-	// already has it being in. Either closed, open, or non-existant.
-	// Leaving it here for now until there are unit tests that are impacted by it.
-
-	// Verify what to do about pairs of open/close events that close the
-	// lifecycle within the batch. There are only few options:
-	// * If an existing open PLOP is present in the db, they will do nothing
-	// * If an existing closed PLOP is present in the db, they will update the
-	// timestamp
-	// * If no existing PLOP is present, they will create a new closed PLOP
-	for _, val := range plopInfo.completedInBatch {
-		indicatorID := ""
-		var processInfo *storage.ProcessIndicatorUniqueKey
-
-		key := getPlopProcessUniqueKey(val)
-
-		if indicator, ok := plopInfo.indicatorsMap[key]; ok {
-			indicatorID = indicator.GetId()
-			log.Debugf("Got indicator %s: %+v", indicatorID, indicator)
+		if !prev {
+			unmatchedPlop.ProcessIndicatorId = indicatorID
+			plopObjects = append(plopObjects, unmatchedPlop)
 		} else {
-			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-			log.Warnf("Found no matching indicators for %s", key)
-			processInfo = val.Process
-		}
-
-		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
-
-		existingPLOP, prevExists := plopInfo.existingPLOPMap[plopKey]
-
-		if prevExists {
-			log.Debugf("Got existing PLOP to update timestamp: %+v", existingPLOP)
-
-			if existingPLOP.CloseTimestamp != nil &&
-				existingPLOP.CloseTimestamp != val.CloseTimestamp {
-
-				// An existing closed PLOP, update timestamp
-				existingPLOP.CloseTimestamp = val.CloseTimestamp
-				plopObjects = append(plopObjects, existingPLOP)
-			}
-
-			// Add nothing if the PLOP is active, i.e. CloseTimestamp == nil
-		}
-
-		if !prevExists {
-			if val.CloseTimestamp == nil {
-				// This events should always be closing by definition
-				log.Warnf("Found active PLOP completed in the batch %+v", val)
-			}
-
-			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			idsToDelete = append(idsToDelete, unmatchedPlop.GetId())
 		}
 	}
-	return plopObjects, nil
+
+	return plopObjects, idsToDelete
 }
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
@@ -443,7 +433,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return err
 	}
 
-	plopObjects, err := ds.getPlopObjectsToUpsert(ctx, plopInfo)
+	plopObjects, err := getPlopObjectsToUpsert(plopInfo)
 	if err != nil {
 		return err
 	}
@@ -460,17 +450,22 @@ func (ds *datastoreImpl) RetryAddProcessListeningOnPort(ctx context.Context) err
 		"RetryAddProcessListeningOnPort",
 	)
 
-	// portProcesses, _ := ds.getUnmatchedPlopsAndConvert(ctx)
 	allUnmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
-	unexpiredUnmatchedPLOPs, idsToDelete := splitPlopsIntoExpiredAndUnexpired(allUnmatchedPLOPs)
+	unexpiredUnmatchedPLOPs, expiredIdsToDelete := splitPlopsIntoExpiredAndUnexpired(allUnmatchedPLOPs)
+	normalizedPlops, idsToDelete := normalizePLOPsForRetry(unexpiredUnmatchedPLOPs)
 	portProcesses := convertToPlopsFromSensor(unexpiredUnmatchedPLOPs)
 
-	plopInfo, err := ds.getPlopInfo(ctx, portProcesses...)
+	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, portProcesses...)
 	if err != nil {
 		return err
 	}
 
-	plopObjects, err := ds.getPlopObjectsToUpsertForRetry(ctx, plopInfo)
+	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
+	if err != nil {
+		return err
+	}
+
+	plopObjects, outdatedIdsToDelete := getPlopObjectsToUpsertForRetry(normalizedPlops, existingPLOPMap, indicatorsMap)
 	if err != nil {
 		return err
 	}
@@ -481,7 +476,8 @@ func (ds *datastoreImpl) RetryAddProcessListeningOnPort(ctx context.Context) err
 		return err
 	}
 
-	// Delete the expired plops
+	idsToDelete = append(idsToDelete, expiredIdsToDelete...)
+	idsToDelete = append(idsToDelete, outdatedIdsToDelete...)
 	err = ds.storage.DeleteMany(ctx, idsToDelete)
 
 	return err
@@ -686,7 +682,7 @@ func normalizePLOPs(
 		key := getPlopKeyFromParts(
 			val.GetProtocol(),
 			val.GetPort(),
-			getPlopProcessUniqueKey(val),
+			getPlopProcessUniqueKey(val.GetProcess()),
 		)
 
 		if prev, ok := normalizedMap[key]; ok {
@@ -754,13 +750,13 @@ func getProcessUniqueKeyFromParts(containerName string,
 	)
 }
 
-func getPlopProcessUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
+func getPlopProcessUniqueKey(plop *storage.ProcessIndicatorUniqueKey) string {
 	return getProcessUniqueKeyFromParts(
-		plop.Process.ContainerName,
-		plop.Process.PodId,
-		plop.Process.ProcessName,
-		plop.Process.ProcessArgs,
-		plop.Process.ProcessExecFilePath,
+		plop.GetContainerName(),
+		plop.GetPodId(),
+		plop.GetProcessName(),
+		plop.GetProcessArgs(),
+		plop.GetProcessExecFilePath(),
 	)
 }
 
@@ -811,7 +807,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
-		FirstTimeSeen:		protoconv.ConvertTimeToTimestamp(time.Now()),
+		TimeFirstSeen:		protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 
 	return append(plopObjects, newPLOP)
