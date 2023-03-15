@@ -36,12 +36,6 @@ func (i *fakeImageServiceClient) EnrichLocalImageInternal(ctx context.Context,
 
 type scanTestSuite struct {
 	suite.Suite
-	fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
-		fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
-	getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
-	scannerClientSingleton func() *scannerclient.Client
-	scanImg                func(ctx context.Context, image *storage.Image, registry registryTypes.Registry,
-		scannerClient *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 }
 
 func TestScanSuite(t *testing.T) {
@@ -55,28 +49,16 @@ func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, fai
 	}
 }
 
-func (suite *scanTestSuite) SetupSuite() {
-	suite.fetchSignaturesWithRetry = fetchSignaturesWithRetry
-	suite.getMatchingRegistry = getMatchingRegistry
-	suite.scannerClientSingleton = scannerClientSingleton
-	suite.scanImg = scanImg
-}
-
-func (suite *scanTestSuite) AfterTest(_, _ string) {
-	scanImg = suite.scanImg
-	fetchSignaturesWithRetry = suite.fetchSignaturesWithRetry
-	getMatchingRegistry = suite.getMatchingRegistry
-	scannerClientSingleton = suite.scannerClientSingleton
-}
-
 func (suite *scanTestSuite) TestLocalEnrichment() {
 	// Use mock functions to avoid having to provide a full registry / scanner.
-	scanImg = successfulScan
-	fetchSignaturesWithRetry = successfulFetchSignatures
-	getMatchingRegistry = func(image *storage.ImageName) (registryTypes.Registry, error) {
-		return &fakeRegistry{fail: false}, nil
+	scan := Scan{
+		scanImg:                  successfulScan,
+		fetchSignaturesWithRetry: successfulFetchSignatures,
+		getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
+			return &fakeRegistry{fail: false}, nil
+		},
+		scannerClientSingleton: emptyScannerClientSingleton,
 	}
-	scannerClientSingleton = emptyScannerClientSingleton
 
 	// Original values will be restored within the teardown function. This will be done after each test.
 
@@ -87,7 +69,7 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 
 	imageServiceClient := suite.createMockImageServiceClient(img, false)
 
-	resultImg, err := EnrichLocalImage(context.Background(), imageServiceClient, containerImg)
+	resultImg, err := scan.EnrichLocalImage(context.Background(), imageServiceClient, containerImg)
 
 	suite.Require().NoError(err, "unexpected error when enriching image")
 
@@ -151,13 +133,13 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 
 	for name, c := range cases {
 		suite.Run(name, func() {
-			scanImg = c.scanImg
-			fetchSignaturesWithRetry = c.fetchSignaturesWithRetry
-			getMatchingRegistry = c.getMatchingRegistry
-			scannerClientSingleton = emptyScannerClientSingleton
-			// Need to manually trigger after test here, otherwise it would only be called at the end of table tests.
-			defer suite.AfterTest("", "")
-			img, err := EnrichLocalImage(context.Background(), c.fakeImageServiceClient, containerImg)
+			scan := Scan{
+				scanImg:                  c.scanImg,
+				fetchSignaturesWithRetry: c.fetchSignaturesWithRetry,
+				getMatchingRegistry:      c.getMatchingRegistry,
+				scannerClientSingleton:   emptyScannerClientSingleton,
+			}
+			img, err := scan.EnrichLocalImage(context.Background(), c.fakeImageServiceClient, containerImg)
 			suite.Assert().Error(err, "expected an error")
 			suite.Assert().Nil(img, "required an empty image")
 			suite.Assert().Equal(c.enrichmentTriggered, c.fakeImageServiceClient.enrichTriggered,
@@ -167,25 +149,27 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 }
 
 func (suite *scanTestSuite) TestMetadataBeingSet() {
-	scanImg = successfulScan
-	fetchSignaturesWithRetry = func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image, _ string,
-		_ registryTypes.Registry) ([]*storage.Signature, error) {
-		if img.GetMetadata().GetV2() == nil {
-			return nil, errors.New("image metadata missing, not attempting fetch of signatures")
-		}
-		return nil, nil
+	scan := Scan{
+		scanImg: successfulScan,
+		fetchSignaturesWithRetry: func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image, _ string,
+			_ registryTypes.Registry) ([]*storage.Signature, error) {
+			if img.GetMetadata().GetV2() == nil {
+				return nil, errors.New("image metadata missing, not attempting fetch of signatures")
+			}
+			return nil, nil
+		},
+		getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
+			return &fakeRegistry{fail: false}, nil
+		},
+		scannerClientSingleton: emptyScannerClientSingleton,
 	}
-	getMatchingRegistry = func(image *storage.ImageName) (registryTypes.Registry, error) {
-		return &fakeRegistry{fail: false}, nil
-	}
-	scannerClientSingleton = emptyScannerClientSingleton
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
 	suite.Require().NoError(err, "failed creating test image")
 
 	img := types.ToImage(containerImg)
 	imageServiceClient := suite.createMockImageServiceClient(img, false)
-	resultImg, err := EnrichLocalImage(context.Background(), imageServiceClient, containerImg)
+	resultImg, err := scan.EnrichLocalImage(context.Background(), imageServiceClient, containerImg)
 
 	suite.Require().NoError(err, "unexpected error when enriching image")
 
