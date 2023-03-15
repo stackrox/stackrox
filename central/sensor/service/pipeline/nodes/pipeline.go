@@ -104,7 +104,8 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	err = p.enricher.EnrichNode(node)
 	if err != nil {
-		log.Warnf("enriching node %s failed (but we ignored it): %v", nodeDatastore.NodeString(node), err)
+		log.Warnf("enriching node %s failed (the failure was ignored, vulnerability and " +
+			"risk information will not be updated): %v", nodeDatastore.NodeString(node), err)
 	}
 
 	if err := p.riskManager.CalculateRiskAndUpsertNode(node); err != nil {
