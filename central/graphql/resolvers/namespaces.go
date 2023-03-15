@@ -512,7 +512,7 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 			AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
 			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery())
-	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
 }
