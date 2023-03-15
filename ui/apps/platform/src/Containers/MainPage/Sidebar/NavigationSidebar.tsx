@@ -28,7 +28,7 @@ import {
     clustersBasePath,
     policyManagementBasePath,
     integrationsPath,
-    accessControlBasePathV2,
+    accessControlBasePath,
     systemConfigPath,
     systemHealthPath,
     collectionsBasePath,
@@ -63,7 +63,7 @@ function NavigationSidebar({
         clustersBasePath,
         policyManagementBasePath,
         integrationsPath,
-        accessControlBasePathV2,
+        accessControlBasePath,
         systemConfigPath,
         systemHealthPath,
     ];

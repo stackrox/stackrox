@@ -38,6 +38,7 @@ describe('Access Control Access scopes', () => {
         cy.get('button:contains("Create access scope")');
 
         cy.get('th:contains("Name")');
+        cy.get('th:contains("Origin")');
         cy.get('th:contains("Description")');
         cy.get('th:contains("Roles")');
         cy.get('th[aria-label="Row actions"]');

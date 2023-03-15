@@ -1,6 +1,4 @@
 import { all, call, fork, put, takeLatest, select } from 'redux-saga/effects';
-import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { accessControlPath } from 'routePaths';
 import * as service from 'services/RolesService';
 import { actions, types } from 'reducers/roles';
 import { selectors } from 'reducers';
@@ -75,7 +73,6 @@ function* watchSelectRole() {
 
 export default function* integrations() {
     yield all([
-        takeEveryNewlyMatchedLocation(accessControlPath, getRoles),
         takeLatest(types.FETCH_ROLES.REQUEST, getRoles),
         fork(watchSaveRole),
         fork(watchDeleteRole),

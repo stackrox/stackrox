@@ -6,41 +6,37 @@ import {
     EmptyStateBody,
     EmptyStateIcon,
     EmptyStateVariant,
+    Flex,
     Grid,
     GridItem,
+    Label,
     PageSection,
+    pluralize,
     Spinner,
+    Split,
+    SplitItem,
     Tab,
     TabTitleText,
     Tabs,
     TabsComponent,
-    TabsProps,
     Text,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { gql, useQuery } from '@apollo/client';
+import { ExclamationCircleIcon, InfoCircleIcon } from '@patternfly/react-icons';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { FixableStatus, isValidCveStatusTab } from './types';
-import useCveStatusTabParameter from './hooks/useCveStatusTabParameter';
+import useURLStringUnion from 'hooks/useURLStringUnion';
+import useURLSearch from 'hooks/useURLSearch';
+import { getHasSearchApplied } from 'utils/searchUtils';
+import { cveStatusTabValues, FixableStatus } from './types';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
-
-export type ImageVulnerabilitiesVariables = {
-    id: string;
-};
-
-export type ImageVulnerabilitiesResponse = {
-    image: {
-        imageVulnerabilities: {
-            severity: string;
-            isFixable: boolean;
-        }[];
-    };
-};
+import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
+import useImageVulnerabilities, {
+    ImageVulnerabilitiesResponse,
+} from './hooks/useImageVulnerabilities';
 
 function severityCountsFromImageVulnerabilities(
     imageVulnerabilities: ImageVulnerabilitiesResponse['image']['imageVulnerabilities']
@@ -78,38 +74,16 @@ function statusCountsFromImageVulnerabilities(
     return statusCounts;
 }
 
-export const imageVulnerabilitiesQuery = gql`
-    query getImageVulnerabilities($id: ID!) {
-        image(id: $id) {
-            id
-            imageVulnerabilities {
-                severity
-                isFixable
-            }
-        }
-    }
-`;
-
 export type ImageSingleVulnerabilitiesProps = {
     imageId: string;
 };
 
 function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps) {
-    // TODO Needs integration with URL search filter
-    const { data, loading, error } = useQuery<
-        ImageVulnerabilitiesResponse,
-        ImageVulnerabilitiesVariables
-    >(imageVulnerabilitiesQuery, {
-        variables: { id: imageId },
-    });
+    const { searchFilter } = useURLSearch();
+    // TODO Still need to properly integrate search filter with query
+    const { data, loading, error } = useImageVulnerabilities(imageId, {});
 
-    const [activeTabKey, setActiveTabKey] = useCveStatusTabParameter();
-
-    const handleTabClick: TabsProps['onSelect'] = (e, tabKey) => {
-        if (isValidCveStatusTab(tabKey)) {
-            setActiveTabKey(tabKey);
-        }
-    };
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
     let mainContent: ReactNode | null = null;
 
@@ -141,21 +115,51 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
         const hiddenStatuses = new Set<FixableStatus>([]);
 
         mainContent = (
-            <Grid hasGutter>
-                <GridItem sm={12} md={6} xl2={4}>
-                    <BySeveritySummaryCard
-                        title="CVEs by severity"
-                        severityCounts={severityCounts}
-                        hiddenSeverities={hiddenSeverities}
+            <>
+                <div className="pf-u-px-lg pf-u-pb-lg">
+                    <Grid hasGutter>
+                        <GridItem sm={12} md={6} xl2={4}>
+                            <BySeveritySummaryCard
+                                title="CVEs by severity"
+                                severityCounts={severityCounts}
+                                hiddenSeverities={hiddenSeverities}
+                            />
+                        </GridItem>
+                        <GridItem sm={12} md={6} xl2={4}>
+                            <CvesByStatusSummaryCard
+                                cveStatusCounts={cveStatusCounts}
+                                hiddenStatuses={hiddenStatuses}
+                            />
+                        </GridItem>
+                    </Grid>
+                </div>
+                <Divider />
+                <div className="pf-u-p-lg">
+                    <Split className="pf-u-pb-lg">
+                        <SplitItem isFilled>
+                            <Flex alignContent={{ default: 'alignContentCenter' }}>
+                                <Title headingLevel="h2">
+                                    {pluralize(
+                                        data.image.imageVulnerabilities.length,
+                                        'result',
+                                        'results'
+                                    )}{' '}
+                                    found
+                                </Title>
+                                {getHasSearchApplied(searchFilter) && (
+                                    <Label isCompact color="blue" icon={<InfoCircleIcon />}>
+                                        Filtered view
+                                    </Label>
+                                )}
+                            </Flex>
+                        </SplitItem>
+                        <SplitItem>TODO Pagination</SplitItem>
+                    </Split>
+                    <SingleEntityVulnerabilitiesTable
+                        imageVulnerabilities={data.image.imageVulnerabilities}
                     />
-                </GridItem>
-                <GridItem sm={12} md={6} xl2={4}>
-                    <CvesByStatusSummaryCard
-                        cveStatusCounts={cveStatusCounts}
-                        hiddenStatuses={hiddenStatuses}
-                    />
-                </GridItem>
-            </Grid>
+                </div>
+            </>
         );
     }
 
@@ -171,7 +175,7 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
             >
                 <Tabs
                     activeKey={activeTabKey}
-                    onSelect={handleTabClick}
+                    onSelect={(e, key) => setActiveTabKey(key)}
                     component={TabsComponent.nav}
                     mountOnEnter
                     unmountOnExit
@@ -182,10 +186,12 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
                         eventKey="Observed"
                         title={<TabTitleText>Observed CVEs</TabTitleText>}
                     >
-                        <PageSection variant="light" component="div" isFilled>
+                        <div className="pf-u-px-sm pf-u-background-color-100">
                             <WorkloadTableToolbar />
+                        </div>
+                        <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                             {mainContent}
-                        </PageSection>
+                        </div>
                     </Tab>
                     <Tab
                         className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"

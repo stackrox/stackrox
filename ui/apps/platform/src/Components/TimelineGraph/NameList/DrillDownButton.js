@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { ChevronRight } from 'react-feather';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import Button from 'Components/Button';
 
 const DrillDownButton = ({ tooltip, onClick }) => {
@@ -24,7 +24,7 @@ const DrillDownButton = ({ tooltip, onClick }) => {
 
     if (tooltip) {
         drillDownButton = (
-            <Tooltip content={<TooltipOverlay>{tooltip}</TooltipOverlay>}>
+            <Tooltip content={tooltip}>
                 <div className={positionClassName}>{drillDownButton}</div>
             </Tooltip>
         );

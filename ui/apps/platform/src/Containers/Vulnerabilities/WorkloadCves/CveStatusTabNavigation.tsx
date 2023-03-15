@@ -14,11 +14,16 @@ import { getQueryString } from 'utils/queryStringUtils';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import EntityTypeToggleGroup from './EntityTypeToggleGroup';
 import { WorkloadCvesSearch } from './searchUtils';
+import { DefaultFilters } from './types';
 
 const observedCvesQueryString = getQueryString<WorkloadCvesSearch>({ cveStatusTab: 'Observed' });
 const observedCvesPath = `${vulnerabilitiesWorkloadCvesPath}${observedCvesQueryString}`;
 
-function CveStatusTabNavigation() {
+type CveStatusTabNavigationProps = {
+    defaultFilters: DefaultFilters;
+};
+
+function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps) {
     const [activeTabKey, setActiveTabKey] = useState(0);
 
     function handleTabClick(e, tabIndex) {
@@ -31,6 +36,8 @@ function CveStatusTabNavigation() {
             onSelect={handleTabClick}
             component={TabsComponent.nav}
             className="pf-u-pl-lg pf-u-background-color-100"
+            mountOnEnter
+            unmountOnExit
         >
             <Tab
                 eventKey={0}
@@ -40,27 +47,17 @@ function CveStatusTabNavigation() {
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
-                            <WorkloadTableToolbar />
+                            <WorkloadTableToolbar defaultFilters={defaultFilters} />
                             <EntityTypeToggleGroup />
                             cve overview table here
                         </CardBody>
                     </Card>
                 </PageSection>
             </Tab>
-            <Tab
-                eventKey={1}
-                title={<TabTitleText>Deferrals</TabTitleText>}
-                href={observedCvesPath}
-                isDisabled
-            >
+            <Tab eventKey={1} title={<TabTitleText>Deferrals</TabTitleText>} isDisabled>
                 deferrals tbd
             </Tab>
-            <Tab
-                eventKey={2}
-                title={<TabTitleText>False Positives</TabTitleText>}
-                href={observedCvesPath}
-                isDisabled
-            >
+            <Tab eventKey={2} title={<TabTitleText>False Positives</TabTitleText>} isDisabled>
                 False-positives tbd
             </Tab>
         </Tabs>

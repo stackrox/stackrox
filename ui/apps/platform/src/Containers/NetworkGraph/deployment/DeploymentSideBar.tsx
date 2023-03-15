@@ -30,10 +30,9 @@ import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 import DeploymentDetails from './DeploymentDetails';
 import DeploymentFlows from './DeploymentFlows';
-import DeploymentBaselines from './DeploymentBaselines';
+import DeploymentBaselines from './DeploymentBaseline';
 import NetworkPolicies from '../common/NetworkPolicies';
 import useSimulation from '../hooks/useSimulation';
-import DeploymentBaselinesSimulated from './DeploymentBaselinesSimulated';
 import { EdgeState } from '../components/EdgeStateSelect';
 import { deploymentTabs } from '../utils/deploymentUtils';
 
@@ -64,7 +63,7 @@ function DeploymentSideBar({
 
     useEffect(() => {
         if (isBaselineSimulationOn) {
-            setActiveKeyTab(deploymentTabs.BASELINES);
+            setActiveKeyTab(deploymentTabs.BASELINE);
         }
     }, [isBaselineSimulationOn, setActiveKeyTab]);
 
@@ -126,15 +125,7 @@ function DeploymentSideBar({
                     </FlexItem>
                 </Flex>
             </StackItem>
-            {isBaselineSimulationOn && (
-                <StackItem isFilled style={{ overflow: 'auto' }} className="pf-u-h-100">
-                    <DeploymentBaselinesSimulated
-                        deploymentId={deploymentId}
-                        onNodeSelect={onNodeSelect}
-                    />
-                </StackItem>
-            )}
-            {!isBaselineSimulationOn && deployment && (
+            {deployment && (
                 <>
                     <StackItem>
                         <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
@@ -151,9 +142,9 @@ function DeploymentSideBar({
                                 disabled={isBaselineSimulationOn}
                             />
                             <Tab
-                                eventKey={deploymentTabs.BASELINES}
-                                tabContentId={deploymentTabs.BASELINES}
-                                title={<TabTitleText>{deploymentTabs.BASELINES}</TabTitleText>}
+                                eventKey={deploymentTabs.BASELINE}
+                                tabContentId={deploymentTabs.BASELINE}
+                                title={<TabTitleText>{deploymentTabs.BASELINE}</TabTitleText>}
                             />
                             <Tab
                                 eventKey={deploymentTabs.NETWORK_POLICIES}
@@ -198,12 +189,12 @@ function DeploymentSideBar({
                             )}
                         </TabContent>
                         <TabContent
-                            eventKey={deploymentTabs.BASELINES}
-                            id={deploymentTabs.BASELINES}
-                            hidden={activeKeyTab !== deploymentTabs.BASELINES}
+                            eventKey={deploymentTabs.BASELINE}
+                            id={deploymentTabs.BASELINE}
+                            hidden={activeKeyTab !== deploymentTabs.BASELINE}
                             className="pf-u-h-100"
                         >
-                            {activeKeyTab === deploymentTabs.BASELINES && (
+                            {activeKeyTab === deploymentTabs.BASELINE && (
                                 <DeploymentBaselines
                                     deployment={deployment}
                                     deploymentId={deploymentId}

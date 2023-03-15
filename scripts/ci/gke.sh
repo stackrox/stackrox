@@ -33,9 +33,6 @@ assign_env_variables() {
     if is_OPENSHIFT_CI; then
         require_environment "BUILD_ID"
         build_num="${BUILD_ID}"
-    elif is_CIRCLECI; then
-        require_environment "CIRCLE_BUILD_NUM"
-        build_num="${CIRCLE_BUILD_NUM}"
     else
         die "Support is missing for this CI environment"
     fi
@@ -51,9 +48,39 @@ assign_env_variables() {
     ci_export MACHINE_TYPE "$machine_type"
     echo "Machine type is set as to $machine_type"
 
-    local gke_release_channel="stable"
-    ci_export GKE_RELEASE_CHANNEL "$gke_release_channel"
-    echo "Using gke release channel: $gke_release_channel"
+    choose_release_channel
+    choose_cluster_version
+}
+
+choose_release_channel() {
+    if ! is_in_PR_context; then
+        GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
+    elif pr_has_label ci-gke-use-rapid-channel; then
+        GKE_RELEASE_CHANNEL="rapid"
+    elif pr_has_label ci-gke-use-regular-channel; then
+        GKE_RELEASE_CHANNEL="regular"
+    elif pr_has_label ci-gke-use-stable-channel; then
+        GKE_RELEASE_CHANNEL="stable"
+    elif pr_has_pragma gke_release_channel; then
+        GKE_RELEASE_CHANNEL="$(pr_get_pragma gke_release_channel)"
+    fi
+}
+
+choose_cluster_version() {
+    if is_in_PR_context && pr_has_pragma gke_cluster_version; then
+        GKE_CLUSTER_VERSION="$(pr_get_pragma gke_cluster_version)"
+    fi
+    if [[ "${GKE_CLUSTER_VERSION:-}" == "latest" ]]; then
+        GKE_CLUSTER_VERSION="$(gcloud container get-server-config --format json | jq -r ".validMasterVersions[0]")"
+    elif [[ "${GKE_CLUSTER_VERSION:-}" == "oldest" ]]; then
+        GKE_CLUSTER_VERSION="$(gcloud container get-server-config --format json | jq -r ".validMasterVersions[-1]")"
+    fi
+    if [[ "${GKE_CLUSTER_VERSION:-}" == "null" ]]; then
+        echo "WARNING: Unable to extract version from gcloud config."
+        echo "Valid versions are:"
+        gcloud container get-server-config --format json | jq .validMasterVersions
+        unset GKE_CLUSTER_VERSION
+    fi
 }
 
 create_cluster() {
@@ -73,15 +100,6 @@ create_cluster() {
         labels="${labels},stackrox-ci-job=${JOB_NAME:0:63}"
         labels="${labels/%-/x}"
         labels="${labels},stackrox-ci-build-id=${BUILD_ID:0:63}"
-        labels="${labels/%-/x}"
-    elif is_CIRCLECI; then
-        require_environment "CIRCLE_JOB"
-        require_environment "CIRCLE_WORKFLOW_ID"
-        tags="${tags},stackrox-ci-${CIRCLE_JOB:0:50}"
-        tags="${tags/%-/x}"
-        labels="${labels},stackrox-ci-job=${CIRCLE_JOB:0:63}"
-        labels="${labels/%-/x}"
-        labels="${labels},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID:0:63}"
         labels="${labels/%-/x}"
     else
         die "Support is missing for this CI environment"
@@ -113,11 +131,13 @@ create_cluster() {
 
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
 
-    VERSION_ARGS=(--release-channel "${GKE_RELEASE_CHANNEL}")
-    get_supported_cluster_version
-    if [[ -n "${CLUSTER_VERSION:-}" ]]; then
-        echo "using cluster version: ${CLUSTER_VERSION}"
-        VERSION_ARGS=(--cluster-version "${CLUSTER_VERSION}")
+    if [[ -n "${GKE_CLUSTER_VERSION:-}" ]]; then
+        ensure_supported_cluster_version
+        echo "Using GKE cluster version: ${GKE_CLUSTER_VERSION} (which overrides release channel ${GKE_RELEASE_CHANNEL})"
+        VERSION_ARGS=(--cluster-version "${GKE_CLUSTER_VERSION}" --no-enable-autoupgrade)
+    else
+        echo "Using GKE release channel: $GKE_RELEASE_CHANNEL"
+        VERSION_ARGS=(--release-channel "${GKE_RELEASE_CHANNEL}")
     fi
 
     PSP_ARG=
@@ -142,7 +162,7 @@ create_cluster() {
             --services-ipv4-cidr=/24 \
             --enable-ip-alias \
             --enable-network-policy \
-            --enable-autorepair \
+            --no-enable-autorepair \
             "${VERSION_ARGS[@]}" \
             --image-type "${GCP_IMAGE_TYPE}" \
             --tags="${tags}" \
@@ -224,18 +244,16 @@ wait_for_cluster() {
     done
 }
 
-get_supported_cluster_version() {
-    if [[ -n "${CLUSTER_VERSION:-}" ]]; then
-        local match
-        match=$(gcloud container get-server-config --format json | jq "[.validMasterVersions | .[] | select(.|test(\"^${CLUSTER_VERSION}\"))][0]")
-        if [[ -z "${match}" || "${match}" == "null" ]]; then
-            echo "A supported version cannot be found that matches ${CLUSTER_VERSION}."
-            echo "Valid master versions are:"
-            gcloud container get-server-config --format json | jq .validMasterVersions
-            exit 1
-        fi
-        CLUSTER_VERSION=$(sed -e 's/^"//' -e 's/"$//' <<<"${match}")
+ensure_supported_cluster_version() {
+    local match
+    match=$(gcloud container get-server-config --format json | jq "[.validMasterVersions | .[] | select(.|test(\"^${GKE_CLUSTER_VERSION}\"))][0]")
+    if [[ -z "${match}" || "${match}" == "null" ]]; then
+        echo "ERROR: A supported version cannot be found that matches ${GKE_CLUSTER_VERSION}."
+        echo "Valid master versions are:"
+        gcloud container get-server-config --format json | jq .validMasterVersions
+        exit 1
     fi
+    GKE_CLUSTER_VERSION=$(sed -e 's/^"//' -e 's/"$//' <<<"${match}")
 }
 
 refresh_gke_token() {

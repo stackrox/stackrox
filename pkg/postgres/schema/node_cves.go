@@ -50,7 +50,7 @@ const (
 // NodeCves holds the Gorm model for Postgres table `node_cves`.
 type NodeCves struct {
 	Id                     string                        `gorm:"column:id;type:varchar;primaryKey"`
-	CveBaseInfoCve         string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
+	CveBaseInfoCve         string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:nodecves_cvebaseinfo_cve,type:hash"`
 	CveBaseInfoPublishedOn *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt   *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	OperatingSystem        string                        `gorm:"column:operatingsystem;type:varchar"`

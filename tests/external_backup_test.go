@@ -50,10 +50,7 @@ func TestGCSExternalBackup(t *testing.T) {
 	serviceAccount := os.Getenv("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT")
 	require.NotEmpty(t, serviceAccount)
 
-	prefix := os.Getenv("CIRCLE_BUILD_NUM")
-	if len(prefix) == 0 {
-		prefix = os.Getenv("BUILD_ID")
-	}
+	prefix := os.Getenv("BUILD_ID")
 	require.NotEmpty(t, prefix)
 
 	client, err := googleStorage.NewClient(context.Background(), option.WithCredentialsJSON([]byte(serviceAccount)))

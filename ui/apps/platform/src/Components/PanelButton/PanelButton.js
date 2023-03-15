@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 const PanelButton = ({
     children,
@@ -17,10 +16,7 @@ const PanelButton = ({
     const tooltipContent = tooltip || text;
     const tooltipClassName = !tooltip ? 'visible xl:invisible' : '';
     return (
-        <Tooltip
-            content={<TooltipOverlay>{tooltipContent}</TooltipOverlay>}
-            className={tooltipClassName}
-        >
+        <Tooltip content={tooltipContent} className={tooltipClassName}>
             <button
                 type="button"
                 className={className}

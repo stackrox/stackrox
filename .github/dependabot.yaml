@@ -15,6 +15,7 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+      - "area/ui"
     reviewers:
       - "stackrox/ui-dep-updaters"
 
@@ -27,6 +28,7 @@ updates:
     labels:
       - "ci-all-qa-tests"
       - "dependencies"
+      - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
 
@@ -38,6 +40,7 @@ updates:
     labels:
       - "ci-all-qa-tests"
       - "dependencies"
+      - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
     ignore:
@@ -52,6 +55,7 @@ updates:
     open-pull-requests-limit: 3
     labels:
     - "dependencies"
+    - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
 
@@ -63,6 +67,7 @@ updates:
     open-pull-requests-limit: 3
     labels:
     - "dependencies"
+    - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
 
@@ -74,6 +79,7 @@ updates:
     open-pull-requests-limit: 1
     labels:
     - "dependencies"
+    - "area/operator"
     reviewers:
     - "stackrox/backend-dep-updaters"
 
@@ -85,6 +91,7 @@ updates:
     open-pull-requests-limit: 1
     labels:
     - "dependencies"
+    - "area/operator"
     reviewers:
     - "stackrox/backend-dep-updaters"
 

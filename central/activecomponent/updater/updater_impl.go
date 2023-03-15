@@ -12,6 +12,7 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -52,6 +53,9 @@ func clearExecutables(image *storage.Image) {
 // PopulateExecutableCache extracts executables from image scan and stores them in the executable cache.
 // Image executables are cleared on successful return.
 func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storage.Image) error {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return nil
+	}
 	imageID := image.GetId()
 	scan := image.GetScan()
 	if imageID == "" || scan == nil {
@@ -97,6 +101,9 @@ func (u *updaterImpl) getExecToComponentsMap(imageScan *storage.ImageScan) map[s
 
 // Update detects active components with most recent process run.
 func (u *updaterImpl) Update() {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return
+	}
 	ctx := sac.WithAllAccess(context.Background())
 	ids, err := u.deploymentStore.GetDeploymentIDs(ctx)
 	if err != nil {

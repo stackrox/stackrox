@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import HealthStatus from '../HealthStatus';
 
 type CollectorUnavailableStatusProps = {
@@ -23,7 +23,7 @@ function CollectorUnavailableStatus({
     );
 
     return isList ? (
-        <Tooltip content={<TooltipOverlay>{reasonUnavailable}</TooltipOverlay>}>
+        <Tooltip content={reasonUnavailable}>
             <div className="inline">
                 <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
                     {statusElement}

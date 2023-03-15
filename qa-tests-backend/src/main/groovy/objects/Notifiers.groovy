@@ -1,5 +1,7 @@
 package objects
 
+import static util.Helpers.withRetry
+
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import groovy.json.JsonSlurper

@@ -31,7 +31,7 @@ func TestTLS(t *testing.T) {
 
 func checkTLSWithRetry(server *httptest.Server) (bool, error) {
 	var tls bool
-	// Retry the test a few times, sometimes in CircleCI this takes longer than the timeout
+	// Retry the test a few times, sometimes in CI this takes longer than the timeout
 	err := retry.WithRetry(
 		func() error {
 			var err error

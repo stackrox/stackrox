@@ -166,12 +166,6 @@ update-shellcheck-skip:
 	$(SILENT)rm -f scripts/style/shellcheck_skip.txt
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh update_failing_list
 
-.PHONY: ci-config-validate
-ci-config-validate:
-	@echo "+ $@"
-	$(SILENT)circleci diagnostic > /dev/null 2>&1 || (echo "Must first set CIRCLECI_CLI_TOKEN or run circleci setup"; exit 1)
-	circleci config validate --org-slug gh/stackrox
-
 .PHONY: fast-central-build
 fast-central-build: central-build-nodeps
 
@@ -391,12 +385,12 @@ main-build: build-prep main-build-dockerized
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) --rm -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+	docker run $(DOCKER_USER) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
 sensor-kubernetes-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+	docker run $(DOCKER_USER) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
 .PHONY: sensor-build
 sensor-build:
@@ -410,7 +404,7 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run $(DOCKER_USER) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
@@ -481,7 +475,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' 'migrator/migrations/m_16?_*/migration_test.go' 'migrator/migrations/m_17?_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/service/service_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
@@ -683,11 +677,7 @@ clean-image:
 
 .PHONY: tag
 tag:
-ifdef COMMIT
-	@git describe $(COMMIT) --tags --abbrev=10 --long --exclude '*-nightly-*'
-else
 	@echo $(TAG)
-endif
 
 .PHONY: shortcommit
 shortcommit:
@@ -766,7 +756,7 @@ ui-publish-packages:
 
 .PHONY: check-debugger
 check-debugger:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" CIRCLE_TAG="$(CIRCLE_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
 ifeq ($(DEBUG_BUILD),yes)
 	$(warning Warning: DEBUG_BUILD is enabled. Don not use this for production builds)
 endif

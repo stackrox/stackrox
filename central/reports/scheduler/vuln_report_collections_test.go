@@ -76,7 +76,6 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
 	)
 
-	collectionPostgres.Destroy(s.ctx, s.testDB.DB)
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
 	index := collectionPostgres.NewIndexer(s.testDB.DB)

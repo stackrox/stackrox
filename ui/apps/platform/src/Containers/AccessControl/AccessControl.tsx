@@ -1,8 +1,10 @@
 import React, { ReactElement } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
-
 import { Alert, List, ListItem } from '@patternfly/react-core';
-import { accessControlBasePath, accessControlPath, getEntityPath } from './accessControlPaths';
+
+import { accessControlBasePath, accessControlPath } from 'routePaths';
+
+import { getEntityPath } from './accessControlPaths';
 
 import AccessControlRouteNotFound from './AccessControlRouteNotFound';
 import AccessScopes from './AccessScopes/AccessScopes';

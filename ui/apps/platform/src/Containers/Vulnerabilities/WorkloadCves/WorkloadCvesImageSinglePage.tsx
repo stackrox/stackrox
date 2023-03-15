@@ -15,23 +15,27 @@ import {
     Tab,
     Tabs,
     TabsComponent,
-    TabsProps,
     TabTitleText,
     Title,
     Tooltip,
 } from '@patternfly/react-core';
 import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
-import { gql, useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
-import useDetailsTabParameter from './hooks/useDetailsTabParameter';
-import { isDetailsTab } from './types';
+import { detailsTabValues } from './types';
 import { getOverviewCvesPath } from './searchUtils';
+import {
+    ImageDetailsResponse,
+    ImageDetailsVariables,
+    imageDetailsQuery,
+} from './hooks/useImageDetails';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -90,51 +94,6 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
     );
 }
 
-export type ImageDetailsVariables = {
-    id: string;
-};
-
-export type ImageDetailsResponse = {
-    image: {
-        deploymentCount: number;
-        name: {
-            fullName: string;
-        } | null;
-        operatingSystem: string;
-        metadata: {
-            v1: {
-                created: Date | null;
-                digest: string;
-            } | null;
-        } | null;
-        dataSource: { name: string } | null;
-        scanTime: Date | null;
-    };
-};
-
-export const imageDetailsQuery = gql`
-    query getImageDetails($id: ID!) {
-        image(id: $id) {
-            id
-            deploymentCount
-            name {
-                fullName
-            }
-            operatingSystem
-            metadata {
-                v1 {
-                    created
-                    digest
-                }
-            }
-            dataSource {
-                name
-            }
-            scanTime
-        }
-    }
-`;
-
 function WorkloadCvesImageSinglePage() {
     const { imageId } = useParams();
     const { data, error } = useQuery<ImageDetailsResponse, ImageDetailsVariables>(
@@ -144,16 +103,10 @@ function WorkloadCvesImageSinglePage() {
         }
     );
 
-    const [activeTabKey, setActiveTabKey] = useDetailsTabParameter();
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const imageData = data && data.image;
     const imageName = imageData?.name?.fullName ?? 'NAME UNKNOWN';
-
-    const handleTabClick: TabsProps['onSelect'] = (e, tabKey) => {
-        if (isDetailsTab(tabKey)) {
-            setActiveTabKey(tabKey);
-        }
-    };
 
     let mainContent: ReactNode | null = null;
 
@@ -199,7 +152,7 @@ function WorkloadCvesImageSinglePage() {
                 >
                     <Tabs
                         activeKey={activeTabKey}
-                        onSelect={handleTabClick}
+                        onSelect={(e, key) => setActiveTabKey(key)}
                         component={TabsComponent.nav}
                         className="pf-u-pl-md pf-u-background-color-100"
                         mountOnEnter

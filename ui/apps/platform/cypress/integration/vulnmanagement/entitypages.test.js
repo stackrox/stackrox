@@ -7,14 +7,18 @@ import {
     interactAndWaitForVulnerabilityManagementSecondaryEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 
 describe('Entities single views', () => {
     withAuth();
 
     // Some tests might fail in local deployment.
 
-    it('related entities tile links should unset search params upon navigation', () => {
+    it('related entities tile links should unset search params upon navigation', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'clusters';
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
@@ -50,7 +54,11 @@ describe('Entities single views', () => {
             });
     });
 
-    it('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', () => {
+    it('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'policies';
         const entitiesKey2 = 'deployments';
         visitVulnerabilityManagementEntities(entitiesKey1);
@@ -84,7 +92,11 @@ describe('Entities single views', () => {
         });
     });
 
-    it('should scope deployment data based on selected policy from table row click', () => {
+    it('should scope deployment data based on selected policy from table row click', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'policies';
         const entitiesKey2 = 'deployments';
         // policy -> related deployments list should scope policy status column by the policy x deployment row
@@ -129,7 +141,11 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should scope deployment data based on selected policy from table count link click', () => {
+    it('should scope deployment data based on selected policy from table count link click', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'policies';
         const entitiesKey2 = 'deployments';
         visitVulnerabilityManagementEntities(entitiesKey1);
@@ -149,7 +165,11 @@ describe('Entities single views', () => {
         );
     });
 
-    it('should scope deployment data based on selected policy from entity page tab sublist', () => {
+    it('should scope deployment data based on selected policy from entity page tab sublist', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'policies';
         const entitiesKey2 = 'deployments';
         visitVulnerabilityManagementEntities(entitiesKey1);
@@ -249,7 +269,11 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should not filter cluster entity page regardless of entity context', () => {
+    it('should not filter cluster entity page regardless of entity context', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey = 'namespaces';
         visitVulnerabilityManagementEntities(entitiesKey);
 
@@ -275,6 +299,7 @@ describe('Entities single views', () => {
     });
 
     it('should show the active state in Component overview when scoped under a deployment', () => {
+        const activeVulnEnabled = hasFeatureFlag('ROX_ACTIVE_VULN_MGMT');
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
         const entitiesKey1 = 'deployments';
         const entitiesKey2 = usingVMUpdates ? 'image-components' : 'components';
@@ -303,14 +328,23 @@ describe('Entities single views', () => {
             cy.get(`[data-testid="side-panel"] ${selectors.tableBodyRows}:eq(0)`).click();
         }, entitiesKey2);
 
-        cy.get(`[data-testid="Active status-value"]`)
-            .invoke('text')
-            .then((activeStatusText) => {
-                expect(activeStatusText).to.be.oneOf(['Active', 'Inactive', 'Undetermined']);
-            });
+        if (activeVulnEnabled) {
+            cy.get(`[data-testid="Active status-value"]`)
+                .invoke('text')
+                .then((activeStatusText) => {
+                    expect(activeStatusText).to.be.oneOf(['Active', 'Inactive', 'Undetermined']);
+                });
+        } else {
+            cy.get('.rt-th')
+                .invoke('text')
+                .then((tableHeaderText) => {
+                    expect(tableHeaderText).not.to.contain('Active');
+                });
+        }
     });
 
     it('should show the active state in the fixable CVES widget for a single deployment', () => {
+        const activeVulnEnabled = hasFeatureFlag('ROX_ACTIVE_VULN_MGMT');
         const entitiesKey = 'deployments';
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
@@ -331,11 +365,20 @@ describe('Entities single views', () => {
         }, entitiesKey);
 
         cy.wait('@getFixableCvesForEntity');
-        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`).contains(
-            'Active'
-        );
-        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20232")`).contains(
-            'Inactive'
-        );
+
+        if (activeVulnEnabled) {
+            cy.get(
+                `${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`
+            ).contains('Active');
+            cy.get(
+                `${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20232")`
+            ).contains('Inactive');
+        } else {
+            cy.get('.rt-th')
+                .invoke('text')
+                .then((tableHeaderText) => {
+                    expect(tableHeaderText).not.to.contain('Active');
+                });
+        }
     });
 });

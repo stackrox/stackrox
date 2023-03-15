@@ -1,3 +1,4 @@
+import { VulnerabilitySeverity } from 'types/cve.proto';
 import { PolicySeverity } from 'types/policy.proto';
 
 const colors = [
@@ -32,6 +33,13 @@ export const severityColors: Record<PolicySeverity, string> = {
     MEDIUM_SEVERITY: 'var(--color-severity-medium)',
     HIGH_SEVERITY: 'var(--color-severity-important)',
     CRITICAL_SEVERITY: 'var(--color-severity-critical)',
+};
+
+export const vulnSeverityIconColors: Record<VulnerabilitySeverity, string> = {
+    LOW_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--blue-300)',
+    MODERATE_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--gold-300)',
+    IMPORTANT_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--orange-200)',
+    CRITICAL_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--red-100)',
 };
 
 export default colors;

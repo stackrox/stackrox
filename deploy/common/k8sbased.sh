@@ -476,6 +476,10 @@ function launch_sensor {
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
     fi
 
+    if [[ -n "$POD_SECURITY_POLICIES" ]]; then
+        extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
+    fi
+
     # Delete path
     rm -rf "$k8s_dir/sensor-deploy"
 

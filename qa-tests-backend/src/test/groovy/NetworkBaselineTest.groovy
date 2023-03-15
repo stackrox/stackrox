@@ -1,3 +1,5 @@
+import static util.Helpers.evaluateWithRetry
+
 import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.storage.NetworkBaselineOuterClass

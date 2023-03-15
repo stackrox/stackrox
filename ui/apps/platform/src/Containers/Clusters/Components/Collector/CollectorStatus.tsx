@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
-
 import HealthStatus from '../HealthStatus';
 import CollectorStatusTotals from './CollectorStatusTotals';
 import CollectorUnavailableStatus from './CollectorUnavailableStatus';
@@ -81,7 +81,7 @@ function CollectorStatus({ healthStatus, isList = false }: CollectorStatusProps)
         return isList ? (
             <Tooltip
                 content={
-                    <DetailedTooltipOverlay
+                    <DetailedTooltipContent
                         title="Collector Health Information"
                         body={infoElement}
                     />

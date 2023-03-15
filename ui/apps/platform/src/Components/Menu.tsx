@@ -1,8 +1,7 @@
 import React, { useState, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp } from 'react-feather';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 const optionsClass =
     'flex items-center relative text-left px-2 py-3 text-sm border-b border-base-400 hover:bg-base-200 capitalize';
@@ -121,7 +120,7 @@ const Menu = ({
 
     const tooltipClassName = !tooltip || disabled ? 'invisible' : '';
     return (
-        <Tooltip content={<TooltipOverlay>{tooltip}</TooltipOverlay>} className={tooltipClassName}>
+        <Tooltip content={tooltip} className={tooltipClassName}>
             <div className={`${className} inline-block relative z-10`}>
                 <button
                     className={`flex h-full w-full ${buttonClass}`}

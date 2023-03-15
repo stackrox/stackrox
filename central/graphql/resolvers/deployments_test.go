@@ -182,10 +182,9 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 
 			// Test DeploymentCount query.
 			expectedDeployments, expectedImagesPerDeployments := compileExpected(s.testDeployments, s.testImages, tc.deploymentFiler, tc.imageFilter)
-			expectedDeploymentCount := int32(len(expectedDeployments))
 			count, err := s.resolver.DeploymentCount(ctx, RawQuery{Query: paginatedQ.Query})
 			assert.NoError(t, err)
-			assert.Equal(t, expectedDeploymentCount, count)
+			assert.Equal(t, int32(len(expectedDeployments)), count)
 
 			// Test Deployments query.
 			actualDeployments, err := s.resolver.Deployments(ctx, paginatedQ)

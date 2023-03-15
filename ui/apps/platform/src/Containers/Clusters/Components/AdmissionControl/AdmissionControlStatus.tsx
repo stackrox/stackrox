@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
-
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import HealthStatus from '../HealthStatus';
 import {
@@ -87,7 +87,7 @@ function AdmissionControlStatus({
         return isList ? (
             <Tooltip
                 content={
-                    <DetailedTooltipOverlay
+                    <DetailedTooltipContent
                         title="Admission Control Health Information"
                         body={infoElement}
                     />

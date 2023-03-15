@@ -35,9 +35,8 @@ export const riskPath = `${riskBasePath}/:deploymentId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const searchPath = `${mainPath}/search`;
 export const apidocsPath = `${mainPath}/apidocs`;
-export const accessControlPath = `${mainPath}/access`;
-export const accessControlBasePathV2 = `${mainPath}/access-control`;
-export const accessControlPathV2 = `${accessControlBasePathV2}/:entitySegment?/:entityId?`;
+export const accessControlBasePath = `${mainPath}/access-control`;
+export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:entityId?`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
@@ -175,7 +174,7 @@ export const basePathToLabelMap = {
     [collectionsBasePath]: 'Collections',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
-    [accessControlBasePathV2]: 'Access Control',
+    [accessControlBasePath]: 'Access Control',
     [systemConfigPath]: 'System Configuration',
     [systemHealthPath]: 'System Health',
     [loginPath]: 'Log In',

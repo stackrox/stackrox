@@ -2,6 +2,7 @@
 // However, add strings in alphabetical order to minimize merge conflicts when multiple people add strings.
 // prettier-ignore
 export type FeatureFlagEnvVar =
+    | 'ROX_ACTIVE_VULN_MGMT'
     | 'ROX_CLAIR_V4_SCANNING'
     | 'ROX_DECLARATIVE_CONFIGURATION'
     | 'ROX_DECOMMISSIONED_CLUSTER_RETENTION'

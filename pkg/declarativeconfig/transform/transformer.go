@@ -11,6 +11,8 @@ import (
 var _ Transformer = (*universalTransformer)(nil)
 
 // Transformer transforms a declarativeconfig.Configuration to proto.Message(s).
+//
+//go:generate mockgen-wrapper
 type Transformer interface {
 	Transform(config declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error)
 }

@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
@@ -21,9 +23,9 @@ import objects.NetworkPolicyTypes
 import objects.Notifier
 import objects.QuayImageIntegration
 import objects.SlackNotifier
-import objects.SyslogNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
+import objects.SyslogNotifier
 import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
@@ -32,15 +34,15 @@ import services.NotifierService
 import services.PolicyService
 import util.Env
 import util.MailServer
-import util.SyslogServer
 import util.SplunkUtil
+import util.SyslogServer
 
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.Timeout
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
-import spock.lang.IgnoreIf
 
 class IntegrationsTest extends BaseSpecification {
     static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"

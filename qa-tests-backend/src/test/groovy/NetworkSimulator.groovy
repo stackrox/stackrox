@@ -8,12 +8,12 @@ import objects.NetworkPolicyTypes
 import objects.SlackNotifier
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import util.Env
 import util.NetworkGraphUtil
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
-import spock.lang.IgnoreIf
-import util.Env
 
 class NetworkSimulator extends BaseSpecification {
 

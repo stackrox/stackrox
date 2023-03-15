@@ -27,8 +27,12 @@ var (
 func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
+	var err error
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = pgStore.New(globaldb.GetPostgres())
+		storage, err = pgStore.NewWithCache(pgStore.New(globaldb.GetPostgres()))
+		if err != nil {
+			log.Fatal("failed to open process baseline store")
+		}
 		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 	} else {
 		var err error

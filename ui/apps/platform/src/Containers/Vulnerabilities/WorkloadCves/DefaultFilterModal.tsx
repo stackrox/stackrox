@@ -4,8 +4,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { useFormik, FormikProvider } from 'formik';
 import { Globe } from 'react-feather';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
-import { DefaultFilters, FixableStatus } from './types';
+import { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from './types';
 
 type DefaultFilterModalProps = {
     defaultFilters: DefaultFilters;
@@ -35,7 +34,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         setIsOpen(!isOpen);
     }
 
-    function handleSeverityChange(severity: VulnerabilitySeverity, isChecked: boolean) {
+    function handleSeverityChange(severity: VulnerabilitySeverityLabel, isChecked: boolean) {
         let newSeverityValues = [...severityValues];
         if (isChecked) {
             newSeverityValues.push(severity);
@@ -87,48 +86,33 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                             <Checkbox
                                 label="Critical"
                                 id="critical-severity"
-                                isChecked={severityValues.includes(
-                                    'CRITICAL_VULNERABILITY_SEVERITY'
-                                )}
+                                isChecked={severityValues.includes('Critical')}
                                 onChange={(isChecked) => {
-                                    handleSeverityChange(
-                                        'CRITICAL_VULNERABILITY_SEVERITY',
-                                        isChecked
-                                    );
+                                    handleSeverityChange('Critical', isChecked);
                                 }}
                             />
                             <Checkbox
                                 label="Important"
                                 id="important-severity"
-                                isChecked={severityValues.includes(
-                                    'IMPORTANT_VULNERABILITY_SEVERITY'
-                                )}
+                                isChecked={severityValues.includes('Important')}
                                 onChange={(isChecked) => {
-                                    handleSeverityChange(
-                                        'IMPORTANT_VULNERABILITY_SEVERITY',
-                                        isChecked
-                                    );
+                                    handleSeverityChange('Important', isChecked);
                                 }}
                             />
                             <Checkbox
                                 label="Moderate"
                                 id="moderate-severity"
-                                isChecked={severityValues.includes(
-                                    'MODERATE_VULNERABILITY_SEVERITY'
-                                )}
+                                isChecked={severityValues.includes('Moderate')}
                                 onChange={(isChecked) => {
-                                    handleSeverityChange(
-                                        'MODERATE_VULNERABILITY_SEVERITY',
-                                        isChecked
-                                    );
+                                    handleSeverityChange('Moderate', isChecked);
                                 }}
                             />
                             <Checkbox
                                 label="Low"
                                 id="low-severity"
-                                isChecked={severityValues.includes('LOW_VULNERABILITY_SEVERITY')}
+                                isChecked={severityValues.includes('Low')}
                                 onChange={(isChecked) => {
-                                    handleSeverityChange('LOW_VULNERABILITY_SEVERITY', isChecked);
+                                    handleSeverityChange('Low', isChecked);
                                 }}
                             />
                         </FormGroup>
