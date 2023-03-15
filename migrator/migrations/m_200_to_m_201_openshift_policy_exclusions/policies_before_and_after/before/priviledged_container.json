@@ -17,6 +17,110 @@
       "eventSource": "NOT_APPLICABLE",
       "exclusions": [
         {
+          "name": "Don't alert on deploymemt mdsd in openshift-azure-logging namespace",
+          "deployment": {
+            "name": "mdsd",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift-azure-logging",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
+          "name": "Don't alert on deploymemt audit-exporter in openshift-security namespace",
+          "deployment": {
+            "name": "audit-exporter",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift-security",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
+          "name": "Don't alert on deploymemt apiserver in openshift-oauth-apiserver namespace",
+          "deployment": {
+            "name": "apiserver",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift-oauth-apiserver",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
+          "name": "Don't alert on deploymemt ovnkube-node in openshift-ovn-kubernetes namespace",
+          "deployment": {
+            "name": "ovnkube-node",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift-ovn-kubernetes",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
+          "name": "Don't alert on deploymemt oauth-openshift in openshift-authentication namespace",
+          "deployment": {
+            "name": "oauth-openshift",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift-authentication",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
+          "name": "Don't alert on deploymemt multus-additional-cni-plugins in openshift-multus namespace",
+          "deployment": {
+            "name": "multus-additional-cni-plugins",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift-multus",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
+          "name": "Don't alert on deploymemt multus in openshift-multus namespace",
+          "deployment": {
+            "name": "multus",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift-multus",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
+          "name": "Don't alert on deploymemt node-ca in openshift-image-registry namespace",
+          "deployment": {
+            "name": "node-ca",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift-image-registry",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
           "name": "Don't alert on the stackrox namespace",
           "deployment": {
             "name": "",

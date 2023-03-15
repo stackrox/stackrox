@@ -15,19 +15,6 @@
   "eventSource": "DEPLOYMENT_EVENT",
   "exclusions": [
     {
-      "name": "Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace",
-      "deployment": {
-        "name": "ovnkube-node",
-        "scope": {
-          "cluster": "",
-          "namespace": "openshift-ovn-kubernetes",
-          "label": null
-        }
-      },
-      "image": null,
-      "expiration": null
-    },
-    {
       "name": "Don't alert on Kube System Namespace",
       "deployment": {
         "name": "",
