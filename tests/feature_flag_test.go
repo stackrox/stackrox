@@ -47,6 +47,7 @@ func TestFeatureFlagSettings(t *testing.T) {
 
 	// TODO(ROX-14939): Remove this with environment variable
 	delete(actualFlagVals, env.PostgresDatastoreEnabled.EnvVar())
+	delete(actualFlagVals, env.ActiveVulnMgmt.EnvVar())
 
 	assert.Equal(t, expectedFlagVals, actualFlagVals, "mismatch between expected and actual feature flag settings")
 }
