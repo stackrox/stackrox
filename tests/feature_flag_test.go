@@ -45,7 +45,7 @@ func TestFeatureFlagSettings(t *testing.T) {
 		actualFlagVals[flag.GetEnvVar()] = flag.GetEnabled()
 	}
 
-	// TODO(ROX-14939): Remove this with environment variable
+	// TODO(ROX-14939): Refactor feature flag logic to include environment variables
 	delete(actualFlagVals, env.PostgresDatastoreEnabled.EnvVar())
 	delete(actualFlagVals, env.ActiveVulnMgmt.EnvVar())
 
