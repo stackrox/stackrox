@@ -54,7 +54,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	doc, err := identityDocFromPKCS7(ctx, mdClient)
 	if err != nil {
 		// TODO: remove?
-		log.Warn("Could not verify AWS public certificate: %v", err)
+		log.Warnf("Could not verify AWS public certificate: %v", err)
 		errs.AddError(err)
 		verified = false
 
