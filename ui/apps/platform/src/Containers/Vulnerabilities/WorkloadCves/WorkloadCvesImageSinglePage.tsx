@@ -20,7 +20,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
-import { gql, useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -31,6 +31,11 @@ import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
 import { detailsTabValues } from './types';
 import { getOverviewCvesPath } from './searchUtils';
+import {
+    ImageDetailsResponse,
+    ImageDetailsVariables,
+    imageDetailsQuery,
+} from './hooks/useImageDetails';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -88,51 +93,6 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
         </LabelGroup>
     );
 }
-
-export type ImageDetailsVariables = {
-    id: string;
-};
-
-export type ImageDetailsResponse = {
-    image: {
-        deploymentCount: number;
-        name: {
-            fullName: string;
-        } | null;
-        operatingSystem: string;
-        metadata: {
-            v1: {
-                created: Date | null;
-                digest: string;
-            } | null;
-        } | null;
-        dataSource: { name: string } | null;
-        scanTime: Date | null;
-    };
-};
-
-export const imageDetailsQuery = gql`
-    query getImageDetails($id: ID!) {
-        image(id: $id) {
-            id
-            deploymentCount
-            name {
-                fullName
-            }
-            operatingSystem
-            metadata {
-                v1 {
-                    created
-                    digest
-                }
-            }
-            dataSource {
-                name
-            }
-            scanTime
-        }
-    }
-`;
 
 function WorkloadCvesImageSinglePage() {
     const { imageId } = useParams();
