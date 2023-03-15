@@ -37,7 +37,10 @@ func Load(databaseName string) (*postgres.DB, *gorm.DB, error) {
 			return nil, nil, err
 		}
 	}
-	// Waits for central-db ready with retries
+	// For migrations we may have long running jobs.  Here we explicitly turn
+	// off the statement timeout for the connection and will rely on the context
+	// timeouts to control this.
+	adminConfig.ConnConfig.RuntimeParams["statement_timeout"] = "0"
 	postgresDB = pgadmin.GetClonePool(adminConfig, databaseName)
 	gormDB, err = gc.ConnectWithRetries(databaseName)
 	if err != nil {
