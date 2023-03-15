@@ -13,11 +13,9 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"gorm.io/gorm"
 )
 
 // This file is a partial copy of 'central/networkbaseline/datastore/datastore.go'
@@ -311,23 +309,3 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 }
 
 //// Interface functions - END
-
-//// Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
-	dropTableNetworkBaselines(ctx, db)
-}
-
-func dropTableNetworkBaselines(ctx context.Context, db *postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_baselines CASCADE")
-
-}
-
-//// Used for testing - END

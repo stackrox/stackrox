@@ -8,15 +8,14 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	frozenSchemav73 "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"gorm.io/gorm"
 )
 
 // This file is a partial copy of 'central/networkgraph/entity/datastore/internal/store/postgres/store.go'
@@ -40,7 +39,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkEntitiesSchema
+	schema = frozenSchemav73.NetworkEntitiesSchema
 )
 
 // Store interface.
@@ -385,23 +384,3 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 }
 
 //// Interface functions - END
-
-//// Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
-	dropTableNetworkEntities(ctx, db)
-}
-
-func dropTableNetworkEntities(ctx context.Context, db *postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_entities CASCADE")
-
-}
-
-//// Used for testing - END

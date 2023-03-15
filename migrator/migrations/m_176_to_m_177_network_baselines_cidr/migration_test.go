@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package m176tom177
 
 import (
@@ -11,9 +13,9 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkentitystore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,6 +56,13 @@ var (
 	ext1Cidr = "42.42.0.0/16"
 	ext2Cidr = "24.24.0.0/16"
 
+	dep1 = uuid.NewV4()
+	dep2 = uuid.NewV4()
+	dep3 = uuid.NewV4()
+	dep4 = uuid.NewV4()
+
+	cluster1 = uuid.NewV4()
+
 	networkEntities = []*storage.NetworkEntity{
 		{
 			Info: &storage.NetworkEntityInfo{
@@ -87,27 +96,27 @@ var (
 
 	networkBaselines = []*storage.NetworkBaseline{
 		{
-			DeploymentId: fixtureconsts.Deployment1,
-			ClusterId:    fixtureconsts.Cluster1,
+			DeploymentId: dep1.String(),
+			ClusterId:    cluster1.String(),
 			Namespace:    "ns1",
 			Peers: []*storage.NetworkBaselinePeer{
-				deploymentPeer(fixtureconsts.Deployment2),
+				deploymentPeer(dep2.String()),
 				externalPeer("ext1"),
 			},
 			DeploymentName: "Has ext1 as peer",
 		},
 		{
-			DeploymentId: fixtureconsts.Deployment2,
-			ClusterId:    fixtureconsts.Cluster1,
+			DeploymentId: dep2.String(),
+			ClusterId:    cluster1.String(),
 			Namespace:    "ns1",
 			Peers: []*storage.NetworkBaselinePeer{
-				deploymentPeer(fixtureconsts.Deployment1),
+				deploymentPeer(dep1.String()),
 			},
 			DeploymentName: "No external peers",
 		},
 		{
-			DeploymentId: fixtureconsts.Deployment3,
-			ClusterId:    fixtureconsts.Cluster1,
+			DeploymentId: dep3.String(),
+			ClusterId:    cluster1.String(),
 			Namespace:    "ns1",
 			ForbiddenPeers: []*storage.NetworkBaselinePeer{
 				externalPeer("ext1"),
@@ -115,8 +124,8 @@ var (
 			DeploymentName: "Has ext as forbidden peer",
 		},
 		{
-			DeploymentId: fixtureconsts.Deployment4,
-			ClusterId:    fixtureconsts.Cluster1,
+			DeploymentId: dep4.String(),
+			ClusterId:    cluster1.String(),
 			Namespace:    "ns1",
 			Peers: []*storage.NetworkBaselinePeer{
 				externalPeer("ext1"),
