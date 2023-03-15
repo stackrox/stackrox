@@ -8,7 +8,8 @@ import (
 )
 
 func TestAlertAndListAlertResourceTypesAreInSync(t *testing.T) {
-	assert.Equal(t, storage.ListAlert_ResourceType_name[0], "DEPLOYMENT")
+	assert.Equal(t, storage.ListAlert_ResourceType_name[0],
+		"DEPLOYMENT a provoked failure by mowsiany, please assign any JIRA issues to him")
 	assert.Equal(t, storage.Alert_Resource_ResourceType_name[0], "UNKNOWN")
 
 	assert.Equal(t, len(storage.Alert_Resource_ResourceType_value), len(storage.ListAlert_ResourceType_value))
