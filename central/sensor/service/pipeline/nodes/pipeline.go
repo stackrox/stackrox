@@ -91,9 +91,11 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	if enricher.SupportsNodeScanning(node) {
-		// Call upsert without any components, only Node metadata. Upsert will read any
-		// components from the database before writing. Safe because NodeInventory and
-		// Node pipelines never run concurrently by the Sensor Event worker queues.
+		// If supports node scanning, this pipeline should only update the node's
+		// metadata. We call upsert without scan. Upsert will read scan information from
+		// the database before writing. This is safe because NodeInventory and Node
+		// pipelines never run concurrently by the Sensor Event worker queues.
+		node.Scan = nil
 		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
 			err = errors.Wrapf(err, "upserting node %s", nodeDatastore.NodeString(node))
 			log.Error(err)
