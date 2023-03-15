@@ -74,7 +74,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	ninv = ninv.Clone()
 
 	// Read the node from the database, if not found we fail.
-	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())
+	node, found, err := p.nodeDatastore.GetManyNodeMetadata(ctx, ninv.GetNodeId())
 	if err != nil {
 		log.Errorf("fetching node (id: %q) from the database: %v", ninv.GetNodeId(), err)
 		return errors.WithMessagef(err, "fetching node: %s", ninv.GetNodeId())
