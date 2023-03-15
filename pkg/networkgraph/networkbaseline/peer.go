@@ -47,6 +47,10 @@ type Peer struct {
 	Name      string
 	DstPort   uint32
 	Protocol  storage.L4Protocol
+
+	// CidrBlock is specific to external source peers. This should only be filled when the underlying entity
+	// is an external source. This is needed in order to differentiate baselines that are created to the same
+	// provider/region but for different CIDR blocks. Check (https://github.com/stackrox/stackrox/pull/5194)
 	CidrBlock string
 }
 
