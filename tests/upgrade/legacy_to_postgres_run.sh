@@ -54,7 +54,6 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
-    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
     test_upgrade_paths "$log_output_dir"
@@ -73,8 +72,6 @@ test_upgrade_paths() {
 
     EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
     EARLIER_TAG="3.69.x-1-g870568de08"
-#    EARLIER_TAG="3.73.x-608-g4ffbc83042"
-#    EARLIER_SHA="4ffbc83042614f9fe4524cbf140323f3372ee6a7"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
     cd "$REPO_FOR_TIME_TRAVEL"
