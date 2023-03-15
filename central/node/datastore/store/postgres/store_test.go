@@ -134,5 +134,7 @@ func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
 	s.NoError(err)
 	s.True(exists)
 
+	// We expect only LastUpdated to have changed.
+	foundNode.LastUpdated = newNode.GetLastUpdated()
 	s.Equal(foundNode, newNode)
 }
