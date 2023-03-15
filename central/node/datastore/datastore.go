@@ -107,5 +107,5 @@ func GetTestRocksBleveDataStore(t testing.TB, rocksengine *rocksdbBase.RocksDB, 
 
 // NodeString returns a human-readable string representation of a node.
 func NodeString(node *storage.Node) string {
-	return fmt.Sprintf("%s:%s (id: %s)", node.GetClusterName(), node.GetName(), node.GetId())
+	return fmt.Sprintf("%s/%s (id: %s)", node.GetClusterName(), node.GetName(), node.GetId())
 }
