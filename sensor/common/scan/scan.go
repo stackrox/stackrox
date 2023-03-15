@@ -25,6 +25,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// Scan wraps the functions required in EnrichLocalImage. This allows us to inject different values for testing purposes
 type Scan struct {
 	// Used for testing purposes only to not require setting up registry / scanner.
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
@@ -34,6 +35,7 @@ type Scan struct {
 	getMatchingRegistry      func(*storage.ImageName) (registryTypes.Registry, error)
 }
 
+// NewScan initializes a Scan struct
 func NewScan(registryStore *registry.Store) *Scan {
 	return &Scan{
 		scanImg:                  scanImage,
@@ -42,11 +44,6 @@ func NewScan(registryStore *registry.Store) *Scan {
 		getMatchingRegistry:      registryStore.GetRegistryForImage,
 	}
 }
-
-// SetMatchingRegistryFunction sets the getMatchingRegistry function
-//func SetMatchingRegistryFunction(getMatchingRegistryFunc func(*storage.ImageName) (registryTypes.Registry, error)) {
-//	getMatchingRegistry = getMatchingRegistryFunc
-//}
 
 // EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
 // from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
