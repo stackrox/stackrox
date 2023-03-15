@@ -10,11 +10,10 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkentitystore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
-	"gorm.io/gorm"
 )
 
 const (
-	startSeqNum = 175
+	startSeqNum = 176
 
 	batchSize = 500
 )
@@ -22,9 +21,9 @@ const (
 var (
 	migration = types.Migration{
 		StartingSeqNum: startSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
+		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 177
 		Run: func(database *types.Databases) error {
-			return addCIDRBlockToBaselines(database.PostgresDB, database.GormDB)
+			return addCIDRBlockToBaselines(database.PostgresDB)
 		},
 	}
 )
@@ -77,10 +76,10 @@ func updatePeer(
 	return false, nil
 }
 
-func addCIDRBlockToBaselines(postgresDB *postgres.DB, gormDB *gorm.DB) error {
+func addCIDRBlockToBaselines(postgresDB *postgres.DB) error {
 	ctx := context.Background()
-	networkBaselineStore := networkbaselinestore.CreateTableAndNewStore(ctx, postgresDB, gormDB)
-	networkEntityStore := networkentitystore.CreateTableAndNewStore(ctx, postgresDB, gormDB)
+	networkBaselineStore := networkbaselinestore.New(postgresDB)
+	networkEntityStore := networkentitystore.New(postgresDB)
 
 	baselinesToUpsert := make([]*storage.NetworkBaseline, 0, batchSize)
 	err := networkBaselineStore.Walk(ctx, func(baseline *storage.NetworkBaseline) error {
