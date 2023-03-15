@@ -271,7 +271,7 @@ func MigratePolicies(db *postgres.DB, policiesToMigrate map[string]PolicyChanges
 
 	ctx := sac.WithAllAccess(context.Background())
 	policyStore := New(db)
-	for id, _ := range policiesToMigrate {
+	for id := range policiesToMigrate {
 		if exists, err := policyStore.Exists(ctx, id); err != nil {
 			return errors.Wrapf(err, "getting policy with id %s", id)
 		} else if !exists {
@@ -289,7 +289,10 @@ func MigratePolicies(db *postgres.DB, policiesToMigrate map[string]PolicyChanges
 
 		// Update policy as needed
 		updateDetails.ToChange.applyToPolicy(policy)
-		policyStore.Upsert(ctx, policy)
+		err := policyStore.Upsert(ctx, policy)
+		if err != nil {
+			return err
+		}
 
 	}
 

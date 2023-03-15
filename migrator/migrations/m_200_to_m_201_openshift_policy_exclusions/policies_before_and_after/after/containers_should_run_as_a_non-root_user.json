@@ -1,6 +1,4 @@
-{
-  "policies": [
-    {
+ {
       "id": "dce17697-1b72-49d2-b18a-05d893cd9368",
       "name": "Docker CIS 4.1: Ensure That a User for the Container Has Been Created",
       "description": "Containers should run as a non-root user",
@@ -16,6 +14,19 @@
       ],
       "eventSource": "NOT_APPLICABLE",
       "exclusions": [
+        {
+          "name": "Don't alert on Openshift namespace",
+          "deployment": {
+            "name": "",
+            "scope": {
+              "cluster": "",
+              "namespace": "openshift",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
         {
           "name": "Don't alert on StackRox namespace",
           "deployment": {
@@ -181,5 +192,3 @@
       "mitreVectorsLocked": true,
       "isDefault": true
     }
-  ]
-}

@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package m170tom171
+package m200tom201
 
 import (
 	"context"
@@ -8,7 +8,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_openshift_policy_exclusion/postgres"
+	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_openshift_policy_exclusions/postgres"
+	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -21,10 +22,8 @@ import (
 type categoriesMigrationTestSuite struct {
 	suite.Suite
 
-	db            *pghelper.TestPostgres
-	policyStore   policyPostgresStore.Store
-	categoryStore policyCategoryPostgresStore.Store
-	edgeStore     policyCategoryEdgePostgresStore.Store
+	db          *pghelper.TestPostgres
+	policyStore policyPostgresStore.Store
 }
 
 func TestMigration(t *testing.T) {
@@ -45,10 +44,13 @@ func (s *categoriesMigrationTestSuite) TearDownTest() {
 func (s *categoriesMigrationTestSuite) TestMigration() {
 	ctx := sac.WithAllAccess(context.Background())
 	testPolicy := fixtures.GetPolicy()
+	testPolicy.Id = "dce17697-1b72-49d2-b18a-05d893cd9368"
+	testPolicy.Name = "Docker CIS 4.1: Ensure That a User for the Container Has Been Created"
+	testPolicy.Description = "Containers should run as a non-root user"
 	exclusion := &storage.Exclusion{
 		Name:       "Existing exclusion 1",
-		Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "test-namespace-1"}}})
-	policy.Exclusions = append(policy.Exclusions, exclusion)
+		Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "test-namespace-1"}}}
+	testPolicy.Exclusions = append(testPolicy.Exclusions, exclusion)
 
 	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
 
@@ -62,6 +64,6 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	q := search.NewQueryBuilder().AddExactMatches(search.PolicyID, testPolicy.GetId()).ProtoQuery()
 	policy, err := s.policyStore.GetByQuery(ctx, q)
 	s.NoError(err)
-	s.Equal(policy.Exclusions, exclusion, "exclusion do not match after migration")
+	s.Equal(len(policy[0].Exclusions), 2, "exclusion do not match after migration")
 
 }
