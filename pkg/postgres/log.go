@@ -3,6 +3,7 @@ package postgres
 import (
 	"time"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/atomic"
@@ -10,7 +11,7 @@ import (
 )
 
 var (
-	slowQueryThreshold      = 30 * time.Second
+	slowQueryThreshold      = env.SlowQueryThreshold.DurationSetting()
 	slowQueryLogRate        = rate.Every(30 * time.Minute)
 	slowQueryLock           sync.Mutex
 	slowQueryRateLimiterMap = make(map[string]*slowQueryEntry)
