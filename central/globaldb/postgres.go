@@ -57,6 +57,10 @@ SELECT TABLE_NAME
 ) a;`
 
 	versionQuery = `SHOW server_version;`
+
+	totalConnectionQuery = `SELECT state, COUNT(datid) FROM pg_stat_activity WHERE state IS NOT NULL GROUP BY state;`
+
+	maxConnectionQuery = `SELECT current_setting('max_connections')::int;`
 )
 
 var (
@@ -235,11 +239,80 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 	metrics.PostgresTotalSize.Set(float64(totalSize))
 }
 
+// CollectPostgresConnectionStats -- collect connection stats for Postgres
+func CollectPostgresConnectionStats(ctx context.Context, db *postgres.DB) {
+	// Get the total connections by database
+	getTotalConnections(ctx, db)
+
+	// Get the max connections for Postgres
+	getMaxConnections(ctx, db)
+}
+
+// getTotalConnections -- gets the total connections by database
+func getTotalConnections(ctx context.Context, db *postgres.DB) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	rows, err := db.Query(ctx, totalConnectionQuery)
+	if err != nil {
+		log.Errorf("error fetching total connection information: %v", err)
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			state           string
+			connectionCount int
+		)
+		if err := rows.Scan(&state, &connectionCount); err != nil {
+			log.Errorf("error scanning row for connection data: %v", err)
+			return
+		}
+
+		stateLabel := prometheus.Labels{"state": state}
+		metrics.PostgresTotalConnections.With(stateLabel).Set(float64(connectionCount))
+	}
+}
+
+// getMaxConnections -- gets maximum number of connections to Postgres server
+func getMaxConnections(ctx context.Context, db *postgres.DB) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	row := db.QueryRow(ctx, maxConnectionQuery)
+	var connectionCount int
+	if err := row.Scan(&connectionCount); err != nil {
+		log.Errorf("error fetching max connection information: %v", err)
+		return
+	}
+
+	metrics.PostgresMaximumConnections.Set(float64(connectionCount))
+}
+
+func processConnectionCountRow(metric *prometheus.GaugeVec, rows *postgres.Rows) {
+	for rows.Next() {
+		var (
+			databaseName    string
+			connectionCount int
+		)
+		if err := rows.Scan(&databaseName, &connectionCount); err != nil {
+			log.Errorf("error scanning row for connection data: %v", err)
+			return
+		}
+
+		databaseLabel := prometheus.Labels{"database": databaseName}
+		metric.With(databaseLabel).Set(float64(connectionCount))
+	}
+}
+
 func startMonitoringPostgres(ctx context.Context, db *postgres.DB, postgresConfig *postgres.Config) {
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {
 		_ = CollectPostgresStats(ctx, db)
 		CollectPostgresDatabaseStats(postgresConfig)
+		CollectPostgresConnectionStats(ctx, db)
 	}
 }

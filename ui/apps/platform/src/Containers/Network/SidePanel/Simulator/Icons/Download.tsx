@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import download from 'utils/download';
@@ -23,7 +23,7 @@ function Download({ modification, modificationName }: DownloadProps): ReactEleme
     }
 
     return (
-        <Tooltip content={<TooltipOverlay>Download YAML</TooltipOverlay>}>
+        <Tooltip content="Download YAML">
             <button
                 type="button"
                 className="inline-block px-2 py-2 border-base-300 cursor-pointer"

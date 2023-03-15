@@ -142,20 +142,21 @@ function PolicyBehaviorForm() {
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsSm' }}
                     >
-                        <div>
+                        <p>
                             Build-time policies apply to image fields such as CVEs and Dockerfile
                             instructions.
-                        </div>
-                        <div>
+                        </p>
+                        <p>
                             Deploy-time policies can include all build-time policy criteria but they
-                            can also include data form your cluster configurations, such as running
+                            can also include data from your cluster configurations, such as running
                             in privileged mode or mounting the Docker socket.
-                        </div>
-                        <div>
+                        </p>
+                        <p>
                             Runtime policies can include all build-time and deploy-time policy
-                            criteria but they can also include data about process executions during
-                            runtime.
-                        </div>
+                            criteria but they <strong>must</strong> include at least one policy
+                            criterion from process, network flow, audit log events, or Kubernetes
+                            events criteria categories.
+                        </p>
                     </Flex>
                 </Alert>
                 <Form>

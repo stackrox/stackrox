@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import { HelpCircle, AlertCircle } from 'react-feather';
 import sortBy from 'lodash/sortBy';
+import { Tooltip } from '@patternfly/react-core';
 
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
@@ -17,7 +18,6 @@ import FixableCVECount from 'Components/FixableCVECount';
 import kubeSVG from 'images/kube.svg';
 import istioSVG from 'images/istio.svg';
 import openShiftSVG from 'images/openShift.svg';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const CLUSTER_WITH_MOST_ORCHESTRATOR_ISTIO_VULNERABILTIES = gql`
@@ -148,7 +148,7 @@ const processData = (data, workflowState, limit, showVmUpdates) => {
 
             const orchestratorContent = isOpenShiftCluster ? (
                 <div className="flex items-center justify-left mr-8">
-                    <Tooltip content={<TooltipOverlay>OpenShift Vulnerabilities</TooltipOverlay>}>
+                    <Tooltip content="OpenShift Vulnerabilities">
                         <div className="flex">
                             <img src={openShiftSVG} alt="openshift" className="pr-2" />
                             <FixableCVECount
@@ -164,7 +164,7 @@ const processData = (data, workflowState, limit, showVmUpdates) => {
                 </div>
             ) : (
                 <div className="flex flex-1 items-center justify-left mr-8">
-                    <Tooltip content={<TooltipOverlay>Kubernetes Vulnerabilities</TooltipOverlay>}>
+                    <Tooltip content="Kubernetes Vulnerabilities">
                         <div className="flex">
                             <img src={kubeSVG} alt="kube" className="pr-2" />
                             <FixableCVECount
@@ -177,16 +177,14 @@ const processData = (data, workflowState, limit, showVmUpdates) => {
                             />
                         </div>
                     </Tooltip>
-                    <Tooltip content={<TooltipOverlay>{indicationTooltipText}</TooltipOverlay>}>
-                        {indicatorIcon}
-                    </Tooltip>
+                    <Tooltip content={indicationTooltipText}>{indicatorIcon}</Tooltip>
                 </div>
             );
 
             const orchestratorIstioContent = (
                 <div className="flex">
                     {orchestratorContent}
-                    <Tooltip content={<TooltipOverlay>Istio Vulnerabilities</TooltipOverlay>}>
+                    <Tooltip content="Istio Vulnerabilities">
                         <div className="flex items-center justify-left pr-2">
                             <img src={istioSVG} alt="istio" className="pr-2" />
                             <FixableCVECount
@@ -264,9 +262,7 @@ const processDataLegacy = (data, workflowState, limit, showVmUpdates) => {
 
                 const orchestratorContent = isOpenShiftCluster ? (
                     <div className="flex items-center justify-left mr-8">
-                        <Tooltip
-                            content={<TooltipOverlay>OpenShift Vulnerabilities</TooltipOverlay>}
-                        >
+                        <Tooltip content="OpenShift Vulnerabilities">
                             <div className="flex">
                                 <img src={openShiftSVG} alt="openshift" className="pr-2" />
                                 <FixableCVECount
@@ -282,9 +278,7 @@ const processDataLegacy = (data, workflowState, limit, showVmUpdates) => {
                     </div>
                 ) : (
                     <div className="flex flex-1 items-center justify-left mr-8">
-                        <Tooltip
-                            content={<TooltipOverlay>Kubernetes Vulnerabilities</TooltipOverlay>}
-                        >
+                        <Tooltip content="Kubernetes Vulnerabilities">
                             <div className="flex">
                                 <img src={kubeSVG} alt="kube" className="pr-2" />
                                 <FixableCVECount
@@ -297,16 +291,14 @@ const processDataLegacy = (data, workflowState, limit, showVmUpdates) => {
                                 />
                             </div>
                         </Tooltip>
-                        <Tooltip content={<TooltipOverlay>{indicationTooltipText}</TooltipOverlay>}>
-                            {indicatorIcon}
-                        </Tooltip>
+                        <Tooltip content={indicationTooltipText}>{indicatorIcon}</Tooltip>
                     </div>
                 );
 
                 const orchestratorIstioContent = (
                     <div className="flex">
                         {orchestratorContent}
-                        <Tooltip content={<TooltipOverlay>Istio Vulnerabilities</TooltipOverlay>}>
+                        <Tooltip content="Istio Vulnerabilities">
                             <div className="flex items-center justify-left pr-2">
                                 <img src={istioSVG} alt="istio" className="pr-2" />
                                 <FixableCVECount

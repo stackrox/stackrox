@@ -34,6 +34,7 @@ interface OrchestratorMain {
     def waitForPodRestart(String ns, String name, int prevRestartCount, int retries, int intervalSeconds)
     String getPodLog(String ns, String name)
     def copyFileToPod(String fromPath, String ns, String podName, String toPath)
+    boolean podReady(Pod pod)
 
     //Deployments
     io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name)

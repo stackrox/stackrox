@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -66,7 +67,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 		pgtestbase := pgtest.ForT(suite.T())
 		suite.Require().NotNil(pgtestbase)
 		suite.pool = pgtestbase.DB
-		suite.storage = postgresStore.New(suite.pool)
+		dbStore := postgresStore.New(suite.pool)
+		suite.storage, err = postgresStore.NewWithCache(dbStore)
+		require.NoError(suite.T(), err)
 		suite.indexer = postgresStore.NewIndexer(suite.pool)
 	} else {
 		suite.db, err = rocksdb.NewTemp(suite.T().Name() + ".db")

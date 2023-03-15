@@ -118,7 +118,7 @@ export const selectors = {
     eventTimelineOverviewButton: 'button[data-testid="event-timeline-overview"]',
     tooltip: {
         ...tooltipSelectors,
-        legendContents: `${tooltipSelectors.overlay} > div`,
+        legendContents: `${tooltipSelectors.overlay} .pf-c-tooltip__content`,
         legendContent: {
             event: eventSelectors,
         },

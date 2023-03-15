@@ -645,16 +645,27 @@ mark_collector_release() {
 
     # We need to make sure the file ends with a newline so as not to corrupt it when appending.
     [[ ! -f RELEASED_VERSIONS ]] || sed --in-place -e '$a'\\ RELEASED_VERSIONS
-    echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
-        >>RELEASED_VERSIONS
-    gitbot add RELEASED_VERSIONS
-    gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
-    gitbot push origin "${branch_name}"
+    if grep -q "${tag}" RELEASED_VERSIONS; then
+        echo "Skip RELEASED_VERSIONS file change, already up to date ..." >> "${GITHUB_STEP_SUMMARY}"
+    else
+        echo "Update RELEASED_VERSIONS file ..." >> "${GITHUB_STEP_SUMMARY}"
+        echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
+            >>RELEASED_VERSIONS
+        gitbot add RELEASED_VERSIONS
+        gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
+        gitbot push origin "${branch_name}"
+    fi
 
-    echo "Create a PR for collector to add this release to its RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
-    gh pr create \
-        --title "Update RELEASED_VERSIONS for StackRox release ${tag}" \
-        --body "Add entry into the RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+    PRs=$(gh pr list -s open \
+            --head "${branch_name}" \
+            --json number \
+            --jq length)
+    if [ "$PRs" -eq 0 ]; then
+        echo "Create a PR for collector to add this release to its RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+        gh pr create \
+            --title "Update RELEASED_VERSIONS for StackRox release ${tag}" \
+            --body "Add entry into the RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+    fi
     popd
 }
 
@@ -789,6 +800,45 @@ pr_has_label_in_body() {
     local pr_details="$2"
 
     [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/label:[[:space:]]*$expected_label ]]
+}
+
+# pr_has_pragma() - returns true if a pragma exists. A pragma is a key with
+# value in the description body of a PR that influences how CI behaves.
+# e.g. /pragma gk_release_channel:rapid.
+pr_has_pragma() {
+    if [[ "$#" -ne 1 ]]; then
+        die "usage: pr_has_pragma <key>"
+    fi
+
+    local pr_details
+    if ! pr_details="$(get_pr_details)"; then
+        info "Warning: checking for a pragma in a non PR context"
+        return 0
+    fi
+
+    local key_to_check="$1"
+    [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/pragma:[[:space:]]*$key_to_check: ]]
+}
+
+# pr_get_pragma() - outputs the pragma key value if it exists.
+pr_get_pragma() {
+    if [[ "$#" -ne 1 ]]; then
+        die "usage: pr_get_pragma <key>"
+    fi
+
+    local pr_details
+    if ! pr_details="$(get_pr_details)"; then
+        echo ''
+        return 0
+    fi
+
+    local key_to_check="$1"
+    while IFS= read -r line; do
+        if [[ "$line" =~ \/pragma:[[:space:]]*$key_to_check:[[:space:]]*(.+) ]]; then
+            # shellcheck disable=SC2001
+            echo "${BASH_REMATCH[1]}" | sed -e 's/[[:space:]]*$//'
+        fi
+    done <<< "$(jq -r '.body' <<<"$pr_details")"
 }
 
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
@@ -1147,7 +1197,7 @@ store_test_results() {
     if ! is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.4/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.5/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira -junit-reports-dir "$from" -threshold 5
     } || true
@@ -1519,8 +1569,10 @@ HEAD
 
     local nodes
     nodes="$(kubectl get nodes -o wide 2>&1 || true)"
-    local versions
-    versions="$(kubectl version -o json 2>&1 || true)"
+    local kubectl_version
+    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    local oc_version
+    oc_version="$(oc version -o json 2>&1 || true)"
 
     cat >> "$artifact_file" << DETAILS
       <h3>Nodes:</h3>
@@ -1528,7 +1580,9 @@ HEAD
       <pre>$nodes</pre>
       <h3>Versions:</h3>
       kubectl version -o json
-      <pre>$versions</pre>
+      <pre>$kubectl_version</pre>
+      oc version -o json
+      <pre>$oc_version</pre>
 DETAILS
 
     cat >> "$artifact_file" <<- FOOT

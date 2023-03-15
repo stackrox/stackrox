@@ -113,7 +113,10 @@ func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 		pgtestbase := pgtest.ForT(suite.T())
 		suite.Require().NotNil(pgtestbase)
 		suite.pool = pgtestbase.DB
-		store = postgresStore.New(suite.pool)
+		dbStore := postgresStore.New(suite.pool)
+		cache, err := postgresStore.NewWithCache(dbStore)
+		suite.NoError(err)
+		store = cache
 		indexer = postgresStore.NewIndexer(suite.pool)
 	} else {
 		db, err := rocksdb.NewTemp(suite.T().Name() + ".db")

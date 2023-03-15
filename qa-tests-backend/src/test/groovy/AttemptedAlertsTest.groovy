@@ -1,3 +1,7 @@
+import static util.Helpers.withRetry
+
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
@@ -5,7 +9,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
 import services.AlertService
 import services.ClusterService
 import util.Env

@@ -1,7 +1,8 @@
 import React, { ReactElement } from 'react';
+import { Tooltip } from '@patternfly/react-core';
 
 import { eventTypes } from 'constants/timelineTypes';
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import { Event } from './eventTypes';
 import ProcessActivityTooltipFields from './EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from './EventTooltipFields/TerminationTooltipFields';
@@ -44,7 +45,10 @@ const EventTooltip = ({
     }
 
     return (
-        <Tooltip content={<DetailedTooltipOverlay title={name} body={tooltipBody} />}>
+        <Tooltip
+            isContentLeftAligned
+            content={<DetailedTooltipContent title={name} body={tooltipBody} />}
+        >
             {children}
         </Tooltip>
     );

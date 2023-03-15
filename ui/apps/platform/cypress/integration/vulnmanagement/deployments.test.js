@@ -1,4 +1,4 @@
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
 import {
     assertSortedItems,
@@ -93,7 +93,11 @@ describe('Vulnerability Management Deployments', () => {
         );
     });
 
-    it('should display links for fixable image CVEs', () => {
+    it('should display links for fixable image CVEs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'image-cves',

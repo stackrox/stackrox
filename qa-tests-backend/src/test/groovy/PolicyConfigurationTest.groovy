@@ -1,5 +1,6 @@
 import static Services.checkForNoViolations
 import static Services.waitForViolation
+import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DryRunResponse
 import io.stackrox.proto.api.v1.SearchServiceOuterClass

@@ -22,7 +22,6 @@ import loading, { selectors as loadingSelectors } from './loading';
 import { selectors as routeSelectors } from './routes';
 import network, { selectors as networkSelectors } from './network/reducer';
 import groups, { selectors as groupsSelectors } from './groups';
-import attributes, { selectors as attributesSelectors } from './attributes';
 import publicConfig, { selectors as publicConfigSelectors } from './publicConfig';
 import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
 
@@ -45,7 +44,6 @@ const appReducer = combineReducers({
     metadata,
     network,
     groups,
-    attributes,
     publicConfig,
     telemetryConfig,
 });
@@ -80,7 +78,6 @@ const getLoadingStatus = (state) => getApp(state).loading;
 const getMetadata = (state) => getApp(state).metadata;
 const getNetwork = (state) => getApp(state).network;
 const getRuleGroups = (state) => getApp(state).groups;
-const getAttributes = (state) => getApp(state).attributes;
 const getPublicConfig = (state) => getApp(state).publicConfig;
 const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 
@@ -102,7 +99,6 @@ const boundSelectors = {
     ...bindSelectors(getMetadata, metadataSelectors),
     ...bindSelectors(getNetwork, networkSelectors),
     ...bindSelectors(getRuleGroups, groupsSelectors),
-    ...bindSelectors(getAttributes, attributesSelectors),
     ...bindSelectors(getPublicConfig, publicConfigSelectors),
     ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
 };

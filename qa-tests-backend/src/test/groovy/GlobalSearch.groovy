@@ -1,10 +1,12 @@
 import static Services.getSearchResponse
 import static Services.waitForViolation
+import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import objects.Deployment
 import util.Env
+
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
