@@ -332,8 +332,7 @@ function launch_central {
           if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
             kubectl -n stackrox patch deploy/central-db --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"init-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":1,"memory":"1Gi"}}}],"containers":[{"name":"central-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
           fi
-      fi
-      if [[ -n "$CI" && "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+      elif [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
           ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
       if [[ "${CGO_CHECKS}" == "true" ]]; then
