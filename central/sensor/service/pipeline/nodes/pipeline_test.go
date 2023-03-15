@@ -97,6 +97,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			},
 		},
 	}
+	t.Setenv("ROX_RHCOS_NODE_SCANNING", "true")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)

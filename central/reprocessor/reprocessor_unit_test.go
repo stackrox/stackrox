@@ -67,6 +67,7 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 			want: false,
 		},
 	}
+	t.Setenv("ROX_RHCOS_NODE_SCANNING", "true")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
