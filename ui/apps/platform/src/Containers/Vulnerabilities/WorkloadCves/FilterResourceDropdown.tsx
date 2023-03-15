@@ -3,7 +3,7 @@ import { Select, SelectOption } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
-export type Resource = 'CVE' | 'IMAGE' | 'DEPLOYMENT' | 'NAMESPACE' | 'CLUSTER';
+export type Resource = 'IMAGE_CVE' | 'IMAGE' | 'DEPLOYMENT' | 'NAMESPACE' | 'CLUSTER';
 
 type FilterResourceDropdownProps = {
     setResource: (selection) => void;
@@ -23,7 +23,9 @@ function FilterResourceDropdown({
     }
 
     const resourceOptions = [
-        <SelectOption key="CVE" value="CVE" />,
+        <SelectOption key="IMAGE_CVE" value="IMAGE_CVE">
+            CVE
+        </SelectOption>,
         <SelectOption key="IMAGE" value="IMAGE">
             Image
         </SelectOption>,
