@@ -2,12 +2,10 @@ package networkbaselinestore
 
 import (
 	"context"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	frozenSchemav73 "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
@@ -161,8 +159,6 @@ func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx *postgres.T
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkBaseline")
-
 	var sacQueryFilter *v1.Query
 
 	// Batch the deletes
@@ -195,7 +191,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err

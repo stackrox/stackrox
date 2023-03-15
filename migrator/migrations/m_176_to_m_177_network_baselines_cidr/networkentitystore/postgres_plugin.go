@@ -47,7 +47,7 @@ var (
 type Store interface {
 	UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error
 	DeleteMany(ctx context.Context, identifiers []string) error
-	Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error)
+	Get(ctx context.Context, infoID string) (*storage.NetworkEntity, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkEntity, []int, error)
 	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error
@@ -271,11 +271,11 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, infoID string) (*storage.NetworkEntity, bool, error) {
 	var sacQueryFilter *v1.Query
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(infoId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.NetworkEntity](ctx, schema, q, s.db)

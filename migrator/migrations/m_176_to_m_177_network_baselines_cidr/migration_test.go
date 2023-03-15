@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stackrox/rox/generated/storage"
 	frozenSchemav73 "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkbaselinestore"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,10 +54,10 @@ var (
 	ext1Cidr = "42.42.0.0/16"
 	ext2Cidr = "24.24.0.0/16"
 
-	dep1 = uuid.New()
-	dep2 = uuid.New()
-	dep3 = uuid.New()
-	dep4 = uuid.New()
+	dep1 = uuid.NewV4()
+	dep2 = uuid.NewV4()
+	dep3 = uuid.NewV4()
+	dep4 = uuid.NewV4()
 
 	networkEntities = []*storage.NetworkEntity{
 		{

@@ -35,7 +35,7 @@ func init() {
 func updatePeer(
 	ctx context.Context,
 	networkEntityStore networkentitystore.Store,
-	deploymentId string,
+	deploymentID string,
 	peer *storage.NetworkBaselinePeer,
 ) (bool, error) {
 	info := peer.GetEntity().GetInfo()
@@ -53,13 +53,13 @@ func updatePeer(
 		if !exists {
 			return false, errors.Wrapf(err, "no network entity for peer %s in baseline for deployment %s",
 				info.GetId(),
-				deploymentId)
+				deploymentID)
 		}
 
 		if entity.GetInfo().GetExternalSource() == nil {
 			return false, errors.Wrapf(err, "inconsistent type for peer %s in baseline for deployment %s: expecting EXTERNAL_SOURCE but is %s",
 				info.GetId(),
-				deploymentId,
+				deploymentID,
 				entity.GetInfo().GetType())
 		}
 
