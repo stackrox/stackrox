@@ -204,7 +204,7 @@ func (resolver *deploymentResolver) DeployAlerts(ctx context.Context, args Pagin
 
 	nested.Pagination = pagination
 
-	nested = paginated.FillDefaultSortOption(nested, paginated.ViolationTimeSortOption)
+	nested = paginated.FillDefaultSortOption(nested, paginated.GetViolationTimeSortOption())
 	return resolver.root.wrapAlerts(
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, nested))
 }
@@ -317,7 +317,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 	pagination := q.GetPagination()
 	q.Pagination = &v1.QueryPagination{SortOptions: pagination.GetSortOptions()}
 
-	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 	alerts, err := resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, q)
 	if err != nil {
 		return nil, err

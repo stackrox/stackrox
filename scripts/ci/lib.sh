@@ -1569,8 +1569,10 @@ HEAD
 
     local nodes
     nodes="$(kubectl get nodes -o wide 2>&1 || true)"
-    local versions
-    versions="$(kubectl version -o json 2>&1 || true)"
+    local kubectl_version
+    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    local oc_version
+    oc_version="$(oc version -o json 2>&1 || true)"
 
     cat >> "$artifact_file" << DETAILS
       <h3>Nodes:</h3>
@@ -1578,7 +1580,9 @@ HEAD
       <pre>$nodes</pre>
       <h3>Versions:</h3>
       kubectl version -o json
-      <pre>$versions</pre>
+      <pre>$kubectl_version</pre>
+      oc version -o json
+      <pre>$oc_version</pre>
 DETAILS
 
     cat >> "$artifact_file" <<- FOOT

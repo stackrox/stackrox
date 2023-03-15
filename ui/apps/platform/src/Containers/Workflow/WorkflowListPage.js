@@ -8,6 +8,7 @@ import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
 import EntityList from 'Components/EntityList';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 
@@ -41,6 +42,7 @@ const WorkflowListPage = ({
 }) => {
     const workflowState = useContext(workflowStateContext);
     const [sortFields, setSortFields] = useState({});
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const searchCategories = [searchCategoryTypes[entityListType]];
     const searchQueryOptions = {
@@ -78,7 +80,7 @@ const WorkflowListPage = ({
         count = ownQueryData.count;
     }
 
-    const tableColumns = getTableColumns(workflowState);
+    const tableColumns = getTableColumns(workflowState, isFeatureFlagEnabled);
     const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(displayData) : null;
 
     function onSortedChange(newSort, column) {

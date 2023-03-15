@@ -18,7 +18,7 @@ import {
     riskPath,
     searchPath,
     apidocsPath,
-    accessControlPathV2,
+    accessControlPath,
     userBasePath,
     systemConfigPath,
     systemHealthPath,
@@ -142,7 +142,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         <Route path={collectionsPath} component={AsyncCollectionsPage} />
                     )}
                     <Route path={riskPath} component={AsyncRiskPage} />
-                    <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
+                    <Route path={accessControlPath} component={AsyncAccessControlPageV2} />
                     <Route path={searchPath} component={AsyncSearchPage} />
                     <Route path={apidocsPath} component={AsyncApiDocsPage} />
                     <Route path={userBasePath} component={AsyncUserPage} />

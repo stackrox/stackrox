@@ -2,11 +2,17 @@ package types
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
+)
+
+var (
+	// DefaultMigrationTimeout -- default timeout for migration postgres statements
+	DefaultMigrationTimeout = env.PostgresDefaultMigrationStatementTimeout.DurationSetting()
 )
 
 // Databases encapsulates all the different databases we are using

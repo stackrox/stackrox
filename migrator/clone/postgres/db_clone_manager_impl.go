@@ -279,6 +279,11 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 		}
 	}
 
+	err = pgadmin.AnalyzeDatabase(d.adminConfig, CurrentClone)
+	if err != nil {
+		log.Warnf("unable to force analyze restore database: %v", err)
+	}
+
 	return nil
 }
 

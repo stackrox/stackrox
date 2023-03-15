@@ -39,6 +39,9 @@ func setQueryDuration(t time.Time, scope, query string) {
 		query = stringutils.GetUpTo(query, "_")
 	}
 	query = strings.ReplaceAll(query, "\n", " ")
+
+	logSlowQuery(t, query)
+
 	queryDuration.With(prometheus.Labels{"scope": scope, "query": query}).Observe(float64(time.Since(t).Milliseconds()))
 }
 

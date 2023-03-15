@@ -305,6 +305,9 @@ Sub Resolver Functions
 */
 
 func (resolver *imageComponentResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return &activeStateResolver{}, nil
+	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ActiveState")
 	scopeQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {

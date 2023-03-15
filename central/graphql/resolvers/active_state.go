@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -18,6 +19,8 @@ const (
 	Inactive
 	// Active means the vulnerability or component is active.
 	Active
+	// FeatureDisabled means the feature is disabled
+	FeatureDisabled
 )
 
 func init() {
@@ -38,12 +41,18 @@ type activeStateResolver struct {
 
 // State is the activeness state
 func (asr *activeStateResolver) State(_ context.Context) string {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return FeatureDisabled.String()
+	}
 	return asr.state.String()
 }
 
 // ActiveContexts is the slice of active contexts in deployment
 func (asr *activeStateResolver) ActiveContexts(ctx context.Context) ([]*activeComponent_ActiveContextResolver, error) {
 	var acs []*activeComponent_ActiveContextResolver
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return acs, nil
+	}
 	if len(asr.activeComponentIDs) == 0 {
 		return acs, nil
 	}

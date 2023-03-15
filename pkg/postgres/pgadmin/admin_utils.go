@@ -47,6 +47,8 @@ const (
 
 	// databaseSizeStmt - gets the size of a specific database within Postgres
 	databaseSizeStmt = "SELECT pg_catalog.pg_database_size($1)"
+
+	analyzeTimeout = 5 * time.Minute
 )
 
 // DropDB - drops a database.
@@ -191,9 +193,11 @@ func AnalyzeDatabase(config *postgres.Config, dbName string) error {
 	// Close the admin connection pool
 	defer connectPool.Close()
 
-	_, err := connectPool.Exec(context.Background(), "ANALYZE")
+	ctx, cancel := context.WithTimeout(context.Background(), analyzeTimeout)
+	defer cancel()
+	_, err := connectPool.Exec(ctx, "ANALYZE")
 
-	log.Debug("Anaylze done")
+	log.Debug("Analyze done")
 	return err
 }
 

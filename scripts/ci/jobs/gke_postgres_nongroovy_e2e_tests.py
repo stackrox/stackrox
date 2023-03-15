@@ -15,6 +15,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 # use postgres
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
+os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
 ClusterTestRunner(
     cluster=GKECluster("postgres-nongroovy-test"),
