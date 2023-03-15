@@ -135,8 +135,8 @@ function FilterAutocompleteSelect({
             />
             <ToolbarFilter
                 chips={searchFilter.IMAGE_CVE ? (searchFilter.IMAGE_CVE as string[]) : []}
-                deleteChip={(category, chip) => onDelete(category as Resource, chip as string)}
-                deleteChipGroup={(category) => onDeleteGroup(category as Resource)}
+                deleteChip={(_, chip) => onDelete('IMAGE_CVE', chip as string)}
+                deleteChipGroup={() => onDeleteGroup('IMAGE_CVE')}
                 categoryName="CVE"
                 children={undefined}
             />
