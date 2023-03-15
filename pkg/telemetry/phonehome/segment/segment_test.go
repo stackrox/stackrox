@@ -110,10 +110,10 @@ func Test_Group(t *testing.T) {
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
 
-	ch := make(chan time.Time, 3)
+	ch := make(chan time.Time, 1)
 	ti := &time.Ticker{C: ch}
 	tt.group(nil, ti, telemeter.WithGroups("Test", "test-group-id"))
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 1; i++ {
 		ch <- time.Time{}
 	}
 
@@ -131,10 +131,10 @@ func Test_GroupWithProps(t *testing.T) {
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
 
-	ch := make(chan time.Time, 3)
+	ch := make(chan time.Time, 1)
 	ti := &time.Ticker{C: ch}
 	tt.group(map[string]any{"key": "value"}, ti, telemeter.WithGroups("Test", "test-group-id"))
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		ch <- time.Time{}
 	}
 

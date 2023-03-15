@@ -6,6 +6,7 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
@@ -18,6 +19,8 @@ type segmentTelemeter struct {
 	client     segment.Client
 	clientID   string
 	clientType string
+
+	stopMux *sync.Mutex
 }
 
 func getMessageType(msg segment.Message) string {
@@ -70,7 +73,7 @@ func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Dura
 		return nil
 	}
 
-	return &segmentTelemeter{client: client, clientID: clientID, clientType: clientType}
+	return &segmentTelemeter{client: client, clientID: clientID, clientType: clientType, stopMux: &sync.Mutex{}}
 }
 
 type logWrapper struct {
@@ -86,11 +89,18 @@ func (l *logWrapper) Errorf(format string, args ...any) {
 }
 
 func (t *segmentTelemeter) Stop() {
-	if t != nil {
-		if err := t.client.Close(); err != nil {
-			log.Error("Cannot close Segment client: ", err)
-		}
+	if t == nil {
+		return
 	}
+	t.stopMux.Lock()
+	defer t.stopMux.Unlock()
+	if t.client == nil {
+		return
+	}
+	if err := t.client.Close(); err != nil {
+		log.Error("Cannot close Segment client: ", err)
+	}
+	t.client = nil
 }
 
 func (t *segmentTelemeter) getUserID(o *telemeter.CallOptions) string {
@@ -155,7 +165,7 @@ func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Contex
 }
 
 func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
-	if t == nil {
+	if t == nil || t.client == nil {
 		return
 	}
 
@@ -183,7 +193,7 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 }
 
 func (t *segmentTelemeter) group(props map[string]any, ti *time.Ticker, opts ...telemeter.Option) {
-	if t == nil {
+	if t == nil || t.client == nil {
 		return
 	}
 
@@ -219,6 +229,11 @@ func (t *segmentTelemeter) group(props map[string]any, ti *time.Ticker, opts ...
 			Context:     group.Context,
 		}
 		go func() {
+			t.stopMux.Lock()
+			defer t.stopMux.Unlock()
+			if t.client == nil {
+				return
+			}
 			if ti == nil {
 				ti = time.NewTicker(2 * time.Second)
 			}
@@ -241,7 +256,7 @@ func (t *segmentTelemeter) group(props map[string]any, ti *time.Ticker, opts ...
 }
 
 func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
-	if t == nil {
+	if t == nil || t.client == nil {
 		return
 	}
 
