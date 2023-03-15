@@ -15,16 +15,21 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
 	timeout = 5 * time.Second
 )
 
-var httpClient = &http.Client{
-	Timeout:   timeout,
-	Transport: proxy.Without(),
-}
+var (
+	log = logging.LoggerForModule()
+
+	httpClient = &http.Client{
+		Timeout:   timeout,
+		Transport: proxy.Without(),
+	}
+)
 
 // GetMetadata tries to obtain the AWS instance metadata.
 // If not on AWS, returns nil, nil.
@@ -48,6 +53,8 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	verified := true
 	doc, err := identityDocFromPKCS7(ctx, mdClient)
 	if err != nil {
+		// TODO: remove?
+		log.Warn("Could not verify AWS public certificate: %v", err)
 		errs.AddError(err)
 		verified = false
 
