@@ -37,7 +37,7 @@ var (
 			return nil
 		},
 	}
-	batchSize = 500
+	batchSize = 5000
 	schema    = frozenSchema.ImagesSchema
 	log       = loghelper.LogWrapper{}
 )
