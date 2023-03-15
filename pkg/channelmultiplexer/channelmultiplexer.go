@@ -43,9 +43,11 @@ func (c *ChannelMultiplexer[T]) Run() {
 	ctx := context.Background()
 
 	output := FanIn[T](ctx, c.inputChannels...)
-	for o := range output {
-		c.outputCommands <- o
-	}
+	go func() {
+		for o := range output {
+			c.outputCommands <- o
+		}
+	}()
 }
 
 // GetOutput returns the multiplexed output channel combining all input channels added with AddChannel

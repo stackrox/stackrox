@@ -41,7 +41,7 @@ func TestMultiplexingChannels(t *testing.T) {
 				mp.AddChannel(ch)
 			}
 
-			go func() { mp.Run() }()
+			mp.Run()
 
 			for _, m := range c.messages {
 				c.inputChannels[m.i] <- &m.str

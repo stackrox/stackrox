@@ -28,7 +28,10 @@ func (c *Multiplexer[T]) Notify(e common.SensorComponentEvent) {
 
 // Start starts the Multiplexer. It is important not to call this before all AddChannel calls
 func (c *Multiplexer[T]) Start() error {
-	// TODO maybe error if this fails(?)
+	return c.run()
+}
+
+func (c *Multiplexer[T]) run() error {
 	c.mp.Run()
 	return nil
 }
