@@ -86,6 +86,8 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 					log.Warn("Attempting to stop an un-started audit log reader - this is a no-op")
 				}
 			}
+		case *sensor.MsgToCompliance_Ack:
+			log.Errorf("Received ACK from Sensor. Cool :)")
 		case *sensor.MsgToCompliance_Nack:
 			log.Errorf("Received NACK from Sensor, resending NodeInventory in X minutes.")
 			time.Sleep(time.Minute * 2)

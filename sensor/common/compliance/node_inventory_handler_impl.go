@@ -113,6 +113,8 @@ func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan 
 					metrics.ObserveReceivedNodeInventory(inventory)
 					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
 					c.sendNodeInventory(toCentral, inventory)
+					log.Infof("Sending ACK to compliance for NodeInventory with ID %s", inventory.GetNodeId())
+					c.sendAckToCompliance(toCompliance, inventory)
 				}
 			}
 		}
@@ -128,6 +130,23 @@ func (c *nodeInventoryHandlerImpl) sendNackToCompliance(complianceC chan<- *Mess
 		msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_Nack{
 				Nack: &sensor.MsgToCompliance_NodeInventoryNack{
+					NodeId: inventory.GetNodeId(),
+				},
+			},
+		},
+		hostname:  inventory.GetNodeName(),
+		broadcast: false,
+	}
+}
+
+func (c *nodeInventoryHandlerImpl) sendAckToCompliance(complianceC chan<- *MessageToComplianceWithAddress, inventory *storage.NodeInventory) {
+	if inventory == nil {
+		return
+	}
+	complianceC <- &MessageToComplianceWithAddress{
+		msg: &sensor.MsgToCompliance{
+			Msg: &sensor.MsgToCompliance_Ack{
+				Ack: &sensor.MsgToCompliance_NodeInventoryAck{
 					NodeId: inventory.GetNodeId(),
 				},
 			},
