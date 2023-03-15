@@ -295,6 +295,7 @@ const URLSearchInputWithAutocomplete = ({
             input && searchOptions.length > 0 && !inputMatchesTopOption(input, availableOptions),
         formatCreateLabel: (inputValue) => inputValue,
         createOptionPosition,
+        placeholder,
         ...rest,
     };
     return <Creatable {...creatableProps} components={{ ...creatableProps.components }} />;
@@ -302,7 +303,7 @@ const URLSearchInputWithAutocomplete = ({
 
 URLSearchInputWithAutocomplete.propTypes = {
     className: PropTypes.string,
-    placeholder: PropTypes.string,
+    placeholder: PropTypes.string.isRequired,
     categoryOptions: PropTypes.arrayOf(PropTypes.string),
     autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
     location: ReactRouterPropTypes.location.isRequired,
@@ -319,7 +320,6 @@ URLSearchInputWithAutocomplete.propTypes = {
 
 URLSearchInputWithAutocomplete.defaultProps = {
     className: '',
-    placeholder: 'Add one or more filters',
     categoryOptions: [],
     autoCompleteResults: [],
     fetchAutocomplete: null,

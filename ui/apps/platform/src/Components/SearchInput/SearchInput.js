@@ -17,7 +17,7 @@ import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 export const searchInputPropTypes = {
     className: PropTypes.string,
-    placeholder: PropTypes.string,
+    placeholder: PropTypes.string.isRequired,
     searchOptions: PropTypes.arrayOf(PropTypes.object),
     searchModifiers: PropTypes.arrayOf(PropTypes.object),
     setSearchOptions: PropTypes.func.isRequired,
@@ -43,7 +43,6 @@ export const searchInputPropTypes = {
 };
 
 export const searchInputDefaultProps = {
-    placeholder: 'Add one or more resource filters',
     className: '',
     searchOptions: [],
     searchModifiers: [],
@@ -222,6 +221,7 @@ class SearchInput extends Component {
         const suggestions = this.getSuggestions();
         const hideDropdown = suggestions.length ? '' : 'hide-dropdown';
         const props = {
+            'aria-label': this.props.placeholder,
             isDisabled,
             className: `${className} ${hideDropdown}`,
             components: { ValueContainer, Option, Placeholder, MultiValue },

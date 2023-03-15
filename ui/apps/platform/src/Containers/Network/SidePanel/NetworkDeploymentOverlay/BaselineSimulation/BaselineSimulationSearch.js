@@ -57,7 +57,7 @@ function BaselineSimulationSearch({ networkBaselines, searchOptions, setSearchOp
             searchModifiers={networkFlowSearchModifiers}
             setSearchOptions={setSearchOptions}
             autoCompleteResults={autoCompleteResults}
-            placeholder="Add one or more resource filters"
+            placeholder="Filter deployments"
         />
     );
 }
