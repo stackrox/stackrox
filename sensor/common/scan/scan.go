@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -22,36 +23,47 @@ var (
 	ErrNoLocalScanner = errors.New("No local Scanner connection")
 
 	log = logging.LoggerForModule()
-
-	// Used for testing purposes only to not require setting up registry / scanner.
-	// NOTE: If you change these, make sure to also change the respective values within the tests.
-	scanImg                  = scanImage
-	fetchSignaturesWithRetry = signatures.FetchImageSignaturesWithRetries
-	getMatchingRegistry      func(*storage.ImageName) (registryTypes.Registry, error)
-	scannerClientSingleton   = scannerclient.GRPCClientSingleton
 )
 
-// SetMatchingRegistryFunction sets the getMatchingRegistry function
-func SetMatchingRegistryFunction(getMatchingRegistryFunc func(*storage.ImageName) (registryTypes.Registry, error)) {
-	getMatchingRegistry = getMatchingRegistryFunc
+type Scan struct {
+	// Used for testing purposes only to not require setting up registry / scanner.
+	// NOTE: If you change these, make sure to also change the respective values within the tests.
+	scanImg                  func(context.Context, *storage.Image, registryTypes.Registry, *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
+	fetchSignaturesWithRetry func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
+	scannerClientSingleton   func() *scannerclient.Client
+	getMatchingRegistry      func(*storage.ImageName) (registryTypes.Registry, error)
 }
+
+func NewScan(registryStore *registry.Store) *Scan {
+	return &Scan{
+		scanImg:                  scanImage,
+		fetchSignaturesWithRetry: signatures.FetchImageSignaturesWithRetries,
+		scannerClientSingleton:   scannerclient.GRPCClientSingleton,
+		getMatchingRegistry:      registryStore.GetRegistryForImage,
+	}
+}
+
+// SetMatchingRegistryFunction sets the getMatchingRegistry function
+//func SetMatchingRegistryFunction(getMatchingRegistryFunc func(*storage.ImageName) (registryTypes.Registry, error)) {
+//	getMatchingRegistry = getMatchingRegistryFunc
+//}
 
 // EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
 // from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image.
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
-func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
+func (s *Scan) EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	imgName := ci.GetName().GetFullName()
 
 	// Check if there is a local Scanner.
 	// No need to continue if there is no local Scanner.
-	scannerClient := scannerClientSingleton()
+	scannerClient := s.scannerClientSingleton()
 	if scannerClient == nil {
 		return nil, ErrNoLocalScanner
 	}
 
 	// Find the associated registry of the image.
-	matchingRegistry, err := getMatchingRegistry(ci.GetName())
+	matchingRegistry, err := s.getMatchingRegistry(ci.GetName())
 	if err != nil {
 		return nil, errors.Wrapf(err, "determining image registry for image %q", imgName)
 	}
@@ -74,14 +86,14 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
 
 	// Scan the image via local scanner.
-	scannerResp, err := scanImg(ctx, image, matchingRegistry, scannerClient)
+	scannerResp, err := s.scanImg(ctx, image, matchingRegistry, scannerClient)
 	if err != nil {
 		log.Debugf("Scan for image %q failed: %v", imgName, err)
 		return nil, errors.Wrapf(err, "scanning image %q locally", imgName)
 	}
 
 	// Fetch signatures from cluster-local registry.
-	sigs, err := fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(),
+	sigs, err := s.fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(),
 		matchingRegistry)
 	if err != nil {
 		log.Debugf("Failed fetching signatures for image %q: %v", imgName, err)
