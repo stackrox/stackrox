@@ -139,6 +139,7 @@ test_upgrade_paths() {
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
     sensor_wait
+    wait_for_collectors_to_be_operational
 
     # Verify data is still there
     checkForRocksAccessScopes
@@ -223,6 +224,7 @@ test_upgrade_paths() {
         "compliance=$REGISTRY/main:$CURRENT_TAG"
 
     sensor_wait
+    wait_for_collectors_to_be_operational
 
     wait_for_central_reconciliation
 
@@ -307,6 +309,7 @@ deploy_scaled_workload() {
     ./deploy/k8s/sensor.sh
 
     sensor_wait
+    wait_for_collectors_to_be_operational
 
     ./scale/launch_workload.sh scale-test
 
