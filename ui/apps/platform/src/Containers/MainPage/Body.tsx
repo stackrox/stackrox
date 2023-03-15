@@ -38,7 +38,7 @@ import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { analyticsPageVisit } from 'utils/analytics';
+import useAnalytics from 'hooks/useAnalytics';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -101,9 +101,10 @@ type BodyProps = {
 
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
     const location = useLocation();
+    const { analyticsPageVisit } = useAnalytics();
     useEffect(() => {
         analyticsPageVisit('visit', location.pathname);
-    }, [location]);
+    }, [location, analyticsPageVisit]);
 
     const { isDarkMode } = useTheme();
 
