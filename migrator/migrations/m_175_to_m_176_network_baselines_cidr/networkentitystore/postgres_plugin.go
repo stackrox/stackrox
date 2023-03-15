@@ -27,6 +27,8 @@ import (
 const (
 	baseTable = "network_entities"
 
+	batchAfter = 100
+
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -43,6 +45,7 @@ var (
 
 // Store interface.
 type Store interface {
+	UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 	Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
@@ -214,6 +217,25 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkEntity) 
 //// Helper functions - END
 
 //// Interface functions
+
+// UpsertMany saves the state of multiple objects in the storage.
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error {
+	return pgutils.Retry(func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		if len(objs) < batchAfter {
+			s.mutex.RLock()
+			defer s.mutex.RUnlock()
+
+			return s.upsert(ctx, objs...)
+		}
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
+
+		return s.copyFrom(ctx, objs...)
+	})
+}
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
