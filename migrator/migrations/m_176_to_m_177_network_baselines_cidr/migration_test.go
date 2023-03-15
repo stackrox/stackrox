@@ -11,9 +11,9 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkentitystore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,11 +54,6 @@ var (
 	ext1Cidr = "42.42.0.0/16"
 	ext2Cidr = "24.24.0.0/16"
 
-	dep1 = uuid.NewV4()
-	dep2 = uuid.NewV4()
-	dep3 = uuid.NewV4()
-	dep4 = uuid.NewV4()
-
 	networkEntities = []*storage.NetworkEntity{
 		{
 			Info: &storage.NetworkEntityInfo{
@@ -92,27 +87,27 @@ var (
 
 	networkBaselines = []*storage.NetworkBaseline{
 		{
-			DeploymentId: dep1.String(),
-			ClusterId:    "c1",
+			DeploymentId: fixtureconsts.Deployment1,
+			ClusterId:    fixtureconsts.Cluster1,
 			Namespace:    "ns1",
 			Peers: []*storage.NetworkBaselinePeer{
-				deploymentPeer(dep2.String()),
+				deploymentPeer(fixtureconsts.Deployment2),
 				externalPeer("ext1"),
 			},
 			DeploymentName: "Has ext1 as peer",
 		},
 		{
-			DeploymentId: dep2.String(),
-			ClusterId:    "c1",
+			DeploymentId: fixtureconsts.Deployment2,
+			ClusterId:    fixtureconsts.Cluster1,
 			Namespace:    "ns1",
 			Peers: []*storage.NetworkBaselinePeer{
-				deploymentPeer(dep1.String()),
+				deploymentPeer(fixtureconsts.Deployment1),
 			},
 			DeploymentName: "No external peers",
 		},
 		{
-			DeploymentId: dep3.String(),
-			ClusterId:    "c1",
+			DeploymentId: fixtureconsts.Deployment3,
+			ClusterId:    fixtureconsts.Cluster1,
 			Namespace:    "ns1",
 			ForbiddenPeers: []*storage.NetworkBaselinePeer{
 				externalPeer("ext1"),
@@ -120,8 +115,8 @@ var (
 			DeploymentName: "Has ext as forbidden peer",
 		},
 		{
-			DeploymentId: dep4.String(),
-			ClusterId:    "c1",
+			DeploymentId: fixtureconsts.Deployment4,
+			ClusterId:    fixtureconsts.Cluster1,
 			Namespace:    "ns1",
 			Peers: []*storage.NetworkBaselinePeer{
 				externalPeer("ext1"),
