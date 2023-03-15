@@ -2,7 +2,6 @@ import { combineReducers } from 'redux';
 
 import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
 import { fetchTelemetryConfig } from 'services/TelemetryConfigService';
-import { analyticsIdentity } from 'utils/analytics';
 
 import { initializeSegment } from 'global/initializeAnalytics';
 
@@ -15,13 +14,16 @@ export const types = {
 // Actions
 
 export const fetchTelemetryConfigThunk = () => {
-    return async (dispatch) => {
+    return async (dispatch, getState) => {
         dispatch({ type: types.FETCH_TELEMETRY_CONFIG.REQUEST });
 
         try {
             const result = await fetchTelemetryConfig();
-            initializeSegment(result.response.storageKeyV1);
-            analyticsIdentity(result.response.userId);
+            const { app: appState } = getState();
+            const telemetryEnabled = appState?.publicConfig?.publicConfig?.telemetry?.enabled;
+            if (telemetryEnabled) {
+                initializeSegment(result.response.storageKeyV1, result.response.userId);
+            }
 
             dispatch({
                 type: types.FETCH_TELEMETRY_CONFIG.SUCCESS,

@@ -31,11 +31,11 @@ import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { selectors } from 'reducers';
+import { initializeSegment } from 'global/initializeAnalytics';
 
 import FormSelect from './FormSelect';
 
 function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
-    const telemetryConfigEnabled = useSelector(selectors.getIsEnabledTelemetryConfig);
     return {
         header: {
             color: systemConfig?.publicConfig?.header?.color || '#000000',
@@ -83,6 +83,7 @@ const SystemConfigForm = ({
     const dispatch = useDispatch();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const telemetryConfigEnabled = useSelector(selectors.getIsEnabledTelemetryConfig);
+    const telemetryConfig = useSelector(selectors.getTelemetryConfig);
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
@@ -106,6 +107,10 @@ const SystemConfigForm = ({
                                 telemetry: null,
                             },
                         };
+
+                        if (data.publicConfig?.telemetry?.enabled && telemetryConfig.storageKeyV1) {
+                            initializeSegment(telemetryConfig.storageKeyV1, telemetryConfig.userId);
+                        }
                         dispatch(action);
                         setSystemConfig(data);
                         setErrorMessage(null);

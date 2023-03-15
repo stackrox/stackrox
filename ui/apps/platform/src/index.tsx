@@ -74,7 +74,6 @@ const dispatch = (action) =>
 
 dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
-dispatch(fetchTelemetryConfigThunk());
 
 ReactDOM.render(
     <Provider store={store}>
