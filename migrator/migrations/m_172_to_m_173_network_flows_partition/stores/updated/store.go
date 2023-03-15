@@ -40,13 +40,13 @@ const (
 	nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND 
 	nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow `
 
-	walkStmt = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM network_flows_v2 nf " + joinStmt + " WHERE nf.ClusterId = $1"
+	walkStmt = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM network_flows_v2 nf " + joinStmt
 
 	// These mimic how the RocksDB version of the flow store work
 	getSinceStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text 
 	FROM network_flows_v2 nf ` + joinStmt +
-		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
+		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL)`
 
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
@@ -60,7 +60,6 @@ const (
 	pruneStaleNetworkFlowsStmt = `DELETE FROM %s a USING (
       SELECT MAX(flow_id) as Max_Flow, Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
         FROM %s
-		WHERE ClusterId = $1
         GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
 		HAVING COUNT(*) > 1
       ) b
@@ -91,6 +90,9 @@ type FlowStore interface {
 
 	// RemoveStaleFlows - remove stale duplicate network flows
 	RemoveStaleFlows(ctx context.Context) error
+
+	// GetPartitionName - returns the partition name
+	GetPartitionName() string
 }
 
 type flowStoreImpl struct {
@@ -197,10 +199,10 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionWalkStmt, s.clusterID)
+		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since), s.clusterID)
+		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
 	}
 	if err != nil {
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
@@ -232,10 +234,10 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionWalkStmt, s.clusterID)
+		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since), s.clusterID)
+		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
 	}
 
 	if err != nil {
@@ -300,8 +302,13 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	// This is purposefully not retried as this is an optimization and not a requirement
 	// It is also currently prone to statement timeouts
 	prune := fmt.Sprintf(pruneStaleNetworkFlowsStmt, s.partitionName, s.partitionName)
-	_, err = conn.Exec(ctx, prune, s.clusterID)
+	_, err = conn.Exec(ctx, prune)
 	return err
+}
+
+// GetPartitionName - returns the partition name
+func (s *flowStoreImpl) GetPartitionName() string {
+	return s.partitionName
 }
 
 //// Used for testing

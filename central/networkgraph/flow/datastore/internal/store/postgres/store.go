@@ -50,29 +50,28 @@ const (
 
 	deleteStmt         = "DELETE FROM network_flows_v2 WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
 	deleteStmtWithTime = "DELETE FROM network_flows_v2 WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
-	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM %s nf " + joinStmt + " WHERE nf.ClusterId = $1"
+	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM %s nf " + joinStmt
 
 	// These mimic how the RocksDB version of the flow store work
 	getSinceStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text 
 	FROM %s nf ` + joinStmt +
-		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
+		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL)`
 	deleteSrcDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
 	deleteDstDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
 
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
-	FROM network_flows_v2 nf ` + joinStmt +
-		`WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1 AND nf.ClusterId = $2
+	FROM %s nf ` + joinStmt +
+		`WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1
 	UNION ALL
 	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
-	FROM network_flows_v2 nf ` + joinStmt +
-		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.ClusterId = $2`
+	FROM %s nf ` + joinStmt +
+		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1`
 
 	pruneStaleNetworkFlowsStmt = `DELETE FROM %s a USING (
       SELECT MAX(flow_id) as Max_Flow, Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
         FROM %s
-		WHERE ClusterId = $1
         GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
 		HAVING COUNT(*) > 1
       ) b
@@ -424,10 +423,10 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionWalkStmt, s.clusterID)
+		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since), s.clusterID)
+		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
 	}
 	if err != nil {
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
@@ -461,10 +460,10 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionWalkStmt, s.clusterID)
+		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since), s.clusterID)
+		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
 	}
 
 	if err != nil {
@@ -492,8 +491,8 @@ func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, depl
 	var rows pgx.Rows
 	var err error
 
-	partitionDeploymentDeleteStmt := fmt.Sprintf(getByDeploymentStmt, s.partitionName, s.partitionName)
-	rows, err = s.db.Query(ctx, partitionDeploymentDeleteStmt, deploymentID, s.clusterID)
+	partitionGetByDeploymentStmt := fmt.Sprintf(getByDeploymentStmt, s.partitionName, s.partitionName, s.partitionName, s.partitionName)
+	rows, err = s.db.Query(ctx, partitionGetByDeploymentStmt, deploymentID)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -579,7 +578,7 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 	// of when flow is created vs a deployment deleted that may also make that problematic.
 	if keyMatchFn != nil {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
-		rows, err := conn.Query(ctx, partitionWalkStmt, s.clusterID)
+		rows, err := conn.Query(ctx, partitionWalkStmt)
 		if err != nil {
 			return err
 		}
@@ -635,7 +634,7 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	// This is purposefully not retried as this is an optimization and not a requirement
 	// It is also currently prone to statement timeouts
 	prune := fmt.Sprintf(pruneStaleNetworkFlowsStmt, s.partitionName, s.partitionName)
-	_, err = conn.Exec(ctx, prune, s.clusterID)
+	_, err = conn.Exec(ctx, prune)
 	return err
 }
 
