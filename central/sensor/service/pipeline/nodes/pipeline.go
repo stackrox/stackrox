@@ -95,7 +95,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// components from the database before writing. Safe because NodeInventory and
 		// Node pipelines never run concurrently by the Sensor Event worker queues.
 		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
-			err = errors.Wrapf(err, "upsertting node %s", nodeDatastore.NodeString(node))
+			err = errors.Wrapf(err, "upserting node %s", nodeDatastore.NodeString(node))
 			log.Error(err)
 			return err
 		}
