@@ -173,10 +173,7 @@ func (n *networkBaselineCidrTestSuite) Test_Migration() {
 	networkEntityStore := networkentitystore.New(n.db.DB)
 
 	n.Require().NoError(networkEntityStore.UpsertMany(ctx, networkEntities))
-	for _, baseline := range networkBaselines {
-		n.T().Logf("upserting baseline: %s", baseline.DeploymentName)
-		n.Require().NoError(baselineStore.UpsertMany(ctx, []*storage.NetworkBaseline{baseline}))
-	}
+	n.Require().NoError(baselineStore.UpsertMany(ctx, networkBaselines))
 
 	dbs := &types.Databases{
 		GormDB:     n.db.GetGormDB(),
