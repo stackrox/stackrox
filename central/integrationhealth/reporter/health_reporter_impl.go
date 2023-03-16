@@ -101,6 +101,21 @@ func (d *DatastoreBasedIntegrationHealthReporter) UpdateIntegrationHealthAsync(h
 	}
 }
 
+// RetrieveIntegrationHealths retrieves the integration healths for a specific type.
+func (d *DatastoreBasedIntegrationHealthReporter) RetrieveIntegrationHealths(typ storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {
+	switch typ {
+	case storage.IntegrationHealth_DECLARATIVE_CONFIG:
+		return d.integrationDS.GetDeclarativeConfigs(integrationWriteCtx)
+	case storage.IntegrationHealth_IMAGE_INTEGRATION:
+		return d.integrationDS.GetRegistriesAndScanners(integrationWriteCtx)
+	case storage.IntegrationHealth_BACKUP:
+		return d.integrationDS.GetBackupPlugins(integrationWriteCtx)
+	case storage.IntegrationHealth_NOTIFIER:
+		return d.integrationDS.GetNotifierPlugins(integrationWriteCtx)
+	}
+	return nil, nil
+}
+
 func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdates() {
 	for {
 		select {

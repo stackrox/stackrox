@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -33,7 +35,9 @@ const (
 	declarativeConfigDir = "/run/stackrox.io/declarative-configuration"
 
 	// The number of consecutive errors for a declarative configuration that causes its health status to be UNHEALTHY.
-	consecutiveReconciliationErrorThreshold = 5
+	consecutiveReconciliationErrorThreshold = 3
+
+	handlerIntegrationHealthStatusPrefix = "Config Map"
 )
 
 type protoMessagesByType = map[reflect.Type][]proto.Message
@@ -255,6 +259,7 @@ func (m *managerImpl) doReconciliation(transformedMessagesByHandler map[string]p
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
 	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
+	var allProtoIDsToSkip []string
 	for _, protoType := range reversedProtoTypes {
 		var idsToSkip []string
 		for _, protoMessageByType := range transformedMessagesByHandler {
@@ -263,10 +268,15 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 				idsToSkip = append(idsToSkip, m.idExtractor(message))
 			}
 		}
+		allProtoIDsToSkip = append(allProtoIDsToSkip, idsToSkip...)
 		typeUpdater := m.updaters[protoType]
 		log.Debugf("Running deletion with resource updater %T, skipping IDs %+v", typeUpdater, idsToSkip)
 		err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
 		log.Debugf("Finished deletion, return value: %+v", err)
+	}
+
+	if err := m.removeStaleHealthStatus(allProtoIDsToSkip); err != nil {
+		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
 }
 
@@ -332,6 +342,36 @@ func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto
 	}
 }
 
+// removeStaleHealthStatus is expected to run after reconciliation has deleted declarative proto messages.
+// In case the first creation of a resource failed, a dangling health status will be here, hence we have to
+// ensure that all stale health status entries are deleted.
+func (m *managerImpl) removeStaleHealthStatus(idsToSkip []string) error {
+	healths, err := m.declarativeConfigErrorReporter.
+		RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG)
+	if err != nil {
+		return errors.Wrap(err, "retrieving integration health statuses for declarative config")
+	}
+
+	idsToSkipSet := set.NewFrozenStringSet(idsToSkip...)
+
+	var removingIntegrationHealths *multierror.Error
+	for _, health := range healths {
+		if idsToSkipSet.Contains(health.GetId()) {
+			continue
+		}
+
+		if strings.Contains(health.GetName(), handlerIntegrationHealthStatusPrefix) {
+			continue
+		}
+
+		if err := m.declarativeConfigErrorReporter.RemoveIntegrationHealth(health.GetId()); err != nil {
+			removingIntegrationHealths = multierror.Append(removingIntegrationHealths, err)
+		}
+	}
+
+	return removingIntegrationHealths.ErrorOrNil()
+}
+
 func handlerNameForIntegrationHealth(handlerID string) string {
-	return fmt.Sprintf("Config Map %s", path.Base(handlerID))
+	return fmt.Sprintf("%s %s", handlerIntegrationHealthStatusPrefix, path.Base(handlerID))
 }
