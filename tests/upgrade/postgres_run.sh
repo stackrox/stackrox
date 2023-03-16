@@ -265,7 +265,7 @@ helm_upgrade_to_postgres() {
         sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
-    local root_certificate_path="$(mktemp -d)/root_certs_values"
+    local root_certificate_path="$(mktemp -d)/root_certs_values.yaml"
     create_certificate_values_file $root_certificate_path
 
     ########################################################################################
