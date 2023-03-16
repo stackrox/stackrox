@@ -53,7 +53,6 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	verified := true
 	doc, err := signedIdentityDoc(ctx, mdClient)
 	if err != nil {
-		// TODO: remove?
 		log.Warnf("Could not verify AWS public certificate: %v", err)
 		errs.AddError(err)
 		verified = false
