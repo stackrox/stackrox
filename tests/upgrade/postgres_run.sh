@@ -265,8 +265,6 @@ helm_upgrade_to_postgres() {
         sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
-    create_db_tls_secret
-
     local root_certificate_path="$(mktemp -d)/root_certs_values"
     create_certificate_values_file $root_certificate_path
 
@@ -281,7 +279,7 @@ helm_upgrade_to_postgres() {
       --set central.db.serviceTLS.generate=true \
       --set central.db.persistence.persistentVolumeClaim.createClaim=true \
       -f "$TEST_ROOT/tests/upgrade/scale-values-public.yaml" \
-      -f "$root_certificate_path"
+      -f "$root_certificate_path" \
       --force
 
     # Return back to test root
