@@ -34,22 +34,19 @@ var (
 // GetMetadata tries to obtain the AWS instance metadata.
 // If not on AWS, returns nil, nil.
 func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
-	errs := errorhelpers.NewErrorList("retrieving AWS EC2 metadata")
-
 	sess, err := session.NewSession()
 	if err != nil {
-		errs.AddError(err)
-		return nil, errs.ToError()
+		return nil, errors.Wrap(err, "creating AWS session")
 	}
 
 	mdClient := ec2metadata.New(sess, &aws.Config{
 		HTTPClient: httpClient,
 	})
 	if !mdClient.Available() {
-		errs.AddError(errors.New("metadata service unavailable"))
-		return nil, errs.ToError()
+		return nil, errors.New("metadata service unavailable")
 	}
 
+	errs := errorhelpers.NewErrorList("retrieving AWS EC2 metadata")
 	verified := true
 	doc, err := signedIdentityDoc(ctx, mdClient)
 	if err != nil {
