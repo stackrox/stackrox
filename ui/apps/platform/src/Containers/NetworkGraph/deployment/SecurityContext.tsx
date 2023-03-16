@@ -1,63 +1,64 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    Stack,
-    StackItem,
+    Divider,
+    Text,
+    TextVariants,
 } from '@patternfly/react-core';
 
-type ContainerSecurityContextMap = {
-    privileged: { label: string };
-    add_capabilities: { label: string };
-    drop_capabilities: { label: string };
+import { Deployment } from 'types/deployment.proto';
+
+type SecurityContextProps = {
+    deployment: Deployment;
 };
 
-const getSecurityContext = (container): ContainerSecurityContextMap | null => {
-    if (!container.securityContext) {
-        return null;
-    }
-    const { privileged, add_capabilities, drop_capabilities } = container.securityContext; // eslint-disable-line
-    return { privileged, add_capabilities, drop_capabilities };
-};
-
-const SecurityContext = ({ deployment }): ReactElement => {
-    let containerResult: ReactElement | ReactElement[];
-    if (deployment.containers) {
-        const containers = deployment.containers
-            .filter((container) => !!container.securityContext)
-            .map((container) => {
-                const securityContext = getSecurityContext(container);
+function SecurityContext({ deployment }: SecurityContextProps) {
+    return (
+        <div>
+            {deployment.containers.map((container) => {
+                const securityContext = container?.securityContext;
                 if (!securityContext || JSON.stringify(securityContext) === '{}') {
-                    return null;
+                    return (
+                        <div>
+                            <Text component={TextVariants.h3}>
+                                Security context for container <strong>{container.name}</strong> not
+                                detected
+                            </Text>
+                        </div>
+                    );
                 }
                 return (
-                    <Stack hasGutter key={container.toString()}>
-                        <StackItem>
-                            <DescriptionList columnModifier={{ default: '2Col' }}>
-                                {Object.keys(securityContext).map((key) => (
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>{key}</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {securityContext[key]}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                ))}
-                            </DescriptionList>
-                        </StackItem>
-                    </Stack>
+                    <div key={container.name} className="pf-u-mb-lg">
+                        <Text
+                            component={TextVariants.h3}
+                            className="pf-u-font-size-lg pf-u-font-weight-bold"
+                        >
+                            Container: <em>{container.name}</em>
+                        </Text>
+                        <Divider component="div" />
+                        <DescriptionList columnModifier={{ default: '2Col' }}>
+                            {Object.keys(securityContext).map((key) => (
+                                <DescriptionListGroup key={key}>
+                                    <DescriptionListTerm>{key}</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        <Text
+                                            component={TextVariants.pre}
+                                            className="pf-u-font-size-xs"
+                                        >
+                                            {JSON.stringify(securityContext[key], null, 2)}
+                                        </Text>
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                            ))}
+                        </DescriptionList>
+                    </div>
                 );
-            });
-        containerResult = containers.length ? (
-            containers
-        ) : (
-            <span className="py-3 font-600 italic">None</span>
-        );
-    } else {
-        containerResult = <span className="py-3 font-600 italic">None</span>;
-    }
-    return <div className="flex h-full px-3">{containerResult}</div>;
-};
+            })}
+        </div>
+    );
+}
 
 export default SecurityContext;
