@@ -3,9 +3,7 @@ import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
 
 import { Cluster } from 'types/cluster.proto';
 import useURLSearch from 'hooks/useURLSearch';
-// import { useEnrichNamespacesWithDeploymentCounts } from 'hooks/useEnrichNamespacesWithDeploymentCounts';
-// import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNamespacesForPermissions';
-import { useFetchClusterNamespacesWithDeploymentCountForPermissions } from 'hooks/useFetchClusterNamespaceWithDeploymentCountForPermissions';
+import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNamespacesForPermissions';
 import useFetchNamespaceDeployments from 'hooks/useFetchNamespaceDeployments';
 import ClusterSelector from './ClusterSelector';
 import NamespaceSelector from './NamespaceSelector';
@@ -26,24 +24,14 @@ function NetworkBreadcrumbs({
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
-    /*
     const fetchedNamespaces = useFetchClusterNamespacesForPermissions(
         ['NetworkGraph', 'Deployment'],
         selectedCluster?.id
     );
-    const { namespaces } = useEnrichNamespacesWithDeploymentCounts(
-        fetchedNamespaces.namespaces,
-        selectedCluster?.id
-    );
-
-     */
-    const { namespaces } = useFetchClusterNamespacesWithDeploymentCountForPermissions(
-        ['Deployment', 'NetworkGraph'],
-        selectedCluster?.id
-    );
+    const namespaces = fetchedNamespaces.namespaces;
     const selectedNamespaceIds = namespaces.reduce<string[]>((acc: string[], namespace) => {
-        return selectedNamespaces.includes(namespace.metadata.name)
-            ? [...acc, namespace.metadata.id]
+        return selectedNamespaces.includes(namespace.name)
+            ? [...acc, namespace.id]
             : acc;
     }, []);
     const { deploymentsByNamespace } = useFetchNamespaceDeployments(selectedNamespaceIds);
