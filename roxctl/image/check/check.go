@@ -89,6 +89,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
 	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().BoolVarP(&imageCheckCmd.force, "force", "f", false, "ignores Central's cache for the image scan and forces a fresh re-pull from Scanner")
 
 	// deprecated, old output format specific flags
 	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
@@ -117,6 +118,7 @@ type imageCheckCommand struct {
 	policyCategories   []string
 	printAllViolations bool
 	timeout            time.Duration
+	force              bool
 
 	// values injected from either Construct, parent command or for abstracting external dependencies
 	env                      environment.Environment
@@ -181,7 +183,7 @@ func (i *imageCheckCommand) CheckImage() error {
 
 func (i *imageCheckCommand) checkImage() error {
 	// Get the violated policies for the input data.
-	req, err := buildRequest(i.image, i.sendNotifications, i.policyCategories)
+	req, err := buildRequest(i.image, i.sendNotifications, i.force, i.policyCategories)
 	if err != nil {
 		return err
 	}
@@ -295,7 +297,7 @@ func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string, sendNotifications bool, policyCategories []string) (*v1.BuildDetectionRequest, error) {
+func buildRequest(image string, sendNotifications bool, force bool, policyCategories []string) (*v1.BuildDetectionRequest, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
@@ -304,5 +306,6 @@ func buildRequest(image string, sendNotifications bool, policyCategories []strin
 		Resource:          &v1.BuildDetectionRequest_Image{Image: img},
 		SendNotifications: sendNotifications,
 		PolicyCategories:  policyCategories,
+		Force:             force,
 	}, nil
 }

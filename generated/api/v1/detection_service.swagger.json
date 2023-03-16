@@ -1488,6 +1488,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "force": {
+          "type": "boolean"
         }
       }
     },
@@ -1516,6 +1519,9 @@
         },
         "clusterId": {
           "type": "string"
+        },
+        "force": {
+          "type": "boolean"
         }
       }
     },
@@ -1554,6 +1560,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "force": {
+          "type": "boolean"
         }
       }
     }

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -136,9 +135,12 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	img := types.ToImage(image)
 
 	enrichmentContext := enricher.EnrichmentContext{}
-	if req.GetNoExternalMetadata() {
-		enrichmentContext.FetchOpt = enricher.NoExternalMetadata
+	fetchOpt, err := getFetchOptionFromRequest(req)
+	if err != nil {
+		return nil, err
 	}
+	enrichmentContext.FetchOpt = fetchOpt
+
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
 		return nil, err
@@ -159,7 +161,8 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 	unusedCategories := getUnusedCategories()
 	if len(unusedCategories) > 0 {
-		return nil, fmt.Errorf("allowed categories %q did not match any policy categories", unusedCategories)
+		return nil, errox.InvalidArgs.Newf(
+			"allowed categories %q did not match any policy categories", unusedCategories)
 	}
 
 	s.maybeSendNotifications(req, alerts)
@@ -199,7 +202,8 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 	unusedCategories := getUnusedCategories()
 	if len(unusedCategories) > 0 {
-		return nil, errors.Errorf("allowed categories %v did not match any policy categories", unusedCategories)
+		return nil, errox.InvalidArgs.Newf(
+			"allowed categories %v did not match any policy categories", unusedCategories)
 	}
 	return &apiV1.DeployDetectionResponse_Run{
 		Name:   deployment.GetName(),
@@ -299,9 +303,11 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	eCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
 	}
-	if req.GetNoExternalMetadata() {
-		eCtx.FetchOpt = enricher.NoExternalMetadata
+	fetchOpt, err := getFetchOptionFromRequest(req)
+	if err != nil {
+		return nil, err
 	}
+	eCtx.FetchOpt = fetchOpt
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
@@ -379,9 +385,11 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 	enrichmentCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
 	}
-	if req.GetNoExternalMetadata() {
-		enrichmentCtx.FetchOpt = enricher.NoExternalMetadata
+	fetchOpt, err := getFetchOptionFromRequest(req)
+	if err != nil {
+		return nil, err
 	}
+	enrichmentCtx.FetchOpt = fetchOpt
 
 	run, err := s.enrichAndDetect(ctx, enrichmentCtx, req.GetDeployment())
 	if err != nil {
@@ -400,4 +408,25 @@ func getIgnoredObjectRefFromYAML(yaml string) (string, error) {
 		return "", err
 	}
 	return k8sobjects.RefOf(unstructured).String(), nil
+}
+
+// getFetchOptionFromRequest will return the associated enricher.FetchOption based on whether force or no external
+// metadata is given.
+// If both are specified, it will return an error since the combination is considered invalid (we cannot force a refetch
+// and at the same time not take external metadata into account).
+func getFetchOptionFromRequest(request interface {
+	GetForce() bool
+	GetNoExternalMetadata() bool
+}) (enricher.FetchOption, error) {
+	if request.GetForce() && request.GetNoExternalMetadata() {
+		return enricher.UseCachesIfPossible, errox.InvalidArgs.Newf(
+			"you can only specify either force or fetching no external metadata, specifying both is not allowed")
+	}
+	if request.GetNoExternalMetadata() {
+		return enricher.NoExternalMetadata, nil
+	}
+	if request.GetForce() {
+		return enricher.ForceRefetch, nil
+	}
+	return enricher.UseCachesIfPossible, nil
 }
