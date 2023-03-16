@@ -12,19 +12,21 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_network_flows_partition/stores/updated"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
 const (
-	cluster1 = fixtureconsts.Cluster1
-	cluster2 = fixtureconsts.Cluster2
-
 	cluster1Count = 10
 	cluster2Count = 15
+)
+
+var (
+	cluster1 = uuid.NewV4().String()
+	cluster2 = uuid.NewV4().String()
 )
 
 type networkFlowsMigrationTestSuite struct {
@@ -40,7 +42,6 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *networkFlowsMigrationTestSuite) SetupTest() {
-	s.T().Skip("Network flow partition migration test is disabled due to incompleteness of the test setup.")
 	s.db = pghelper.ForT(s.T(), true)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableNetworkFlowsStmt)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableClustersStmt)
