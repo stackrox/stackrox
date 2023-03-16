@@ -280,6 +280,7 @@ const URLSearchInputWithAutocomplete = ({
     const hideDropdown = options.length ? '' : 'hide-dropdown';
     const isFocused = document.activeElement.id === 'url-search-input';
     const creatableProps = {
+        'aria-label': placeholder,
         className: `${className} ${hideDropdown}`,
         components: { ValueContainer, Option, Placeholder, MultiValue },
         options,
@@ -295,7 +296,6 @@ const URLSearchInputWithAutocomplete = ({
             input && searchOptions.length > 0 && !inputMatchesTopOption(input, availableOptions),
         formatCreateLabel: (inputValue) => inputValue,
         createOptionPosition,
-        placeholder,
         ...rest,
     };
     return <Creatable {...creatableProps} components={{ ...creatableProps.components }} />;
