@@ -80,6 +80,7 @@ updates:
     labels:
     - "dependencies"
     - "area/operator"
+    - "auto-merge"
     reviewers:
     - "stackrox/backend-dep-updaters"
 
@@ -92,6 +93,7 @@ updates:
     labels:
     - "dependencies"
     - "area/operator"
+    - "auto-merge"
     reviewers:
     - "stackrox/backend-dep-updaters"
 
