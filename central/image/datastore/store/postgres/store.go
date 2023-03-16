@@ -499,7 +499,10 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 	}
 
 	for idx, obj := range objs {
-		if !forceAdd {
+		if forceAdd {
+			// Add the id to be deleted.
+			deletes.Add(obj.GetId())
+		} else {
 			// Since the edge only maintains states enriched by ACS, if the edge already exists, then skip upsert.
 			if oldEdgeIDs.Remove(obj.GetId()) {
 				continue
@@ -520,9 +523,6 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 			obj.GetImageCveId(),
 			serialized,
 		})
-
-		// Add the id to be deleted.
-		deletes.Add(obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
