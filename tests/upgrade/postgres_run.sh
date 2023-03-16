@@ -107,10 +107,14 @@ test_upgrade_paths() {
 
     # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
     # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
-    echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
-    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> scripts/ci/logcheck/allowlist-patterns
-    echo "Unable to connect to Sensor at"
-    echo >> scripts/ci/logcheck/allowlist-patterns
+#    echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
+#    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> scripts/ci/logcheck/allowlist-patterns
+#    echo "Unable to connect to Sensor at" >> scripts/ci/logcheck/allowlist-patterns
+    cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
+    echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
+    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
+    echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
+    export ALLOWLIST_FILE="/tmp/allowlist-patterns"
 
     ########################################################################################
     # Use helm to upgrade to a Postgres release.                                           #

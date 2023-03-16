@@ -8,7 +8,12 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 BLOCKLIST_FILE="${DIR}/blocklist-patterns"
-ALLOWLIST_FILE="${DIR}/allowlist-patterns"
+# Allow for tests to set this as an environment variable
+if [[ -n "${ALLOWLIST_FILE}" ]]; then
+    ALLOWLIST_FILE="${DIR}/allowlist-patterns"
+fi
+info "SHREWS -- check this"
+echo "${ALLOWLIST_FILE}"
 
 join_by() { local IFS="$1"; shift; echo "$*"; }
 
