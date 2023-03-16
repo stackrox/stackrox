@@ -29,7 +29,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/facebookincubator/nvdtools v0.1.5
-	github.com/fatih/color v1.14.1
+	github.com/fatih/color v1.15.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/georgysavva/scany v1.2.1
 	github.com/ghodss/yaml v1.0.0
