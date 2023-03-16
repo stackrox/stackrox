@@ -200,6 +200,7 @@ helm_upgrade_to_latest_postgres() {
      --set central.db.persistence.persistentVolumeClaim.createClaim=true \
      --set central.exposure.loadBalancer.enabled=true \
      -f "$TEST_ROOT/tests/upgrade/scale-values-public.yaml" \
+     -f "$root_certificate_path" \
      --force
 
     # Return back to test root
