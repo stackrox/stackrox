@@ -92,7 +92,7 @@ func splitPlopsIntoExpiredAndUnexpired(plops []*storage.ProcessListeningOnPortSt
 	unexpiredPlops := make([]*storage.ProcessListeningOnPortStorage, 0)
 	idsToDelete := make([]string, 0)
 	currentTime := time.Now()
-	expirationLifetime := 91*time.Second
+	expirationLifetime := 91 * time.Second
 
 	for _, plop := range plops {
 		timeFirstSeen := protoconv.ConvertTimestampToTimeOrNow(plop.TimeFirstSeen)
@@ -142,9 +142,9 @@ func normalizePLOPsForRetryKey(plops []*storage.ProcessListeningOnPortStorage) (
 		}
 
 		if plop.GetCloseTimestamp() != nil {
-			nclosed += 1
+			nclosed++
 		} else {
-			nopen += 1
+			nopen++
 		}
 
 		idsToDelete = append(idsToDelete, plop.GetId())
@@ -172,8 +172,7 @@ func normalizePLOPsForRetry(plops []*storage.ProcessListeningOnPortStorage) (map
 	return normalizedPlopsMap, idsToDelete
 }
 
-
-//func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*storage.ProcessListeningOnPortFromSensor, error) {
+// func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*storage.ProcessListeningOnPortFromSensor, error) {
 //
 //	portProcesses := make([]*storage.ProcessListeningOnPortFromSensor, 0)
 //	unmatchedIds := make([]string, 0)
@@ -383,7 +382,6 @@ func getPlopObjectsToUpsertForRetry(
 	idsToDelete := make([]string, 0)
 	plopObjects := make([]*storage.ProcessListeningOnPortStorage, 0)
 
-
 	for key, unmatchedPlop := range unmatchedPLOPMap {
 		indicatorID := ""
 
@@ -467,9 +465,6 @@ func (ds *datastoreImpl) RetryAddProcessListeningOnPort(ctx context.Context) err
 	}
 
 	plopObjects, outdatedIdsToDelete := getPlopObjectsToUpsertForRetry(normalizedPlops, existingPLOPMap, indicatorsMap)
-	if err != nil {
-		return err
-	}
 
 	// Now save actual PLOP objects
 	err = ds.storage.UpsertMany(ctx, plopObjects)
@@ -808,7 +803,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
-		TimeFirstSeen:		protoconv.ConvertTimeToTimestamp(time.Now()),
+		TimeFirstSeen:      protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 
 	return append(plopObjects, newPLOP)

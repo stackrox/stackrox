@@ -332,7 +332,7 @@ func TestProcessListeningOnPortReprocessNoIndicator(t *testing.T) {
 			ProcessIndicatorId: "",
 			Closed:             false,
 			Process:            plopObjects[0].Process,
-			TimeFirstSeen:       plopsFromDB[0].GetTimeFirstSeen(),
+			TimeFirstSeen:      plopsFromDB[0].GetTimeFirstSeen(),
 		},
 	}
 
@@ -353,7 +353,7 @@ func TestProcessListeningOnPortReprocessNoIndicator(t *testing.T) {
 			ProcessIndicatorId: "",
 			Closed:             false,
 			Process:            plopObjects[0].Process,
-			TimeFirstSeen:       plopsFromDB[0].GetTimeFirstSeen(),
+			TimeFirstSeen:      plopsFromDB[0].GetTimeFirstSeen(),
 		},
 	}
 
@@ -452,7 +452,7 @@ func TestProcessListeningOnPortReprocessCloseBeforeRetrying(t *testing.T) {
 			ProcessIndicatorId: "",
 			Closed:             false,
 			Process:            plopObjects[0].Process,
-			TimeFirstSeen:       plopsFromDB[0].GetTimeFirstSeen(),
+			TimeFirstSeen:      plopsFromDB[0].GetTimeFirstSeen(),
 		},
 	}
 
@@ -491,7 +491,7 @@ func TestProcessListeningOnPortReprocessCloseBeforeRetrying(t *testing.T) {
 			ProcessIndicatorId: indicators[0].Id,
 			Closed:             true,
 			Process:            nil,
-			TimeFirstSeen:       plopsFromDB[0].GetTimeFirstSeen(),
+			TimeFirstSeen:      plopsFromDB[0].GetTimeFirstSeen(),
 		},
 	}
 
@@ -590,7 +590,7 @@ func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 			ProcessIndicatorId: "",
 			Closed:             false,
 			Process:            plopObjects[0].Process,
-			TimeFirstSeen:       plopsFromDB[0].GetTimeFirstSeen(),
+			TimeFirstSeen:      plopsFromDB[0].GetTimeFirstSeen(),
 		},
 	}
 
@@ -629,7 +629,7 @@ func TestProcessListeningOnPortReprocessBatchBeforeRetrying(t *testing.T) {
 			ProcessIndicatorId: indicators[0].Id,
 			Closed:             false,
 			Process:            nil,
-			TimeFirstSeen:       plopsFromDB[0].GetTimeFirstSeen(),
+			TimeFirstSeen:      plopsFromDB[0].GetTimeFirstSeen(),
 		},
 	}
 
