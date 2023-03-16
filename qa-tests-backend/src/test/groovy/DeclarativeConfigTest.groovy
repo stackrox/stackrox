@@ -201,7 +201,7 @@ oidc:
     }
 
     @Tag("BAT")
-    def "Check successful creation of declarative resources"() {
+    def "Check successful creation, update, and deletion of declarative resources"() {
         when:
 
         createDefaultSetOfResources(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
@@ -380,6 +380,91 @@ oidc:
         assert GroupService.getGroups(
                 GroupServiceOuterClass.GetGroupsRequest.newBuilder().setAuthProviderId(authProvider.getId()).build())
                 .getGroupsCount() == 0
+    }
+
+    @Tag("BAT")
+    def "Check creating invalid configuration will not work"() {
+        when:
+        orchestrator.createConfigMap(CONFIGMAP_NAME,
+                [
+                        (PERMISSION_SET_KEY): INVALID_PERMISSION_SET_YAML,
+                        (ACCESS_SCOPE_KEY): INVALID_ACCESS_SCOPE_YAML,
+                        (ROLE_KEY): INVALID_ROLE_YAML,
+                        (AUTH_PROVIDER_KEY): INVALID_AUTH_PROVIDER_YAML,
+                ], DEFAULT_NAMESPACE)
+
+        then:
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            // Expect 6 integration health status for the created resources and one for the config map.
+            assert response.integrationHealthCount == CREATED_RESOURCES + 1
+            for (integrationHealth in response.integrationHealthList) {
+                assert integrationHealth.hasLastTimestamp()
+                assert integrationHealth.getErrorMessage() == ""
+                assert integrationHealth.getStatus() == Status.HEALTHY
+            }
+            def configMapHealth = response.getIntegrationHealthList().find {
+                it.getName().contains("Config Map")
+            }
+            assert configMapHealth
+            assert configMapHealth.hasLastTimestamp()
+            assert configMapHealth.getErrorMessage() == ""
+            assert configMapHealth.getStatus() == Status.HEALTHY
+
+            def integrationHealthList = response.getIntegrationHealthList()
+            assert integrationHealthList.remove(configMapHealth)
+
+            for (integrationHealth in integrationHealthList) {
+                assert integrationHealth.hasLastTimestamp()
+                assert integrationHealth.getErrorMessage()
+                assert integrationHealth.getStatus() == Status.UNHEALTHY
+            }
+        }
+
+        // No permission set should be created.
+        def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
+                .getPermissionSetsList().find {
+            it.getName() == VALID_PERMISSION_SET.getName()
+        }
+        assert permissionSetAfterDeletion == null
+
+        // No access scope should be created.
+        def accessScopeAfterDeletion = RoleService.getRoleService()
+                .listSimpleAccessScopes()
+                .getAccessScopesList().find {
+            it.getName() == VALID_ACCESS_SCOPE.getName()
+        }
+        assert accessScopeAfterDeletion == null
+
+        // No role should be created.
+        try {
+            RoleService.getRole(VALID_ROLE.getName())
+        } catch (StatusRuntimeException ex) {
+            assert ex.getStatus().getCode() == io.grpc.Status.NOT_FOUND.getCode()
+        }
+
+        // No auth provider should be created.
+        assert AuthProviderService.getAuthProviderService().
+                getAuthProviders(
+                        AuthproviderService.GetAuthProvidersRequest.newBuilder()
+                                .setName(VALID_AUTH_PROVIDER.getName()).build()
+                )
+                .getAuthProvidersCount() == 0
+
+        when:
+        orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
+
+        then:
+        // Only the config map health status should exist, all others should be removed.
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            assert response.getIntegrationHealthCount() == 1
+            def configMapHealth = response.getIntegrationHealth(0)
+            assert configMapHealth
+            assert configMapHealth.getName().contains("Config Map")
+            assert configMapHealth.getErrorMessage() == ""
+            assert configMapHealth.getStatus() == Status.HEALTHY
+        }
     }
 
     // Helpers
