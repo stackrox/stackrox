@@ -217,7 +217,7 @@ oidc:
         // It may take some time until a) the config map contents are mapped within the pod b) the reconciliation
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
-        withRetry(5, 60) {
+        withRetry(5, 30) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
             assert response.integrationHealthCount == CREATED_RESOURCES + 1
@@ -255,9 +255,9 @@ oidc:
 
         then:
         // Verify the integration health for the permission set is unhealthy and contains an error message.
-        // The errors will be surface after at least five consecutive occurrences, hence we need to retry multiple
+        // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(10, 60) {
+        withRetry(5, 30) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def permissionSetHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
@@ -276,9 +276,9 @@ oidc:
 
         then:
         // Verify the integration health for the access scope is unhealthy and contains an error message.
-        // The errors will be surface after at least five consecutive occurrences, hence we need to retry multiple
+        // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(10, 60) {
+        withRetry(5, 30) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def accessScopeHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
@@ -297,7 +297,7 @@ oidc:
 
         then:
         // Verify the integration health for the role is unhealthy and contains an error message.
-        withRetry(10, 60) {
+        withRetry(5, 30) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def roleHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ROLE_KEY)
@@ -316,9 +316,9 @@ oidc:
 
         then:
         // Verify the integration health for the auth provider is unhealthy and contains an error message.
-        // The errors will be surface after at least five consecutive occurrences, hence we need to retry multiple
+        // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(10, 60) {
+        withRetry(5, 30) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def roleHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(AUTH_PROVIDER_KEY)
@@ -342,7 +342,7 @@ oidc:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
 
         then:
-        withRetry(5, 60) {
+        withRetry(5, 30) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             assert response.getIntegrationHealthCount() == 1
             def configMapHealth = response.getIntegrationHealth(0)
