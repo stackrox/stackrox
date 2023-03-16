@@ -51,7 +51,7 @@ func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, fai
 
 func (suite *scanTestSuite) TestLocalEnrichment() {
 	// Use mock functions to avoid having to provide a full registry / scanner.
-	scan := Scan{
+	scan := LocalScan{
 		scanImg:                  successfulScan,
 		fetchSignaturesWithRetry: successfulFetchSignatures,
 		getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
@@ -133,7 +133,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 
 	for name, c := range cases {
 		suite.Run(name, func() {
-			scan := Scan{
+			scan := LocalScan{
 				scanImg:                  c.scanImg,
 				fetchSignaturesWithRetry: c.fetchSignaturesWithRetry,
 				getMatchingRegistry:      c.getMatchingRegistry,
@@ -149,7 +149,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 }
 
 func (suite *scanTestSuite) TestMetadataBeingSet() {
-	scan := Scan{
+	scan := LocalScan{
 		scanImg: successfulScan,
 		fetchSignaturesWithRetry: func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image, _ string,
 			_ registryTypes.Registry) ([]*storage.Signature, error) {

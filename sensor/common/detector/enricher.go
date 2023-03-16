@@ -45,7 +45,7 @@ type enricher struct {
 	scanResultChan chan scanResult
 
 	serviceAccountStore store.ServiceAccountStore
-	scan                *scan.Scan
+	localScan           *scan.LocalScan
 	imageCache          expiringcache.Cache
 	stopSig             concurrency.Signal
 }
@@ -60,7 +60,7 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, _ *scan.Scan) (*v1.ScanImageInternalResponse, error) {
+func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, _ *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
@@ -78,7 +78,7 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageReq
 	return svc.ScanImageInternal(ctx, internalReq)
 }
 
-func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.Scan) (*v1.ScanImageInternalResponse, error) {
+func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
@@ -88,9 +88,9 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 	}, err
 }
 
-type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.Scan) (*v1.ScanImageInternalResponse, error)
+type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.LocalScan) (*v1.ScanImageInternalResponse, error)
 
-func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.Scan, scanFn scanFunc) (*v1.ScanImageInternalResponse, error) {
+func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.LocalScan, scanFn scanFunc) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -122,7 +122,7 @@ outer:
 	}
 }
 
-func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.Scan) {
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.LocalScan) {
 	defer c.signal.Signal()
 
 	// Ask Central to scan the image if the image is not internal.
@@ -149,7 +149,7 @@ func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAcc
 		serviceAccountStore: serviceAccountStore,
 		imageCache:          cache,
 		stopSig:             concurrency.NewSignal(),
-		scan:                scan.NewScan(registryStore),
+		localScan:           scan.NewLocalScan(registryStore),
 	}
 }
 
@@ -201,7 +201,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req, e.scan)
+		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req, e.localScan)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),

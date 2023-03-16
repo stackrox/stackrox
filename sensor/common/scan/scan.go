@@ -25,8 +25,8 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Scan wraps the functions required in EnrichLocalImage. This allows us to inject different values for testing purposes
-type Scan struct {
+// LocalScan wraps the functions required in EnrichLocalImage. This allows us to inject different values for testing purposes
+type LocalScan struct {
 	// Used for testing purposes only to not require setting up registry / scanner.
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
 	scanImg                  func(context.Context, *storage.Image, registryTypes.Registry, *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
@@ -35,9 +35,9 @@ type Scan struct {
 	getMatchingRegistry      func(*storage.ImageName) (registryTypes.Registry, error)
 }
 
-// NewScan initializes a Scan struct
-func NewScan(registryStore *registry.Store) *Scan {
-	return &Scan{
+// NewLocalScan initializes a LocalScan struct
+func NewLocalScan(registryStore *registry.Store) *LocalScan {
+	return &LocalScan{
 		scanImg:                  scanImage,
 		fetchSignaturesWithRetry: signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:   scannerclient.GRPCClientSingleton,
@@ -49,7 +49,7 @@ func NewScan(registryStore *registry.Store) *Scan {
 // from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image.
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
-func (s *Scan) EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
+func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	imgName := ci.GetName().GetFullName()
 
 	// Check if there is a local Scanner.
@@ -82,7 +82,7 @@ func (s *Scan) EnrichLocalImage(ctx context.Context, centralClient v1.ImageServi
 
 	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
 
-	// Scan the image via local scanner.
+	// LocalScan the image via local scanner.
 	scannerResp, err := s.scanImg(ctx, image, matchingRegistry, scannerClient)
 	if err != nil {
 		log.Debugf("Scan for image %q failed: %v", imgName, err)

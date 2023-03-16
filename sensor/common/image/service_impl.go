@@ -31,7 +31,7 @@ func NewService(imageCache expiringcache.Cache, registryStore *registry.Store) S
 	return &serviceImpl{
 		imageCache:    imageCache,
 		registryStore: registryStore,
-		scan:          scan.NewScan(registryStore),
+		localScan:     scan.NewLocalScan(registryStore),
 	}
 }
 
@@ -41,7 +41,7 @@ type serviceImpl struct {
 	centralClient v1.ImageServiceClient
 	imageCache    expiringcache.Cache
 	registryStore *registry.Store
-	scan          *scan.Scan
+	localScan     *scan.LocalScan
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
@@ -78,7 +78,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}, nil
 	}
 
-	img, err := s.scan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
+	img, err := s.localScan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning image via local scanner")
 	}
