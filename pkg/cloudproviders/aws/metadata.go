@@ -51,14 +51,14 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}
 
 	verified := true
-	doc, err := identityDocFromPKCS7(ctx, mdClient)
+	doc, err := signedIdentityDoc(ctx, mdClient)
 	if err != nil {
 		// TODO: remove?
 		log.Warnf("Could not verify AWS public certificate: %v", err)
 		errs.AddError(err)
 		verified = false
 
-		doc, err = identityDocFromAPI(ctx, mdClient)
+		doc, err = plaintextIdentityDoc(ctx, mdClient)
 		errs.AddError(err)
 	}
 
@@ -78,28 +78,26 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}, nil
 }
 
-func identityDocFromPKCS7(ctx context.Context, mdClient *ec2metadata.EC2Metadata) (*ec2metadata.EC2InstanceIdentityDocument, error) {
-	pkcsBase64, err := mdClient.GetDynamicDataWithContext(ctx, "instance-identity/pkcs7")
+func signedIdentityDoc(ctx context.Context, mdClient *ec2metadata.EC2Metadata) (*ec2metadata.EC2InstanceIdentityDocument, error) {
+	// This endpoint returns PKCS #7 structured data.
+	p7Base64, err := mdClient.GetDynamicDataWithContext(ctx, "instance-identity/rsa2048")
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving PKCS7 signature")
+		return nil, errors.Wrap(err, "retrieving RSA-2048 signature")
 	}
 
-	rawPKCS7, err := base64.StdEncoding.DecodeString(pkcsBase64)
-	if err != nil {
-		return nil, err
-	}
-
-	p7, err := pkcs7.Parse(rawPKCS7)
+	p7Raw, err := base64.StdEncoding.DecodeString(p7Base64)
 	if err != nil {
 		return nil, err
 	}
 
-	// It is probably possible to determine which certificate to use
-	// based on the region returned by the metadata service,
-	// but there is no harm in just checking all known certs.
+	p7, err := pkcs7.Parse(p7Raw)
+	if err != nil {
+		return nil, err
+	}
+
 	p7.Certificates = awsCerts
 	if err := p7.Verify(); err != nil {
-		return nil, errors.Wrap(err, "verifying PKCS7 signature")
+		return nil, errors.Wrap(err, "verifying RSA-2048 signature")
 	}
 
 	doc := &ec2metadata.EC2InstanceIdentityDocument{}
@@ -110,7 +108,7 @@ func identityDocFromPKCS7(ctx context.Context, mdClient *ec2metadata.EC2Metadata
 	return doc, nil
 }
 
-func identityDocFromAPI(ctx context.Context, mdClient *ec2metadata.EC2Metadata) (*ec2metadata.EC2InstanceIdentityDocument, error) {
+func plaintextIdentityDoc(ctx context.Context, mdClient *ec2metadata.EC2Metadata) (*ec2metadata.EC2InstanceIdentityDocument, error) {
 	doc := &ec2metadata.EC2InstanceIdentityDocument{}
 	var err error
 	*doc, err = mdClient.GetInstanceIdentityDocumentWithContext(ctx)
