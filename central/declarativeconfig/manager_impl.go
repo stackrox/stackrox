@@ -12,6 +12,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/hashicorp/go-multierror"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
@@ -50,6 +51,8 @@ type managerImpl struct {
 
 	transformedMessagesByHandler map[string]protoMessagesByType
 	transformedMessagesMutex     sync.RWMutex
+
+	lastReconciliationHash uint64
 
 	reconciliationTickerDuration time.Duration
 	watchIntervalDuration        time.Duration
@@ -226,6 +229,24 @@ func (m *managerImpl) runReconciliation() {
 	m.transformedMessagesMutex.RLock()
 	transformedMessagesByHandler := maputil.ShallowClone(m.transformedMessagesByHandler)
 	m.transformedMessagesMutex.RUnlock()
+
+	// Create a hash from the transformed messages by handler map.
+	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
+	// the pointer's value.
+	hash, err := hashstructure.Hash(transformedMessagesByHandler, hashstructure.FormatV2,
+		&hashstructure.HashOptions{ZeroNil: true})
+
+	// If we received an error for hash generation, log it and _always_ run the reconciliation. This way we ensure
+	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).
+	if err != nil {
+		log.Errorf("Failed to create hash for transformed messages by handler %+v, "+
+			"reconciliation will be executed: %v",
+			m.transformedMessagesByHandler, err)
+	} else if m.lastReconciliationHash == hash {
+		log.Debugf("Hashes for transformed messages by handler are equal, skipping reconciliation run")
+		return
+	}
+	m.lastReconciliationHash = hash
 	m.reconcileTransformedMessages(transformedMessagesByHandler)
 }
 
