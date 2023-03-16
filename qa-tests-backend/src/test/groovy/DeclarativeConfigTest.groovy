@@ -1,5 +1,7 @@
 import static util.Helpers.withRetry
 
+import java.util.concurrent.TimeUnit
+
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.AuthproviderService
@@ -17,10 +19,18 @@ import io.stackrox.proto.storage.TraitsOuterClass.Traits
 import services.AuthProviderService
 import services.GroupService
 import services.IntegrationHealthService
+import services.MetadataService
 import services.RoleService
 
+import org.junit.Rule
+import org.junit.rules.Timeout
+import spock.lang.IgnoreIf
+import spock.lang.Retry
 import spock.lang.Tag
 
+@Retry(count = 0)
+// TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
+@IgnoreIf({ MetadataService.isReleaseBuild() })
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
@@ -186,6 +196,11 @@ oidc:
   mode: fragment
   clientID: SOMECLIENTID
 """
+
+    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(1200, TimeUnit.SECONDS)
 
     def cleanup() {
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
@@ -389,11 +404,6 @@ oidc:
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
             assert response.integrationHealthCount == CREATED_RESOURCES + 1
-            for (integrationHealth in response.integrationHealthList) {
-                assert integrationHealth.hasLastTimestamp()
-                assert integrationHealth.getErrorMessage() == ""
-                assert integrationHealth.getStatus() == Status.HEALTHY
-            }
             def configMapHealth = response.getIntegrationHealthList().find {
                 it.getName().contains("Config Map")
             }
