@@ -172,27 +172,6 @@ func normalizePLOPsForRetry(plops []*storage.ProcessListeningOnPortStorage) (map
 	return normalizedPlopsMap, idsToDelete
 }
 
-// func (ds *datastoreImpl) getUnmatchedPlopsAndConvert(ctx context.Context) ([]*storage.ProcessListeningOnPortFromSensor, error) {
-//
-//	portProcesses := make([]*storage.ProcessListeningOnPortFromSensor, 0)
-//	unmatchedIds := make([]string, 0)
-//	unmatchedPLOPs, _ := ds.getUnmatchedPlopsFromDB(ctx)
-//	unexpiredUnmatchedPLOPs, idsToDelete := splitPlopsIntoExpiredAndUnexpired(unmatchedPLOPs)
-//
-//	for _, val := range unexpirtedUnmatchedPLOPs {
-//		unmatchedIds = append(unmatchedIds, val.Id)
-//		plop := convertPlopFromStorageToPlopFromSensor(val)
-//		portProcesses = append(portProcesses, plop)
-//	}
-//
-//	// Unmatched plop objects are deleted and added back in to avoid duplicate rows.
-//	// Deleting unmatched plops is not the most efficient solution.
-//	// Instead plopObjects should be set correctly in AddProcessListeningOnPort.
-//	err := ds.storage.DeleteMany(ctx, unmatchedIds)
-//
-//	return portProcesses, err
-//}
-
 // PlopInfo contains the information needed to determine the upserts for plop
 type PlopInfo struct {
 	normalizedPLOPs  []*storage.ProcessListeningOnPortFromSensor
