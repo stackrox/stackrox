@@ -267,7 +267,8 @@ func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 	key := imagecacheutils.GetImageCacheKey(image)
 
 	newValue := &cacheValue{
-		image: image,
+		image:     image,
+		localScan: d.enricher.localScan,
 	}
 	d.enricher.imageCache.Add(key, newValue)
 	d.admissionCacheNeedsFlush = true
