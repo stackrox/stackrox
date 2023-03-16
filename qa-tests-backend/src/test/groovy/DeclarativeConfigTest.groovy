@@ -22,15 +22,6 @@ import services.RoleService
 import spock.lang.Tag
 
 class DeclarativeConfigTest extends BaseSpecification {
-    // TODO(dhaus): Lower the error threshold to 3, as 5 is quite a long time (we have to wait at least 5 minutes),
-    //  if it's annoying within the tests, its pretty annoying to use.
-
-    // TODO(dhaus): Currently, if there's an error during the _first_ creation of a resource,
-    //  the integration health status will not be removed when the config map is removed.
-    //  This is due to us not knowing prior declarative configurations that existed.
-    //  It may be worthwhile to have a step that cleans all integration health statuses,
-    //  modulo the resource IDs that still exist + the handler health statuses.
-
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
     static final private String CONFIGMAP_NAME = "declarative-configurations"
@@ -323,8 +314,8 @@ oidc:
         }
 
         // The previously created auth provider should not exist anymore.
-        // TODO(dhaus): This currently is the behavior since within update we call delete + create.
-        //              Maybe we should just switch to using registry.Update(), if possible?
+        // TODO(ROX-16007): This currently is the behavior since within update we call delete + create.
+        //              Maybe we should just switch to using registry.Update(), if possible.
         assert AuthProviderService.getAuthProviderService().
                 getAuthProviders(
                         AuthproviderService.GetAuthProvidersRequest.newBuilder()
