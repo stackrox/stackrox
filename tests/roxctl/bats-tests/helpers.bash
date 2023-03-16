@@ -354,6 +354,6 @@ generate_bundle() {
 
 delete_cluster() {
   local name="$1";shift
-  run roxctl_authenticated cluster delete --name "$name"
+  run roxctl_authenticated cluster delete --name "$name" --timeout=1m
   assert_success
 }
