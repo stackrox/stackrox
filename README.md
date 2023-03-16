@@ -200,7 +200,7 @@ Run the following in your working directory of choice:
 ```
 git clone git@github.com:stackrox/stackrox.git
 cd stackrox
-MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/k8s/deploy.sh
+MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/deploy.sh
 ```
 
 After a few minutes, all resources should be deployed.
@@ -224,7 +224,7 @@ Run the following in your working directory of choice:
 ```
 git clone git@github.com:stackrox/stackrox.git
 cd stackrox
-MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/openshift/deploy.sh
+MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/deploy.sh
 ```
 
 After a few minutes, all resources should be deployed. The process will complete with this message.
@@ -244,7 +244,7 @@ Run the following in your working directory of choice:
 ```
 git clone git@github.com:stackrox/stackrox.git
 cd stackrox
-MAIN_IMAGE_TAG=latest ./deploy/k8s/deploy-local.sh
+MAIN_IMAGE_TAG=latest ./deploy/deploy-local.sh
 ```
 
 After a few minutes, all resources should be deployed.
@@ -377,7 +377,7 @@ $ export SKIP_UI_BUILD=1
 $ roxkubectx
 
 # To deploy locally, call:
-$ ./deploy/k8s/deploy-local.sh
+$ ./deploy/deploy-local.sh
 
 # Now you can access StackRox dashboard at https://localhost:8000
 # or simply call another workflow script:
