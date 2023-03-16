@@ -19,6 +19,8 @@ import services.GroupService
 import services.IntegrationHealthService
 import services.RoleService
 
+import spock.lang.Tag
+
 class DeclarativeConfigTest extends BaseSpecification {
     // TODO(dhaus): Lower the error threshold to 3, as 5 is quite a long time (we have to wait at least 5 minutes),
     //  if it's annoying within the tests, its pretty annoying to use.
@@ -198,6 +200,7 @@ oidc:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
     }
 
+    @Tag("BAT")
     def "Check successful creation of declarative resources"() {
         when:
 
