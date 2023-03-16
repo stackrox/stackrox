@@ -38,10 +38,14 @@ class DeploymentTest extends BaseSpecification {
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
+        ImageService.scanImage(DEPLOYMENT_IMAGE_NAME)
     }
 
     def cleanupSpec() {
         orchestrator.deleteDeployment(DEPLOYMENT)
+        ImageService.deleteImages(
+            SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${DEPLOYMENT_IMAGE_NAME}").build(),
+            true)
     }
 
     @Unroll
@@ -83,6 +87,7 @@ class DeploymentTest extends BaseSpecification {
         query                                                            | _
         "Image:"+DEPLOYMENT_IMAGE_NAME                                   | _
         "Image Sha:sha256:"+DEPLOYMENT_IMAGE_SHA                         | _
+        "CVE:CVE-2018-18314"                                             | _
         "CVE:CVE-2018-18314+Fixable:true"                                | _
         "Deployment:${DEPLOYMENT_NAME}+Image:r/quay.io.*"                | _
         "Image:r/quay.io.*"                                              | _
