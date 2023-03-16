@@ -1,5 +1,8 @@
 import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
+import derivedNamespaceSVG from 'images/network-graph/code-branch.svg';
+import filteredNamespaceSVG from 'images/network-graph/filter.svg';
+
 import {
     DeploymentNetworkEntityInfo,
     ExternalSourceNetworkEntityInfo,
@@ -45,7 +48,8 @@ function getBaseNode(id: string): CustomNodeModel {
 function getNamespaceNode(
     namespace: string,
     cluster: string,
-    deploymentId: string
+    deploymentId: string,
+    isFiltered: boolean
 ): NamespaceNodeModel {
     const namespaceData: NamespaceData = {
         collapsible: true,
@@ -53,6 +57,7 @@ function getNamespaceNode(
         type: 'NAMESPACE',
         namespace,
         cluster,
+        labelIconClass: isFiltered ? filteredNamespaceSVG : derivedNamespaceSVG,
     };
     return {
         id: namespace,
@@ -189,7 +194,8 @@ function mergePortProtocolEdgeLabels(firstLabel: string, secondLabel = ''): stri
 
 export function transformActiveData(
     nodes: Node[],
-    policyNodeMap: Record<string, DeploymentNodeModel>
+    policyNodeMap: Record<string, DeploymentNodeModel>,
+    filteredNamespaces: string[]
 ): {
     activeDataModel: CustomModel;
     activeEdgeMap: Record<string, CustomEdgeModel>;
@@ -222,7 +228,8 @@ export function transformActiveData(
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
+                const isFiltered = filteredNamespaces.includes(namespace);
+                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id, isFiltered);
             }
 
             // creating deployment nodes
@@ -436,7 +443,8 @@ export function transformPolicyData(nodes: Node[]): {
 export function createExtraneousFlowsModel(
     policyDataModel: CustomModel,
     activeNodeMap: Record<string, CustomNodeModel>,
-    activeEdgeMap: Record<string, CustomEdgeModel>
+    activeEdgeMap: Record<string, CustomEdgeModel>,
+    filteredNamespaces: string[]
 ): CustomModel {
     const extraneousDataModel = {
         graph: graphModel,
@@ -513,7 +521,8 @@ export function createExtraneousFlowsModel(
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
+                const isFiltered = filteredNamespaces.includes(namespace);
+                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id, isFiltered);
             }
         }
 

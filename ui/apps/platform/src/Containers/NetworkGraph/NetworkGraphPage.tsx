@@ -174,13 +174,14 @@ function NetworkGraphPage() {
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
                         const { activeDataModel, activeEdgeMap, activeNodeMap } =
-                            transformActiveData(activeNodes, policyNodeMap);
+                            transformActiveData(activeNodes, policyNodeMap, namespacesFromUrl);
 
                         // create extraneous flows graph
                         const extraneousFlowsDataModel = createExtraneousFlowsModel(
                             policyDataModel,
                             activeNodeMap,
-                            activeEdgeMap
+                            activeEdgeMap,
+                            namespacesFromUrl
                         );
 
                         const newUpdatedTimestamp = new Date();
