@@ -225,11 +225,12 @@ func (ds *datastoreImpl) getPlopInfo(
 
 	// plopInfo.normalizedPLOPs, plopInfo.completedInBatch = normalizePLOPs(portProcesses)
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
+	allNormalizedPLOPs := append(normalizedPLOPs, completedInBatch...)
 
 	// TODO ROX-14376: The next two calls, fetchIndicators and fetchExistingPLOPs, have to
 	// be done in a single join query fetching both ProcessIndicator and needed
 	// bits from PLOP.
-	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, normalizedPLOPs...)
+	indicatorsMap, indicatorIds, err := ds.fetchIndicators(ctx, allNormalizedPLOPs...)
 	// plopInfo.indicatorsMap, indicatorIds, err = ds.fetchIndicators(ctx, plopInfo.normalizedPLOPs...)
 	if err != nil {
 		return nil, err
