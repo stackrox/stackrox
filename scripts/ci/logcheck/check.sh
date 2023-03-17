@@ -8,14 +8,16 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 BLOCKLIST_FILE="${DIR}/blocklist-patterns"
-allow_file="${ALLOWLIST_FILE:${DIR}/allowlist-patterns}"
+echo "INFO: ${ALLOWLIST_FILE}"
+allow_file="${ALLOWLIST_FILE}"
 # Allow for tests to set this as an environment variable
-#if [[ -z "${ALLOWLIST_FILE:-}" ]]; then
-#    info "SHREWS -- in the if"
-#    ALLOWLIST_FILE="${DIR}/allowlist-patterns"
-#fi
+if [[ -z "${ALLOWLIST_FILE:-}" ]]; then
+    echo "SHREWS -- in the if"
+    allow_file="${DIR}/allowlist-patterns"
+fi
 echo "INFO: $(date): SHREWS -- check this"
 echo "INFO: ${allow_file}"
+cat "${allow_file}"
 echo "INFO: $(date): SHREWS -- end"
 
 join_by() { local IFS="$1"; shift; echo "$*"; }
