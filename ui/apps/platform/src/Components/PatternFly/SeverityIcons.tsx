@@ -4,6 +4,7 @@ import {
     AngleDoubleUpIcon,
     CriticalRiskIcon,
     EqualsIcon,
+    UnknownIcon,
 } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
@@ -35,6 +36,12 @@ const SeverityIcons: Record<VulnerabilitySeverity, React.FC<SVGIconProps>> = {
         <AngleDoubleDownIcon
             {...props}
             color={props.color ?? vulnSeverityIconColors.LOW_VULNERABILITY_SEVERITY}
+        />
+    ),
+    UNKNOWN_VULNERABILITY_SEVERITY: (props) => (
+        <UnknownIcon
+            {...props}
+            color={props.color ?? vulnSeverityIconColors.UNKNOWN_VULNERABILITY_SEVERITY}
         />
     ),
 };
