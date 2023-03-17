@@ -7,6 +7,7 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
+// NodeInventoryResponseToNodeInventory converts a NodeInventory response to a native storage.NodeInventory version
 func NodeInventoryResponseToNodeInventory(response *scannerV1.GetNodeInventoryResponse) *storage.NodeInventory {
 	ni := &storage.NodeInventory{
 		NodeId:     uuid.Nil.String(),
