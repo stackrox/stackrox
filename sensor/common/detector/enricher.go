@@ -123,7 +123,7 @@ outer:
 	}
 }
 
-func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan *scan.LocalScan) {
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
 	defer c.signal.Signal()
 
 	// Ask Central to scan the image if the image is not internal.
@@ -203,7 +203,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req, e.localScan)
+		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),
