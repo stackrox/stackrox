@@ -289,6 +289,9 @@ jobs:
       run: ls -R
       working-directory: artifacts
 
+    - name: Show environment temporarily
+      run: env|sort
+
     - name: Propagate errors from JUnit files to JIRA
       # High threshold as we process output from 5 jobs.
       run: ./junit2jira -junit-reports-dir artifacts -threshold 50
