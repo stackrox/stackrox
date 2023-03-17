@@ -110,13 +110,7 @@ func Test_Group(t *testing.T) {
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
 
-	ch := make(chan time.Time, 1)
-	ti := &time.Ticker{C: ch}
-	tt.group(nil, ti, telemeter.WithGroups("Test", "test-group-id"))
-	for i := 0; i < 1; i++ {
-		ch <- time.Time{}
-	}
-
+	tt.Group(nil, telemeter.WithGroups("Test", "test-group-id"))
 	tt.Stop()
 	s.Close()
 	assert.Equal(t, int32(1), i, "Group call had to issue 1 message")
@@ -131,13 +125,16 @@ func Test_GroupWithProps(t *testing.T) {
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
 
-	ch := make(chan time.Time, 1)
-	ti := &time.Ticker{C: ch}
-	tt.group(map[string]any{"key": "value"}, ti, telemeter.WithGroups("Test", "test-group-id"))
-	for i := 0; i < 2; i++ {
-		ch <- time.Time{}
-	}
+	ch := make(chan time.Time, 2)
+	ch <- time.Time{}
+	ch <- time.Time{}
 
+	ti := &time.Ticker{C: ch}
+	options := telemeter.ApplyOptions(
+		[]telemeter.Option{telemeter.WithGroups("Test", "test-group-id")},
+	)
+	tt.group(map[string]any{"key": "value"}, options)
+	tt.groupFix(options, ti)
 	tt.Stop()
 	s.Close()
 	assert.Equal(t, int32(4), i, "Group call had to issue 4 messages")

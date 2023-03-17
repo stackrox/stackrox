@@ -6,7 +6,6 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
@@ -19,8 +18,6 @@ type segmentTelemeter struct {
 	client     segment.Client
 	clientID   string
 	clientType string
-
-	stopMux *sync.Mutex
 }
 
 func getMessageType(msg segment.Message) string {
@@ -73,7 +70,7 @@ func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Dura
 		return nil
 	}
 
-	return &segmentTelemeter{client: client, clientID: clientID, clientType: clientType, stopMux: &sync.Mutex{}}
+	return &segmentTelemeter{client: client, clientID: clientID, clientType: clientType}
 }
 
 type logWrapper struct {
@@ -92,15 +89,9 @@ func (t *segmentTelemeter) Stop() {
 	if t == nil {
 		return
 	}
-	t.stopMux.Lock()
-	defer t.stopMux.Unlock()
-	if t.client == nil {
-		return
-	}
 	if err := t.client.Close(); err != nil {
 		log.Error("Cannot close Segment client: ", err)
 	}
-	t.client = nil
 }
 
 func (t *segmentTelemeter) getUserID(o *telemeter.CallOptions) string {
@@ -165,7 +156,7 @@ func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Contex
 }
 
 func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
-	if t == nil || t.client == nil {
+	if t == nil {
 		return
 	}
 
@@ -189,15 +180,22 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 }
 
 func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
-	t.group(props, nil, opts...)
-}
-
-func (t *segmentTelemeter) group(props map[string]any, ti *time.Ticker, opts ...telemeter.Option) {
-	if t == nil || t.client == nil {
+	if t == nil {
 		return
 	}
-
 	options := telemeter.ApplyOptions(opts)
+	t.group(props, options)
+
+	if len(props) != 0 {
+		go func() {
+			ti := time.NewTicker(2 * time.Second)
+			t.groupFix(options, ti)
+			ti.Stop()
+		}()
+	}
+}
+
+func (t *segmentTelemeter) group(props map[string]any, options *telemeter.CallOptions) {
 	group := segment.Group{
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
@@ -218,45 +216,37 @@ func (t *segmentTelemeter) group(props map[string]any, ti *time.Ticker, opts ...
 			log.Error("Cannot enqueue Segment group event: ", err)
 		}
 	}
-	if len(props) > 0 {
-		// Track the group properties update with the same device ID
-		// to ensure following events get the properties attached. This is
-		// due to Amplitude partioning by device ID.
-		track := segment.Track{
-			UserId:      group.UserId,
-			AnonymousId: group.AnonymousId,
-			Event:       "Group Properties Updated",
-			Context:     group.Context,
+}
+
+func (t *segmentTelemeter) groupFix(options *telemeter.CallOptions, ti *time.Ticker) {
+	// Track the group properties update with the same device ID
+	// to ensure following events get the properties attached. This is
+	// due to Amplitude partioning by device ID.
+	track := segment.Track{
+		UserId:      t.getUserID(options),
+		AnonymousId: t.getAnonymousID(options),
+		Event:       "Group Properties Updated",
+		Context:     t.makeContext(options),
+	}
+
+	// Segment does not guarantee the processing order of the events,
+	// we need, therefore, to add a delay between Group and Track to
+	// ensure the Track catches the group properties. We do it several
+	// times to raise the chances for the potential events from other
+	// clients coming in between to capture the group properties.
+	for i := 0; i < 3; i++ {
+		if i != 0 {
+			<-ti.C
 		}
-		go func() {
-			t.stopMux.Lock()
-			defer t.stopMux.Unlock()
-			if t.client == nil {
-				return
-			}
-			if ti == nil {
-				ti = time.NewTicker(2 * time.Second)
-			}
-			// Segment does not guarantee the processing order of the events,
-			// we need, therefore, to add a delay between Group and Track to
-			// ensure the Track catches the group properties. We do it several
-			// times to raise the chances for the potential events from other
-			// clients coming in between to capture the group properties.
-			for i := 0; i < 3; i++ {
-				if i != 0 {
-					<-ti.C
-				}
-				if err := t.client.Enqueue(track); err != nil {
-					log.Error("Cannot enqueue Segment track event: ", err)
-				}
-			}
-			ti.Stop()
-		}()
+		if err := t.client.Enqueue(track); err != nil {
+			log.Error("Cannot enqueue Segment track event: ", err)
+			break
+		}
 	}
 }
 
 func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
-	if t == nil || t.client == nil {
+	if t == nil {
 		return
 	}
 
