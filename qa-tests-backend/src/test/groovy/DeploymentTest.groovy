@@ -43,9 +43,7 @@ class DeploymentTest extends BaseSpecification {
 
     def cleanupSpec() {
         orchestrator.deleteDeployment(DEPLOYMENT)
-        ImageService.deleteImages(
-            SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${DEPLOYMENT_IMAGE_NAME}").build(),
-            true)
+        ImageService.deleteImages(RawQuery.newBuilder().setQuery("Image:${DEPLOYMENT_IMAGE_NAME}").build(), true)
     }
 
     @Unroll
