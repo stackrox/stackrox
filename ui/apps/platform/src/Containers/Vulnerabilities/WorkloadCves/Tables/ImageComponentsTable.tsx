@@ -1,6 +1,6 @@
 import React from 'react';
 import { CodeBlock, CodeBlockCode } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { ImageVulnerabilityComponent } from '../hooks/useImageVulnerabilities';
 import { ImageDetailsResponse } from '../hooks/useImageDetails';

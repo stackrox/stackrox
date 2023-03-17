@@ -1,13 +1,13 @@
 import React from 'react';
 import { Button, ButtonVariant } from '@patternfly/react-core';
 import {
+    ExpandableRowContent,
     TableComposable,
-    Thead,
-    Tr,
-    Th,
     Tbody,
     Td,
-    ExpandableRowContent,
+    Th,
+    Thead,
+    Tr,
 } from '@patternfly/react-table';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
