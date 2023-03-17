@@ -285,11 +285,11 @@
 #     # Custom resource overrides for the Central DB deployment.
 #     resources:
 #       requests:
-#         memory: "1500Mi"
-#         cpu: "1000m"
+#         memory: "8Gi"
+#         cpu: "4"
 #       limits:
-#         memory: "4Gi"
-#         cpu: "2000m"
+#         memory: "16Gi"
+#         cpu: "8"
 #
 #     # Persistence configuration for the StackRox Central DB.
 #     # Exactly ONE of the nested values should be specified. If none is specified,

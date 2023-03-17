@@ -55,11 +55,11 @@ defaults:
 
       resources:
         requests:
-          memory: "4Gi"
-          cpu: "2"
-        limits:
           memory: "8Gi"
           cpu: "4"
+        limits:
+          memory: "16Gi"
+          cpu: "8"
   scanner:
     disable: false
     replicas: 3
