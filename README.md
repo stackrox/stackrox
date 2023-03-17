@@ -244,7 +244,7 @@ Run the following in your working directory of choice:
 ```
 git clone git@github.com:stackrox/stackrox.git
 cd stackrox
-MAIN_IMAGE_TAG=latest ./deploy/deploy-local.sh
+MAIN_IMAGE_TAG=latest ./deploy/k8s/deploy-local.sh
 ```
 
 After a few minutes, all resources should be deployed.
