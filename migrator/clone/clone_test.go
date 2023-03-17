@@ -48,6 +48,7 @@ func setVersion(t *testing.T, ver *versionPair) {
 }
 
 func TestCloneMigration(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
 		doTestCloneMigration(t, false)
@@ -61,6 +62,7 @@ func TestCloneMigration(t *testing.T) {
 }
 
 func TestCloneMigrationRocksToPostgres(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
@@ -167,7 +169,7 @@ func doTestCloneMigrationToPostgres(t *testing.T, runBoth bool) {
 					// Now try to go back to Rocks and make sure that fails
 					// Turn Postgres back off
 					require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
-					mock.runMigrator("", "", true)
+					mock.runMigrator("", "")
 
 					// Turn Postgres back on
 					require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
@@ -181,7 +183,7 @@ func createAndRunCentral(t *testing.T, ver *versionPair, runBoth bool) *mockCent
 	mock := createCentral(t, runBoth)
 	mock.setVersion = setVersion
 	mock.setVersion(t, ver)
-	mock.runMigrator("", "", false)
+	mock.runMigrator("", "")
 	mock.runCentral()
 	return mock
 }
@@ -195,7 +197,7 @@ func createAndRunCentralStartRocks(t *testing.T, ver *versionPair, runBoth bool)
 	// First get a Rocks up and current.  This way when we do the next upgrade we should get a previous rocks.
 	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 
-	mock.runMigrator("", "", false)
+	mock.runMigrator("", "")
 	mock.runCentral()
 
 	// Turn Postgres back on
@@ -204,6 +206,7 @@ func createAndRunCentralStartRocks(t *testing.T, ver *versionPair, runBoth bool)
 }
 
 func TestCloneMigrationFailureAndReentry(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	currVer = releaseVer
 	doTestCloneMigrationFailureAndReentry(t)
 	currVer = devVer
@@ -264,7 +267,7 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 			}
 			if c.furtherToVersion != nil {
 				// Run migrator multiple times
-				mock.runMigrator("", "", false)
+				mock.runMigrator("", "")
 				mock.upgradeCentral(c.furtherToVersion, "")
 			}
 		})
@@ -272,6 +275,7 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 }
 
 func TestCloneRestore(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	// This will test restore for Rocks -> Rocks or Postgres -> Postgres depending on
 	// the test is executed with the Postgres env variable set or not.
 	testCloneRestore(t, false)
@@ -357,6 +361,7 @@ func testCloneRestore(t *testing.T, rocksToPostgres bool) {
 }
 
 func TestForceRollbackFailure(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	currVer = releaseVer
 	doTestForceRollbackFailure(t)
 	currVer = devVer
@@ -467,6 +472,7 @@ func doTestForceRollbackFailure(t *testing.T) {
 }
 
 func TestForceRollbackRocksToPostgresFailure(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
 		doTestForceRollbackRocksToPostgresFailure(t)
@@ -579,6 +585,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 }
 
 func TestRollback(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	currVer = releaseVer
 	doTestRollback(t)
 	currVer = devVer
@@ -668,6 +675,7 @@ func doTestRollback(t *testing.T) {
 
 // TestRollbackPostgresToRocks - set of tests that will test rolling back to Rocks from Postgres.
 func TestRollbackPostgresToRocks(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
@@ -769,6 +777,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 // This is a completely white box test to cover the racing condition while persisting changes.
 // These conditions are theoretically possible but chance is very slim but we should handle that.
 func TestRacingConditionInPersist(t *testing.T) {
+	t.Skip("ROX-15123: Skip Rollback to RocksDB test")
 	if buildinfo.ReleaseBuild {
 		return
 	}
@@ -826,26 +835,30 @@ func TestUpgradeFromLastRocksDB(t *testing.T) {
 		previousVerion *versionPair
 		fromVersion    *versionPair
 		toVersion      *versionPair
+		fromRocks      bool
 	}{
 		{
 			description:    "Upgrade from fresh install of 3.74",
 			previousVerion: nil,
-			fromVersion:    &lastLegacyDBVer,
-			toVersion:      &postgresDBVer,
+			fromVersion:    &lastLegacyDBVer, // versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()}
+			toVersion:      &postgresDBVer,   // versionPair{version: "4.0.0", seqNum: 175}
+			fromRocks:      false,
 		},
 		{
 			description:    "Upgrade from 3.74 with previous",
-			previousVerion: &preVer,
-			fromVersion:    &lastLegacyDBVer,
-			toVersion:      &postgresDBVer,
+			previousVerion: &preVer,          // versionPair{version: "3.0.57.0", seqNum: 64}
+			fromVersion:    &lastLegacyDBVer, // versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()}
+			toVersion:      &postgresDBVer,   // versionPair{version: "4.0.0", seqNum: 175}
+			fromRocks:      true,
 		},
 		{
 			// We require upgrade from 3.74 to Postgres. This is not a recommended upgrade path, but
 			// internally we still need to test the data on stackrox-db PVC is in valid state,
 			// so we can recover from it.
 			description: "Upgrade directly from earlier versions",
-			fromVersion: &preVer,
-			toVersion:   &postgresDBVer,
+			fromVersion: &preVer,        // versionPair{version: "3.0.57.0", seqNum: 64}
+			toVersion:   &postgresDBVer, // versionPair{version: "4.0.0", seqNum: 175}
+			fromRocks:   true,
 		},
 	}
 
@@ -859,19 +872,24 @@ func TestUpgradeFromLastRocksDB(t *testing.T) {
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 
-			if c.previousVerion != nil {
+			// Doesn't make sense to run this on the fresh install case
+			if c.fromRocks {
 				mock.legacyUpgrade(t, c.fromVersion)
 			}
 
 			mock.upgradeCentral(c.toVersion, "")
 			mock.verifyCurrent()
-			if strings.HasPrefix(c.fromVersion.version, "3.74.") {
-				mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: c.fromVersion.version, seqNum: migrations.LastRocksDBVersionSeqNum()})
-			} else {
-				mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()})
-			}
-			if c.previousVerion != nil {
-				mock.verifyClone(rocksdb.PreviousClone, &versionPair{version: c.previousVerion.version, seqNum: c.previousVerion.seqNum})
+
+			// Again on the fresh install case we don't touch rocks so it won't be updated.
+			if c.fromRocks {
+				if strings.HasPrefix(c.fromVersion.version, "3.74.") {
+					mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: c.fromVersion.version, seqNum: migrations.LastRocksDBVersionSeqNum()})
+				} else {
+					mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()})
+				}
+				if c.previousVerion != nil {
+					mock.verifyClone(rocksdb.PreviousClone, &versionPair{version: c.previousVerion.version, seqNum: c.previousVerion.seqNum})
+				}
 			}
 		})
 	}

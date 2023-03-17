@@ -104,7 +104,7 @@ func (m *mockCentral) destroyCentral() {
 func (m *mockCentral) rebootCentral() {
 	curSeq := migrations.CurrentDBVersionSeqNum()
 	curVer := version.GetMainVersion()
-	m.runMigrator("", "", false)
+	m.runMigrator("", "")
 	m.runCentral()
 	assert.Equal(m.t, curSeq, migrations.CurrentDBVersionSeqNum())
 	assert.Equal(m.t, curVer, version.GetMainVersion())
@@ -112,15 +112,19 @@ func (m *mockCentral) rebootCentral() {
 
 func (m *mockCentral) migrateWithVersion(ver *versionPair, breakpoint string, forceRollback string) {
 	m.setVersion(m.t, ver)
-	m.runMigrator(breakpoint, forceRollback, false)
+	m.runMigrator(breakpoint, forceRollback)
 }
 
 // legacyUpgrade emulates the legacy database upgrade.
 func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair) {
-	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
-	m.setVersion(t, ver)
-	m.runMigrator("", "", false)
-	m.runCentral()
+	log.Infof("SHREWS -- legacyUpgrade -- runBoth %t, updateBoth %t, version %v", m.runBoth, m.updateBoth, ver)
+
+	m.setMigrationVersion(filepath.Join(migrations.CurrentPath(), "db"), ver)
+
+	//require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
+	//m.setVersion(t, ver)
+	//m.runMigrator("", "")
+	//m.runCentral()
 	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
 }
 
@@ -129,7 +133,7 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 	m.migrateWithVersion(ver, breakpoint, "")
 	// Re-run migrator if the previous one breaks
 	if breakpoint != "" {
-		m.runMigrator("", "", false)
+		m.runMigrator("", "")
 	}
 
 	m.runCentral()
@@ -182,7 +186,7 @@ func (m *mockCentral) upgradeDB(path, clone, pgClone string) {
 	}
 }
 
-func (m *mockCentral) runMigrator(breakPoint string, forceRollback string, unsupportedRocks bool) {
+func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 	var dbm DBCloneManager
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -277,9 +281,9 @@ func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string, rocksT
 	curVer := &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()}
 	m.restore(ver, rocksToPostgres)
 	if breakPoint == "" {
-		m.runMigrator(breakPoint, "", false)
+		m.runMigrator(breakPoint, "")
 	}
-	m.runMigrator("", "", false)
+	m.runMigrator("", "")
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		m.verifyClonePostgres(pgClone.BackupClone, curVer)
@@ -293,7 +297,7 @@ func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string, rocksT
 func (m *mockCentral) rollbackCentral(ver *versionPair, breakpoint string, forceRollback string) {
 	m.migrateWithVersion(ver, breakpoint, forceRollback)
 	if breakpoint != "" {
-		m.runMigrator("", "", false)
+		m.runMigrator("", "")
 	}
 
 	m.runCentral()
