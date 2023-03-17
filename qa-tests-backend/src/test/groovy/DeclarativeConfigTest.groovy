@@ -259,7 +259,7 @@ oidc:
         // times here.
         withRetry(10, 60) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def permissionSetHealth = response.integrationHealthList.find {
+            def permissionSetHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
@@ -280,7 +280,7 @@ oidc:
         // times here.
         withRetry(10, 60) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def accessScopeHealth = response.integrationHealthList.find {
+            def accessScopeHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
@@ -299,7 +299,7 @@ oidc:
         // Verify the integration health for the role is unhealthy and contains an error message.
         withRetry(10, 60) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.integrationHealthList.find {
+            def roleHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ROLE_KEY)
             }
             assert roleHealth
@@ -320,7 +320,7 @@ oidc:
         // times here.
         withRetry(10, 60) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.integrationHealthList.find {
+            def roleHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(AUTH_PROVIDER_KEY)
             }
             assert roleHealth
@@ -400,20 +400,20 @@ oidc:
                 ], DEFAULT_NAMESPACE)
 
         then:
-        withRetry(5, 60) {
+        withRetry(10, 60) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
             assert response.integrationHealthCount == CREATED_RESOURCES + 1
-            def configMapHealth = response.getIntegrationHealthList().find {
-                it.getName().contains("Config Map")
-            }
-            assert configMapHealth
-            assert configMapHealth.hasLastTimestamp()
-            assert configMapHealth.getErrorMessage() == ""
-            assert configMapHealth.getStatus() == Status.HEALTHY
 
             for (integrationHealth in response.getIntegrationHealthList()) {
-                if (!integrationHealth.getName().contains("Config Map")) {
+                // Groups / config map health will be healthy and do not indicate an error.
+                if (integrationHealth.getName().contains("Config Map") ||
+                        integrationHealth.getName().contains("group") ) {
+                    assert integrationHealth
+                    assert integrationHealth.hasLastTimestamp()
+                    assert integrationHealth.getErrorMessage() == ""
+                    assert integrationHealth.getStatus() == Status.HEALTHY
+                } else {
                     assert integrationHealth.hasLastTimestamp()
                     assert integrationHealth.getErrorMessage()
                     assert integrationHealth.getStatus() == Status.UNHEALTHY
