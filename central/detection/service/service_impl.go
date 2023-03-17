@@ -136,15 +136,11 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	img := types.ToImage(image)
 
 	enrichmentContext := enricher.EnrichmentContext{}
-	if req.GetNoExternalMetadata() && req.GetForce() {
-		return nil, errox.InvalidArgs.CausedBy("Force option is incompatible with not fetching metadata from external sources")
+	fetchOpt, err := getFetchOptionFromRequest(req)
+	if err != nil {
+		return nil, err
 	}
-	if req.GetNoExternalMetadata() {
-		enrichmentContext.FetchOpt = enricher.NoExternalMetadata
-	}
-	if req.GetForce() {
-		enrichmentContext.FetchOpt = enricher.ForceRefetch
-	}
+	enrichmentContext.FetchOpt = fetchOpt
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
 		return nil, err
@@ -305,9 +301,11 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	eCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
 	}
-	if req.GetNoExternalMetadata() {
-		eCtx.FetchOpt = enricher.NoExternalMetadata
+	fetchOpt, err := getFetchOptionFromRequest(req)
+	if err != nil {
+		return nil, err
 	}
+	eCtx.FetchOpt = fetchOpt
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
@@ -406,4 +404,25 @@ func getIgnoredObjectRefFromYAML(yaml string) (string, error) {
 		return "", err
 	}
 	return k8sobjects.RefOf(unstructured).String(), nil
+}
+
+// getFetchOptionFromRequest will return the associated enricher.FetchOption based on whether force or no external
+// metadata is given.
+// If both are specified, it will return an error since the combination is considered invalid (we cannot force a refetch
+// and at the same time not take external metadata into account).
+func getFetchOptionFromRequest(request interface {
+	GetForce() bool
+	GetNoExternalMetadata() bool
+}) (enricher.FetchOption, error) {
+	if request.GetForce() && request.GetNoExternalMetadata() {
+		return enricher.UseCachesIfPossible, errox.InvalidArgs.New(
+			"force option is incompatible with not fetching metadata from external sources")
+	}
+	if request.GetNoExternalMetadata() {
+		return enricher.NoExternalMetadata, nil
+	}
+	if request.GetForce() {
+		return enricher.ForceRefetch, nil
+	}
+	return enricher.UseCachesIfPossible, nil
 }
