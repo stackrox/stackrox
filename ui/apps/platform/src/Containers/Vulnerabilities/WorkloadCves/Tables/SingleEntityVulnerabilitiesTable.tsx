@@ -17,6 +17,7 @@ import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import useSet from 'hooks/useSet';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
 import ImageComponentsTable from './ImageComponentsTable';
@@ -25,11 +26,13 @@ import { ImageDetailsResponse } from '../hooks/useImageDetails';
 export type SingleEntityVulnerabilitiesTableProps = {
     image: ImageDetailsResponse['image'] | undefined;
     imageVulnerabilities: ImageVulnerabilitiesResponse['image']['imageVulnerabilities'];
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
 function SingleEntityVulnerabilitiesTable({
     image,
     imageVulnerabilities,
+    getSortParams,
 }: SingleEntityVulnerabilitiesTableProps) {
     const expandedRowSet = useSet<string>();
     return (
@@ -37,9 +40,10 @@ function SingleEntityVulnerabilitiesTable({
             <Thead>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
-                    <Th>CVE</Th>
-                    <Th>Severity</Th>
-                    <Th>CVE status</Th>
+                    <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <Th sort={getSortParams('Severity')}>Severity</Th>
+                    <Th sort={getSortParams('Fixable')}>CVE Status</Th>
+                    {/* TODO Add sorting for these columns once aggregate sorting is available in BE */}
                     <Th>Affected components</Th>
                     <Th>First discovered</Th>
                 </Tr>
