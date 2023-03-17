@@ -7,19 +7,19 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-// NodeInventoryResponseToNodeInventory converts a NodeInventory response to a native storage.NodeInventory version
-func NodeInventoryResponseToNodeInventory(response *scannerV1.GetNodeInventoryResponse) *storage.NodeInventory {
+// ToNodeInventory converts a NodeInventory response to a native storage.NodeInventory version
+func ToNodeInventory(resp *scannerV1.GetNodeInventoryResponse) *storage.NodeInventory {
 	ni := &storage.NodeInventory{
 		NodeId:     uuid.Nil.String(),
-		NodeName:   response.GetNodeName(),
+		NodeName:   resp.GetNodeName(),
 		ScanTime:   timestamp.TimestampNow(),
-		Components: inventoryComponentsToStorageComponents(response.GetComponents()),
-		Notes:      convertNotes(response.GetNotes()),
+		Components: toStorageComponents(resp.GetComponents()),
+		Notes:      convertNotes(resp.GetNotes()),
 	}
 	return ni
 }
 
-func inventoryComponentsToStorageComponents(c *scannerV1.Components) *storage.NodeInventory_Components {
+func toStorageComponents(c *scannerV1.Components) *storage.NodeInventory_Components {
 	if c == nil {
 		return nil
 	}

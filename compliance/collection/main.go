@@ -30,9 +30,11 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+)
+
+const (
+	nodeScannerEndpoint = "127.0.0.1:8444"
 )
 
 var (
@@ -191,7 +193,7 @@ func scanNode(scanner scannerV1.NodeInventoryServiceClient) (*sensor.MsgFromComp
 	if err != nil {
 		return nil, err
 	}
-	inv := inventory.NodeInventoryResponseToNodeInventory(result)
+	inv := inventory.ToNodeInventory(result)
 	msg := &sensor.MsgFromCompliance{
 		Node: result.GetNodeName(),
 		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inv},
@@ -268,12 +270,13 @@ func main() {
 		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
 
 		// Set up Compliance <-> NodeInventory connection
-		niConn, err := grpc.Dial("127.0.0.1:8444", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		niConn, err := clientconn.AuthenticatedGRPCConnection(nodeScannerEndpoint, mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
 		if err != nil {
 			log.Fatal(err)
 		}
 		log.Info("Initialized NodeInventory gRPC connection")
 		niClient = scannerV1.NewNodeInventoryServiceClient(niConn)
+
 	}
 
 	// Set up Compliance <-> Sensor connection
