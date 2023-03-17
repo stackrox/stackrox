@@ -46,6 +46,7 @@ function ClusterSelector({
 
     return (
         <Select
+            className="cluster-select"
             isPlain
             placeholderText={
                 <span>
