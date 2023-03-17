@@ -37,6 +37,7 @@ import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabiliti
 import useImageVulnerabilities, {
     ImageVulnerabilitiesResponse,
 } from './hooks/useImageVulnerabilities';
+import { ImageDetailsResponse } from './hooks/useImageDetails';
 
 function severityCountsFromImageVulnerabilities(
     imageVulnerabilities: ImageVulnerabilitiesResponse['image']['imageVulnerabilities']
@@ -76,9 +77,10 @@ function statusCountsFromImageVulnerabilities(
 
 export type ImageSingleVulnerabilitiesProps = {
     imageId: string;
+    imageData: ImageDetailsResponse['image'] | undefined;
 };
 
-function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps) {
+function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     // TODO Still need to properly integrate search filter with query
     const { data, loading, error } = useImageVulnerabilities(imageId, {});
@@ -156,6 +158,7 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
                         <SplitItem>TODO Pagination</SplitItem>
                     </Split>
                     <SingleEntityVulnerabilitiesTable
+                        image={imageData}
                         imageVulnerabilities={data.image.imageVulnerabilities}
                     />
                 </div>
