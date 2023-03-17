@@ -89,7 +89,7 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 	return &v1.ListRolesResponse{Roles: roles}, nil
 }
 
-// GetRole returns the k8s role binding for the id.
+// GetRoleBinding returns the k8s role binding for the id.
 func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceByID) (*v1.GetRoleBindingResponse, error) {
 	binding, exists, err := s.bindings.GetRoleBinding(ctx, request.GetId())
 	if err != nil {
@@ -120,7 +120,7 @@ func (s *serviceImpl) GetSubject(ctx context.Context, request *v1.ResourceByID) 
 	return getSubjectFromStores(ctx, request.GetId(), s.roles, s.bindings)
 }
 
-// ListSubjects returns all of the subjects granted roles that match the input query.
+// ListSubjects returns all subjects granted roles that match the input query.
 func (s *serviceImpl) ListSubjects(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListSubjectsResponse, error) {
 	// Keep only binding specific fields in the query.
 	bindingQuery := &v1.RawQuery{
@@ -140,6 +140,6 @@ func (s *serviceImpl) ListSubjects(ctx context.Context, rawQuery *v1.RawQuery) (
 		return nil, err
 	}
 
-	// List all of the subjects.
+	// List all subjects.
 	return listSubjects(rawQuery, roleSearch.GetRoles(), bindingsSearch.GetBindings())
 }

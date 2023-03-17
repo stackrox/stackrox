@@ -29,7 +29,7 @@ func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*s
 		return nil, err
 	}
 
-	// Collect all of the subjects with at least one role in the set of roles and bindings.
+	// Collect all subjects with at least one role in the set of roles and bindings.
 	evaluator := k8srbac.NewEvaluator(roles, bindings)
 	subjectsAndRoles := make([]*v1.SubjectAndRoles, 0, len(subjectsToList))
 	for _, subject := range subjectsToList {
