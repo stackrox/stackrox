@@ -117,6 +117,7 @@ test_upgrade_paths() {
     echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
     echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
     echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
+    echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
     export ALLOWLIST_FILE="/tmp/allowlist-patterns"
 
     ########################################################################################

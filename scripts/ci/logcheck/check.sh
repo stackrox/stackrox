@@ -14,10 +14,9 @@ allow_file="${ALLOWLIST_FILE:${DIR}/allowlist-patterns}"
 #    info "SHREWS -- in the if"
 #    ALLOWLIST_FILE="${DIR}/allowlist-patterns"
 #fi
-info "SHREWS -- check this"
-info "${allow_file}"
-env
-info "SHREWS -- end"
+echo "INFO: $(date): SHREWS -- check this"
+echo "INFO: ${allow_file}"
+echo "INFO: $(date): SHREWS -- end"
 
 join_by() { local IFS="$1"; shift; echo "$*"; }
 
