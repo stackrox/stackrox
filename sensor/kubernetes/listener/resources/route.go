@@ -44,7 +44,10 @@ func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 	if existingService == nil {
 		return nil
 	}
+	// If re-sync is disabled, we do not call UpdateExposuresForMatchingDeployments,
+	// and instead we send all matching deployments to reprocess.
 	if env.ResyncDisabled.BooleanSetting() {
+		// We do not append any Route event here because Routes, just like Services, are not tracked by central.
 		event := component.NewEvent()
 		event.AddDeploymentReference(resolver.ResolveDeploymentLabels(existingService.GetNamespace(), existingService.selector), central.ResourceAction_UPDATE_RESOURCE, false)
 		return event
