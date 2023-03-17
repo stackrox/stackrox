@@ -2,7 +2,9 @@ package store
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/rbac"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 )
@@ -16,6 +18,7 @@ type DeploymentStore interface {
 	FindDeploymentIDsWithServiceAccount(namespace, sa string) []string
 	FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string
 	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, error)
+	CountDeploymentsForNamespace(namespaceName string) int
 }
 
 // PodStore provides functionality to fetch all pods from underlying store.
@@ -65,9 +68,14 @@ type RBACStore interface {
 // Provider is a wrapper for injecting in memory stores as a dependency.
 type Provider interface {
 	Deployments() DeploymentStore
+	Pods() PodStore
 	Services() ServiceStore
+	NetworkPolicies() NetworkPolicyStore
 	RBAC() RBACStore
+	ServiceAccounts() ServiceAccountStore
 	EndpointManager() EndpointManager
+	Registries() *registry.Store
+	Entities() *clusterentities.Store
 }
 
 // EndpointManager provides functionality to map and store endpoints information
