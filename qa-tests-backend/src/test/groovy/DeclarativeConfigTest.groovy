@@ -412,13 +412,12 @@ oidc:
             assert configMapHealth.getErrorMessage() == ""
             assert configMapHealth.getStatus() == Status.HEALTHY
 
-            def integrationHealthList = response.getIntegrationHealthList()
-            assert integrationHealthList.remove(configMapHealth)
-
-            for (integrationHealth in integrationHealthList) {
-                assert integrationHealth.hasLastTimestamp()
-                assert integrationHealth.getErrorMessage()
-                assert integrationHealth.getStatus() == Status.UNHEALTHY
+            for (integrationHealth in response.getIntegrationHealthList()) {
+                if (!integrationHealth.getName().contains("Config Map")) {
+                    assert integrationHealth.hasLastTimestamp()
+                    assert integrationHealth.getErrorMessage()
+                    assert integrationHealth.getStatus() == Status.UNHEALTHY
+                }
             }
         }
 
