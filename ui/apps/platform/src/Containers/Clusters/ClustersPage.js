@@ -63,7 +63,7 @@ const ClustersPage = ({
                     searchFilter={searchFilter}
                     searchOptions={searchOptions}
                     searchCategory="CLUSTERS"
-                    placeholder="Add one or more filters"
+                    placeholder="Filter clusters"
                     handleChangeSearchFilter={setSearchFilter}
                 />
                 <div className="flex items-center ml-4 mr-3">

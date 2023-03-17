@@ -27,7 +27,7 @@ function RiskPageHeader({ isViewFiltered, searchOptions }) {
                 searchFilter={searchFilter}
                 searchOptions={searchOptions}
                 searchCategory={autoCompleteCategory}
-                placeholder="Add one or more resource filters"
+                placeholder="Filter deployments"
                 handleChangeSearchFilter={(filter) => setSearchFilter(filter, 'push')}
                 autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             />
