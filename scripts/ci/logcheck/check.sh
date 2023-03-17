@@ -12,8 +12,6 @@ BLOCKLIST_FILE="${DIR}/blocklist-patterns"
 if [[ -n "${ALLOWLIST_FILE}" ]]; then
     ALLOWLIST_FILE="${DIR}/allowlist-patterns"
 fi
-info "SHREWS -- check this"
-echo "${ALLOWLIST_FILE}"
 
 join_by() { local IFS="$1"; shift; echo "$*"; }
 
