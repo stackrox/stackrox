@@ -8,10 +8,10 @@ import (
 
 	"github.com/stackrox/rox/central/clustercveedge/datastore"
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"

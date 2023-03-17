@@ -16,7 +16,6 @@ import (
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stretchr/testify/suite"
 )

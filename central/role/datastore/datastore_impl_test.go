@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/role"
-	"github.com/stackrox/rox/central/role/resources"
 	PermissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	postgresRolePGStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

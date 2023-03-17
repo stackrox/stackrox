@@ -6,10 +6,10 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
-	"github.com/stackrox/rox/central/role/resources"
 	backupListener "github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 )
 

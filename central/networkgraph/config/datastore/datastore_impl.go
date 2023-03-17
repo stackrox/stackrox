@@ -7,11 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
