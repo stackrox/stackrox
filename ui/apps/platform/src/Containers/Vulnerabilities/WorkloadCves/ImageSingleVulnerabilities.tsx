@@ -70,7 +70,7 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
 
     let mainContent: ReactNode | null = null;
 
-    const vulnerabilityData = data || previousData;
+    const vulnerabilityData = data ?? previousData;
 
     if (error) {
         mainContent = (

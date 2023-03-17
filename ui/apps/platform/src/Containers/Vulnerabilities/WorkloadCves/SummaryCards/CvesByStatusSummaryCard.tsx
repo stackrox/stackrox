@@ -1,5 +1,14 @@
 import React from 'react';
-import { Card, CardTitle, CardBody, Flex, Text, Grid, GridItem } from '@patternfly/react-core';
+import {
+    Card,
+    CardTitle,
+    CardBody,
+    Flex,
+    Grid,
+    GridItem,
+    pluralize,
+    Text,
+} from '@patternfly/react-core';
 
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { FixableStatus } from '../types';
@@ -23,7 +32,7 @@ const statusDisplays = [
             imageVulnerabilityCounterKeys.forEach((key) => {
                 count += counts[key].fixable;
             });
-            return `${count} vulnerabilities with available fixes`;
+            return `${pluralize(count, 'vulnerability', 'vulnerabilities')} with available fixes`;
         },
     },
     {
