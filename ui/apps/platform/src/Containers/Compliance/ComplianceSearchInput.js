@@ -16,7 +16,7 @@ const addComplianceStateOption = (searchOptions) => {
     return modifiedSearchOptions;
 };
 
-const ComplianceListSearchInput = ({ categories, shouldAddComplianceState }) => (
+const ComplianceSearchInput = ({ placeholder, categories, shouldAddComplianceState }) => (
     <Query query={SEARCH_OPTIONS_QUERY} action="list" variables={{ categories }}>
         {({ data }) => {
             if (!data) {
@@ -28,6 +28,7 @@ const ComplianceListSearchInput = ({ categories, shouldAddComplianceState }) => 
             }
             return (
                 <URLSearchInput
+                    placeholder={placeholder}
                     className="w-full"
                     categoryOptions={searchOptions}
                     categories={categories}
@@ -37,14 +38,15 @@ const ComplianceListSearchInput = ({ categories, shouldAddComplianceState }) => 
     </Query>
 );
 
-ComplianceListSearchInput.propTypes = {
+ComplianceSearchInput.propTypes = {
+    placeholder: PropTypes.string.isRequired,
     categories: PropTypes.arrayOf(PropTypes.string),
     shouldAddComplianceState: PropTypes.bool,
 };
 
-ComplianceListSearchInput.defaultProps = {
+ComplianceSearchInput.defaultProps = {
     categories: [],
     shouldAddComplianceState: false,
 };
 
-export default ComplianceListSearchInput;
+export default ComplianceSearchInput;

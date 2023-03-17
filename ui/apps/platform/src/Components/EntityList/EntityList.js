@@ -79,6 +79,9 @@ const EntityList = ({
         rowData.length
     )}`;
 
+    // Occurrences in Vulnerability Management do not require alternatives 'results' and headerText above.
+    const placeholder = `Filter ${pluralize(entityLabels[entityType])}`;
+
     // need `useLayoutEffect` here to solve an edge case,
     //   where the use have navigated to a single-page sublist,
     //   then clicked "Open in current window",
@@ -96,6 +99,7 @@ const EntityList = ({
         <>
             <div className="flex flex-1 justify-start">
                 <URLSearchInput
+                    placeholder={placeholder}
                     className="w-full"
                     categoryOptions={searchOptions}
                     categories={availableCategories}

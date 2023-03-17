@@ -4,7 +4,7 @@ import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import entityTypes from 'constants/entityTypes';
 import ComplianceList from 'Containers/Compliance/List/List';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
-import SearchInput from '../SearchInput';
+import ComplianceSearchInput from '../ComplianceSearchInput';
 import Header from '../List/Header';
 
 const StandardPage = ({
@@ -24,7 +24,11 @@ const StandardPage = ({
             <Header
                 entityType={entityTypes.CONTROL}
                 searchComponent={
-                    <SearchInput categories={['COMPLIANCE']} shouldAddComplianceState />
+                    <ComplianceSearchInput
+                        placeholder="Filter standards"
+                        categories={['COMPLIANCE']}
+                        shouldAddComplianceState
+                    />
                 }
                 isExporting={isExporting}
                 setIsExporting={setIsExporting}
