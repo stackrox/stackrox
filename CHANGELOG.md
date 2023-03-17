@@ -28,6 +28,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Active Vulnerability Management has been moved behind that ROX_ACTIVE_VULN_MGMT flag and has been defaulted to false due to
   performance. If Active Vulnerability Management is desired, then a user may set this flag to true and it will be reactivated;
   however, it is recommended to increase the memory limit of Central.
+- ROX-14251: StackRox now uses IMDSv2 to retrieve AWS metadata instead of IMDSv1.
 
 ## [3.74.0]
 
