@@ -111,22 +111,6 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
 
-    # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
-    # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
-    cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
-    chmod 755 /tmp/allowlist-patterns
-    echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
-    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
-    echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
-    echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
-    export ALLOWLIST_FILE="/tmp/allowlist-patterns"
-    ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
-
-    info "SHREWS debug copy of allow file"
-    pwd
-    cat /tmp/allowlist-patterns
-    info "SHREWS end debug of copy"
-
     ########################################################################################
     # Use helm to upgrade to a Postgres release.                                           #
     ########################################################################################
@@ -143,11 +127,17 @@ test_upgrade_paths() {
     # Ensure the access scopes added to rocks still exist after the upgrade
     checkForRocksAccessScopes
 
-    info "SHREWS 2 debug copy of allow file"
-    pwd
-    cat /tmp/allowlist-patterns
-    cat scripts/ci/logcheck/check.sh
-    info "SHREWS end debug of copy"
+    # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
+    # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
+    cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
+    chmod 755 /tmp/allowlist-patterns
+    echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
+    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
+    echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
+    echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
+    export ALLOWLIST_FILE="/tmp/allowlist-patterns"
+    ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
+
     collect_and_check_stackrox_logs "$log_output_dir" "00_initial_check"
 
     # Add some Postgres Access Scopes.  These should not survive a rollback.
