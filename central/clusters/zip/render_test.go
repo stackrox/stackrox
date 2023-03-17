@@ -3,6 +3,7 @@ package zip
 import (
 	"bufio"
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/central/clusters"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -31,19 +33,19 @@ var dummyCerts = sensor.Certs{
 }
 
 func init() {
-	testutils.SetMainVersion(&testing.T{}, "3.0.55.0")
+	testutils.SetExampleVersion(&testing.T{})
 }
 
 func TestRenderOpenshiftEnv(t *testing.T) {
 	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 	for _, clusterType := range []storage.ClusterType{storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		t.Run(clusterType.String(), func(t *testing.T) {
-			doTestRenderOpenshiftEnv(t, clusterType)
+			doTestRenderOpenshif(t, clusterType)
 		})
 	}
 }
 
-func doTestRenderOpenshiftEnv(t *testing.T, clusterType storage.ClusterType) {
+func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	cluster := &storage.Cluster{
 		Name:      "cluster",
 		MainImage: "stackrox/main:abc",
@@ -53,8 +55,33 @@ func doTestRenderOpenshiftEnv(t *testing.T, clusterType storage.ClusterType) {
 	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
 	require.NoError(t, err)
 
+	assertEnvVars := func(obj runtime.Object) {
+		deployment := obj.(*v1.Deployment)
+		var found bool
+		for _, envVar := range deployment.Spec.Template.Spec.Containers[0].Env {
+			if envVar.Name == env.OpenshiftAPI.EnvVar() {
+				found = true
+				assert.Equal(t, "true", envVar.Value)
+			}
+		}
+		assert.True(t, found)
+	}
+
+	cases := map[string]func(object runtime.Object){
+		"sensor.yaml": assertEnvVars,
+		"collector.yaml": func(obj runtime.Object) {
+			ds := obj.(*v1.DaemonSet)
+			assert.Len(t, ds.Spec.Template.Spec.Containers, 3)
+			mainImage := ds.Spec.Template.Spec.Containers[1].Image
+			nodeInvCont := ds.Spec.Template.Spec.Containers[2]
+			expectedScannerParts := strings.Split(strings.ReplaceAll(mainImage, "/main:", "/scanner-slim:"), ":")
+			assert.Truef(t, strings.HasPrefix(nodeInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nodeInvCont.Image, mainImage)
+		},
+	}
+
 	for _, f := range baseFiles {
-		if f.Name != "sensor.yaml" {
+		assertFunc, ok := cases[f.Name]
+		if !ok {
 			continue
 		}
 
@@ -66,16 +93,7 @@ func doTestRenderOpenshiftEnv(t *testing.T, clusterType storage.ClusterType) {
 
 		obj, _, err := decode(yamlBytes, nil, nil)
 		assert.NoError(t, err)
-
-		deployment := obj.(*v1.Deployment)
-		var found bool
-		for _, envVar := range deployment.Spec.Template.Spec.Containers[0].Env {
-			if envVar.Name == env.OpenshiftAPI.EnvVar() {
-				found = true
-				assert.Equal(t, "true", envVar.Value)
-			}
-		}
-		assert.True(t, found)
+		assertFunc(obj)
 	}
 }
 
