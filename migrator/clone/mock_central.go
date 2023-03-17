@@ -119,7 +119,12 @@ func (m *mockCentral) migrateWithVersion(ver *versionPair, breakpoint string, fo
 func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair) {
 	log.Infof("SHREWS -- legacyUpgrade -- runBoth %t, updateBoth %t, version %v", m.runBoth, m.updateBoth, ver)
 
-	m.setMigrationVersion(filepath.Join(migrations.CurrentPath(), "db"), ver)
+	//m.setMigrationVersion(filepath.Join(m.mountPath, rocksdb.CurrentClone), ver)
+
+	path := filepath.Join(m.mountPath, rocksdb.CurrentClone)
+	require.NoError(m.t, os.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", ver.seqNum)), 0644))
+
+	m.setMigrationVersion(path, ver)
 
 	//require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 	//m.setVersion(t, ver)
