@@ -479,6 +479,10 @@ check_for_stackrox_restarts() {
 }
 
 check_for_errors_in_stackrox_logs() {
+    info "SHREWS -- why does this not pick up my changes"
+    pwd
+    cat scripts/ci/logcheck/check.sh
+    info "SHREWS -- end"
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: check_for_errors_in_stackrox_logs <dir>"
     fi
