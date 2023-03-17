@@ -8,10 +8,16 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 BLOCKLIST_FILE="${DIR}/blocklist-patterns"
+allow_file="${ALLOWLIST_FILE:${DIR}/allowlist-patterns}"
 # Allow for tests to set this as an environment variable
-if [[ -n "${ALLOWLIST_FILE}" ]]; then
-    ALLOWLIST_FILE="${DIR}/allowlist-patterns"
-fi
+#if [[ -z "${ALLOWLIST_FILE:-}" ]]; then
+#    info "SHREWS -- in the if"
+#    ALLOWLIST_FILE="${DIR}/allowlist-patterns"
+#fi
+info "SHREWS -- check this"
+info "${allow_file}"
+env
+info "SHREWS -- end"
 
 join_by() { local IFS="$1"; shift; echo "$*"; }
 
@@ -19,7 +25,7 @@ IFS=$'\n' read -d '' -r -a blocklist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${B
 
 blocklist_pattern="$(join_by '|' "${blocklist_subpatterns[@]}")"
 
-IFS=$'\n' read -d '' -r -a allowlist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${ALLOWLIST_FILE}")
+IFS=$'\n' read -d '' -r -a allowlist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${allow_file}")
 
 allowlist_pattern="$(join_by '|' "${allowlist_subpatterns[@]}")"
 

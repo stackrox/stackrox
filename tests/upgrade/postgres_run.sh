@@ -83,6 +83,12 @@ test_upgrade_paths() {
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
+    # There is an issue on gke v1.24 for these older releases where we may have a
+    # timeout trying to get the metadata for the cloud provider.  Rather than extend
+    # the general wait_for_api time period and potentially hide issues from other
+    # tests we will extend the wait period for these tests.
+    export MAX_WAIT_SECONDS=600
+
     ########################################################################################
     # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
     ########################################################################################
@@ -316,7 +322,6 @@ deploy_scaled_workload() {
     sensor_wait
 
     ./scale/launch_workload.sh scale-test
-
     wait_for_api
 
     info "Sleep for a bit to let the scale build"
