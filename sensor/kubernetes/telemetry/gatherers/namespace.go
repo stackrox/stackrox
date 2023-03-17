@@ -5,17 +5,17 @@ import (
 
 	"github.com/stackrox/rox/pkg/telemetry"
 	"github.com/stackrox/rox/pkg/telemetry/data"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/common/store"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 type namespaceGatherer struct {
 	k8sClient       kubernetes.Interface
-	deploymentStore *resources.DeploymentStore
+	deploymentStore store.DeploymentStore
 }
 
-func newNamespaceGatherer(k8sClient kubernetes.Interface, deploymentStore *resources.DeploymentStore) *namespaceGatherer {
+func newNamespaceGatherer(k8sClient kubernetes.Interface, deploymentStore store.DeploymentStore) *namespaceGatherer {
 	return &namespaceGatherer{
 		k8sClient:       k8sClient,
 		deploymentStore: deploymentStore,
