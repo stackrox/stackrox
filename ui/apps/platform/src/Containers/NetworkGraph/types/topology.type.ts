@@ -49,6 +49,7 @@ export type NamespaceData = {
     showContextMenu: boolean;
     namespace: string;
     cluster: string;
+    isFilteredNamespace: boolean;
     labelIconClass: string;
 };
 
