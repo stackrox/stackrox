@@ -62,14 +62,12 @@ type Values = {
 };
 
 export type SystemConfigFormProps = {
-    isDecommissionedClusterRetentionEnabled: boolean;
     systemConfig: SystemConfig;
     setSystemConfig: (systemConfig: SystemConfig) => void;
     setIsNotEditing: () => void;
 };
 
 const SystemConfigForm = ({
-    isDecommissionedClusterRetentionEnabled,
     systemConfig,
     setSystemConfig,
     setIsNotEditing,
@@ -257,48 +255,44 @@ const SystemConfigForm = ({
                     </FormGroup>
                 </GridItem>
             </Grid>
-            {isDecommissionedClusterRetentionEnabled && (
-                <>
-                    <Title headingLevel="h3">Cluster deletion</Title>
-                    <Grid hasGutter md={6}>
-                        <GridItem>
-                            <FormGroup
-                                label="Decommissioned cluster age"
-                                isRequired
-                                fieldId="privateConfig.decommissionedClusterRetention.retentionDurationDays"
-                            >
-                                <TextInput
-                                    isRequired
-                                    type="number"
-                                    id="privateConfig.decommissionedClusterRetention.retentionDurationDays"
-                                    name="privateConfig.decommissionedClusterRetention.retentionDurationDays"
-                                    value={
-                                        values?.privateConfig?.decommissionedClusterRetention
-                                            ?.retentionDurationDays
-                                    }
-                                    onChange={onChange}
-                                />
-                            </FormGroup>
-                        </GridItem>
-                        <GridItem>
-                            <FormGroup
-                                label="Ignore clusters which have the following labels"
-                                fieldId="privateConfig.decommissionedClusterRetention.ignoreClusterLabels"
-                            >
-                                <ClusterLabelsTable
-                                    labels={
-                                        values.privateConfig.decommissionedClusterRetention
-                                            .ignoreClusterLabels
-                                    }
-                                    hasAction
-                                    handleChangeLabels={handleChangeLabels}
-                                    isValueRequired
-                                />
-                            </FormGroup>
-                        </GridItem>
-                    </Grid>
-                </>
-            )}
+            <Title headingLevel="h3">Cluster deletion</Title>
+            <Grid hasGutter md={6}>
+                <GridItem>
+                    <FormGroup
+                        label="Decommissioned cluster age"
+                        isRequired
+                        fieldId="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                            name="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                            value={
+                                values?.privateConfig?.decommissionedClusterRetention
+                                    ?.retentionDurationDays
+                            }
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Ignore clusters which have the following labels"
+                        fieldId="privateConfig.decommissionedClusterRetention.ignoreClusterLabels"
+                    >
+                        <ClusterLabelsTable
+                            labels={
+                                values.privateConfig.decommissionedClusterRetention
+                                    .ignoreClusterLabels
+                            }
+                            hasAction
+                            handleChangeLabels={handleChangeLabels}
+                            isValueRequired
+                        />
+                    </FormGroup>
+                </GridItem>
+            </Grid>
             <Title headingLevel="h2">Public configuration</Title>
             <Grid hasGutter>
                 <GridItem sm={12} md={6}>

@@ -9,13 +9,11 @@ import PublicConfigLoginDetails from './PublicConfigLoginDetails';
 
 export type SystemConfigDetailsProps = {
     isClustersRoutePathRendered: boolean;
-    isDecommissionedClusterRetentionEnabled: boolean;
     systemConfig: SystemConfig;
 };
 
 function SystemConfigDetails({
     isClustersRoutePathRendered,
-    isDecommissionedClusterRetentionEnabled,
     systemConfig,
 }: SystemConfigDetailsProps): ReactElement {
     return (
@@ -26,9 +24,6 @@ function SystemConfigDetails({
                 </Title>
                 <PrivateConfigDataRetentionDetails
                     isClustersRoutePathRendered={isClustersRoutePathRendered}
-                    isDecommissionedClusterRetentionEnabled={
-                        isDecommissionedClusterRetentionEnabled
-                    }
                     privateConfig={systemConfig?.privateConfig}
                 />
             </PageSection>
