@@ -36,7 +36,7 @@ class NullTest(BaseTest):
 
 
 class UpgradeTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60
+    TEST_TIMEOUT = 30 * 60
     TEST_OUTPUT_DIR = "/tmp/upgrade-test-logs"
 
     def run(self):
@@ -54,7 +54,7 @@ class UpgradeTest(BaseTest):
 
 
 class PostgresUpgradeTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60
+    TEST_TIMEOUT = 30 * 60
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
     TEST_LEGACY_OUTPUT_DIR = "/tmp/legacy-postgres-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
@@ -88,7 +88,7 @@ class PostgresUpgradeTest(BaseTest):
 class OperatorE2eTest(BaseTest):
     # TODO(ROX-12348): adjust these timeouts once we know average run times
     FETCH_KUTTL_TIMEOUT_SEC = 5 * 60
-    DEPLOY_TIMEOUT_SEC = 40 * 60
+    DEPLOY_TIMEOUT_SEC = 10 * 60
     UPGRADE_TEST_TIMEOUT_SEC = 50 * 60
     E2E_TEST_TIMEOUT_SEC = 50 * 60
     SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
@@ -159,7 +159,7 @@ class OperatorE2eTest(BaseTest):
 
 
 class QaE2eTestPart1(BaseTest):
-    TEST_TIMEOUT = 240 * 60
+    TEST_TIMEOUT = 30 * 60
 
     def run(self):
         print("Executing qa-tests-backend tests (part I)")
@@ -180,7 +180,7 @@ class QaE2eTestPart2(BaseTest):
         )
 
 class QaE2eTestCompatibility(BaseTest):
-    TEST_TIMEOUT = 240 * 60
+    TEST_TIMEOUT = 30 * 60
 
     def run(self):
         print("Executing qa-tests-compatibility tests")
@@ -212,7 +212,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
 
 
 class UIE2eTest(BaseTest):
-    TEST_TIMEOUT = 2 * 60 * 60
+    TEST_TIMEOUT = 30 * 60
 
     def run(self):
         print("Executing UI e2e test")
