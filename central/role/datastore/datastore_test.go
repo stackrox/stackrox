@@ -357,11 +357,6 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(declarative resource)")
 }
 
-func (s *roleDataStoreTestSuite) TestRoleGroupReferences() {
-	// 1. If a group is returned, deletion should not be possible for the group.
-
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Permission sets                                                            //
 //                                                                            //
