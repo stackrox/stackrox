@@ -52,7 +52,8 @@ type managerImpl struct {
 	transformedMessagesByHandler map[string]protoMessagesByType
 	transformedMessagesMutex     sync.RWMutex
 
-	lastReconciliationHash uint64
+	lastReconciliationHash   uint64
+	lastReconciliationFailed concurrency.Flag
 
 	reconciliationTickerDuration time.Duration
 	watchIntervalDuration        time.Duration
@@ -66,7 +67,7 @@ type managerImpl struct {
 	reconciliationCtx context.Context
 
 	declarativeConfigErrorReporter integrationhealth.Reporter
-	errorsPerDeclarativeConfig     map[string]int32
+	errorsPerDeclarativeConfig     map[string]int
 
 	updaters map[reflect.Type]updater.ResourceUpdater
 }
@@ -98,7 +99,7 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 		updaters:                       updaters,
 		reconciliationCtx:              writeDeclarativeRoleCtx,
 		declarativeConfigErrorReporter: reconciliationErrorReporter,
-		errorsPerDeclarativeConfig:     map[string]int32{},
+		errorsPerDeclarativeConfig:     map[string]int{},
 		idExtractor:                    idExtractor,
 		nameExtractor:                  nameExtractor,
 		shortCircuitSignal:             concurrency.NewSignal(),
@@ -230,33 +231,34 @@ func (m *managerImpl) runReconciliation() {
 	transformedMessagesByHandler := maputil.ShallowClone(m.transformedMessagesByHandler)
 	m.transformedMessagesMutex.RUnlock()
 
-	// Create a hash from the transformed messages by handler map.
-	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
-	// the pointer's value.
-	hash, err := hashstructure.Hash(transformedMessagesByHandler, hashstructure.FormatV2,
-		&hashstructure.HashOptions{ZeroNil: true})
-
-	// If we received an error for hash generation, log it and _always_ run the reconciliation. This way we ensure
-	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).
-	if err != nil {
-		log.Errorf("Failed to create hash for transformed messages by handler %+v, "+
-			"reconciliation will be executed: %v",
-			m.transformedMessagesByHandler, err)
-	} else if m.lastReconciliationHash == hash {
-		log.Debugf("Hashes for transformed messages by handler are equal, skipping reconciliation run")
-		return
-	}
-	m.lastReconciliationHash = hash
 	m.reconcileTransformedMessages(transformedMessagesByHandler)
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
 	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
+
+	hasChanges, hash := calculateHashAndIndicateChanges(transformedMessagesByHandler, m.lastReconciliationHash)
+	m.lastReconciliationHash = hash
+
+	// If no changes are indicated within the message we reconcile, and no previous reconciliation failed, do not
+	// run the reconciliation.
+	if !hasChanges && !m.lastReconciliationFailed.Get() {
+		log.Debug("No changes found compared to the previous reconciliation, and no errors have occurred." +
+			" The reconciliation will be skipped.")
+		return
+	}
+
 	m.doUpsert(transformedMessagesByHandler)
-	m.doDeletion(transformedMessagesByHandler)
+
+	// Deletion should only be executed when changes have occurred. If only errors occurred in the last reconciliation,
+	// then we should not attempt to delete anything.
+	if hasChanges {
+		m.doDeletion(transformedMessagesByHandler)
+	}
 }
 
 func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) {
+	var failureInReconciliation bool
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
@@ -267,9 +269,14 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 			for _, message := range messages {
 				err := typeUpdater.Upsert(m.reconciliationCtx, message)
 				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
+				if err != nil {
+					failureInReconciliation = true
+				}
 			}
 		}
 	}
+
+	m.lastReconciliationFailed.Set(failureInReconciliation)
 }
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
@@ -306,15 +313,16 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 // In case err == nil, the health status will be set to healthy.
 // In case err != nil _and_ the number of errors for this message is >= the given threshold, the health
 // status will be set to unhealthy.
-func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int32) {
+func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int) {
 	messageID := m.idExtractor(message)
 	integrationHealth := declarativeConfigUtils.IntegrationHealthForProtoMessage(message, handler, err, m.idExtractor, m.nameExtractor)
 
 	if err != nil {
-		currentDeclarativeConfigErrors := m.errorsPerDeclarativeConfig[messageID] + 1
-		m.errorsPerDeclarativeConfig[messageID] = currentDeclarativeConfigErrors
-
-		if currentDeclarativeConfigErrors >= threshold {
+		// Limit the number of recorded errors to the threshold.
+		if m.errorsPerDeclarativeConfig[messageID] < threshold {
+			m.errorsPerDeclarativeConfig[messageID]++
+		}
+		if m.errorsPerDeclarativeConfig[messageID] >= threshold {
 			m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(integrationHealth)
 		}
 		log.Debugf("Error within reconciliation for %+v: %v", message, err)
@@ -397,4 +405,22 @@ func (m *managerImpl) verifyUpdaters() error {
 
 func handlerNameForIntegrationHealth(handlerID string) string {
 	return fmt.Sprintf("%s %s", handlerIntegrationHealthStatusPrefix, path.Base(handlerID))
+}
+
+func calculateHashAndIndicateChanges(transformedMessagesByHandler map[string]protoMessagesByType, previousHash uint64) (bool, uint64) {
+	// Create a hash from the transformed messages by handler map.
+	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
+	// the pointer's value.
+	hash, err := hashstructure.Hash(transformedMessagesByHandler, hashstructure.FormatV2,
+		&hashstructure.HashOptions{ZeroNil: true})
+
+	// If we received an error for hash generation, log it and _always_ run the deletion. This way we ensure
+	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).
+	if err != nil {
+		log.Errorf("Failed to create hash for transformed messages by handler %+v, "+
+			"reconciliation will be executed: %v",
+			transformedMessagesByHandler, err)
+		return true, hash
+	}
+	return previousHash != hash, hash
 }

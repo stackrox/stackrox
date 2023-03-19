@@ -244,10 +244,10 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		ErrorMessage: "test error",
 	}))
 
-	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(5)
 
 	reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
-		Return(nil, nil).AnyTimes()
+		Return(nil, nil).Times(1)
 
 	m := newTestManager(t)
 	m.updaters = map[reflect.Type]updater.ResourceUpdater{
