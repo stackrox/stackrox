@@ -10,14 +10,14 @@ import (
 )
 
 func TestInventoryConvert(t *testing.T) {
-	suite.Run(t, new(InventoryConvertTestSuite))
+	suite.Run(t, new(inventoryConvertTestSuite))
 }
 
-type InventoryConvertTestSuite struct {
+type inventoryConvertTestSuite struct {
 	suite.Suite
 }
 
-func (s *InventoryConvertTestSuite) TestToNodeInventory() {
+func (s *inventoryConvertTestSuite) TestToNodeInventory() {
 	in := &scannerV1.GetNodeInventoryResponse{
 		NodeName: "testme",
 		Components: &scannerV1.Components{
@@ -45,7 +45,7 @@ func (s *InventoryConvertTestSuite) TestToNodeInventory() {
 	s.Equal([]storage.NodeInventory_Note{storage.NodeInventory_OS_CVES_STALE}, actual.GetNotes())
 }
 
-func (s *InventoryConvertTestSuite) TestToStorageComponents() {
+func (s *inventoryConvertTestSuite) TestToStorageComponents() {
 	testCases := map[string]struct {
 		inComponent  *scannerV1.Components
 		outComponent *storage.NodeInventory_Components
@@ -113,7 +113,7 @@ func (s *InventoryConvertTestSuite) TestToStorageComponents() {
 				RhelContentSets:    nil,
 			},
 			outComponent: &storage.NodeInventory_Components{
-				Namespace:       "unknown",
+				Namespace:       "",
 				RhelComponents:  nil,
 				RhelContentSets: nil,
 			},
@@ -131,7 +131,7 @@ func (s *InventoryConvertTestSuite) TestToStorageComponents() {
 	}
 }
 
-func (s *InventoryConvertTestSuite) TestConvertRHELComponents() {
+func (s *inventoryConvertTestSuite) TestConvertRHELComponents() {
 	testCases := map[string]struct {
 		inComponents  []*scannerV1.RHELComponent
 		outComponents []*storage.NodeInventory_Components_RHELComponent
@@ -210,7 +210,7 @@ func (s *InventoryConvertTestSuite) TestConvertRHELComponents() {
 	}
 }
 
-func (s *InventoryConvertTestSuite) TestConvertExecutables() {
+func (s *inventoryConvertTestSuite) TestConvertExecutables() {
 	testcases := map[string]struct {
 		exe      []*scannerV1.Executable
 		expected []*storage.NodeInventory_Components_RHELComponent_Executable
@@ -279,7 +279,7 @@ func (s *InventoryConvertTestSuite) TestConvertExecutables() {
 	}
 }
 
-func (s *InventoryConvertTestSuite) TestConvertNotes() {
+func (s *inventoryConvertTestSuite) TestConvertNotes() {
 	in := []scannerV1.Note{
 		scannerV1.Note_OS_CVES_UNAVAILABLE,
 		scannerV1.Note_OS_CVES_STALE,
@@ -296,7 +296,7 @@ func (s *InventoryConvertTestSuite) TestConvertNotes() {
 	s.Contains(actual, storage.NodeInventory_CERTIFIED_RHEL_SCAN_UNAVAILABLE)
 }
 
-func (s *InventoryConvertTestSuite) TestConvertNotesOnNil() {
+func (s *inventoryConvertTestSuite) TestConvertNotesOnNil() {
 	actual := convertNotes(nil)
 
 	s.Nil(actual)

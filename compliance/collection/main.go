@@ -33,10 +33,6 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const (
-	nodeScannerEndpoint = "127.0.0.1:8444"
-)
-
 var (
 	log = logging.LoggerForModule()
 
@@ -258,11 +254,12 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
+	clientconn.SetUserAgent(clientconn.Compliance)
 
 	// Set the random seed based on the current time.
 	rand.Seed(time.Now().UnixNano())
 
-	var niClient scannerV1.NodeInventoryServiceClient
+	var nodeInventoryClient scannerV1.NodeInventoryServiceClient
 
 	if features.RHCOSNodeScanning.Enabled() {
 		// Start the prometheus metrics server
@@ -270,17 +267,15 @@ func main() {
 		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
 
 		// Set up Compliance <-> NodeInventory connection
-		niConn, err := clientconn.AuthenticatedGRPCConnection(nodeScannerEndpoint, mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
+		niConn, err := clientconn.AuthenticatedGRPCConnection(env.NodeScanningEndpoint.Setting(), mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
 		if err != nil {
-			log.Fatal(err)
+			log.Errorf("Could not initialize connection to NodeInventory service. Node Scanning will be unavailable. Error: %v", err)
 		}
 		log.Info("Initialized NodeInventory gRPC connection")
-		niClient = scannerV1.NewNodeInventoryServiceClient(niConn)
-
+		nodeInventoryClient = scannerV1.NewNodeInventoryServiceClient(niConn)
 	}
 
 	// Set up Compliance <-> Sensor connection
-	clientconn.SetUserAgent(clientconn.Compliance)
 	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
 	if err != nil {
 		log.Fatal(err)
@@ -306,7 +301,7 @@ func main() {
 	// TODO(ROX-13935): Remove FakeNodeInventory and its FF
 	if features.RHCOSNodeScanning.Enabled() {
 		i := intervals.NewNodeScanIntervalFromEnv()
-		nodeInventoriesC := manageNodeScanLoop(ctx, i, niClient)
+		nodeInventoriesC := manageNodeScanLoop(ctx, i, nodeInventoryClient)
 
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
 		go func() {
