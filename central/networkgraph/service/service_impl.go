@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
+	deploymentMatcher "github.com/stackrox/rox/central/networkpolicies/deployment"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -314,7 +315,65 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 			node.QueryMatch = true
 		}
 	}
+
+	if request.IncludePolicies {
+		err := s.enhanceWithNetworkPolicyIsolationInfo(ctx, graph)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return graph, nil
+}
+
+func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context, graph *v1.NetworkGraph) error {
+	var deploymentIds []string
+	for _, node := range graph.GetNodes() {
+		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+			deploymentIds = append(deploymentIds, node.GetEntity().GetId())
+		}
+	}
+
+	deploymentObjects, err := s.deployments.GetDeployments(ctx, deploymentIds)
+	if err != nil {
+		return err
+	}
+
+	clusterNamespaceContext := set.NewSet[deploymentMatcher.ClusterNamespace]()
+	for _, deployment := range deploymentObjects {
+		clusterNamespaceContext.Add(deploymentMatcher.ClusterNamespace{
+			Cluster:   deployment.GetClusterId(),
+			Namespace: deployment.GetNamespace(),
+		})
+	}
+
+	matcher, err := deploymentMatcher.BuildMatcher(s.networkPolicy, clusterNamespaceContext.AsSlice())
+	if err != nil {
+		return err
+	}
+
+	var isolationDetails map[string]deploymentMatcher.IsolationDetails
+	for _, deployment := range deploymentObjects {
+		details := matcher.GetIsolationDetails(deployment)
+		isolationDetails[deployment.GetId()] = deploymentMatcher.IsolationDetails{
+			IngressIsolated: details.IngressIsolated,
+			EgressIsolated:  details.EgressIsolated,
+			PolicyIDs:       details.PolicyIDs,
+		}
+	}
+
+	for idx, node := range graph.Nodes {
+		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+			deploymentId := node.GetEntity().GetId()
+			if isolationDetail, ok := isolationDetails[deploymentId]; ok {
+				graph.Nodes[idx].NonIsolatedEgress = !isolationDetail.EgressIsolated
+				graph.Nodes[idx].NonIsolatedIngress = !isolationDetail.IngressIsolated
+				graph.Nodes[idx].PolicyIds = isolationDetail.PolicyIDs
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *serviceImpl) addDeploymentFlowsToGraph(
