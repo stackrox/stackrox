@@ -24,15 +24,12 @@ function NetworkBreadcrumbs({
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
-    const fetchedNamespaces = useFetchClusterNamespacesForPermissions(
+    const { namespaces } = useFetchClusterNamespacesForPermissions(
         ['NetworkGraph', 'Deployment'],
         selectedCluster?.id
     );
-    const namespaces = fetchedNamespaces.namespaces;
     const selectedNamespaceIds = namespaces.reduce<string[]>((acc: string[], namespace) => {
-        return selectedNamespaces.includes(namespace.name)
-            ? [...acc, namespace.id]
-            : acc;
+        return selectedNamespaces.includes(namespace.name) ? [...acc, namespace.id] : acc;
     }, []);
     const { deploymentsByNamespace } = useFetchNamespaceDeployments(selectedNamespaceIds);
 
