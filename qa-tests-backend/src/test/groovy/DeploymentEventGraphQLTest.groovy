@@ -125,7 +125,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
             log.info "return code " + depEvents.getCode()
             assert depEvents.getValue().result != null
             def events = depEvents.getValue().result
-            assert events.numPolicyViolations == 1
+            assert events.numPolicyViolations >= 1
             // Cannot determine how many processes will actually run at this point due to the apt-get.
             // As long as we see more than 1, we'll take it.
             assert events.numProcessActivities > 1

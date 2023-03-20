@@ -9,11 +9,11 @@ import spock.lang.Unroll
 
 class VulnMgmtWorkflowTest extends BaseSpecification {
 
-    static final private NGINX_1_10_2_IMAGE = "us.gcr.io/stackrox-ci/nginx:1.10.2"
+    static final private NGINX_1_12_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12"
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("vulnerable-deploy")
-            .setImage(NGINX_1_10_2_IMAGE)
+            .setImage(NGINX_1_12_IMAGE)
             .addLabel("app", "test")
 
     static final private String CVE_TO_DEFER = "CVE-2005-2541"

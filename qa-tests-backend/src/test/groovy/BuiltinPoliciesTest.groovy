@@ -43,13 +43,13 @@ class BuiltinPoliciesTest extends BaseSpecification {
     static final private List<Deployment> NO_WAIT_DEPLOYMENTS = [
             new Deployment()
                     .setName(TRIGGER_DOCKER_MOUNT)
-                    .setImage("nginx:latest")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-latest")
                     .addVolume(new Volume(name: "docker-sock",
                             hostPath: "/var/run/docker.sock",
                             mountPath: "/var/run/docker.sock")),
             new Deployment()
                     .setName(TRIGGER_CRIO_MOUNT)
-                    .setImage("nginx:latest")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-latest")
                     .addVolume(new Volume(name: "crio-sock",
                             hostPath: "/run/crio/crio.sock",
                             mountPath: "/run/crio/crio.sock")),
