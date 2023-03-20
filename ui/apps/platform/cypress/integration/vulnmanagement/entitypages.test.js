@@ -54,7 +54,8 @@ describe('Entities single views', () => {
             });
     });
 
-    it('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', function () {
+    // ROX-15888 ROX-15985: skip until decision whether valid to assume high severity violations.
+    it.skip('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
@@ -92,7 +93,9 @@ describe('Entities single views', () => {
         });
     });
 
-    it('should scope deployment data based on selected policy from table row click', function () {
+    // ROX-15985: skip until decision whether valid to assume high severity violations.
+    // TODO if the test survives, rewrite as described below.
+    it.skip('should scope deployment data based on selected policy from table row click', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
@@ -141,7 +144,8 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should scope deployment data based on selected policy from table count link click', function () {
+    // ROX-15889 ROX-15985: skip until decision whether valid to assume high severity violations.
+    it.skip('should scope deployment data based on selected policy from table count link click', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
@@ -165,7 +169,8 @@ describe('Entities single views', () => {
         );
     });
 
-    it('should scope deployment data based on selected policy from entity page tab sublist', function () {
+    // ROX-15934 ROX-15985: skip until decision whether valid to assume high severity violations.
+    it.skip('should scope deployment data based on selected policy from entity page tab sublist', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
