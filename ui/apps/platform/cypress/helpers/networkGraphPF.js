@@ -20,10 +20,10 @@ const routeMatcherMapForClusterInNetworkGraph = {
     },
 };
 
+const clusterNamespacesTarget = '/v1/sac/clusters/*/namespaces';
+
 export function selectCluster() {
-    // TODO: update this test to use the new low-permission Clusters-Namespace endpoint after that is merged
-    //    https://github.com/stackrox/stackrox/pull/4951
-    cy.intercept('POST', api.graphql('getClusterNamespaces')).as('getClusterNamespaces');
+    cy.intercept('POST', clusterNamespacesTarget);
 
     interactAndWaitForResponses(
         () => {
@@ -33,7 +33,7 @@ export function selectCluster() {
         {
             getClusterNamespaces: {
                 method: 'POST',
-                url: api.graphql('getClusterNamespaces'),
+                url: clusterNamespacesTarget,
             },
         }
     );
@@ -62,11 +62,9 @@ export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
 export const searchMetadataOptionsAlias = 'search/metadata/options';
 
 const routeMatcherMapToVisitNetworkGraph = {
-    // TODO: update this test to use the new low-permission Clusters endpoint after that is merged
-    //    https://github.com/stackrox/stackrox/pull/4951
     [clustersAlias]: {
         method: 'GET',
-        url: '/v1/clusters',
+        url: '/v1/sac/clusters',
     },
     [networkPoliciesGraphEpochAlias]: {
         method: 'GET',
