@@ -13,11 +13,9 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
 	updaterMocks "github.com/stackrox/rox/central/declarativeconfig/updater/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	transformMocks "github.com/stackrox/rox/pkg/declarativeconfig/transform/mocks"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -265,71 +263,6 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 			},
 		})
 	}
-}
-
-func TestReconcileTransformedMessages_MissingUpdaterCausesPanic_DevBuild(t *testing.T) {
-	if buildinfo.ReleaseBuild {
-		t.SkipNow()
-	}
-
-	controller := gomock.NewController(t)
-	reporter := reporterMocks.NewMockReporter(controller)
-	permissionSet1 := &storage.PermissionSet{
-		Name: "permission-set-1",
-		Id:   "some-id",
-	}
-	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-		Id:           "some-id",
-		Name:         "permission-set-1 in config map test-handler-1",
-		Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
-		Status:       storage.IntegrationHealth_UNHEALTHY,
-		ErrorMessage: "manager does not have updater for type *storage.PermissionSet",
-	}))
-
-	m := newTestManager(t)
-	m.declarativeConfigErrorReporter = reporter
-
-	assert.Panics(t, func() {
-		m.reconcileTransformedMessages(map[string]protoMessagesByType{
-			"test-handler-1": {
-				types.PermissionSetType: []proto.Message{
-					permissionSet1,
-				},
-			},
-		})
-	})
-}
-
-func TestReconcileTransformedMessages_MissingUpdaterStopsManager_ReleaseBuild(t *testing.T) {
-	if !buildinfo.ReleaseBuild {
-		t.SkipNow()
-	}
-
-	controller := gomock.NewController(t)
-	reporter := reporterMocks.NewMockReporter(controller)
-	permissionSet1 := &storage.PermissionSet{
-		Name: "permission-set-1",
-		Id:   "some-id",
-	}
-	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-		Id:           "some-id",
-		Name:         "permission-set-1 in config map test-handler-1",
-		Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
-		Status:       storage.IntegrationHealth_UNHEALTHY,
-		ErrorMessage: "manager does not have updater for type *storage.PermissionSet",
-	}))
-
-	m := newTestManager(t)
-	m.declarativeConfigErrorReporter = reporter
-
-	m.reconcileTransformedMessages(map[string]protoMessagesByType{
-		"test-handler-1": {
-			types.PermissionSetType: []proto.Message{
-				permissionSet1,
-			},
-		},
-	})
-	assert.True(t, m.stopSignal.IsDone())
 }
 
 func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {

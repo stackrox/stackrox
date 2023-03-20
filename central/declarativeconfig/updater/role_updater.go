@@ -58,10 +58,6 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 			roleDeletionErr = multierror.Append(roleDeletionErr, err)
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(role, "", err,
 				u.idExtractor, u.nameExtractor))
-			continue
-		}
-		if err := u.reporter.RemoveIntegrationHealth(u.idExtractor(role)); err != nil {
-			log.Errorf("Error removing the health status for role %s: %v", role.GetName(), err)
 		}
 	}
 	return roleDeletionErr.ErrorOrNil()

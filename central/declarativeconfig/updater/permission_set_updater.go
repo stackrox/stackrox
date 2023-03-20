@@ -58,10 +58,6 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 			permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, err)
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(permissionSet, "", err,
 				u.idExtractor, u.nameExtractor))
-			continue
-		}
-		if err := u.reporter.RemoveIntegrationHealth(u.idExtractor(permissionSet)); err != nil {
-			log.Errorf("Error removing the health status for permission set %s: %v", permissionSet.GetId(), err)
 		}
 	}
 	return permissionSetDeletionErr.ErrorOrNil()

@@ -58,10 +58,6 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 			scopeDeletionErr = multierror.Append(scopeDeletionErr, err)
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(scope, "", err,
 				u.idExtractor, u.nameExtractor))
-			continue
-		}
-		if err := u.reporter.RemoveIntegrationHealth(u.idExtractor(scope)); err != nil {
-			log.Errorf("Error removing the health status for access scope %s: %v", scope.GetId(), err)
 		}
 	}
 	return scopeDeletionErr.ErrorOrNil()

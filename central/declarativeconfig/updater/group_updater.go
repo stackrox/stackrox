@@ -44,9 +44,9 @@ func (u *groupUpdater) Upsert(ctx context.Context, m proto.Message) error {
 func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) error {
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
-	groups, err := u.groupDS.GetFiltered(ctx, func(properties *storage.GroupProperties) bool {
-		return properties.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
-			!resourcesToSkip.Contains(properties.GetId())
+	groups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
+		return group.GetProps().GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
+			!resourcesToSkip.Contains(group.GetProps().GetId())
 	})
 	if err != nil {
 		return errors.Wrap(err, "retrieving declarative groups")
@@ -58,10 +58,6 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 			groupDeletionErr = multierror.Append(groupDeletionErr, err)
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(group, "", err,
 				u.idExtractor, u.nameExtractor))
-			continue
-		}
-		if err := u.reporter.RemoveIntegrationHealth(u.idExtractor(group)); err != nil {
-			log.Errorf("Error removing the health status for group %s: %v", group.GetProps().GetId(), err)
 		}
 	}
 	return groupDeletionErr.ErrorOrNil()

@@ -80,9 +80,6 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 		if err := u.groupDS.RemoveAllWithAuthProviderID(ctx, authProvider.GetId(), true); err != nil {
 			log.Errorf("Error deleting groups for auth provider id %s: %v", authProvider.GetId(), err)
 		}
-		if err := u.reporter.RemoveIntegrationHealth(u.idExtractor(authProvider)); err != nil {
-			log.Errorf("Error removing the health status for auth provider %s: %v", authProvider.GetId(), err)
-		}
 	}
 	return authProviderDeletionErr.ErrorOrNil()
 }

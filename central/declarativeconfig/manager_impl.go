@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -105,6 +106,12 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 
 func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 	m.once.Do(func() {
+		if err := m.verifyUpdaters(protoTypesOrder); err != nil {
+			utils.Should(err)
+			log.Error("Received an error during verification of updaters. No reconciliation will be done.")
+			return
+		}
+
 		// For each directory within the declarative configuration path, create a watch handler.
 		// The reason we need multiple watch handlers and cannot simply watch the root directory is that
 		// changes to directories are ignored within the watch handler.
@@ -229,25 +236,21 @@ func (m *managerImpl) runReconciliation() {
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
 	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
-	if ok := m.doReconciliation(transformedMessagesByHandler); !ok {
+	if ok := m.doUpsert(transformedMessagesByHandler); !ok {
 		// We ran into an issue during reconciliation that is irrecoverable, i.e. a missing type updater, and return.
 		return
 	}
 	m.doDeletion(transformedMessagesByHandler)
 }
 
-func (m *managerImpl) doReconciliation(transformedMessagesByHandler map[string]protoMessagesByType) bool {
+func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) bool {
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
 			if !hasMessages {
 				continue
 			}
-			typeUpdater, hasUpdater := m.updaters[protoType]
-			if !hasUpdater {
-				m.handleMissingTypeUpdater(handler, protoType, messages)
-				return false
-			}
+			typeUpdater := m.updaters[protoType]
 			for _, message := range messages {
 				err := typeUpdater.Upsert(m.reconciliationCtx, message)
 				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
@@ -278,16 +281,6 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 	if err := m.removeStaleHealthStatus(allProtoIDsToSkip); err != nil {
 		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
-}
-
-func (m *managerImpl) handleMissingTypeUpdater(handler string, protoType reflect.Type, messages []proto.Message) {
-	err := fmt.Errorf("manager does not have updater for type %v", protoType)
-	for _, message := range messages {
-		// Set the threshold to 0, meaning we will _always_ update the integration health status to unhealthy.
-		m.updateHealthForMessage(handler, message, err, 0)
-	}
-	utils.Should(err)
-	m.stopSignal.Signal()
 }
 
 // updateHealthForMessage will update the health status of a message using the integrationhealth.Reporter.
@@ -370,6 +363,15 @@ func (m *managerImpl) removeStaleHealthStatus(idsToSkip []string) error {
 	}
 
 	return removingIntegrationHealths.ErrorOrNil()
+}
+
+func (m *managerImpl) verifyUpdaters(protoTypesToReconcile []reflect.Type) error {
+	for _, protoType := range protoTypesToReconcile {
+		if _, ok := m.updaters[protoType]; !ok {
+			return errox.InvariantViolation.Newf("found no updater for proto type %v", protoType)
+		}
+	}
+	return nil
 }
 
 func handlerNameForIntegrationHealth(handlerID string) string {
