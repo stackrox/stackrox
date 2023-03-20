@@ -21,7 +21,7 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -56,7 +56,7 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -88,7 +88,7 @@ jobs:
   pre-build-go-binaries:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -107,7 +107,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.6
+        uses: joerick/pr-labels-action@v1.0.7
 
       - name: Setup Go build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
@@ -127,7 +127,7 @@ jobs:
   pre-build-go-binaries-rcd:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -146,7 +146,7 @@ jobs:
     - uses: ./.github/actions/handle-tagged-build
 
     - name: PR labels
-      uses: joerick/pr-labels-action@v1.0.6
+      uses: joerick/pr-labels-action@v1.0.7
 
     - name: Setup Go build environment
       run: |
@@ -169,7 +169,7 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -215,7 +215,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -290,7 +290,12 @@ jobs:
       - name: Push images
         run: |
             source ./scripts/ci/lib.sh
-            push_main_image_set "${GITHUB_HEAD_REF}" "${{ env.ROX_PRODUCT_BRANDING }}"
+            echo "Will determin context from: ${{ github.event_name }} & ${{ github.ref_name }}"
+            push_context=""
+            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+              push_context="merge-to-master"
+            fi
+            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}"
 
       - name: Push matching collector and scanner images
         run: |
@@ -317,7 +322,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -398,7 +403,7 @@ jobs:
   build-and-push-operator:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -419,13 +424,16 @@ jobs:
           # Prevent fatal error "detected dubious ownership in repository" from recent git.
           git config --global --add safe.directory "$(pwd)"
 
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Resolve mods for protos
         run: go mod tidy
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.6
+        uses: joerick/pr-labels-action@v1.0.7
 
       - name: Setup Go build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
@@ -461,7 +469,7 @@ jobs:
   build-and-push-mock-grpc-server:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -511,7 +519,7 @@ jobs:
     needs:
       - build-and-push-main
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
       env:
         STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
@@ -552,7 +560,7 @@ jobs:
 
   slack-on-build-failure:
     if: github.event_name == 'push' && failure()
-    name: Post Build Failure
+    name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
       - pre-build-ui
@@ -565,9 +573,13 @@ jobs:
       - build-and-push-operator
       - build-and-push-mock-grpc-server
       - scan-images-with-roxctl
+    permissions:
+      actions: read
     steps:
       - name: Slack Workflow Notification
-        uses: Gamesight/slack-workflow-status@v1.1.0
+        uses: Gamesight/slack-workflow-status@26a36836c887f260477432e4314ec3490a84f309
         with:
+          include_commit_message: true
+          include_jobs: on-failure
           repo_token: ${{secrets.GITHUB_TOKEN}}
           slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}

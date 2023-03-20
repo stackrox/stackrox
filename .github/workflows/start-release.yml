@@ -183,6 +183,12 @@ jobs:
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
+      - name: Synchronize fork from openshift/release
+        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        env:
+          GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+        run: |
+          gh repo sync stackrox/openshift-release --source stackrox/openshift-release
       - name: Make configuration
         if: steps.check-existing.outputs.branch-exists == 'false'
         env:
@@ -190,17 +196,10 @@ jobs:
         run: |
           # Duplicate the main config and keep only postsubmit jobs.
           yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) |
-              .promotion.tag=\"$RELEASE\" |
               .zz_generated_metadata.branch=\"release-$RELEASE\"" \
             "$CFG_DIR/stackrox-stackrox-master.yaml" \
             > "$CFG_DIR/stackrox-$BRANCH.yaml"
 
-          # Duplicate the opensource images config and keep only postsubmit jobs.
-          yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) |
-              .promotion.tag=\"$RELEASE-stackrox-branding\" |
-              .zz_generated_metadata.branch=\"release-$RELEASE\"" \
-            "$CFG_DIR/stackrox-stackrox-master__stackrox_branding.yaml" \
-            > "$CFG_DIR/stackrox-${BRANCH}__stackrox_branding.yaml"
       - name: Make update
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
@@ -218,8 +217,10 @@ jobs:
           PR_URL=$(gh pr create --repo openshift/release \
             --title "Stackrox release $RELEASE" \
             --base "master" \
-            --body "CI configuration files to support Stackrox release \`$RELEASE\`." \
-            --assignee "$GITHUB_ACTOR")
+            --body "CI configuration files to support Stackrox release \`$RELEASE\`.")
+
+          PR_NUMBER="$(echo "${PR_URL}" | rev | cut -d '/' -f1 | rev)"
+          gh pr comment "${PR_NUMBER}" --repo openshift/release --body "/assign ${GITHUB_ACTOR}"
 
           echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> "$GITHUB_STEP_SUMMARY"
 
@@ -253,24 +254,24 @@ jobs:
     needs: [variables]
     runs-on: ubuntu-latest
     steps:
-      - name: Create ${{needs.variables.outputs.milestone}} milestone
+      - name: Create ${{needs.variables.outputs.next-milestone}} milestone
         if: env.DRY_RUN == 'false'
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
-            -f title="${{needs.variables.outputs.milestone}}" \
+            -f title="${{needs.variables.outputs.next-milestone}}" \
             2>&1); then
 
             if grep "HTTP 422" <<< "$http_code"; then
-              echo ":arrow_right: Milestone ${{needs.variables.outputs.milestone}} already exists." \
+              echo ":arrow_right: Milestone ${{needs.variables.outputs.next-milestone}} already exists." \
                 "**Close it once it's finished.**" >> "$GITHUB_STEP_SUMMARY"
             else
-              echo "::error::Couldn't create milestone ${{needs.variables.outputs.milestone}}: $http_code"
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $http_code"
               exit 1
             fi
           else
-            echo ":arrow_right: Milestone ${{needs.variables.outputs.milestone}} has been created." \
+            echo ":arrow_right: Milestone ${{needs.variables.outputs.next-milestone}} has been created." \
               "**Close it once it's finished.**" >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -296,7 +297,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "Branch `${{needs.variables.outputs.branch}}`
-            and milestone `${{needs.variables.outputs.milestone}}`
+            and milestone `${{needs.variables.outputs.next-milestone}}`
             have been created.\n\nPRs merged to the ${{env.main_branch}} branch
             and assigned to RC milestones will be cherry-picked when closing the respective milestones.
             For the urgent fixes that must go exclusively to this release
@@ -324,7 +325,7 @@ jobs:
             has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            "Milestone `${{needs.variables.outputs.milestone}}`
+            "Milestone `${{needs.variables.outputs.next-milestone}}`
             has been created.\n\nPRs merged to the ${{env.main_branch}} branch
             and assigned to RC milestones will be cherry-picked when closing the respective milestones.
             For the urgent fixes that must go exclusively to this release

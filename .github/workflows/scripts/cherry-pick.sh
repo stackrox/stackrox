@@ -22,7 +22,7 @@ SLACK_MESSAGE_FILE=$(mktemp)
 
 # Increments PICKED variable if managed to pick a cherry.
 cherry_pick() {
-    IFS=$'\t' read -r PR URL COMMIT AUTHOR TITLE <<<"$1"
+    IFS=$'\t' read -r PR URL COMMIT _ AUTHOR TITLE <<<"$1"
 
     # Skip commits merged before branching.
     if git merge-base --is-ancestor "$COMMIT" HEAD; then
@@ -75,8 +75,8 @@ find_fork_point() {
 PR_COMMITS=$(gh pr list -s merged \
     --search "milestone:$MILESTONE" \
     --base "$main_branch" \
-    --json number,url,mergeCommit,author,title \
-    --jq '.[] | "\(.number)\t\(.url)\t\(.mergeCommit.oid)\t\(.author.login)\t\(.title)"')
+    --json mergedAt,number,url,mergeCommit,author,title \
+    --jq 'sort_by(.mergedAt) | .[] | "\(.number)\t\(.url)\t\(.mergeCommit.oid)\t\(.mergedAt)\t\(.author.login)\t\(.title)"')
 
 if [ -n "$PR_COMMITS" ]; then
     echo "Commits of merged PRs:"
