@@ -382,7 +382,7 @@ rollback_sensor_via_upgrader() {
 
 create_certificate_values_file() {
     if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: create_certificate_values_file <path_to_values_file>"
+        die "wrong args. usage: create_certificate_values_file <path_to_values_file>"
     fi
 
     local cert_path="$1"
@@ -393,7 +393,7 @@ create_certificate_values_file() {
     caPem=$(kubectl -n stackrox get secret central-tls -o go-template='{{ index .data "ca.pem" }}' | base64 --decode)
 
     # create root certificates value file
-    yq e -n ".ca.cert = \"${caPem}\" | .ca.key = \"${caKey}\"" > $cert_path
+    yq e -n ".ca.cert = \"${caPem}\" | .ca.key = \"${caKey}\"" > "$cert_path"
 }
 
 preamble() {
