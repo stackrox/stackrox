@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # check.sh
 # Checks if a file contains any pattern from a configurable blocklist.
 # Usage: check.sh <files...>
@@ -9,6 +7,7 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "INFO:  SHREWS is in the check"
+echo "Incoming Allow file is ${ALLOWLIST_FILE}"
 
 BLOCKLIST_FILE="${DIR}/blocklist-patterns"
 allow_file="${ALLOWLIST_FILE:-${DIR}/allowlist-patterns}"
