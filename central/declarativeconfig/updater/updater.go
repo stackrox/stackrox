@@ -14,7 +14,6 @@ import (
 
 // ResourceUpdater handles updates of proto resources within declarative config reconciliation routine.
 // Each ResourceUpdater is responsible for updates of specific proto type.
-// TODO(ROX-14694): Extend interface with methods necessary for resource deletion.
 //
 //go:generate mockgen-wrapper
 type ResourceUpdater interface {
