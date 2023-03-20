@@ -6,10 +6,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -131,8 +129,6 @@ func TestRegistryStore_UpsertNoAuthRegistry(t *testing.T) {
 }
 
 func TestRegistryStore_GetFirstRegistryForImage(t *testing.T) {
-	logging.SetGlobalLogLevel(zapcore.DebugLevel)
-
 	ctx := context.Background()
 	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 
