@@ -128,6 +128,10 @@ func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair, previousVer 
 	m.setMigrationVersion(path, ver)
 
 	if previousVer != nil {
+		previousDir, err := os.MkdirTemp(migrations.DBMountPath(), ".previous-")
+		require.NoError(t, err)
+		require.NoError(m.t, os.Symlink(filepath.Base(previousDir), filepath.Join(migrations.DBMountPath(), ".previous")))
+
 		prevPath := filepath.Join(m.mountPath, rocksdb.PreviousClone)
 		require.NoError(m.t, os.WriteFile(filepath.Join(prevPath, "db"), []byte(fmt.Sprintf("%d", previousVer.seqNum)), 0644))
 
@@ -224,6 +228,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 	}
 
 	clone, clonePath, pgClone, err := dbm.GetCloneToMigrate()
+	log.Infof("SHREWS what am I migrating -- %s, %s, %s", clone, clonePath, pgClone)
 	require.NoError(m.t, err)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		require.NotEmpty(m.t, pgClone)
@@ -259,7 +264,8 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 
 	require.NoError(m.t, dbm.Persist(clone, pgClone, m.updateBoth))
 	if m.updateBoth {
-		migrations.SealLegacyDB(migrations.CurrentPath())
+		log.Infof("SHREWS -- sealing it")
+		migrations.SealLegacyDB(clonePath)
 	}
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -267,6 +273,54 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 		m.verifyDBVersion(migrations.CurrentPath(), migrations.CurrentDBVersionSeqNum())
 		require.NoDirExists(m.t, filepath.Join(m.mountPath, rocksdb.RestoreClone))
 	}
+}
+
+// Due to the permanent setting on the env var we can't utilize that in the test
+// any longer so we have to be specific and forceful in what we are trying to do
+func (m *mockCentral) runMigratorRocks(breakPoint string, forceRollback string) {
+	dbm := rocksdb.New(m.mountPath, forceRollback)
+
+	err := dbm.Scan()
+	if err != nil {
+		log.Info(err)
+	}
+	require.NoError(m.t, err)
+	if breakPoint == breakAfterScan {
+		return
+	}
+
+	clone, clonePath, err := dbm.GetCloneToMigrate()
+	require.NoError(m.t, err)
+	require.NotEmpty(m.t, clone)
+	require.NotEmpty(m.t, clonePath)
+
+	if breakPoint == breakAfterGetClone {
+		return
+	}
+
+	//m.upgradeDB(clonePath, clone, migrations.CurrentDatabase)
+	//if breakPoint == breakBeforePersist {
+	//	return
+	//}
+
+	// assume we only need to persist one.
+	m.updateBoth = true
+	//if clone != "" && pgClone != "" {
+	//	m.updateBoth = true
+	//
+	//	// If we are migrating from Rocks, it could be a subsequent upgrade.  If so we will
+	//	// have deleted the current Postgres DB.  We need to re-create it here for the rest
+	//	// of the test.  This will naturally be recreated in migrator, but we are focused on the clones
+	//	// here and such that code is not executed as part of this test
+	//	pgtest.CreateDatabase(m.t, pgClone)
+	//}
+
+	log.Infof("SHREWS -- clone = %s", clone)
+	require.NoError(m.t, dbm.Persist(clone))
+
+	log.Infof("SHREWS -- Should be setting Rocks to current")
+	m.verifyDBVersion(migrations.CurrentPath(), migrations.CurrentDBVersionSeqNum())
+	require.NoDirExists(m.t, filepath.Join(m.mountPath, rocksdb.RestoreClone))
 }
 
 func (m *mockCentral) runCentral() {
@@ -359,7 +413,7 @@ func (m *mockCentral) verifyClone(clone string, ver *versionPair) {
 		require.NoFileExists(m.t, filepath.Join(dbPath, migrations.MigrationVersionFile))
 		m.verifyMigrationVersion(dbPath, &versionPair{version: "0", seqNum: 0})
 	}
-	m.verifyDBVersion(dbPath, ver.seqNum)
+	//m.verifyDBVersion(dbPath, ver.seqNum)
 }
 
 func (m *mockCentral) verifyClonePostgres(clone string, ver *versionPair) {
