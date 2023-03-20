@@ -28,6 +28,7 @@ var (
 type ProcessPool struct {
 	Processes map[string][]*storage.ProcessSignal
 	Capacity  int
+	Size      int
 	lock      sync.RWMutex
 }
 
