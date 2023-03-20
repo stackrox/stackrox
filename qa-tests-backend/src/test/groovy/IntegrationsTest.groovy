@@ -218,7 +218,7 @@ class IntegrationsTest extends BaseSpecification {
         Deployment nginxdeployment =
                 new Deployment()
                         .setName(nginxName)
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
                         .addLabel("app", nginxName)
         orchestrator.createDeployment(nginxdeployment)
         assert Services.waitForViolation(nginxName, policy.name, 60)
@@ -370,7 +370,7 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
         */
 
         /*
@@ -379,13 +379,13 @@ class IntegrationsTest extends BaseSpecification {
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
         */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
     }
 
     @Unroll
@@ -482,7 +482,7 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
         */
 
          /*
@@ -491,13 +491,13 @@ class IntegrationsTest extends BaseSpecification {
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
         */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
     }
 
     @Unroll
@@ -612,7 +612,7 @@ class IntegrationsTest extends BaseSpecification {
                         .setName(uniqueName("policy-violation-email-notification-deploy-override"))
                         .addLabel("app", "policy-violation-email-notification-deploy-override")
                         .addAnnotation("mailgun", "stackrox.qa+alt1@gmail.com")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
         "Email namespace override"     |
                 new EmailNotifier("Email Test", false,
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt2@gmail.com")   |
@@ -621,7 +621,7 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification-ns-override"))
                         .addLabel("app", "policy-violation-email-notification-ns-override")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
          */
         "Slack deploy override"   |
                 new SlackNotifier("slack test", "slack-key")   |
@@ -630,14 +630,14 @@ class IntegrationsTest extends BaseSpecification {
                         .setName("policy-violation-generic-notification-deploy-override")
                         .addLabel("app", "policy-violation-generic-notification-deploy-override")
                         .addAnnotation("slack-key", NotifierService.SLACK_ALT_WEBHOOK)
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
         "Slack namespace override"   |
                 new SlackNotifier("slack test", "slack-key")   |
                 [key: "slack-key", value: NotifierService.SLACK_ALT_WEBHOOK] |
                 new Deployment()
                         .setName("policy-violation-generic-notification-ns-override")
                         .addLabel("app", "policy-violation-generic-notification-ns-override")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                        .setImage("nginx:latest")
     }
 
     @Unroll
