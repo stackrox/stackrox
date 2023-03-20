@@ -887,6 +887,9 @@ func TestUpgradeFromLastRocksDB(t *testing.T) {
 				if c.previousVerion != nil {
 					mock.verifyClone(rocksdb.PreviousClone, &versionPair{version: c.previousVerion.version, seqNum: c.previousVerion.seqNum})
 				}
+			} else {
+				// Rocks should have then empty version if we fresh installed Postgres.
+				mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: "0", seqNum: 0})
 			}
 		})
 	}
