@@ -31,9 +31,17 @@ const (
 
 	localScannerDeploymentName   = "scanner"
 	localScannerDBDeploymentName = "scanner-db"
+
+	sensorContainerName = "sensor"
+)
+
+const (
+	oomKilledReason = "OOMKilled"
 )
 
 var (
+	sensorPodName = os.Getenv("POD_NAME")
+
 	log = logging.LoggerForModule()
 )
 
@@ -78,6 +86,7 @@ func (u *updaterImpl) run() {
 			collectorHealthInfo := u.getCollectorInfo()
 			admissionControlHealthInfo := u.getAdmissionControlInfo()
 			scannerHealthInfo := u.getLocalScannerInfo()
+			sensorHealthInfo := u.getSensorHealthInfo()
 			select {
 			case u.updates <- &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
@@ -163,6 +172,26 @@ func (u *updaterImpl) getAdmissionControlInfo() *storage.AdmissionControlHealthI
 		log.Errorf("Errors while getting admission control info: %v", result.StatusErrors)
 	}
 	return &result
+}
+
+func (u *updaterImpl) getSensorHealthInfo() *storage.SensorHealthInfo {
+	pod, err := u.client.CoreV1().Pods(u.namespace).Get(u.ctx(), sensorPodName, metav1.GetOptions{})
+	if err != nil {
+		return &storage.SensorHealthInfo{}
+	}
+
+	lastTerminatedReason := ""
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.Name != sensorContainerName {
+			continue
+		}
+		if terminated := status.LastTerminationState.Terminated; terminated != nil {
+			lastTerminatedReason = terminated.Reason
+		}
+	}
+	return &storage.SensorHealthInfo{
+		LastTerminatedReason: lastTerminatedReason,
+	}
 }
 
 func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {

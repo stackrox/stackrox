@@ -257,6 +257,7 @@ message AuditLogFileState {
     string                    last_audit_id      = 2; // Previously received audit id. May be empty
 }
 
+// Next Tag: 13
 message ClusterHealthStatus {
     string                    id                               = 9 [(gogoproto.moretags) = 'sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"'];
     enum HealthStatusLabel {
@@ -273,6 +274,8 @@ message ClusterHealthStatus {
     // scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
     // Please do not confuse this with the default scanner deployment on a central cluster.
     ScannerHealthInfo          scanner_health_info              = 10;
+
+    SensorHealthInfo           sensor_health_info               = 12;
 
     // The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
     HealthStatusLabel         sensor_health_status              = 2 [(gogoproto.moretags) = 'search:"Sensor Status,store"'];
@@ -335,6 +338,10 @@ message AdmissionControlHealthInfo {
 
     // Collection of errors that occurred while trying to obtain admission control health info.
     repeated string status_errors = 3;
+}
+
+message SensorHealthInfo {
+    string last_terminated_reason = 1;
 }
 
 // ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called "local scanner").

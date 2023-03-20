@@ -512,6 +512,9 @@
           "$ref": "#/definitions/storageScannerHealthInfo",
           "description": "scanner_health_info is filled when the scanner is deployed on a secured cluster (so called \"local scanner\").\nPlease do not confuse this with the default scanner deployment on a central cluster."
         },
+        "sensorHealthInfo": {
+          "$ref": "#/definitions/storageSensorHealthInfo"
+        },
         "sensorHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel",
           "description": "The following _health_status fields provide aggregated health status of the respective components and are assigned by central."
@@ -537,7 +540,8 @@
           "type": "boolean",
           "title": "To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version"
         }
-      }
+      },
+      "title": "Next Tag: 13"
     },
     "storageClusterStatus": {
       "type": "object",
@@ -780,6 +784,14 @@
         }
       },
       "description": "StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine\nwhether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network\npartition), or from a deployment in a different namespace or cluster."
+    },
+    "storageSensorHealthInfo": {
+      "type": "object",
+      "properties": {
+        "lastTerminatedReason": {
+          "type": "string"
+        }
+      }
     },
     "storageStaticClusterConfig": {
       "type": "object",

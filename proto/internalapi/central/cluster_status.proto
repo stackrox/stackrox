@@ -22,4 +22,5 @@ message RawClusterHealthInfo {
     storage.CollectorHealthInfo        collector_health_info            = 1;
     storage.AdmissionControlHealthInfo admission_control_health_info    = 2;
     storage.ScannerHealthInfo          scanner_health_info              = 3;
+    storage.SensorHealthInfo           sensor_health_info               = 4;
 }
