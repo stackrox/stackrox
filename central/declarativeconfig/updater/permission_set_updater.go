@@ -41,7 +41,7 @@ func (u *permissionSetUpdater) Upsert(ctx context.Context, m proto.Message) erro
 	return u.roleDS.UpsertPermissionSet(ctx, permissionSet)
 }
 
-func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) error {
+func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	permissionSets, err := u.roleDS.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
@@ -49,16 +49,18 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 			!resourcesToSkip.Contains(permissionSet.GetId())
 	})
 	if err != nil {
-		return errors.Wrap(err, "retrieving declarative permission sets")
+		return nil, errors.Wrap(err, "retrieving declarative permission sets")
 	}
 
 	var permissionSetDeletionErr *multierror.Error
+	var permissionSetIDs []string
 	for _, permissionSet := range permissionSets {
 		if err := u.roleDS.RemovePermissionSet(ctx, permissionSet.GetId()); err != nil {
 			permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, err)
+			permissionSetIDs = append(permissionSetIDs, permissionSet.GetId())
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(permissionSet, "", err,
 				u.idExtractor, u.nameExtractor))
 		}
 	}
-	return permissionSetDeletionErr.ErrorOrNil()
+	return permissionSetIDs, permissionSetDeletionErr.ErrorOrNil()
 }

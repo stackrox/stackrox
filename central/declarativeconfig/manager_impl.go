@@ -236,14 +236,11 @@ func (m *managerImpl) runReconciliation() {
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
 	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
-	if ok := m.doUpsert(transformedMessagesByHandler); !ok {
-		// We ran into an issue during reconciliation that is irrecoverable, i.e. a missing type updater, and return.
-		return
-	}
+	m.doUpsert(transformedMessagesByHandler)
 	m.doDeletion(transformedMessagesByHandler)
 }
 
-func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) bool {
+func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) {
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
@@ -257,7 +254,6 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 			}
 		}
 	}
-	return true
 }
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
@@ -274,8 +270,15 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		allProtoIDsToSkip = append(allProtoIDsToSkip, idsToSkip...)
 		typeUpdater := m.updaters[protoType]
 		log.Debugf("Running deletion with resource updater %T, skipping IDs %+v", typeUpdater, idsToSkip)
-		err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
+		failedDeletionIDs, err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
 		log.Debugf("Finished deletion, return value: %+v", err)
+		// In case of an error, ensure we do not delete the integration health status for resources we failed to delete.
+		// Otherwise, the reason why the deletion failed will not be visible to users while the resource may still
+		// exist.
+		if err != nil {
+			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
+			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
+		}
 	}
 
 	if err := m.removeStaleHealthStatus(allProtoIDsToSkip); err != nil {

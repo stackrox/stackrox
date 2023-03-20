@@ -41,7 +41,7 @@ func (u *roleUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	return u.roleDS.UpsertRole(ctx, role)
 }
 
-func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) error {
+func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	roles, err := u.roleDS.GetRolesFiltered(ctx, func(role *storage.Role) bool {
@@ -49,16 +49,18 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 			!resourcesToSkip.Contains(role.GetName())
 	})
 	if err != nil {
-		return errors.Wrap(err, "retrieving declarative roles")
+		return nil, errors.Wrap(err, "retrieving declarative roles")
 	}
 
 	var roleDeletionErr *multierror.Error
+	var roleIds []string
 	for _, role := range roles {
 		if err := u.roleDS.RemoveRole(ctx, role.GetName()); err != nil {
 			roleDeletionErr = multierror.Append(roleDeletionErr, err)
+			roleIds = append(roleIds, role.GetName())
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(role, "", err,
 				u.idExtractor, u.nameExtractor))
 		}
 	}
-	return roleDeletionErr.ErrorOrNil()
+	return roleIds, roleDeletionErr.ErrorOrNil()
 }

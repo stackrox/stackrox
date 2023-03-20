@@ -56,7 +56,7 @@ func (u *authProviderUpdater) Upsert(ctx context.Context, m proto.Message) error
 	return nil
 }
 
-func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) error {
+func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	authProviders, err := u.authProviderDS.GetAuthProvidersFiltered(ctx, func(authProvider *storage.AuthProvider) bool {
@@ -64,13 +64,15 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 			!resourcesToSkip.Contains(authProvider.GetId())
 	})
 	if err != nil {
-		return errors.Wrap(err, "retrieving declarative auth providers")
+		return nil, errors.Wrap(err, "retrieving declarative auth providers")
 	}
 
 	var authProviderDeletionErr *multierror.Error
+	var authProviderIDs []string
 	for _, authProvider := range authProviders {
 		if err := u.authProviderRegistry.DeleteProvider(ctx, authProvider.GetId(), true, true); err != nil {
 			authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
+			authProviderIDs = append(authProviderIDs, authProvider.GetId())
 
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(authProvider, "", err,
 				u.idExtractor, u.nameExtractor))
@@ -81,5 +83,5 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 			log.Errorf("Error deleting groups for auth provider id %s: %v", authProvider.GetId(), err)
 		}
 	}
-	return authProviderDeletionErr.ErrorOrNil()
+	return authProviderIDs, authProviderDeletionErr.ErrorOrNil()
 }

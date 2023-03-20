@@ -36,15 +36,16 @@ func (m *MockResourceUpdater) EXPECT() *MockResourceUpdaterMockRecorder {
 }
 
 // DeleteResources mocks base method.
-func (m *MockResourceUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) error {
+func (m *MockResourceUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx}
 	for _, a := range resourceIDsToSkip {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "DeleteResources", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteResources indicates an expected call of DeleteResources.

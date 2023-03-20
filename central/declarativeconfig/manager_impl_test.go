@@ -148,11 +148,11 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{"id-perm-set-1", "id-perm-set-2"})).Return(nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-access-scope"}).Return(nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{"id-perm-set-1", "id-perm-set-2"})).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-access-scope"}).Return([]string{"skipping-scope"}, errors.New("some-error")),
 	)
 
 	// We retrieve the integration healths on the deletion, only the non-ignored ID that does not have "Config Map"
@@ -173,6 +173,10 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			},
 			{
 				Id:   "role",
+				Name: "",
+			},
+			{
+				Id:   "skipping-scope",
 				Name: "",
 			},
 			{
@@ -238,7 +242,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		ErrorMessage: "test error",
 	}))
 
-	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 	reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
 		Return(nil, nil).AnyTimes()
