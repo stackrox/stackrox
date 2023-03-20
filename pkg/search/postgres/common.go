@@ -13,6 +13,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -22,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/random"
+	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -325,9 +328,251 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
+func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) error {
+	if len(querySelects) == 0 {
+		return errors.New("select portion of the query cannot be empty")
+	}
+
+	for idx, qs := range querySelects {
+		field := qs.GetField()
+		fieldMetadata := queryFields[field.GetName()]
+		dbField := fieldMetadata.baseField
+		if dbField == nil {
+			return errors.Errorf("field %s in select portion of query does not exist in table %s or connected tables", field, schema.Table)
+		}
+		// TODO(mandar): Add support for the following.
+		if dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
+			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map {
+			return errors.Errorf("field %s in select portion of query is unsupported", field)
+		}
+
+		if qs.GetFilter() == nil {
+			querySoFar.SelectedFields = append(querySoFar.SelectedFields,
+				selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), ""),
+			)
+			continue
+		}
+
+		// SQL constraint
+		if field.GetAggregateFunc() == aggregatefunc.Unset.String() {
+			return errors.New("FILTER clause can only be applied to aggregate functions")
+		}
+
+		filter := qs.GetFilter()
+		qe, err := compileQueryToPostgres(schema, filter.GetQuery(), queryFields, nowForQuery)
+		if err != nil {
+			return errors.New("failed to parse filter in select portion of query")
+		}
+		if qe == nil || qe.Where.Query == "" {
+			return nil
+		}
+		querySoFar.Data = append(querySoFar.Data, qe.Where.Values...)
+
+		selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), qe.Where.Query)
+		if alias := filter.GetName(); alias != "" {
+			selectField.Alias = alias
+		} else {
+			selectField.Alias = fmt.Sprintf("%s_%d", selectField.Alias, idx)
+		}
+		querySoFar.SelectedFields = append(querySoFar.SelectedFields, selectField)
+	}
+	return nil
+}
+func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
+	if querySoFar.QueryType != SELECT && len(groupBy.GetFields()) > 0 {
+		return errors.New("GROUP BY clause not supported with SEARCH query type; Use SELECT")
+	}
+
+	// If explicit group by clauses are not specified and if a query field (in select or order by) is a derived field requiring a group by clause,
+	// default to primary key grouping. Note that all fields in the query, including pagination, are in `queryFields`.
+	if len(groupBy.GetFields()) == 0 {
+		for _, field := range queryFields {
+			if field.derivedMetadata == nil {
+				continue
+			}
+			switch field.derivedMetadata.DerivationType {
+			case searchPkg.CountDerivationType:
+				applyGroupByPrimaryKeys(querySoFar, schema)
+				return nil
+			}
+		}
+		return nil
+	}
+
+	for _, groupByField := range groupBy.GetFields() {
+		fieldMetadata := queryFields[groupByField]
+		dbField := fieldMetadata.baseField
+		if dbField == nil {
+			return errors.Errorf("field %s in GROUP BY clause does not exist in table %s or connected tables", groupByField, schema.Table)
+		}
+		if fieldMetadata.derivedMetadata != nil {
+			// Aggregate functions are not allowed in GROUP BY clause. SQL constraint.
+			return errors.Errorf("found %s in GROUP BY clause. Derived fields cannot be used in GROUP BY clause", groupByField)
+		}
+		if dbField.Options.PrimaryKey {
+			querySoFar.GroupByPrimaryKey = true
+		}
+
+		selectField := selectQueryField(groupByField, dbField, false, aggregatefunc.Unset, "")
+		selectField.FromGroupBy = true
+		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
+	}
+	return nil
+}
+
+func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
+	querySoFar.GroupByPrimaryKey = true
+	pks := schema.PrimaryKeys()
+	for idx := range pks {
+		pk := &pks[idx]
+		selectField := selectQueryField("", pk, false, aggregatefunc.Unset, "")
+		selectField.FromGroupBy = true
+		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
+	}
+}
+
+func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
+	if pagination == nil {
+		return nil
+	}
+
+	for idx, so := range pagination.GetSortOptions() {
+		if idx != 0 && so.GetSearchAfter() != "" {
+			return errors.New("search after for pagination must be defined for only the first sort option")
+		}
+		if so.GetField() == searchPkg.DocID.String() {
+			var cast string
+			if schema.ID().SQLType == "uuid" {
+				cast = "::text"
+			}
+			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+				Field: pgsearch.SelectQueryField{
+					SelectPath: qualifyColumn(schema.Table, schema.ID().ColumnName, cast),
+					FieldType:  postgres.String,
+				},
+				Descending:  so.GetReversed(),
+				SearchAfter: so.GetSearchAfter(),
+			})
+			continue
+		}
+		fieldMetadata := queryFields[so.GetField()]
+		dbField := fieldMetadata.baseField
+		if dbField == nil {
+			return errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
+		}
+
+		if fieldMetadata.derivedMetadata == nil {
+			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+				Field:       selectQueryField(so.GetField(), dbField, false, aggregatefunc.Unset, ""),
+				Descending:  so.GetReversed(),
+				SearchAfter: so.GetSearchAfter(),
+			})
+		} else {
+			var selectField pgsearch.SelectQueryField
+			var descending bool
+			switch fieldMetadata.derivedMetadata.DerivationType {
+			case searchPkg.CountDerivationType:
+				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Count, "")
+				descending = so.GetReversed()
+			case searchPkg.SimpleReverseSortDerivationType:
+				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Unset, "")
+				descending = !so.GetReversed()
+			default:
+				log.Errorf("Unsupported derived field %s found in query", so.GetField())
+				continue
+			}
+
+			selectField.DerivedField = true
+			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+				Field:      selectField,
+				Descending: descending,
+			})
+		}
+	}
+	querySoFar.Pagination.Limit = int(pagination.GetLimit())
+	querySoFar.Pagination.Offset = int(pagination.GetOffset())
+	return nil
+}
+
+func applyPaginationForSearchAfter(query *query) error {
+	pagination := query.Pagination
+	if len(pagination.OrderBys) == 0 {
+		return nil
+	}
+	firstOrderBy := pagination.OrderBys[0]
+	if firstOrderBy.SearchAfter == "" {
+		return nil
+	}
+	if query.Where != "" {
+		query.Where += " and "
+	}
+	operand := ">"
+	if firstOrderBy.Descending {
+		operand = "<"
+	}
+	query.Where += fmt.Sprintf("%s %s $$", firstOrderBy.Field.SelectPath, operand)
+	query.Data = append(query.Data, firstOrderBy.SearchAfter)
+	return nil
+}
+
+func enrichQueryWithScopedAccessControlFilter(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*v1.Query, error) {
+	scopingResource := *schema.ScopingResource
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	accessMode := storage.Access_NO_ACCESS
+	switch queryType {
+	case COUNT:
+		accessMode = storage.Access_READ_ACCESS
+	case GET:
+		accessMode = storage.Access_READ_ACCESS
+	case SEARCH:
+		accessMode = storage.Access_READ_ACCESS
+	case SELECT:
+		accessMode = storage.Access_READ_ACCESS
+	case DELETE:
+		accessMode = storage.Access_READ_WRITE_ACCESS
+	}
+	if scopingResource.GetScope() == permissions.GlobalScope {
+		scopeChecker = scopeChecker.AccessMode(accessMode).Resource(scopingResource)
+		if !scopeChecker.IsAllowed() {
+			return nil, sac.ErrResourceAccessDenied
+		}
+		return q, nil
+	}
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: scopingResource,
+		Access:   accessMode,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var sacQueryFilter *v1.Query
+	switch scopingResource.GetScope() {
+	case permissions.ClusterScope:
+		sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+		if err != nil {
+			return nil, err
+		}
+	case permissions.NamespaceScope:
+		sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+		if err != nil {
+			return nil, err
+		}
+	}
+	enrichedQuery := searchPkg.ConjunctionQuery(sacQueryFilter, q)
+	enrichedQuery.Pagination = q.GetPagination()
+	return enrichedQuery, nil
+}
+
+func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
 	nowForQuery := time.Now()
 	standardizeFieldNamesInQuery(q)
+	if schema != nil && schema.ScopingResource != nil {
+		enrichedQuery, err := enrichQueryWithScopedAccessControlFilter(ctx, q, schema, queryType)
+		if err != nil {
+			return nil, err
+		}
+		q = enrichedQuery
+	}
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
 
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
@@ -700,7 +945,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		}
 	}()
 
-	query, err = standardizeQueryAndPopulatePath(q, schema, SEARCH)
+	query, err = standardizeQueryAndPopulatePath(ctx, q, schema, SEARCH)
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +971,7 @@ func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Quer
 
 // RunCountRequestForSchema executes a request for just the count against the database
 func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (int, error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, COUNT)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, COUNT)
 	if err != nil || query == nil {
 		return 0, err
 	}
@@ -749,7 +994,7 @@ type unmarshaler[T any] interface {
 
 // RunGetQueryForSchema executes a request for just the search against the database
 func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*T, error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
 		return nil, err
 	}
@@ -778,7 +1023,7 @@ func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Con
 
 // RunGetManyQueryForSchema executes a request for just the search against the database and unmarshal it to given type.
 func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]*T, error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
 		return nil, err
 	}
@@ -794,7 +1039,7 @@ func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sch
 
 // RunCursorQueryForSchema creates a cursor against the database
 func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error creating query")
 	}
@@ -842,7 +1087,7 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
 func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) error {
-	query, err := standardizeQueryAndPopulatePath(q, schema, DELETE)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, DELETE)
 	if err != nil || query == nil {
 		return err
 	}
