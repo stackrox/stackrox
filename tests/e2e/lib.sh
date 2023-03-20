@@ -482,7 +482,11 @@ check_for_errors_in_stackrox_logs() {
     info "SHREWS -- why does this not pick up my changes"
     pwd
     cat scripts/ci/logcheck/check.sh
-    echo "Allow file is ${ALLOWLIST_FILE}"
+    if [[ -z "${ALLOWLIST_FILE:-}" ]]; then
+        info "allowlist file is not set"
+    else
+        echo "Allow file is ${ALLOWLIST_FILE}"
+    fi
     info "SHREWS -- end"
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: check_for_errors_in_stackrox_logs <dir>"
