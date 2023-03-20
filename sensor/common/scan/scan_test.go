@@ -119,13 +119,15 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return &fakeRegistry{fail: true}, nil
 			},
+			enrichmentTriggered: true,
 		},
 		"fail scanning the image locally": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return &fakeRegistry{fail: false}, nil
 			},
-			scanImg: failingScan,
+			scanImg:             failingScan,
+			enrichmentTriggered: true,
 		},
 		"fail enrich image via central": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true),
@@ -143,6 +145,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			},
 			scanImg:                  successfulScan,
 			fetchSignaturesWithRetry: failingFetchSignatures,
+			enrichmentTriggered:      true,
 		},
 	}
 

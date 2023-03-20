@@ -382,6 +382,13 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	defer s.internalScanSemaphore.Release(1)
 
+	hasPreviousErrors := false
+	if len(request.Error) > 0 {
+		hasPreviousErrors = true
+		log.Infof("received image enrichment request from sensor with previous errors: %q", request.GetImageName().GetFullName(), request.GetError())
+	}
+
+	var imgExists bool
 	forceSigVerificationUpdate := true
 	forceScanUpdate := true
 	imgID := request.GetImageId()
@@ -414,6 +421,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		if exists && !forceScanUpdate && !forceSigVerificationUpdate {
 			return internalScanRespFromImage(existingImg), nil
 		}
+
+		imgExists = true
 	}
 
 	img := &storage.Image{
@@ -421,17 +430,23 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		Name:           request.GetImageName(),
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
+		Notes:          request.GetImageNotes(),
 		IsClusterLocal: true,
 	}
 
-	if forceScanUpdate {
-		if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil {
+	if forceScanUpdate && !hasPreviousErrors {
+		if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil && imgExists {
+			// TODO: Determine why notes are not set on failures like in other flows
+
+			// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
+			// central, since it could lead to us overriding an enriched image with a non-enriched image.
 			return nil, err
 		}
 	}
 
-	if forceSigVerificationUpdate {
-		if _, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img); err != nil {
+	if forceSigVerificationUpdate && !hasPreviousErrors {
+		if _, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img); err != nil && imgExists {
+			// TODO: Determine why notes are not set on failures like in other flows
 			return nil, err
 		}
 	}
