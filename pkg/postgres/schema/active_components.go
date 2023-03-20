@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -41,6 +42,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
+		schema.ScopingResource = &resources.Deployment
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ACTIVE_COMPONENT, "activecomponent", (*storage.ActiveComponent)(nil)))
 		RegisterTable(schema, CreateTableActiveComponentsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ACTIVE_COMPONENT, schema)

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -29,6 +30,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestSingleKeyStruct)(nil)), "test_single_key_structs")
+		schema.ScopingResource = &resources.Namespace
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory(100), "testsinglekeystruct", (*storage.TestSingleKeyStruct)(nil)))
 		RegisterTable(schema, CreateTableTestSingleKeyStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(100), schema)

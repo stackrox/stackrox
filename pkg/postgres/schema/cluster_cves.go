@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -28,6 +29,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVE)(nil)), "cluster_cves")
+		schema.ScopingResource = &resources.Cluster
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_VULNERABILITIES, "clustercve", (*storage.ClusterCVE)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_CLUSTER_VULNERABILITIES,

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -29,6 +30,7 @@ var (
 	// TestMultiKeyStructsSchema is the go schema for table `test_multi_key_structs`.
 	TestMultiKeyStructsSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "test_multi_key_structs")
+		schema.ScopingResource = &resources.Namespace
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testmultikeystruct", (*storage.TestMultiKeyStruct)(nil)))
 		return schema
 	}()

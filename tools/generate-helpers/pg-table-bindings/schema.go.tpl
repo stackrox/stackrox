@@ -16,6 +16,7 @@ import (
     "github.com/stackrox/rox/pkg/features"{{- end }}
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/postgres/walker"
+    "github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres/mapping"
     "github.com/stackrox/rox/pkg/uuid"
@@ -60,6 +61,10 @@ var (
              return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
          })
          {{- end }}
+
+        {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+            schema.ScopingResource = &resources.{{.Type | storageToResource}}
+        {{- end }}
 
         {{- if .SearchCategory }}
             schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{.Schema.Type}})(nil)))
