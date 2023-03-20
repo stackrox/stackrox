@@ -21,19 +21,16 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
 import ImageComponentsTable from './ImageComponentsTable';
-import { ImageDetailsResponse } from '../hooks/useImageDetails';
 import { DynamicColumnIcon } from '../DynamicIcon';
 
 export type SingleEntityVulnerabilitiesTableProps = {
-    image: ImageDetailsResponse['image'] | undefined;
-    imageVulnerabilities: ImageVulnerabilitiesResponse['image']['imageVulnerabilities'];
+    image: ImageVulnerabilitiesResponse['image'];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };
 
 function SingleEntityVulnerabilitiesTable({
     image,
-    imageVulnerabilities,
     getSortParams,
     isFiltered,
 }: SingleEntityVulnerabilitiesTableProps) {
@@ -58,7 +55,7 @@ function SingleEntityVulnerabilitiesTable({
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
-            {imageVulnerabilities.map(
+            {image.imageVulnerabilities.map(
                 (
                     { cve, severity, summary, isFixable, imageComponents, discoveredAtImage },
                     rowIndex
@@ -138,7 +135,7 @@ function SingleEntityVulnerabilitiesTable({
                                             }}
                                         >
                                             <ImageComponentsTable
-                                                image={image}
+                                                layers={image.metadata?.v1?.layers ?? []}
                                                 imageComponents={imageComponents}
                                             />
                                         </div>
