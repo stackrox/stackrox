@@ -39,24 +39,30 @@ func getIdentityToken(ctx context.Context, audience string) (string, error) {
 	}
 	req = req.WithContext(ctx)
 	q := req.URL.Query()
+	log.Errorf("[GCP getIdentityToken] request url %+q", req.URL)
 	q.Add("audience", audience)
+	log.Errorf("[GCP getIdentityToken] request aud %+q", audience)
 	req.URL.RawQuery = q.Encode()
+	log.Errorf("[GCP getIdentityToken] request rawquery %+q", req.URL.RawQuery)
 
 	req.Header.Add("Metadata-Flavor", "Google")
 
 	resp, err := metadataHTTPClient.Do(req)
 	// Assume the service is unavailable if we encounter a transport error or a non-2xx status code
 	if err != nil {
+		log.Errorf("[GCP getIdentityToken] err from request %+q", err)
 		return "", nil
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
+	log.Errorf("[GCP getIdentityToken] req status code %+q", resp.StatusCode)
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
 		return "", nil
 	}
 
 	tokenBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Errorf("[GCP getIdentityToken] err reading response body %+q", err)
 		return "", errors.Wrap(err, "reading response body")
 	}
 
@@ -66,6 +72,7 @@ func getIdentityToken(ctx context.Context, audience string) (string, error) {
 func getMetadataFromIdentityToken(ctx context.Context) (*gcpMetadata, error) {
 	nonce, err := cryptoutils.NewNonceGenerator(nonceLen, rand.Reader).Nonce()
 	if err != nil {
+		log.Errorf("[GCP getMetadataFromIdentityToken] err generating nonce %+q", err)
 		return nil, errors.Wrap(err, "generating nonce")
 	}
 
@@ -75,39 +82,45 @@ func getMetadataFromIdentityToken(ctx context.Context) (*gcpMetadata, error) {
 	// cert due to rotation.
 	var certs certSet
 	if err := certs.Fetch(ctx); err != nil {
-		log.Warnf("Failed to fetch Google OAuth2 certs: %v", err)
+		log.Errorf("Failed to fetch Google OAuth2 certs: %v", err)
 	}
 
 	identityToken, err := getIdentityToken(ctx, audience)
 	if err != nil {
+		log.Errorf("[GCP getMetadataFromIdentityToken] err getting identity token %+q", err)
 		return nil, err
 	}
 	if identityToken == "" {
+		log.Error("[GCP getMetadataFromIdentityToken] identity token is nil")
 		return nil, nil
 	}
 
 	if err := certs.Fetch(ctx); err != nil {
-		log.Warnf("Failed to fetch Google OAuth2 certs: %v", err)
+		log.Errorf("Failed to fetch Google OAuth2 certs: %v", err)
 	}
 
 	parsedToken, err := jwt.ParseSigned(identityToken)
 	if err != nil {
+		log.Errorf("[GCP getMetadataFromIdentityToken] err generating jwt %+q", err)
 		return nil, err
 	}
 
 	if len(parsedToken.Headers) != 1 {
+		log.Errorf("[GCP getMetadataFromIdentityToken] parsed JWT should have exactly one header, has %+q", parsedToken.Headers)
 		return nil, errors.Errorf("parsed JWT should have exactly one header, has %d", len(parsedToken.Headers))
 	}
 
 	kid := parsedToken.Headers[0].KeyID
 	key := certs.GetKey(kid)
 	if key == nil {
+		log.Errorf("[GCP getMetadataFromIdentityToken] parsed JWT header referenced unknown key %+q", kid)
 		return nil, errors.Errorf("parsed JWT header referenced unknown key %q", kid)
 	}
 
 	var claims identityTokenClaims
 
 	if err := parsedToken.Claims(key, &claims); err != nil {
+		log.Errorf("[GCP getMetadataFromIdentityToken] err retrieving claims %+q", err)
 		return nil, errors.Wrap(err, "retrieving claims")
 	}
 
@@ -117,10 +130,12 @@ func getMetadataFromIdentityToken(ctx context.Context) (*gcpMetadata, error) {
 	}
 
 	if err := claims.Validate(expectedClaims); err != nil {
+		log.Errorf("[GCP getMetadataFromIdentityToken] err validating claims %+q", err)
 		return nil, errors.Wrap(err, "validating claims")
 	}
 
 	if claims.Google.ComputeEngine.Zone == "" || claims.Google.ComputeEngine.ProjectID == "" {
+		log.Error("[GCP getMetadataFromIdentityToken] identity token is missing required fields")
 		return nil, errors.New("identity token is missing required fields")
 	}
 
