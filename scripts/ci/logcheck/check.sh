@@ -6,13 +6,10 @@
 # It returns a non-zero exit status if any offending patterns have been found.
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
-echo "INFO:  SHREWS is in the check"
-echo "Incoming Allow file is ${ALLOWLIST_FILE}"
 
 BLOCKLIST_FILE="${DIR}/blocklist-patterns"
 allow_file="${ALLOWLIST_FILE:-${DIR}/allowlist-patterns}"
 echo "INFO:  Allow list file: ${allow_file}"
-cat "${allow_file}"
 
 join_by() { local IFS="$1"; shift; echo "$*"; }
 
