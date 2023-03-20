@@ -46,7 +46,8 @@ func NewDefaultHTTPServer(subsystem Subsystem) *HTTPServer {
 		Name:      "uptime_seconds",
 		Help:      "Total number of seconds that the service has been up",
 	})
-	prometheus.MustRegister(uptimeMetric)
+	// Allow the metric to be registered multiple times for tests
+	_ = prometheus.Register(uptimeMetric)
 
 	return &HTTPServer{
 		Address:      env.MetricsSetting.Setting(),
