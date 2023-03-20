@@ -77,9 +77,9 @@ type imageDatastoreSACSuite struct {
 
 	datastore datastore.DataStore
 
-	imageVulnDatastore  imageCVEEdgeDataStore.DataStore
-	deploymentDatastore deploymentDataStore.DataStore
-	namespaceDatastore  namespaceDataStore.DataStore
+	imageVulnEdgeDatastore imageCVEEdgeDataStore.DataStore
+	deploymentDatastore    deploymentDataStore.DataStore
+	namespaceDatastore     namespaceDataStore.DataStore
 
 	optionsMap searchPkg.OptionsMap
 
@@ -96,7 +96,7 @@ func (s *imageDatastoreSACSuite) SetupSuite() {
 		s.Require().NotNil(s.pgtestbase)
 		s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 		s.Require().NoError(err)
-		s.imageVulnDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+		s.imageVulnEdgeDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 		s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 		s.Require().NoError(err)
 		s.namespaceDatastore, err = namespaceDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
@@ -127,7 +127,7 @@ func (s *imageDatastoreSACSuite) SetupSuite() {
 
 		s.datastore, err = datastore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
 		s.Require().NoError(err)
-		s.imageVulnDatastore = imageCVEEdgeDataStore.GetTestRocksBleveDataStore(s.T(), s.index, s.dacky, s.keyFence)
+		s.imageVulnEdgeDatastore = imageCVEEdgeDataStore.GetTestRocksBleveDataStore(s.T(), s.index, s.dacky, s.keyFence)
 		s.deploymentDatastore, err = deploymentDataStore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
 		s.Require().NoError(err)
 		s.namespaceDatastore, err = namespaceDataStore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
@@ -254,14 +254,14 @@ func (s *imageDatastoreSACSuite) TestUpdateVulnerabilityState() {
 			s.Require().NoError(insertErr)
 			for _, cve := range foundCVEs {
 				edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-				edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
+				edge, found, err := s.imageVulnEdgeDatastore.Get(checkCtx, edgeID)
 				s.NoError(err)
 				s.True(found)
 				s.Equal(storage.VulnerabilityState_OBSERVED, edge.GetState())
 			}
 			for _, cve := range missingCVEs {
 				edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-				edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
+				edge, found, err := s.imageVulnEdgeDatastore.Get(checkCtx, edgeID)
 				s.NoError(err)
 				s.False(found)
 				s.Nil(edge)
@@ -276,19 +276,18 @@ func (s *imageDatastoreSACSuite) TestUpdateVulnerabilityState() {
 				s.NoError(updateErr)
 				for _, cve := range foundCVEs {
 					expectedState := storage.VulnerabilityState_OBSERVED
-					if !env.PostgresDatastoreEnabled.BooleanSetting() && cve.GetCve() == cve3.GetCve() {
-						// Currently, UpdateVulnerabilityState only updates the state column, but not the stored serialized object
+					if cve.GetCve() == cve3.GetCve() {
 						expectedState = storage.VulnerabilityState_DEFERRED
 					}
 					edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-					edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
+					edge, found, err := s.imageVulnEdgeDatastore.Get(checkCtx, edgeID)
 					s.NoError(err)
 					s.True(found)
 					s.Equal(expectedState, edge.GetState())
 				}
 				for _, cve := range missingCVEs {
 					edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-					edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
+					edge, found, err := s.imageVulnEdgeDatastore.Get(checkCtx, edgeID)
 					s.NoError(err)
 					s.False(found)
 					s.Nil(edge)
