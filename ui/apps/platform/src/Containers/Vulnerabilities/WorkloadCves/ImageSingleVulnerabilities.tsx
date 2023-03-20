@@ -30,7 +30,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSort, { UseURLSortProps } from 'hooks/useURLSort';
+import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { cveStatusTabValues, FixableStatus } from './types';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
