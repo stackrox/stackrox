@@ -14,8 +14,8 @@ var (
 	fakeImgName = &storage.ImageName{
 		Registry: "quay.io",
 		Remote:   "rhacs-eng/sandbox",
-		Tag:      "noexist:1.2.0",
-		FullName: "quay.io/rhacs-eng/sandbox/noexist:1.20",
+		Tag:      "noexist",
+		FullName: "quay.io/rhacs-eng/sandbox:noexist",
 	}
 )
 
