@@ -22,6 +22,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     // Deployment names
     static final private String TCPCONNECTIONTARGET1 = "tcp-connection-target-1"
     static final private String TCPCONNECTIONTARGET2 = "tcp-connection-target-2"
+    static final private String TCPCONNECTIONTARGET3 = "tcp-connection-target-3"
 
     // Other namespace
     static final private String OTHER_NAMESPACE = "qa2"
@@ -52,6 +53,14 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT)" as String,]),
+            new Deployment()
+                    .setName(TCPCONNECTIONTARGET3)
+                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .addPort(8081, "TCP")
+                    .addLabel("app", TCPCONNECTIONTARGET3)
+                    .setExposeAsService(true)
+                    .setCommand(["/bin/sh", "-c",])
+                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT & sleep 240 && pkill socat && sleep 3600)" as String,]),
         ]
     }
 
@@ -226,6 +235,51 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def list3 = processesListeningOnPorts.listeningEndpointsList
         assert list3.size() == 0
+    }
+
+    @Tag("BAT")
+    def "Verify networking endpoints disappear when process is terminated"() {
+        given:
+        "Two deployments that listen on ports are started up"
+
+        rebuildForRetries()
+        def clusterId = ClusterService.getClusterId()
+
+        String deploymentId3 = targetDeployments[2].getDeploymentUid()
+
+        def gotCorrectNumElements = waitForResponseToHaveNumElements(1, deploymentId3, 240)
+
+        assert gotCorrectNumElements
+
+        def processesListeningOnPorts = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(deploymentId3)
+                return temp
+        }
+
+        assert processesListeningOnPorts
+
+        def list = processesListeningOnPorts.listeningEndpointsList
+        assert list.size() == 1
+
+        def endpoint = list.find { it.endpoint.port == 8081 }
+
+        assert endpoint
+        assert endpoint.clusterId == clusterId
+        assert endpoint.containerName == TCPCONNECTIONTARGET3
+        assert endpoint.signal.id
+        assert endpoint.signal.containerId
+        assert endpoint.signal.time
+        assert endpoint.signal.name == "socat"
+        assert endpoint.signal.execFilePath == "/usr/bin/socat"
+        assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+        assert endpoint.signal.pid
+
+        gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId3, 180)
+
+        assert gotCorrectNumElements
+
+        destroyDeployments()
     }
 
     private waitForResponseToHaveNumElements(int numElements,
