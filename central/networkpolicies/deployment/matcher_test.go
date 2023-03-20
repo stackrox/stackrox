@@ -153,8 +153,8 @@ func Test_MatchDeployments(t *testing.T) {
 			details := matcher.GetIsolationDetails(testCase.deployment)
 			assert.Equal(t, testCase.ingressIsolated, details.IngressIsolated)
 			assert.Equal(t, testCase.egressIsolated, details.EgressIsolated)
-			for _, policyId := range testCase.hasPolicyIds {
-				assert.Contains(t, details.PolicyIDs, policyId)
+			for _, policyID := range testCase.hasPolicyIds {
+				assert.Contains(t, details.PolicyIDs, policyID)
 			}
 		})
 	}

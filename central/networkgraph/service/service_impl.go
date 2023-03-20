@@ -352,7 +352,7 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 		return err
 	}
 
-	var isolationDetails map[string]deploymentMatcher.IsolationDetails
+	isolationDetails := make(map[string]deploymentMatcher.IsolationDetails, len(deploymentObjects))
 	for _, deployment := range deploymentObjects {
 		details := matcher.GetIsolationDetails(deployment)
 		isolationDetails[deployment.GetId()] = deploymentMatcher.IsolationDetails{
@@ -364,8 +364,8 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 
 	for idx, node := range graph.Nodes {
 		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
-			deploymentId := node.GetEntity().GetId()
-			if isolationDetail, ok := isolationDetails[deploymentId]; ok {
+			deploymentID := node.GetEntity().GetId()
+			if isolationDetail, ok := isolationDetails[deploymentID]; ok {
 				graph.Nodes[idx].NonIsolatedEgress = !isolationDetail.EgressIsolated
 				graph.Nodes[idx].NonIsolatedIngress = !isolationDetail.IngressIsolated
 				graph.Nodes[idx].PolicyIds = isolationDetail.PolicyIDs

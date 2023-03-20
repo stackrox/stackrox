@@ -9,22 +9,27 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 )
 
+// IsolationDetails represents the isolation level of a deployment.
 type IsolationDetails struct {
 	PolicyIDs       []string
 	IngressIsolated bool
 	EgressIsolated  bool
 }
 
+// LabeledResource is likely network graph node that belongs to a cluster and a namespace, and should be
+// selectable by Pod Selectors.
 type LabeledResource interface {
 	GetClusterId() string
 	GetNamespace() string
 	GetPodLabels() map[string]string
 }
 
+// Matcher interface for generating Isolation Details for deployments based on Network Policies matched.
 type Matcher interface {
 	GetIsolationDetails(deploymentLabels LabeledResource) IsolationDetails
 }
 
+// ClusterNamespace is a helper struct to index network policies based on their cluster and namespace.
 type ClusterNamespace struct {
 	Cluster   string
 	Namespace string
@@ -40,6 +45,7 @@ type policyMatcherImpl struct {
 	netpolMap map[ClusterNamespace][]selectablePolicy
 }
 
+// BuildMatcher creates a matcher with pre-loaded Network Policies from a set of ClusterNamespace filter.
 func BuildMatcher(store networkPolicyDS.DataStore, namespaceFilter []ClusterNamespace) (Matcher, error) {
 	netpolMap, err := buildNetworkPolicies(store, namespaceFilter)
 	if err != nil {
@@ -76,6 +82,8 @@ func buildNetworkPolicies(store networkPolicyDS.DataStore, namespace []ClusterNa
 	return result, nil
 }
 
+// GetIsolationDetails will iterate over preloaded Network Policies and return the isolation level of
+// the resource provided as parameter.
 func (m *policyMatcherImpl) GetIsolationDetails(resource LabeledResource) IsolationDetails {
 	// Get Policies from the same cluster and namespace
 	policies, ok := m.netpolMap[ClusterNamespace{
