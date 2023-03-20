@@ -52,8 +52,9 @@ type managerImpl struct {
 	transformedMessagesByHandler map[string]protoMessagesByType
 	transformedMessagesMutex     sync.RWMutex
 
-	lastReconciliationHash   uint64
-	lastReconciliationFailed concurrency.Flag
+	lastReconciliationHash uint64
+	lastUpsertFailed       concurrency.Flag
+	lastDeletionFailed     concurrency.Flag
 
 	reconciliationTickerDuration time.Duration
 	watchIntervalDuration        time.Duration
@@ -241,23 +242,27 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 
 	// If no changes are indicated within the message we reconcile, and no previous reconciliation failed, do not
 	// run the reconciliation.
-	if !hasChanges && !m.lastReconciliationFailed.Get() {
+	if !hasChanges && !m.lastUpsertFailed.Get() && !m.lastDeletionFailed.Get() {
 		log.Debug("No changes found compared to the previous reconciliation, and no errors have occurred." +
 			" The reconciliation will be skipped.")
 		return
 	}
 
-	m.doUpsert(transformedMessagesByHandler)
+	// Only upsert resources if either the messages we reconcile on changed or the last upsert failed, as it might
+	// have been a transient error or successfully remediated by now.
+	if hasChanges || m.lastUpsertFailed.Get() {
+		m.doUpsert(transformedMessagesByHandler)
+	}
 
-	// Deletion should only be executed when changes have occurred. If only errors occurred in the last reconciliation,
-	// then we should not attempt to delete anything.
-	if hasChanges {
+	// Only delete resources if either the messages we reconcile on changed or the last deletion failed, as it might
+	// have been a transient error or successfully remediated by now.
+	if hasChanges || m.lastDeletionFailed.Get() {
 		m.doDeletion(transformedMessagesByHandler)
 	}
 }
 
 func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) {
-	var failureInReconciliation bool
+	var failureInUpsert bool
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
@@ -269,17 +274,17 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 				err := typeUpdater.Upsert(m.reconciliationCtx, message)
 				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
 				if err != nil {
-					failureInReconciliation = true
+					failureInUpsert = true
 				}
 			}
 		}
 	}
-
-	m.lastReconciliationFailed.Set(failureInReconciliation)
+	m.lastUpsertFailed.Set(failureInUpsert)
 }
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
 	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
+	var failureInDeletion bool
 	var allProtoIDsToSkip []string
 	for _, protoType := range reversedProtoTypes {
 		var idsToSkip []string
@@ -300,12 +305,14 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		if err != nil {
 			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
 			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
+			failureInDeletion = true
 		}
 	}
 
 	if err := m.removeStaleHealthStatuses(allProtoIDsToSkip); err != nil {
 		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
+	m.lastDeletionFailed.Set(failureInDeletion)
 }
 
 // updateHealthForMessage will update the health status of a message using the integrationhealth.Reporter.
