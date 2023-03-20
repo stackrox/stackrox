@@ -25,7 +25,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Role)(nil)), "roles")
-		schema.ScopingResource = &resources.Role
+		schema.ScopingResource = &resources.Access
 		RegisterTable(schema, CreateTableRolesStmt)
 		return schema
 	}()

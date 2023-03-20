@@ -25,7 +25,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.SimpleAccessScope)(nil)), "simple_access_scopes")
-		schema.ScopingResource = &resources.Role
+		schema.ScopingResource = &resources.Access
 		RegisterTable(schema, CreateTableSimpleAccessScopesStmt)
 		return schema
 	}()

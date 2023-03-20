@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 	// BlobsSchema is the go schema for table `blobs`.
 	BlobsSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.Blob)(nil)), "blobs")
+		schema.ScopingResource = &resources.Administration
 		return schema
 	}()
 )

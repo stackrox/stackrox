@@ -25,7 +25,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PermissionSet)(nil)), "permission_sets")
-		schema.ScopingResource = &resources.Role
+		schema.ScopingResource = &resources.Access
 		RegisterTable(schema, CreateTablePermissionSetsStmt)
 		return schema
 	}()

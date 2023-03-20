@@ -29,7 +29,6 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
-		schema.ScopingResource = &resources.DeploymentExtension
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Deployment": DeploymentsSchema,
 		}
@@ -37,6 +36,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
+		schema.ScopingResource = &resources.DeploymentExtension
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
 		RegisterTable(schema, CreateTableProcessIndicatorsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, schema)

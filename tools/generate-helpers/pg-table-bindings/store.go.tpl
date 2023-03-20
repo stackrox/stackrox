@@ -10,9 +10,9 @@
     {{- $singlePK := index . 1 -}}
     {{- range $index, $pk := $pks -}}
     {{- if eq $pk.Name $singlePK.Name -}}
-        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery()
     {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery()
     {{- end -}}
     {{- end -}}
 {{end}}
@@ -456,24 +456,15 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
-    var sacQueryFilter *v1.Query
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-    if err != nil {
-        return err
-    }
     {{- end }}
 
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        {{template "matchQuery" (arr $pks $singlePK)}}
-    )
+    q := {{template "matchQuery" (arr $pks $singlePK)}}
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
@@ -485,26 +476,15 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
-    var sacQueryFilter *v1.Query
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-    if err != nil {
-        return err
-    }
     {{- end }}
 
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        query,
-    )
-
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, query, s.db)
 }
 {{- end}}
 
@@ -515,17 +495,11 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
 
-    var sacQueryFilter *v1.Query
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.DeleteManyAllowed(ctx); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-    if err != nil {
-        return err
     }
     {{- end }}
 
@@ -542,10 +516,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
         }
 
         identifierBatch := identifiers[:localBatchSize]
-        q := search.ConjunctionQuery(
-        sacQueryFilter,
-            search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-        )
+        q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
         if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
             return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
@@ -564,42 +535,26 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "{{.TrimmedType}}")
 
-    var sacQueryFilter *v1.Query
-
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.CountAllowed(ctx); err != nil || !ok {
         return 0, err
     }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return 0, err
-	}
     {{- end }}
 
-    return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+    return pgSearch.RunCountRequestForSchema(ctx, schema, search.EmptyQuery(), s.db)
 }
 
 // Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
 
-    var sacQueryFilter *v1.Query
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
     }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return false, err
-	}
     {{- end }}
 
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        {{template "matchQuery" (arr $pks $singlePK)}}
-    )
+    q := {{template "matchQuery" (arr $pks $singlePK)}}
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
@@ -611,22 +566,13 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
-    var sacQueryFilter *v1.Query
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil || !ok {
         return nil, false, err
     }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-        return nil, false, err
-	}
     {{- end }}
 
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        {{template "matchQuery" (arr $pks $singlePK)}}
-    )
+    q := {{template "matchQuery" (arr $pks $singlePK)}}
 
 	data, err := pgSearch.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
@@ -643,27 +589,15 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "{{.TrimmedType}}")
 
-    var sacQueryFilter *v1.Query
     {{ if .Obj.HasPermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
         return nil, err
     } else if !ok {
         return nil, nil
     }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-        return nil, err
-	}
     {{- end }}
-    pagination := query.GetPagination()
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        query,
-    )
-    q.Pagination = pagination
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, query, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 		    return nil, nil
@@ -685,23 +619,14 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
         return nil, nil, nil
     }
 
-    var sacQueryFilter *v1.Query
     {{ if .Obj.HasPermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
         return nil, nil, err
     } else if !ok {
         return nil, nil, nil
     }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-        return nil, nil, err
-	}
     {{- end }}
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
-    )
+    q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
 	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
@@ -738,18 +663,12 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
 // GetIDs returns all the IDs for the store.
 func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
-    var sacQueryFilter *v1.Query
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
         return nil, err
     }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, err
-	}
     {{- end }}
-    result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+    result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -780,18 +699,12 @@ func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
 
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error {
-    var sacQueryFilter *v1.Query
 {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.WalkAllowed(ctx); err != nil || !ok {
         return err
     }
-{{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-    if err != nil {
-        return err
-    }
 {{- end }}
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[{{.Type}}](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[{{.Type}}](ctx, schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return err
 	}

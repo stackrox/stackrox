@@ -28,7 +28,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PolicyCategory)(nil)), "policy_categories")
-		schema.ScopingResource = &resources.Policy
+		schema.ScopingResource = &resources.WorkflowAdministration
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORIES, "policycategory", (*storage.PolicyCategory)(nil)))
 		RegisterTable(schema, CreateTablePolicyCategoriesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICY_CATEGORIES, schema)

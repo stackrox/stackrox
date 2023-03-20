@@ -273,18 +273,13 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkEntit
 // Delete removes the object associated to the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, infoID string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkEntity")
-
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery()
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
@@ -292,27 +287,19 @@ func (s *storeImpl) Delete(ctx context.Context, infoID string) error {
 // DeleteByQuery removes the objects from the store based on the passed query.
 func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkEntity")
-
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, query, s.db)
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkEntity")
 
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().DeleteManyAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -332,10 +319,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 		}
 
 		identifierBatch := identifiers[:localBatchSize]
-		q := search.ConjunctionQuery(
-			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-		)
+		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
 			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
@@ -352,28 +336,21 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NetworkEntity")
 
-	var sacQueryFilter *v1.Query
-
 	if ok, err := permissionCheckerSingleton().CountAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
 
-	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return pgSearch.RunCountRequestForSchema(ctx, schema, search.EmptyQuery(), s.db)
 }
 
 // Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, infoID string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkEntity")
-
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().ExistsAllowed(ctx); err != nil || !ok {
 		return false, err
 	}
 
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery()
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
@@ -385,15 +362,11 @@ func (s *storeImpl) Exists(ctx context.Context, infoID string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, infoID string) (*storage.NetworkEntity, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")
 
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().GetAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
 
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery()
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.NetworkEntity](ctx, schema, q, s.db)
 	if err != nil {
@@ -407,20 +380,13 @@ func (s *storeImpl) Get(ctx context.Context, infoID string) (*storage.NetworkEnt
 func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "NetworkEntity")
 
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
 	}
-	pagination := query.GetPagination()
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-	q.Pagination = pagination
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.NetworkEntity](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.NetworkEntity](ctx, schema, query, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -438,16 +404,12 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 		return nil, nil, nil
 	}
 
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
 		return nil, nil, err
 	} else if !ok {
 		return nil, nil, nil
 	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
 	rows, err := pgSearch.RunGetManyQueryForSchema[storage.NetworkEntity](ctx, schema, q, s.db)
 	if err != nil {
@@ -481,11 +443,10 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 // GetIDs returns all the IDs for the store.
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NetworkEntityIDs")
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().GetIDsAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
-	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -500,11 +461,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error {
-	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().WalkAllowed(ctx); err != nil || !ok {
 		return err
 	}
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.NetworkEntity](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.NetworkEntity](ctx, schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return err
 	}
