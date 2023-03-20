@@ -25,16 +25,38 @@ type datastoreImpl struct {
 
 // GetAllAuthProviders retrieves authProviders.
 func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error) {
-	// No SAC checks here because all users need to be able to read auth providers in order to authenticate.
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+
 	return b.storage.GetAll(ctx)
+}
+
+func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,
+	filter func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+	// TODO(ROX-15902): The store currently doesn't provide a Walk function. This is mostly due to us supporting the
+	// old bolt store. Once we deprecate old store solutions with the 4.0.0 release, this should be changed to use
+	// store.Walk.
+	authProviders, err := b.storage.GetAll(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving auth providers")
+	}
+	filteredAuthProviders := make([]*storage.AuthProvider, 0, len(authProviders))
+	for _, authProvider := range authProviders {
+		if filter(authProvider) {
+			filteredAuthProviders = append(filteredAuthProviders, authProvider)
+		}
+	}
+	return filteredAuthProviders, nil
 }
 
 // AddAuthProvider adds an auth provider into bolt.
 func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
-	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
 	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
@@ -50,10 +72,8 @@ func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *stora
 
 // UpdateAuthProvider upserts an auth provider into bolt.
 func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
-	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
 	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
@@ -75,10 +95,8 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 
 // RemoveAuthProvider removes an auth provider from bolt.
 func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string, force bool) error {
-	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
 	}
 
 	ap, err := b.verifyExistsAndMutable(ctx, id, force)

@@ -84,12 +84,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil)
 
 	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
 
 	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -97,13 +97,19 @@ func (s *groupDataStoreTestSuite) TestAllowsGet() {
 
 func (s *groupDataStoreTestSuite) TestGet() {
 	group := fixtures.GetGroup()
-	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil).Times(1)
 
 	// Test that can fetch by id
 	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
 		AuthProviderId: group.GetProps().GetAuthProviderId()})
 	s.NoError(err)
 	s.Equal(group, g)
+
+	// Test that a non-existing group will yield errox.NotFound.
+	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(nil, false, nil).Times(1)
+	g, err = s.dataStore.Get(s.hasReadCtx, group.GetProps())
+	s.Nil(g)
+	s.ErrorIs(err, errox.NotFound)
 }
 
 func (s *groupDataStoreTestSuite) TestGetWithoutID() {
