@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
@@ -27,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
-	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/ternary"
@@ -311,193 +309,6 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) error {
-	if len(querySelects) == 0 {
-		return errors.New("select portion of the query cannot be empty")
-	}
-
-	for idx, qs := range querySelects {
-		field := qs.GetField()
-		fieldMetadata := queryFields[field.GetName()]
-		dbField := fieldMetadata.baseField
-		if dbField == nil {
-			return errors.Errorf("field %s in select portion of query does not exist in table %s or connected tables", field, schema.Table)
-		}
-		// TODO(mandar): Add support for the following.
-		if dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
-			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map {
-			return errors.Errorf("field %s in select portion of query is unsupported", field)
-		}
-
-		if qs.GetFilter() == nil {
-			querySoFar.SelectedFields = append(querySoFar.SelectedFields,
-				selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), ""),
-			)
-			continue
-		}
-
-		// SQL constraint
-		if field.GetAggregateFunc() == aggregatefunc.Unset.String() {
-			return errors.New("FILTER clause can only be applied to aggregate functions")
-		}
-
-		filter := qs.GetFilter()
-		qe, err := compileQueryToPostgres(schema, filter.GetQuery(), queryFields, nowForQuery)
-		if err != nil {
-			return errors.New("failed to parse filter in select portion of query")
-		}
-		if qe == nil || qe.Where.Query == "" {
-			return nil
-		}
-		querySoFar.Data = append(querySoFar.Data, qe.Where.Values...)
-
-		selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), qe.Where.Query)
-		if alias := filter.GetName(); alias != "" {
-			selectField.Alias = alias
-		} else {
-			selectField.Alias = fmt.Sprintf("%s_%d", selectField.Alias, idx)
-		}
-		querySoFar.SelectedFields = append(querySoFar.SelectedFields, selectField)
-	}
-	return nil
-}
-func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
-	if querySoFar.QueryType != SELECT && len(groupBy.GetFields()) > 0 {
-		return errors.New("GROUP BY clause not supported with SEARCH query type; Use SELECT")
-	}
-
-	// If explicit group by clauses are not specified and if a query field (in select or order by) is a derived field requiring a group by clause,
-	// default to primary key grouping. Note that all fields in the query, including pagination, are in `queryFields`.
-	if len(groupBy.GetFields()) == 0 {
-		for _, field := range queryFields {
-			if field.derivedMetadata == nil {
-				continue
-			}
-			switch field.derivedMetadata.DerivationType {
-			case searchPkg.CountDerivationType:
-				applyGroupByPrimaryKeys(querySoFar, schema)
-				return nil
-			}
-		}
-		return nil
-	}
-
-	for _, groupByField := range groupBy.GetFields() {
-		fieldMetadata := queryFields[groupByField]
-		dbField := fieldMetadata.baseField
-		if dbField == nil {
-			return errors.Errorf("field %s in GROUP BY clause does not exist in table %s or connected tables", groupByField, schema.Table)
-		}
-		if fieldMetadata.derivedMetadata != nil {
-			// Aggregate functions are not allowed in GROUP BY clause. SQL constraint.
-			return errors.Errorf("found %s in GROUP BY clause. Derived fields cannot be used in GROUP BY clause", groupByField)
-		}
-		if dbField.Options.PrimaryKey {
-			querySoFar.GroupByPrimaryKey = true
-		}
-
-		selectField := selectQueryField(groupByField, dbField, false, aggregatefunc.Unset, "")
-		selectField.FromGroupBy = true
-		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
-	}
-	return nil
-}
-
-func applyGroupByPrimaryKeys(querySoFar *query, schema *walker.Schema) {
-	querySoFar.GroupByPrimaryKey = true
-	pks := schema.PrimaryKeys()
-	for idx := range pks {
-		pk := &pks[idx]
-		selectField := selectQueryField("", pk, false, aggregatefunc.Unset, "")
-		selectField.FromGroupBy = true
-		querySoFar.GroupBys = append(querySoFar.GroupBys, groupByEntry{Field: selectField})
-	}
-}
-
-func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
-	if pagination == nil {
-		return nil
-	}
-
-	for idx, so := range pagination.GetSortOptions() {
-		if idx != 0 && so.GetSearchAfter() != "" {
-			return errors.New("search after for pagination must be defined for only the first sort option")
-		}
-		if so.GetField() == searchPkg.DocID.String() {
-			var cast string
-			if schema.ID().SQLType == "uuid" {
-				cast = "::text"
-			}
-			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-				Field: pgsearch.SelectQueryField{
-					SelectPath: qualifyColumn(schema.Table, schema.ID().ColumnName, cast),
-					FieldType:  postgres.String,
-				},
-				Descending:  so.GetReversed(),
-				SearchAfter: so.GetSearchAfter(),
-			})
-			continue
-		}
-		fieldMetadata := queryFields[so.GetField()]
-		dbField := fieldMetadata.baseField
-		if dbField == nil {
-			return errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
-		}
-
-		if fieldMetadata.derivedMetadata == nil {
-			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-				Field:       selectQueryField(so.GetField(), dbField, false, aggregatefunc.Unset, ""),
-				Descending:  so.GetReversed(),
-				SearchAfter: so.GetSearchAfter(),
-			})
-		} else {
-			var selectField pgsearch.SelectQueryField
-			var descending bool
-			switch fieldMetadata.derivedMetadata.DerivationType {
-			case searchPkg.CountDerivationType:
-				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Count, "")
-				descending = so.GetReversed()
-			case searchPkg.SimpleReverseSortDerivationType:
-				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Unset, "")
-				descending = !so.GetReversed()
-			default:
-				log.Errorf("Unsupported derived field %s found in query", so.GetField())
-				continue
-			}
-
-			selectField.DerivedField = true
-			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-				Field:      selectField,
-				Descending: descending,
-			})
-		}
-	}
-	querySoFar.Pagination.Limit = int(pagination.GetLimit())
-	querySoFar.Pagination.Offset = int(pagination.GetOffset())
-	return nil
-}
-
-func applyPaginationForSearchAfter(query *query) error {
-	pagination := query.Pagination
-	if len(pagination.OrderBys) == 0 {
-		return nil
-	}
-	firstOrderBy := pagination.OrderBys[0]
-	if firstOrderBy.SearchAfter == "" {
-		return nil
-	}
-	if query.Where != "" {
-		query.Where += " and "
-	}
-	operand := ">"
-	if firstOrderBy.Descending {
-		operand = "<"
-	}
-	query.Where += fmt.Sprintf("%s %s $$", firstOrderBy.Field.SelectPath, operand)
-	query.Data = append(query.Data, firstOrderBy.SearchAfter)
-	return nil
-}
-
 func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
 	nowForQuery := time.Now()
 	standardizeFieldNamesInQuery(q)
@@ -545,101 +356,6 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 	parsedQuery.populatePrimaryKeySelectFields()
 
 	return parsedQuery, nil
-}
-
-func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
-	nowForQuery := time.Now()
-
-	var err error
-	q, err = scopeContextToQuery(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	standardizeFieldNamesInQuery(q)
-	innerJoins, dbFields := getJoinsAndFields(schema, q)
-	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
-		return nil, nil
-	}
-
-	parsedQuery := &query{
-		Schema:     schema,
-		QueryType:  queryType,
-		From:       schema.Table,
-		InnerJoins: innerJoins,
-	}
-
-	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
-		return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
-	}
-
-	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	if queryEntry != nil {
-		parsedQuery.Where = queryEntry.Where.Query
-		parsedQuery.Data = append(parsedQuery.Data, queryEntry.Where.Values...)
-		// TODO(ROX-14940): We won't need this once highlights is removed and fields can only be selected when explicitly specified in the query.
-		parsedQuery.SelectedFields = append(parsedQuery.SelectedFields, queryEntry.SelectedFields...)
-		if queryEntry.Having != nil {
-			parsedQuery.Having = queryEntry.Having.Query
-			parsedQuery.Data = append(parsedQuery.Data, queryEntry.Having.Values...)
-		}
-	}
-
-	if err := populateGroupBy(parsedQuery, q.GetGroupBy(), schema, dbFields); err != nil {
-		return nil, err
-	}
-	if err := populatePagination(parsedQuery, q.GetPagination(), schema, dbFields); err != nil {
-		return nil, err
-	}
-	if err := applyPaginationForSearchAfter(parsedQuery); err != nil {
-		return nil, err
-	}
-	return parsedQuery, nil
-}
-
-func scopeContextToQuery(ctx context.Context, q *v1.Query) (*v1.Query, error) {
-	scopeQ, err := scoped.GetQueryForAllScopes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if scopeQ == nil {
-		return q, nil
-	}
-
-	return cloneAndCombine(q, scopeQ), nil
-}
-
-func cloneAndCombine(q *v1.Query, scopeQ *v1.Query) *v1.Query {
-	if q == nil {
-		return scopeQ
-	}
-	if scopeQ == nil {
-		return q
-	}
-
-	// Select, Group By, and Pagination must be set on the top-level query to be picked up by the query parser.
-	// Therefore, move them to the top-level query.
-
-	cloned := q.Clone()
-	selects := cloned.GetSelects()
-	groupBy := cloned.GetGroupBy()
-	pagination := cloned.GetPagination()
-
-	// Removing this from to-be nested query is optional because selects, group by and pagination from
-	// the nested query is ignored anyway. However, this make it safer.
-	cloned.Selects = nil
-	cloned.GroupBy = nil
-	cloned.Pagination = nil
-
-	cloned = searchPkg.ConjunctionQuery(cloned, scopeQ)
-	cloned.Selects = selects
-	cloned.GroupBy = groupBy
-	cloned.Pagination = pagination
-	return cloned
 }
 
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
@@ -948,26 +664,6 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 	return searchResults, rows.Err()
 }
 
-func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, query *query) ([]*T, error) {
-	if len(query.SelectedFields) == 0 {
-		return nil, errors.New("select fields required for select query")
-	}
-
-	queryStr := query.AsSQL()
-
-	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
-	}
-	defer rows.Close()
-
-	var scannedRows []*T
-	if err := pgxscan.ScanAll(&scannedRows, rows); err != nil {
-		return nil, err
-	}
-	return scannedRows, rows.Err()
-}
-
 // RunSearchRequestForSchema executes a request against the database for given schema
 func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *postgres.DB) ([]searchPkg.Result, error) {
 	var query *query
@@ -999,40 +695,6 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
 
 		return retryableRunSearchRequestForSchema(ctx, query, schema, db)
-	})
-}
-
-// RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
-// explicitly specify select fields.
-func RunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
-	var query *query
-	var err error
-	// Add this to be safe and convert panics to errors,
-	// since we do a lot of casting and other operations that could potentially panic in this code.
-	// Panics are expected ONLY in the event of a programming error, all foreseeable errors are handled
-	// the usual way.
-	defer func() {
-		if r := recover(); r != nil {
-			if query != nil {
-				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
-			} else {
-				log.Errorf("Unexpected error running search request: %v", r)
-			}
-			debug.PrintStack()
-			err = fmt.Errorf("unexpected error running search request: %v", r)
-		}
-	}()
-
-	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
-	if err != nil {
-		return nil, err
-	}
-	// A nil-query implies no results.
-	if query == nil {
-		return nil, nil
-	}
-	return pgutils.Retry2(func() ([]*T, error) {
-		return retryableRunSelectRequestForSchema[T](ctx, db, query)
 	})
 }
 
@@ -1208,33 +870,4 @@ func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
 
 func qualifyColumn(table, column, cast string) string {
 	return table + "." + column + cast
-}
-
-func selectQueryField(searchField string, field *walker.Field, selectDistinct bool, aggrFunc aggregatefunc.AggrFunc, filter string) pgsearch.SelectQueryField {
-	var cast string
-	var dataType postgres.DataType
-	if field.SQLType == "uuid" {
-		cast = "::text"
-	}
-
-	selectPath := qualifyColumn(field.Schema.Table, field.ColumnName, cast)
-	if selectDistinct {
-		selectPath = fmt.Sprintf("distinct(%s)", selectPath)
-	}
-	if aggrFunc != aggregatefunc.Unset {
-		selectPath = fmt.Sprintf("%s(%s)", aggrFunc, selectPath)
-		dataType = aggrFunc.DataType()
-	}
-	if filter != "" {
-		selectPath = fmt.Sprintf("%s filter (where %s)", selectPath, filter)
-	}
-	if dataType == "" {
-		dataType = field.DataType
-	}
-	return pgsearch.SelectQueryField{
-		SelectPath:   selectPath,
-		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.String()), "_"),
-		FieldType:    dataType,
-		DerivedField: aggrFunc != aggregatefunc.Unset,
-	}
 }
