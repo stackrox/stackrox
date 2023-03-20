@@ -94,6 +94,7 @@ func (u *updaterImpl) run() {
 						CollectorHealthInfo:        collectorHealthInfo,
 						AdmissionControlHealthInfo: admissionControlHealthInfo,
 						ScannerHealthInfo:          scannerHealthInfo,
+						SensorHealthInfo:           sensorHealthInfo,
 					},
 				},
 			}:
