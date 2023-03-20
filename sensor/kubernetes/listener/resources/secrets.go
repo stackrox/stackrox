@@ -248,13 +248,13 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
-	serviceAcctName := secret.GetAnnotations()[saAnnotation]
-	hasServiceAcctNameAnnotation := len(serviceAcctName) > 0
+	saName, hasAnnotation := secret.GetAnnotations()[saAnnotation]
+
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
 	// In OpenShift, the default service account also contains credentials for the
 	// OpenShift Container Registry, which is an internal image registry.
-	fromDefaultSA := serviceAcctName == defaultSA
+	fromDefaultSA := saName == defaultSA
 
 	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
@@ -281,7 +281,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				}
 			}
 
-			if env.ForceLocalImageScanning.BooleanSetting() && !hasServiceAcctNameAnnotation {
+			if env.ForceLocalImageScanning.BooleanSetting() && !hasAnnotation {
 				// Store registry secrets to enable downstream scanning of all images
 				//
 				// Ignore secrets with the service-account.name annotation, each auto-generated secret for an OCP service
@@ -289,9 +289,9 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				// it is wasted memory
 
 				// TODO: a namespace may contain multiple .dockerconfig* secrets for the same registry (not handled
-				// today). To handle change upsert to key off of more than just namespace+registry endpoint, such
+				// today). To handle, change upsert to key off of more than just namespace+registry endpoint, such
 				// as namespace + secret name.  This logic is temporary and will be removed in a future release when registry
-				// integrations are used instead of pull secrets
+				// integrations are used instead of pull secrets, being tracked by ROX-16077
 				err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
 				if err != nil {
 					log.Errorf("unable to upsert registry %q into store: %v", registry, err)
