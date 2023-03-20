@@ -35,26 +35,17 @@ func newProcessPool() *ProcessPool {
 	return &ProcessPool{
 		Processes: make(map[string][]*storage.ProcessSignal),
 		Capacity:  10000,
+		Size:      0,
 	}
-}
-
-func (p *ProcessPool) getProcessPoolSize() int {
-	size := 0
-
-	for _, processes := range p.Processes {
-		size += len(processes)
-	}
-
-	return size
 }
 
 func (p *ProcessPool) add(val *storage.ProcessSignal) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	size := p.getProcessPoolSize()
-	if size < p.Capacity {
+	if p.Size < p.Capacity {
 		p.Processes[val.ContainerId] = append(p.Processes[val.ContainerId], val)
+		p.Size++
 	} else {
 		nprocess := len(p.Processes[val.ContainerId])
 		if nprocess > 0 {
@@ -69,6 +60,7 @@ func (p *ProcessPool) remove(containerID string) {
 	defer p.lock.Unlock()
 
 	delete(p.Processes, containerID)
+	p.Size -= len(p.Processes[containerID])
 }
 
 func (p *ProcessPool) getRandomProcess(containerID string) *storage.ProcessSignal {
