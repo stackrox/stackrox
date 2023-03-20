@@ -15,6 +15,7 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
+	deploymentMatcher "github.com/stackrox/rox/central/networkpolicies/deployment"
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
@@ -56,6 +57,7 @@ var (
 			"/v1.NetworkPolicyService/SimulateNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
+			"/v1.NetworkPolicyService/GetIsolationForDeployments",
 			"/v1.NetworkPolicyService/GetUndoModification",
 			"/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment",
 			"/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment",
@@ -124,6 +126,42 @@ func populateYAML(np *storage.NetworkPolicy) {
 		return
 	}
 	np.Yaml = yaml
+}
+
+func (s *serviceImpl) GetIsolationForDeployments(ctx context.Context, req *v1.GetIsolationForDeploymentsRequest) (*v1.GetIsolationForDeploymentsResponse, error) {
+	deploymentObjects, err := s.deployments.GetDeployments(ctx, req.GetDeploymentIds())
+	if err != nil {
+		return nil, err
+	}
+
+	clusterNamespaceContext := set.NewSet[deploymentMatcher.ClusterNamespace]()
+	for _, deployment := range deploymentObjects {
+		clusterNamespaceContext.Add(deploymentMatcher.ClusterNamespace{
+			Cluster:   deployment.GetClusterId(),
+			Namespace: deployment.GetNamespace(),
+		})
+	}
+
+	matcher, err := deploymentMatcher.BuildMatcher(s.networkPolicies, clusterNamespaceContext.AsSlice())
+	if err != nil {
+		return nil, err
+	}
+
+	var isolationDetails []*v1.DeploymentIsolation
+	for _, deployment := range deploymentObjects {
+		details := matcher.GetIsolationDetails(deployment)
+		isolationDetails = append(isolationDetails, &v1.DeploymentIsolation{
+			DeploymentId:    deployment.GetId(),
+			IngressIsolated: details.IngressIsolated,
+			EgressIsolated:  details.EgressIsolated,
+			PolicyIds:       details.PolicyIDs,
+		})
+	}
+
+	return &v1.GetIsolationForDeploymentsResponse{
+		DeploymentIsolation: isolationDetails,
+	}, nil
+
 }
 
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.NetworkPolicy, error) {

@@ -238,6 +238,40 @@
         ]
       }
     },
+    "/v1/networkpolicies/deployment": {
+      "get": {
+        "operationId": "NetworkPolicyService_GetIsolationForDeployments",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetIsolationForDeploymentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deploymentIds",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "NetworkPolicyService"
+        ]
+      }
+    },
     "/v1/networkpolicies/generate/baseline/{deploymentId}": {
       "post": {
         "operationId": "NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment",
@@ -1029,6 +1063,26 @@
         }
       }
     },
+    "v1DeploymentIsolation": {
+      "type": "object",
+      "properties": {
+        "deploymentId": {
+          "type": "string"
+        },
+        "ingressIsolated": {
+          "type": "boolean"
+        },
+        "egressIsolated": {
+          "type": "boolean"
+        },
+        "policyIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1Empty": {
       "type": "object"
     },
@@ -1133,6 +1187,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1GetDiffFlowsReconciledFlow"
+          }
+        }
+      }
+    },
+    "v1GetIsolationForDeploymentsResponse": {
+      "type": "object",
+      "properties": {
+        "deploymentIsolation": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1DeploymentIsolation"
           }
         }
       }
