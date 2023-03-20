@@ -258,7 +258,8 @@ describe('Configuration Management Dashboard', () => {
     });
 
     // This test might fail in local deployment.
-    it('should show the same number of high severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
+    // ROX-15985: skip until decision whether valid to assume high severity violations.
+    it.skip('should show the same number of high severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
         const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
