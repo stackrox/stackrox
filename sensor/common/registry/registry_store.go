@@ -177,8 +177,8 @@ func (rs *Store) GetFirstRegistryForImage(image *storage.ImageName) (registryTyp
 		namespace string
 		reg       registryTypes.Registry
 	}
-	findings := []finding{}
 
+	var findings []finding
 	reg := image.GetRegistry()
 	for namespace, registries := range rs.store {
 		for _, registry := range registries.GetAll() {
