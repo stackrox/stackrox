@@ -2,8 +2,10 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
+	groupDS "github.com/stackrox/rox/central/group/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
@@ -22,12 +24,17 @@ var (
 	roleSAC = sac.ForResource(resources.Role)
 
 	log = logging.LoggerForModule()
+
+	// TODO(ROX-14398): Once we use Access for this datastore instead of role, we can reuse the client's context instead.
+	groupReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 )
 
 type dataStoreImpl struct {
 	roleStorage          rocksDBStore.RoleStore
 	permissionSetStorage rocksDBStore.PermissionSetStore
 	accessScopeStorage   rocksDBStore.SimpleAccessScopeStore
+	groupStorage         groupDS.DataStore
 
 	lock sync.RWMutex
 }
@@ -721,11 +728,31 @@ func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string)
 	if !found {
 		return errors.Wrapf(errox.NotFound, "name = %q", name)
 	}
-	if err = verifyRoleOrigin(ctx, role); err != nil {
+	if err := verifyRoleOrigin(ctx, role); err != nil {
 		return err
 	}
 
-	return verifyNotDefaultRole(role)
+	if err := verifyNotDefaultRole(role); err != nil {
+		return err
+	}
+
+	return ds.verifyNoGroupReferences(groupReadCtx, role)
+}
+
+// Returns errox.ReferencedByAnotherObject if the given role is referenced by a group.
+func (ds *dataStoreImpl) verifyNoGroupReferences(ctx context.Context, role *storage.Role) error {
+	groups, err := ds.groupStorage.GetFiltered(ctx, func(group *storage.Group) bool {
+		return group.GetRoleName() == role.GetName()
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(groups) > 0 {
+		return errox.ReferencedByAnotherObject.Newf("role %s is referenced by groups [%s] in auth providers, "+
+			"ensure all references to the role are removed", role.GetName(), strings.Join(getGroupIDs(groups), ","))
+	}
+	return nil
 }
 
 // Returns errox.InvalidArgs if the given scope is a default one.
@@ -764,4 +791,12 @@ func (ds *dataStoreImpl) getRoleAccessScopeOrError(ctx context.Context, role *st
 		return nil, errors.Wrapf(errox.InvariantViolation, "access scope %s for role %q is missing", role.GetAccessScopeId(), role.GetName())
 	}
 	return accessScope, nil
+}
+
+func getGroupIDs(groups []*storage.Group) []string {
+	groupIDs := make([]string, 0, len(groups))
+	for _, group := range groups {
+		groupIDs = append(groupIDs, group.GetProps().GetId())
+	}
+	return groupIDs
 }
