@@ -1428,7 +1428,6 @@ type TestMultiKeyStruct struct {
 	Embedded           *TestMultiKeyStruct_Embedded `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
 	Nested             []*TestMultiKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested,proto3" json:"nested,omitempty"`
 	// Types that are valid to be assigned to Oneof:
-	//
 	//	*TestMultiKeyStruct_Oneofstring
 	//	*TestMultiKeyStruct_Oneofnested
 	Oneof                isTestMultiKeyStruct_Oneof `protobuf_oneof:"oneof"`
