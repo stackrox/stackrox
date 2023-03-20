@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sca/resources"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
