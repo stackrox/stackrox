@@ -80,7 +80,7 @@ func (mr *MockDataStoreMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 }
 
 // GetFiltered mocks base method.
-func (m *MockDataStore) GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
+func (m *MockDataStore) GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFiltered", ctx, filter)
 	ret0, _ := ret[0].([]*storage.Group)

@@ -67,19 +67,19 @@ func (s *serviceImpl) GetGroups(ctx context.Context, req *v1.GetGroupsRequest) (
 		id = &m.Id
 	}
 
-	var filter func(*storage.GroupProperties) bool
+	var filter func(*storage.Group) bool
 	if authProvider != nil || key != nil || value != nil || id != nil {
-		filter = func(props *storage.GroupProperties) bool {
-			if authProvider != nil && *authProvider != props.GetAuthProviderId() {
+		filter = func(group *storage.Group) bool {
+			if authProvider != nil && *authProvider != group.GetProps().GetAuthProviderId() {
 				return false
 			}
-			if key != nil && *key != props.GetKey() {
+			if key != nil && *key != group.GetProps().GetKey() {
 				return false
 			}
-			if value != nil && *value != props.GetValue() {
+			if value != nil && *value != group.GetProps().GetValue() {
 				return false
 			}
-			if id != nil && *id != props.GetId() {
+			if id != nil && *id != group.GetProps().GetId() {
 				return false
 			}
 			return true
