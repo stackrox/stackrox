@@ -46,8 +46,8 @@ type policyMatcherImpl struct {
 }
 
 // BuildMatcher creates a matcher with pre-loaded Network Policies from a set of ClusterNamespace filter.
-func BuildMatcher(store networkPolicyDS.DataStore, namespaceFilter []ClusterNamespace) (Matcher, error) {
-	netpolMap, err := buildNetworkPolicies(store, namespaceFilter)
+func BuildMatcher(ctx context.Context, store networkPolicyDS.DataStore, namespaceFilter []ClusterNamespace) (Matcher, error) {
+	netpolMap, err := buildNetworkPolicies(ctx, store, namespaceFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +57,7 @@ func BuildMatcher(store networkPolicyDS.DataStore, namespaceFilter []ClusterName
 	}, nil
 }
 
-func buildNetworkPolicies(store networkPolicyDS.DataStore, namespace []ClusterNamespace) (map[ClusterNamespace][]selectablePolicy, error) {
-	ctx := context.Background()
+func buildNetworkPolicies(ctx context.Context, store networkPolicyDS.DataStore, namespace []ClusterNamespace) (map[ClusterNamespace][]selectablePolicy, error) {
 	result := map[ClusterNamespace][]selectablePolicy{}
 	for _, clusterNs := range namespace {
 		policies, err := store.GetNetworkPolicies(ctx, clusterNs.Cluster, clusterNs.Namespace)

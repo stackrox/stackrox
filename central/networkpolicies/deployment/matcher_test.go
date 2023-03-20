@@ -1,6 +1,7 @@
 package deployment
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -75,7 +76,8 @@ func Test_MatchDeployments(t *testing.T) {
 				givenPodSelector("never", "match")),
 		}, nil)
 
-	matcher, err := BuildMatcher(mockNetpol, []ClusterNamespace{
+	ctx := context.Background()
+	matcher, err := BuildMatcher(ctx, mockNetpol, []ClusterNamespace{
 		{
 			Cluster:   fixtureconsts.Cluster1,
 			Namespace: "ns1",
