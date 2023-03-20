@@ -351,7 +351,6 @@ func (m *mockCentral) verifyClone(clone string, ver *versionPair) {
 		require.NoFileExists(m.t, filepath.Join(dbPath, migrations.MigrationVersionFile))
 		m.verifyMigrationVersion(dbPath, &versionPair{version: "0", seqNum: 0})
 	}
-	//m.verifyDBVersion(dbPath, ver.seqNum)
 }
 
 func (m *mockCentral) verifyClonePostgres(clone string, ver *versionPair) {
