@@ -150,7 +150,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (resource.includes('Administration')) {
+                if (resource === 'Administration') {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -209,7 +209,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (!resourcesLimited.some((v) => resource.includes(v))) {
+                if (!resourcesLimited.some((v) => resource === v)) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -328,7 +328,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (!resourcesLimited.some((v) => resource.includes(v))) {
+                if (!resourcesLimited.some((v) => resource === v)) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
