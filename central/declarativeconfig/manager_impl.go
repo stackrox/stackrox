@@ -237,8 +237,7 @@ func (m *managerImpl) runReconciliation() {
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
 	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
 
-	hasChanges, hash := calculateHashAndIndicateChanges(transformedMessagesByHandler, m.lastReconciliationHash)
-	m.lastReconciliationHash = hash
+	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
 
 	// If no changes are indicated within the message we reconcile, and no previous reconciliation failed, do not
 	// run the reconciliation.
@@ -403,11 +402,7 @@ func (m *managerImpl) verifyUpdaters() error {
 	return nil
 }
 
-func handlerNameForIntegrationHealth(handlerID string) string {
-	return fmt.Sprintf("%s %s", handlerIntegrationHealthStatusPrefix, path.Base(handlerID))
-}
-
-func calculateHashAndIndicateChanges(transformedMessagesByHandler map[string]protoMessagesByType, previousHash uint64) (bool, uint64) {
+func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandler map[string]protoMessagesByType) bool {
 	// Create a hash from the transformed messages by handler map.
 	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
 	// the pointer's value.
@@ -420,7 +415,16 @@ func calculateHashAndIndicateChanges(transformedMessagesByHandler map[string]pro
 		log.Errorf("Failed to create hash for transformed messages by handler %+v, "+
 			"reconciliation will be executed: %v",
 			transformedMessagesByHandler, err)
-		return true, hash
+		return true
 	}
-	return previousHash != hash, hash
+
+	if m.lastReconciliationHash != hash {
+		m.lastReconciliationHash = hash
+		return true
+	}
+	return false
+}
+
+func handlerNameForIntegrationHealth(handlerID string) string {
+	return fmt.Sprintf("%s %s", handlerIntegrationHealthStatusPrefix, path.Base(handlerID))
 }
