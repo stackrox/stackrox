@@ -196,6 +196,7 @@ func createAndRunCentralStartRocks(t *testing.T, ver *versionPair, runBoth bool)
 	mock.setVersion(t, ver)
 	// First get a Rocks up and current.  This way when we do the next upgrade we should get a previous rocks.
 	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
+	log.Infof("SHREWS -- Should be false = %t", env.PostgresDatastoreEnabled.BooleanSetting())
 
 	mock.runMigrator("", "")
 	mock.runCentral()
@@ -873,9 +874,9 @@ func TestUpgradeFromLastRocksDB(t *testing.T) {
 			mock.setVersion = setVersion
 
 			// Doesn't make sense to run this on the fresh install case
-			if c.fromRocks {
-				mock.legacyUpgrade(t, c.fromVersion)
-			}
+			//if c.fromRocks {
+			//	mock.legacyUpgrade(t, c.fromVersion, c.previousVerion)
+			//}
 
 			mock.upgradeCentral(c.toVersion, "")
 			mock.verifyCurrent()

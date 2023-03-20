@@ -75,6 +75,7 @@ func createCentral(t *testing.T, runBoth bool) *mockCentral {
 	mock.ctx = sac.WithAllAccess(context.Background())
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() || runBoth {
+		log.Infof("SHREWS -- starting both")
 		dbPath := filepath.Join(mountDir, ".db-init")
 		require.NoError(t, os.Mkdir(dbPath, 0755))
 		require.NoError(t, os.Symlink(dbPath, filepath.Join(mountDir, "current")))
@@ -116,7 +117,7 @@ func (m *mockCentral) migrateWithVersion(ver *versionPair, breakpoint string, fo
 }
 
 // legacyUpgrade emulates the legacy database upgrade.
-func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair) {
+func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair, previousVer *versionPair) {
 	log.Infof("SHREWS -- legacyUpgrade -- runBoth %t, updateBoth %t, version %v", m.runBoth, m.updateBoth, ver)
 
 	//m.setMigrationVersion(filepath.Join(m.mountPath, rocksdb.CurrentClone), ver)
@@ -125,6 +126,13 @@ func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair) {
 	require.NoError(m.t, os.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", ver.seqNum)), 0644))
 
 	m.setMigrationVersion(path, ver)
+
+	if previousVer != nil {
+		prevPath := filepath.Join(m.mountPath, rocksdb.PreviousClone)
+		require.NoError(m.t, os.WriteFile(filepath.Join(prevPath, "db"), []byte(fmt.Sprintf("%d", previousVer.seqNum)), 0644))
+
+		m.setMigrationVersion(prevPath, previousVer)
+	}
 
 	//require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 	//m.setVersion(t, ver)
@@ -194,6 +202,7 @@ func (m *mockCentral) upgradeDB(path, clone, pgClone string) {
 func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 	var dbm DBCloneManager
 
+	log.Infof("SHREWS -- Enabled = %t", env.PostgresDatastoreEnabled.BooleanSetting())
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		source := pgtest.GetConnectionString(m.t)
 		sourceMap, _ := pgconfig.ParseSource(source)
@@ -254,6 +263,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 	}
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		log.Infof("SHREWS -- Should be setting Rocks to current")
 		m.verifyDBVersion(migrations.CurrentPath(), migrations.CurrentDBVersionSeqNum())
 		require.NoDirExists(m.t, filepath.Join(m.mountPath, rocksdb.RestoreClone))
 	}
@@ -261,6 +271,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 
 func (m *mockCentral) runCentral() {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		log.Infof("SHREWS -- Should be verifying that we have correct Rocks versions")
 		require.NoError(m.t, migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(m.mountPath, ".backup")))
 		if version.CompareVersions(version.GetMainVersion(), "3.0.57.0") >= 0 {
 			migrations.SetCurrent(migrations.CurrentPath())
