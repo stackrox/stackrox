@@ -94,14 +94,16 @@ func run() error {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
+	restConfig := utils.GetRHACSConfigOrDie()
+
+	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
-		LeaderElectionConfig:   utils.GetRHACSConfigOrDie(),
+		LeaderElectionConfig:   restConfig,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create manager")
