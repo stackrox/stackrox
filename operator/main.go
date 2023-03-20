@@ -37,10 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -105,12 +101,7 @@ func run() error {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
-		NewClient: func(cache cache.Cache, config *rest.Config, options ctrlClient.Options, uncachedObjects ...ctrlClient.Object) (ctrlClient.Client, error) {
-			if config != nil {
-				config.UserAgent = utils.GetRHACSUserAgent()
-			}
-			return cluster.DefaultNewClient(cache, config, options, uncachedObjects...)
-		},
+		LeaderElectionConfig:   utils.GetRHACSConfigOrDie(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create manager")
