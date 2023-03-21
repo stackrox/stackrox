@@ -239,7 +239,7 @@ func main() {
 	localConfig := mustGetCommandLineArgs()
 	if localConfig.WithMetrics {
 		// Start the prometheus metrics server
-		metrics.NewDefaultHTTPServer().RunForever()
+		metrics.NewDefaultHTTPServer(metrics.SensorSubsystem).RunForever()
 		metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 	}
 	var fakeClient client.Interface

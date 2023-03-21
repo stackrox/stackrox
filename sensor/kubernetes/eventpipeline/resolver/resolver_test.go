@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
@@ -682,4 +684,24 @@ func (p *fakeProvider) RBAC() store.RBACStore {
 
 func (p *fakeProvider) EndpointManager() store.EndpointManager {
 	return p.endpointManager
+}
+
+func (p *fakeProvider) Pods() store.PodStore {
+	return nil
+}
+
+func (p *fakeProvider) Registries() *registry.Store {
+	return nil
+}
+
+func (p *fakeProvider) ServiceAccounts() store.ServiceAccountStore {
+	return nil
+}
+
+func (p *fakeProvider) NetworkPolicies() store.NetworkPolicyStore {
+	return nil
+}
+
+func (p *fakeProvider) Entities() *clusterentities.Store {
+	return nil
 }

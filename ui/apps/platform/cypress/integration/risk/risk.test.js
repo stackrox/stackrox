@@ -152,7 +152,7 @@ describe('Risk page', () => {
             viewRiskDeploymentInNetworkGraph();
         });
 
-        const searchPlaceholderText = 'Add one or more resource filters';
+        const searchPlaceholderText = 'Filter deployments';
 
         it('should not have anything in search bar when URL has no search params', () => {
             visitRiskDeployments();

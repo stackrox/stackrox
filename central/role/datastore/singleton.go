@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
+	groupDS "github.com/stackrox/rox/central/group/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
@@ -47,7 +48,7 @@ func Singleton() DataStore {
 			utils.CrashOnError(err)
 		}
 		// Which role format is used is determined solely by the feature flag.
-		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
+		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupDS.Singleton())
 
 		for r, a := range vulnReportingDefaultRoles {
 			defaultRoles[r] = a
@@ -126,8 +127,7 @@ var defaultRoles = map[string]roleAttributes{
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
 			permissions.Modify(resources.Cluster),
-			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
-			permissions.Modify(resources.ServiceIdentity),
+			permissions.Modify(resources.Administration),
 		},
 	},
 	rolePkg.VulnMgmtApprover: {

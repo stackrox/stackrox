@@ -2,8 +2,10 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
+	groupDS "github.com/stackrox/rox/central/group/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
@@ -22,12 +24,17 @@ var (
 	roleSAC = sac.ForResource(resources.Role)
 
 	log = logging.LoggerForModule()
+
+	// TODO(ROX-14398): Once we use Access for this datastore instead of role, we can reuse the client's context instead.
+	groupReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 )
 
 type dataStoreImpl struct {
 	roleStorage          rocksDBStore.RoleStore
 	permissionSetStorage rocksDBStore.PermissionSetStore
 	accessScopeStorage   rocksDBStore.SimpleAccessScopeStore
+	groupStorage         groupDS.DataStore
 
 	lock sync.RWMutex
 }
@@ -137,23 +144,42 @@ func (ds *dataStoreImpl) UpsertAccessScope(ctx context.Context, newScope *storag
 }
 
 func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Role, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, false, err
 	}
-
 	return ds.roleStorage.Get(ctx, name)
 }
 
 func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
 	return ds.getAllRolesNoScopeCheck(ctx)
 }
 
+func (ds *dataStoreImpl) GetRolesFiltered(ctx context.Context, filter func(role *storage.Role) bool) ([]*storage.Role, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+
+	var filteredRoles []*storage.Role
+	walkFn := func() error {
+		filteredRoles = filteredRoles[:0]
+		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
+			if filter(role) {
+				filteredRoles = append(filteredRoles, role)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+	return filteredRoles, nil
+}
+
 func (ds *dataStoreImpl) CountRoles(ctx context.Context) (int, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return 0, err
 	}
 
@@ -260,18 +286,16 @@ func verifyRoleOrigin(ctx context.Context, role *storage.Role) error {
 //                                                                            //
 
 func (ds *dataStoreImpl) GetPermissionSet(ctx context.Context, id string) (*storage.PermissionSet, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, false, err
 	}
-
 	return ds.permissionSetStorage.Get(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
 	var permissionSets []*storage.PermissionSet
 	walkFn := func() error {
 		permissionSets = permissionSets[:0]
@@ -287,11 +311,32 @@ func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.P
 	return permissionSets, nil
 }
 
-func (ds *dataStoreImpl) CountPermissionSets(ctx context.Context) (int, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
-		return 0, err
+func (ds *dataStoreImpl) GetPermissionSetsFiltered(ctx context.Context,
+	filter func(permissionSet *storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+	var filteredPermissionSets []*storage.PermissionSet
+	walkFn := func() error {
+		filteredPermissionSets = filteredPermissionSets[:0]
+		return ds.permissionSetStorage.Walk(ctx, func(permissionSet *storage.PermissionSet) error {
+			if filter(permissionSet) {
+				filteredPermissionSets = append(filteredPermissionSets, permissionSet)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
 	}
 
+	return filteredPermissionSets, nil
+}
+
+func (ds *dataStoreImpl) CountPermissionSets(ctx context.Context) (int, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return 0, err
+	}
 	return ds.permissionSetStorage.Count(ctx)
 }
 
@@ -412,18 +457,16 @@ func verifyPermissionSetOrigin(ctx context.Context, ps *storage.PermissionSet) e
 //                                                                            //
 
 func (ds *dataStoreImpl) GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, false, err
 	}
-
 	return ds.accessScopeStorage.Get(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.SimpleAccessScope, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
 	var scopes []*storage.SimpleAccessScope
 	walkFn := func() error {
 		scopes = scopes[:0]
@@ -439,11 +482,32 @@ func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.Sim
 	return scopes, nil
 }
 
-func (ds *dataStoreImpl) CountAccessScopes(ctx context.Context) (int, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
-		return 0, err
+func (ds *dataStoreImpl) GetAccessScopesFiltered(ctx context.Context,
+	filter func(accessScope *storage.SimpleAccessScope) bool) ([]*storage.SimpleAccessScope, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+	var filteredScopes []*storage.SimpleAccessScope
+	walkFn := func() error {
+		filteredScopes = filteredScopes[:0]
+		return ds.accessScopeStorage.Walk(ctx, func(scope *storage.SimpleAccessScope) error {
+			if filter(scope) {
+				filteredScopes = append(filteredScopes, scope)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
 	}
 
+	return filteredScopes, nil
+}
+
+func (ds *dataStoreImpl) CountAccessScopes(ctx context.Context) (int, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return 0, err
+	}
 	return ds.accessScopeStorage.Count(ctx)
 }
 
@@ -553,7 +617,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 }
 
 func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (permissions.ResolvedRole, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -721,11 +785,31 @@ func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string)
 	if !found {
 		return errors.Wrapf(errox.NotFound, "name = %q", name)
 	}
-	if err = verifyRoleOrigin(ctx, role); err != nil {
+	if err := verifyRoleOrigin(ctx, role); err != nil {
 		return err
 	}
 
-	return verifyNotDefaultRole(role)
+	if err := verifyNotDefaultRole(role); err != nil {
+		return err
+	}
+
+	return ds.verifyNoGroupReferences(groupReadCtx, role)
+}
+
+// Returns errox.ReferencedByAnotherObject if the given role is referenced by a group.
+func (ds *dataStoreImpl) verifyNoGroupReferences(ctx context.Context, role *storage.Role) error {
+	groups, err := ds.groupStorage.GetFiltered(ctx, func(group *storage.Group) bool {
+		return group.GetRoleName() == role.GetName()
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(groups) > 0 {
+		return errox.ReferencedByAnotherObject.Newf("role %s is referenced by groups [%s] in auth providers, "+
+			"ensure all references to the role are removed", role.GetName(), strings.Join(getGroupIDs(groups), ","))
+	}
+	return nil
 }
 
 // Returns errox.InvalidArgs if the given scope is a default one.
@@ -764,4 +848,12 @@ func (ds *dataStoreImpl) getRoleAccessScopeOrError(ctx context.Context, role *st
 		return nil, errors.Wrapf(errox.InvariantViolation, "access scope %s for role %q is missing", role.GetAccessScopeId(), role.GetName())
 	}
 	return accessScope, nil
+}
+
+func getGroupIDs(groups []*storage.Group) []string {
+	groupIDs := make([]string, 0, len(groups))
+	for _, group := range groups {
+		groupIDs = append(groupIDs, group.GetProps().GetId())
+	}
+	return groupIDs
 }

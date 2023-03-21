@@ -84,12 +84,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil)
 
 	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
 
 	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -97,13 +97,19 @@ func (s *groupDataStoreTestSuite) TestAllowsGet() {
 
 func (s *groupDataStoreTestSuite) TestGet() {
 	group := fixtures.GetGroup()
-	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil).Times(1)
 
 	// Test that can fetch by id
 	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
 		AuthProviderId: group.GetProps().GetAuthProviderId()})
 	s.NoError(err)
 	s.Equal(group, g)
+
+	// Test that a non-existing group will yield errox.NotFound.
+	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(nil, false, nil).Times(1)
+	g, err = s.dataStore.Get(s.hasReadCtx, group.GetProps())
+	s.Nil(g)
+	s.ErrorIs(err, errox.NotFound)
 }
 
 func (s *groupDataStoreTestSuite) TestGetWithoutID() {
@@ -145,7 +151,7 @@ func (s *groupDataStoreTestSuite) TestAllowsGetAll() {
 func (s *groupDataStoreTestSuite) TestEnforcesGetFiltered() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	groups, err := s.dataStore.GetFiltered(s.hasNoneCtx, func(_ *storage.GroupProperties) bool { return true })
+	groups, err := s.dataStore.GetFiltered(s.hasNoneCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error, should return nil without access")
 	s.Nil(groups, "expected return value to be nil")
 }
@@ -153,12 +159,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesGetFiltered() {
 func (s *groupDataStoreTestSuite) TestAllowsGetFiltered() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 
-	_, err := s.dataStore.GetFiltered(s.hasReadCtx, func(_ *storage.GroupProperties) bool { return true })
+	_, err := s.dataStore.GetFiltered(s.hasReadCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	_, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(_ *storage.GroupProperties) bool { return true })
+	_, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
@@ -166,13 +172,13 @@ func (s *groupDataStoreTestSuite) TestGetFiltered() {
 	groups := fixtures.GetGroups()
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(walkMockFunc(groups))
 
-	actualGroups, err := s.dataStore.GetFiltered(s.hasWriteCtx, func(*storage.GroupProperties) bool { return false })
+	actualGroups, err := s.dataStore.GetFiltered(s.hasWriteCtx, func(*storage.Group) bool { return false })
 	s.NoError(err)
 	s.Empty(actualGroups)
 
 	// Test with a selective filter
-	actualGroups, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(props *storage.GroupProperties) bool {
-		return props.GetAuthProviderId() == "authProvider1" || props.GetKey() == "Attribute2"
+	actualGroups, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(group *storage.Group) bool {
+		return group.GetProps().GetAuthProviderId() == "authProvider1" || group.GetProps().GetKey() == "Attribute2"
 	})
 	expectedGroups := []*storage.Group{
 		groups[1], groups[2], groups[3], groups[4], groups[6],

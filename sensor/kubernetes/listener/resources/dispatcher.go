@@ -14,11 +14,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
-	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -62,7 +60,6 @@ func NewDispatcherRegistry(
 	profileLister cache.GenericLister,
 	processFilter filter.Filter,
 	configHandler config.Handler,
-	namespaces *orchestratornamespaces.OrchestratorNamespaces,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
 	storeProvider *InMemoryStoreProvider,
@@ -70,18 +67,18 @@ func NewDispatcherRegistry(
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
-	serviceAccountStore := ServiceAccountStoreSingleton()
+	serviceAccountStore := storeProvider.serviceAccountStore
 	deploymentStore := storeProvider.deploymentStore
 	podStore := storeProvider.podStore
 	nsStore := newNamespaceStore()
-	netPolicyStore := NetworkPolicySingleton()
+	netPolicyStore := storeProvider.networkPolicyStore
 	endpointManager := storeProvider.endpointManager
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())
-	registryStore := registry.Singleton()
+	registryStore := storeProvider.registryStore
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, namespaces, registryStore, credentialsManager),
+			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
 
 		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater, k8sAPI),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
@@ -91,7 +88,7 @@ func NewDispatcherRegistry(
 		networkPolicyDispatcher:   newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
 		nodeDispatcher:            newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
 		serviceAccountDispatcher:  newServiceAccountDispatcher(serviceAccountStore),
-		clusterOperatorDispatcher: newClusterOperatorDispatcher(namespaces),
+		clusterOperatorDispatcher: newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
 
 		traceWriter: traceWriter,
 

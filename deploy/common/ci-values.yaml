@@ -1,5 +1,15 @@
 # Change resource overrides for the stackrox-central-services Helm chart in CI.
 
+central:
+  db:
+    resources:
+      limits:
+        cpu: 8
+        memory: 16Gi
+      requests:
+        cpu: 1
+        memory: 1Gi
+
 scanner:
   replicas: 1
   autoscaling:

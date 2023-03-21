@@ -1,8 +1,8 @@
 import React, { useCallback, ChangeEvent } from 'react';
-import { Badge, Button, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
+import { Button, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Namespace } from 'hooks/useFetchClusterNamespaces';
+import { Namespace } from 'hooks/useFetchClusterNamespacesForPermissions';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import { getDeploymentLookupMap, getDeploymentsAllowedByNamespaces } from '../utils/hierarchyUtils';
@@ -48,14 +48,12 @@ function NamespaceSelector({
             filterElementsWithValueProp(
                 filterValue,
                 namespaces.map((namespace) => (
-                    <SelectOption
-                        key={namespace.metadata.id}
-                        value={namespace.metadata.name}
-                        isDisabled={namespace.deploymentCount < 1}
-                    >
+                    <SelectOption key={namespace.id} value={namespace.name}>
                         <span>
-                            <NamespaceIcon /> {namespace.metadata.name}{' '}
-                            <Badge isRead>{namespace.deploymentCount}</Badge>
+                            <NamespaceIcon />
+                            <span className="pf-u-mx-xs" data-testid="namespace-name">
+                                {namespace.name}
+                            </span>
                         </span>
                     </SelectOption>
                 ))
@@ -98,14 +96,12 @@ function NamespaceSelector({
 
     const namespaceSelectOptions: JSX.Element[] = namespaces.map((namespace) => {
         return (
-            <SelectOption
-                key={namespace.metadata.id}
-                value={namespace.metadata.name}
-                isDisabled={namespace.deploymentCount < 1}
-            >
+            <SelectOption key={namespace.id} value={namespace.name}>
                 <span>
-                    <NamespaceIcon /> {namespace.metadata.name}{' '}
-                    <Badge isRead>{namespace.deploymentCount}</Badge>
+                    <NamespaceIcon />
+                    <span className="pf-u-mx-xs" data-testid="namespace-name">
+                        {namespace.name}
+                    </span>
                 </span>
             </SelectOption>
         );

@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react';
+import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { Page } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
@@ -6,6 +7,7 @@ import { gql, useQuery } from '@apollo/client';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import { selectors } from 'reducers';
 import { clustersBasePath } from 'routePaths';
 
 import AnnouncementBanner from './Banners/AnnouncementBanner';
@@ -39,6 +41,7 @@ function MainPage(): ReactElement {
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
+    const isLoadingPublicConfig = useSelector(selectors.isLoadingPublicConfigSelector);
 
     // Check for clusters under management
     // if none, and user can admin Clusters, redirect to clusters section
@@ -53,13 +56,15 @@ function MainPage(): ReactElement {
         },
     });
 
-    // Render Body and NavigationSideBar only when feature flags and permissions are available.
-    if (isLoadingFeatureFlags || isLoadingPermissions) {
+    // Prerequisites from initial requests for conditional rendering that affects all authenticated routes:
+    // feature flags: for NavigationSidebar and Body
+    // permissions: for NavigationSidebar and Body
+    // public config: for PublicConfigHeader and PublicConfigFooter and analytics
+    if (isLoadingFeatureFlags || isLoadingPermissions || isLoadingPublicConfig) {
         return <LoadingSection message="Loading..." />;
     }
 
-    // TODO: ROX-12750 Replace ServiceIdentity with Administration
-    const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
+    const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
 
     return (
         <>
@@ -68,11 +73,11 @@ function MainPage(): ReactElement {
             <AnnouncementBanner />
             <CredentialExpiryBanner
                 component="CENTRAL"
-                hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
+                hasAdministrationWritePermission={hasAdministrationWritePermission}
             />
             <CredentialExpiryBanner
                 component="SCANNER"
-                hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
+                hasAdministrationWritePermission={hasAdministrationWritePermission}
             />
             <OutdatedVersionBanner />
             <DatabaseStatusBanner />

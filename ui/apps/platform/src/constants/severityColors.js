@@ -20,6 +20,7 @@ export const vulnerabilitySeverityColorMapPF = {
     Moderate: 'orange',
     Important: 'red',
     Critical: 'purple',
+    Unknown: 'gray',
 };
 
 export const severityTextColorMap = {

@@ -13,7 +13,7 @@ import (
 type DataStore interface {
 	Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error)
 	GetAll(ctx context.Context) ([]*storage.Group, error)
-	GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error)
+	GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)
 
 	Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error)
 
