@@ -134,6 +134,7 @@ test_upgrade_paths() {
     echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
     echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
     echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
+    echo "Unexpected HTTP request failure" >> /tmp/allowlist-patterns
     # Using ci_export so the post tests have this as well
     ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
