@@ -3,7 +3,7 @@ import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
 
 import { Cluster } from 'types/cluster.proto';
 import useURLSearch from 'hooks/useURLSearch';
-import useFetchClusterNamespaces from 'hooks/useFetchClusterNamespaces';
+import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNamespacesForPermissions';
 import useFetchNamespaceDeployments from 'hooks/useFetchNamespaceDeployments';
 import ClusterSelector from './ClusterSelector';
 import NamespaceSelector from './NamespaceSelector';
@@ -24,11 +24,12 @@ function NetworkBreadcrumbs({
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
-    const { namespaces } = useFetchClusterNamespaces(selectedCluster?.id);
+    const { namespaces } = useFetchClusterNamespacesForPermissions(
+        ['NetworkGraph', 'Deployment'],
+        selectedCluster?.id
+    );
     const selectedNamespaceIds = namespaces.reduce<string[]>((acc: string[], namespace) => {
-        return selectedNamespaces.includes(namespace.metadata.name)
-            ? [...acc, namespace.metadata.id]
-            : acc;
+        return selectedNamespaces.includes(namespace.name) ? [...acc, namespace.id] : acc;
     }, []);
     const { deploymentsByNamespace } = useFetchNamespaceDeployments(selectedNamespaceIds);
 
