@@ -64,7 +64,7 @@ export const searchMetadataOptionsAlias = 'search/metadata/options';
 const routeMatcherMapToVisitNetworkGraph = {
     [clustersAlias]: {
         method: 'GET',
-        url: '/v1/sac/clusters',
+        url: '/v1/sac/clusters?permissions=NetworkGraph&permissions=Deployment',
     },
     [networkPoliciesGraphEpochAlias]: {
         method: 'GET',
