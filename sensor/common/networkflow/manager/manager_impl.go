@@ -134,6 +134,10 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 		},
 	}
 
+	if ts != timestamp.InfiniteFuture {
+		proto.CloseTimestamp = ts.GogoProtobuf()
+	}
+
 	return proto
 }
 
