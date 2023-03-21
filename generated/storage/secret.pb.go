@@ -735,6 +735,7 @@ type SecretDataFile struct {
 	Name string     `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Type SecretType `protobuf:"varint,2,opt,name=type,proto3,enum=storage.SecretType" json:"type,omitempty" search:"Secret Type"`
 	// Types that are valid to be assigned to Metadata:
+	//
 	//	*SecretDataFile_Cert
 	//	*SecretDataFile_ImagePullSecret
 	Metadata             isSecretDataFile_Metadata `protobuf_oneof:"metadata"`
