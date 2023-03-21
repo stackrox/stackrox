@@ -10,7 +10,8 @@ import (
 // ToNodeInventory converts a NodeInventory response to a native storage.NodeInventory version
 func ToNodeInventory(resp *scannerV1.GetNodeInventoryResponse) *storage.NodeInventory {
 	return &storage.NodeInventory{
-		NodeId:     uuid.Nil.String(), // NodeId is only available to Sensor. Until it arrives there, we add a placeholder
+		// NodeId is only available to Sensor. Until it arrives there, we add a placeholder
+		NodeId:     uuid.Nil.String(),
 		NodeName:   resp.GetNodeName(),
 		ScanTime:   timestamp.TimestampNow(),
 		Components: toStorageComponents(resp.GetComponents()),
