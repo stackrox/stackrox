@@ -19,7 +19,6 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { vulnerabilitySeverities, VulnerabilitySeverity } from 'types/cve.proto';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
@@ -34,14 +33,8 @@ import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
 import { DynamicTableLabel } from './DynamicIcon';
-import { parseQuerySearchFilter } from './searchUtils';
+import { getHiddenSeverities, parseQuerySearchFilter } from './searchUtils';
 import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from './types';
-
-function getHiddenSeverities(querySearchFilter: QuerySearchFilter): Set<VulnerabilitySeverity> {
-    return querySearchFilter.Severity
-        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
-        : new Set([]);
-}
 
 function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
     const hiddenStatuses = new Set<FixableStatus>([]);
@@ -120,7 +113,8 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
     } else if (vulnerabilityData) {
         const hiddenSeverities = getHiddenSeverities(querySearchFilter);
         const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-        const totalVulnerabilityCount = vulnerabilityData.image.imageVulnerabilityCounter.all.total;
+        const vulnCounter = vulnerabilityData.image.imageVulnerabilityCounter;
+        const totalVulnerabilityCount = vulnCounter.all.total;
 
         mainContent = (
             <>
@@ -129,7 +123,12 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
                         <GridItem sm={12} md={6} xl2={4}>
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
-                                severityCounts={vulnerabilityData.image.imageVulnerabilityCounter}
+                                severityCounts={{
+                                    CRITICAL_VULNERABILITY_SEVERITY: vulnCounter.critical.total,
+                                    IMPORTANT_VULNERABILITY_SEVERITY: vulnCounter.important.total,
+                                    MODERATE_VULNERABILITY_SEVERITY: vulnCounter.moderate.total,
+                                    LOW_VULNERABILITY_SEVERITY: vulnCounter.low.total,
+                                }}
                                 hiddenSeverities={hiddenSeverities}
                             />
                         </GridItem>

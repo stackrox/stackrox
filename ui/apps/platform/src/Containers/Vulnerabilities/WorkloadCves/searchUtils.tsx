@@ -1,6 +1,7 @@
 import qs from 'qs';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { VulnerabilitySeverity, vulnerabilitySeverities } from 'types/cve.proto';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import { searchValueAsArray } from 'utils/searchUtils';
@@ -89,4 +90,13 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
     }
 
     return cleanSearchFilter;
+}
+
+// Given a search filter, determine which severities should be hidden from the user
+export function getHiddenSeverities(
+    querySearchFilter: QuerySearchFilter
+): Set<VulnerabilitySeverity> {
+    return querySearchFilter.Severity
+        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
+        : new Set([]);
 }

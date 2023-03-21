@@ -1,6 +1,7 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
+    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
@@ -14,12 +15,20 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { getOverviewCvesPath } from './searchUtils';
+import useURLSearch from 'hooks/useURLSearch';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHiddenSeverities, getOverviewCvesPath, parseQuerySearchFilter } from './searchUtils';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import ImageCvePageHeader, {
     ImageCveMetadata,
     imageCveMetadataFragment,
 } from './ImageCvePageHeader';
+import ImageCveSummaryCards, {
+    ImageCveSeveritySummary,
+    imageCveSeveritySummaryFragment,
+    ImageCveSummaryCount,
+    imageCveSummaryCountFragment,
+} from './ImageCveSummaryCards';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -35,14 +44,37 @@ export const imageCveMetadataQuery = gql`
     }
 `;
 
+export const imageCveSummaryQuery = gql`
+    ${imageCveSummaryCountFragment}
+    ${imageCveSeveritySummaryFragment}
+    query getImageCveSummaryData($cve: String!, $query: String!) {
+        ...ImageCVESummaryCounts
+        imageCVE(cve: $cve) {
+            cve
+            ...ImageCVESeveritySummary
+        }
+    }
+`;
+
 function ImageCvePage() {
     const { cveId } = useParams();
+    const { searchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const metadataRequest = useQuery<{ imageCVE: ImageCveMetadata }, { cve: string }>(
         imageCveMetadataQuery,
         { variables: { cve: cveId } }
     );
 
+    const summaryRequest = useQuery<
+        ImageCveSummaryCount & { imageCVE: ImageCveSeveritySummary },
+        { cve: string; query: string }
+    >(imageCveSummaryQuery, {
+        variables: { cve: cveId, query: getRequestQueryStringForSearchFilter(querySearchFilter) },
+    });
+
     const cveName = metadataRequest.data?.imageCVE?.cve;
+
+    const hiddenSeverities = getHiddenSeverities(querySearchFilter);
 
     return (
         <>
@@ -79,8 +111,36 @@ function ImageCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
-                <WorkloadTableToolbar />
-                <Divider />
+                <div className="pf-u-background-color-100">
+                    <div className="pf-u-px-sm">
+                        <WorkloadTableToolbar />
+                    </div>
+                    <div className="pf-u-px-lg pf-u-pb-lg">
+                        {summaryRequest.error && (
+                            <Alert
+                                title="There was an error loading the summary data for this CVE"
+                                isInline
+                                variant="danger"
+                            >
+                                {getAxiosErrorMessage(summaryRequest.error)}
+                            </Alert>
+                        )}
+                        {summaryRequest.loading && !summaryRequest.data && (
+                            <Skeleton
+                                style={{ height: '120px' }}
+                                screenreaderText="Loading image cve summary data"
+                            />
+                        )}
+                        {summaryRequest.data && (
+                            <ImageCveSummaryCards
+                                summaryCounts={summaryRequest.data}
+                                severitySummary={summaryRequest.data.imageCVE}
+                                hiddenSeverities={hiddenSeverities}
+                            />
+                        )}
+                    </div>
+                    <Divider />
+                </div>
             </PageSection>
         </>
     );
