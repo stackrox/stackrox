@@ -271,8 +271,10 @@ func main() {
 		if err != nil {
 			log.Errorf("Could not initialize connection to NodeInventory service. Node Scanning will be unavailable: %v", err)
 		}
-		log.Info("Initialized NodeInventory gRPC connection")
-		nodeInventoryClient = scannerV1.NewNodeInventoryServiceClient(niConn)
+		if niConn != nil {
+			log.Info("Initialized NodeInventory gRPC connection")
+			nodeInventoryClient = scannerV1.NewNodeInventoryServiceClient(niConn)
+		}
 	}
 
 	// Set up Compliance <-> Sensor connection
