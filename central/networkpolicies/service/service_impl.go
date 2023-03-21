@@ -142,7 +142,7 @@ func (s *serviceImpl) GetIsolationForDeployments(ctx context.Context, req *v1.Ge
 		})
 	}
 
-	matcher, err := deploymentMatcher.BuildMatcher(s.networkPolicies, clusterNamespaceContext.AsSlice())
+	matcher, err := deploymentMatcher.BuildMatcher(ctx, s.networkPolicies, clusterNamespaceContext.AsSlice())
 	if err != nil {
 		return nil, err
 	}
