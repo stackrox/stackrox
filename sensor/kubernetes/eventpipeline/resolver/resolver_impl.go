@@ -3,6 +3,7 @@ package resolver
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -46,6 +47,20 @@ func (r *resolverImpl) runResolver() {
 	}
 }
 
+func (r *resolverImpl) getImageMetadataFromDeploymentContainers(prebuiltDeployment *storage.Deployment) map[string]store.ImageMetadata {
+	result := make(map[string]store.ImageMetadata)
+	for _, container := range prebuiltDeployment.GetContainers() {
+		image := container.GetImage()
+		if image != nil && image.GetId() != "" && image.GetName() != nil {
+			result[image.GetName().GetFullName()] = store.ImageMetadata{
+				NotPullable:    !imageUtils.IsPullable(image.GetId()),
+				IsClusterLocal: r.storeProvider.Registries().HasRegistryForImage(image.GetName()),
+			}
+		}
+	}
+	return result
+}
+
 // processMessage resolves the dependencies and forwards the message to the outputQueue
 func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	if msg.DeploymentReferences != nil {
@@ -76,10 +91,12 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
 				exposureInfo := r.storeProvider.Services().
 					GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
+				imageMetadata := r.getImageMetadataFromDeploymentContainers(preBuiltDeployment)
 
 				d, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
 					PermissionLevel: permissionLevel,
 					Exposures:       exposureInfo,
+					ImageMetadata:   imageMetadata,
 				})
 
 				if err != nil {

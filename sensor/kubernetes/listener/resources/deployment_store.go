@@ -197,6 +197,17 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	if err := wrap.updateHash(); err != nil {
 		return nil, err
 	}
+
+	// These properties are set when initially parsing a deployment/pod event as a deploymentWrap. Since secrets could
+	// influence its values, we need to manually set them here in case this deployment update was triggered by a secret
+	// event.
+	for idx, container := range wrap.GetContainers() {
+		if metadata, ok := dependencies.ImageMetadata[container.GetImage().GetName().GetFullName()]; ok {
+			wrap.Containers[idx].Image.NotPullable = metadata.NotPullable
+			wrap.Containers[idx].Image.IsClusterLocal = metadata.IsClusterLocal
+		}
+	}
+
 	ds.addOrUpdateDeploymentNoLock(wrap)
 	return wrap.GetDeployment().Clone(), nil
 }
