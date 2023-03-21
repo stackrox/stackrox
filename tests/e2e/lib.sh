@@ -544,7 +544,7 @@ wait_for_api() {
     info "Waiting for Central to be ready"
 
     start_time="$(date '+%s')"
-    max_seconds=300
+    max_seconds=${MAX_WAIT_SECONDS:-300}
 
     while true; do
         central_json="$(kubectl -n stackrox get deploy/central -o json)"
