@@ -74,13 +74,11 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		// TODO: ROX-12750 Replace DebugLogs with Administration
-		user.With(permissions.View(resources.DebugLogs)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.DebugService/GetLogLevel",
 			"/v1.DebugService/StreamAuthzTraces",
 		},
-		// TODO: ROX-12750 Replace DebugLogs with Administration
-		user.With(permissions.Modify(resources.DebugLogs)): {
+		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.DebugService/SetLogLevel",
 		},
 	})
@@ -476,8 +474,7 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-12750 Replace Config with Administration
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	return s.configDataStore.GetConfig(accessConfigCtx)
 }
@@ -486,21 +483,18 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
 		{
-			Route: "/debug/dump",
-			// TODO: ROX-12750 Replace DebugLogs with Administration
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Route:         "/debug/dump",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDebugDump),
 		},
 		{
-			Route: "/api/extensions/diagnostics",
-			// TODO: ROX-12750 Replace DebugLogs with Administration
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Route:         "/api/extensions/diagnostics",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
 		},
 		{
-			Route: "/debug/versions.json",
-			// TODO: ROX-12750 Replace DebugLogs with Administration
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Route:         "/debug/versions.json",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getVersionsJSON),
 		},
 	}

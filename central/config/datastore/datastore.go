@@ -28,8 +28,7 @@ func New(store store.Store) DataStore {
 }
 
 var (
-	// TODO: ROX-12750 Replace Config with Administration and rename SAC variable accordingly.
-	configSAC = sac.ForResource(resources.Config)
+	administrationSAC = sac.ForResource(resources.Administration)
 )
 
 type datastoreImpl struct {
@@ -38,7 +37,7 @@ type datastoreImpl struct {
 
 // GetConfig returns Central's config
 func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.Config, error) {
-	if ok, err := configSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -50,7 +49,7 @@ func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.Config, error) 
 
 // UpsertConfig updates Central's config
 func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config) error {
-	if ok, err := configSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
