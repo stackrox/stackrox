@@ -79,15 +79,22 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 			requiredBytes := int64(math.Ceil(float64(currentDBBytes) * (1.0 + capacityMarginFraction)))
 
 			var toBeFreedBytes int64
-			if pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase) {
+			exists, err := pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Failed to determine if %s database exists", migrations.PreviousDatabase)
+			}
+			if exists {
 				toBeFreedBytes, err = pgadmin.GetDatabaseSize(adminConfig, migrations.GetPreviousClone())
 				if err != nil {
 					return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.PreviousDatabase)
 				}
 
 				// Get a short-lived connection for the purposes of checking the version of the previous clone.
-				pool := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
+				pool, err := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
 				defer pool.Close()
+				if err != nil {
+					log.Infof("Unable to get previous database, leaving ForceRollbackTo empty.  %v", err)
+				}
 
 				// Get rollback to version
 				migVer, err := versionUtils.ReadVersionPostgres(pool)
