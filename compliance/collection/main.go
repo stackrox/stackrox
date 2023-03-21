@@ -269,7 +269,7 @@ func main() {
 		// Set up Compliance <-> NodeInventory connection
 		niConn, err := clientconn.AuthenticatedGRPCConnection(env.NodeScanningEndpoint.Setting(), mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
 		if err != nil {
-			log.Errorf("Could not initialize connection to NodeInventory service. Node Scanning will be unavailable. Error: %v", err)
+			log.Errorf("Could not initialize connection to NodeInventory service. Node Scanning will be unavailable: %v", err)
 		}
 		log.Info("Initialized NodeInventory gRPC connection")
 		nodeInventoryClient = scannerV1.NewNodeInventoryServiceClient(niConn)
