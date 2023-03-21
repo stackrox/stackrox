@@ -43,7 +43,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 		HTTPClient: httpClient,
 	})
 	if !mdClient.Available() {
-		return nil, errors.New("metadata service unavailable")
+		return nil, nil
 	}
 
 	errs := errorhelpers.NewErrorList("retrieving AWS EC2 metadata")
