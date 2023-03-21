@@ -49,6 +49,7 @@ export type NamespaceData = {
     showContextMenu: boolean;
     namespace: string;
     cluster: string;
+    labelIconClass: string;
 };
 
 export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
