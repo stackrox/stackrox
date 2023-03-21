@@ -29,21 +29,23 @@ var (
 // LocalScan wraps the functions required in EnrichLocalImage. This allows us to inject different values for testing purposes
 type LocalScan struct {
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
-	scanImg                  func(context.Context, *storage.Image, registryTypes.Registry, *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
-	fetchSignaturesWithRetry func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
-	scannerClientSingleton   func() *scannerclient.Client
-	getMatchingRegistry      func(*storage.ImageName) (registryTypes.Registry, error)
-	registryStore            *registry.Store
+	scanImg                        func(context.Context, *storage.Image, registryTypes.Registry, *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
+	fetchSignaturesWithRetry       func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
+	scannerClientSingleton         func() *scannerclient.Client
+	getMatchingRegistry            func(*storage.ImageName) (registryTypes.Registry, error)
+	getRegistryForImageInNamespace func(*storage.ImageName, string) (registryTypes.Registry, error)
+	upsertNoAuthRegistry           func(context.Context, string, *storage.ImageName) (registryTypes.Registry, error)
 }
 
 // NewLocalScan initializes a LocalScan struct
 func NewLocalScan(registryStore *registry.Store) *LocalScan {
 	return &LocalScan{
-		scanImg:                  scanImage,
-		fetchSignaturesWithRetry: signatures.FetchImageSignaturesWithRetries,
-		scannerClientSingleton:   scannerclient.GRPCClientSingleton,
-		getMatchingRegistry:      registryStore.GetRegistryForImage,
-		registryStore:            registryStore,
+		scanImg:                        scanImage,
+		fetchSignaturesWithRetry:       signatures.FetchImageSignaturesWithRetries,
+		scannerClientSingleton:         scannerclient.GRPCClientSingleton,
+		getMatchingRegistry:            registryStore.GetRegistryForImage,
+		getRegistryForImageInNamespace: registryStore.GetRegistryForImageInNamespace,
+		upsertNoAuthRegistry:           registryStore.UpsertNoAuthRegistry,
 	}
 }
 
@@ -182,11 +184,11 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	var reg registryTypes.Registry
 	imgName := ci.GetName()
 
-	reg, err := s.registryStore.GetRegistryForImageInNamespace(imgName, namespace)
+	reg, err := s.getRegistryForImageInNamespace(imgName, namespace)
 	if err != nil {
 		// no registry was found, assume this image represents a registry that does not require authentication.
 		// add the registry to regStore and use it for scanning going forward
-		reg, err = s.registryStore.UpsertNoAuthRegistry(ctx, namespace, imgName)
+		reg, err = s.upsertNoAuthRegistry(ctx, namespace, imgName)
 		if err != nil {
 			return nil, err
 		}

@@ -385,7 +385,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	hasPreviousErrors := false
 	if len(request.Error) > 0 {
 		hasPreviousErrors = true
-		log.Infof("received image enrichment request from sensor with previous errors: %q", request.GetImageName().GetFullName(), request.GetError())
+		log.Infof("received image enrichment request from sensor with previous errors %q: %v", request.GetImageName().GetFullName(), request.GetError())
 	}
 
 	var imgExists bool

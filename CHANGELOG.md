@@ -14,7 +14,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   configured telemetry collection.
 - ROX-15434: new `ROX_FORCE_LOCAL_IMAGE_SCANNING` env var added to sensor which forces all images observed by
   sensor to be analyzed by the local scanner (OCP only)
-  
 
 ### Removed Features
 
