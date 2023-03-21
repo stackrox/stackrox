@@ -50,6 +50,7 @@ func NewLocalScan(registryStore *registry.Store) *LocalScan {
 // EnrichLocalImageFromRegistry will enrich an image with scan results from local scanner as well as signatures
 // from the local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image.
+//
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
 func (s *LocalScan) EnrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registry registryTypes.Registry) (*storage.Image, error) {
 	// Check if there is a local Scanner.
@@ -151,7 +152,10 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 // EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
 // from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image.
+//
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
+//
+// Registry credentials are extracted from s.getMatchingRegistry based on ci.Name
 func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	imgName := ci.GetName().GetFullName()
 
@@ -166,6 +170,14 @@ func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.Image
 	return s.EnrichLocalImageFromRegistry(ctx, centralClient, ci, matchingRegistry)
 }
 
+// EnrichLocalImageInNamespace will enrich a cluster-local image with scan results from local scanner as well as signatures
+// from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
+// vulnerabilities will be fetched from central, returning the fully enriched image.
+//
+// It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
+//
+// Registry credentials are extracted from s.registryStore based on namespace, if no credentials are found
+// assumes no auth is needed
 func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, namespace string) (*storage.Image, error) {
 	var reg registryTypes.Registry
 	imgName := ci.GetName()

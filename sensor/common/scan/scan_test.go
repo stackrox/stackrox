@@ -7,10 +7,12 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
@@ -179,6 +181,61 @@ func (suite *scanTestSuite) TestMetadataBeingSet() {
 	suite.Assert().Equal(img, resultImg, "resulting image is not equal to expected one")
 
 	suite.Assert().True(imageServiceClient.enrichTriggered, "enrichment on central was not triggered")
+}
+
+func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
+	regStore := registry.NewRegistryStore(func(_ context.Context, _ string) (bool, error) { return false, nil })
+
+	scan := LocalScan{
+		scanImg: successfulScan,
+		fetchSignaturesWithRetry: func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image, _ string, _ registryTypes.Registry) ([]*storage.Signature, error) {
+			if img.GetMetadata().GetV2() == nil {
+				return nil, errors.New("image metadata missing, not attempting fetch of signatures")
+			}
+			return nil, nil
+		},
+		getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
+			return &fakeRegistry{fail: false}, nil
+		},
+		scannerClientSingleton: emptyScannerClientSingleton,
+		registryStore:          regStore,
+	}
+
+	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
+	suite.Require().NoError(err, "failed creating test image")
+
+	img := types.ToImage(containerImg)
+	imageServiceClient := suite.createMockImageServiceClient(img, false)
+
+	namespace := "fake-namespace"
+
+	resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, namespace)
+	suite.Require().NoError(err, "unexpected error when enriching image")
+	suite.Assert().Equal(img, resultImg, "resulting image is not equal to expected one")
+	suite.Assert().True(imageServiceClient.enrichTriggered, "enrichment on central was not triggered")
+
+	// enrichment without matching regstore entry should create a new noauth registry
+	suite.Assert().True(regStore.HasRegistryForImageInNamespace(img.GetName(), namespace), "regStore should have entry for image")
+	reg, err := regStore.GetRegistryForImageInNamespace(img.GetName(), namespace)
+	suite.Require().NoError(err)
+	suite.Assert().Equal(containerImg.Name.Registry, reg.Config().RegistryHostname)
+	suite.Assert().Empty(reg.Config().Username)
+	suite.Assert().Empty(reg.Config().Password)
+
+	// enrichment with matching regstore entry should NOT create a new noauth registry
+	regStore = registry.NewRegistryStore(func(_ context.Context, _ string) (bool, error) { return false, nil })
+	scan.registryStore = regStore
+
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+	regStore.UpsertRegistry(context.Background(), namespace, containerImg.Name.Registry, dce)
+
+	scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, namespace)
+	reg, err = regStore.GetRegistryForImageInNamespace(img.GetName(), namespace)
+	suite.Require().NoError(err)
+	suite.Assert().Equal(containerImg.Name.Registry, reg.Config().RegistryHostname)
+	suite.Assert().Equal(dce.Username, reg.Config().Username)
+	suite.Assert().Equal(dce.Password, reg.Config().Password)
+
 }
 
 func successfulScan(_ context.Context, _ *storage.Image,
