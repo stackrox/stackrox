@@ -6535,6 +6535,10 @@
               {
                 "name": "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
                 "integer": 6
+              },
+              {
+                "name": "CONTENT_SET_UNAVAILABLE",
+                "integer": 6
               }
             ]
           },

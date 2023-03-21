@@ -586,6 +586,7 @@
         "LANGUAGE_CVES_UNAVAILABLE",
         "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
       ],
+
       "default": "OS_CVES_UNAVAILABLE"
     },
     "scannerV1OSComponent": {
@@ -1221,7 +1222,8 @@
         "OS_CVES_UNAVAILABLE",
         "OS_CVES_STALE",
         "LANGUAGE_CVES_UNAVAILABLE",
-        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
+        "CONTENT_SET_UNAVAILABLE"
       ],
       "default": "UNSET"
     },

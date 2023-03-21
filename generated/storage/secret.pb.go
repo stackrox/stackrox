@@ -82,7 +82,7 @@ func (SecretType) EnumDescriptor() ([]byte, []int) {
 // Flat secret object.
 // Any properties of an individual secret.
 // (regardless of time, scope, or context)
-// ////////////////////////////////////////
+//////////////////////////////////////////
 type Secret struct {
 	Id          string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Secret ID,store,hidden" sql:"pk,type(uuid)"`
 	Name        string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Secret,store"`
@@ -735,7 +735,6 @@ type SecretDataFile struct {
 	Name string     `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Type SecretType `protobuf:"varint,2,opt,name=type,proto3,enum=storage.SecretType" json:"type,omitempty" search:"Secret Type"`
 	// Types that are valid to be assigned to Metadata:
-	//
 	//	*SecretDataFile_Cert
 	//	*SecretDataFile_ImagePullSecret
 	Metadata             isSecretDataFile_Metadata `protobuf_oneof:"metadata"`
