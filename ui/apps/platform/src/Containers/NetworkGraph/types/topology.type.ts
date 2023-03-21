@@ -76,6 +76,7 @@ export type DeploymentData = {
     isExternallyConnected: boolean;
     showExternalState: boolean;
     isFadedOut: boolean;
+    labelIconClass: string;
 };
 
 export type ExternalGroupData = {

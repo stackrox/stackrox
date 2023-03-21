@@ -1,7 +1,7 @@
 import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
-import derivedNamespaceSVG from 'images/network-graph/code-branch.svg';
-import filteredNamespaceSVG from 'images/network-graph/filter.svg';
+import derivedNamespaceSVG from 'images/network-graph/derived-namespace.svg';
+import filteredNamespaceSVG from 'images/network-graph/filtered-namespace.svg';
 
 import {
     DeploymentNetworkEntityInfo,
@@ -91,7 +91,8 @@ function getDeploymentNodeModel(
     entity: DeploymentNetworkEntityInfo,
     policyIds: string[],
     networkPolicyState: NetworkPolicyState,
-    isExternallyConnected: boolean
+    isExternallyConnected: boolean,
+    isFiltered: boolean
 ): DeploymentNodeModel {
     const baseNode = getBaseNode(entity.id) as DeploymentNodeModel;
     return {
@@ -105,6 +106,7 @@ function getDeploymentNodeModel(
             isExternallyConnected,
             showExternalState: true,
             isFadedOut: false,
+            labelIconClass: isFiltered ? filteredNamespaceSVG : '',
         },
     };
 }
@@ -139,7 +141,8 @@ function getNodeModel(
     policyIds: string[],
     networkPolicyState: NetworkPolicyState,
     isExternallyConnected: boolean,
-    outEdges: OutEdges
+    outEdges: OutEdges,
+    isDeploymentFiltered: boolean
 ): CustomNodeModel {
     switch (entity.type) {
         case 'DEPLOYMENT':
@@ -147,7 +150,8 @@ function getNodeModel(
                 entity,
                 policyIds,
                 networkPolicyState,
-                isExternallyConnected
+                isExternallyConnected,
+                isDeploymentFiltered
             );
         case 'EXTERNAL_SOURCE':
         case 'INTERNET':
@@ -195,7 +199,8 @@ function mergePortProtocolEdgeLabels(firstLabel: string, secondLabel = ''): stri
 export function transformActiveData(
     nodes: Node[],
     policyNodeMap: Record<string, DeploymentNodeModel>,
-    filteredNamespaces: string[]
+    filteredNamespaces: string[],
+    filteredDeployments: string[]
 ): {
     activeDataModel: CustomModel;
     activeEdgeMap: Record<string, CustomEdgeModel>;
@@ -228,16 +233,23 @@ export function transformActiveData(
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                const isFiltered = filteredNamespaces.includes(namespace);
-                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id, isFiltered);
+                const isNamespaceFiltered = filteredNamespaces.includes(namespace);
+                namespaceNodes[namespace] = getNamespaceNode(
+                    namespace,
+                    cluster,
+                    id,
+                    isNamespaceFiltered
+                );
             }
 
             // creating deployment nodes
+            const isDeploymentFiltered = filteredDeployments.includes(entity.deployment.name);
             const deploymentNode = getDeploymentNodeModel(
                 entity,
                 policyIds,
                 networkPolicyState,
-                isExternallyConnected
+                isExternallyConnected,
+                isDeploymentFiltered
             );
 
             deploymentNodes[id] = deploymentNode;
@@ -356,7 +368,10 @@ function getNetworkPolicyState(
 // external connections can only be active, so this is hard coded to false
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
-export function transformPolicyData(nodes: Node[]): {
+export function transformPolicyData(
+    nodes: Node[],
+    filteredDeployments: string[]
+): {
     policyDataModel: CustomModel;
     policyNodeMap: Record<string, DeploymentNodeModel>;
 } {
@@ -372,12 +387,17 @@ export function transformPolicyData(nodes: Node[]): {
     nodes.forEach((policyNode) => {
         const { entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress } = policyNode;
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
+        const isDeploymentFiltered =
+            entity.type === 'DEPLOYMENT'
+                ? filteredDeployments.includes(entity.deployment.name)
+                : false;
         const node = getNodeModel(
             entity,
             policyIds,
             networkPolicyState,
             POLICY_NODE_EXTERNALLY_CONNECTED_VALUE,
-            outEdges
+            outEdges,
+            isDeploymentFiltered
         );
         if (!policyNodeMap[node.id]) {
             policyNodeMap[node.id] = node as DeploymentNodeModel;
@@ -521,8 +541,13 @@ export function createExtraneousFlowsModel(
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                const isFiltered = filteredNamespaces.includes(namespace);
-                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id, isFiltered);
+                const isNamespaceFiltered = filteredNamespaces.includes(namespace);
+                namespaceNodes[namespace] = getNamespaceNode(
+                    namespace,
+                    cluster,
+                    id,
+                    isNamespaceFiltered
+                );
             }
         }
 
