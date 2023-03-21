@@ -158,14 +158,10 @@ func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_Commun
 }
 
 func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scanner scannerV1.NodeInventoryServiceClient) <-chan *sensor.MsgFromCompliance {
-	sensorC := make(chan *sensor.MsgFromCompliance)
+	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
 	nodeName := getNode()
-	if scanner == nil {
-		log.Error("NodeInventoryServiceClient not provided. Node Scanning will be unavailable.")
-		return sensorC
-	}
 	go func() {
-		defer close(sensorC)
+		defer close(nodeInventoriesC)
 		t := time.NewTicker(i.Initial())
 		for {
 			select {
@@ -177,7 +173,7 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 				if err != nil {
 					log.Errorf("error running scanNode: %v", err)
 				} else {
-					sensorC <- msg
+					nodeInventoriesC <- msg
 				}
 				interval := i.Next()
 				cmetrics.ObserveRescanInterval(interval, getNode())
@@ -185,7 +181,7 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 			}
 		}
 	}()
-	return sensorC
+	return nodeInventoriesC
 }
 
 func scanNode(scanner scannerV1.NodeInventoryServiceClient) (*sensor.MsgFromCompliance, error) {
@@ -305,7 +301,7 @@ func main() {
 	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
 	// TODO(ROX-13935): Remove FakeNodeInventory and its FF
-	if features.RHCOSNodeScanning.Enabled() {
+	if features.RHCOSNodeScanning.Enabled() && nodeInventoryClient != nil {
 		i := intervals.NewNodeScanIntervalFromEnv()
 		nodeInventoriesC := manageNodeScanLoop(ctx, i, nodeInventoryClient)
 
@@ -315,7 +311,11 @@ func main() {
 				select {
 				case <-ctx.Done():
 					return
-				case sensorC <- <-nodeInventoriesC:
+				case msg, more := <-nodeInventoriesC:
+					if !more {
+						return
+					}
+					sensorC <- msg
 				}
 			}
 		}()
