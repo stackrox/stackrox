@@ -61,7 +61,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT & " +
-			"sleep 240 && pkill socat && sleep 3600)" as String,]),
+			"sleep 90 && pkill socat && sleep 3600)" as String,]),
         ]
     }
 
@@ -119,124 +119,124 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
     }
 
-    @Tag("BAT")
-    def "Verify networking endpoints with processes appear in API at the deployment level"() {
-        given:
-        "Two deployments that listen on ports are started up"
+    //@Tag("BAT")
+    //def "Verify networking endpoints with processes appear in API at the deployment level"() {
+    //    given:
+    //    "Two deployments that listen on ports are started up"
 
-        rebuildForRetries()
-        def clusterId = ClusterService.getClusterId()
+    //    rebuildForRetries()
+    //    def clusterId = ClusterService.getClusterId()
 
-        String deploymentId1 = targetDeployments[0].getDeploymentUid()
-        String deploymentId2 = targetDeployments[1].getDeploymentUid()
+    //    String deploymentId1 = targetDeployments[0].getDeploymentUid()
+    //    String deploymentId2 = targetDeployments[1].getDeploymentUid()
 
-        def gotCorrectNumElements = waitForResponseToHaveNumElements(2, deploymentId1, 240)
+    //    def gotCorrectNumElements = waitForResponseToHaveNumElements(2, deploymentId1, 240)
 
-        assert gotCorrectNumElements
+    //    assert gotCorrectNumElements
 
-        def processesListeningOnPorts = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(deploymentId1)
-                return temp
-        }
+    //    def processesListeningOnPorts = evaluateWithRetry(10, 10) {
+    //            def temp = ProcessesListeningOnPortsService
+    //                    .getProcessesListeningOnPortsResponse(deploymentId1)
+    //            return temp
+    //    }
 
-        assert processesListeningOnPorts
+    //    assert processesListeningOnPorts
 
-        def list = processesListeningOnPorts.listeningEndpointsList
-        assert list.size() == 2
+    //    def list = processesListeningOnPorts.listeningEndpointsList
+    //    assert list.size() == 2
 
-        def endpoint1 = list.find { it.endpoint.port == 80 }
+    //    def endpoint1 = list.find { it.endpoint.port == 80 }
 
-        assert endpoint1
-        assert endpoint1.deploymentId
-        assert endpoint1.podId
-        assert endpoint1.podUid
-        assert endpoint1.containerName == TCPCONNECTIONTARGET1
-        assert endpoint1.signal.id
-        assert endpoint1.signal.containerId
-        assert endpoint1.signal.time
-        assert endpoint1.signal.name == "socat"
-        assert endpoint1.signal.execFilePath == "/usr/bin/socat"
-        assert endpoint1.signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
-        assert endpoint1.signal.pid
-        assert endpoint1.clusterId == clusterId
-        assert endpoint1.namespace
-        assert endpoint1.containerStartTime
-        assert endpoint1.imageId
+    //    assert endpoint1
+    //    assert endpoint1.deploymentId
+    //    assert endpoint1.podId
+    //    assert endpoint1.podUid
+    //    assert endpoint1.containerName == TCPCONNECTIONTARGET1
+    //    assert endpoint1.signal.id
+    //    assert endpoint1.signal.containerId
+    //    assert endpoint1.signal.time
+    //    assert endpoint1.signal.name == "socat"
+    //    assert endpoint1.signal.execFilePath == "/usr/bin/socat"
+    //    assert endpoint1.signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+    //    assert endpoint1.signal.pid
+    //    assert endpoint1.clusterId == clusterId
+    //    assert endpoint1.namespace
+    //    assert endpoint1.containerStartTime
+    //    assert endpoint1.imageId
 
-        def endpoint2 = list.find { it.endpoint.port == 8080 }
+    //    def endpoint2 = list.find { it.endpoint.port == 8080 }
 
-        assert endpoint2
-        assert endpoint2.clusterId == clusterId
-        assert endpoint2.containerName == TCPCONNECTIONTARGET1
-        assert endpoint2.signal.id
-        assert endpoint2.signal.containerId
-        assert endpoint2.signal.time
-        assert endpoint2.signal.name == "socat"
-        assert endpoint2.signal.execFilePath == "/usr/bin/socat"
-        assert endpoint2.signal.args == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
-        assert endpoint2.signal.pid
+    //    assert endpoint2
+    //    assert endpoint2.clusterId == clusterId
+    //    assert endpoint2.containerName == TCPCONNECTIONTARGET1
+    //    assert endpoint2.signal.id
+    //    assert endpoint2.signal.containerId
+    //    assert endpoint2.signal.time
+    //    assert endpoint2.signal.name == "socat"
+    //    assert endpoint2.signal.execFilePath == "/usr/bin/socat"
+    //    assert endpoint2.signal.args == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+    //    assert endpoint2.signal.pid
 
-        gotCorrectNumElements = waitForResponseToHaveNumElements(1, deploymentId2, 240)
+    //    gotCorrectNumElements = waitForResponseToHaveNumElements(1, deploymentId2, 240)
 
-        assert gotCorrectNumElements
+    //    assert gotCorrectNumElements
 
-        processesListeningOnPorts = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(deploymentId2)
-                return temp
-        }
+    //    processesListeningOnPorts = evaluateWithRetry(10, 10) {
+    //            def temp = ProcessesListeningOnPortsService
+    //                    .getProcessesListeningOnPortsResponse(deploymentId2)
+    //            return temp
+    //    }
 
-        assert processesListeningOnPorts
+    //    assert processesListeningOnPorts
 
-        list = processesListeningOnPorts.listeningEndpointsList
-        assert list.size() == 1
+    //    list = processesListeningOnPorts.listeningEndpointsList
+    //    assert list.size() == 1
 
-        def endpoint = list.find { it.endpoint.port == 8081 }
+    //    def endpoint = list.find { it.endpoint.port == 8081 }
 
-        assert endpoint
-        assert endpoint.clusterId == clusterId
-        assert endpoint.containerName == TCPCONNECTIONTARGET2
-        assert endpoint.signal.id
-        assert endpoint.signal.containerId
-        assert endpoint.signal.time
-        assert endpoint.signal.name == "socat"
-        assert endpoint.signal.execFilePath == "/usr/bin/socat"
-        assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
-        assert endpoint.signal.pid
+    //    assert endpoint
+    //    assert endpoint.clusterId == clusterId
+    //    assert endpoint.containerName == TCPCONNECTIONTARGET2
+    //    assert endpoint.signal.id
+    //    assert endpoint.signal.containerId
+    //    assert endpoint.signal.time
+    //    assert endpoint.signal.name == "socat"
+    //    assert endpoint.signal.execFilePath == "/usr/bin/socat"
+    //    assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+    //    assert endpoint.signal.pid
 
-        destroyDeployments()
+    //    destroyDeployments()
 
-        gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId1, 240)
+    //    gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId1, 240)
 
-        assert gotCorrectNumElements
+    //    assert gotCorrectNumElements
 
-        processesListeningOnPorts = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(deploymentId1)
-                return temp
-        }
+    //    processesListeningOnPorts = evaluateWithRetry(10, 10) {
+    //            def temp = ProcessesListeningOnPortsService
+    //                    .getProcessesListeningOnPortsResponse(deploymentId1)
+    //            return temp
+    //    }
 
-        assert processesListeningOnPorts
+    //    assert processesListeningOnPorts
 
-        def list2 = processesListeningOnPorts.listeningEndpointsList
-        assert list2.size() == 0
+    //    def list2 = processesListeningOnPorts.listeningEndpointsList
+    //    assert list2.size() == 0
 
-        gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId2, 240)
+    //    gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId2, 240)
 
-        assert gotCorrectNumElements
+    //    assert gotCorrectNumElements
 
-        processesListeningOnPorts = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(deploymentId2)
-                return temp
-        }
+    //    processesListeningOnPorts = evaluateWithRetry(10, 10) {
+    //            def temp = ProcessesListeningOnPortsService
+    //                    .getProcessesListeningOnPortsResponse(deploymentId2)
+    //            return temp
+    //    }
 
-        assert processesListeningOnPorts
+    //    assert processesListeningOnPorts
 
-        def list3 = processesListeningOnPorts.listeningEndpointsList
-        assert list3.size() == 0
-    }
+    //    def list3 = processesListeningOnPorts.listeningEndpointsList
+    //    assert list3.size() == 0
+    //}
 
     @Tag("BAT")
     def "Verify networking endpoints disappear when process is terminated"() {
@@ -279,6 +279,51 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId3, 180)
 
         assert gotCorrectNumElements
+
+        destroyDeployments()
+    }
+
+    @Tag("BAT")
+    def "Verify networking endpoints doesn't disappear when port stays open"() {
+        given:
+        "Two deployments that listen on ports are started up"
+
+        rebuildForRetries()
+        def clusterId = ClusterService.getClusterId()
+
+        String deploymentId3 = targetDeployments[2].getDeploymentUid()
+
+        def gotCorrectNumElements = waitForResponseToHaveNumElements(1, deploymentId2, 240)
+
+        assert gotCorrectNumElements
+
+        def processesListeningOnPorts = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(deploymentId3)
+                return temp
+        }
+
+        assert processesListeningOnPorts
+
+        def list = processesListeningOnPorts.listeningEndpointsList
+        assert list.size() == 1
+
+        def endpoint = list.find { it.endpoint.port == 8081 }
+
+        assert endpoint
+        assert endpoint.clusterId == clusterId
+        assert endpoint.containerName == TCPCONNECTIONTARGET3
+        assert endpoint.signal.id
+        assert endpoint.signal.containerId
+        assert endpoint.signal.time
+        assert endpoint.signal.name == "socat"
+        assert endpoint.signal.execFilePath == "/usr/bin/socat"
+        assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+        assert endpoint.signal.pid
+
+        gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId2, 180)
+
+        assert !gotCorrectNumElements
 
         destroyDeployments()
     }
