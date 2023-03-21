@@ -70,14 +70,14 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 }
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
-func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
+func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) (registryTypes.Registry, error) {
 	secure, err := rs.checkTLS(ctx, registry)
 	if err != nil {
-		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
+		return nil, errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
 	regs := rs.getRegistries(namespace)
-	err = regs.UpdateImageIntegration(&storage.ImageIntegration{
+	reg, err := regs.UpdateImageIntegration(&storage.ImageIntegration{
 		Id:         registry,
 		Name:       registry,
 		Type:       "docker",
@@ -92,22 +92,17 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 		},
 	})
 	if err != nil {
-		return errors.Wrapf(err, "updating registry store with registry %q", registry)
+		return nil, errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
 
 	log.Debugf("Upserted registry %q for namespace %q into store", registry, namespace)
 
-	return nil
+	return reg, nil
 }
 
 // UpsertNoAuthRegistry will store a new registry with no user/pass and return the created registry integration
 func (rs *Store) UpsertNoAuthRegistry(ctx context.Context, namespace string, imgName *storage.ImageName) (registryTypes.Registry, error) {
-	err := rs.UpsertRegistry(ctx, namespace, imgName.GetRegistry(), config.DockerConfigEntry{})
-	if err != nil {
-		return nil, err
-	}
-
-	return rs.GetRegistryForImageInNamespace(imgName, namespace)
+	return rs.UpsertRegistry(ctx, namespace, imgName.GetRegistry(), config.DockerConfigEntry{})
 }
 
 // getRegistriesInNamespace returns all the registries within a given namespace.

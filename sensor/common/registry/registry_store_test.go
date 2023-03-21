@@ -34,9 +34,12 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 		Username: "username",
 		Password: "password",
 	}
-	require.NoError(t, regStore.UpsertRegistry(ctx, "qa", "image-registry.openshift-image-registry.svc:5000", dce))
-	require.NoError(t, regStore.UpsertRegistry(ctx, "qa", "image-registry.openshift-image-registry.svc.local:5000", dce))
-	require.NoError(t, regStore.UpsertRegistry(ctx, "qa", "172.99.12.11:5000", dce))
+	_, err := regStore.UpsertRegistry(ctx, "qa", "image-registry.openshift-image-registry.svc:5000", dce)
+	require.NoError(t, err)
+	_, err = regStore.UpsertRegistry(ctx, "qa", "image-registry.openshift-image-registry.svc.local:5000", dce)
+	require.NoError(t, err)
+	_, err = regStore.UpsertRegistry(ctx, "qa", "172.99.12.11:5000", dce)
+	require.NoError(t, err)
 
 	img := &storage.ImageName{
 		Registry: "image-registry.openshift-image-registry.svc:5000",
@@ -80,7 +83,8 @@ func TestRegistryStore_SpecificNamespace(t *testing.T) {
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 	fakeNamespace := "fake-namespace"
 
-	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dce))
+	_, err := regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dce)
+	require.NoError(t, err)
 	assert.True(t, regStore.HasRegistryForImageInNamespace(fakeImgName, fakeNamespace))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
@@ -102,14 +106,16 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	dceB := config.DockerConfigEntry{Username: "usernameB", Password: "passwordB"}
 	fakeNamespace := "fake-namespace"
 
-	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceA))
+	_, err := regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceA)
+	require.NoError(t, err)
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
 	assert.Equal(t, fakeImgName.GetRegistry(), reg.Name())
 	assert.Equal(t, reg.Config().Username, dceA.Username)
 	assert.Equal(t, reg.Config().Password, dceA.Password)
 
-	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceB))
+	_, err = regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceB)
+	require.NoError(t, err)
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
 	assert.Equal(t, fakeImgName.GetRegistry(), reg.Name())
@@ -140,9 +146,12 @@ func TestRegistryStore_GetFirstRegistryForImage(t *testing.T) {
 	fakeNamespace2 := "fake-namespace2"
 	fakeNamespace3 := "fake-namespace3"
 
-	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace1, fakeImgName.GetRegistry(), dce1))
-	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace2, fakeImgName.GetRegistry(), dce2))
-	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace3, fakeImgName.GetRegistry(), dce3))
+	_, err := regStore.UpsertRegistry(ctx, fakeNamespace1, fakeImgName.GetRegistry(), dce1)
+	require.NoError(t, err)
+	_, err = regStore.UpsertRegistry(ctx, fakeNamespace2, fakeImgName.GetRegistry(), dce2)
+	require.NoError(t, err)
+	_, err = regStore.UpsertRegistry(ctx, fakeNamespace3, fakeImgName.GetRegistry(), dce3)
+	require.NoError(t, err)
 
 	reg, err := regStore.GetFirstRegistryForImage(fakeImgName)
 	require.NoError(t, err)

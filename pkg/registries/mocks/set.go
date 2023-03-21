@@ -132,11 +132,12 @@ func (mr *MockSetMockRecorder) RemoveImageIntegration(id interface{}) *gomock.Ca
 }
 
 // UpdateImageIntegration mocks base method.
-func (m *MockSet) UpdateImageIntegration(integration *storage.ImageIntegration) error {
+func (m *MockSet) UpdateImageIntegration(integration *storage.ImageIntegration) (types.Registry, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateImageIntegration", integration)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(types.Registry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpdateImageIntegration indicates an expected call of UpdateImageIntegration.

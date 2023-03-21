@@ -157,7 +157,7 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 //
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
 //
-// Registry credentials are extracted from s.getMatchingRegistry based on ci.Name
+// Registry credentials are extracted from getMatchingRegistry based on ci.Name, returns error if no credentials are found
 func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	imgName := ci.GetName().GetFullName()
 
@@ -178,7 +178,7 @@ func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.Image
 //
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
 //
-// Registry credentials are extracted from s.registryStore based on namespace, if no credentials are found
+// Registry credentials are extracted from getRegistryForImageInNamespace based on namespace, if no credentials are found
 // assumes no auth is needed
 func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, namespace string) (*storage.Image, error) {
 	var reg registryTypes.Registry

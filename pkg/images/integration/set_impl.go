@@ -59,7 +59,7 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 	for _, category := range integration.GetCategories() {
 		switch category {
 		case storage.ImageIntegrationCategory_REGISTRY:
-			err = e.registrySet.UpdateImageIntegration(integration)
+			_, err = e.registrySet.UpdateImageIntegration(integration)
 		case storage.ImageIntegrationCategory_SCANNER:
 			err = e.scannerSet.UpdateImageIntegration(integration)
 		case storage.ImageIntegrationCategory_NODE_SCANNER: // This is because node scanners are implemented into image integrations

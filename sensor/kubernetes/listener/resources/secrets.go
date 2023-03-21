@@ -260,7 +260,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	for registry, dce := range dockerConfig {
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
-			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+			_, err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
@@ -292,7 +292,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				// today). To handle, change upsert to key off of more than just namespace+registry endpoint, such
 				// as namespace + secret name.  This logic is temporary and will be removed in a future release when registry
 				// integrations are used instead of pull secrets, being tracked by ROX-16077
-				err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+				_, err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
 				if err != nil {
 					log.Errorf("unable to upsert registry %q into store: %v", registry, err)
 				} else {

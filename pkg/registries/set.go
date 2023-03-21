@@ -16,7 +16,7 @@ type Set interface {
 
 	IsEmpty() bool
 	Clear()
-	UpdateImageIntegration(integration *storage.ImageIntegration) error
+	UpdateImageIntegration(integration *storage.ImageIntegration) (types.Registry, error)
 	RemoveImageIntegration(id string) error
 }
 
