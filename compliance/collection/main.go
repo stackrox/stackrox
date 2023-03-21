@@ -258,7 +258,7 @@ func main() {
 
 	if features.RHCOSNodeScanning.Enabled() {
 		// Start the prometheus metrics server
-		metrics.NewDefaultHTTPServer().RunForever()
+		metrics.NewDefaultHTTPServer(metrics.ComplianceSubsystem).RunForever()
 		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
 	}
 

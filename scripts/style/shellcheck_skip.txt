@@ -1,7 +1,11 @@
+deploy/central.sh
 deploy/common/docker-auth.sh
 deploy/common/k8sbased.sh
+deploy/deploy-local.sh
+deploy/deploy.sh
 deploy/openshift/deploy-local.sh
 deploy/openshift/deploy.sh
+deploy/sensor.sh
 dev-tools/add-host-alias.sh
 dev-tools/enable-hotreload.sh
 dev-tools/roxctl.sh

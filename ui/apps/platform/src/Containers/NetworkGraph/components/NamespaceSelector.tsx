@@ -54,7 +54,10 @@ function NamespaceSelector({
                         isDisabled={namespace.deploymentCount < 1}
                     >
                         <span>
-                            <NamespaceIcon /> {namespace.metadata.name}{' '}
+                            <NamespaceIcon />
+                            <span className="pf-u-mx-xs" data-testid="namespace-name">
+                                {namespace.metadata.name}
+                            </span>
                             <Badge isRead>{namespace.deploymentCount}</Badge>
                         </span>
                     </SelectOption>
@@ -104,7 +107,10 @@ function NamespaceSelector({
                 isDisabled={namespace.deploymentCount < 1}
             >
                 <span>
-                    <NamespaceIcon /> {namespace.metadata.name}{' '}
+                    <NamespaceIcon />
+                    <span className="pf-u-mx-xs" data-testid="namespace-name">
+                        {namespace.metadata.name}
+                    </span>
                     <Badge isRead>{namespace.deploymentCount}</Badge>
                 </span>
             </SelectOption>

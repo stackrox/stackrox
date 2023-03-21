@@ -236,6 +236,106 @@ func (mr *MockSecurityHubAPIMockRecorder) BatchEnableStandardsWithContext(arg0, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchEnableStandardsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchEnableStandardsWithContext), varargs...)
 }
 
+// BatchGetSecurityControls mocks base method.
+func (m *MockSecurityHubAPI) BatchGetSecurityControls(arg0 *securityhub.BatchGetSecurityControlsInput) (*securityhub.BatchGetSecurityControlsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetSecurityControls", arg0)
+	ret0, _ := ret[0].(*securityhub.BatchGetSecurityControlsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetSecurityControls indicates an expected call of BatchGetSecurityControls.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetSecurityControls(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetSecurityControls", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetSecurityControls), arg0)
+}
+
+// BatchGetSecurityControlsRequest mocks base method.
+func (m *MockSecurityHubAPI) BatchGetSecurityControlsRequest(arg0 *securityhub.BatchGetSecurityControlsInput) (*request.Request, *securityhub.BatchGetSecurityControlsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetSecurityControlsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.BatchGetSecurityControlsOutput)
+	return ret0, ret1
+}
+
+// BatchGetSecurityControlsRequest indicates an expected call of BatchGetSecurityControlsRequest.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetSecurityControlsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetSecurityControlsRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetSecurityControlsRequest), arg0)
+}
+
+// BatchGetSecurityControlsWithContext mocks base method.
+func (m *MockSecurityHubAPI) BatchGetSecurityControlsWithContext(arg0 context.Context, arg1 *securityhub.BatchGetSecurityControlsInput, arg2 ...request.Option) (*securityhub.BatchGetSecurityControlsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchGetSecurityControlsWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.BatchGetSecurityControlsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetSecurityControlsWithContext indicates an expected call of BatchGetSecurityControlsWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetSecurityControlsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetSecurityControlsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetSecurityControlsWithContext), varargs...)
+}
+
+// BatchGetStandardsControlAssociations mocks base method.
+func (m *MockSecurityHubAPI) BatchGetStandardsControlAssociations(arg0 *securityhub.BatchGetStandardsControlAssociationsInput) (*securityhub.BatchGetStandardsControlAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetStandardsControlAssociations", arg0)
+	ret0, _ := ret[0].(*securityhub.BatchGetStandardsControlAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetStandardsControlAssociations indicates an expected call of BatchGetStandardsControlAssociations.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetStandardsControlAssociations(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetStandardsControlAssociations", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetStandardsControlAssociations), arg0)
+}
+
+// BatchGetStandardsControlAssociationsRequest mocks base method.
+func (m *MockSecurityHubAPI) BatchGetStandardsControlAssociationsRequest(arg0 *securityhub.BatchGetStandardsControlAssociationsInput) (*request.Request, *securityhub.BatchGetStandardsControlAssociationsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetStandardsControlAssociationsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.BatchGetStandardsControlAssociationsOutput)
+	return ret0, ret1
+}
+
+// BatchGetStandardsControlAssociationsRequest indicates an expected call of BatchGetStandardsControlAssociationsRequest.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetStandardsControlAssociationsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetStandardsControlAssociationsRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetStandardsControlAssociationsRequest), arg0)
+}
+
+// BatchGetStandardsControlAssociationsWithContext mocks base method.
+func (m *MockSecurityHubAPI) BatchGetStandardsControlAssociationsWithContext(arg0 context.Context, arg1 *securityhub.BatchGetStandardsControlAssociationsInput, arg2 ...request.Option) (*securityhub.BatchGetStandardsControlAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchGetStandardsControlAssociationsWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.BatchGetStandardsControlAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetStandardsControlAssociationsWithContext indicates an expected call of BatchGetStandardsControlAssociationsWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetStandardsControlAssociationsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetStandardsControlAssociationsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetStandardsControlAssociationsWithContext), varargs...)
+}
+
 // BatchImportFindings mocks base method.
 func (m *MockSecurityHubAPI) BatchImportFindings(arg0 *securityhub.BatchImportFindingsInput) (*securityhub.BatchImportFindingsOutput, error) {
 	m.ctrl.T.Helper()
@@ -334,6 +434,56 @@ func (mr *MockSecurityHubAPIMockRecorder) BatchUpdateFindingsWithContext(arg0, a
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateFindingsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchUpdateFindingsWithContext), varargs...)
+}
+
+// BatchUpdateStandardsControlAssociations mocks base method.
+func (m *MockSecurityHubAPI) BatchUpdateStandardsControlAssociations(arg0 *securityhub.BatchUpdateStandardsControlAssociationsInput) (*securityhub.BatchUpdateStandardsControlAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchUpdateStandardsControlAssociations", arg0)
+	ret0, _ := ret[0].(*securityhub.BatchUpdateStandardsControlAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchUpdateStandardsControlAssociations indicates an expected call of BatchUpdateStandardsControlAssociations.
+func (mr *MockSecurityHubAPIMockRecorder) BatchUpdateStandardsControlAssociations(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateStandardsControlAssociations", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchUpdateStandardsControlAssociations), arg0)
+}
+
+// BatchUpdateStandardsControlAssociationsRequest mocks base method.
+func (m *MockSecurityHubAPI) BatchUpdateStandardsControlAssociationsRequest(arg0 *securityhub.BatchUpdateStandardsControlAssociationsInput) (*request.Request, *securityhub.BatchUpdateStandardsControlAssociationsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchUpdateStandardsControlAssociationsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.BatchUpdateStandardsControlAssociationsOutput)
+	return ret0, ret1
+}
+
+// BatchUpdateStandardsControlAssociationsRequest indicates an expected call of BatchUpdateStandardsControlAssociationsRequest.
+func (mr *MockSecurityHubAPIMockRecorder) BatchUpdateStandardsControlAssociationsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateStandardsControlAssociationsRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchUpdateStandardsControlAssociationsRequest), arg0)
+}
+
+// BatchUpdateStandardsControlAssociationsWithContext mocks base method.
+func (m *MockSecurityHubAPI) BatchUpdateStandardsControlAssociationsWithContext(arg0 context.Context, arg1 *securityhub.BatchUpdateStandardsControlAssociationsInput, arg2 ...request.Option) (*securityhub.BatchUpdateStandardsControlAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchUpdateStandardsControlAssociationsWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.BatchUpdateStandardsControlAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchUpdateStandardsControlAssociationsWithContext indicates an expected call of BatchUpdateStandardsControlAssociationsWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) BatchUpdateStandardsControlAssociationsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateStandardsControlAssociationsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchUpdateStandardsControlAssociationsWithContext), varargs...)
 }
 
 // CreateActionTarget mocks base method.
@@ -2730,6 +2880,172 @@ func (mr *MockSecurityHubAPIMockRecorder) ListOrganizationAdminAccountsWithConte
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOrganizationAdminAccountsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListOrganizationAdminAccountsWithContext), varargs...)
+}
+
+// ListSecurityControlDefinitions mocks base method.
+func (m *MockSecurityHubAPI) ListSecurityControlDefinitions(arg0 *securityhub.ListSecurityControlDefinitionsInput) (*securityhub.ListSecurityControlDefinitionsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSecurityControlDefinitions", arg0)
+	ret0, _ := ret[0].(*securityhub.ListSecurityControlDefinitionsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSecurityControlDefinitions indicates an expected call of ListSecurityControlDefinitions.
+func (mr *MockSecurityHubAPIMockRecorder) ListSecurityControlDefinitions(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSecurityControlDefinitions", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListSecurityControlDefinitions), arg0)
+}
+
+// ListSecurityControlDefinitionsPages mocks base method.
+func (m *MockSecurityHubAPI) ListSecurityControlDefinitionsPages(arg0 *securityhub.ListSecurityControlDefinitionsInput, arg1 func(*securityhub.ListSecurityControlDefinitionsOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSecurityControlDefinitionsPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListSecurityControlDefinitionsPages indicates an expected call of ListSecurityControlDefinitionsPages.
+func (mr *MockSecurityHubAPIMockRecorder) ListSecurityControlDefinitionsPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSecurityControlDefinitionsPages", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListSecurityControlDefinitionsPages), arg0, arg1)
+}
+
+// ListSecurityControlDefinitionsPagesWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListSecurityControlDefinitionsPagesWithContext(arg0 context.Context, arg1 *securityhub.ListSecurityControlDefinitionsInput, arg2 func(*securityhub.ListSecurityControlDefinitionsOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListSecurityControlDefinitionsPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListSecurityControlDefinitionsPagesWithContext indicates an expected call of ListSecurityControlDefinitionsPagesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListSecurityControlDefinitionsPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSecurityControlDefinitionsPagesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListSecurityControlDefinitionsPagesWithContext), varargs...)
+}
+
+// ListSecurityControlDefinitionsRequest mocks base method.
+func (m *MockSecurityHubAPI) ListSecurityControlDefinitionsRequest(arg0 *securityhub.ListSecurityControlDefinitionsInput) (*request.Request, *securityhub.ListSecurityControlDefinitionsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSecurityControlDefinitionsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.ListSecurityControlDefinitionsOutput)
+	return ret0, ret1
+}
+
+// ListSecurityControlDefinitionsRequest indicates an expected call of ListSecurityControlDefinitionsRequest.
+func (mr *MockSecurityHubAPIMockRecorder) ListSecurityControlDefinitionsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSecurityControlDefinitionsRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListSecurityControlDefinitionsRequest), arg0)
+}
+
+// ListSecurityControlDefinitionsWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListSecurityControlDefinitionsWithContext(arg0 context.Context, arg1 *securityhub.ListSecurityControlDefinitionsInput, arg2 ...request.Option) (*securityhub.ListSecurityControlDefinitionsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListSecurityControlDefinitionsWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.ListSecurityControlDefinitionsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSecurityControlDefinitionsWithContext indicates an expected call of ListSecurityControlDefinitionsWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListSecurityControlDefinitionsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSecurityControlDefinitionsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListSecurityControlDefinitionsWithContext), varargs...)
+}
+
+// ListStandardsControlAssociations mocks base method.
+func (m *MockSecurityHubAPI) ListStandardsControlAssociations(arg0 *securityhub.ListStandardsControlAssociationsInput) (*securityhub.ListStandardsControlAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListStandardsControlAssociations", arg0)
+	ret0, _ := ret[0].(*securityhub.ListStandardsControlAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListStandardsControlAssociations indicates an expected call of ListStandardsControlAssociations.
+func (mr *MockSecurityHubAPIMockRecorder) ListStandardsControlAssociations(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStandardsControlAssociations", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListStandardsControlAssociations), arg0)
+}
+
+// ListStandardsControlAssociationsPages mocks base method.
+func (m *MockSecurityHubAPI) ListStandardsControlAssociationsPages(arg0 *securityhub.ListStandardsControlAssociationsInput, arg1 func(*securityhub.ListStandardsControlAssociationsOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListStandardsControlAssociationsPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListStandardsControlAssociationsPages indicates an expected call of ListStandardsControlAssociationsPages.
+func (mr *MockSecurityHubAPIMockRecorder) ListStandardsControlAssociationsPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStandardsControlAssociationsPages", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListStandardsControlAssociationsPages), arg0, arg1)
+}
+
+// ListStandardsControlAssociationsPagesWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListStandardsControlAssociationsPagesWithContext(arg0 context.Context, arg1 *securityhub.ListStandardsControlAssociationsInput, arg2 func(*securityhub.ListStandardsControlAssociationsOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListStandardsControlAssociationsPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListStandardsControlAssociationsPagesWithContext indicates an expected call of ListStandardsControlAssociationsPagesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListStandardsControlAssociationsPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStandardsControlAssociationsPagesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListStandardsControlAssociationsPagesWithContext), varargs...)
+}
+
+// ListStandardsControlAssociationsRequest mocks base method.
+func (m *MockSecurityHubAPI) ListStandardsControlAssociationsRequest(arg0 *securityhub.ListStandardsControlAssociationsInput) (*request.Request, *securityhub.ListStandardsControlAssociationsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListStandardsControlAssociationsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.ListStandardsControlAssociationsOutput)
+	return ret0, ret1
+}
+
+// ListStandardsControlAssociationsRequest indicates an expected call of ListStandardsControlAssociationsRequest.
+func (mr *MockSecurityHubAPIMockRecorder) ListStandardsControlAssociationsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStandardsControlAssociationsRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListStandardsControlAssociationsRequest), arg0)
+}
+
+// ListStandardsControlAssociationsWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListStandardsControlAssociationsWithContext(arg0 context.Context, arg1 *securityhub.ListStandardsControlAssociationsInput, arg2 ...request.Option) (*securityhub.ListStandardsControlAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListStandardsControlAssociationsWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.ListStandardsControlAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListStandardsControlAssociationsWithContext indicates an expected call of ListStandardsControlAssociationsWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListStandardsControlAssociationsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStandardsControlAssociationsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListStandardsControlAssociationsWithContext), varargs...)
 }
 
 // ListTagsForResource mocks base method.

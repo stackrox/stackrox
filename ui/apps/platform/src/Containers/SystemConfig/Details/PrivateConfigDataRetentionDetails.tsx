@@ -28,13 +28,11 @@ function DataRetentionValue({ value, suffix }: DataRetentionValueProps): ReactEl
 
 export type PrivateConfigDataRetentionDetailsProps = {
     isClustersRoutePathRendered: boolean;
-    isDecommissionedClusterRetentionEnabled: boolean;
     privateConfig: PrivateConfig;
 };
 
 const PrivateConfigDataRetentionDetails = ({
     isClustersRoutePathRendered,
-    isDecommissionedClusterRetentionEnabled,
     privateConfig,
 }: PrivateConfigDataRetentionDetailsProps): ReactElement => {
     return (
@@ -118,63 +116,56 @@ const PrivateConfigDataRetentionDetails = ({
                     </CardBody>
                 </Card>
             </GridItem>
-            {isDecommissionedClusterRetentionEnabled && (
-                <>
-                    <GridItem sm={12}>
-                        <Title headingLevel="h3" id="cluster-deletion">
-                            Cluster deletion
-                        </Title>
-                    </GridItem>
-                    <GridItem>
-                        <Card isFlat>
-                            <CardTitle>Decommissioned cluster age</CardTitle>
-                            <CardBody>
-                                <DataRetentionValue
-                                    value={
-                                        privateConfig?.decommissionedClusterRetention
-                                            ?.retentionDurationDays
-                                    }
-                                    suffix="day"
-                                />
-                            </CardBody>
-                        </Card>
-                    </GridItem>
-                    <GridItem>
-                        <Card isFlat>
-                            <CardTitle>Ignore clusters which have labels</CardTitle>
-                            <CardBody>
-                                {Object.keys(
-                                    privateConfig?.decommissionedClusterRetention
-                                        ?.ignoreClusterLabels ?? {}
-                                ).length === 0 ? (
-                                    'No labels'
-                                ) : (
-                                    <ClusterLabelsTable
-                                        labels={
-                                            privateConfig.decommissionedClusterRetention
-                                                .ignoreClusterLabels
-                                        }
-                                        hasAction={false}
-                                        handleChangeLabels={() => {}}
-                                    />
-                                )}
-                            </CardBody>
-                            {isClustersRoutePathRendered && (
-                                <CardBody>
-                                    <Button
-                                        variant="link"
-                                        isInline
-                                        component={LinkShim}
-                                        href={`${clustersBasePath}?s[Sensor Status]=UNHEALTHY`}
-                                    >
-                                        Clusters which have Sensor Status: Unhealthy
-                                    </Button>
-                                </CardBody>
-                            )}
-                        </Card>
-                    </GridItem>
-                </>
-            )}
+            <GridItem sm={12}>
+                <Title headingLevel="h3" id="cluster-deletion">
+                    Cluster deletion
+                </Title>
+            </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Decommissioned cluster age</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
+                            value={
+                                privateConfig?.decommissionedClusterRetention?.retentionDurationDays
+                            }
+                            suffix="day"
+                        />
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Ignore clusters which have labels</CardTitle>
+                    <CardBody>
+                        {Object.keys(
+                            privateConfig?.decommissionedClusterRetention?.ignoreClusterLabels ?? {}
+                        ).length === 0 ? (
+                            'No labels'
+                        ) : (
+                            <ClusterLabelsTable
+                                labels={
+                                    privateConfig.decommissionedClusterRetention.ignoreClusterLabels
+                                }
+                                hasAction={false}
+                                handleChangeLabels={() => {}}
+                            />
+                        )}
+                    </CardBody>
+                    {isClustersRoutePathRendered && (
+                        <CardBody>
+                            <Button
+                                variant="link"
+                                isInline
+                                component={LinkShim}
+                                href={`${clustersBasePath}?s[Sensor Status]=UNHEALTHY`}
+                            >
+                                Clusters which have Sensor Status: Unhealthy
+                            </Button>
+                        </CardBody>
+                    )}
+                </Card>
+            </GridItem>
         </Grid>
     );
 };

@@ -463,32 +463,25 @@ func removeOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	return nil
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
+func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, error) {
 	oldNode, found, err := s.GetNodeMetadata(ctx, node.GetId())
 	if err != nil {
-		return false, false, err
+		return false, err
 	}
 	if !found {
-		return true, true, nil
+		return true, nil
 	}
-
-	scanUpdated := false
-	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
-	if oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) > 0 {
-		node.Scan = oldNode.Scan
-	} else {
-		scanUpdated = true
-	}
-
-	// If the node in the DB is latest, then use its risk score and scan stats
+	// We skip rewriting components and vulnerabilities if the node scan is older.
+	scanUpdated := oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
+		node.Scan = oldNode.Scan
 		node.RiskScore = oldNode.GetRiskScore()
 		node.SetComponents = oldNode.GetSetComponents()
 		node.SetCves = oldNode.GetSetCves()
 		node.SetFixable = oldNode.GetSetFixable()
 		node.SetTopCvss = oldNode.GetSetTopCvss()
 	}
-	return true, scanUpdated, nil
+	return scanUpdated, nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
@@ -497,12 +490,9 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
 	}
-	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+	scanUpdated, err := s.isUpdated(ctx, obj)
 	if err != nil {
 		return err
-	}
-	if !metadataUpdated && !scanUpdated {
-		return nil
 	}
 
 	nodeParts := getPartsAsSlice(common.Split(obj, scanUpdated))

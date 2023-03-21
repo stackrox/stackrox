@@ -35,6 +35,7 @@ func NewService(imageCache expiringcache.Cache, registryStore *registry.Store) S
 	return &serviceImpl{
 		imageCache:    imageCache,
 		registryStore: registryStore,
+		localScan:     scan.NewLocalScan(registryStore),
 	}
 }
 
@@ -44,6 +45,7 @@ type serviceImpl struct {
 	centralClient v1.ImageServiceClient
 	imageCache    expiringcache.Cache
 	registryStore *registry.Store
+	localScan     *scan.LocalScan
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
@@ -83,7 +85,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	var err error
 	var img *storage.Image
 	if req.GetImage().GetIsClusterLocal() {
-		img, err = scan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
+		img, err = s.localScan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
 
 	} else {
 		// ForceLocalImageScanning must be true
@@ -98,7 +100,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 			}
 		}
 
-		img, err = scan.EnrichLocalImageFromRegistry(ctx, s.centralClient, req.GetImage(), reg)
+		img, err = s.localScan.EnrichLocalImageFromRegistry(ctx, s.centralClient, req.GetImage(), reg)
 	}
 
 	if err != nil {

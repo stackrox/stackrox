@@ -6,6 +6,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	groupMock "github.com/stackrox/rox/central/group/datastore/mocks"
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
@@ -87,6 +89,8 @@ type roleDataStoreTestSuite struct {
 	boltDB    *bolt.DB
 	rocksie   *rocksdb.RocksDB
 
+	groupsDataStore *groupMock.MockDataStore
+
 	postgresTest *pgtest.TestPostgres
 
 	existingRole          *storage.Role
@@ -135,7 +139,8 @@ func (s *roleDataStoreTestSuite) initDataStore() {
 		s.Require().NoError(err)
 	}
 
-	s.dataStore = New(roleStorage, permissionSetStorage, accessScopeStorage)
+	s.groupsDataStore = groupMock.NewMockDataStore(gomock.NewController(s.T()))
+	s.dataStore = New(roleStorage, permissionSetStorage, accessScopeStorage, s.groupsDataStore)
 
 	// Insert a permission set, access scope, and role into the test DB.
 	s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
@@ -181,17 +186,17 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 	badRole := getInvalidRole("new invalid role")
 
 	role, found, err := s.dataStore.GetRole(s.hasNoneCtx, s.existingRole.GetName())
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found, "not found")
 	s.Nil(role)
 
 	role, found, err = s.dataStore.GetRole(s.hasNoneCtx, goodRole.GetName())
-	s.NoError(err, "no error even if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found, "not found")
 	s.Nil(role)
 
 	roles, err := s.dataStore.GetAllRoles(s.hasNoneCtx)
-	s.NoError(err, "no access for GetAll*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Empty(roles)
 
 	err = s.dataStore.AddRole(s.hasNoneCtx, goodRole)
@@ -236,6 +241,19 @@ func (s *roleDataStoreTestSuite) TestRoleReadOperations() {
 	roles, err := s.dataStore.GetAllRoles(s.hasReadCtx)
 	s.NoError(err)
 	s.Len(roles, 1, "with READ access all objects are returned")
+
+	roles, err = s.dataStore.GetRolesFiltered(s.hasReadCtx, func(role *storage.Role) bool {
+		return role.GetName() == s.existingRole.GetName()
+	})
+	s.NoError(err)
+	s.Len(roles, 1)
+	s.ElementsMatch(roles, []*storage.Role{role})
+
+	roles, err = s.dataStore.GetRolesFiltered(s.hasReadCtx, func(role *storage.Role) bool {
+		return role.GetName() == "non-existing-role"
+	})
+	s.NoError(err)
+	s.Empty(roles)
 }
 
 func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
@@ -253,6 +271,7 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	badDeclarativeRole.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
+	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, secondExistingPermissionSet)
 	s.NoError(err, "failed to add second permission set needed for test")
@@ -377,17 +396,17 @@ func (s *roleDataStoreTestSuite) TestPermissionSetPermissions() {
 	badPermissionSet := getInvalidPermissionSet("permissionset.invalid", "new invalid permission set")
 
 	permissionSet, found, err := s.dataStore.GetPermissionSet(s.hasNoneCtx, s.existingPermissionSet.GetId())
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found)
 	s.Nil(permissionSet)
 
 	permissionSet, found, err = s.dataStore.GetPermissionSet(s.hasNoneCtx, goodPermissionSet.GetId())
-	s.NoError(err, "no error even if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found)
 	s.Nil(permissionSet)
 
 	permissionSets, err := s.dataStore.GetAllPermissionSets(s.hasNoneCtx)
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Empty(permissionSets)
 
 	err = s.dataStore.AddPermissionSet(s.hasNoneCtx, goodPermissionSet)
@@ -434,6 +453,19 @@ func (s *roleDataStoreTestSuite) TestPermissionSetReadOperations() {
 	permissionSets, err := s.dataStore.GetAllPermissionSets(s.hasReadCtx)
 	s.NoError(err)
 	s.Len(permissionSets, 1, "with READ access all objects are returned")
+
+	permissionSets, err = s.dataStore.GetPermissionSetsFiltered(s.hasReadCtx, func(permissionSet *storage.PermissionSet) bool {
+		return permissionSet.GetId() == s.existingPermissionSet.GetId()
+	})
+	s.NoError(err)
+	s.Len(permissionSets, 1)
+	s.ElementsMatch(permissionSets, []*storage.PermissionSet{s.existingPermissionSet})
+
+	permissionSets, err = s.dataStore.GetPermissionSetsFiltered(s.hasReadCtx, func(permissionSet *storage.PermissionSet) bool {
+		return permissionSet.GetId() == "non-existing permission set"
+	})
+	s.NoError(err)
+	s.Empty(permissionSets)
 }
 
 func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
@@ -605,17 +637,17 @@ func (s *roleDataStoreTestSuite) TestAccessScopePermissions() {
 	badScope := getInvalidAccessScope("scope.invalid", "new invalid scope")
 
 	scope, found, err := s.dataStore.GetAccessScope(s.hasNoneCtx, s.existingScope.GetId())
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found)
 	s.Nil(scope)
 
 	scope, found, err = s.dataStore.GetAccessScope(s.hasNoneCtx, goodScope.GetId())
-	s.NoError(err, "no error even if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found)
 	s.Nil(scope)
 
 	scopes, err := s.dataStore.GetAllAccessScopes(s.hasNoneCtx)
-	s.NoError(err, "no access for Get*() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Empty(scopes)
 
 	err = s.dataStore.AddAccessScope(s.hasNoneCtx, goodScope)
@@ -662,6 +694,19 @@ func (s *roleDataStoreTestSuite) TestAccessScopeReadOperations() {
 	scopes, err := s.dataStore.GetAllAccessScopes(s.hasReadCtx)
 	s.NoError(err)
 	s.Len(scopes, 1, "with READ access all objects are returned")
+
+	scopes, err = s.dataStore.GetAccessScopesFiltered(s.hasReadCtx, func(accessScope *storage.SimpleAccessScope) bool {
+		return accessScope.GetId() == s.existingScope.GetId()
+	})
+	s.NoError(err)
+	s.Len(scopes, 1)
+	s.ElementsMatch(scopes, []*storage.SimpleAccessScope{s.existingScope})
+
+	scopes, err = s.dataStore.GetAccessScopesFiltered(s.hasReadCtx, func(accessScope *storage.SimpleAccessScope) bool {
+		return accessScope.GetId() == "non-existing scope"
+	})
+	s.NoError(err)
+	s.Empty(scopes)
 }
 
 func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
@@ -828,7 +873,16 @@ func (s *roleDataStoreTestSuite) TestForeignKeyConstraints() {
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId())
 	s.ErrorIs(err, errox.ReferencedByAnotherObject, "cannot delete an Access Scope referred to by a Role")
 
-	s.NoError(s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName()))
+	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return([]*storage.Group{{
+		RoleName: role.GetName(),
+	}}, nil)
+	err = s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName())
+	s.ErrorIs(err, errox.ReferencedByAnotherObject)
+
+	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
+	err = s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName())
+	s.NoError(err)
+
 	s.NoError(s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId()))
 	s.NoError(s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId()))
 }
@@ -837,7 +891,7 @@ func (s *roleDataStoreTestSuite) TestGetAndResolveRole() {
 	noScopeRole := getValidRole("role without a scope", s.existingPermissionSet.GetId(), "")
 
 	resolvedRole, err := s.dataStore.GetAndResolveRole(s.hasNoneCtx, s.existingRole.GetName())
-	s.NoError(err, "no access for GetAndResolveRole() is not an error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Nil(resolvedRole)
 
 	resolvedRole, err = s.dataStore.GetAndResolveRole(s.hasReadCtx, noScopeRole.GetName())

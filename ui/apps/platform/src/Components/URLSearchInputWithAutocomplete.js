@@ -280,6 +280,7 @@ const URLSearchInputWithAutocomplete = ({
     const hideDropdown = options.length ? '' : 'hide-dropdown';
     const isFocused = document.activeElement.id === 'url-search-input';
     const creatableProps = {
+        'aria-label': placeholder,
         className: `${className} ${hideDropdown}`,
         components: { ValueContainer, Option, Placeholder, MultiValue },
         options,
@@ -302,7 +303,7 @@ const URLSearchInputWithAutocomplete = ({
 
 URLSearchInputWithAutocomplete.propTypes = {
     className: PropTypes.string,
-    placeholder: PropTypes.string,
+    placeholder: PropTypes.string.isRequired,
     categoryOptions: PropTypes.arrayOf(PropTypes.string),
     autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
     location: ReactRouterPropTypes.location.isRequired,
@@ -319,7 +320,6 @@ URLSearchInputWithAutocomplete.propTypes = {
 
 URLSearchInputWithAutocomplete.defaultProps = {
     className: '',
-    placeholder: 'Add one or more filters',
     categoryOptions: [],
     autoCompleteResults: [],
     fetchAutocomplete: null,

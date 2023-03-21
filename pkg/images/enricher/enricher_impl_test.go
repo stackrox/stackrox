@@ -48,6 +48,10 @@ func imageGetterFromImage(image *storage.Image) ImageGetter {
 	}
 }
 
+func imageGetterPanicOnCall(_ context.Context, _ string) (*storage.Image, bool, error) {
+	panic("Unexpected call to imageGetter")
+}
+
 var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
 
 type fakeSigFetcher struct {
@@ -368,6 +372,7 @@ func TestEnricherFlow(t *testing.T) {
 				Names: []*storage.ImageName{{Registry: "reg"}},
 				Scan:  &storage.ImageScan{},
 			},
+			imageGetter: imageGetterPanicOnCall,
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
 				requestedScan:     true,
@@ -384,7 +389,7 @@ func TestEnricherFlow(t *testing.T) {
 			},
 			inMetadataCache:      true,
 			shortCircuitRegistry: false,
-			shortCircuitScanner:  true,
+			shortCircuitScanner:  false,
 			image: &storage.Image{
 				Id:       "id",
 				Metadata: &storage.ImageMetadata{},
@@ -392,14 +397,10 @@ func TestEnricherFlow(t *testing.T) {
 				Name:     &storage.ImageName{Registry: "reg"},
 				Names:    []*storage.ImageName{{Registry: "reg"}},
 			},
-			imageGetter: imageGetterFromImage(&storage.Image{
-				Id:       "id",
-				Metadata: &storage.ImageMetadata{},
-				Scan:     &storage.ImageScan{},
-			}),
+			imageGetter: imageGetterPanicOnCall,
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
-				requestedScan:     false,
+				requestedScan:     true,
 			}),
 			result: EnrichmentResult{
 				ImageUpdated: true,

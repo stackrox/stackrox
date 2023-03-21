@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
@@ -47,13 +46,15 @@ type enricher struct {
 	scanResultChan chan scanResult
 
 	serviceAccountStore store.ServiceAccountStore
+	localScan           *scan.LocalScan
 	imageCache          expiringcache.Cache
 	stopSig             concurrency.Signal
 }
 
 type cacheValue struct {
-	signal concurrency.Signal
-	image  *storage.Image
+	signal    concurrency.Signal
+	image     *storage.Image
+	localScan *scan.LocalScan
 }
 
 func (c *cacheValue) waitAndGet() *storage.Image {
@@ -61,7 +62,7 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error) {
+func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, _ *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
@@ -79,31 +80,17 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageReq
 	return svc.ScanImageInternal(ctx, internalReq)
 }
 
-func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error) {
+func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
 	var img *storage.Image
 	var err error
 	if req.containerImage.GetIsClusterLocal() {
-		img, err = scan.EnrichLocalImage(ctx, svc, req.containerImage)
+		img, err = localScan.EnrichLocalImage(ctx, svc, req.containerImage)
 	} else {
 		// ForceLocalImageScanning must be enabled
-		var reg registryTypes.Registry
-		regStore := registry.Singleton()
-		imgName := req.containerImage.GetName()
-
-		reg, err = regStore.GetRegistryForImageInNamespace(imgName, req.namespace)
-		if err != nil {
-			// no registry was found, assume this image represents a registry that does not require authentication.
-			// add the registry to regStore and use it for scanning going forward
-			reg, err = regStore.UpsertNoAuthRegistry(ctx, req.namespace, imgName)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		img, err = scan.EnrichLocalImageFromRegistry(ctx, svc, req.containerImage, reg)
+		img, err = localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace)
 	}
 
 	return &v1.ScanImageInternalResponse{
@@ -111,9 +98,9 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 	}, err
 }
 
-type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error)
+type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error)
 
-func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan scanFunc) (*v1.ScanImageInternalResponse, error) {
+func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scanFn scanFunc) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -126,7 +113,7 @@ outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
 		timeSpentInBackoffSoFar := eb.GetElapsedTime()
-		scannedImage, err := scan(ctx, svc, req)
+		scannedImage, err := scanFn(ctx, svc, req, c.localScan)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate-limited, backoff and try again.
@@ -155,7 +142,7 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 		scanImageFn = scanImageLocal
 	}
 
-	scannedImage, err := scanWithRetries(ctx, svc, req, scanImageFn)
+	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
@@ -166,12 +153,13 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore) *enricher {
+func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
 		imageCache:          cache,
 		stopSig:             concurrency.NewSignal(),
+		localScan:           scan.NewLocalScan(registryStore),
 	}
 }
 
@@ -219,7 +207,8 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 
 	newValue := &cacheValue{
-		signal: concurrency.NewSignal(),
+		signal:    concurrency.NewSignal(),
+		localScan: e.localScan,
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {

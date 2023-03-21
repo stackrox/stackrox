@@ -254,12 +254,30 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 	s.NoError(err)
 	s.Len(results, 0)
 
-	var unsnoozedCVEs []string
+	var snoozedCVEs, unsnoozedCVEs set.Set[string]
 	for _, component := range cloned.GetScan().GetComponents() {
 		s.Require().GreaterOrEqual(len(component.GetVulns()), 2)
-		err := s.datastore.UpdateVulnerabilityState(ctx, component.GetVulns()[0].GetCve(), []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
+
+		snoozedCVE := component.GetVulns()[0].GetCve()
+		err := s.datastore.UpdateVulnerabilityState(ctx, snoozedCVE, []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
 		s.NoError(err)
-		unsnoozedCVEs = append(unsnoozedCVEs, component.GetVulns()[1].GetCve())
+		snoozedCVEs.Add(snoozedCVE)
+		unsnoozedCVEs.Add(component.GetVulns()[1].GetCve())
+	}
+
+	// Test serialized data is in sync.
+	storedImage, found, err := s.datastore.GetImage(ctx, cloned.GetId())
+	s.NoError(err)
+	s.True(found)
+	for _, component := range storedImage.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			if snoozedCVEs.Contains(vuln.GetCve()) {
+				s.Equal(vuln.GetState(), storage.VulnerabilityState_DEFERRED)
+			} else {
+				s.Equal(vuln.GetState(), storage.VulnerabilityState_OBSERVED)
+
+			}
+		}
 	}
 
 	results, err = s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery())
@@ -275,14 +293,14 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 
 	results, err = s.datastore.Search(ctx, pkgSearch.ConjunctionQuery(
 		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
-		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs...).ProtoQuery(),
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs.AsSlice()...).ProtoQuery(),
 	))
 	s.NoError(err)
 	s.Len(results, 0)
 
 	results, err = s.datastore.Search(ctx, pkgSearch.ConjunctionQuery(
 		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
-		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs...).ProtoQuery(),
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs.AsSlice()...).ProtoQuery(),
 	))
 	s.NoError(err)
 	s.Len(results, 2)

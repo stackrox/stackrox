@@ -406,6 +406,10 @@ func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.
 	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil
 }
 
+func (*tstAuthProviderStore) GetAuthProvidersFiltered(_ context.Context, _ func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
+	return nil, nil
+}
+
 func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthProvider) error {
 	return nil
 }

@@ -327,7 +327,7 @@ deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s c
 		mkdir config/local-deploy-versioned && \
 		cd config/local-deploy-versioned && \
 		$(KUSTOMIZE) create --resources ../default && \
-		$(KUSTOMIZE) edit set image controller=$(IMG)
+		$(KUSTOMIZE) edit set image quay.io/stackrox-io/stackrox-operator=$(IMG)
 	$(KUSTOMIZE) build config/local-deploy-versioned | kubectl create -f -
 
 .PHONY: undeploy

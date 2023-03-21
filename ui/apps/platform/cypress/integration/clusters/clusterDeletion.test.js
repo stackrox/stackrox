@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 import {
     assertClusterNameInSidePanel,
@@ -11,12 +10,6 @@ import {
 
 describe('Clusters list clusterIdToRetentionInfo', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_DECOMMISSIONED_CLUSTER_RETENTION')) {
-            this.skip();
-        }
-    });
 
     const fixturePath = 'clusters/health.json';
 
@@ -44,12 +37,6 @@ describe('Clusters list clusterIdToRetentionInfo', () => {
 
 describe('Cluster page clusterRetentionInfo', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_DECOMMISSIONED_CLUSTER_RETENTION')) {
-            this.skip();
-        }
-    });
 
     // div:contains("Cluster Deletion") because [data-testid="clusterDeletion"] fails for unknown reason :(
 

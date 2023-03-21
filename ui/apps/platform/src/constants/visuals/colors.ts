@@ -40,6 +40,7 @@ export const vulnSeverityIconColors: Record<VulnerabilitySeverity, string> = {
     MODERATE_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--gold-300)',
     IMPORTANT_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--orange-200)',
     CRITICAL_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--red-100)',
+    UNKNOWN_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--black-400)',
 };
 
 export default colors;

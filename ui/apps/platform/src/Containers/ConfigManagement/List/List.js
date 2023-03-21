@@ -60,6 +60,7 @@ const List = ({
     }
 
     const categories = [searchCategoryTypes[entityType]];
+    const placeholder = `Filter ${pluralize(entityLabels[entityType])}`;
 
     function getRenderComponents(headerComponents, tableRows, totalCount) {
         const header = `${totalCount} ${pluralize(
@@ -124,6 +125,7 @@ const List = ({
                                     : [];
                             return (
                                 <URLSearchInput
+                                    placeholder={placeholder}
                                     className="w-full"
                                     categoryOptions={searchOptions}
                                     categories={categories}

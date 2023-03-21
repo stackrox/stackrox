@@ -13,6 +13,9 @@ const entityNameKeyMap = {
         return version ? `${name} ${version}` : name;
     },
     [entityTypes.CVE]: (data) => resolvePath(data, 'vulnerability.cve'),
+    [entityTypes.IMAGE_CVE]: (data) => resolvePath(data, 'vulnerability.cve'),
+    [entityTypes.NODE_CVE]: (data) => resolvePath(data, 'vulnerability.cve'),
+    [entityTypes.CLUSTER_CVE]: (data) => resolvePath(data, 'vulnerability.cve'),
     [entityTypes.DEPLOYMENT]: (data) => resolvePath(data, 'deployment.name'),
     [entityTypes.NAMESPACE]: (data) => resolvePath(data, 'namespace.metadata.name'),
     [entityTypes.ROLE]: (data) => {

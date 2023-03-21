@@ -61,7 +61,7 @@ function NetworkSearch({
     return (
         <SearchFilterInput
             className="pf-u-w-100 theme-light pf-search-shim"
-            placeholder="Add one or more deployment filters"
+            placeholder="Filter deployments"
             searchFilter={searchFilter}
             searchCategory="DEPLOYMENTS"
             searchOptions={searchOptions}

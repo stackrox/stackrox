@@ -14,7 +14,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.2.3
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/aws/aws-sdk-go v1.44.180
+	github.com/aws/aws-sdk-go v1.44.219
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.3
@@ -29,7 +29,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/facebookincubator/nvdtools v0.1.5
-	github.com/fatih/color v1.14.1
+	github.com/fatih/color v1.15.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/georgysavva/scany v1.2.1
 	github.com/ghodss/yaml v1.0.0
@@ -37,7 +37,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.4
@@ -114,8 +114,8 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/postgres v1.4.8
-	gorm.io/gorm v1.24.6
+	gorm.io/driver/postgres v1.5.0
+	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
 	helm.sh/helm/v3 v3.11.2
 	k8s.io/api v0.26.2
 	k8s.io/apimachinery v0.26.2

@@ -1,44 +1,73 @@
 import React from 'react';
 import { Button, ButtonVariant } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import {
+    ExpandableRowContent,
+    TableComposable,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
+import useSet from 'hooks/useSet';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
+import ImageComponentsTable from './ImageComponentsTable';
+import { ImageDetailsResponse } from '../hooks/useImageDetails';
 
 export type SingleEntityVulnerabilitiesTableProps = {
+    image: ImageDetailsResponse['image'] | undefined;
     imageVulnerabilities: ImageVulnerabilitiesResponse['image']['imageVulnerabilities'];
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
 function SingleEntityVulnerabilitiesTable({
+    image,
     imageVulnerabilities,
+    getSortParams,
 }: SingleEntityVulnerabilitiesTableProps) {
+    const expandedRowSet = useSet<string>();
     return (
         <TableComposable>
             <Thead>
                 <Tr>
-                    <Th>CVE</Th>
-                    <Th>Severity</Th>
-                    <Th>CVE Status</Th>
+                    <Th>{/* Header for expanded column */}</Th>
+                    <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <Th sort={getSortParams('Severity')}>Severity</Th>
+                    <Th sort={getSortParams('Fixable')}>CVE Status</Th>
+                    {/* TODO Add sorting for these columns once aggregate sorting is available in BE */}
                     <Th>Affected components</Th>
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
-            <Tbody>
-                {imageVulnerabilities.map(
-                    ({ cve, severity, isFixable, imageComponents, discoveredAtImage }) => {
-                        const SeverityIcon: React.FC<SVGIconProps> | undefined =
-                            SeverityIcons[severity];
-                        const severityLabel: string | undefined =
-                            vulnerabilitySeverityLabels[severity];
+            {imageVulnerabilities.map(
+                (
+                    { cve, severity, summary, isFixable, imageComponents, discoveredAtImage },
+                    rowIndex
+                ) => {
+                    const SeverityIcon: React.FC<SVGIconProps> | undefined =
+                        SeverityIcons[severity];
+                    const severityLabel: string | undefined = vulnerabilitySeverityLabels[severity];
+                    const isExpanded = expandedRowSet.has(cve);
 
-                        return (
-                            <Tr key={cve}>
+                    return (
+                        <Tbody key={cve} isExpanded={isExpanded}>
+                            <Tr>
+                                <Td
+                                    expand={{
+                                        rowIndex,
+                                        isExpanded,
+                                        onToggle: () => expandedRowSet.toggle(cve),
+                                    }}
+                                />
                                 <Td dataLabel="CVE">
                                     <Button
                                         variant={ButtonVariant.link}
@@ -87,10 +116,29 @@ function SingleEntityVulnerabilitiesTable({
                                     {getDistanceStrictAsPhrase(discoveredAtImage, new Date())}
                                 </Td>
                             </Tr>
-                        );
-                    }
-                )}
-            </Tbody>
+                            <Tr isExpanded={isExpanded}>
+                                <Td />
+                                <Td colSpan={5}>
+                                    <ExpandableRowContent>
+                                        <p>{summary}</p>
+                                        <div
+                                            className="pf-u-p-md pf-u-mt-md"
+                                            style={{
+                                                border: '1px solid var(--pf-c-table--BorderColor)',
+                                            }}
+                                        >
+                                            <ImageComponentsTable
+                                                image={image}
+                                                imageComponents={imageComponents}
+                                            />
+                                        </div>
+                                    </ExpandableRowContent>
+                                </Td>
+                            </Tr>
+                        </Tbody>
+                    );
+                }
+            )}
         </TableComposable>
     );
 }

@@ -63,7 +63,7 @@ function NetworkBaselinesSearch({
             searchModifiers={networkFlowSearchModifiers}
             setSearchOptions={setSearchOptions}
             autoCompleteResults={autoCompleteResults}
-            placeholder="Add one or more resource filters"
+            placeholder="Filter deployments"
         />
     );
 }
