@@ -13,6 +13,7 @@ export default function getImageScanMessage(
     const hasOSCvesUnavailable = scanNotes?.includes('OS_CVES_UNAVAILABLE');
     const hasOSCvesStale = scanNotes?.includes('OS_CVES_STALE');
     const hasCertifiedRHELCvesUnavailable = scanNotes?.includes('CERTIFIED_RHEL_SCAN_UNAVAILABLE');
+    const hasContentSetUnavailable = scanNotes?.includes('CONTENT_SET_UNAVAILABLE');
 
     if (hasMissingMetadata) {
         return imageScanMessages.missingMetadata;
@@ -31,6 +32,9 @@ export default function getImageScanMessage(
     }
     if (hasPartialScanData && hasCertifiedRHELCvesUnavailable) {
         return imageScanMessages.certifiedRHELUnavailable;
+    }
+    if (hasPartialScanData && hasContentSetUnavailable) {
+        return imageScanMessages.contentSetUnavailable;
     }
     if (hasOSCvesStale) {
         return imageScanMessages.osCvesStale;

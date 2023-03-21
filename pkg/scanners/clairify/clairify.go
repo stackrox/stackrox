@@ -265,6 +265,12 @@ func isPartialScan(notes set.StringSet) bool {
 	osCVEsUnavailable := notes.Contains(storage.ImageScan_OS_CVES_UNAVAILABLE.String())
 	languageCVEsUnavailable := notes.Contains(storage.ImageScan_LANGUAGE_CVES_UNAVAILABLE.String())
 	certifiedRHELUnavailable := notes.Contains(storage.ImageScan_CERTIFIED_RHEL_SCAN_UNAVAILABLE.String())
+	contentSetUnavailable := notes.Contains(storage.ImageScan_CONTENT_SET_UNAVAILABLE.String())
+
+	// If CPE data is incorrect or missing the scan is considered partial
+	if contentSetUnavailable {
+		return true
+	}
 
 	// != simulates XOR for bool values.
 	// When both osCVEsUnavailable and languageCVEsUnavailable are true, we have no scan results.
@@ -292,6 +298,8 @@ func convertNote(note clairV1.Note) storage.ImageScan_Note {
 		return storage.ImageScan_LANGUAGE_CVES_UNAVAILABLE
 	case clairV1.CertifiedRHELScanUnavailable:
 		return storage.ImageScan_CERTIFIED_RHEL_SCAN_UNAVAILABLE
+	case clairV1.ContentSetUnavailable:
+		return storage.ImageScan_CONTENT_SET_UNAVAILABLE
 	default:
 		return -1
 	}

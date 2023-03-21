@@ -126,6 +126,7 @@ message NodeInventory {
         OS_CVES_STALE = 1;
         LANGUAGE_CVES_UNAVAILABLE = 2;
         CERTIFIED_RHEL_SCAN_UNAVAILABLE = 3;
+        CONTENT_SETS_UNAVAILABLE = 4;
     }
 }
 
