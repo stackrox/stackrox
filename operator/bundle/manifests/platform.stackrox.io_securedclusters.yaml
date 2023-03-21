@@ -391,7 +391,7 @@ spec:
                           you will not be able to see any information about network
                           activity and process executions. The remaining settings
                           in these section will not have any effect.
-                          NOTE KernelModule collection is deprecated and will be removed
+                          KernelModule collection is deprecated and will be removed
                           in release 4.1.
                         enum:
                         - EBPF
