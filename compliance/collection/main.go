@@ -160,6 +160,10 @@ func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_Commun
 func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scanner scannerV1.NodeInventoryServiceClient) <-chan *sensor.MsgFromCompliance {
 	sensorC := make(chan *sensor.MsgFromCompliance)
 	nodeName := getNode()
+	if scanner == nil {
+		log.Error("NodeInventoryServiceClient not provided. Node Scanning will be unavailable.")
+		return sensorC
+	}
 	go func() {
 		defer close(sensorC)
 		t := time.NewTicker(i.Initial())
