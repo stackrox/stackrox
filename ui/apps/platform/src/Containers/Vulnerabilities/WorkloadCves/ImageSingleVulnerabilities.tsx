@@ -2,10 +2,6 @@ import React, { ReactNode } from 'react';
 import {
     Bullseye,
     Divider,
-    EmptyState,
-    EmptyStateBody,
-    EmptyStateIcon,
-    EmptyStateVariant,
     Flex,
     Grid,
     GridItem,
@@ -22,10 +18,8 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import { vulnerabilitySeverities, VulnerabilitySeverity } from 'types/cve.proto';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
@@ -37,6 +31,7 @@ import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
 import { DynamicTableLabel } from './DynamicIcon';
+import ErrorSection from './ErrorSection';
 import { parseQuerySearchFilter } from './searchUtils';
 import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from './types';
 
@@ -102,18 +97,7 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
     const vulnerabilityData = data ?? previousData;
 
     if (error) {
-        mainContent = (
-            <Bullseye>
-                <EmptyState variant={EmptyStateVariant.large}>
-                    <EmptyStateIcon
-                        className="pf-u-danger-color-100"
-                        icon={ExclamationCircleIcon}
-                    />
-                    <Title headingLevel="h2">{getAxiosErrorMessage(error)}</Title>
-                    <EmptyStateBody>Adjust your filters and try again</EmptyStateBody>
-                </EmptyState>
-            </Bullseye>
-        );
+        mainContent = <ErrorSection error={error}>Adjust your filters and try again</ErrorSection>;
     } else if (loading && !vulnerabilityData) {
         mainContent = (
             <Bullseye>

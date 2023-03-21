@@ -2,11 +2,7 @@ import React, { ReactNode, useState } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
-    Bullseye,
     Divider,
-    EmptyState,
-    EmptyStateIcon,
-    EmptyStateVariant,
     Flex,
     Label,
     LabelGroup,
@@ -19,18 +15,18 @@ import {
     Title,
     Tooltip,
 } from '@patternfly/react-core';
-import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { CopyIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
 import { detailsTabValues } from './types';
 import { getOverviewCvesPath } from './searchUtils';
 import useImageDetails, { ImageDetailsResponse } from './hooks/useImageDetails';
+import ErrorSection from './ErrorSection';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -102,15 +98,7 @@ function WorkloadCvesImageSinglePage() {
     if (error) {
         mainContent = (
             <PageSection variant="light">
-                <Bullseye>
-                    <EmptyState variant={EmptyStateVariant.large}>
-                        <EmptyStateIcon
-                            className="pf-u-danger-color-100"
-                            icon={ExclamationCircleIcon}
-                        />
-                        <Title headingLevel="h2">{getAxiosErrorMessage(error)}</Title>
-                    </EmptyState>
-                </Bullseye>
+                <ErrorSection error={error} />
             </PageSection>
         );
     } else {
