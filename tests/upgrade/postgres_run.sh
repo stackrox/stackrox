@@ -83,6 +83,12 @@ test_upgrade_paths() {
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
+    # There is an issue on gke v1.24 for these older releases where we may have a
+    # timeout trying to get the metadata for the cloud provider.  Rather than extend
+    # the general wait_for_api time period and potentially hide issues from other
+    # tests we will extend the wait period for these tests.
+    export MAX_WAIT_SECONDS=600
+
     ########################################################################################
     # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
     ########################################################################################
@@ -105,13 +111,6 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
 
-    # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
-    # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
-    echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
-    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> scripts/ci/logcheck/allowlist-patterns
-    echo "Unable to connect to Sensor at"
-    echo >> scripts/ci/logcheck/allowlist-patterns
-
     ########################################################################################
     # Use helm to upgrade to a Postgres release.                                           #
     ########################################################################################
@@ -127,6 +126,17 @@ test_upgrade_paths() {
 
     # Ensure the access scopes added to rocks still exist after the upgrade
     checkForRocksAccessScopes
+
+    # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
+    # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
+    cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
+    echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
+    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
+    echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
+    echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
+    echo "Unexpected HTTP request failure" >> /tmp/allowlist-patterns
+    # Using ci_export so the post tests have this as well
+    ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
     collect_and_check_stackrox_logs "$log_output_dir" "00_initial_check"
 
@@ -320,7 +330,6 @@ deploy_scaled_workload() {
     sensor_wait
 
     ./scale/launch_workload.sh scale-test
-
     wait_for_api
 
     info "Sleep for a bit to let the scale build"
