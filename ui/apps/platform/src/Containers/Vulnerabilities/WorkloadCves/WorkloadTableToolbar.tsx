@@ -1,15 +1,11 @@
 import React, { useEffect } from 'react';
 import {
     Toolbar,
-    ToolbarFilter,
-    ToolbarToggleGroup,
+    ToolbarItem,
     ToolbarGroup,
     ToolbarContent,
     ToolbarChip,
-    Flex,
 } from '@patternfly/react-core';
-import { FilterIcon } from '@patternfly/react-icons';
-import { Globe } from 'react-feather';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';
@@ -18,16 +14,14 @@ import { Resource } from './FilterResourceDropdown';
 import FilterAutocomplete from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
-
-import './WorkloadTableToolbar.css';
+import FilterChips from './FilterChips';
 
 const emptyDefaultFilters = {
     Severity: [],
     Fixable: [],
 };
 
-type FilterType = 'resource' | 'Severity' | 'Fixable';
-
+type FilterType = 'Severity' | 'Fixable';
 type WorkloadTableToolbarProps = {
     defaultFilters?: DefaultFilters;
     resourceContext?: Resource;
@@ -38,64 +32,39 @@ function WorkloadTableToolbar({
     resourceContext,
 }: WorkloadTableToolbarProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const severityFilterChips: ToolbarChip[] = [];
-    const fixableFilterChips: ToolbarChip[] = [];
 
     function onSelect(type: FilterType, e, selection) {
-        if (type === 'resource') {
+        const { checked } = e.target as HTMLInputElement;
+        const selectedSearchFilter = searchFilter[type] as string[];
+        if (searchFilter[type]) {
             setSearchFilter({
                 ...searchFilter,
-                resource: selection,
+                [type]: checked
+                    ? [...selectedSearchFilter, selection]
+                    : selectedSearchFilter.filter((value) => value !== selection),
             });
         } else {
-            const { checked } = e.target as HTMLInputElement;
-            const selectedSearchFilter = searchFilter[type] as string[];
-            if (searchFilter[type]) {
-                setSearchFilter({
-                    ...searchFilter,
-                    [type]: checked
-                        ? [...selectedSearchFilter, selection]
-                        : selectedSearchFilter.filter((value) => value !== selection),
-                });
-            } else {
-                setSearchFilter({
-                    ...searchFilter,
-                    [type]: checked
-                        ? [selection]
-                        : selectedSearchFilter.filter((value) => value !== selection),
-                });
-            }
-        }
-    }
-
-    function onDelete(type: FilterType, chip: ToolbarChip) {
-        if (type === 'Severity') {
-            const severitySearchFilter = searchFilter.Severity as string[];
             setSearchFilter({
                 ...searchFilter,
-                Severity: severitySearchFilter.filter((fil: string) => fil !== chip.key),
-            });
-        } else if (type === 'Fixable') {
-            const fixableSearchFilter = searchFilter.Fixable as string[];
-            setSearchFilter({
-                ...searchFilter,
-                Fixable: fixableSearchFilter.filter((fil: string) => fil !== chip.key),
+                [type]: checked
+                    ? [selection]
+                    : selectedSearchFilter.filter((value) => value !== selection),
             });
         }
     }
 
-    function onDeleteGroup(type: FilterType) {
-        if (type === 'Severity') {
-            const { Severity, ...remainingSearchFilter } = searchFilter;
-            setSearchFilter({
-                ...remainingSearchFilter,
-            });
-        } else if (type === 'Fixable') {
-            const { Fixable, ...remainingSearchFilter } = searchFilter;
-            setSearchFilter({
-                ...remainingSearchFilter,
-            });
-        }
+    function onDelete(category: FilterType | Resource, chip: ToolbarChip | string) {
+        const newSearchFilter = { ...searchFilter };
+        const newResourceFilter = searchFilter[category] as string[];
+        const chipKey = typeof chip === 'string' ? chip : chip.key;
+        newSearchFilter[category] = newResourceFilter.filter((fil: string) => fil !== chipKey);
+        setSearchFilter(newSearchFilter);
+    }
+
+    function onDeleteGroup(category: FilterType | Resource) {
+        const newSearchFilter = { ...searchFilter };
+        delete newSearchFilter[category];
+        setSearchFilter(newSearchFilter);
     }
 
     function onDeleteAll() {
@@ -125,86 +94,27 @@ function WorkloadTableToolbar({
         }
     }, [defaultFilters, searchFilter, setSearchFilter]);
 
-    const severitySearchFilter = searchFilter.Severity as VulnerabilitySeverityLabel[];
-    severitySearchFilter?.forEach((sev) => {
-        if (defaultFilters.Severity?.includes(sev)) {
-            severityFilterChips.push({
-                key: sev,
-                node: (
-                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                        <Globe height="15px" />
-                        {sev}
-                    </Flex>
-                ),
-            });
-        } else {
-            severityFilterChips.push({
-                key: sev,
-                node: <Flex>{sev}</Flex>,
-            });
-        }
-    });
-
-    const fixableSearchFilter = searchFilter.Fixable as FixableStatus[];
-    fixableSearchFilter?.forEach((status) => {
-        if (defaultFilters.Fixable?.includes(status)) {
-            fixableFilterChips.push({
-                key: status,
-                node: (
-                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                        <Globe height="15px" />
-                        {status}
-                    </Flex>
-                ),
-            });
-        } else {
-            fixableFilterChips.push({
-                key: status,
-                node: <Flex>{status}</Flex>,
-            });
-        }
-    });
-
     return (
-        <Toolbar
-            id="workload-cves-table-toolbar"
-            collapseListedFiltersBreakpoint="xl"
-            clearAllFilters={onDeleteAll}
-        >
-            <ToolbarContent>
-                <ToolbarToggleGroup
-                    toggleIcon={<FilterIcon />}
-                    breakpoint="xl"
-                    className="pf-u-flex-1"
-                >
-                    <FilterAutocomplete
+        <Toolbar id="workload-cves-table-toolbar" clearAllFilters={onDeleteAll}>
+            <ToolbarContent className="workload-cves-table-toolbar-dropdowns">
+                <FilterAutocomplete
+                    searchFilter={searchFilter}
+                    setSearchFilter={setSearchFilter}
+                    resourceContext={resourceContext}
+                    onDeleteGroup={onDeleteGroup}
+                />
+                <ToolbarGroup>
+                    <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
+                    <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
+                </ToolbarGroup>
+                <ToolbarGroup>
+                    <FilterChips
+                        defaultFilters={defaultFilters}
                         searchFilter={searchFilter}
-                        setSearchFilter={setSearchFilter}
-                        resourceContext={resourceContext}
+                        onDeleteGroup={onDeleteGroup}
+                        onDelete={onDelete}
                     />
-                    <ToolbarGroup>
-                        <ToolbarFilter
-                            chips={severityFilterChips}
-                            deleteChip={(category, chip) =>
-                                onDelete(category as FilterType, chip as ToolbarChip)
-                            }
-                            deleteChipGroup={(category) => onDeleteGroup(category as FilterType)}
-                            categoryName="Severity"
-                        >
-                            <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
-                        </ToolbarFilter>
-                        <ToolbarFilter
-                            chips={fixableFilterChips}
-                            deleteChip={(category, chip) =>
-                                onDelete(category as FilterType, chip as ToolbarChip)
-                            }
-                            deleteChipGroup={(category) => onDeleteGroup(category as FilterType)}
-                            categoryName="Fixable"
-                        >
-                            <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
-                        </ToolbarFilter>
-                    </ToolbarGroup>
-                </ToolbarToggleGroup>
+                </ToolbarGroup>
             </ToolbarContent>
         </Toolbar>
     );

@@ -1,0 +1,20 @@
+#workload-cves-table-toolbar .pf-c-chip-group__close {
+    align-self: center;
+}
+
+#workload-cves-table-toolbar .pf-c-chip-group__main {
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+#workload-cves-table-toolbar .pf-c-chip-group, .pf-c-chip-group__list {
+    flex-wrap: nowrap;
+}
+
+#workload-cves-table-toolbar .pf-c-toolbar__group {
+    flex-wrap: wrap;
+}
+
+#workload-cves-table-toolbar .workload-cves-table-toolbar-dropdowns .pf-c-toolbar__group  {
+    flex-wrap: nowrap;
+}
