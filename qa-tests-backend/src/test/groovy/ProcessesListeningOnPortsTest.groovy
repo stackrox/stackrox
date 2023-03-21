@@ -60,7 +60,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .addLabel("app", TCPCONNECTIONTARGET3)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT & sleep 240 && pkill socat && sleep 3600)" as String,]),
+                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT & " +
+			"sleep 240 && pkill socat && sleep 3600)" as String,]),
         ]
     }
 
