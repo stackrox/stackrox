@@ -20,7 +20,7 @@ const routeMatcherMapForClusterInNetworkGraph = {
     },
 };
 
-const clusterNamespacesTarget = '/v1/sac/clusters/*/namespaces';
+const clusterNamespacesTarget = '/v1/sac/clusters/*/namespaces?permissions=NetworkGraph&permissions=Deployment';
 
 export function selectCluster() {
     cy.intercept('POST', clusterNamespacesTarget);
