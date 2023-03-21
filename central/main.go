@@ -255,16 +255,17 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	// TODO: ROX-12750 update with new list of replaced/deprecated resources
 	log.Warn("The following permission resources have been replaced:\n" +
 		"	Access replaces AuthProvider, Group, Licenses, and User\n" +
+		"	Administration replaces AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
+		"	Cluster also covers ClusterCVE\n" +
+		"	Compliance replaces ComplianceRuns\n" +
 		"	DeploymentExtension replaces Indicator, NetworkBaseline, ProcessWhitelist, and Risk\n" +
 		"	Integration replaces APIToken, BackupPlugins, ImageIntegration, Notifier, and SignatureIntegration\n" +
 		"	Image now also covers ImageComponent\n" +
 		"The following permission resources will be replaced in the upcoming versions:\n" +
-		"	Administration will replace AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
-		"	Compliance will replace ComplianceRuns\n" +
-		"	Cluster will cover ClusterCVE.")
+		"	Access will replace Role\n" +
+		"	WorkflowAdministration will replace Policy and VulnerabilityReports.")
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version
@@ -542,8 +543,7 @@ func startGRPCServer() {
 	telemetryCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-12750 Replace Config with Administration.
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	if cds, err := configDS.Singleton().GetConfig(telemetryCtx); err == nil || cds == nil {
 		if t := cds.GetPublicConfig().GetTelemetry(); t == nil || t.GetEnabled() {
@@ -623,16 +623,14 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
 		{
-			Route: "/api/extensions/clusters/zip",
-			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity))),
+			Route:         "/api/extensions/clusters/zip",
+			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{
-			Route: "/api/extensions/scanner/zip",
-			// TODO: ROX-12750 Replace ScannerBundle with Administration.
-			Authorizer:    user.With(permissions.View(resources.ScannerBundle)),
+			Route:         "/api/extensions/scanner/zip",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
 		},
@@ -788,12 +786,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
 				or.SensorOrAuthorizer(
 					or.ScannerOr(
-						// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
-						user.With(permissions.View(resources.ScannerDefinitions)))): {
+						user.With(permissions.View(resources.Administration)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
-				// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
-				user.With(permissions.Modify(resources.ScannerDefinitions)): {
+				user.With(permissions.Modify(resources.Administration)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},
 			}),

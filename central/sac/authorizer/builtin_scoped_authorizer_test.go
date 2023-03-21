@@ -94,13 +94,6 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 			results:   []bool{false, false, true},
 		},
 		{
-			name:  "allow read from compliance with replacing resource permissions",
-			roles: []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Cluster())}, // TODO: ROX-12750 Replace ComplianceRuns with Compliance.
-
-			scopeKeys: readCluster(firstClusterID, resources.ComplianceRuns.Resource),
-			results:   []bool{false, false, true},
-		},
-		{
 			name: "allow read from namespace with multiple roles",
 			roles: []permissions.ResolvedRole{
 				role(allResourcesView, withAccessTo1Namespace()),
@@ -434,17 +427,15 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:  "Access to replaced resource (read-only) for unrestricted scope gives unrestricted scope tree for the resource and any access (case read cluster)",
-			roles: []permissions.ResolvedRole{role(complianceEdit, rolePkg.AccessScopeIncludeAll)},
-			// TODO: ROX-12750 Replace ComplianceRuns with Compliance.
-			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
+			name:      "Access to resource (read-only) for unrestricted scope gives unrestricted scope tree for the resource and any access (case read cluster)",
+			roles:     []permissions.ResolvedRole{role(complianceEdit, rolePkg.AccessScopeIncludeAll)},
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Compliance),
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
 		},
 		{
-			name:  "Access to replaced resource (read-write) for unrestricted scope gives unrestricted scope tree for the resource and any access (case write cluster)",
-			roles: []permissions.ResolvedRole{role(complianceEdit, rolePkg.AccessScopeIncludeAll)},
-			// TODO: ROX-12750 Replace ComplianceRuns with Compliance.
-			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.ComplianceRuns),
+			name:      "Access to resource (read-write) for unrestricted scope gives unrestricted scope tree for the resource and any access (case write cluster)",
+			roles:     []permissions.ResolvedRole{role(complianceEdit, rolePkg.AccessScopeIncludeAll)},
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Compliance),
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
 		},
 		{
@@ -577,45 +568,41 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:  "Access to specific replaced resource (read-only) for namespace scope gives namespace scope tree for the resource and any access (case read cluster)",
-			roles: []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
-			// TODO: ROX-12750 Replace ComplianceRuns with Compliance.
-			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
+			name:      "Access to specific resource (read-only) for namespace scope gives namespace scope tree for the resource and any access (case read cluster)",
+			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Compliance),
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
-			name:  "Access to specific replaced resource (read-write) for namespace scope gives namespace scope tree for the resource and any access (case write cluster)",
-			roles: []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
-			// TODO: ROX-12750 Replace ComplianceRuns with Compliance.
-			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.ComplianceRuns),
+			name:      "Access to specific resource (read-write) for namespace scope gives namespace scope tree for the resource and any access (case write cluster)",
+			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Compliance),
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
-			name:      "Access to specific replaced resource (read-only) for namespace scope gives deny-all scope tree for any other resource and access (case read namespace)",
+			name:      "Access to specific resource (read-only) for namespace scope gives deny-all scope tree for any other resource and access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to specific replaced resource (read-write) for namespace scope gives deny-all scope tree for any other resource and access (case write namespace)",
+			name:      "Access to specific resource (read-write) for namespace scope gives deny-all scope tree for any other resource and access (case write namespace)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name: "Access to specific replaced resource (read-only) for mixed scope gives union scope tree for the resource and any access (case read cluster)",
+			name: "Access to specific resource (read-only) for mixed scope gives union scope tree for the resource and any access (case read cluster)",
 			roles: []permissions.ResolvedRole{
 				role(complianceEdit, withAccessTo1Namespace()), role(complianceEdit, withAccessTo2Cluster())},
-			// TODO: ROX-12750 Replace ComplianceRuns with Compliance.
-			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Compliance),
 			resultEAS: mixedEffectiveScope,
 		},
 		{
-			name: "Access to specific replaced resource (read-write) for mixed scope gives union scope tree for the resource and any access (case write cluster)",
+			name: "Access to specific resource (read-write) for mixed scope gives union scope tree for the resource and any access (case write cluster)",
 			roles: []permissions.ResolvedRole{
 				role(complianceEdit, withAccessTo1Namespace()), role(complianceEdit, withAccessTo2Cluster())},
-			// TODO: ROX-12750 Replace ComplianceRuns with Compliance.
-			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.ComplianceRuns),
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Compliance),
 			resultEAS: mixedEffectiveScope,
 		},
 		{

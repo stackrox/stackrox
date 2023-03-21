@@ -23,7 +23,7 @@ import spock.lang.Unroll
 class DiagnosticBundleTest extends BaseSpecification {
 
     @Shared
-    private String debugLogsReaderRoleName
+    private String administrationReaderRoleName
     @Shared
     private GenerateTokenResponse adminToken
     @Shared
@@ -35,21 +35,19 @@ class DiagnosticBundleTest extends BaseSpecification {
 
     def setupSpec() {
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
-        debugLogsReaderRoleName = UUID.randomUUID()
-        RoleService.createRoleWithScopeAndPermissionSet(debugLogsReaderRoleName,
+        administrationReaderRoleName = UUID.randomUUID()
+        RoleService.createRoleWithScopeAndPermissionSet(administrationReaderRoleName,
                 UNRESTRICTED_SCOPE_ID,
                 [
-                        // TODO: ROX-12750 Replace DebugLogs with Administration
-                        "DebugLogs": RoleOuterClass.Access.READ_ACCESS,
+                        "Administration": RoleOuterClass.Access.READ_ACCESS,
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
                 ]
         )
         debugLogsReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
-                debugLogsReaderRoleName)
+                administrationReaderRoleName)
         Map<String, RoleOuterClass.Access> resourceToAccess =
                 [
-                        // TODO: ROX-12750 Replace DebugLogs with Administration
-                        "DebugLogs": RoleOuterClass.Access.NO_ACCESS,
+                        "Administration": RoleOuterClass.Access.NO_ACCESS,
                         "Cluster": RoleOuterClass.Access.NO_ACCESS,
                 ]
 
@@ -71,7 +69,7 @@ class DiagnosticBundleTest extends BaseSpecification {
         if (noAccessRole != null) {
             RoleService.deleteRole(noAccessRole.name)
         }
-        RoleService.deleteRole(debugLogsReaderRoleName)
+        RoleService.deleteRole(administrationReaderRoleName)
     }
 
     @Unroll
