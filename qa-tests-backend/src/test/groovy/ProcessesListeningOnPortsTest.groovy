@@ -312,7 +312,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert endpoint
         assert endpoint.clusterId == clusterId
-        assert endpoint.containerName == TCPCONNECTIONTARGET3
+        assert endpoint.containerName == TCPCONNECTIONTARGET2
         assert endpoint.signal.id
         assert endpoint.signal.containerId
         assert endpoint.signal.time
